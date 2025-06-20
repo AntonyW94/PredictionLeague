@@ -1,4 +1,7 @@
-using PredictionLeague.Web.Components;
+using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components.Authorization;
+using PredictionLeague.Web.Client.Authentication;
+using PredictionLeague.Web.Client.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,6 +9,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
+
+builder.Services.AddBlazoredLocalStorage(); // Add local storage service
+builder.Services.AddAuthorizationCore(); // Add core authorization services
+
+builder.Services.AddHttpClient<IAuthService, AuthService>(client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7075/");
+});
 
 var app = builder.Build();
 
@@ -23,13 +34,13 @@ else
 
 app.UseHttpsRedirection();
 
-
+app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapStaticAssets();
+// This is the key change to ensure all pages from the client assembly are interactive by default.
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
-    .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(PredictionLeague.Web.Client._Imports).Assembly);
+    .AddInteractiveWebAssemblyRenderMode();
+    //.AddAdditionalAssemblies(typeof(PredictionLeague.Web.Client._Imports).Assembly);
 
 app.Run();

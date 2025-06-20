@@ -1,0 +1,46 @@
+﻿@page "/"
+
+<PageTitle>Home - Premier League Predictions</PageTitle>
+
+<div class="container-fluid">
+
+    <!-- Hero Section -->
+    <div class="text-center p-5 mb-4 rounded-3" style="background-color: var(--pl-purple); color: white;">
+        <div class="container-fluid py-5">
+
+            <!-- >> UPDATED THIS TO THE CORRECT PNG LOGO << -->
+            <img src="https://cdn.mos.cms.futurecdn.net/YfcLFQhjH3dBhA2tGqs8Qf-970-80.jpg.webp" alt="New Premier League Logo" style="height: 110px; background-color: white; border-radius: 5%;" class="mb-4" />
+
+            <h1 class="display-5 fw-bold" style="color: white;">Welcome to the Prediction League</h1>
+            <p class="fs-4">Think you know the Premier League? Prove it. Predict the scores for every match, every week, and compete against friends and rivals to top the leaderboard.</p>
+            <NavLink class="btn btn-lg mt-3" href="register" style="background-image: linear-gradient(to right, #90EE90, var(--pl-green)); border: none; color: white; font-weight: 700;">Get Started</NavLink>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <div class="row align-items-md-stretch">
+        <div class="col-md-6 mb-4">
+            <div class="h-100 p-5 bg-light border rounded-3 d-flex flex-column">
+                <h2>How It Works</h2>
+                <p class="flex-grow-1">The rules are simple. Each week, submit your score predictions for all 10 Premier League matches before the Game Week deadline. Once the deadline passes, your predictions are locked in and you can see what everyone else has predicted. Points are awarded as follows:</p>
+                <ul>
+                    <!-- >> UPDATED POINTS << -->
+                    <li><strong>5 Points:</strong> Predict the exact correct score.</li>
+                    <li><strong>3 Points:</strong> Predict the correct result (Win/Draw/Loss), but not the exact score.</li>
+                    <li><strong>0 Points:</strong> An incorrect prediction.</li>
+                </ul>
+                <p class="mt-auto">Climb the weekly, monthly, and yearly leaderboards. Create private leagues to challenge your friends for the ultimate bragging rights!</p>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="rounded-3" style="background-color: #f8f9fa;">
+                <!-- Royalty-Free Image Placeholder -->
+                <img src="https://images.unsplash.com/photo-1486286701208-1d58e9338013?q=80&w=840&h=420&auto=format&fit=crop"
+                     class="rounded shadow-sm"
+                     style="width: 100%; height: auto;"
+                     alt="A football sitting on the grass of a pitch"
+                     onerror="this.onerror=null;this.src='https://placehold.co/840x420/CCCCCC/FFFFFF?text=Image+Not+Found';" />
+            </div>
+        </div>
+    </div>
+</div>
