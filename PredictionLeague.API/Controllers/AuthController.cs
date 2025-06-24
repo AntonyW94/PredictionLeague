@@ -15,11 +15,13 @@ namespace PredictionLeague.API.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public AuthController(UserManager<ApplicationUser> userManager, IConfiguration configuration)
+        public AuthController(UserManager<ApplicationUser> userManager, IConfiguration configuration, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _configuration = configuration;
+            _roleManager = roleManager;
         }
 
         // POST: api/auth/register
@@ -48,6 +50,11 @@ namespace PredictionLeague.API.Controllers
                 return BadRequest(new AuthResponse { IsSuccess = false, Message = "User creation failed.", Token = string.Join(", ", result.Errors.Select(e => e.Description)) });
             }
 
+            const string defaultRole = "Player";
+            
+            if (await _roleManager.RoleExistsAsync(defaultRole))
+                await _userManager.AddToRoleAsync(newUser, defaultRole);
+
             return Ok(new AuthResponse { IsSuccess = true, Message = "User created successfully." });
         }
 
@@ -62,46 +69,57 @@ namespace PredictionLeague.API.Controllers
                 return Unauthorized(new AuthResponse { IsSuccess = false, Message = "Invalid email or password." });
             }
 
-            var tokenResponse = GenerateJwtToken(user);
+            var tokenResponse = await GenerateJwtToken(user);
 
             return Ok(tokenResponse);
         }
 
-        private AuthResponse GenerateJwtToken(ApplicationUser user)
+        private async Task<AuthResponse> GenerateJwtToken(ApplicationUser user)
         {
-            var jwtSettings = _configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["Secret"];
-            var issuer = jwtSettings["Issuer"];
-            var audience = jwtSettings["Audience"];
-
-            var claims = new[]
+            try
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id), // 'sub' is a standard claim for user ID
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
-                // Add custom claims like FirstName if needed
-                new Claim("FirstName", user.FirstName)
-            };
+                var jwtSettings = _configuration.GetSection("JwtSettings");
+                var secretKey = jwtSettings["Secret"];
+                var issuer = jwtSettings["Issuer"];
+                var audience = jwtSettings["Audience"];
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.UtcNow.AddDays(7); // Token expiry date
+                var userRoles = await _userManager.GetRolesAsync(user);
 
-            var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
-                claims: claims,
-                expires: expires,
-                signingCredentials: creds
-            );
+                var claims = new[]
+                {
+                    new Claim(JwtRegisteredClaimNames.Sub, user.Id), // 'sub' is a standard claim for user ID
+                    new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
+                    // Add custom claims like FirstName if needed
+                    new Claim("FirstName", user.FirstName),
+                    new Claim("LastName", user.LastName),
+                    new Claim("FullName", $"{user.FirstName} {user.LastName}")
+                }.Union(userRoles.Select(role => new Claim(ClaimTypes.Role, role))); // Add roles to the token claims;
 
-            return new AuthResponse
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                var expires = DateTime.UtcNow.AddDays(7); // Token expiry date
+
+                var token = new JwtSecurityToken(
+                    issuer: issuer,
+                    audience: audience,
+                    claims: claims,
+                    expires: expires,
+                    signingCredentials: creds
+                );
+
+                return new AuthResponse
+                {
+                    IsSuccess = true,
+                    Message = "Login successful.",
+                    Token = new JwtSecurityTokenHandler().WriteToken(token),
+                    ExpiresAt = expires
+                };
+            }
+            catch (Exception ex)
             {
-                IsSuccess = true,
-                Message = "Login successful.",
-                Token = new JwtSecurityTokenHandler().WriteToken(token),
-                ExpiresAt = expires
-            };
+                return new AuthResponse { IsSuccess = false, Message = $"Token generation failed: {ex.Message}" };
+            }
         }
     }
 }

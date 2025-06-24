@@ -1,0 +1,145 @@
+﻿@page "/login"
+
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header text-white text-center" style="background-color: var(--pl-purple);">
+                    <h4>Login to Your Account</h4>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="_model" OnValidSubmit="HandleLogin" FormName="loginForm">
+                        <DataAnnotationsValidator />
+
+                        @if (!string.IsNullOrEmpty(_errorMessage))
+                        {
+                            <div class="alert alert-danger">@_errorMessage</div>
+                        }
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email address</label>
+                            <InputText id="email" class="form-control" @bind-Value="_model.Email" />
+                            <ValidationMessage For="@(() => _model.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <InputText id="password" type="password" class="form-control" @bind-Value="_model.Password" />
+                            <ValidationMessage For="@(() => _model.Password)" />
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary" disabled="@_isBusy" style="background-color: var(--pl-pink); border-color: var(--pl-pink);">
+                                @if (_isBusy)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span> Logging in...</span>
+                                }
+                                else
+                                {
+                                    <span>Login</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+
+                    <div class="d-flex align-items-center my-4">
+                        <div class="flex-grow-1 border-top"></div>
+                        <div class="px-3 text-muted">OR</div>
+                        <div class="flex-grow-1 border-top"></div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <!-- Google Login Button -->
+                        <button class="btn social-btn google-btn" @onclick="HandleGoogleLogin">
+                            <svg class="social-icon" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.386-7.439-7.574s3.344-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0 5.48 0 0 5.48 0 12s5.48 12 12.24 12c7.21 0 11.5-5.222 11.5-11.826 0-.788-.085-1.39-.189-1.889H12.24z"></path></svg>
+                            Continue with Google
+                        </button>
+
+                        <!-- Apple Login Button -->
+                        <button class="btn social-btn apple-btn" @onclick="HandleAppleLogin">
+                            <svg class="social-icon" viewBox="0 0 16 16"><path fill="white" d="M8.61,3.41a2.83,2.83,0,0,0-2.43-1.42A2.86,2.86,0,0,0,3.34,4.77a5,5,0,0,0-1,3.74,4.45,4.45,0,0,0,3,4.2,2.4,2.4,0,0,0,1.4.05,1,1,0,0,0,.7-.68,4.19,4.19,0,0,1-2-3.23,4.24,4.24,0,0,1,.87-2.62,2.5,2.5,0,0,1,2.26-.82ZM7.74,2a2,2,0,0,0,1.26.5A1.86,1.86,0,0,0,8.19.5,2,2,0,0,0,7.74,2Z" /></svg>
+                            Continue with Apple
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .social-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        font-weight: 500;
+        border: 1px solid #ddd;
+        border-radius: 0.25rem;
+    }
+
+    .social-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+    }
+
+    .google-btn {
+        background-color: white;
+        color: #757575;
+    }
+    .google-btn:hover {
+        background-color: #f7f7f7;
+    }
+
+    .apple-btn {
+        background-color: black;
+        color: white;
+    }
+    .apple-btn:hover {
+        background-color: #333;
+    }
+</style>
+
+@code {
+    private readonly LoginRequest _model = new();
+    private string? _errorMessage;
+    private bool _isBusy;
+
+    private async Task HandleLogin()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+
+        var result = await AuthService.Login(_model);
+
+        if (result.IsSuccess)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            _errorMessage = result.Message;
+        }
+
+        _isBusy = false;
+    }
+
+    private void HandleGoogleLogin()
+    {
+        // Placeholder for Google login logic
+        // This would typically redirect to the API's external login endpoint
+        _errorMessage = "Google login is not yet implemented.";
+    }
+
+    private void HandleAppleLogin()
+    {
+        // Placeholder for Apple login logic
+        _errorMessage = "Apple login is not yet implemented.";
+    }
+}

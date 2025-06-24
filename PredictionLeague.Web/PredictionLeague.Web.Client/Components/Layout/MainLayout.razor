@@ -1,13 +1,15 @@
 ﻿@inherits LayoutComponentBase
 
 <div class="page">
-    <main>
-        <NavLayout />
+    <CascadingAuthenticationState>
+        <main>
+            <NavLayout />
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    </CascadingAuthenticationState>
 </div>
 
 <div id="blazor-error-ui">

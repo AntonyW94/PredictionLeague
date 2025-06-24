@@ -1,4 +1,4 @@
-﻿<nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--pl-purple);">
+﻿@* <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--pl-purple);">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Prediction League</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,4 +19,62 @@
             </ul>
         </div>
     </div>
+</nav> *@
+
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--pl-purple);">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Prediction League</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+
+            <AuthorizeView>
+                <Authorized>
+                    <!-- This content shows only when the user is logged in -->
+                    <ul class="navbar-nav w-100">
+                        <!-- ms-auto pushes the following items to the right -->
+                        <li class="nav-item ms-auto py-0 d-flex align-items-center">
+                            <span class="navbar-text text-white me-2">
+                                @context.User.FindFirst("FullName")?.Value
+                            </span>
+                        </li>
+                        <li class="nav-item py-0">
+                            <button class="nav-link btn btn-link" @onclick="LogoutUser" style="color: white; font-size: 1.25rem; line-height: 1;" title="Logout">
+                                <span class="bi bi-box-arrow-right" aria-hidden="true"></span>
+                            </button>
+                        </li>
+                    </ul>
+                </Authorized>
+                <NotAuthorized>
+                    <!-- This content shows only when the user is logged out, using your exact structure -->
+                    <ul class="navbar-nav w-100">
+                        <li class="nav-item ms-auto py-0">
+                            <NavLink class="nav-link" href="register" style="color: white;">
+                                Register
+                            </NavLink>
+                        </li>
+                        <li class="nav-item py-0">
+                            <NavLink class="nav-link" href="login" style="color: white;">
+                                Login
+                            </NavLink>
+                        </li>
+                    </ul>
+                </NotAuthorized>
+            </AuthorizeView>
+
+        </div>
+    </div>
 </nav>
+
+@code {
+    private async Task LogoutUser()
+    {
+        await AuthService.Logout();
+        // Force a full page reload to ensure all state is cleared.
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+}
