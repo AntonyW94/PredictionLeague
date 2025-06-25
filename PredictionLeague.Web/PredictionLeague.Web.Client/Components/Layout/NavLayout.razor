@@ -1,32 +1,13 @@
-﻿@* <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--pl-purple);">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Prediction League</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav w-100">
-                <li class="nav-item ms-auto py-0">
-                    <NavLink class="nav-link" href="register" style="color: white;">
-                        Register
-                    </NavLink>
-                </li>
-                <li class="nav-item py-0">
-                    <NavLink class="nav-link" href="login" style="color: white;">
-                        Login
-                    </NavLink>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav> *@
-
-@inject IAuthService AuthService
+﻿@inject IAuthService AuthService
 @inject NavigationManager NavigationManager
 
 <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--pl-purple);">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Prediction League</a>
+        <a class="navbar-brand d-flex align-items-center" href="">
+            <!-- >> ADDED THE LOGO IMAGE HERE << -->
+            <img src="https://play-lh.googleusercontent.com/pJPgV--7ICYdqOyd6_8pgVXx9jIa81_YNLKI532jiGa9xBMZJarKRzgj76oYXUO7zK8" alt="Prediction League Logo" style="height: 30px; margin-right: 10px;" />
+            Prediction League
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
