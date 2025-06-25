@@ -4,7 +4,6 @@
 <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--pl-purple);">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center" href="">
-            <!-- >> ADDED THE LOGO IMAGE HERE << -->
             <img src="https://play-lh.googleusercontent.com/pJPgV--7ICYdqOyd6_8pgVXx9jIa81_YNLKI532jiGa9xBMZJarKRzgj76oYXUO7zK8" alt="Prediction League Logo" style="height: 30px; margin-right: 10px;" />
             Prediction League
         </a>
@@ -15,23 +14,35 @@
 
             <AuthorizeView>
                 <Authorized>
-                    <!-- This content shows only when the user is logged in -->
                     <ul class="navbar-nav w-100">
-                        <!-- ms-auto pushes the following items to the right -->
                         <li class="nav-item ms-auto py-0 d-flex align-items-center">
-                            <span class="navbar-text text-white me-2">
-                                @context.User.FindFirst("FullName")?.Value
+                            <span class="navbar-text text-white me-2 fw-bold">
+                                @context.User.FindFirst("FirstName")?.Value
                             </span>
                         </li>
-                        <li class="nav-item py-0">
-                            <button class="nav-link btn btn-link" @onclick="LogoutUser" style="color: white; font-size: 1.25rem; line-height: 1;" title="Logout">
-                                <span class="bi bi-box-arrow-right" aria-hidden="true"></span>
-                            </button>
+
+                        <li class="nav-item dropdown py-0">
+                            <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white; font-size: 1.25rem; line-height: 1;" title="User Menu">
+                                <span class="bi bi-person-fill" aria-hidden="true"></span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <NavLink class="dropdown-item" href="my-details">
+                                        <span class="bi bi-person-badge me-2 fw-bold"></span>My Details
+                                    </NavLink>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <button class="dropdown-item d-flex align-items-center" type="button" @onclick="LogoutUser">
+                                        <span class="bi bi-box-arrow-right me-2 fw-bold"></span>Logout
+                                    </button>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </Authorized>
+
                 <NotAuthorized>
-                    <!-- This content shows only when the user is logged out, using your exact structure -->
                     <ul class="navbar-nav w-100">
                         <li class="nav-item ms-auto py-0">
                             <NavLink class="nav-link" href="register" style="color: white;">
@@ -55,7 +66,6 @@
     private async Task LogoutUser()
     {
         await AuthService.Logout();
-        // Force a full page reload to ensure all state is cleared.
         NavigationManager.NavigateTo("/", forceLoad: true);
     }
 }
