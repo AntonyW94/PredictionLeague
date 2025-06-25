@@ -1,4 +1,5 @@
-﻿@using static Microsoft.AspNetCore.Components.Web.RenderMode
+﻿@using PredictionLeague.Web.Client.Components.Layout
+@* @using static Microsoft.AspNetCore.Components.Web.RenderMode
 <!DOCTYPE html>
 <html lang="en">
 
@@ -14,18 +15,9 @@
 </head>
 
 <body>
-    @*     <Router AppAssembly="typeof(Program).Assembly" AdditionalAssemblies="new[] { typeof(PredictionLeague.Web.Client.Program).Assembly }">
-        <Found Context="routeData">
-            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
-            <FocusOnNavigate RouteData="routeData" Selector="h1" />
-        </Found>
-        <NotFound>
-            <PageTitle>Not found</PageTitle>
-            <LayoutView Layout="typeof(Layout.MainLayout)">
-                <p role="alert">Sorry, there's nothing at this address.</p>
-            </LayoutView>
-        </NotFound>
-    </Router> *@
+<div id="app-loading">
+    <div class="spinner"></div>
+</div>
 
     <Routes @rendermode="new InteractiveWebAssemblyRenderMode(prerender: false)" />
 
@@ -33,4 +25,17 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 
-</html>
+</html> *@
+
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Not found</PageTitle>
+        <LayoutView Layout="typeof(MainLayout)">
+            <p role="alert">Sorry, there's nothing at this address.</p>
+        </LayoutView>
+    </NotFound>
+</Router>
