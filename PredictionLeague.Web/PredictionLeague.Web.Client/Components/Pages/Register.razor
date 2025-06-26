@@ -1,135 +1,153 @@
 ﻿@page "/register"
-
-@using PredictionLeague.Shared.Auth
 @inject IAuthService AuthService
 @inject NavigationManager NavigationManager
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header text-white text-center" style="background-color: var(--pl-purple);">
-                    <h4>Create Your Account</h4>
-                </div>
-                <div class="card-body">
-                    <EditForm Model="_model" OnValidSubmit="HandleRegistration" FormName="registerForm">
-                        <DataAnnotationsValidator />
+<PageTitle>Register</PageTitle>
 
-                        @if (!string.IsNullOrEmpty(_errorMessage))
-                        {
-                            <div class="alert alert-danger">@_errorMessage</div>
-                        }
-                        @if (!string.IsNullOrEmpty(_successMessage))
-                        {
-                            <div class="alert alert-success">@_successMessage</div>
-                        }
+<div class="my-details-container">
+    <div class="form-container">
+        <h3 class="text-center fw-bold text-white mb-4">Register</h3>
 
-                        <div class="mb-3">
-                            <label for="firstName" class="form-label">First Name</label>
-                            <InputText id="firstName" class="form-control" @bind-Value="_model.FirstName" />
-                            <ValidationMessage For="@(() => _model.FirstName)" />
-                        </div>
+        <EditForm Model="_model" OnValidSubmit="HandleRegistration" FormName="registerForm">
+            <DataAnnotationsValidator />
 
-                        <div class="mb-3">
-                            <label for="lastName" class="form-label">Last Name</label>
-                            <InputText id="lastName" class="form-control" @bind-Value="_model.LastName" />
-                            <ValidationMessage For="@(() => _model.LastName)" />
-                        </div>
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">@_errorMessage</div>
+            }
+            @if (!string.IsNullOrEmpty(_successMessage))
+            {
+                <div class="alert alert-success">@_successMessage</div>
+            }
 
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email address</label>
-                            <InputText id="email" class="form-control" @bind-Value="_model.Email" />
-                            <ValidationMessage For="@(() => _model.Email)" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <InputText id="password" type="password" class="form-control" @bind-Value="_model.Password" />
-                            <ValidationMessage For="@(() => _model.Password)" />
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary" disabled="@_isBusy" style="background-color: var(--pl-pink); border-color: var(--pl-pink);">
-                                @if (_isBusy)
-                                {
-                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                    <span> Registering...</span>
-                                }
-                                else
-                                {
-                                    <span>Create Account</span>
-                                }
-                            </button>
-                        </div>
-                    </EditForm>
-
-                    <div class="d-flex align-items-center my-4">
-                        <div class="flex-grow-1 border-top"></div>
-                        <div class="px-3 text-muted">OR</div>
-                        <div class="flex-grow-1 border-top"></div>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <!-- Google Login Button -->
-                        <button class="btn social-btn google-btn" @onclick="HandleGoogleLogin">
-                            <svg class="social-icon" viewBox="0 0 24 24"><path fill="#EA4335" d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.386-7.439-7.574s3.344-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0 5.48 0 0 5.48 0 12s5.48 12 12.24 12c7.21 0 11.5-5.222 11.5-11.826 0-.788-.085-1.39-.189-1.889H12.24z"></path></svg>
-                            Continue with Google
-                        </button>
-
-                        <!-- Apple Login Button -->
-                        <button class="btn social-btn apple-btn" @onclick="HandleAppleLogin">
-                            <svg class="social-icon" viewBox="0 0 16 16"><path fill="white" d="M8.61,3.41a2.83,2.83,0,0,0-2.43-1.42A2.86,2.86,0,0,0,3.34,4.77a5,5,0,0,0-1,3.74,4.45,4.45,0,0,0,3,4.2,2.4,2.4,0,0,0,1.4.05,1,1,0,0,0,.7-.68,4.19,4.19,0,0,1-2-3.23,4.24,4.24,0,0,1,.87-2.62,2.5,2.5,0,0,1,2.26-.82ZM7.74,2a2,2,0,0,0,1.26.5A1.86,1.86,0,0,0,8.19.5,2,2,0,0,0,7.74,2Z" /></svg>
-                            Continue with Apple
-                        </button>
-                    </div>
-
-                </div>
+            <div class="mb-3">
+                <label for="firstName" class="form-label text-white">First Name</label>
+                <InputText id="firstName" class="form-control" @bind-Value="_model.FirstName" />
+                <ValidationMessage For="@(() => _model.FirstName)" />
             </div>
-        </div>
+
+            <div class="mb-3">
+                <label for="lastName" class="form-label text-white">Last Name</label>
+                <InputText id="lastName" class="form-control" @bind-Value="_model.LastName" />
+                <ValidationMessage For="@(() => _model.LastName)" />
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label text-white">Email address</label>
+                <InputText id="email" class="form-control" @bind-Value="_model.Email" />
+                <ValidationMessage For="@(() => _model.Email)" />
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label text-white">Password</label>
+                <InputText id="password" type="password" class="form-control" @bind-Value="_model.Password" />
+                <ValidationMessage For="@(() => _model.Password)" />
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn" disabled="@_isBusy" style="background-color: var(--pl-green); border-color: var(--pl-green); color: var(--pl-purple); font-weight: 700;">
+                    @if (_isBusy)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span> Registering...</span>
+                    }
+                    else
+                    {
+                        <span>Create Account</span>
+                    }
+                </button>
+            </div>
+            
+            <div class="d-flex align-items-center my-4">
+                <div class="flex-grow-1 border-top"></div>
+                <div class="px-3 text-white fw-bold">OR</div>
+                <div class="flex-grow-1 border-top"></div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <!-- Google Login Button -->
+                <button class="btn social-btn google-btn" @onclick="HandleGoogleLogin">
+                    <svg class="social-icon" version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><g><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></g></svg>
+                    Continue with Google
+                </button>
+                
+                <!-- Apple Login Button -->
+                <button class="btn social-btn apple-btn" @onclick="HandleAppleLogin">
+                     <svg class="social-icon" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="white">
+                        <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+                     </svg>
+                    Continue with Apple
+                </button>
+            </div>
+        </EditForm>
     </div>
 </div>
 
 <style>
+    .my-details-container {
+        background-color: var(--pl-purple);
+        min-height: calc(100vh - 56px); 
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+    }
+
+    .form-container {
+        background-color: var(--pl-light-purple); 
+        padding: 2.5rem;
+        border-radius: 8px;
+        width: 25%;
+        min-width: 400px;
+    }
+
+    /* These styles are scoped to this component */
     .social-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 0.5rem;
+        padding: 0.75rem;
         font-weight: 500;
-        border: 1px solid #ddd;
-        border-radius: 0.25rem;
+        border-radius: 4px;
+        transition: background-color 0.2s ease-in-out;
     }
 
     .social-icon {
         width: 20px;
         height: 20px;
-        margin-right: 10px;
+        margin-right: 12px;
     }
 
     .google-btn {
         background-color: white;
-        color: #757575;
+        color: #1f1f1f;
+        border: 1px solid #dadce0;
     }
-
-        .google-btn:hover {
-            background-color: #f7f7f7;
-        }
+    .google-btn:hover {
+        background-color: #f8f9fa;
+        border-color: #c6c6c6;
+    }
 
     .apple-btn {
         background-color: black;
         color: white;
+        border: 1px solid black;
+    }
+    .apple-btn:hover {
+        background-color: #333;
     }
 
-        .apple-btn:hover {
-            background-color: #333;
-        }
+    /* Override default validation message color */
+    .validation-message {
+        color: var(--pl-pink);
+    }
 </style>
 
 @code {
     private RegisterRequest _model = new();
     private string? _errorMessage;
     private string? _successMessage;
-    private bool _isBusy = false;
+    private bool _isBusy;
 
     private async Task HandleRegistration()
     {
@@ -142,7 +160,7 @@
         if (result.IsSuccess)
         {
             _successMessage = "Registration successful! You will be redirected to the login page shortly.";
-            await Task.Delay(2000);
+            await Task.Delay(2000); 
             NavigationManager.NavigateTo("/login");
         }
         else
@@ -155,14 +173,11 @@
 
     private void HandleGoogleLogin()
     {
-        // Placeholder for Google login logic
-        // This would typically redirect to the API's external login endpoint
         _errorMessage = "Google login is not yet implemented.";
     }
 
     private void HandleAppleLogin()
     {
-        // Placeholder for Apple login logic
         _errorMessage = "Apple login is not yet implemented.";
     }
 }
