@@ -1,4 +1,4 @@
-﻿using PredictionLeague.Core.Services.DTOs;
+﻿using PredictionLeague.Shared.Leaderboards;
 
 namespace PredictionLeague.Core.Services;
 

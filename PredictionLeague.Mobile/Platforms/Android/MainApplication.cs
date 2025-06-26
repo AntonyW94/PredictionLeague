@@ -1,7 +1,7 @@
 ﻿using Android.App;
 using Android.Runtime;
 
-namespace PredictionLeague.Mobile
+namespace PredictionLeague.Mobile.Platforms.Android
 {
     [Application]
     public class MainApplication : MauiApplication

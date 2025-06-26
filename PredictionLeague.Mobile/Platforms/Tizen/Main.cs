@@ -1,8 +1,4 @@
-using Microsoft.Maui;
-using Microsoft.Maui.Hosting;
-using System;
-
-namespace PredictionLeague.Mobile
+namespace PredictionLeague.Mobile.Platforms.Tizen
 {
     internal class Program : MauiApplication
     {

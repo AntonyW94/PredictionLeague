@@ -1,7 +1,4 @@
-﻿using ObjCRuntime;
-using UIKit;
-
-namespace PredictionLeague.Mobile
+﻿namespace PredictionLeague.Mobile.Platforms.iOS
 {
     public class Program
     {

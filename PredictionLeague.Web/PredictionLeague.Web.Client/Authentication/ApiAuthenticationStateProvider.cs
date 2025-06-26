@@ -1,18 +1,22 @@
 ﻿using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
 using System.Security.Claims;
+
 
 namespace PredictionLeague.Web.Client.Authentication;
 
 public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly ILocalStorageService _localStorage;
+    private readonly HttpClient _httpClient;
     private readonly JwtSecurityTokenHandler _jwtSecurityTokenHandler = new();
 
-    public ApiAuthenticationStateProvider(ILocalStorageService localStorage)
+    public ApiAuthenticationStateProvider(ILocalStorageService localStorage, HttpClient httpClient)
     {
         _localStorage = localStorage;
+        _httpClient = httpClient;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -26,11 +30,13 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 
         var tokenContent = _jwtSecurityTokenHandler.ReadJwtToken(savedToken);
         var expiry = tokenContent.ValidTo;
-        if (expiry < System.DateTime.UtcNow)
+        if (expiry < DateTime.UtcNow)
         {
             await _localStorage.RemoveItemAsync("authToken");
             return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
+
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", savedToken);
 
         var claims = ParseClaims(tokenContent);
         var user = new ClaimsPrincipal(new ClaimsIdentity(claims, "jwt"));
@@ -57,7 +63,6 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
     private IList<Claim> ParseClaims(JwtSecurityToken tokenContent)
     {
         var claims = tokenContent.Claims.ToList();
-        // The "sub" claim is the standard for user ID, map it to NameIdentifier
         claims.Add(new Claim(ClaimTypes.Name, tokenContent.Subject));
         return claims;
     }

@@ -1,6 +1,6 @@
 ﻿using PredictionLeague.Core.Repositories;
 using PredictionLeague.Core.Services;
-using PredictionLeague.Core.Services.DTOs;
+using PredictionLeague.Shared.Leaderboards;
 
 namespace PredictionLeague.Infrastructure.Services;
 

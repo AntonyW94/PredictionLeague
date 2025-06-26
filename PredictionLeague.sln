@@ -25,6 +25,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Web", "Pre
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Web.Client", "PredictionLeague.Web\PredictionLeague.Web.Client\PredictionLeague.Web.Client.csproj", "{9C7E46D0-F7DE-459E-A27B-BFC2D4B48ED8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{84CD77FC-15CE-4129-AA7E-9FAC46F65D92}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Shared", "PredictionLeague.Shared\PredictionLeague.Shared.csproj", "{C4E04719-B626-4353-8966-A32AAD48DC06}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +59,10 @@ Global
 		{9C7E46D0-F7DE-459E-A27B-BFC2D4B48ED8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C7E46D0-F7DE-459E-A27B-BFC2D4B48ED8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9C7E46D0-F7DE-459E-A27B-BFC2D4B48ED8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4E04719-B626-4353-8966-A32AAD48DC06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4E04719-B626-4353-8966-A32AAD48DC06}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4E04719-B626-4353-8966-A32AAD48DC06}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4E04719-B626-4353-8966-A32AAD48DC06}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -66,6 +74,7 @@ Global
 		{63B5281B-AC01-4C48-9D8C-3A3EE0755F74} = {E661B5DD-F60A-41F7-B298-7741AF2AE95E}
 		{F38F05AA-AFE0-4EBA-B284-417022D1FB17} = {B2350B51-AECC-47F6-8DF0-13AE28C74C11}
 		{9C7E46D0-F7DE-459E-A27B-BFC2D4B48ED8} = {B2350B51-AECC-47F6-8DF0-13AE28C74C11}
+		{C4E04719-B626-4353-8966-A32AAD48DC06} = {84CD77FC-15CE-4129-AA7E-9FAC46F65D92}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A1BDC2C1-EC20-4C4E-A759-C8D7DD6D4D78}

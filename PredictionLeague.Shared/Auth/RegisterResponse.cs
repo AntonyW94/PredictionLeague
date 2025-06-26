@@ -1,4 +1,4 @@
-﻿namespace PredictionLeague.Web.Client.Contracts.Auth;
+﻿namespace PredictionLeague.Shared.Auth;
 
 public class RegisterResponse
 {

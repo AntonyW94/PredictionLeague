@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace PredictionLeague.API.Contracts;
+namespace PredictionLeague.Shared.Leagues;
 
 public class JoinLeagueRequest
 {

@@ -1,6 +1,6 @@
 ﻿using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
-using PredictionLeague.Web.Client.Contracts.Auth;
+using PredictionLeague.Shared.Auth;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 

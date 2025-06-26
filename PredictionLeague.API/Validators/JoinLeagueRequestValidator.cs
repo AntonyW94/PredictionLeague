@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using PredictionLeague.API.Contracts;
+using PredictionLeague.Shared.Leagues;
 
 namespace PredictionLeague.API.Validators;
 

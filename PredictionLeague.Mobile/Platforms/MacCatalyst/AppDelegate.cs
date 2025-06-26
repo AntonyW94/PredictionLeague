@@ -1,6 +1,4 @@
-﻿using Foundation;
-
-namespace PredictionLeague.Mobile
+﻿namespace PredictionLeague.Mobile.Platforms.MacCatalyst
 {
     [Register("AppDelegate")]
     public class AppDelegate : MauiUIApplicationDelegate

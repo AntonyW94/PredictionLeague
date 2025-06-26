@@ -1,4 +1,4 @@
-﻿namespace PredictionLeague.Core.Services.DTOs
+﻿namespace PredictionLeague.Shared.Leaderboards
 {
     public class LeaderboardEntry
     {
