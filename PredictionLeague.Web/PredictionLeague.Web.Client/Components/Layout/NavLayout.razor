@@ -15,15 +15,25 @@
             <AuthorizeView>
                 <Authorized>
                     <ul class="navbar-nav w-100">
-                        <li class="nav-item ms-auto py-0 d-flex align-items-center">
-                            <span class="navbar-text text-white me-2 fw-bold">
-                                @context.User.FindFirst("FirstName")?.Value
-                            </span>
-                        </li>
+                        @if (context.User.IsInRole("Administrator"))
+                        {
+                            <li class="nav-item dropdown py-0">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white; font-weight: bold; line-height: 1;">
+                                    Admin
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><NavLink class="dropdown-item" href="/admin/create-season">Manage Seasons</NavLink></li>
+                                    <li><NavLink class="dropdown-item" href="/admin/teams">Manage Teams</NavLink></li>
+                                </ul>
+                            </li>
+                        }
 
-                        <li class="nav-item dropdown py-0">
-                            <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white; font-size: 1.25rem; line-height: 1;" title="User Menu">
-                                <span class="bi bi-person-fill" aria-hidden="true"></span>
+                        <li class="nav-item dropdown ms-auto py-0">
+                            <a class="nav-link d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white; line-height: 1;" title="User Menu">
+                                <span class="navbar-text text-white me-2 fw-bold">
+                                    @context.User.FindFirst("FirstName")?.Value
+                                </span>
+                                <span class="bi bi-person-fill" aria-hidden="true" style="font-size: 1.25rem;"></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
@@ -61,6 +71,23 @@
         </div>
     </div>
 </nav>
+
+
+<style>
+    .navbar-nav > .nav-item {
+        transition: background-color 0.2s ease-in-out;
+    }
+
+        .navbar-nav > .nav-item:hover {
+            background-color: var(--pl-green);
+        }
+
+            .navbar-nav > .nav-item:hover .nav-link,
+            .navbar-nav > .nav-item:hover .navbar-text,
+            .navbar-nav > .nav-item:hover .bi-person-fill {
+                color: var(--pl-purple) !important;
+            }
+</style>
 
 @code {
     private async Task LogoutUser()

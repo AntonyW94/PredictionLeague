@@ -12,17 +12,18 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<IMatchRepository, MatchRepository>();
-builder.Services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
 builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();
+builder.Services.AddScoped<IMatchRepository, MatchRepository>();
 builder.Services.AddScoped<IRoundRepository, RoundRepository>();
 builder.Services.AddScoped<IRoundResultRepository, RoundResultRepository>();
-builder.Services.AddScoped<ISeasonRepository, SeasonRepository>();
+builder.Services.AddScoped<ISeasonRepository, SeasonRepository>(); 
+builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
 
+builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<ILeagueService, LeagueService>();
 builder.Services.AddScoped<IPredictionService, PredictionService>();
 builder.Services.AddScoped<IRoundService, RoundService>();
-builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddUserStore<DapperUserStore>()

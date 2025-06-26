@@ -4,6 +4,7 @@ using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
 using PredictionLeague.Core.Repositories.PredictionLeague.Core.Repositories;
 using PredictionLeague.Shared.Admin;
+using PredictionLeague.Shared.Admin.Teams;
 using System.Transactions;
 
 namespace PredictionLeague.API.Controllers
@@ -16,15 +17,17 @@ namespace PredictionLeague.API.Controllers
         private readonly ISeasonRepository _seasonRepository;
         private readonly IRoundRepository _roundRepository;
         private readonly IMatchRepository _matchRepository;
+        private readonly ITeamRepository _teamRepository;
 
         public AdminController(
             ISeasonRepository seasonRepository,
             IRoundRepository roundRepository,
-            IMatchRepository matchRepository)
+            IMatchRepository matchRepository, ITeamRepository teamRepository)
         {
             _seasonRepository = seasonRepository;
             _roundRepository = roundRepository;
             _matchRepository = matchRepository;
+            _teamRepository = teamRepository;
         }
 
         [HttpPost("season")]
@@ -73,5 +76,40 @@ namespace PredictionLeague.API.Controllers
 
             return Ok(new { message = "Round and matches created successfully." });
         }
+
+        #region Teams
+
+        [HttpPost("teams")]
+        public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
+        {
+            var newTeam = new Team
+            {
+                Name = request.Name,
+                LogoUrl = request.LogoUrl
+            };
+
+            var createdTeam = await _teamRepository.AddAsync(newTeam);
+
+            return CreatedAtAction(nameof(TeamsController.GetTeamById), "Teams", new { id = createdTeam.Id }, createdTeam);
+        }
+
+        [HttpPut("teams/{id}")]
+        public async Task<IActionResult> UpdateTeam(int id, [FromBody] UpdateTeamRequest request)
+        {
+            var team = await _teamRepository.GetByIdAsync(id);
+            if (team == null)
+            {
+                return NotFound("Team not found.");
+            }
+
+            team.Name = request.Name;
+            team.LogoUrl = request.LogoUrl;
+
+            await _teamRepository.UpdateAsync(team);
+
+            return Ok(new { message = "Team updated successfully." });
+        }
+
+        #endregion
     }
 }
