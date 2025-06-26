@@ -21,7 +21,7 @@ public class SeasonRepository : ISeasonRepository
     public async Task AddAsync(Season season)
     {
         using var dbConnection = Connection;
-        const string sql = "INSERT INTO [Seasons] ([YearName], [StartDate], [EndDate], [IsActive]) VALUES (@YearName, @StartDate, @EndDate, @IsActive);";
+        const string sql = "INSERT INTO [Seasons] ([Name], [StartDate], [EndDate], [IsActive]) VALUES (@Name, @StartDate, @EndDate, @IsActive);";
         await dbConnection.ExecuteAsync(sql, season);
     }
 

@@ -1,0 +1,121 @@
+﻿@page "/admin/create-season"
+@attribute [Authorize(Roles = "Administrator")]
+@inject HttpClient Http
+@using Microsoft.AspNetCore.Authorization
+@using PredictionLeague.Shared.Admin
+
+<PageTitle>Create Season</PageTitle>
+
+<div class="my-details-container">
+    <div class="form-container">
+        <h3 class="text-center fw-bold text-white mb-4">Create New Season</h3>
+
+        <EditForm Model="_model" OnValidSubmit="HandleCreateSeason">
+            <DataAnnotationsValidator />
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">@_errorMessage</div>
+            }
+            @if (!string.IsNullOrEmpty(_successMessage))
+            {
+                <div class="alert alert-success" role="alert">@_successMessage</div>
+            }
+
+            <div class="mb-3">
+                <label for="name" class="form-label text-white">Season Name</label>
+                <InputText id="name" class="form-control" @bind-Value="_model.Name" placeholder="e.g., 2024/2025" />
+                <ValidationMessage For="@(() => _model.Name)" />
+            </div>
+
+            <div class="mb-3">
+                <label for="startDate" class="form-label text-white">Start Date</label>
+                <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
+                <ValidationMessage For="@(() => _model.StartDate)" />
+            </div>
+
+            <div class="mb-3">
+                <label for="endDate" class="form-label text-white">End Date</label>
+                <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
+                <ValidationMessage For="@(() => _model.EndDate)" />
+            </div>
+
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn" disabled="@_isBusy" style="background-color: var(--pl-green); border-color: var(--pl-green); color: var(--pl-purple); font-weight: 700;">
+                    @if (_isBusy)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span> Creating...</span>
+                    }
+                    else
+                    {
+                        <span>Create Season</span>
+                    }
+                </button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+<style>
+    .my-details-container {
+        background-color: var(--pl-purple);
+        min-height: calc(100vh - 56px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+    }
+
+    .form-container {
+        background-color: var(--pl-light-purple);
+        padding: 2.5rem;
+        border-radius: 8px;
+        width: 25%;
+        min-width: 450px; /* Ensures the form doesn't get too narrow */
+    }
+
+    .validation-message {
+        color: var(--pl-pink);
+    }
+</style>
+
+@code {
+    private CreateSeasonRequest _model = new()
+    {
+        // Pre-populate with sensible defaults
+        StartDate = DateTime.Today,
+        EndDate = DateTime.Today.AddMonths(9)
+    };
+
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    private async Task HandleCreateSeason()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        var response = await Http.PostAsJsonAsync("api/admin/season", _model);
+
+        if (response.IsSuccessStatusCode)
+        {
+            _successMessage = "Season created successfully!";
+            // Optionally, clear the form or navigate away
+            _model = new()
+            {
+                StartDate = DateTime.Today,
+                EndDate = DateTime.Today.AddMonths(9)
+            };
+        }
+        else
+        {
+            // In a real app, you might parse a more specific error response
+            _errorMessage = "There was an error creating the season.";
+        }
+
+        _isBusy = false;
+    }
+}
