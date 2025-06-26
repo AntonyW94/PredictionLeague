@@ -34,10 +34,10 @@ namespace PredictionLeague.API.Controllers
 
         // Placeholder for yearly leaderboard
         // GET: api/leaderboard/yearly/3?leagueId=10
-        [HttpGet("yearly/{gameYearId}")]
-        public async Task<IActionResult> GetYearlyLeaderboard(int gameYearId, [FromQuery] int? leagueId)
+        [HttpGet("yearly/{seasonId}")]
+        public async Task<IActionResult> GetYearlyLeaderboard(int seasonId, [FromQuery] int? leagueId)
         {
-            var leaderboard = await _leaderboardService.GetYearlyLeaderboardAsync(gameYearId, leagueId);
+            var leaderboard = await _leaderboardService.GetYearlyLeaderboardAsync(seasonId, leagueId);
             return Ok(leaderboard);
         }
     }

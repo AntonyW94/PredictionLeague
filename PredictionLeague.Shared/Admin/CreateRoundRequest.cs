@@ -5,7 +5,7 @@ namespace PredictionLeague.Shared.Admin
     public class CreateRoundRequest
     {
         [Required]
-        public int GameYearId { get; set; }
+        public int SeasonId { get; set; }
 
         [Required]
         [Range(1, 52)]

@@ -13,32 +13,32 @@ namespace PredictionLeague.API.Controllers
     [Authorize(Roles = "Administrator")]
     public class AdminController : ControllerBase
     {
-        private readonly IGameYearRepository _gameYearRepository;
+        private readonly ISeasonRepository _seasonRepository;
         private readonly IRoundRepository _roundRepository;
         private readonly IMatchRepository _matchRepository;
 
         public AdminController(
-            IGameYearRepository gameYearRepository,
+            ISeasonRepository seasonRepository,
             IRoundRepository roundRepository,
             IMatchRepository matchRepository)
         {
-            _gameYearRepository = gameYearRepository;
+            _seasonRepository = seasonRepository;
             _roundRepository = roundRepository;
             _matchRepository = matchRepository;
         }
 
-        [HttpPost("gameyear")]
-        public async Task<IActionResult> CreateGameYear([FromBody] CreateGameYearRequest request)
+        [HttpPost("season")]
+        public async Task<IActionResult> CreateSeason([FromBody] CreateSeasonRequest request)
         {
-            var gameYear = new GameYear
+            var season = new Season
             {
-                YearName = request.YearName,
+                Name = request.Name,
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 IsActive = true
             };
-            await _gameYearRepository.AddAsync(gameYear);
-            return Ok(gameYear);
+            await _seasonRepository.AddAsync(season);
+            return Ok(season);
         }
 
         [HttpPost("round")]
@@ -48,7 +48,7 @@ namespace PredictionLeague.API.Controllers
             {
                 var round = new Round
                 {
-                    GameYearId = request.GameYearId,
+                    SeasonId = request.SeasonId,
                     RoundNumber = request.RoundNumber,
                     StartDate = request.StartDate,
                     Deadline = request.Deadline

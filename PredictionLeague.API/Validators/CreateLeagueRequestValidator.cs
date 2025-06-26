@@ -11,7 +11,7 @@ namespace PredictionLeague.API.Validators
                 .NotEmpty().WithMessage("League name cannot be empty.")
                 .Length(3, 100).WithMessage("League name must be between 3 and 100 characters.");
 
-            RuleFor(x => x.GameYearId).GreaterThan(0).WithMessage("A valid Game Year must be provided.");
+            RuleFor(x => x.SeasonId).GreaterThan(0).WithMessage("A valid Game Year must be provided.");
         }
     }
 }

@@ -25,7 +25,7 @@ namespace PredictionLeague.Infrastructure.Repositories
             const string sql = @"
                 INSERT INTO [Rounds] 
                 (
-                    [GameYearId], 
+                    [SeasonId], 
                     [RoundNumber],
                     [StartDate],
                     [Deadline]
@@ -33,7 +33,7 @@ namespace PredictionLeague.Infrastructure.Repositories
                 OUTPUT INSERTED.[Id]
                 VALUES 
                 (
-                    @GameYearId, 
+                    @SeasonId, 
                     @RoundNumber,
                     @StartDate,
                     @Deadline

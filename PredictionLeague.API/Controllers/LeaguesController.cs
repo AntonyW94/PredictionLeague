@@ -31,7 +31,7 @@ namespace PredictionLeague.API.Controllers
 
             try
             {
-                var newLeague = await _leagueService.CreateLeagueAsync(request.Name, request.GameYearId, userId);
+                var newLeague = await _leagueService.CreateLeagueAsync(request.Name, request.SeasonId, userId);
                 // Return a 201 Created status with the location of the new resource and the created object.
                 return CreatedAtAction(nameof(GetLeagueById), new { leagueId = newLeague.Id }, newLeague);
             }

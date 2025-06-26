@@ -30,9 +30,9 @@ public class LeagueRepository : ILeagueRepository
     {
         using var dbConnection = Connection;
         const string sql = @"
-                INSERT INTO Leagues (Name, GameYearId, AdministratorUserId, EntryCode, CreatedAt)
+                INSERT INTO Leagues (Name, SeasonId, AdministratorUserId, EntryCode, CreatedAt)
                 OUTPUT INSERTED.Id
-                VALUES (@Name, @GameYearId, @AdministratorUserId, @EntryCode, GETDATE());";
+                VALUES (@Name, @SeasonId, @AdministratorUserId, @EntryCode, GETDATE());";
 
         var newId = await dbConnection.QuerySingleAsync<int>(sql, league);
         league.Id = newId;

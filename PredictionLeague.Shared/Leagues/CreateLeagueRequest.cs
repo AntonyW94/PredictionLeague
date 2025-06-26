@@ -9,6 +9,6 @@ namespace PredictionLeague.Shared.Leagues
         public string Name { get; set; } = string.Empty;
 
         [Required]
-        public int GameYearId { get; set; }
+        public int SeasonId { get; set; }
     }
 }

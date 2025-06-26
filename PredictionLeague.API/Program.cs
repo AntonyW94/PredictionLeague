@@ -17,7 +17,7 @@ builder.Services.AddScoped<IMatchRepository, MatchRepository>();
 builder.Services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
 builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();
 builder.Services.AddScoped<IRoundResultRepository, RoundResultRepository>();
-builder.Services.AddScoped<IGameYearRepository, GameYearRepository>();
+builder.Services.AddScoped<ISeasonRepository, SeasonRepository>();
 
 builder.Services.AddScoped<ILeagueService, LeagueService>();
 builder.Services.AddScoped<IPredictionService, PredictionService>();

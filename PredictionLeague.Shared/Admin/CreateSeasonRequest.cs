@@ -2,11 +2,11 @@
 
 namespace PredictionLeague.Shared.Admin
 {
-    public class CreateGameYearRequest
+    public class CreateSeasonRequest
     {
         [Required]
         [StringLength(50, MinimumLength = 4)]
-        public string YearName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
         [Required]
         public DateTime StartDate { get; set; }

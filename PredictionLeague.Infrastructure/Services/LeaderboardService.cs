@@ -49,7 +49,7 @@ public class LeaderboardService : ILeaderboardService
         throw new System.NotImplementedException();
     }
 
-    public Task<IEnumerable<LeaderboardEntry>> GetYearlyLeaderboardAsync(int gameYearId, int? leagueId = null)
+    public Task<IEnumerable<LeaderboardEntry>> GetYearlyLeaderboardAsync(int seasonId, int? leagueId = null)
     {
         // This would require a more complex repository method to fetch all rounds for a year,
         // then aggregate the results.

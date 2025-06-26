@@ -7,27 +7,25 @@ namespace PredictionLeague.Infrastructure.Services;
 public class LeagueService : ILeagueService
 {
     private readonly ILeagueRepository _leagueRepository;
-    private readonly IGameYearRepository _gameYearRepository;
+    private readonly ISeasonRepository _seasonRepository;
 
-    public LeagueService(ILeagueRepository leagueRepository, IGameYearRepository gameYearRepository)
+    public LeagueService(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository)
     {
         _leagueRepository = leagueRepository;
-        _gameYearRepository = gameYearRepository;
+        _seasonRepository = seasonRepository;
     }
 
-    public async Task<League> CreateLeagueAsync(string name, int gameYearId, string administratorUserId)
+    public async Task<League> CreateLeagueAsync(string name, int seasonId, string administratorUserId)
     {
-        // Optional: Validate that gameYearId is valid
-        var gameYear = await _gameYearRepository.GetByIdAsync(gameYearId);
-        if (gameYear == null)
-        {
-            throw new Exception("Invalid Game Year specified.");
-        }
+        // Optional: Validate that seasonId is valid
+        var season = await _seasonRepository.GetByIdAsync(seasonId);
+        if (season == null)
+            throw new Exception("Invalid Season specified.");
 
         var league = new League
         {
             Name = name,
-            GameYearId = gameYearId,
+            SeasonId = seasonId,
             AdministratorUserId = administratorUserId,
             EntryCode = GenerateEntryCode() // Private method to create a random code
         };
