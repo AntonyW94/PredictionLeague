@@ -5,7 +5,7 @@ namespace PredictionLeague.Shared.Predictions;
 public class SubmitPredictionsRequest
 {
     [Required]
-    public int GameWeekId { get; set; }
+    public int RoundId { get; set; }
 
     [Required]
     [MinLength(1)]

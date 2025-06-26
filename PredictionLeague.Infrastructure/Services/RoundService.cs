@@ -4,26 +4,26 @@ using PredictionLeague.Core.Services;
 
 namespace PredictionLeague.Infrastructure.Services;
 
-public class GameWeekService : IGameWeekService
+public class RoundService : IRoundService
 {
-    private readonly IGameWeekResultRepository _gameWeekResultRepository;
+    private readonly IRoundResultRepository _roundResultRepository;
     private readonly IPredictionService _predictionService;
     private readonly IUserPredictionRepository _predictionRepository;
     private readonly IMatchRepository _matchRepository;
 
-    public GameWeekService(
-        IGameWeekResultRepository gameWeekResultRepository,
+    public RoundService(
+        IRoundResultRepository roundResultRepository,
         IPredictionService predictionService,
         IUserPredictionRepository predictionRepository,
         IMatchRepository matchRepository)
     {
-        _gameWeekResultRepository = gameWeekResultRepository;
+        _roundResultRepository = roundResultRepository;
         _predictionService = predictionService;
         _predictionRepository = predictionRepository;
         _matchRepository = matchRepository;
     }
 
-    public async Task UpdateResultsAsync(int gameWeekId, IEnumerable<Match> completedMatches)
+    public async Task UpdateResultsAsync(int roundId, IEnumerable<Match> completedMatches)
     {
         // First, calculate points for each match individually
         foreach (var match in completedMatches)
@@ -34,15 +34,15 @@ public class GameWeekService : IGameWeekService
             }
         }
 
-        // Now, aggregate the results for the entire gameweek
-        var allPredictionsForWeek = new List<UserPrediction>();
-        var matchesInWeek = await _matchRepository.GetByGameWeekIdAsync(gameWeekId);
-        foreach (var match in matchesInWeek)
+        // Now, aggregate the results for the entire round
+        var allPredictionsForRound = new List<UserPrediction>();
+        var matchesInRound = await _matchRepository.GetByRoundIdAsync(roundId);
+        foreach (var match in matchesInRound)
         {
-            allPredictionsForWeek.AddRange(await _predictionRepository.GetByMatchIdAsync(match.Id));
+            allPredictionsForRound.AddRange(await _predictionRepository.GetByMatchIdAsync(match.Id));
         }
 
-        var userScores = allPredictionsForWeek
+        var userScores = allPredictionsForRound
             .GroupBy(p => p.UserId)
             .Select(g => new
             {
@@ -52,13 +52,13 @@ public class GameWeekService : IGameWeekService
 
         foreach (var score in userScores)
         {
-            var gameWeekResult = new GameWeekResult
+            var roundResult = new RoundResult
             {
-                GameWeekId = gameWeekId,
+                RoundId = roundId,
                 UserId = score.UserId,
                 TotalPoints = score.TotalPoints
             };
-            await _gameWeekResultRepository.UpsertAsync(gameWeekResult);
+            await _roundResultRepository.UpsertAsync(roundResult);
         }
     }
 }

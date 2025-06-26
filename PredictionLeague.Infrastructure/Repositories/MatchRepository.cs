@@ -21,9 +21,9 @@ namespace PredictionLeague.Infrastructure.Repositories
         public async Task AddAsync(Match match)
         {
             using var dbConnection = Connection;
-            const string sql = @"
-                INSERT INTO [Matches] ([GameWeekId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status])
-                VALUES (@GameWeekId, @HomeTeamId, @AwayTeamId, @MatchDateTime, @Status);";
+            var sql = @"
+                INSERT INTO [Matches] ([RoundId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status])
+                VALUES (@RoundId, @HomeTeamId, @AwayTeamId, @MatchDateTime, @Status);";
             await dbConnection.ExecuteAsync(sql, match);
         }
 
@@ -35,10 +35,9 @@ namespace PredictionLeague.Infrastructure.Repositories
             return await dbConnection.QuerySingleOrDefaultAsync<Match>(sql, new { Id = id });
         }
 
-        public async Task<IEnumerable<Match>> GetByGameWeekIdAsync(int gameWeekId)
+        public async Task<IEnumerable<Match>> GetByRoundIdAsync(int roundId)
         {
             using var dbConnection = Connection;
-            // This query joins with Teams to get the team names along with the match details
             const string sql = @"
                 SELECT
                     m.*,
@@ -47,7 +46,7 @@ namespace PredictionLeague.Infrastructure.Repositories
                 FROM [Matches] m
                 JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
                 JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
-                WHERE m.[GameWeekId] = @GameWeekId
+                WHERE m.[RoundId] = @RoundId
                 ORDER BY m.[MatchDateTime];";
 
             var matches = await dbConnection.QueryAsync<Match, Team, Team, Match>(
@@ -58,19 +57,18 @@ namespace PredictionLeague.Infrastructure.Repositories
                     match.AwayTeam = awayTeam;
                     return match;
                 },
-                new { GameWeekId = gameWeekId },
+                new { RoundId = roundId },
                 splitOn: "HomeTeamId,AwayTeamId"
             );
-           
             return matches;
         }
 
         public async Task UpdateAsync(Match match)
         {
             using var dbConnection = Connection;
-            const string sql = @"
+            var sql = @"
                 UPDATE [Matches]
-                SET [GameWeekId] = @GameWeekId,
+                SET [RoundId] = @RoundId,
                     [HomeTeamId] = @HomeTeamId,
                     [AwayTeamId] = @AwayTeamId,
                     [MatchDateTime] = @MatchDateTime,
@@ -78,7 +76,7 @@ namespace PredictionLeague.Infrastructure.Repositories
                     [ActualHomeTeamScore] = @ActualHomeTeamScore,
                     [ActualAwayTeamScore] = @ActualAwayTeamScore
                 WHERE [Id] = @Id;";
-          
+            
             await dbConnection.ExecuteAsync(sql, match);
         }
     }

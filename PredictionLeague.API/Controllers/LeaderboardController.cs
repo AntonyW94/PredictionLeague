@@ -14,12 +14,12 @@ namespace PredictionLeague.API.Controllers
             _leaderboardService = leaderboardService;
         }
 
-        // GET: api/leaderboard/gameweek/5
-        // GET: api/leaderboard/gameweek/5?leagueId=10
-        [HttpGet("gameweek/{gameWeekId}")]
-        public async Task<IActionResult> GetGameWeekLeaderboard(int gameWeekId, [FromQuery] int? leagueId)
+        // GET: api/leaderboard/round/5
+        // GET: api/leaderboard/round/5?leagueId=10
+        [HttpGet("round/{roundId}")]
+        public async Task<IActionResult> GetRoundLeaderboard(int roundId, [FromQuery] int? leagueId)
         {
-            var leaderboard = await _leaderboardService.GetGameWeekLeaderboardAsync(gameWeekId, leagueId);
+            var leaderboard = await _leaderboardService.GetRoundLeaderboardAsync(roundId, leagueId);
             return Ok(leaderboard);
         }
 

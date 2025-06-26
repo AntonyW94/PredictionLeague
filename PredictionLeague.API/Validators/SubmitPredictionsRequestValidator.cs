@@ -7,7 +7,7 @@ public class SubmitPredictionsRequestValidator : AbstractValidator<SubmitPredict
 {
     public SubmitPredictionsRequestValidator()
     {
-        RuleFor(x => x.GameWeekId).GreaterThan(0);
+        RuleFor(x => x.RoundId).GreaterThan(0);
         RuleFor(x => x.Predictions).NotEmpty().WithMessage("At least one prediction must be submitted.");
         RuleForEach(x => x.Predictions).SetValidator(new PredictionSubmissionValidator());
     }

@@ -1,23 +1,77 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PredictionLeague.Core.Models;
+using PredictionLeague.Core.Repositories;
+using PredictionLeague.Core.Repositories.PredictionLeague.Core.Repositories;
+using PredictionLeague.Shared.Admin;
+using System.Transactions;
 
 namespace PredictionLeague.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Administrator")] // This entire controller is protected and only accessible by users in the "Administrator" role.
+    [Authorize(Roles = "Administrator")]
     public class AdminController : ControllerBase
     {
-        // Example of an admin-only endpoint
-        // POST: api/admin/gameweek/results
-        [HttpPost("gameweek/results")]
-        public IActionResult UpdateGameWeekResults()
+        private readonly IGameYearRepository _gameYearRepository;
+        private readonly IRoundRepository _roundRepository;
+        private readonly IMatchRepository _matchRepository;
+
+        public AdminController(
+            IGameYearRepository gameYearRepository,
+            IRoundRepository roundRepository,
+            IMatchRepository matchRepository)
         {
-            // Here you would add logic to:
-            // 1. Accept a list of match results from the request body.
-            // 2. Call a service (e.g., IGameWeekService) to update the actual scores for each match.
-            // 3. Trigger the points calculation for the entire gameweek.
-            return Ok(new { message = "Admin action completed." });
+            _gameYearRepository = gameYearRepository;
+            _roundRepository = roundRepository;
+            _matchRepository = matchRepository;
+        }
+
+        [HttpPost("gameyear")]
+        public async Task<IActionResult> CreateGameYear([FromBody] CreateGameYearRequest request)
+        {
+            var gameYear = new GameYear
+            {
+                YearName = request.YearName,
+                StartDate = request.StartDate,
+                EndDate = request.EndDate,
+                IsActive = true
+            };
+            await _gameYearRepository.AddAsync(gameYear);
+            return Ok(gameYear);
+        }
+
+        [HttpPost("round")]
+        public async Task<IActionResult> CreateRound([FromBody] CreateRoundRequest request)
+        {
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                var round = new Round
+                {
+                    GameYearId = request.GameYearId,
+                    RoundNumber = request.RoundNumber,
+                    StartDate = request.StartDate,
+                    Deadline = request.Deadline
+                };
+
+                var createdRound = await _roundRepository.AddAsync(round);
+
+                foreach (var matchRequest in request.Matches)
+                {
+                    var match = new Match
+                    {
+                        RoundId = createdRound.Id,
+                        HomeTeamId = matchRequest.HomeTeamId,
+                        AwayTeamId = matchRequest.AwayTeamId,
+                        MatchDateTime = matchRequest.MatchDateTime
+                    };
+                    await _matchRepository.AddAsync(match);
+                }
+
+                scope.Complete();
+            }
+
+            return Ok(new { message = "Round and matches created successfully." });
         }
     }
 }

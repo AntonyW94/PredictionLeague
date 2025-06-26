@@ -15,11 +15,11 @@ namespace PredictionLeague.Infrastructure.Services
             _matchRepository = matchRepository;
         }
 
-        public async Task SubmitPredictionsAsync(string userId, int gameWeekId, IEnumerable<UserPrediction> predictions)
+        public async Task SubmitPredictionsAsync(string userId, int roundId, IEnumerable<UserPrediction> predictions)
         {
             // In a real system, add validation:
-            // 1. Check if the gameweek deadline has passed.
-            // 2. Ensure all predictions are for matches within the specified gameWeekId.
+            // 1. Check if the round deadline has passed.
+            // 2. Ensure all predictions are for matches within the specified roundId.
 
             foreach (var prediction in predictions)
             {
@@ -54,7 +54,7 @@ namespace PredictionLeague.Infrastructure.Services
             // This highlights a need to enhance IUserPredictionRepository with an Update method.
         }
 
-        private int CalculatePoints(int actualHome, int actualAway, int predictedHome, int predictedAway)
+        private static int CalculatePoints(int actualHome, int actualAway, int predictedHome, int predictedAway)
         {
             // Correct score
             if (actualHome == predictedHome && actualAway == predictedAway)
@@ -65,12 +65,7 @@ namespace PredictionLeague.Infrastructure.Services
             // Correct result (win/draw/loss)
             var actualResult = Math.Sign(actualHome - actualAway);
             var predictedResult = Math.Sign(predictedHome - predictedAway);
-            if (actualResult == predictedResult)
-            {
-                return 1; // Example: 1 point for correct result
-            }
-
-            return 0;
+            return actualResult == predictedResult ? 1 : 0;
         }
     }
 }

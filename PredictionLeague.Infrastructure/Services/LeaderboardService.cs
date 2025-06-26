@@ -6,21 +6,21 @@ namespace PredictionLeague.Infrastructure.Services;
 
 public class LeaderboardService : ILeaderboardService
 {
-    private readonly IGameWeekResultRepository _gameWeekResultRepository;
+    private readonly IRoundResultRepository _roundResultRepository;
 
     private readonly ILeagueRepository _leagueRepository;
     // In a real app, you would have a user repository to get user names
     // private readonly IUserRepository _userRepository;
 
-    public LeaderboardService(IGameWeekResultRepository gameWeekResultRepository, ILeagueRepository leagueRepository)
+    public LeaderboardService(IRoundResultRepository roundResultRepository, ILeagueRepository leagueRepository)
     {
-        _gameWeekResultRepository = gameWeekResultRepository;
+        _roundResultRepository = roundResultRepository;
         _leagueRepository = leagueRepository;
     }
 
-    public async Task<IEnumerable<LeaderboardEntry>> GetGameWeekLeaderboardAsync(int gameWeekId, int? leagueId = null)
+    public async Task<IEnumerable<LeaderboardEntry>> GetRoundLeaderboardAsync(int roundId, int? leagueId = null)
     {
-        var results = await _gameWeekResultRepository.GetByGameWeekIdAsync(gameWeekId);
+        var results = await _roundResultRepository.GetByRoundIdAsync(roundId);
 
         if (leagueId.HasValue)
         {
@@ -44,14 +44,14 @@ public class LeaderboardService : ILeaderboardService
 
     public Task<IEnumerable<LeaderboardEntry>> GetMonthlyLeaderboardAsync(int year, int month, int? leagueId = null)
     {
-        // This would require a more complex repository method to fetch gameweeks within a month,
+        // This would require a more complex repository method to fetch rounds within a month,
         // then aggregate the results.
         throw new System.NotImplementedException();
     }
 
     public Task<IEnumerable<LeaderboardEntry>> GetYearlyLeaderboardAsync(int gameYearId, int? leagueId = null)
     {
-        // This would require a more complex repository method to fetch all gameweeks for a year,
+        // This would require a more complex repository method to fetch all rounds for a year,
         // then aggregate the results.
         throw new System.NotImplementedException();
     }

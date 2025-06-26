@@ -26,15 +26,15 @@ public class UserPredictionRepository : IUserPredictionRepository
         return await dbConnection.QueryAsync<UserPrediction>(sql, new { MatchId = matchId });
     }
 
-    public async Task<IEnumerable<UserPrediction>> GetByUserIdAndGameWeekIdAsync(string userId, int gameWeekId)
+    public async Task<IEnumerable<UserPrediction>> GetByUserIdAndRoundIdAsync(string userId, int roundId)
     {
         using var dbConnection = Connection;
         const string sql = @"
                 SELECT up.* FROM [UserPredictions] up
                 JOIN [Matches] m ON up.[MatchId] = m.[Id]
-                WHERE up.[UserId] = @UserId AND m.[GameWeekId] = @GameWeekId;";
+                WHERE up.[UserId] = @UserId AND m.[RoundId] = @RoundId;";
      
-        return await dbConnection.QueryAsync<UserPrediction>(sql, new { UserId = userId, GameWeekId = gameWeekId });
+        return await dbConnection.QueryAsync<UserPrediction>(sql, new { UserId = userId, RoundId = roundId });
     }
 
     public async Task UpsertAsync(UserPrediction prediction)

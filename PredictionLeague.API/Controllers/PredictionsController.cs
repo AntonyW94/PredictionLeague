@@ -39,7 +39,7 @@ namespace PredictionLeague.API.Controllers
                     PredictedAwayScore = p.PredictedAwayScore
                 });
 
-                await _predictionService.SubmitPredictionsAsync(userId, request.GameWeekId, predictionsToSubmit);
+                await _predictionService.SubmitPredictionsAsync(userId, request.RoundId, predictionsToSubmit);
                 return Ok(new { message = "Predictions submitted successfully." });
             }
             catch (Exception ex)
