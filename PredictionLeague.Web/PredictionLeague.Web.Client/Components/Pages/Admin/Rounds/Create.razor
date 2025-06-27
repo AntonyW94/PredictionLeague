@@ -1,0 +1,242 @@
+﻿@page "/admin/seasons/{SeasonId:int}/create-round"
+@attribute [Authorize(Roles = "Administrator")]
+@using Microsoft.AspNetCore.Authorization
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using PredictionLeague.Shared.Admin
+@using PredictionLeague.Shared.Admin.Seasons
+@using PredictionLeague.Shared.Admin.Teams
+
+<PageTitle>Create Round</PageTitle>
+
+<div class="my-details-container">
+    <div class="form-container">
+        <h3 class="text-center fw-bold text-white mb-4">Create New Round for Season: @_seasonName</h3>
+
+        @if (_isLoading)
+        {
+            <p class="text-center text-white"><em>Loading data...</em></p>
+        }
+        else
+        {
+            <EditForm Model="_model" OnValidSubmit="HandleCreateRound">
+                <DataAnnotationsValidator />
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert-danger">@_errorMessage</div>
+                }
+                @if (!string.IsNullOrEmpty(_successMessage))
+                {
+                    <div class="alert alert-success">@_successMessage</div>
+                }
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="roundNumber" class="form-label text-white">Round Number</label>
+                        <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="startDate" class="form-label text-white">Round Start Date</label>
+                        <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" @onchange="OnStartDateChanged" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="deadline" class="form-label text-white">Prediction Deadline</label>
+                        <InputDate Type="InputDateType.DateTimeLocal" id="deadline" class="form-control" @bind-Value="_model.Deadline" />
+                    </div>
+                </div>
+
+                <hr class="text-white" />
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="text-white mb-0">Matches</h4>
+                    <button type="button" class="btn btn-sm d-flex align-items-center dark-pink-button" @onclick="AddMatch"><span class="bi bi-plus-lg"></span> Add Match</button>
+                </div>
+
+                @for (var i = 0; i < _model.Matches.Count; i++)
+                {
+                    var matchIndex = i;
+                    <div class="row mb-2 gx-2 align-items-center">
+                        <div class="col-md-3">
+                            <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTime" />
+                        </div>
+
+                        <div class="col">
+                            <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].HomeTeamId">
+                                <option value="0">Home Team</option>
+                                @foreach (var team in _teams)
+                                {
+                                    <option value="@team.Id">@team.Name</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="col-auto">
+                            <div class="logo-wrapper @(_model.Matches[matchIndex].HomeTeamId > 0 ? "visible" : "")">
+                                <img src="@GetTeamLogoUrl(_model.Matches[matchIndex].HomeTeamId)" class="match-logo" />
+                            </div>
+                        </div>
+
+                        <div class="col-auto text-white fw-bold">vs</div>
+
+                        <div class="col-auto">
+                            <div class="logo-wrapper @(_model.Matches[matchIndex].AwayTeamId > 0 ? "visible" : "")">
+                                <img src="@GetTeamLogoUrl(_model.Matches[matchIndex].AwayTeamId)" class="match-logo" />
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].AwayTeamId">
+                                <option value="0">Away Team</option>
+                                @foreach (var team in _teams)
+                                {
+                                    <option value="@team.Id">@team.Name</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-sm pink-button" @onclick="() => RemoveMatch(matchIndex)"><span class="bi bi-trash text-white"></span></button>
+                        </div>
+                    </div>
+                }
+
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn pink-button" @onclick='() => NavigationManager.NavigateTo("/admin/seasons")'>Cancel</button>
+                    <button type="submit" class="btn green-button" disabled="@_isBusy">
+                        @if (_isBusy)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                            <span> Creating...</span>
+     }
+    else
+    {
+                            <span>Create Round</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+<style>
+    .my-details-container {
+        background-color: var(--pl-purple);
+        min-height: calc(100vh - 56px);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .form-container {
+        background-color: var(--pl-light-purple);
+        padding: 2.5rem;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 900px;
+    }
+
+    .validation-message {
+        color: var(--pl-pink);
+    }
+
+    .match-logo {
+        height: 25px;
+    }
+
+    .logo-wrapper {
+        background-color: transparent;
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+        .logo-wrapper.visible {
+            background-color: white;
+        }
+</style>
+
+@code {
+    [Parameter] public int SeasonId { get; set; }
+    private CreateRoundRequest _model = new();
+    private List<TeamDto> _teams = new();
+    private string _seasonName = string.Empty;
+
+    private bool _isLoading = true;
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _model.SeasonId = SeasonId;
+        var now = DateTime.Now;
+        _model.StartDate = now.Date;
+        _model.Deadline = now;
+
+        for (int i = 0; i < 10; i++)
+        {
+            _model.Matches.Add(new CreateMatchRequest { MatchDateTime = now });
+        }
+
+        try
+        {
+            var season = await Http.GetFromJsonAsync<SeasonDto>($"api/seasons/{SeasonId}");
+            _seasonName = season?.Name ?? "Unknown";
+            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/teams") ?? new();
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Could not load required data. Please try again later.";
+        }
+
+        _isLoading = false;
+    }
+
+    private void OnStartDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var newDate))
+        {
+            _model.StartDate = newDate.Date;
+            foreach (var match in _model.Matches)
+            {
+                match.MatchDateTime = newDate.Date;
+            }
+        }
+    }
+
+    private void AddMatch() => _model.Matches.Add(new CreateMatchRequest { MatchDateTime = _model.StartDate });
+    private void RemoveMatch(int index)
+    {
+        if (index >= 0 && index < _model.Matches.Count) { _model.Matches.RemoveAt(index); }
+    }
+
+    private string? GetTeamLogoUrl(int teamId)
+    {
+        if (teamId < 0)
+            return "https://placehold.co/25x25/transparent/transparent?text=";
+
+        return _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl;
+    }
+
+    private async Task HandleCreateRound()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+        var response = await Http.PostAsJsonAsync("api/admin/round", _model);
+
+        if (response.IsSuccessStatusCode)
+        {
+            _successMessage = "Round created successfully!";
+            _model = new() { SeasonId = SeasonId };
+            for (int i = 0; i < 10; i++) { _model.Matches.Add(new CreateMatchRequest { MatchDateTime = DateTime.Now }); }
+        }
+        else { _errorMessage = "There was an error creating the round."; }
+        _isBusy = false;
+    }
+}

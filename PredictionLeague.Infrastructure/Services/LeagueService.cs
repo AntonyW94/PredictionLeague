@@ -68,7 +68,7 @@ public class LeagueService : ILeagueService
         var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ123456789";
         var random = new Random();
         var result = new char[6];
-        for (int i = 0; i < result.Length; i++)
+        for (var i = 0; i < result.Length; i++)
         {
             result[i] = chars[random.Next(chars.Length)];
         }

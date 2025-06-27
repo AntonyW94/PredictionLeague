@@ -1,15 +1,22 @@
 ﻿@page "/admin/seasons/edit/{SeasonId:int}"
+
 @attribute [Authorize(Roles = "Administrator")]
-@using Microsoft.AspNetCore.Authorization
+
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using Microsoft.AspNetCore.Authorization
 @using PredictionLeague.Shared.Admin.Seasons
+
 
 <PageTitle>Edit Season</PageTitle>
 
 <div class="my-details-container">
     <div class="form-container">
-        <h3 class="text-center fw-bold text-white mb-4">Edit Season</h3>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-white mb-0">Edit Season</h3>
+        </div>
+
         @if (_model == null)
         {
             <p class="text-center text-white"><em>Loading season...</em></p>
@@ -31,21 +38,42 @@
                     <label for="name" class="form-label text-white">Season Name</label>
                     <InputText id="name" class="form-control" @bind-Value="_model.Name" />
                 </div>
+
                 <div class="mb-3">
                     <label for="startDate" class="form-label text-white">Start Date</label>
                     <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
                 </div>
+
                 <div class="mb-3">
                     <label for="endDate" class="form-label text-white">End Date</label>
                     <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
                 </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-white">Rounds</label>
+                    <div class="d-flex align-items-center">
+                        <span class="badge fs-6 me-3" style="background-color: var(--pl-purple)">@_roundCount</span>
+                        <button type="button" class="btn btn-sm dark-pink-button me-2" @onclick="() => ViewRounds(SeasonId)" title="View Rounds">
+                            <span class="bi bi-eye-fill"></span>
+                        </button>
+                        <button type="button" class="btn btn-sm light-cyan-button" @onclick="() => AddRound(SeasonId)" title="Add Round">
+                            <span class="bi bi-plus-circle-fill"></span>
+                        </button>
+                    </div>
+                </div>
+
                 <div class="mb-3 form-check">
                     <InputCheckbox id="isActive" class="form-check-input" @bind-Value="_model.IsActive" />
-                    <label for="isActive" class="form-check-label text-white">Is Active Season</label>
+                    <label for="isActive" class="form-check-label text-white">Active</label>
                 </div>
+
                 <div class="d-flex justify-content-between mt-4">
-                    <button type="submit" class="btn" disabled="@_isBusy" style="background-color: var(--pl-green); color: var(--pl-purple);">Save Changes</button>
-                    <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                    <button type="button" class="btn pink-button d-flex align-items-center" @onclick="BackToSeasons">
+                        <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Seasons
+                    </button>
+                    <button type="submit" class="btn green-button d-flex align-items-center" disabled="@_isBusy">
+                        <span class="bi bi-save me-2"></span>Save
+                    </button>
                 </div>
             </EditForm>
         }
@@ -78,16 +106,18 @@
 @code {
     [Parameter] public int SeasonId { get; set; }
     private UpdateSeasonRequest? _model;
+    private int _roundCount;
     private bool _isBusy;
     private string? _errorMessage;
     private string? _successMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        var season = await Http.GetFromJsonAsync<SeasonDto>($"api/seasons/{SeasonId}");
-        if (season != null)
+        var seasonDto = await Http.GetFromJsonAsync<SeasonDto>($"api/seasons/{SeasonId}");
+        if (seasonDto != null)
         {
-            _model = new UpdateSeasonRequest { Name = season.Name, StartDate = season.StartDate, EndDate = season.EndDate, IsActive = season.IsActive };
+            _model = new UpdateSeasonRequest { Name = seasonDto.Name, StartDate = seasonDto.StartDate, EndDate = seasonDto.EndDate, IsActive = seasonDto.IsActive };
+            _roundCount = seasonDto.RoundCount;
         }
     }
 
@@ -96,6 +126,7 @@
         _isBusy = true;
         _errorMessage = null;
         _successMessage = null;
+      
         var response = await Http.PutAsJsonAsync($"api/admin/seasons/{SeasonId}", _model);
         if (response.IsSuccessStatusCode)
         {
@@ -103,9 +134,15 @@
             await Task.Delay(1500);
             NavigationManager.NavigateTo("/admin/seasons");
         }
-        else { _errorMessage = "Error updating season."; }
+        else
+        {
+            _errorMessage = "Error updating season.";
+        }
+
         _isBusy = false;
     }
 
-    private void Cancel() => NavigationManager.NavigateTo("/admin/seasons");
+    private void BackToSeasons() => NavigationManager.NavigateTo("/admin/seasons");
+    private void AddRound(int seasonId) => NavigationManager.NavigateTo($"/admin/seasons/{seasonId}/create-round");
+    private void ViewRounds(int seasonId) => NavigationManager.NavigateTo($"/admin/seasons/{seasonId}/rounds");
 }

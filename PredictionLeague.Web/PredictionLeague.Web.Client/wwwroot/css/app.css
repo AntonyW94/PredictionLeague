@@ -44,8 +44,11 @@ h1:focus {
     --pl-purple-dark: #31144a;
     --pl-light-purple: #4A2E6C;
     --pl-pink: #E90052;
+    --pl-dark-pink: #963cff;
     --pl-cyan: #04F5FF;
     --pl-green: #00FF85;
+    --pl-light-green: #84fab0;
+    --pl-light-cyan: #03c2b4;
     --content-bg: #f4f7f6;
     --light-text: #EAEAEA;
 }
@@ -222,4 +225,66 @@ main {
     100% {
         transform: rotate(360deg);
     }
+}
+
+/* Styles for Tables */
+.striped-table {
+    --bs-table-bg: var(--pl-purple);
+    --bs-table-striped-bg: var(--pl-light-purple);
+    --bs-table-striped-color: white;
+    --bs-table-color: white;
+    --bs-table-border-color: var(--pl-purple-dark);
+    --bs-table-hover-color: white;
+    --bs-table-hover-bg: #5a3e7e;
+}
+
+/* Styles for Buttons */
+.green-button {
+    background-color: var(--pl-green);
+    color: var(--pl-purple);
+    font-weight: bold;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+    .green-button:hover {
+        background-color: white;
+        color: var(--pl-purple);
+    }
+
+.pink-button {
+    background-color: var(--pl-pink);
+    color: white;
+    font-weight: bold;
+}
+
+    .pink-button:hover {
+        background-color: white;
+        color: var(--pl-pink);
+    }
+
+.dark-pink-button {
+    background-color: var(--pl-dark-pink);
+    color: white;
+    font-weight: bold;
+}
+
+    .dark-pink-button:hover {
+        background-color: white;
+        color: var(--pl-dark-pink);
+    }
+
+.light-cyan-button {
+    background-color: var(--pl-light-cyan);
+    color: white;
+    font-weight: bold;
+}
+
+    .light-cyan-button:hover {
+        background-color: white;
+        color: var(--pl-light-cyan);
+    }
+
+/* Styles for Text */
+.white-text{
+    color: white;
 }

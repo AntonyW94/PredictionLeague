@@ -8,5 +8,6 @@ namespace PredictionLeague.Core.Repositories
         Task<IEnumerable<Match>> GetByRoundIdAsync(int roundId);
         Task AddAsync(Match match);
         Task UpdateAsync(Match match);
+        Task DeleteByRoundIdAsync(int roundId);
     }
 }

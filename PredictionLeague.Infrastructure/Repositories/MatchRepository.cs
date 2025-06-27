@@ -79,5 +79,12 @@ namespace PredictionLeague.Infrastructure.Repositories
             
             await dbConnection.ExecuteAsync(sql, match);
         }
+
+        public async Task DeleteByRoundIdAsync(int roundId)
+        {
+            using var connection = Connection;
+            const string sql = "DELETE FROM [Matches] WHERE [RoundId] = @RoundId;";
+            await connection.ExecuteAsync(sql, new { RoundId = roundId });
+        }
     }
 }

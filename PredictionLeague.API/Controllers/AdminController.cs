@@ -4,6 +4,8 @@ using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
 using PredictionLeague.Core.Repositories.PredictionLeague.Core.Repositories;
 using PredictionLeague.Shared.Admin;
+using PredictionLeague.Shared.Admin.Matches;
+using PredictionLeague.Shared.Admin.Rounds;
 using PredictionLeague.Shared.Admin.Seasons;
 using PredictionLeague.Shared.Admin.Teams;
 using System.Transactions;
@@ -58,17 +60,33 @@ namespace PredictionLeague.API.Controllers
         [HttpPut("seasons/{id}")]
         public async Task<IActionResult> UpdateSeason(int id, [FromBody] UpdateSeasonRequest request)
         {
-            var season = await _seasonRepository.GetByIdAsync(id);
-            if (season == null)
+            var seasonDto = await _seasonRepository.GetByIdAsync(id);
+            if (seasonDto == null)
                 return NotFound("Season not found.");
 
-            season.Name = request.Name;
-            season.StartDate = request.StartDate;
-            season.EndDate = request.EndDate;
-            season.IsActive = request.IsActive;
+            seasonDto.Name = request.Name;
+            seasonDto.StartDate = request.StartDate;
+            seasonDto.EndDate = request.EndDate;
+            seasonDto.IsActive = request.IsActive;
+
+            var season = new Season
+            {
+                Name = seasonDto.Name,
+                StartDate = seasonDto.StartDate,
+                EndDate = seasonDto.EndDate,
+                IsActive = seasonDto.IsActive
+            };
 
             await _seasonRepository.UpdateAsync(season);
             return Ok(new { message = "Season updated successfully." });
+        }
+
+
+        [HttpGet("seasons/{seasonId}/rounds")]
+        public async Task<IActionResult> GetRoundsForSeason(int seasonId)
+        {
+            var rounds = await _roundRepository.GetBySeasonIdAsync(seasonId);
+            return Ok(rounds);
         }
 
         #endregion
@@ -106,6 +124,69 @@ namespace PredictionLeague.API.Controllers
             }
 
             return Ok(new { message = "Round and matches created successfully." });
+        }
+
+        [HttpGet("rounds/{roundId}")]
+        public async Task<IActionResult> GetRoundById(int roundId)
+        {
+            var round = await _roundRepository.GetByIdAsync(roundId);
+            if (round == null) return NotFound();
+
+            var matches = await _matchRepository.GetByRoundIdAsync(roundId);
+
+            var response = new RoundDetailsDto
+            {
+                Round = new RoundDto
+                {
+                    Id = round.Id,
+                    SeasonId = round.SeasonId,
+                    RoundNumber = round.RoundNumber,
+                    StartDate = round.StartDate,
+                    Deadline = round.Deadline
+                },
+                Matches = matches.Select(m => new MatchDto
+                {
+                    Id = m.Id,
+                    HomeTeamId = m.HomeTeamId,
+                    AwayTeamId = m.AwayTeamId,
+                    MatchDateTime = m.MatchDateTime
+                }).ToList()
+            };
+
+            return Ok(response);
+        }
+
+        [HttpPut("rounds/{roundId}")]
+        public async Task<IActionResult> UpdateRound(int roundId, [FromBody] UpdateRoundRequest request)
+        {
+            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                var round = await _roundRepository.GetByIdAsync(roundId);
+                if (round == null)
+                    return NotFound("Round not found.");
+
+                round.StartDate = request.StartDate;
+                round.Deadline = request.Deadline;
+               
+                await _roundRepository.UpdateAsync(round);
+
+                // A simple way to handle match updates: delete all existing matches and re-add them.
+                await _matchRepository.DeleteByRoundIdAsync(roundId); // Assumes this method exists
+                foreach (var matchRequest in request.Matches)
+                {
+                    var match = new Match
+                    {
+                        RoundId = roundId,
+                        HomeTeamId = matchRequest.HomeTeamId,
+                        AwayTeamId = matchRequest.AwayTeamId,
+                        MatchDateTime = matchRequest.MatchDateTime
+                    };
+                    await _matchRepository.AddAsync(match);
+                }
+
+                scope.Complete();
+            }
+            return Ok(new { message = "Round updated successfully." });
         }
 
         #endregion

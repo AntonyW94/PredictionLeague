@@ -1,0 +1,94 @@
+﻿@page "/admin/seasons/{SeasonId:int}/rounds"
+
+@attribute [Authorize(Roles = "Administrator")]
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@using Microsoft.AspNetCore.Authorization
+@using PredictionLeague.Shared.Admin.Rounds
+
+<PageTitle>Manage Rounds</PageTitle>
+
+<div class="my-details-container">
+    <div class="admin-table-container">
+        <h3 class="fw-bold text-white mb-4">Manage Rounds</h3>
+
+        @if (_rounds == null)
+        {
+            <p class="text-center text-white"><em>Loading rounds...</em></p>
+        }
+        else
+        {
+            <table class="table table-striped striped-table">
+                <thead>
+                <tr>
+                    <th>Round Number</th>
+                    <th>Start Date</th>
+                    <th>Prediction Deadline</th>
+                    <th>Matches</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var round in _rounds)
+                {
+                    <tr>
+                        <td class="align-middle">@round.RoundNumber</td>
+                        <td class="align-middle">@round.StartDate.ToShortDateString()</td>
+                        <td class="align-middle">@round.Deadline.ToString("g")</td>
+                        <td class="align-middle">@round.MatchCount</td>
+                        <td class="text-end align-middle">
+                            <button class="btn btn-sm green-button" @onclick="() => EditRound(round.Id)">Edit</button>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+
+            <div class="d-flex justify-content-between mt-4">
+                <button class="btn pink-button d-flex align-items-center" @onclick="BackToSeason">
+                    <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Season
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .my-details-container {
+        background-color: var(--pl-purple);
+        min-height: calc(100vh - 56px);
+        padding: 2rem;
+    }
+
+    .admin-table-container {
+        background-color: var(--pl-light-purple);
+        padding: 2.5rem;
+        border-radius: 8px;
+        max-width: 900px;
+        margin: auto;
+    }
+</style>
+
+@code {
+    [Parameter] public int SeasonId { get; set; }
+    private List<RoundDto>? _rounds;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Fetch both the rounds for the season and the season's name
+        try
+        {
+            _rounds = await Http.GetFromJsonAsync<List<RoundDto>>($"api/admin/seasons/{SeasonId}/rounds");
+        }
+        catch (Exception)
+        {
+            // Handle error if data fails to load
+        }
+    }
+
+    private void EditRound(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/edit/{roundId}");
+
+    private void BackToSeason() => NavigationManager.NavigateTo($"/admin/seasons/edit/{SeasonId}");
+}
