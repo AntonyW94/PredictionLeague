@@ -25,24 +25,17 @@ public class SeasonRepository : ISeasonRepository
         await dbConnection.ExecuteAsync(sql, season);
     }
 
-    public async Task<Season?> GetActiveAsync()
-    {
-        using var dbConnection = Connection;
-        const string sql = "SELECT s.* FROM [Seasons] gy WHERE s.[IsActive] = 1;";
-        return await dbConnection.QuerySingleOrDefaultAsync<Season>(sql);
-    }
-
     public async Task<IEnumerable<Season>> GetAllAsync()
     {
         using var dbConnection = Connection;
-        const string sql = "SELECT s.* FROM [Seasons] gy ORDER BY s.[StartDate] DESC;";
+        const string sql = "SELECT s.* FROM [Seasons] s ORDER BY s.[StartDate] DESC;";
         return await dbConnection.QueryAsync<Season>(sql);
     }
 
     public async Task<Season?> GetByIdAsync(int id)
     {
         using var dbConnection = Connection;
-        const string sql = "SELECT s.* FROM [Seasons] gy WHERE s.[Id] = @Id;";
+        const string sql = "SELECT s.* FROM [Seasons] s WHERE s.[Id] = @Id;";
         return await dbConnection.QuerySingleOrDefaultAsync<Season>(sql, new { Id = id });
     }
 

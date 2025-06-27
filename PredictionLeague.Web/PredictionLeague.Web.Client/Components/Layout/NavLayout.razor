@@ -11,23 +11,26 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-
+            
             <AuthorizeView>
                 <Authorized>
+                    <!-- This content shows only when the user is logged in -->
                     <ul class="navbar-nav w-100">
+                        
                         @if (context.User.IsInRole("Administrator"))
                         {
-                            <li class="nav-item dropdown py-0">
-                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white; font-weight: bold; line-height: 1;">
+                            <li class="nav-item dropdown py-0 d-flex align-items-center">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white; font-weight: bold;">
                                     Admin
                                 </a>
                                 <ul class="dropdown-menu">
-                                    <li><NavLink class="dropdown-item" href="/admin/create-season">Manage Seasons</NavLink></li>
+                                    <li><NavLink class="dropdown-item" href="/admin/seasons">Manage Seasons</NavLink></li>
                                     <li><NavLink class="dropdown-item" href="/admin/teams">Manage Teams</NavLink></li>
                                 </ul>
                             </li>
                         }
 
+                        <!-- User menu dropdown pushed to the right -->
                         <li class="nav-item dropdown ms-auto py-0">
                             <a class="nav-link d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white; line-height: 1;" title="User Menu">
                                 <span class="navbar-text text-white me-2 fw-bold">
@@ -51,8 +54,8 @@
                         </li>
                     </ul>
                 </Authorized>
-
                 <NotAuthorized>
+                    <!-- This content shows only when the user is logged out -->
                     <ul class="navbar-nav w-100">
                         <li class="nav-item ms-auto py-0">
                             <NavLink class="nav-link" href="register" style="color: white;">
@@ -72,27 +75,28 @@
     </div>
 </nav>
 
-
 <style>
     .navbar-nav > .nav-item {
         transition: background-color 0.2s ease-in-out;
+        border-radius: 4px; 
     }
 
-        .navbar-nav > .nav-item:hover {
-            background-color: var(--pl-green);
-        }
-
-            .navbar-nav > .nav-item:hover .nav-link,
-            .navbar-nav > .nav-item:hover .navbar-text,
-            .navbar-nav > .nav-item:hover .bi-person-fill {
-                color: var(--pl-purple) !important;
-            }
+    .navbar-nav > .nav-item:hover {
+        background-color: var(--pl-green);
+    }
+    
+    .navbar-nav > .nav-item:hover .nav-link,
+    .navbar-nav > .nav-item:hover .navbar-text,
+    .navbar-nav > .nav-item:hover .bi-person-fill {
+        color: var(--pl-purple) !important;
+    }
 </style>
 
 @code {
     private async Task LogoutUser()
     {
         await AuthService.Logout();
-        NavigationManager.NavigateTo("/", forceLoad: true);
+        // Force a full page reload to ensure all state is cleared.
+        NavigationManager.NavigateTo("/", forceLoad: true); 
     }
 }

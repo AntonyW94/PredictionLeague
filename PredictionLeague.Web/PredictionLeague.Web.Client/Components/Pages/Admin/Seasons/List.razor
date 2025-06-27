@@ -1,0 +1,106 @@
+﻿@page "/admin/seasons"
+@attribute [Authorize(Roles = "Administrator")]
+@using Microsoft.AspNetCore.Authorization
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using PredictionLeague.Shared.Admin.Seasons
+
+<PageTitle>Manage Seasons</PageTitle>
+
+<div class="my-details-container">
+    <div class="admin-table-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-white mb-0">Manage Seasons</h3>
+            <button class="btn d-flex align-items-center" style="background-color: var(--pl-green); color: var(--pl-purple); font-weight: 700;" @onclick='() => NavigationManager.NavigateTo("/admin/seasons/create")'>
+                <span class="bi bi-plus-circle-fill me-2"></span>Create Season
+            </button>
+        </div>
+
+        @if (_seasons == null)
+        {
+            <p class="text-center text-white"><em>Loading...</em></p>
+        }
+        else
+        {
+            <table class="table table-striped custom-striped-table text-white">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Active</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var season in _seasons)
+                    {
+                        <tr>
+                            <td class="align-middle">@season.Name</td>
+                            <td class="align-middle">@season.StartDate.ToShortDateString()</td>
+                            <td class="align-middle">@season.EndDate.ToShortDateString()</td>
+                            <td class="align-middle">
+                                @if (season.IsActive)
+                                {
+                                    <span class="badge" style="background-color: var(--pl-green); color: var(--pl-purple);">Yes</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">No</span>
+                                }
+
+                            </td>
+                            <td class="text-end align-middle">
+                                <button class="btn btn-sm edit-button" @onclick="() => EditSeason(season.Id)">Edit</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+<style>
+    .my-details-container {
+        background-color: var(--pl-purple);
+        min-height: calc(100vh - 56px);
+        padding: 2rem;
+    }
+
+    .admin-table-container {
+        background-color: var(--pl-light-purple);
+        padding: 2.5rem;
+        border-radius: 8px;
+        max-width: 900px;
+        margin: auto;
+    }
+
+    .edit-button {
+        background-color: var(--pl-green);
+        color: var(--pl-purple);
+        font-weight: 500;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+        .edit-button:hover {
+            background-color: white;
+            color: var(--pl-purple);
+        }
+
+    .custom-striped-table {
+        --bs-table-bg: var(--pl-purple);
+        --bs-table-striped-bg: var(--pl-light-purple);
+        --bs-table-striped-color: white;
+        --bs-table-color: white;
+        --bs-table-border-color: var(--pl-purple-dark);
+        --bs-table-hover-color: white;
+        --bs-table-hover-bg: #5a3e7e;
+    }
+</style>
+
+@code {
+    private List<SeasonDto>? _seasons;
+    protected override async Task OnInitializedAsync() { _seasons = await Http.GetFromJsonAsync<List<SeasonDto>>("api/admin/seasons"); }
+    private void EditSeason(int seasonId) { NavigationManager.NavigateTo($"/admin/seasons/edit/{seasonId}"); }
+}

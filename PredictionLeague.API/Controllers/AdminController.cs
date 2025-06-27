@@ -4,6 +4,7 @@ using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
 using PredictionLeague.Core.Repositories.PredictionLeague.Core.Repositories;
 using PredictionLeague.Shared.Admin;
+using PredictionLeague.Shared.Admin.Seasons;
 using PredictionLeague.Shared.Admin.Teams;
 using System.Transactions;
 
@@ -30,6 +31,15 @@ namespace PredictionLeague.API.Controllers
             _teamRepository = teamRepository;
         }
 
+        #region Seasons 
+
+        [HttpGet("seasons")]
+        public async Task<IActionResult> GetAllSeasons()
+        {
+            var seasons = await _seasonRepository.GetAllAsync();
+            return Ok(seasons);
+        }
+
         [HttpPost("season")]
         public async Task<IActionResult> CreateSeason([FromBody] CreateSeasonRequest request)
         {
@@ -40,9 +50,30 @@ namespace PredictionLeague.API.Controllers
                 EndDate = request.EndDate,
                 IsActive = true
             };
+            
             await _seasonRepository.AddAsync(season);
             return Ok(season);
         }
+
+        [HttpPut("seasons/{id}")]
+        public async Task<IActionResult> UpdateSeason(int id, [FromBody] UpdateSeasonRequest request)
+        {
+            var season = await _seasonRepository.GetByIdAsync(id);
+            if (season == null)
+                return NotFound("Season not found.");
+
+            season.Name = request.Name;
+            season.StartDate = request.StartDate;
+            season.EndDate = request.EndDate;
+            season.IsActive = request.IsActive;
+
+            await _seasonRepository.UpdateAsync(season);
+            return Ok(new { message = "Season updated successfully." });
+        }
+
+        #endregion
+
+        #region Rounds
 
         [HttpPost("round")]
         public async Task<IActionResult> CreateRound([FromBody] CreateRoundRequest request)
@@ -76,6 +107,8 @@ namespace PredictionLeague.API.Controllers
 
             return Ok(new { message = "Round and matches created successfully." });
         }
+
+        #endregion
 
         #region Teams
 

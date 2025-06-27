@@ -20,5 +20,15 @@ namespace PredictionLeague.API.Controllers
             var seasons = await _seasonRepository.GetAllAsync();
             return Ok(seasons);
         }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetSeasonById(int id)
+        {
+            var season = await _seasonRepository.GetByIdAsync(id);
+            if (season == null)
+                return NotFound();
+
+            return Ok(season);
+        }
     }
 }

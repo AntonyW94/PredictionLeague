@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace PredictionLeague.Shared.Admin
+namespace PredictionLeague.Shared.Admin.Seasons
 {
     public class CreateSeasonRequest
     {

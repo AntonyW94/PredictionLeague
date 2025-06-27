@@ -1,8 +1,8 @@
-﻿@page "/admin/create-season"
+﻿@page "/admin/seasons/create"
 @attribute [Authorize(Roles = "Administrator")]
 @inject HttpClient Http
 @using Microsoft.AspNetCore.Authorization
-@using PredictionLeague.Shared.Admin
+@using PredictionLeague.Shared.Admin.Seasons
 
 <PageTitle>Create Season</PageTitle>
 
@@ -72,7 +72,7 @@
         padding: 2.5rem;
         border-radius: 8px;
         width: 25%;
-        min-width: 450px; /* Ensures the form doesn't get too narrow */
+        min-width: 450px;
     }
 
     .validation-message {
@@ -83,7 +83,6 @@
 @code {
     private CreateSeasonRequest _model = new()
     {
-        // Pre-populate with sensible defaults
         StartDate = DateTime.Today,
         EndDate = DateTime.Today.AddMonths(9)
     };
@@ -103,7 +102,6 @@
         if (response.IsSuccessStatusCode)
         {
             _successMessage = "Season created successfully!";
-            // Optionally, clear the form or navigate away
             _model = new()
             {
                 StartDate = DateTime.Today,
@@ -112,7 +110,6 @@
         }
         else
         {
-            // In a real app, you might parse a more specific error response
             _errorMessage = "There was an error creating the season.";
         }
 
