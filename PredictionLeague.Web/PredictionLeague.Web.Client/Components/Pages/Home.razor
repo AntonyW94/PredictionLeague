@@ -1,19 +1,20 @@
 ﻿@page "/"
-@inject NavigationManager NavigationManager
 
 <PageTitle>Home - Premier League Predictions</PageTitle>
 
-<!-- Hero Section - Full Width -->
-<div class="hero-section text-center p-5 mb-4" style="color: white;">
+<div class="hero-section text-center p-5 mb-4 text-white">
     <div class="container py-5">
-        <img src="https://cdn.mos.cms.futurecdn.net/YfcLFQhjH3dBhA2tGqs8Qf-970-80.jpg.webp" alt="New Premier League Logo" style="height: 110px; background-color: white; border-radius: 5%;" class="mb-4" />
-        <h1 class="display-5 fw-bold" style="color: white;">Welcome to the Prediction League</h1>
+        <img src="https://cdn.mos.cms.futurecdn.net/YfcLFQhjH3dBhA2tGqs8Qf-970-80.jpg.webp" alt="New Premier League Logo" class="mb-4 hero-image" />
+        <h1 class="display-5 fw-bold text-white">Welcome to the Prediction League</h1>
         <p class="fs-4 col-md-8 mx-auto">Think you know the Premier League? Prove it. Predict the scores for every match, every week, and compete against friends and rivals to top the leaderboard.</p>
-        <NavLink class="btn btn-lg mt-3 green-button" href="register">Register Now</NavLink>
+        <div class="d-flex justify-content-center align-items-center mt-4 gap-3">
+            <NavLink class="btn btn-lg green-button" href="login">Login</NavLink>
+            <span class="text-white fw-bold">or</span>
+            <NavLink class="btn btn-lg green-button" href="register">Register Now</NavLink>
+        </div>
     </div>
 </div>
 
-<!-- Main Content Section - Centered and Contained -->
 <div class="container px-4">
     <div class="row align-items-md-stretch">
         <div class="col-md-6 mb-4">
@@ -38,3 +39,11 @@
         </div>
     </div>
 </div>
+
+<style>
+    .hero-image {
+        height: 110px;
+        background-color: white;
+        border-radius: 5%;
+    }
+</style>

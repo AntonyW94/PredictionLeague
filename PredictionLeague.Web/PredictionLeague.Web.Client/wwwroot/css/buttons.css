@@ -1,0 +1,105 @@
+﻿.green-button {
+    background-color: var(--pl-green);
+    color: var(--pl-purple);
+    font-weight: bold;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+    .green-button:hover {
+        background-color: white;
+        color: var(--pl-purple);
+    }
+
+.pink-button {
+    background-color: var(--pl-pink);
+    color: white;
+    font-weight: bold;
+}
+
+    .pink-button:hover {
+        background-color: white;
+        color: var(--pl-pink);
+    }
+
+.dark-pink-button {
+    background-color: var(--pl-dark-pink);
+    color: white;
+    font-weight: bold;
+}
+
+    .dark-pink-button:hover {
+        background-color: white;
+        color: var(--pl-dark-pink);
+    }
+
+.light-cyan-button {
+    background-color: var(--pl-light-cyan);
+    color: var(--pl-purple);
+    font-weight: bold;
+}
+
+    .light-cyan-button:hover {
+        background-color: white;
+        color: var(--pl-light-cyan);
+    }
+
+.back-button {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    color: var(--pl-pink);
+    transition: color 0.2s ease-in-out;
+}
+
+    .back-button:hover {
+        color: white;
+    }
+
+    .back-button span {
+        font-size: 24px;
+    }
+
+/* Social Buttons */
+.social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    font-weight: 500;
+    border-radius: 4px;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.social-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 12px;
+    transition: fill 0.2s ease-in-out;
+}
+
+.google-btn {
+    background-color: white;
+    color: #1f1f1f;
+    border: 1px solid #dadce0;
+}
+
+    .google-btn:hover {
+        background-color: #cecece;
+        border-color: #c6c6c6;
+    }
+
+.apple-btn {
+    background-color: black;
+    color: white;
+    border: 1px solid black;
+}
+
+    .apple-btn:hover {
+        background-color: white;
+        color: black;
+    }
+
+    .apple-btn:hover .social-icon{
+        fill: black;
+    }

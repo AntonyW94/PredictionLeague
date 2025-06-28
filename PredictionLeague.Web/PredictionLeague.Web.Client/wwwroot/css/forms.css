@@ -1,0 +1,34 @@
+﻿.form-container {
+    background-color: var(--pl-light-purple);
+    padding: 2.5rem;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 600px;
+}
+
+    .form-container.wide {
+        max-width: 900px; 
+    }
+
+.validation-message {
+    color: var(--pl-pink);
+}
+
+.match-logo {
+    height: 25px;
+}
+
+.logo-wrapper {
+    background-color: transparent;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease-in-out;
+}
+
+    .logo-wrapper.visible {
+        background-color: white;
+    }

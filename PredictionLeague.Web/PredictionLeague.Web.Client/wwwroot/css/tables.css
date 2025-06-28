@@ -1,0 +1,9 @@
+﻿.striped-table {
+    --bs-table-bg: var(--pl-purple);
+    --bs-table-striped-bg: var(--pl-light-purple);
+    --bs-table-striped-color: white;
+    --bs-table-color: white;
+    --bs-table-border-color: var(--pl-purple-dark);
+    --bs-table-hover-color: white;
+    --bs-table-hover-bg: #5a3e7e;
+}

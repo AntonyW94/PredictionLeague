@@ -1,0 +1,39 @@
+﻿.page-container {
+    background-color: var(--pl-purple);
+    min-height: calc(100vh - 56px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.form-container {
+    background-color: var(--pl-light-purple);
+    padding: 2.5rem;
+    border-radius: 8px;
+    width: 25%;
+    min-width: 400px;
+}
+
+.admin-table-container {
+    background-color: var(--pl-light-purple);
+    padding: 2.5rem;
+    border-radius: 8px;
+    max-width: 900px;
+    margin: auto;
+}
+
+.admin-content-container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+.hero-section {
+    background-color: var(--pl-purple);
+}
+
+.hero-image {
+    height: 110px;
+    background-color: white;
+    border-radius: 5%;
+}

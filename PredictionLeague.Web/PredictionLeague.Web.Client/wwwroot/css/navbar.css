@@ -1,0 +1,46 @@
+﻿/* In wwwroot/css/navbar.css */
+
+.navbar-custom {
+    background-color: var(--pl-purple);
+}
+
+.navbar-logo {
+    height: 30px;
+    margin-right: 10px;
+}
+
+/* Base styles for nav links */
+.navbar-nav .nav-item .nav-link,
+.navbar-nav .nav-item .navbar-text {
+    color: white !important;
+}
+
+/* Specific styles for different links */
+.admin-toggle {
+    font-weight: bold;
+}
+
+.user-menu-toggle {
+    line-height: 1;
+}
+
+.user-icon {
+    font-size: 1.25rem;
+}
+
+/* Hover effect styles */
+.navbar-nav > .nav-item {
+    transition: background-color 0.2s ease-in-out;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+    .navbar-nav > .nav-item:hover  {
+        background-color: var(--pl-green);
+    }
+
+        .navbar-nav > .nav-item:hover .nav-link,
+        .navbar-nav > .nav-item:hover .navbar-text,
+        .navbar-nav > .nav-item:hover .bi-person-fill {
+            color: var(--pl-purple) !important;
+        }

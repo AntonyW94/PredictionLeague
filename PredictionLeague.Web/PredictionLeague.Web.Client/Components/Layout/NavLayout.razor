@@ -1,46 +1,46 @@
 ﻿@inject IAuthService AuthService
 @inject NavigationManager NavigationManager
 
-<nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--pl-purple);">
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center" href="">
-            <img src="https://play-lh.googleusercontent.com/pJPgV--7ICYdqOyd6_8pgVXx9jIa81_YNLKI532jiGa9xBMZJarKRzgj76oYXUO7zK8" alt="Prediction League Logo" style="height: 30px; margin-right: 10px;" />
+            <img src="https://play-lh.googleusercontent.com/pJPgV--7ICYdqOyd6_8pgVXx9jIa81_YNLKI532jiGa9xBMZJarKRzgj76oYXUO7zK8" alt="Prediction League Logo" class="navbar-logo" />
             Prediction League
         </a>
+
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarNav">
-            
             <AuthorizeView>
                 <Authorized>
-                    <!-- This content shows only when the user is logged in -->
                     <ul class="navbar-nav w-100">
-                        
+
                         @if (context.User.IsInRole("Administrator"))
                         {
                             <li class="nav-item dropdown py-0 d-flex align-items-center">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white; font-weight: bold;">
+                                <a class="nav-link dropdown-toggle admin-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     Admin
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li><NavLink class="dropdown-item" href="/admin/seasons">Manage Seasons</NavLink></li>
                                     <li><NavLink class="dropdown-item" href="/admin/teams">Manage Teams</NavLink></li>
+                                    <li><NavLink class="dropdown-item" href="/admin/rounds/create">Create Round</NavLink></li>
                                 </ul>
                             </li>
                         }
 
-                        <!-- User menu dropdown pushed to the right -->
                         <li class="nav-item dropdown ms-auto py-0">
-                            <a class="nav-link d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white; line-height: 1;" title="User Menu">
-                                <span class="navbar-text text-white me-2 fw-bold">
+                            <a class="nav-link d-flex align-items-center user-menu-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="User Menu">
+                                <span class="navbar-text me-2 fw-bold">
                                     @context.User.FindFirst("FirstName")?.Value
                                 </span>
-                                <span class="bi bi-person-fill" aria-hidden="true" style="font-size: 1.25rem;"></span>
+                                <span class="bi bi-person-fill user-icon" aria-hidden="true"></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
                                 <li>
-                                    <NavLink class="dropdown-item" href="my-details">
+                                    <NavLink class="dropdown-item" href="account/details">
                                         <span class="bi bi-person-badge me-2 fw-bold"></span>My Details
                                     </NavLink>
                                 </li>
@@ -54,17 +54,17 @@
                         </li>
                     </ul>
                 </Authorized>
+
                 <NotAuthorized>
-                    <!-- This content shows only when the user is logged out -->
                     <ul class="navbar-nav w-100">
-                        <li class="nav-item ms-auto py-0">
-                            <NavLink class="nav-link" href="register" style="color: white;">
-                                Register
+                        <li class="nav-item ms-auto py-0 me-2">
+                            <NavLink class="nav-link text-white" href="auth/login">
+                                Login
                             </NavLink>
                         </li>
                         <li class="nav-item py-0">
-                            <NavLink class="nav-link" href="login" style="color: white;">
-                                Login
+                            <NavLink class="nav-link text-white" href="auth/register">
+                                Register
                             </NavLink>
                         </li>
                     </ul>
@@ -75,28 +75,10 @@
     </div>
 </nav>
 
-<style>
-    .navbar-nav > .nav-item {
-        transition: background-color 0.2s ease-in-out;
-        border-radius: 4px; 
-    }
-
-    .navbar-nav > .nav-item:hover {
-        background-color: var(--pl-green);
-    }
-    
-    .navbar-nav > .nav-item:hover .nav-link,
-    .navbar-nav > .nav-item:hover .navbar-text,
-    .navbar-nav > .nav-item:hover .bi-person-fill {
-        color: var(--pl-purple) !important;
-    }
-</style>
-
 @code {
     private async Task LogoutUser()
     {
         await AuthService.Logout();
-        // Force a full page reload to ensure all state is cleared.
-        NavigationManager.NavigateTo("/", forceLoad: true); 
+        NavigationManager.NavigateTo("/", forceLoad: true);
     }
 }
