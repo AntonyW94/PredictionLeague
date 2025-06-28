@@ -1,5 +1,4 @@
-﻿/* In wwwroot/css/navbar.css */
-
+﻿
 .navbar-custom {
     background-color: var(--pl-purple);
 }
@@ -9,38 +8,31 @@
     margin-right: 10px;
 }
 
-/* Base styles for nav links */
-.navbar-nav .nav-item .nav-link,
-.navbar-nav .nav-item .navbar-text {
-    color: white !important;
+.navbar-text{
+    color: white;
 }
 
-/* Specific styles for different links */
-.admin-toggle {
+.navbar-nav .nav-link {
+    color: white;
+    border-radius: 4px; 
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
     font-weight: bold;
 }
 
-.user-menu-toggle {
-    line-height: 1;
-}
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active {
+        background-color: var(--pl-green);
+        color: var(--pl-purple) !important;
+    }
+
+        .navbar-nav .nav-link:hover *,
+        .navbar-nav .nav-link.active * {
+            color: var(--pl-purple) !important;
+        }
 
 .user-icon {
     font-size: 1.25rem;
 }
-
-/* Hover effect styles */
-.navbar-nav > .nav-item {
-    transition: background-color 0.2s ease-in-out;
-    border-radius: 4px;
-    font-weight: bold;
-}
-
-    .navbar-nav > .nav-item:hover  {
-        background-color: var(--pl-green);
-    }
-
-        .navbar-nav > .nav-item:hover .nav-link,
-        .navbar-nav > .nav-item:hover .navbar-text,
-        .navbar-nav > .nav-item:hover .bi-person-fill {
-            color: var(--pl-purple) !important;
-        }
