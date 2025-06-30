@@ -7,55 +7,83 @@
     margin-right: 10px;
 }
 
-.navbar-text {
-    color: white;
+/* --- DESKTOP STYLES --- */
+
+/* Base styles for desktop nav links */
+.navbar-nav .nav-item .nav-link,
+.navbar-nav .nav-item .navbar-text {
+    color: white !important;
 }
 
-.navbar-nav .nav-link {
-    color: white;
-    border-radius: 4px;
-    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-    padding: 0.5rem 1rem;
-    display: flex;
-    align-items: center;
+.admin-toggle {
     font-weight: bold;
 }
 
-    .navbar-nav .nav-link:hover,
-    .navbar-nav .nav-link.active {
-        background-color: var(--pl-green);
-        color: var(--pl-purple) !important;
-    }
-
-        .navbar-nav .nav-link:hover *,
-        .navbar-nav .nav-link.active * {
-            color: var(--pl-purple) !important;
-        }
+.user-menu-toggle {
+    line-height: 1;
+}
 
 .user-icon {
     font-size: 1.25rem;
 }
 
+/* Hover effect styles for desktop */
+.navbar-nav > .nav-item {
+    transition: background-color 0.2s ease-in-out;
+    border-radius: 4px;
+}
+
+    .navbar-nav > .nav-item:hover {
+        background-color: white;
+    }
+
+        .navbar-nav > .nav-item:hover .nav-link,
+        .navbar-nav > .nav-item:hover .navbar-text,
+        .navbar-nav > .nav-item:hover .bi-person-fill {
+            color: var(--pl-purple) !important;
+        }
+
+/* Dropdown menu styles */
 .dropdown-menu {
-    background-color: var(--pl-green);
+    background-color: white;
     border: none;
 }
 
 .dropdown-item {
     color: var(--pl-purple);
-    font-weight: 500; 
+    font-weight: 500;
 }
 
     .dropdown-item:hover, .dropdown-item:focus {
-        color: var(--pl-purple);
-        background-color: white;
+        color: var(--pl-light-purple);
+        font-weight: bold;
     }
 
     .dropdown-item .bi {
-        font-weight: bold !important; 
+        font-weight: bold !important;
         color: var(--pl-purple);
     }
 
 .dropdown-divider {
     border-top: 1px solid rgba(61, 25, 91, 0.25);
+}
+
+
+/* --- MOBILE STYLES --- */
+@media (max-width: 991.98px) {
+    .navbar-nav .nav-link {
+        padding: 0.5rem 1rem;
+    }
+
+    .mobile-nav-header {
+        font-weight: 700;
+        color: var(--pl-light-cyan) !important;
+        font-size: 1.1rem;
+        padding-top: 1rem;
+    }
+
+    .mobile-nav-sub-item {
+        padding-left: 2rem !important;
+        font-size: 1rem;
+    }
 }

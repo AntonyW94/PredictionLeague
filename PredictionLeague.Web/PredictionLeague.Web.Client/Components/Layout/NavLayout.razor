@@ -15,8 +15,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <AuthorizeView>
                 <Authorized>
-                    <ul class="navbar-nav w-100">
-
+                    <ul class="navbar-nav w-100 d-none d-lg-flex">
                         @if (context.User.IsInRole("Administrator"))
                         {
                             <li class="nav-item dropdown py-0 d-flex align-items-center">
@@ -29,7 +28,6 @@
                                 </ul>
                             </li>
                         }
-
                         <li class="nav-item dropdown ms-auto py-0">
                             <a class="nav-link d-flex align-items-center user-menu-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="User Menu">
                                 <span class="navbar-text me-2 fw-bold">
@@ -38,43 +36,66 @@
                                 <span class="bi bi-person-fill user-icon" aria-hidden="true"></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <NavLink class="dropdown-item" href="account/details">
-                                        <span class="bi bi-person-badge me-2 fw-bold"></span>My Details
-                                    </NavLink>
-                                </li>
+                                <li><NavLink class="dropdown-item" href="account/details"><span class="bi bi-person-badge me-2 fw-bold"></span>My Details</NavLink></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <button class="dropdown-item d-flex align-items-center" type="button" @onclick="LogoutUser">
-                                        <span class="bi bi-box-arrow-right me-2 fw-bold"></span>Logout
-                                    </button>
-                                </li>
+                                <li><button class="dropdown-item d-flex align-items-center" type="button" @onclick="LogoutUser"><span class="bi bi-box-arrow-right me-2 fw-bold"></span>Logout</button></li>
                             </ul>
                         </li>
+                    </ul>
+
+                    <ul class="navbar-nav d-lg-none">
+                        <li class="nav-item">
+                            <button class="btn nav-link mobile-nav-header w-100 text-start" @onclick="() => _isUserMenuOpen = !_isUserMenuOpen">
+                                @context.User.FindFirst("FirstName")?.Value
+                                <span class="bi @(_isUserMenuOpen ? "bi-chevron-up" : "bi-chevron-down") float-end"></span>
+                            </button>
+                        </li>
+
+                        @if (_isUserMenuOpen)
+                        {
+                            <li class="nav-item"><NavLink class="nav-link mobile-nav-sub-item" href="account/details">My Details</NavLink></li>
+                            <li class="nav-item"><button class="btn nav-link mobile-nav-sub-item text-start" @onclick="LogoutUser">Logout</button></li>
+                        }
+
+                        @if (context.User.IsInRole("Administrator"))
+                        {
+                            <li class="nav-item">
+                                <button class="btn nav-link mobile-nav-header w-100 text-start" @onclick="() => _isAdminMenuOpen = !_isAdminMenuOpen">
+                                    Admin
+                                    <span class="bi @(_isAdminMenuOpen ? "bi-chevron-up" : "bi-chevron-down") float-end"></span>
+                                </button>
+                            </li>
+
+                            @if (_isAdminMenuOpen)
+                            {
+                                <li class="nav-item"><NavLink class="nav-link mobile-nav-sub-item" href="/admin/seasons">Manage Seasons</NavLink></li>
+                                <li class="nav-item"><NavLink class="nav-link mobile-nav-sub-item" href="/admin/teams">Manage Teams</NavLink></li>
+                            }
+
+                            <li class="nav-item"><hr class="text-white"/></li>
+                        }
                     </ul>
                 </Authorized>
 
                 <NotAuthorized>
-                    <ul class="navbar-nav w-100">
-                        <li class="nav-item ms-auto py-0 me-2">
-                            <NavLink class="nav-link text-white" href="auth/login">
-                                Login
-                            </NavLink>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item mx-1">
+                            <NavLink class="nav-link" href="auth/login">Login</NavLink>
                         </li>
-                        <li class="nav-item py-0">
-                            <NavLink class="nav-link text-white" href="auth/register">
-                                Register
-                            </NavLink>
+                        <li class="nav-item mx-1">
+                            <NavLink class="nav-link" href="auth/register">Register</NavLink>
                         </li>
                     </ul>
                 </NotAuthorized>
             </AuthorizeView>
-
         </div>
     </div>
 </nav>
 
 @code {
+    private bool _isAdminMenuOpen;
+    private bool _isUserMenuOpen;
+    
     private async Task LogoutUser()
     {
         await AuthService.Logout();
