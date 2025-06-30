@@ -1,8 +1,11 @@
 ﻿@page "/admin/seasons"
+
 @attribute [Authorize(Roles = "Administrator")]
-@using Microsoft.AspNetCore.Authorization
+
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using Microsoft.AspNetCore.Authorization
 @using PredictionLeague.Shared.Admin.Seasons
 
 <PageTitle>Manage Seasons</PageTitle>
@@ -54,7 +57,7 @@
                                 }
                             </td>
                             <td class="text-end align-middle">
-                                <button class="btn btn-sm me-2 light-cyan-button" @onclick="() => AddRound(season.Id)">Add Round</button>
+                                <button class="btn btn-sm me-2 dark-pink-button" @onclick="() => AddRound(season.Id)">Add Round</button>
                                 <button class="btn btn-sm green-button" @onclick="() => EditSeason(season.Id)">Edit</button>
                             </td>
                         </tr>
@@ -64,22 +67,6 @@
         }
     </div>
 </div>
-
-<style>
-    .page-container {
-        background-color: var(--pl-purple);
-        min-height: calc(100vh - 56px);
-        padding: 2rem;
-    }
-
-    .admin-table-container {
-        background-color: var(--pl-light-purple);
-        padding: 2.5rem;
-        border-radius: 8px;
-        max-width: 900px;
-        margin: auto;
-    }    
-</style>
 
 @code {
     private List<SeasonDto>? _seasons;

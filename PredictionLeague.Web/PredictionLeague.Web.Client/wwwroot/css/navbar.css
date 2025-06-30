@@ -1,5 +1,4 @@
-﻿
-.navbar-custom {
+﻿.navbar-custom {
     background-color: var(--pl-purple);
 }
 
@@ -8,13 +7,13 @@
     margin-right: 10px;
 }
 
-.navbar-text{
+.navbar-text {
     color: white;
 }
 
 .navbar-nav .nav-link {
     color: white;
-    border-radius: 4px; 
+    border-radius: 4px;
     transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
     padding: 0.5rem 1rem;
     display: flex;
@@ -35,4 +34,28 @@
 
 .user-icon {
     font-size: 1.25rem;
+}
+
+.dropdown-menu {
+    background-color: var(--pl-green);
+    border: none;
+}
+
+.dropdown-item {
+    color: var(--pl-purple);
+    font-weight: 500; 
+}
+
+    .dropdown-item:hover, .dropdown-item:focus {
+        color: var(--pl-purple);
+        background-color: white;
+    }
+
+    .dropdown-item .bi {
+        font-weight: bold !important; 
+        color: var(--pl-purple);
+    }
+
+.dropdown-divider {
+    border-top: 1px solid rgba(61, 25, 91, 0.25);
 }

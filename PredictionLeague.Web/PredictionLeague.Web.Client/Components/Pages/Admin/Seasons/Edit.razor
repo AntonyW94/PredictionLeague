@@ -68,40 +68,27 @@
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
-                    <button type="button" class="btn pink-button d-flex align-items-center" @onclick="BackToSeasons">
+                    <button type="button" class="btn pink-button d-flex align-items-center" @onclick="Back">
                         <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Seasons
                     </button>
+                    
                     <button type="submit" class="btn green-button d-flex align-items-center" disabled="@_isBusy">
-                        <span class="bi bi-save me-2"></span>Save
+                        @if (_isBusy)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span class="bi bi-check-circle-fill me-2"></span>
+                            <span>Save</span>
+                        }
                     </button>
                 </div>
             </EditForm>
         }
     </div>
 </div>
-
-<style>
-    .page-container {
-        background-color: var(--pl-purple);
-        min-height: calc(100vh - 56px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-    }
-
-    .form-container {
-        background-color: var(--pl-light-purple);
-        padding: 2.5rem;
-        border-radius: 8px;
-        width: 100%;
-        max-width: 600px;
-    }
-
-    .validation-message {
-        color: var(--pl-pink);
-    }
-</style>
 
 @code {
     [Parameter] public int SeasonId { get; set; }
@@ -142,7 +129,7 @@
         _isBusy = false;
     }
 
-    private void BackToSeasons() => NavigationManager.NavigateTo("/admin/seasons");
+    private void Back() => NavigationManager.NavigateTo("/admin/seasons");
     private void AddRound(int seasonId) => NavigationManager.NavigateTo($"/admin/seasons/{seasonId}/create-round");
     private void ViewRounds(int seasonId) => NavigationManager.NavigateTo($"/admin/seasons/{seasonId}/rounds");
 }

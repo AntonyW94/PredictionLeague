@@ -16,7 +16,7 @@
                 }
                 else if (_model != null)
                 {
-                    <EditForm Model="_model" OnValidSubmit="HandleUpdateDetails" Context="EditFormContext">
+                    <EditForm Model="_model" OnValidSubmit="HandleUpdateDetails" Context="editFormContext">
                         <DataAnnotationsValidator />
 
                         @if (!string.IsNullOrEmpty(_errorMessage))

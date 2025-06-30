@@ -13,7 +13,7 @@
 <PageTitle>Edit Round</PageTitle>
 
 <div class="page-container">
-    <div class="form-container">
+    <div class="form-container wide">
         <h3 class="text-center fw-bold text-white mb-4">Edit Round</h3>
         @if (_model == null)
         {
@@ -27,6 +27,7 @@
                 {
                     <div class="alert alert-danger">@_errorMessage</div>
                 }
+
                 @if (!string.IsNullOrEmpty(_successMessage))
                 {
                     <div class="alert alert-success">@_successMessage</div>
@@ -44,9 +45,13 @@
                 </div>
 
                 <hr class="text-white" />
+
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="text-white mb-0">Matches</h4>
-                    <button type="button" class="btn btn-sm d-flex align-items-center light-cyan-button" @onclick="AddMatch"><span class="bi bi-plus-lg"></span> Add Match</button>
+                    <button type="button" class="btn btn-sm d-flex align-items-center dark-pink-button" @onclick="AddMatch">
+                        <span class="bi bi-plus-circle-fill me-2"></span>
+                        Add Match
+                    </button>
                 </div>
 
                 @for (var i = 0; i < _model.Matches.Count; i++)
@@ -56,6 +61,7 @@
                         <div class="col-md-3">
                             <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTime" />
                         </div>
+
                         <div class="col">
                             <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].HomeTeamId">
                                 <option value="0">Home Team</option>
@@ -65,17 +71,21 @@
                                 }
                             </InputSelect>
                         </div>
+
                         <div class="col-auto">
                             <div class="logo-wrapper @(_model.Matches[matchIndex].HomeTeamId > 0 ? "visible" : "")">
                                 <img src="@GetTeamLogoUrl(_model.Matches[matchIndex].HomeTeamId)" class="match-logo" />
                             </div>
                         </div>
+
                         <div class="col-auto text-white fw-bold">vs</div>
+
                         <div class="col-auto">
                             <div class="logo-wrapper @(_model.Matches[matchIndex].AwayTeamId > 0 ? "visible" : "")">
                                 <img src="@GetTeamLogoUrl(_model.Matches[matchIndex].AwayTeamId)" class="match-logo" />
                             </div>
                         </div>
+
                         <div class="col">
                             <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].AwayTeamId">
                                 <option value="0">Away Team</option>
@@ -85,6 +95,7 @@
                                 }
                             </InputSelect>
                         </div>
+
                         <div class="col-auto">
                             <button type="button" class="btn btn-sm pink-button" @onclick="() => RemoveMatch(matchIndex)"><span class="bi bi-trash text-white"></span></button>
                         </div>
@@ -92,55 +103,27 @@
                 }
 
                 <div class="d-flex justify-content-between mt-4">
-                    <button type="button" class="btn pink-button" @onclick="Cancel">Cancel</button>
-                    <button type="submit" class="btn green-button" disabled="@_isBusy">Save Changes</button>
+                    <button type="button" class="btn pink-button d-flex align-items-center" @onclick="Back">
+                        <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Rounds
+                    </button>
+                    
+                    <button type="submit" class="btn green-button d-flex align-items-center" disabled="@_isBusy">
+                        @if (_isBusy)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                            <span>Saving...</span>
+                        }
+                        else
+                        {
+                            <span class="bi bi-check-circle-fill me-2"></span>
+                            <span>Save</span>
+                        }
+                    </button>
                 </div>
             </EditForm>
         }
     </div>
 </div>
-
-<style>
-    .page-container {
-        background-color: var(--pl-purple);
-        min-height: calc(100vh - 56px);
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        padding: 2rem;
-    }
-
-    .form-container {
-        background-color: var(--pl-light-purple);
-        padding: 2.5rem;
-        border-radius: 8px;
-        width: 100%;
-        max-width: 900px;
-    }
-
-    .validation-message {
-        color: var(--pl-pink);
-    }
-
-    .match-logo {
-        height: 25px;
-    }
-
-    .logo-wrapper {
-        background-color: transparent;
-        border-radius: 50%;
-        width: 38px;
-        height: 38px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.2s ease-in-out;
-    }
-
-        .logo-wrapper.visible {
-            background-color: white;
-        }
-</style>
 
 @code {
     [Parameter] public int RoundId { get; set; }
@@ -154,7 +137,6 @@
     protected override async Task OnInitializedAsync()
     {
         var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/admin/rounds/{RoundId}");
-
         if (roundDetails != null)
         {
             _seasonId = roundDetails.Round.SeasonId;
@@ -217,5 +199,5 @@
         _isBusy = false;
     }
 
-    private void Cancel() => NavigationManager.NavigateTo($"/admin/seasons/{_seasonId}/rounds");
+    private void Back() => NavigationManager.NavigateTo($"/admin/seasons/{_seasonId}/rounds");
 }

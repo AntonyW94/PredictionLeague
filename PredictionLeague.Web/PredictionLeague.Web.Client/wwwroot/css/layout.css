@@ -7,14 +7,6 @@
     padding: 2rem;
 }
 
-.form-container {
-    background-color: var(--pl-light-purple);
-    padding: 2.5rem;
-    border-radius: 8px;
-    width: 25%;
-    min-width: 400px;
-}
-
 .admin-table-container {
     background-color: var(--pl-light-purple);
     padding: 2.5rem;
@@ -25,6 +17,7 @@
 
 .admin-content-container {
     max-width: 1200px;
+    width: 100%;
     margin: auto;
 }
 

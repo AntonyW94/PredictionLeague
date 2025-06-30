@@ -3,9 +3,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using PredictionLeague.Web.Client.Authentication;
 using PredictionLeague.Web.Client.Components;
-using System;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace PredictionLeague.Web.Client;
 public class Program

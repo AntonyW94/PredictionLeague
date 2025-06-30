@@ -1,8 +1,11 @@
 ﻿@page "/admin/seasons/{SeasonId:int}/create-round"
+
 @attribute [Authorize(Roles = "Administrator")]
-@using Microsoft.AspNetCore.Authorization
+
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using Microsoft.AspNetCore.Authorization
 @using PredictionLeague.Shared.Admin
 @using PredictionLeague.Shared.Admin.Seasons
 @using PredictionLeague.Shared.Admin.Teams
@@ -10,7 +13,7 @@
 <PageTitle>Create Round</PageTitle>
 
 <div class="page-container">
-    <div class="form-container">
+    <div class="form-container wide">
         <h3 class="text-center fw-bold text-white mb-4">Create New Round for Season: @_seasonName</h3>
 
         @if (_isLoading)
@@ -48,7 +51,10 @@
                 <hr class="text-white" />
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="text-white mb-0">Matches</h4>
-                    <button type="button" class="btn btn-sm d-flex align-items-center dark-pink-button" @onclick="AddMatch"><span class="bi bi-plus-lg"></span> Add Match</button>
+                    <button type="button" class="btn btn-sm d-flex align-items-center dark-pink-button" @onclick="AddMatch">
+                        <span class="bi bi-plus-circle-fill me-2"></span>
+                        Add Match
+                    </button>
                 </div>
 
                 @for (var i = 0; i < _model.Matches.Count; i++)
@@ -100,16 +106,20 @@
                 }
 
                 <div class="d-flex justify-content-between mt-4">
-                    <button type="button" class="btn pink-button" @onclick='() => NavigationManager.NavigateTo("/admin/seasons")'>Cancel</button>
-                    <button type="submit" class="btn green-button" disabled="@_isBusy">
+                    <button type="button" class="btn pink-button d-flex align-items-center" @onclick="Back">
+                        <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Rounds
+                    </button>
+                    
+                    <button type="submit" class="btn green-button d-flex align-items-center" disabled="@_isBusy">
                         @if (_isBusy)
                         {
                             <span class="spinner-border spinner-border-sm"></span>
-                            <span> Creating...</span>
-     }
-    else
-    {
-                            <span>Create Round</span>
+                            <span>Creating Round...</span>
+                        }
+                        else
+                        {
+                            <span class="bi bi-check-circle-fill me-2"></span>
+                            <span>Save</span>
                         }
                     </button>
                 </div>
@@ -118,54 +128,12 @@
     </div>
 </div>
 
-<style>
-    .page-container {
-        background-color: var(--pl-purple);
-        min-height: calc(100vh - 56px);
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        padding: 2rem;
-    }
-
-    .form-container {
-        background-color: var(--pl-light-purple);
-        padding: 2.5rem;
-        border-radius: 8px;
-        width: 100%;
-        max-width: 900px;
-    }
-
-    .validation-message {
-        color: var(--pl-pink);
-    }
-
-    .match-logo {
-        height: 25px;
-    }
-
-    .logo-wrapper {
-        background-color: transparent;
-        border-radius: 50%;
-        width: 38px;
-        height: 38px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.2s ease-in-out;
-    }
-
-        .logo-wrapper.visible {
-            background-color: white;
-        }
-</style>
-
 @code {
     [Parameter] public int SeasonId { get; set; }
+   
     private CreateRoundRequest _model = new();
     private List<TeamDto> _teams = new();
     private string _seasonName = string.Empty;
-
     private bool _isLoading = true;
     private bool _isBusy;
     private string? _errorMessage;
@@ -173,12 +141,13 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _model.SeasonId = SeasonId;
         var now = DateTime.Now;
+
+        _model.SeasonId = SeasonId;
         _model.StartDate = now.Date;
         _model.Deadline = now;
 
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _model.Matches.Add(new CreateMatchRequest { MatchDateTime = now });
         }
@@ -186,6 +155,7 @@
         try
         {
             var season = await Http.GetFromJsonAsync<SeasonDto>($"api/seasons/{SeasonId}");
+
             _seasonName = season?.Name ?? "Unknown";
             _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/teams") ?? new();
         }
@@ -202,6 +172,7 @@
         if (DateTime.TryParse(e.Value?.ToString(), out var newDate))
         {
             _model.StartDate = newDate.Date;
+
             foreach (var match in _model.Matches)
             {
                 match.MatchDateTime = newDate.Date;
@@ -212,15 +183,13 @@
     private void AddMatch() => _model.Matches.Add(new CreateMatchRequest { MatchDateTime = _model.StartDate });
     private void RemoveMatch(int index)
     {
-        if (index >= 0 && index < _model.Matches.Count) { _model.Matches.RemoveAt(index); }
+        if (index >= 0 && index < _model.Matches.Count)
+            _model.Matches.RemoveAt(index);
     }
 
     private string? GetTeamLogoUrl(int teamId)
     {
-        if (teamId < 0)
-            return "https://placehold.co/25x25/transparent/transparent?text=";
-
-        return _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl;
+        return teamId < 0 ? "https://placehold.co/25x25/transparent/transparent?text=" : _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl;
     }
 
     private async Task HandleCreateRound()
@@ -228,15 +197,26 @@
         _isBusy = true;
         _errorMessage = null;
         _successMessage = null;
+      
         var response = await Http.PostAsJsonAsync("api/admin/round", _model);
-
         if (response.IsSuccessStatusCode)
         {
             _successMessage = "Round created successfully!";
             _model = new() { SeasonId = SeasonId };
-            for (int i = 0; i < 10; i++) { _model.Matches.Add(new CreateMatchRequest { MatchDateTime = DateTime.Now }); }
+
+            for (var i = 0; i < 10; i++)
+            {
+                _model.Matches.Add(new CreateMatchRequest { MatchDateTime = DateTime.Now });
+            }
         }
-        else { _errorMessage = "There was an error creating the round."; }
+        else
+        {
+            _errorMessage = "There was an error creating the round.";
+        }
+
         _isBusy = false;
     }
+
+
+    private void Back() => NavigationManager.NavigateTo($"/admin/seasons/{SeasonId}/rounds");
 }

@@ -1,13 +1,13 @@
 ﻿.green-button {
     background-color: var(--pl-green);
-    color: var(--pl-purple);
+    color: white;
     font-weight: bold;
     transition: background-color 0.2s, color 0.2s;
 }
 
-    .green-button:hover {
+    .green-button:not(.badge):hover {
         background-color: white;
-        color: var(--pl-purple);
+        color: var(--pl-green);
     }
 
 .pink-button {
@@ -16,7 +16,7 @@
     font-weight: bold;
 }
 
-    .pink-button:hover {
+    .pink-button:not(.badge):hover {
         background-color: white;
         color: var(--pl-pink);
     }
@@ -27,18 +27,18 @@
     font-weight: bold;
 }
 
-    .dark-pink-button:hover {
+    .dark-pink-button:not(.badge):hover {
         background-color: white;
         color: var(--pl-dark-pink);
     }
 
 .light-cyan-button {
     background-color: var(--pl-light-cyan);
-    color: var(--pl-purple);
+    color: white;
     font-weight: bold;
 }
 
-    .light-cyan-button:hover {
+    .light-cyan-button:not(.badge):hover {
         background-color: white;
         color: var(--pl-light-cyan);
     }
@@ -52,7 +52,7 @@
     transition: color 0.2s ease-in-out;
 }
 
-    .back-button:hover {
+    .back-button:not(.badge):hover {
         color: white;
     }
 
