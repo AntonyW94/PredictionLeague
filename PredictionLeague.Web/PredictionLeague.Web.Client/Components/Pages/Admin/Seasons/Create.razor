@@ -12,7 +12,9 @@
 
 <div class="page-container">
     <div class="form-container">
-        <h3 class="text-center fw-bold text-white mb-4">Create New Season</h3>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-white mb-0">Create New Season</h3>
+        </div>
 
         <EditForm Model="_model" OnValidSubmit="HandleCreateSeason">
             <DataAnnotationsValidator />
@@ -65,29 +67,6 @@
         </EditForm>
     </div>
 </div>
-
-<style>
-    .page-container {
-        background-color: var(--pl-purple);
-        min-height: calc(100vh - 56px);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 2rem;
-    }
-
-    .form-container {
-        background-color: var(--pl-light-purple);
-        padding: 2.5rem;
-        border-radius: 8px;
-        width: 25%;
-        min-width: 450px;
-    }
-
-    .validation-message {
-        color: var(--pl-pink);
-    }
-</style>
 
 @code {
     private CreateSeasonRequest _model = new()

@@ -45,3 +45,19 @@
     align-items: center;
     justify-content: center;
 }
+
+.match-editor-row {
+    margin-bottom: 1.5rem;
+}
+
+.match-card {
+    border: 1px solid var(--pl-purple-dark);
+    border-radius: 8px;
+    background-color: var(--pl-purple);
+}
+
+.match-card-header {
+    padding: 0.5rem 1rem;
+    background-color: var(--pl-purple-dark);
+    color: white;
+}
