@@ -5,6 +5,7 @@ using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
 using PredictionLeague.Core.Repositories.PredictionLeague.Core.Repositories;
 using PredictionLeague.Core.Services;
+using PredictionLeague.Core.Services.PredictionLeague.Core.Services;
 using PredictionLeague.Infrastructure.Identity;
 using PredictionLeague.Infrastructure.Repositories;
 using PredictionLeague.Infrastructure.Services;
@@ -20,6 +21,7 @@ builder.Services.AddScoped<ISeasonRepository, SeasonRepository>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
 
+builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<ILeagueService, LeagueService>();
 builder.Services.AddScoped<IPredictionService, PredictionService>();

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Services;
 using PredictionLeague.Shared.Predictions;
 using System.Security.Claims;
@@ -19,32 +18,23 @@ namespace PredictionLeague.API.Controllers
             _predictionService = predictionService;
         }
 
-        // POST: api/predictions
         [HttpPost]
         public async Task<IActionResult> SubmitPredictions([FromBody] SubmitPredictionsRequest request)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
             try
             {
-                // Map the DTO from the request to the Core domain model.
-                var predictionsToSubmit = request.Predictions.Select(p => new UserPrediction
-                {
-                    MatchId = p.MatchId,
-                    PredictedHomeScore = p.PredictedHomeScore,
-                    PredictedAwayScore = p.PredictedAwayScore
-                });
-
-                await _predictionService.SubmitPredictionsAsync(userId, request.RoundId, predictionsToSubmit);
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                await _predictionService.SubmitPredictionsAsync(userId, request);
                 return Ok(new { message = "Predictions submitted successfully." });
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                // Generic error for unexpected issues
+                return StatusCode(500, "An unexpected error occurred.");
             }
         }
     }

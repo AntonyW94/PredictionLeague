@@ -9,8 +9,10 @@ namespace PredictionLeague.Core.Repositories
         {
             Task<Round> AddAsync(Round round);
             Task<IEnumerable<RoundDto>> GetBySeasonIdAsync(int seasonId);
+            Task<Round?> GetCurrentRoundAsync(int seasonId);
             Task<Round?> GetByIdAsync(int id);
             Task UpdateAsync(Round round);
+            
         }
     }
 }

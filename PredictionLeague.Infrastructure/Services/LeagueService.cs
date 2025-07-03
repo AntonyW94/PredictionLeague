@@ -1,6 +1,7 @@
 ﻿using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
 using PredictionLeague.Core.Services;
+using PredictionLeague.Shared.Dashboard;
 
 namespace PredictionLeague.Infrastructure.Services;
 
@@ -40,9 +41,7 @@ public class LeagueService : ILeagueService
 
     public async Task<IEnumerable<League>> GetLeaguesForUserAsync(string userId)
     {
-        // This implementation would typically require a new repository method like GetLeaguesByUserIdAsync
-        // for performance. For now, this logic can reside in the service.
-        throw new NotImplementedException("This requires a more complex query in the LeagueRepository.");
+        return await _leagueRepository.GetLeaguesByUserIdAsync(userId);
     }
 
     public async Task JoinLeagueAsync(string entryCode, string userId)
@@ -61,6 +60,22 @@ public class LeagueService : ILeagueService
         }
 
         await _leagueRepository.AddMemberAsync(league.Id, userId);
+    }
+
+    public async Task JoinPublicLeagueAsync(int leagueId, string userId)
+    {
+        // In a real app, you would add more validation (e.g., does the league exist and is it public?)
+        await _leagueRepository.AddMemberAsync(leagueId, userId);
+    }
+
+    public async Task<League?> GetDefaultPublicLeagueAsync()
+    {
+        return await _leagueRepository.GetDefaultPublicLeagueAsync();
+    }
+
+    public async Task<IEnumerable<PublicLeagueDto>> GetJoinablePublicLeaguesForUserAsync(string userId)
+    {
+        return await _leagueRepository.GetJoinablePublicLeaguesAsync(userId);
     }
 
     private string GenerateEntryCode()

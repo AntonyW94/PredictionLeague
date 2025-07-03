@@ -23,6 +23,7 @@
                                     Admin
                                 </a>
                                 <ul class="dropdown-menu">
+                                    <li><NavLink class="dropdown-item" href="/admin/leagues">Manage Leagues</NavLink></li>
                                     <li><NavLink class="dropdown-item" href="/admin/seasons">Manage Seasons</NavLink></li>
                                     <li><NavLink class="dropdown-item" href="/admin/teams">Manage Teams</NavLink></li>
                                 </ul>
@@ -68,6 +69,7 @@
 
                             @if (_isAdminMenuOpen)
                             {
+                                <li class="nav-item"><NavLink class="dropdown-item" href="/admin/leagues">Manage Leagues</NavLink></li>
                                 <li class="nav-item"><NavLink class="nav-link mobile-nav-sub-item" href="/admin/seasons">Manage Seasons</NavLink></li>
                                 <li class="nav-item"><NavLink class="nav-link mobile-nav-sub-item" href="/admin/teams">Manage Teams</NavLink></li>
                             }

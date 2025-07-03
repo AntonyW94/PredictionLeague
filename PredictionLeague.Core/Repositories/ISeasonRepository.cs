@@ -8,5 +8,5 @@ public interface ISeasonRepository
     Task<IEnumerable<SeasonDto>> GetAllAsync();
     Task<SeasonDto?> GetByIdAsync(int id);
     Task AddAsync(Season season);
-    Task UpdateAsync(Season season);
+    Task UpdateAsync(int id, UpdateSeasonRequest request);
 }

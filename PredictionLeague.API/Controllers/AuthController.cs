@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using PredictionLeague.Core.Models;
+using PredictionLeague.Core.Services;
 using PredictionLeague.Shared.Auth;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -15,13 +16,15 @@ namespace PredictionLeague.API.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly ILeagueService _leagueService;
         private readonly RoleManager<IdentityRole> _roleManager;
 
-        public AuthController(UserManager<ApplicationUser> userManager, IConfiguration configuration, RoleManager<IdentityRole> roleManager)
+        public AuthController(UserManager<ApplicationUser> userManager, IConfiguration configuration, RoleManager<IdentityRole> roleManager, ILeagueService leagueService)
         {
             _userManager = userManager;
             _configuration = configuration;
             _roleManager = roleManager;
+            _leagueService = leagueService;
         }
 
         // POST: api/auth/register
@@ -43,13 +46,18 @@ namespace PredictionLeague.API.Controllers
             };
 
             var result = await _userManager.CreateAsync(newUser, request.Password);
-
             if (!result.Succeeded)
             {
                 // In a real app, you might want to format these errors better.
                 return BadRequest(new AuthResponse { IsSuccess = false, Message = "User creation failed.", Token = string.Join(", ", result.Errors.Select(e => e.Description)) });
             }
-
+           
+            var defaultLeague = await _leagueService.GetDefaultPublicLeagueAsync();
+            if (defaultLeague != null)
+            {
+                await _leagueService.JoinPublicLeagueAsync(defaultLeague.Id, newUser.Id);
+            }
+            
             const string defaultRole = "Player";
             
             if (await _roleManager.RoleExistsAsync(defaultRole))

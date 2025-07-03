@@ -1,0 +1,112 @@
+﻿@page "/dashboard"
+
+@attribute [Authorize]
+
+@inject HttpClient Http
+@inject IAuthService AuthService
+
+@using Microsoft.AspNetCore.Authorization
+@using PredictionLeague.Shared.Dashboard
+
+<PageTitle>Dashboard</PageTitle>
+
+<div class="page-container">
+    <div class="dashboard-container">
+        @if (_isLoading)
+        {
+            <p class="text-center text-white"><em>Loading your dashboard...</em></p>
+        }
+        else
+        {
+            <div class="row">
+                <div class="col-lg-2"></div>
+                <div class="col-lg-4">
+
+                    @if (_dashboardData?.UpcomingRounds != null && _dashboardData.UpcomingRounds.Any())
+                    {
+                        <div class="text-center text-white p-5 rounded-3" style="background-color: var(--pl-light-purple);">
+                            <h3 class="text-white text-center fw-bold mb-4">Your Upcoming Rounds</h3>
+                            <div class="rounds-grid">
+                                @foreach (var round in _dashboardData.UpcomingRounds)
+                                {
+                                    <div class="round-card">
+                                        <div class="round-card-header">
+                                            <h5 class="mb-0 fw-bold text-white">@round.SeasonName</h5>
+                                            <span>Round @round.RoundNumber</span>
+                                        </div>
+                                        <div class="round-card-body">
+                                            <p class="deadline-text">Deadline: @round.Deadline.ToString("ddd dd MMM, HH:mm")</p>
+                                            <NavLink href="@($"/predictions/{round.Id}")" class="btn green-button w-100">
+                                                Predict Now
+                                            </NavLink>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-white p-5 rounded-3" style="background-color: var(--pl-light-purple);">
+                            <h3 class="fw-bold text-white mb-4">No Upcoming Rounds</h3>
+                            <p>There are currently no upcoming rounds available for you to predict. Please check back later.</p>
+                        </div>
+                    }
+                </div>
+
+                <div class="col-lg-4">
+                    @if (_dashboardData?.JoinablePublicLeagues != null && _dashboardData.JoinablePublicLeagues.Any())
+                    {
+                        <div class="text-center text-white p-5 rounded-3" style="background-color: var(--pl-light-purple);">
+                            <h4 class="text-white text-center mb-3 mt-4 mt-lg-0">Join Other Public Leagues</h4>
+                            <div class="list-group">
+                                @foreach (var league in _dashboardData.JoinablePublicLeagues)
+                                {
+                                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center joinable-league-item">
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-white">@league.Name</h6>
+                                            <small class="text-white">@league.SeasonName</small>
+                                        </div>
+                                        <button class="btn btn-sm dark-pink-button" @onclick="() => JoinLeague(league.Id)">Join</button>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="col-lg-2"></div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private DashboardDto? _dashboardData;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _dashboardData = await Http.GetFromJsonAsync<DashboardDto>("api/dashboard/dashboard-data");
+        }
+        catch (Exception)
+        {
+            // Handle error, e.g., show an error message
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task JoinLeague(int leagueId)
+    {
+        var result = await AuthService.JoinPublicLeagueAsync(leagueId);
+        if (result)
+        {
+            _isLoading = true;
+            await OnInitializedAsync();
+        }
+    }
+}

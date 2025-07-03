@@ -63,6 +63,16 @@ namespace PredictionLeague.Infrastructure.Repositories
             return await connection.QueryAsync<RoundDto>(sql, new { SeasonId = seasonId });
         }
 
+        public async Task<Round?> GetCurrentRoundAsync(int seasonId)
+        {
+            using var connection = Connection;
+            const string sql = @"
+                SELECT TOP 1 * FROM [Rounds] 
+                WHERE [SeasonId] = @SeasonId AND [Deadline] > GETUTCDATE() 
+                ORDER BY [Deadline] ASC;";
+            return await connection.QuerySingleOrDefaultAsync<Round>(sql, new { SeasonId = seasonId });
+        }
+
         public async Task<Round?> GetByIdAsync(int id)
         {
             using var connection = Connection;

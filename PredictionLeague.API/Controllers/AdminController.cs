@@ -1,14 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PredictionLeague.Core.Models;
-using PredictionLeague.Core.Repositories;
-using PredictionLeague.Core.Repositories.PredictionLeague.Core.Repositories;
+using PredictionLeague.Core.Services.PredictionLeague.Core.Services;
 using PredictionLeague.Shared.Admin;
-using PredictionLeague.Shared.Admin.Matches;
+using PredictionLeague.Shared.Admin.Leagues;
 using PredictionLeague.Shared.Admin.Rounds;
 using PredictionLeague.Shared.Admin.Seasons;
 using PredictionLeague.Shared.Admin.Teams;
-using System.Transactions;
+using PredictionLeague.Shared.Leagues;
+using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers
 {
@@ -17,175 +16,65 @@ namespace PredictionLeague.API.Controllers
     [Authorize(Roles = "Administrator")]
     public class AdminController : ControllerBase
     {
-        private readonly ISeasonRepository _seasonRepository;
-        private readonly IRoundRepository _roundRepository;
-        private readonly IMatchRepository _matchRepository;
-        private readonly ITeamRepository _teamRepository;
+        private readonly IAdminService _adminService;
 
-        public AdminController(
-            ISeasonRepository seasonRepository,
-            IRoundRepository roundRepository,
-            IMatchRepository matchRepository, ITeamRepository teamRepository)
+        public AdminController(IAdminService adminService)
         {
-            _seasonRepository = seasonRepository;
-            _roundRepository = roundRepository;
-            _matchRepository = matchRepository;
-            _teamRepository = teamRepository;
+            _adminService = adminService;
         }
 
-        #region Seasons 
+        #region Seasons
 
         [HttpGet("seasons")]
         public async Task<IActionResult> GetAllSeasons()
         {
-            var seasons = await _seasonRepository.GetAllAsync();
+            var seasons = await _adminService.GetAllSeasonsAsync();
             return Ok(seasons);
         }
 
-        [HttpPost("season")]
+        [HttpPost("seasons")]
         public async Task<IActionResult> CreateSeason([FromBody] CreateSeasonRequest request)
         {
-            var season = new Season
-            {
-                Name = request.Name,
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
-                IsActive = true
-            };
-            
-            await _seasonRepository.AddAsync(season);
-            return Ok(season);
+            await _adminService.CreateSeasonAsync(request);
+            return Ok(new { message = "Season created successfully." });
         }
 
         [HttpPut("seasons/{id}")]
         public async Task<IActionResult> UpdateSeason(int id, [FromBody] UpdateSeasonRequest request)
         {
-            var seasonDto = await _seasonRepository.GetByIdAsync(id);
-            if (seasonDto == null)
-                return NotFound("Season not found.");
-
-            seasonDto.Name = request.Name;
-            seasonDto.StartDate = request.StartDate;
-            seasonDto.EndDate = request.EndDate;
-            seasonDto.IsActive = request.IsActive;
-
-            var season = new Season
-            {
-                Name = seasonDto.Name,
-                StartDate = seasonDto.StartDate,
-                EndDate = seasonDto.EndDate,
-                IsActive = seasonDto.IsActive
-            };
-
-            await _seasonRepository.UpdateAsync(season);
+            await _adminService.UpdateSeasonAsync(id, request);
             return Ok(new { message = "Season updated successfully." });
-        }
-
-
-        [HttpGet("seasons/{seasonId}/rounds")]
-        public async Task<IActionResult> GetRoundsForSeason(int seasonId)
-        {
-            var rounds = await _roundRepository.GetBySeasonIdAsync(seasonId);
-            return Ok(rounds);
         }
 
         #endregion
 
         #region Rounds
 
-        [HttpPost("round")]
-        public async Task<IActionResult> CreateRound([FromBody] CreateRoundRequest request)
+        [HttpGet("seasons/{seasonId}/rounds")]
+        public async Task<IActionResult> GetRoundsForSeason(int seasonId)
         {
-            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-            {
-                var round = new Round
-                {
-                    SeasonId = request.SeasonId,
-                    RoundNumber = request.RoundNumber,
-                    StartDate = request.StartDate,
-                    Deadline = request.Deadline
-                };
-
-                var createdRound = await _roundRepository.AddAsync(round);
-
-                foreach (var matchRequest in request.Matches)
-                {
-                    var match = new Match
-                    {
-                        RoundId = createdRound.Id,
-                        HomeTeamId = matchRequest.HomeTeamId,
-                        AwayTeamId = matchRequest.AwayTeamId,
-                        MatchDateTime = matchRequest.MatchDateTime
-                    };
-                    await _matchRepository.AddAsync(match);
-                }
-
-                scope.Complete();
-            }
-
-            return Ok(new { message = "Round and matches created successfully." });
+            var rounds = await _adminService.GetRoundsForSeasonAsync(seasonId);
+            return Ok(rounds);
         }
 
         [HttpGet("rounds/{roundId}")]
         public async Task<IActionResult> GetRoundById(int roundId)
         {
-            var round = await _roundRepository.GetByIdAsync(roundId);
-            if (round == null) return NotFound();
+            var roundDetails = await _adminService.GetRoundByIdAsync(roundId);
+            return Ok(roundDetails);
+        }
 
-            var matches = await _matchRepository.GetByRoundIdAsync(roundId);
-
-            var response = new RoundDetailsDto
-            {
-                Round = new RoundDto
-                {
-                    Id = round.Id,
-                    SeasonId = round.SeasonId,
-                    RoundNumber = round.RoundNumber,
-                    StartDate = round.StartDate,
-                    Deadline = round.Deadline
-                },
-                Matches = matches.Select(m => new MatchDto
-                {
-                    Id = m.Id,
-                    HomeTeamId = m.HomeTeamId,
-                    AwayTeamId = m.AwayTeamId,
-                    MatchDateTime = m.MatchDateTime
-                }).ToList()
-            };
-
-            return Ok(response);
+        [HttpPost("round")]
+        public async Task<IActionResult> CreateRound([FromBody] CreateRoundRequest request)
+        {
+            await _adminService.CreateRoundAsync(request);
+            return Ok(new { message = "Round and matches created successfully." });
         }
 
         [HttpPut("rounds/{roundId}")]
         public async Task<IActionResult> UpdateRound(int roundId, [FromBody] UpdateRoundRequest request)
         {
-            using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-            {
-                var round = await _roundRepository.GetByIdAsync(roundId);
-                if (round == null)
-                    return NotFound("Round not found.");
-
-                round.StartDate = request.StartDate;
-                round.Deadline = request.Deadline;
-               
-                await _roundRepository.UpdateAsync(round);
-
-                // A simple way to handle match updates: delete all existing matches and re-add them.
-                await _matchRepository.DeleteByRoundIdAsync(roundId); // Assumes this method exists
-                foreach (var matchRequest in request.Matches)
-                {
-                    var match = new Match
-                    {
-                        RoundId = roundId,
-                        HomeTeamId = matchRequest.HomeTeamId,
-                        AwayTeamId = matchRequest.AwayTeamId,
-                        MatchDateTime = matchRequest.MatchDateTime
-                    };
-                    await _matchRepository.AddAsync(match);
-                }
-
-                scope.Complete();
-            }
+            await _adminService.UpdateRoundAsync(roundId, request);
             return Ok(new { message = "Round updated successfully." });
         }
 
@@ -196,32 +85,41 @@ namespace PredictionLeague.API.Controllers
         [HttpPost("teams")]
         public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
         {
-            var newTeam = new Team
-            {
-                Name = request.Name,
-                LogoUrl = request.LogoUrl
-            };
-
-            var createdTeam = await _teamRepository.AddAsync(newTeam);
-
+            var createdTeam = await _adminService.CreateTeamAsync(request);
             return CreatedAtAction(nameof(TeamsController.GetTeamById), "Teams", new { id = createdTeam.Id }, createdTeam);
         }
 
         [HttpPut("teams/{id}")]
         public async Task<IActionResult> UpdateTeam(int id, [FromBody] UpdateTeamRequest request)
         {
-            var team = await _teamRepository.GetByIdAsync(id);
-            if (team == null)
-            {
-                return NotFound("Team not found.");
-            }
-
-            team.Name = request.Name;
-            team.LogoUrl = request.LogoUrl;
-
-            await _teamRepository.UpdateAsync(team);
-
+            await _adminService.UpdateTeamAsync(id, request);
             return Ok(new { message = "Team updated successfully." });
+        }
+
+        #endregion
+
+        #region Leagues
+
+        [HttpGet("leagues")]
+        public async Task<IActionResult> GetAllLeagues()
+        {
+            var leagues = await _adminService.GetAllLeaguesAsync();
+            return Ok(leagues);
+        }
+
+        [HttpPost("leagues")]
+        public async Task<IActionResult> CreateLeague([FromBody] CreateLeagueRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            await _adminService.CreateLeagueAsync(request, userId!);
+            return Ok(new { message = "League created successfully." });
+        }
+
+        [HttpPut("leagues/{id}")]
+        public async Task<IActionResult> UpdateLeague(int id, [FromBody] UpdateLeagueRequest request)
+        {
+            await _adminService.UpdateLeagueAsync(id, request);
+            return Ok(new { message = "League updated successfully." });
         }
 
         #endregion

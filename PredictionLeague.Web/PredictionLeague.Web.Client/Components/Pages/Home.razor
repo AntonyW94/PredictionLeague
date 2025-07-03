@@ -1,41 +1,62 @@
 ﻿@page "/"
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Home - Premier League Predictions</PageTitle>
 
-<div class="hero-section text-center p-5 mb-4 text-white">
-    <div class="container py-5">
-        <img src="https://cdn.mos.cms.futurecdn.net/YfcLFQhjH3dBhA2tGqs8Qf-970-80.jpg.webp" alt="New Premier League Logo" class="mb-4 hero-image" />
-        <h1 class="display-5 fw-bold text-white">Welcome to the Prediction League</h1>
-        <p class="fs-4 col-md-8 mx-auto">Think you know the Premier League? Prove it. Predict the scores for every match, every week, and compete against friends and rivals to top the leaderboard.</p>
-        <div class="d-flex justify-content-center align-items-center mt-4 gap-3">
-            <NavLink class="btn btn-lg green-button" href="auth/login">Login</NavLink>
-            <span class="text-white fw-bold">or</span>
-            <NavLink class="btn btn-lg green-button" href="auth/register">Register Now</NavLink>
-        </div>
-    </div>
-</div>
+<CascadingAuthenticationState>
+    <AuthorizeView>
+        <NotAuthorized>
+            <div class="hero-section text-center p-5 mb-4 text-white">
+                <div class="container py-5">
+                    <img src="https://cdn.mos.cms.futurecdn.net/YfcLFQhjH3dBhA2tGqs8Qf-970-80.jpg.webp" alt="New Premier League Logo" class="mb-4 hero-image" />
+                    <h1 class="display-5 fw-bold text-white">Welcome to the Prediction League</h1>
+                    <p class="fs-4 col-md-8 mx-auto">Think you know the Premier League? Prove it. Predict the scores for every match, every week, and compete against friends and rivals to top the leaderboard.</p>
+                    <div class="d-flex justify-content-center align-items-center mt-4 gap-3">
+                        <NavLink class="btn btn-lg light-cyan-button" href="auth/login">Login</NavLink>
+                        <span class="text-white fw-bold">or</span>
+                        <NavLink class="btn btn-lg green-button" href="auth/register">Register Now</NavLink>
+                    </div>
+                </div>
+            </div>
 
-<div class="container px-4">
-    <div class="row align-items-md-stretch">
-        <div class="col-md-6 mb-4">
-            <div class="h-100 p-5 bg-light border rounded-3 d-flex flex-column">
-                <h2>How It Works</h2>
-                <p class="flex-grow-1">The rules are simple. Each week, submit your score predictions for all 10 Premier League matches before the Game Week deadline. Once the deadline passes, your predictions are locked in and you can see what everyone else has predicted. Points are awarded as follows:</p>
-                <ul>
-                    <li><strong>5 Points:</strong> Predict the exact correct score.</li>
-                    <li><strong>3 Points:</strong> Predict the correct result (Win/Draw/Loss), but not the exact score.</li>
-                    <li><strong>0 Points:</strong> An incorrect prediction.</li>
-                </ul>
-                <p class="mt-auto">Climb the weekly, monthly, and yearly leaderboards. Create private leagues to challenge your friends for the ultimate bragging rights!</p>
+            <div class="container px-4">
+                <div class="row align-items-md-stretch">
+                    <div class="col-md-6 mb-4">
+                        <div class="h-100 p-5 bg-light border rounded-3 d-flex flex-column">
+                            <h2>How It Works</h2>
+                            <p class="flex-grow-1">The rules are simple. Each week, submit your score predictions for all 10 Premier League matches before the Game Week deadline. Once the deadline passes, your predictions are locked in and you can see what everyone else has predicted. Points are awarded as follows:</p>
+                            <ul>
+                                <li><strong>5 Points:</strong> Predict the exact correct score.</li>
+                                <li><strong>3 Points:</strong> Predict the correct result (Win/Draw/Loss), but not the exact score.</li>
+                                <li><strong>0 Points:</strong> An incorrect prediction.</li>
+                            </ul>
+                            <p class="mt-auto">Climb the weekly, monthly, and yearly leaderboards. Create private leagues to challenge your friends for the ultimate bragging rights!</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="h-100 rounded-3">
+                            <img src="https://images.unsplash.com/photo-1486286701208-1d58e9338013?q=80&w=840&h=420&auto=format&fit=crop"
+                                 class="img-fluid rounded shadow-sm"
+                                 alt="A football sitting on the grass of a pitch"
+                                 onerror="this.onerror=null;this.src='https://placehold.co/840x420/CCCCCC/FFFFFF?text=Image+Not+Found';" />
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="col-md-6 mb-4">
-            <div class="h-100 rounded-3">
-                <img src="https://images.unsplash.com/photo-1486286701208-1d58e9338013?q=80&w=840&h=420&auto=format&fit=crop"
-                     class="img-fluid rounded shadow-sm"
-                     alt="A football sitting on the grass of a pitch"
-                     onerror="this.onerror=null;this.src='https://placehold.co/840x420/CCCCCC/FFFFFF?text=Image+Not+Found';" />
-            </div>
-        </div>
-    </div>
-</div>
+        </NotAuthorized>
+    </AuthorizeView>
+</CascadingAuthenticationState>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            NavigationManager.NavigateTo("/dashboard");
+        }
+    }
+}

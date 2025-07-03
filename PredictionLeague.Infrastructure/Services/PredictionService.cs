@@ -1,6 +1,8 @@
 ﻿using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
+using PredictionLeague.Core.Repositories.PredictionLeague.Core.Repositories;
 using PredictionLeague.Core.Services;
+using PredictionLeague.Shared.Predictions;
 
 namespace PredictionLeague.Infrastructure.Services
 {
@@ -8,22 +10,32 @@ namespace PredictionLeague.Infrastructure.Services
     {
         private readonly IUserPredictionRepository _predictionRepository;
         private readonly IMatchRepository _matchRepository;
+        private readonly IRoundRepository _roundRepository;
 
-        public PredictionService(IUserPredictionRepository predictionRepository, IMatchRepository matchRepository)
+        public PredictionService(IUserPredictionRepository predictionRepository, IMatchRepository matchRepository, IRoundRepository roundRepository)
         {
             _predictionRepository = predictionRepository;
             _matchRepository = matchRepository;
+            _roundRepository = roundRepository;
         }
 
-        public async Task SubmitPredictionsAsync(string userId, int roundId, IEnumerable<UserPrediction> predictions)
+        public async Task SubmitPredictionsAsync(string userId, SubmitPredictionsRequest request)
         {
-            // In a real system, add validation:
-            // 1. Check if the round deadline has passed.
-            // 2. Ensure all predictions are for matches within the specified roundId.
-
-            foreach (var prediction in predictions)
+            var round = await _roundRepository.GetByIdAsync(request.RoundId);
+            if (round == null || round.Deadline < DateTime.UtcNow)
             {
-                prediction.UserId = userId; // Ensure the user ID is set correctly
+                throw new InvalidOperationException("The prediction deadline has passed for this round.");
+            }
+
+            foreach (var predictionDto in request.Predictions)
+            {
+                var prediction = new UserPrediction
+                {
+                    MatchId = predictionDto.MatchId,
+                    UserId = userId,
+                    PredictedHomeScore = predictionDto.PredictedHomeScore,
+                    PredictedAwayScore = predictionDto.PredictedAwayScore
+                };
                 await _predictionRepository.UpsertAsync(prediction);
             }
         }

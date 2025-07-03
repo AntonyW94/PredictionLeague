@@ -1,10 +1,10 @@
-﻿using PredictionLeague.Core.Models;
+﻿using PredictionLeague.Shared.Predictions;
 
 namespace PredictionLeague.Core.Services
 {
     public interface IPredictionService
     {
-        Task SubmitPredictionsAsync(string userId, int roundId, IEnumerable<UserPrediction> predictions);
+        Task SubmitPredictionsAsync(string userId, SubmitPredictionsRequest request);
         Task CalculatePointsForMatchAsync(int matchId);
     }
 }

@@ -1,0 +1,66 @@
+﻿.dashboard-container {
+    width: 90%; /* Increased width to accommodate columns */
+    max-width: 1400px;
+    margin: auto;
+}
+
+.rounds-grid {
+    display: grid;
+    /* Updated to show 3 cards on desktop in the main column */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+}
+
+.round-card {
+    background-color: var(--pl-light-purple);
+    border-radius: 8px;
+    overflow: hidden;
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+.round-card-header {
+    background-color: var(--pl-purple-dark);
+    padding: 1rem;
+    text-align: center;
+}
+
+.round-card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.deadline-text {
+    flex-grow: 1;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--light-text);
+}
+
+.joinable-league-item {
+    background-color: var(--pl-purple);
+    border-color: var(--pl-purple);
+    color: white;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+}
+
+    .joinable-league-item:hover {
+        background-color: var(--pl-purple);
+        border-color: var(--pl-purple);
+    }
+
+/* Responsive adjustments for mobile */
+@media (max-width: 992px) {
+    .dashboard-container {
+        width: 95%;
+    }
+
+    .rounds-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
+}

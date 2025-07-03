@@ -42,7 +42,7 @@ namespace PredictionLeague.API.Controllers
             }
         }
 
-        // POST: api/leagues/join
+        // POST: api/leagues/join (for private leagues)
         [HttpPost("join")]
         public async Task<IActionResult> JoinLeague([FromBody] JoinLeagueRequest request)
         {
@@ -55,6 +55,28 @@ namespace PredictionLeague.API.Controllers
             try
             {
                 await _leagueService.JoinLeagueAsync(request.EntryCode, userId);
+                return Ok(new { message = "Successfully joined league." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        // >> ADDED METHOD <<
+        // POST: api/leagues/{leagueId}/join (for public leagues)
+        [HttpPost("{leagueId}/join")]
+        public async Task<IActionResult> JoinPublicLeague(int leagueId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            try
+            {
+                await _leagueService.JoinPublicLeagueAsync(leagueId, userId);
                 return Ok(new { message = "Successfully joined league." });
             }
             catch (Exception ex)

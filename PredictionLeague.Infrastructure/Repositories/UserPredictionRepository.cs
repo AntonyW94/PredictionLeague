@@ -28,13 +28,12 @@ public class UserPredictionRepository : IUserPredictionRepository
 
     public async Task<IEnumerable<UserPrediction>> GetByUserIdAndRoundIdAsync(string userId, int roundId)
     {
-        using var dbConnection = Connection;
+        using var connection = Connection;
         const string sql = @"
-                SELECT up.* FROM [UserPredictions] up
-                JOIN [Matches] m ON up.[MatchId] = m.[Id]
-                WHERE up.[UserId] = @UserId AND m.[RoundId] = @RoundId;";
-     
-        return await dbConnection.QueryAsync<UserPrediction>(sql, new { UserId = userId, RoundId = roundId });
+            SELECT up.* FROM [UserPredictions] up
+            INNER JOIN [Matches] m ON up.[MatchId] = m.[Id]
+            WHERE up.[UserId] = @UserId AND m.[RoundId] = @RoundId;";
+        return await connection.QueryAsync<UserPrediction>(sql, new { UserId = userId, RoundId = roundId });
     }
 
     public async Task UpsertAsync(UserPrediction prediction)

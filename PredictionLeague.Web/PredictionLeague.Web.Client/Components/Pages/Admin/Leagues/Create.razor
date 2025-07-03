@@ -1,0 +1,77 @@
+﻿@page "/admin/leagues/create"
+@attribute [Authorize(Roles = "Administrator")]
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Authorization
+@using PredictionLeague.Shared.Admin.Leagues
+@using PredictionLeague.Shared.Admin.Seasons
+@using PredictionLeague.Shared.Leagues
+
+<PageTitle>Create League</PageTitle>
+
+<div class="page-container">
+    <div class="form-container">
+        <h3 class="text-center fw-bold text-white mb-4">Create New League</h3>
+        <EditForm Model="_model" OnValidSubmit="HandleCreateLeague">
+            <DataAnnotationsValidator />
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger">@_errorMessage</div>
+            }
+            @if (!string.IsNullOrEmpty(_successMessage))
+            {
+                <div class="alert alert-success">@_successMessage</div>
+            }
+
+            <div class="mb-3">
+                <label for="season" class="form-label text-white">Season</label>
+                <InputSelect id="season" class="form-select" @bind-Value="_model.SeasonId">
+                    <option value="0">-- Select a Season --</option>
+                    @foreach (var season in _seasons)
+                    {
+                        <option value="@season.Id">@season.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <label for="name" class="form-label text-white">League Name</label>
+                <InputText id="name" class="form-control" @bind-Value="_model.Name" />
+            </div>
+            <div class="mb-3">
+                <label for="entryCode" class="form-label text-white">Entry Code (optional)</label>
+                <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" />
+                <small class="form-text text-white-50">Leave blank to create a public league.</small>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <button type="button" class="btn pink-button" @onclick='() => NavigationManager.NavigateTo("/admin/leagues")'>Cancel</button>
+                <button type="submit" class="btn green-button" disabled="@_isBusy">Create League</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private List<SeasonDto> _seasons = new();
+    private CreateLeagueRequest _model = new();
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync() { _seasons = await Http.GetFromJsonAsync<List<SeasonDto>>("api/admin/seasons") ?? new(); }
+
+    private async Task HandleCreateLeague()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+        var response = await Http.PostAsJsonAsync("api/admin/leagues", _model);
+        if (response.IsSuccessStatusCode)
+        {
+            _successMessage = "League created successfully!";
+            _model = new();
+        }
+        else { _errorMessage = "Error creating league."; }
+        _isBusy = false;
+    }
+}

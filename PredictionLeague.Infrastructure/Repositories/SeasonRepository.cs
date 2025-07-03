@@ -62,16 +62,16 @@ public class SeasonRepository : ISeasonRepository
         return await connection.QuerySingleOrDefaultAsync<SeasonDto>(sql, new { Id = id });
     }
 
-    public async Task UpdateAsync(Season season)
+    public async Task UpdateAsync(int id, UpdateSeasonRequest request)
     {
-        using var dbConnection = Connection;
+        using var connection = Connection;
         const string sql = @"
-                UPDATE [Seasons]
-                SET [Name] = @Name,
+                UPDATE [Seasons] SET
+                    [Name] = @Name,
                     [StartDate] = @StartDate,
                     [EndDate] = @EndDate,
                     [IsActive] = @IsActive
                 WHERE [Id] = @Id;";
-        await dbConnection.ExecuteAsync(sql, season);
+        await connection.ExecuteAsync(sql, new { Id = id, request.Name, request.StartDate, request.EndDate, request.IsActive });
     }
 }
