@@ -73,9 +73,9 @@ public class LeagueService : ILeagueService
         return await _leagueRepository.GetDefaultPublicLeagueAsync();
     }
 
-    public async Task<IEnumerable<PublicLeagueDto>> GetJoinablePublicLeaguesForUserAsync(string userId)
+    public async Task<IEnumerable<PublicLeagueDto>> GetAllPublicLeaguesForUserAsync(string userId)
     {
-        return await _leagueRepository.GetJoinablePublicLeaguesAsync(userId);
+        return await _leagueRepository.GetAllPublicLeaguesForUserAsync(userId);
     }
 
     private string GenerateEntryCode()

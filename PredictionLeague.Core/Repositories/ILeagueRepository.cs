@@ -13,7 +13,7 @@ public interface ILeagueRepository
     Task<IEnumerable<LeagueMember>> GetMembersByLeagueIdAsync(int leagueId);
     Task<IEnumerable<League>> GetLeaguesByUserIdAsync(string userId);
     Task<League?> GetDefaultPublicLeagueAsync();
-    Task<IEnumerable<PublicLeagueDto>> GetJoinablePublicLeaguesAsync(string userId);
+    Task<IEnumerable<PublicLeagueDto>> GetAllPublicLeaguesForUserAsync(string userId);
     Task<IEnumerable<LeagueDto>> GetAllAsync();
     Task UpdateAsync(League league);
 }

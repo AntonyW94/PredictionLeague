@@ -10,5 +10,5 @@ public interface ILeagueService
     Task<IEnumerable<League>> GetLeaguesForUserAsync(string userId);
     Task JoinPublicLeagueAsync(int leagueId, string userId);
     Task<League?> GetDefaultPublicLeagueAsync();
-    Task<IEnumerable<PublicLeagueDto>> GetJoinablePublicLeaguesForUserAsync(string userId);
+    Task<IEnumerable<PublicLeagueDto>> GetAllPublicLeaguesForUserAsync(string userId);
 }

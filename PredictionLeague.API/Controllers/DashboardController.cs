@@ -16,20 +16,20 @@ namespace PredictionLeague.API.Controllers
         private readonly IRoundRepository _roundRepository;
         private readonly IMatchRepository _matchRepository;
         private readonly IUserPredictionRepository _predictionRepository;
-        private readonly ILeagueService _leagueService; // << ADDED
+        private readonly ILeagueService _leagueService;
         private readonly ISeasonRepository _seasonRepository;
 
         public DashboardController(
             IRoundRepository roundRepository,
             IMatchRepository matchRepository,
             IUserPredictionRepository predictionRepository,
-            ILeagueService leagueService, // << ADDED
+            ILeagueService leagueService,
             ISeasonRepository seasonRepository)
         {
             _roundRepository = roundRepository;
             _matchRepository = matchRepository;
             _predictionRepository = predictionRepository;
-            _leagueService = leagueService; // << ADDED
+            _leagueService = leagueService;
             _seasonRepository = seasonRepository;
         }
 
@@ -76,7 +76,7 @@ namespace PredictionLeague.API.Controllers
                 }
             }
 
-            var joinableLeagues = await _leagueService.GetJoinablePublicLeaguesForUserAsync(userId!);
+            var joinableLeagues = await _leagueService.GetAllPublicLeaguesForUserAsync(userId!);
             
             var dashboardDto = new DashboardDto
             {

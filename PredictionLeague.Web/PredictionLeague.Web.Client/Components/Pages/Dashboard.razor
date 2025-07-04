@@ -79,7 +79,14 @@
                                                 <h6 class="mb-0 fw-bold text-white">@league.Name</h6>
                                                 <small class="text-white-50">@league.SeasonName</small>
                                             </div>
-                                            <button class="btn btn-sm dark-pink-button" @onclick="() => JoinLeague(league.Id)">Join</button>
+                                            @if (league.IsMember)
+                                            {
+                                                <button class="btn btn-sm btn-secondary" disabled>Already Joined</button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm dark-pink-button" @onclick="() => JoinLeague(league.Id)">Join</button>
+                                            }
                                         </div>
                                     }
                                 </div>

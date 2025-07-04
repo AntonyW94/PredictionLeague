@@ -84,18 +84,19 @@ public class LeagueRepository : ILeagueRepository
         return await connection.QuerySingleOrDefaultAsync<League>(sql);
     }
 
-    public async Task<IEnumerable<PublicLeagueDto>> GetJoinablePublicLeaguesAsync(string userId)
+    public async Task<IEnumerable<PublicLeagueDto>> GetAllPublicLeaguesForUserAsync(string userId)
     {
         using var connection = Connection;
         const string sql = @"
             SELECT 
                 l.[Id],
                 l.[Name],
-                s.[Name] AS SeasonName
+                s.[Name] AS SeasonName,
+                CASE WHEN lm.[UserId] IS NOT NULL THEN 1 ELSE 0 END AS IsMember
             FROM [Leagues] l
             INNER JOIN [Seasons] s ON l.[SeasonId] = s.[Id]
-            WHERE l.[EntryCode] IS NULL 
-            AND l.[Id] NOT IN (SELECT lm.[LeagueId] FROM [LeagueMembers] lm WHERE lm.[UserId] = @UserId);";
+            LEFT JOIN [LeagueMembers] lm ON l.[Id] = lm.[LeagueId] AND lm.[UserId] = @UserId
+            WHERE l.[EntryCode] IS NULL;";
         return await connection.QueryAsync<PublicLeagueDto>(sql, new { UserId = userId });
     }
 

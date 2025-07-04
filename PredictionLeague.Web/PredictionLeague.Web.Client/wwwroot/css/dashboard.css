@@ -76,7 +76,6 @@
 
 .leagues-list-container {
     max-width: 600px;
-    margin: auto;
     width: 100%;
 }
 
@@ -89,8 +88,9 @@
 }
 
     .joinable-league-item:hover {
-        background-color: #5a3e7e;
+        background-color: var(--pl-purple-dark);
     }
+
 /* Responsive adjustments for mobile */
 @media (max-width: 992px) {
     .dashboard-container {
