@@ -56,7 +56,13 @@
 
     .dropdown-item:hover, .dropdown-item:focus {
         color: var(--pl-light-purple);
+        background-color: white;
         font-weight: bold;
+    }
+
+    .dropdown-item.active {
+        color: var(--pl-light-purple);
+        background-color: white;
     }
 
     .dropdown-item .bi {

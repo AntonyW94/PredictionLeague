@@ -8,6 +8,10 @@
 
     .form-container.wide {
         max-width: 900px; 
+    } 
+    
+    .form-container.extra-wide {
+        max-width: 1200px; 
     }
 
 .validation-message {

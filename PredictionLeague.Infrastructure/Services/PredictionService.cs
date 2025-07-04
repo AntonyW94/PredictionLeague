@@ -2,6 +2,7 @@
 using PredictionLeague.Core.Repositories;
 using PredictionLeague.Core.Repositories.PredictionLeague.Core.Repositories;
 using PredictionLeague.Core.Services;
+using PredictionLeague.Shared.Dashboard;
 using PredictionLeague.Shared.Predictions;
 
 namespace PredictionLeague.Infrastructure.Services
@@ -11,12 +12,14 @@ namespace PredictionLeague.Infrastructure.Services
         private readonly IUserPredictionRepository _predictionRepository;
         private readonly IMatchRepository _matchRepository;
         private readonly IRoundRepository _roundRepository;
+        private readonly ISeasonRepository _seasonRepository;
 
-        public PredictionService(IUserPredictionRepository predictionRepository, IMatchRepository matchRepository, IRoundRepository roundRepository)
+        public PredictionService(IUserPredictionRepository predictionRepository, IMatchRepository matchRepository, IRoundRepository roundRepository, ISeasonRepository seasonRepository)
         {
             _predictionRepository = predictionRepository;
             _matchRepository = matchRepository;
             _roundRepository = roundRepository;
+            _seasonRepository = seasonRepository;
         }
 
         public async Task SubmitPredictionsAsync(string userId, SubmitPredictionsRequest request)
@@ -68,16 +71,46 @@ namespace PredictionLeague.Infrastructure.Services
 
         private static int CalculatePoints(int actualHome, int actualAway, int predictedHome, int predictedAway)
         {
-            // Correct score
             if (actualHome == predictedHome && actualAway == predictedAway)
-            {
-                return 3; // Example: 3 points for exact score
-            }
+                return 5;
 
-            // Correct result (win/draw/loss)
             var actualResult = Math.Sign(actualHome - actualAway);
             var predictedResult = Math.Sign(predictedHome - predictedAway);
-            return actualResult == predictedResult ? 1 : 0;
+            return actualResult == predictedResult ? 3 : 0;
+        }
+
+        public async Task<PredictionPageDto> GetPredictionPageDataAsync(int roundId, string userId)
+        {
+            var round = await _roundRepository.GetByIdAsync(roundId) ?? throw new KeyNotFoundException("Round not found.");
+            var season = await _seasonRepository.GetByIdAsync(round.SeasonId) ?? throw new KeyNotFoundException("Season not found.");
+            var matches = await _matchRepository.GetByRoundIdAsync(roundId);
+            var userPredictions = await _predictionRepository.GetByUserIdAndRoundIdAsync(userId, roundId);
+
+            var pageData = new PredictionPageDto
+            {
+                RoundId = round.Id,
+                RoundNumber = round.RoundNumber,
+                SeasonName = season.Name,
+                Deadline = round.Deadline,
+                IsPastDeadline = round.Deadline < DateTime.UtcNow,
+                Matches = matches.Select(m =>
+                {
+                    var prediction = userPredictions.FirstOrDefault(p => p.MatchId == m.Id);
+                    return new MatchPredictionDto
+                    {
+                        MatchId = m.Id,
+                        MatchDateTime = m.MatchDateTime,
+                        HomeTeamName = m.HomeTeam!.Name,
+                        HomeTeamLogoUrl = m.HomeTeam.LogoUrl!,
+                        AwayTeamName = m.AwayTeam!.Name,
+                        AwayTeamLogoUrl = m.AwayTeam.LogoUrl!,
+                        PredictedHomeScore = prediction?.PredictedHomeScore,
+                        PredictedAwayScore = prediction?.PredictedAwayScore
+                    };
+                }).ToList()
+            };
+
+            return pageData;
         }
     }
 }

@@ -1,23 +1,56 @@
-﻿.dashboard-container {
-    width: 90%; /* Increased width to accommodate columns */
+﻿
+.dashboard-container {
+    width: 90%;
     max-width: 1400px;
     margin: auto;
 }
 
-.rounds-grid {
-    display: grid;
-    /* Updated to show 3 cards on desktop in the main column */
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.5rem;
+.dashboard-card {
+    background-color: var(--pl-light-purple);
+    padding: 2rem;
+    border-radius: 8px;
+    color: white;
+    display: flex;
+    flex-direction: column;
 }
 
+.carousel-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-grow: 1;
+}
+
+.carousel-btn {
+    background: none;
+    border: none;
+    color: var(--pl-green); 
+    font-size: 2.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s ease-in-out;
+}
+
+    .carousel-btn:hover {
+        color: white;
+    }
+
+    .carousel-btn:disabled {
+        color: var(--pl-purple);
+        cursor: not-allowed;
+    }
+
 .round-card {
-    background-color: var(--pl-light-purple);
+    background-color: var(--pl-purple);
     border-radius: 8px;
     overflow: hidden;
     color: white;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    max-width: 320px; 
+    flex-shrink: 0;
 }
 
 .round-card-header {
@@ -41,19 +74,23 @@
     color: var(--light-text);
 }
 
+.leagues-list-container {
+    max-width: 600px;
+    margin: auto;
+    width: 100%;
+}
+
 .joinable-league-item {
     background-color: var(--pl-purple);
-    border-color: var(--pl-purple);
+    border-color: var(--pl-purple-dark);
     color: white;
     margin-bottom: 0.5rem;
     border-radius: 4px;
 }
 
     .joinable-league-item:hover {
-        background-color: var(--pl-purple);
-        border-color: var(--pl-purple);
+        background-color: #5a3e7e;
     }
-
 /* Responsive adjustments for mobile */
 @media (max-width: 992px) {
     .dashboard-container {

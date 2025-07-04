@@ -1,0 +1,191 @@
+﻿@page "/predictions/{RoundId:int}"
+
+@attribute [Authorize]
+
+@inject HttpClient Http
+
+@using PredictionLeague.Shared.Predictions
+@using PredictionLeague.Shared.Dashboard
+
+<PageTitle>Predictions - Round @(_pageData?.RoundNumber)</PageTitle>
+
+<div class="page-container">
+    <div class="form-container extra-wide">
+        @if (_isLoading)
+        {
+            <p class="text-center text-white"><em>Loading...</em></p>
+        }
+        else if (_pageData != null)
+        {
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold text-white mb-0">@_pageData.SeasonName - Round @_pageData.RoundNumber</h3>
+                <span class="badge bg-danger">Deadline: @_pageData.Deadline.ToString("ddd dd MMM, HH:mm")</span>
+            </div>
+
+            <EditForm Model="_model" OnValidSubmit="HandleSubmitPredictions">
+                <DataAnnotationsValidator />
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert-danger">@_errorMessage</div>
+                }
+                @if (!string.IsNullOrEmpty(_successMessage))
+                {
+                    <div class="alert alert-success">@_successMessage</div>
+                }
+
+                <div class="prediction-grid">
+                    @foreach (var match in _pageData.Matches)
+                    {
+                        <div class="prediction-card">
+                            <div class="prediction-card-header">
+                                @match.MatchDateTime.ToString("dddd dd MMMM, HH:mm")
+                            </div>
+                            <div class="prediction-card-body">
+                                <div class="team-display">
+                                    <img src="@match.HomeTeamLogoUrl" class="match-logo" />
+                                    <span class="team-name">@match.HomeTeamName</span>
+                                </div>
+                                <div class="score-input-group">
+                                    <!-- Home Score Stepper -->
+                                    <div class="score-input-stepper">
+                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, true, 1)" disabled="@_pageData.IsPastDeadline">
+                                            <span class="bi bi-caret-up-fill"></span>
+                                        </button>
+                                        <div class="score-value">@match.PredictedHomeScore</div>
+                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, true, -1)" disabled="@_pageData.IsPastDeadline">
+                                            <span class="bi bi-caret-down-fill"></span>
+                                        </button>
+                                    </div>
+                                    <span class="vs-separator">-</span>
+                                    <!-- Away Score Stepper -->
+                                    <div class="score-input-stepper">
+                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, false, 1)" disabled="@_pageData.IsPastDeadline">
+                                            <span class="bi bi-caret-up-fill"></span>
+                                        </button>
+                                        <div class="score-value">@match.PredictedAwayScore</div>
+                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, false, -1)" disabled="@_pageData.IsPastDeadline">
+                                            <span class="bi bi-caret-down-fill"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="team-display">
+                                    <img src="@match.AwayTeamLogoUrl" class="match-logo" />
+                                    <span class="team-name">@match.AwayTeamName</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (!_pageData.IsPastDeadline)
+                {
+                    <div class="d-flex justify-content-end mt-4">
+                        <button type="submit" class="btn btn-lg green-button" disabled="@_isBusy">
+                            @if (_isBusy)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                                <span> Saving...</span>
+         }
+        else
+        {
+                                <span>Save Predictions</span>
+                            }
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning mt-4">The deadline for this round has passed. Predictions are locked.</div>
+                }
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int RoundId { get; set; }
+
+    private PredictionPageDto? _pageData;
+    private SubmitPredictionsRequest _model = new();
+    private bool _isLoading = true;
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _pageData = await Http.GetFromJsonAsync<PredictionPageDto>($"api/predictions/{RoundId}");
+            if (_pageData != null)
+            {
+                foreach (var match in _pageData.Matches)
+                {
+                    match.PredictedHomeScore ??= 0;
+                    match.PredictedAwayScore ??= 0;
+                }
+
+                _model.RoundId = _pageData.RoundId;
+                _model.Predictions = _pageData.Matches.Select(m => new PredictionSubmission
+                {
+                    MatchId = m.MatchId,
+                    PredictedHomeScore = m.PredictedHomeScore ?? 0,
+                    PredictedAwayScore = m.PredictedAwayScore ?? 0
+                }).ToList();
+            }
+        }
+        catch (Exception) { _errorMessage = "Could not load prediction data."; }
+        finally { _isLoading = false; }
+    }
+
+    private void UpdateScore(MatchPredictionDto match, bool isHomeTeam, int delta)
+    {
+        if (isHomeTeam)
+        {
+            var currentScore = match.PredictedHomeScore ?? 0;
+            var newScore = currentScore + delta;
+            if (newScore >= 0 && newScore <= 9)
+            {
+                match.PredictedHomeScore = newScore;
+            }
+        }
+        else
+        {
+            var currentScore = match.PredictedAwayScore ?? 0;
+            var newScore = currentScore + delta;
+            if (newScore >= 0 && newScore <= 9)
+            {
+                match.PredictedAwayScore = newScore;
+            }
+        }
+    }
+
+    private async Task HandleSubmitPredictions()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        if (_pageData != null)
+        {
+            _model.Predictions = _pageData.Matches.Select(m => new PredictionSubmission
+            {
+                MatchId = m.MatchId,
+                PredictedHomeScore = m.PredictedHomeScore ?? 0,
+                PredictedAwayScore = m.PredictedAwayScore ?? 0
+            }).ToList();
+        }
+
+        var response = await Http.PostAsJsonAsync("api/predictions", _model);
+        if (response.IsSuccessStatusCode)
+        {
+            _successMessage = "Your predictions have been saved successfully!";
+        }
+        else
+        {
+            _errorMessage = "There was an error saving your predictions.";
+        }
+        _isBusy = false;
+    }
+}

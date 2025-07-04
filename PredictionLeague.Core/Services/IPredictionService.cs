@@ -6,5 +6,6 @@ namespace PredictionLeague.Core.Services
     {
         Task SubmitPredictionsAsync(string userId, SubmitPredictionsRequest request);
         Task CalculatePointsForMatchAsync(int matchId);
+        Task<PredictionPageDto> GetPredictionPageDataAsync(int roundId, string userId);
     }
 }

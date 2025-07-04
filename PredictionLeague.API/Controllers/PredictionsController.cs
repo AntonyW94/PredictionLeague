@@ -18,6 +18,14 @@ namespace PredictionLeague.API.Controllers
             _predictionService = predictionService;
         }
 
+        [HttpGet("{roundId}")]
+        public async Task<IActionResult> GetPredictionPageData(int roundId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var pageData = await _predictionService.GetPredictionPageDataAsync(roundId, userId!);
+            return Ok(pageData);
+        }
+
         [HttpPost]
         public async Task<IActionResult> SubmitPredictions([FromBody] SubmitPredictionsRequest request)
         {

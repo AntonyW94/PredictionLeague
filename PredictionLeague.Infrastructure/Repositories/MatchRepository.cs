@@ -37,19 +37,19 @@ namespace PredictionLeague.Infrastructure.Repositories
 
         public async Task<IEnumerable<Match>> GetByRoundIdAsync(int roundId)
         {
-            using var dbConnection = Connection;
+            using var connection = Connection;
             const string sql = @"
                 SELECT
                     m.*,
-                    ht.[Id] as HomeTeamId, ht.[Name] as HomeTeamName,
-                    at.[Id] as AwayTeamId, at.[Name] as AwayTeamName
+                    ht.*,
+                    at.*
                 FROM [Matches] m
-                JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
-                JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
+                INNER JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
+                INNER JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
                 WHERE m.[RoundId] = @RoundId
                 ORDER BY m.[MatchDateTime];";
 
-            var matches = await dbConnection.QueryAsync<Match, Team, Team, Match>(
+            var matches = await connection.QueryAsync<Match, Team, Team, Match>(
                 sql,
                 (match, homeTeam, awayTeam) =>
                 {
@@ -58,7 +58,7 @@ namespace PredictionLeague.Infrastructure.Repositories
                     return match;
                 },
                 new { RoundId = roundId },
-                splitOn: "HomeTeamId,AwayTeamId"
+                splitOn: "Id,Id" // Split on the "Id" column for the home and away teams
             );
             return matches;
         }
