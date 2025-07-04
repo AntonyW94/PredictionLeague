@@ -1,34 +1,34 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PredictionLeague.Core.Repositories;
+using PredictionLeague.Core.Services;
 
-namespace PredictionLeague.API.Controllers
+namespace PredictionLeague.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class SeasonsController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class SeasonsController : ControllerBase
+    private readonly ISeasonService _seasonService;
+
+    public SeasonsController(ISeasonService seasonService)
     {
-        private readonly ISeasonRepository _seasonRepository;
+        _seasonService = seasonService;
+    }
 
-        public SeasonsController(ISeasonRepository seasonRepository)
+    [HttpGet]
+    public async Task<IActionResult> GetAllSeasons()
+    {
+        var seasons = await _seasonService.GetAllAsync();
+        return Ok(seasons);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetSeasonById(int id)
+    {
+        var season = await _seasonService.GetByIdAsync(id);
+        if (season == null)
         {
-            _seasonRepository = seasonRepository;
+            return NotFound();
         }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAllSeasons()
-        {
-            var seasons = await _seasonRepository.GetAllAsync();
-            return Ok(seasons);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetSeasonById(int id)
-        {
-            var season = await _seasonRepository.GetByIdAsync(id);
-            if (season == null)
-                return NotFound();
-
-            return Ok(season);
-        }
+        return Ok(season);
     }
 }

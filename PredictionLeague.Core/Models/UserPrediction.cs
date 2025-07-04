@@ -1,14 +1,13 @@
-﻿namespace PredictionLeague.Core.Models
+﻿namespace PredictionLeague.Core.Models;
+
+public class UserPrediction
 {
-    public class UserPrediction
-    {
-        public int Id { get; set; }
-        public int MatchId { get; set; }
-        public string UserId { get; set; } = string.Empty;
-        public int PredictedHomeScore { get; set; }
-        public int PredictedAwayScore { get; set; }
-        public int? PointsAwarded { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-    }
+    public int Id { get; init; }
+    public int MatchId { get; init; }
+    public string UserId { get; init; } = string.Empty;
+    public int PredictedHomeScore { get; init; }
+    public int PredictedAwayScore { get; init; }
+    public int? PointsAwarded { get; set; }
+    public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
 }

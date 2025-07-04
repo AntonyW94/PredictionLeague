@@ -1,35 +1,33 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PredictionLeague.Core.Repositories;
+using PredictionLeague.Core.Services;
 
-namespace PredictionLeague.API.Controllers
+namespace PredictionLeague.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class TeamsController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class TeamsController : ControllerBase
+    private readonly ITeamService _teamService;
+
+    public TeamsController(ITeamService teamService) 
     {
-        private readonly ITeamRepository _teamRepository;
+        _teamService = teamService;
+    }
 
-        public TeamsController(ITeamRepository teamRepository)
-        {
-            _teamRepository = teamRepository;
-        }
+    [HttpGet]
+    public async Task<IActionResult> GetAllTeams()
+    {
+        var teams = await _teamService.GetAllAsync();
+        return Ok(teams);
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllTeams()
-        {
-            var teams = await _teamRepository.GetAllAsync();
-            return Ok(teams);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetTeamById(int id)
-        {
-            var team = await _teamRepository.GetByIdAsync(id);
-            if (team == null)
-            {
-                return NotFound();
-            }
-            return Ok(team);
-        }
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetTeamById(int id)
+    {
+        var team = await _teamService.GetByIdAsync(id);
+        if (team == null)
+            return NotFound();
+           
+        return Ok(team);
     }
 }

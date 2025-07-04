@@ -1,127 +1,145 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PredictionLeague.Core.Services.PredictionLeague.Core.Services;
+using PredictionLeague.Core.Services;
 using PredictionLeague.Shared.Admin;
 using PredictionLeague.Shared.Admin.Leagues;
+using PredictionLeague.Shared.Admin.Results;
 using PredictionLeague.Shared.Admin.Rounds;
 using PredictionLeague.Shared.Admin.Seasons;
 using PredictionLeague.Shared.Admin.Teams;
 using PredictionLeague.Shared.Leagues;
 using System.Security.Claims;
 
-namespace PredictionLeague.API.Controllers
+namespace PredictionLeague.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize(Roles = "Administrator")]
+public class AdminController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize(Roles = "Administrator")]
-    public class AdminController : ControllerBase
+    private readonly IAdminService _adminService;
+
+    public AdminController(IAdminService adminService)
     {
-        private readonly IAdminService _adminService;
+        _adminService = adminService;
+    }
 
-        public AdminController(IAdminService adminService)
-        {
-            _adminService = adminService;
-        }
+    #region Seasons
 
-        #region Seasons
+    [HttpGet("seasons")]
+    public async Task<IActionResult> GetAllSeasons()
+    {
+        var seasons = await _adminService.GetAllSeasonsAsync();
+        return Ok(seasons);
+    }
 
-        [HttpGet("seasons")]
-        public async Task<IActionResult> GetAllSeasons()
-        {
-            var seasons = await _adminService.GetAllSeasonsAsync();
-            return Ok(seasons);
-        }
+    [HttpPost("seasons")]
+    public async Task<IActionResult> CreateSeason([FromBody] CreateSeasonRequest request)
+    {
+        await _adminService.CreateSeasonAsync(request);
+        return Ok(new { message = "Season created successfully." });
+    }
 
-        [HttpPost("seasons")]
-        public async Task<IActionResult> CreateSeason([FromBody] CreateSeasonRequest request)
-        {
-            await _adminService.CreateSeasonAsync(request);
-            return Ok(new { message = "Season created successfully." });
-        }
+    [HttpPut("seasons/{id}")]
+    public async Task<IActionResult> UpdateSeason(int id, [FromBody] UpdateSeasonRequest request)
+    {
+        await _adminService.UpdateSeasonAsync(id, request);
+        return Ok(new { message = "Season updated successfully." });
+    }
 
-        [HttpPut("seasons/{id}")]
-        public async Task<IActionResult> UpdateSeason(int id, [FromBody] UpdateSeasonRequest request)
-        {
-            await _adminService.UpdateSeasonAsync(id, request);
-            return Ok(new { message = "Season updated successfully." });
-        }
+    #endregion
 
-        #endregion
+    #region Rounds
 
-        #region Rounds
+    [HttpGet("seasons/{seasonId}/rounds")]
+    public async Task<IActionResult> GetRoundsForSeason(int seasonId)
+    {
+        var rounds = await _adminService.GetRoundsForSeasonAsync(seasonId);
+        return Ok(rounds);
+    }
 
-        [HttpGet("seasons/{seasonId}/rounds")]
-        public async Task<IActionResult> GetRoundsForSeason(int seasonId)
-        {
-            var rounds = await _adminService.GetRoundsForSeasonAsync(seasonId);
-            return Ok(rounds);
-        }
-
-        [HttpGet("rounds/{roundId}")]
-        public async Task<IActionResult> GetRoundById(int roundId)
+    [HttpGet("rounds/{roundId}")]
+    public async Task<IActionResult> GetRoundById(int roundId)
+    {
+        try
         {
             var roundDetails = await _adminService.GetRoundByIdAsync(roundId);
             return Ok(roundDetails);
         }
-
-        [HttpPost("round")]
-        public async Task<IActionResult> CreateRound([FromBody] CreateRoundRequest request)
+        catch (KeyNotFoundException ex)
         {
-            await _adminService.CreateRoundAsync(request);
-            return Ok(new { message = "Round and matches created successfully." });
+            return NotFound(new { message = ex.Message });
         }
-
-        [HttpPut("rounds/{roundId}")]
-        public async Task<IActionResult> UpdateRound(int roundId, [FromBody] UpdateRoundRequest request)
-        {
-            await _adminService.UpdateRoundAsync(roundId, request);
-            return Ok(new { message = "Round updated successfully." });
-        }
-
-        #endregion
-
-        #region Teams
-
-        [HttpPost("teams")]
-        public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
-        {
-            var createdTeam = await _adminService.CreateTeamAsync(request);
-            return CreatedAtAction(nameof(TeamsController.GetTeamById), "Teams", new { id = createdTeam.Id }, createdTeam);
-        }
-
-        [HttpPut("teams/{id}")]
-        public async Task<IActionResult> UpdateTeam(int id, [FromBody] UpdateTeamRequest request)
-        {
-            await _adminService.UpdateTeamAsync(id, request);
-            return Ok(new { message = "Team updated successfully." });
-        }
-
-        #endregion
-
-        #region Leagues
-
-        [HttpGet("leagues")]
-        public async Task<IActionResult> GetAllLeagues()
-        {
-            var leagues = await _adminService.GetAllLeaguesAsync();
-            return Ok(leagues);
-        }
-
-        [HttpPost("leagues")]
-        public async Task<IActionResult> CreateLeague([FromBody] CreateLeagueRequest request)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            await _adminService.CreateLeagueAsync(request, userId!);
-            return Ok(new { message = "League created successfully." });
-        }
-
-        [HttpPut("leagues/{id}")]
-        public async Task<IActionResult> UpdateLeague(int id, [FromBody] UpdateLeagueRequest request)
-        {
-            await _adminService.UpdateLeagueAsync(id, request);
-            return Ok(new { message = "League updated successfully." });
-        }
-
-        #endregion
     }
+
+    [HttpPost("round")]
+    public async Task<IActionResult> CreateRound([FromBody] CreateRoundRequest request)
+    {
+        await _adminService.CreateRoundAsync(request);
+        return Ok(new { message = "Round and matches created successfully." });
+    }
+
+    [HttpPut("rounds/{roundId}")]
+    public async Task<IActionResult> UpdateRound(int roundId, [FromBody] UpdateRoundRequest request)
+    {
+        await _adminService.UpdateRoundAsync(roundId, request);
+        return Ok(new { message = "Round updated successfully." });
+    }
+
+    #endregion
+
+    #region Teams
+
+    [HttpPost("teams")]
+    public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
+    {
+        var createdTeam = await _adminService.CreateTeamAsync(request);
+        return CreatedAtAction(nameof(TeamsController.GetTeamById), "Teams", new { id = createdTeam.Id }, createdTeam);
+    }
+
+    [HttpPut("teams/{id}")]
+    public async Task<IActionResult> UpdateTeam(int id, [FromBody] UpdateTeamRequest request)
+    {
+        await _adminService.UpdateTeamAsync(id, request);
+        return Ok(new { message = "Team updated successfully." });
+    }
+
+    #endregion
+
+    #region Leagues
+
+    [HttpGet("leagues")]
+    public async Task<IActionResult> GetAllLeagues()
+    {
+        var leagues = await _adminService.GetAllLeaguesAsync();
+        return Ok(leagues);
+    }
+
+    [HttpPost("leagues")]
+    public async Task<IActionResult> CreateLeague([FromBody] CreateLeagueRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        await _adminService.CreateLeagueAsync(request, userId!);
+        return Ok(new { message = "League created successfully." });
+    }
+
+    [HttpPut("leagues/{id}")]
+    public async Task<IActionResult> UpdateLeague(int id, [FromBody] UpdateLeagueRequest request)
+    {
+        await _adminService.UpdateLeagueAsync(id, request);
+        return Ok(new { message = "League updated successfully." });
+    }
+
+    #endregion
+
+    #region Matches
+
+    [HttpPut("results")]
+    public async Task<IActionResult> UpdateResults([FromBody] List<UpdateResultRequest>? request)
+    {
+        await _adminService.UpdateMatchResultsAsync(request);
+        return Ok(new { message = "Results updated and points calculated successfully." });
+    }
+
+    #endregion
 }

@@ -1,22 +1,21 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace PredictionLeague.Shared.Admin
+namespace PredictionLeague.Shared.Admin;
+
+public class CreateRoundRequest
 {
-    public class CreateRoundRequest
-    {
-        [Required]
-        public int SeasonId { get; set; }
+    [Required]
+    public int SeasonId { get; set; }
 
-        [Required]
-        [Range(1, 52)]
-        public int RoundNumber { get; set; }
+    [Required]
+    [Range(1, 52)]
+    public int RoundNumber { get; set; }
 
-        [Required]
-        public DateTime StartDate { get; set; }
+    [Required]
+    public DateTime StartDate { get; set; }
         
-        [Required]
-        public DateTime Deadline { get; set; }
+    [Required]
+    public DateTime Deadline { get; set; }
 
-        public List<CreateMatchRequest> Matches { get; set; } = new();
-    }
+    public List<CreateMatchRequest> Matches { get; set; } = new();
 }

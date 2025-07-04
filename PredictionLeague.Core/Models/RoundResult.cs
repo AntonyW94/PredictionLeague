@@ -1,10 +1,9 @@
-﻿namespace PredictionLeague.Core.Models
+﻿namespace PredictionLeague.Core.Models;
+
+public class RoundResult
 {
-    public class RoundResult
-    {
-        public int Id { get; set; }
-        public int RoundId { get; set; }
-        public string UserId { get; set; } = string.Empty;
-        public int TotalPoints { get; set; }
-    }
+    public int Id { get; init; }
+    public int RoundId { get; init; }
+    public string UserId { get; init; } = string.Empty;
+    public int TotalPoints { get; init; }
 }

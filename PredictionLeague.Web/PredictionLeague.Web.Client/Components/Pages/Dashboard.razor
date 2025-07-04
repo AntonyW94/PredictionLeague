@@ -68,11 +68,11 @@
                 <div class="col-lg-4 mb-4">
                     <div class="dashboard-card h-100">
                         <h3 class="text-white text-center fw-bold mb-3">Leagues</h3>
-                        @if (_dashboardData?.JoinablePublicLeagues != null && _dashboardData.JoinablePublicLeagues.Any())
+                        @if (_dashboardData?.PublicLeagues != null && _dashboardData.PublicLeagues.Any())
                         {
                             <div class="leagues-list-container">
                                 <div class="list-group">
-                                    @foreach (var league in _dashboardData.JoinablePublicLeagues)
+                                    @foreach (var league in _dashboardData.PublicLeagues)
                                     {
                                         <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center joinable-league-item">
                                             <div>

@@ -1,15 +1,12 @@
-﻿namespace PredictionLeague.Shared.Admin.Matches;
+﻿namespace PredictionLeague.Shared.Admin.Results;
 
-public class MatchDto
+public class MatchResultDto
 {
     public int Id { get; set; }
-    public int HomeTeamId { get; set; }
     public string HomeTeamName { get; set; } = string.Empty;
     public string HomeTeamLogoUrl { get; set; } = string.Empty;
-    public int AwayTeamId { get; set; }
     public string AwayTeamName { get; set; } = string.Empty;
     public string AwayTeamLogoUrl { get; set; } = string.Empty;
-    public DateTime MatchDateTime { get; set; }
     public int? ActualHomeScore { get; set; }
     public int? ActualAwayScore { get; set; }
 }

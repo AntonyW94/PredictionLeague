@@ -1,77 +1,71 @@
 ﻿using Dapper;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
-using PredictionLeague.Shared.Admin.Seasons;
+using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
 namespace PredictionLeague.Infrastructure.Repositories;
 
 public class SeasonRepository : ISeasonRepository
 {
-    private readonly string _connectionString;
+    private readonly IDbConnectionFactory _connectionFactory;
+    private IDbConnection Connection => _connectionFactory.CreateConnection();
 
-    public SeasonRepository(IConfiguration configuration)
+    public SeasonRepository(IDbConnectionFactory connectionFactory)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        _connectionFactory = connectionFactory;
     }
 
-    private IDbConnection Connection => new SqlConnection(_connectionString);
+    public async Task<IEnumerable<Season>> GetAllAsync()
+    {
+        const string sql = "SELECT * FROM [Seasons] ORDER BY [StartDate] DESC;";
+
+        using var connection = Connection;
+        return await connection.QueryAsync<Season>(sql);
+    }
+
+    public async Task<Season?> GetByIdAsync(int id)
+    {
+        const string sql = "SELECT * FROM [Seasons] WHERE [Id] = @Id;";
+
+        using var connection = Connection;
+        return await connection.QuerySingleOrDefaultAsync<Season>(sql, new { Id = id });
+    }
 
     public async Task AddAsync(Season season)
     {
-        using var dbConnection = Connection;
-        const string sql = "INSERT INTO [Seasons] ([Name], [StartDate], [EndDate], [IsActive]) VALUES (@Name, @StartDate, @EndDate, @IsActive);";
-        await dbConnection.ExecuteAsync(sql, season);
+        const string sql = @"
+                INSERT INTO [Seasons]
+                (
+                    [Name],
+                    [StartDate],
+                    [EndDate],
+                    [IsActive]
+                )
+                VALUES
+                (
+                    @Name,
+                    @StartDate,
+                    @EndDate,
+                    @IsActive
+                );";
+            
+        using var connection = Connection;
+        await connection.ExecuteAsync(sql, season);
     }
 
-    public async Task<IEnumerable<SeasonDto>> GetAllAsync()
+    public async Task UpdateAsync(Season season)
     {
-        using var connection = Connection;
         const string sql = @"
-                SELECT 
-                    s.[Id],
-                    s.[Name],
-                    s.[StartDate],
-                    s.[EndDate],
-                    s.[IsActive],
-                    COUNT(r.[Id]) AS RoundCount
-                FROM [Seasons] s
-                LEFT JOIN [Rounds] r ON s.[Id] = r.[SeasonId]
-                GROUP BY s.[Id], s.[Name], s.[StartDate], s.[EndDate], s.[IsActive]
-                ORDER BY s.[StartDate] DESC;";
-        return await connection.QueryAsync<SeasonDto>(sql);
-    }
-
-    public async Task<SeasonDto?> GetByIdAsync(int id)
-    {
-        using var connection = Connection;
-        const string sql = @"
-                SELECT 
-                    s.[Id],
-                    s.[Name],
-                    s.[StartDate],
-                    s.[EndDate],
-                    s.[IsActive],
-                    COUNT(r.[Id]) AS RoundCount
-                FROM [Seasons] s
-                LEFT JOIN [Rounds] r ON s.[Id] = r.[SeasonId]
-                WHERE s.[Id] = @Id
-                GROUP BY s.[Id], s.[Name], s.[StartDate], s.[EndDate], s.[IsActive];";
-        return await connection.QuerySingleOrDefaultAsync<SeasonDto>(sql, new { Id = id });
-    }
-
-    public async Task UpdateAsync(int id, UpdateSeasonRequest request)
-    {
-        using var connection = Connection;
-        const string sql = @"
-                UPDATE [Seasons] SET
+                UPDATE [Seasons]
+                SET
                     [Name] = @Name,
                     [StartDate] = @StartDate,
                     [EndDate] = @EndDate,
                     [IsActive] = @IsActive
                 WHERE [Id] = @Id;";
-        await connection.ExecuteAsync(sql, new { Id = id, request.Name, request.StartDate, request.EndDate, request.IsActive });
+          
+        using var connection = Connection;
+        await connection.ExecuteAsync(sql, season);
     }
 }

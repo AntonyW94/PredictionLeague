@@ -1,48 +1,42 @@
 ﻿using Dapper;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
+using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
 namespace PredictionLeague.Infrastructure.Repositories;
 
 public class UserPredictionRepository : IUserPredictionRepository
 {
-    private readonly string _connectionString;
+    private readonly IDbConnectionFactory _connectionFactory;
+    private IDbConnection Connection => _connectionFactory.CreateConnection();
 
-    public UserPredictionRepository(IConfiguration configuration)
+    public UserPredictionRepository(IDbConnectionFactory connectionFactory)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        _connectionFactory = connectionFactory;
     }
-
-    private IDbConnection Connection => new SqlConnection(_connectionString);
 
     public async Task<IEnumerable<UserPrediction>> GetByMatchIdAsync(int matchId)
     {
-        using var dbConnection = Connection;
         const string sql = "SELECT up.* FROM [UserPredictions] up WHERE up.[MatchId] = @MatchId;";
-      
+
+        using var dbConnection = Connection;
         return await dbConnection.QueryAsync<UserPrediction>(sql, new { MatchId = matchId });
     }
 
     public async Task<IEnumerable<UserPrediction>> GetByUserIdAndRoundIdAsync(string userId, int roundId)
     {
-        using var connection = Connection;
         const string sql = @"
             SELECT up.* FROM [UserPredictions] up
             INNER JOIN [Matches] m ON up.[MatchId] = m.[Id]
             WHERE up.[UserId] = @UserId AND m.[RoundId] = @RoundId;";
+
+        using var connection = Connection;
         return await connection.QueryAsync<UserPrediction>(sql, new { UserId = userId, RoundId = roundId });
     }
 
     public async Task UpsertAsync(UserPrediction prediction)
     {
-        using var dbConnection = Connection;
-        // This MERGE statement is the core of the Upsert logic.
-        // It checks if a record exists for the match and user.
-        // If it exists (MATCHED), it UPDATES it.
-        // If it doesn't (NOT MATCHED), it INSERTS a new one.
         const string sql = @"
                 MERGE INTO [UserPredictions] AS t
                 USING (VALUES (@MatchId, @UserId)) AS s ([MatchId], [UserId])
@@ -55,7 +49,16 @@ public class UserPredictionRepository : IUserPredictionRepository
                 WHEN NOT MATCHED BY TARGET THEN
                     INSERT ([MatchId], [UserId], [PredictedHomeScore], [PredictedAwayScore], [PointsAwarded], [CreatedAt], [UpdatedAt])
                     VALUES (@MatchId, @UserId, @PredictedHomeScore, @PredictedAwayScore, NULL, GETDATE(), GETDATE());";
-      
+
+        using var dbConnection = Connection;
         await dbConnection.ExecuteAsync(sql, prediction);
+    }
+
+    public async Task UpdatePointsAsync(int predictionId, int points)
+    {
+        const string sql = "UPDATE [UserPredictions] SET [PointsAwarded] = @Points WHERE [Id] = @PredictionId;";
+
+        using var connection = Connection;
+        await connection.ExecuteAsync(sql, new { Points = points, PredictionId = predictionId });
     }
 }

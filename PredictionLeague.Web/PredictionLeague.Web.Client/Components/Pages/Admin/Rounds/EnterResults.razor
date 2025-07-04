@@ -1,0 +1,150 @@
+﻿@page "/admin/rounds/{RoundId:int}/results"
+@attribute [Authorize(Roles = "Administrator")]
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@using PredictionLeague.Shared.Admin.Results
+@using PredictionLeague.Shared.Admin.Rounds
+
+<PageTitle>Enter Results - Round @_roundNumber</PageTitle>
+
+<div class="page-container">
+    <div class="form-container wide">
+        <h3 class="text-center fw-bold text-white mb-4">Enter Results for Round @_roundNumber</h3>
+
+        @if (_isLoading)
+        {
+            <p class="text-center text-white"><em>Loading matches...</em></p>
+        }
+        else if (_matches != null)
+        {
+            <EditForm Model="_matches" OnValidSubmit="HandleSaveResults">
+                <DataAnnotationsValidator />
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert-danger">@_errorMessage</div>
+                }
+                @if (!string.IsNullOrEmpty(_successMessage))
+                {
+                    <div class="alert alert-success">@_successMessage</div>
+                }
+
+                <div class="prediction-grid">
+                    @foreach (var match in _matches)
+                    {
+                        <div class="prediction-card">
+                            <div class="prediction-card-body">
+                                <div class="team-display">
+                                    <img src="@match.HomeTeamLogoUrl" class="match-logo" />
+                                    <span class="team-name">@match.HomeTeamName</span>
+                                </div>
+                                <div class="score-input-group">
+                                    <InputNumber class="form-control score-input" @bind-Value="match.ActualHomeScore" />
+                                    <span class="vs-separator">-</span>
+                                    <InputNumber class="form-control score-input" @bind-Value="match.ActualAwayScore" />
+                                </div>
+                                <div class="team-display">
+                                    <img src="@match.AwayTeamLogoUrl" class="match-logo" />
+                                    <span class="team-name">@match.AwayTeamName</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn pink-button" @onclick="BackToRounds">Cancel</button>
+                    <button type="submit" class="btn green-button" disabled="@_isBusy">
+                        @if (_isBusy)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                            <span> Saving...</span>
+     }
+    else
+    {
+                            <span>Save Results & Calculate Points</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int RoundId { get; set; }
+
+    private List<MatchResultDto>? _matches;
+    private int _seasonId;
+    private int _roundNumber;
+    private bool _isLoading = true;
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/admin/rounds/{RoundId}");
+            if (roundDetails != null)
+            {
+                _seasonId = roundDetails.Round.SeasonId;
+                _roundNumber = roundDetails.Round.RoundNumber;
+                _matches = roundDetails.Matches.Select(m => new MatchResultDto
+                {
+                    Id = m.Id,
+                    HomeTeamName = m.HomeTeamName,
+                    HomeTeamLogoUrl = m.HomeTeamLogoUrl,
+                    AwayTeamName = m.AwayTeamName,
+                    AwayTeamLogoUrl = m.AwayTeamLogoUrl,
+                    ActualHomeScore = m.ActualHomeScore,
+                    ActualAwayScore = m.ActualAwayScore
+                }).ToList();
+            }
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Could not load round details.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandleSaveResults()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        var resultsToUpdate = _matches!
+            .Select(m => new UpdateResultRequest
+            {
+                MatchId = m.Id,
+                HomeScore = m.ActualHomeScore ?? 0,
+                AwayScore = m.ActualAwayScore ?? 0
+            }).ToList();
+
+        var response = await Http.PutAsJsonAsync("api/admin/results", resultsToUpdate);
+
+        if (response.IsSuccessStatusCode)
+        {
+            _successMessage = "Results saved and points calculated successfully!";
+        }
+        else
+        {
+            _errorMessage = "There was an error saving the results.";
+        }
+
+        _isBusy = false;
+    }
+
+    private void BackToRounds()
+    {
+        NavigationManager.NavigateTo($"/admin/seasons/{_seasonId}/rounds");
+    }
+}

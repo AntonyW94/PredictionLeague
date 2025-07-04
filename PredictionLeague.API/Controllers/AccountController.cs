@@ -5,67 +5,66 @@ using PredictionLeague.Core.Models;
 using PredictionLeague.Shared.Account;
 using System.Security.Claims;
 
-namespace PredictionLeague.API.Controllers
+namespace PredictionLeague.API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class AccountController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class AccountController : ControllerBase
+    private readonly UserManager<ApplicationUser> _userManager;
+
+    public AccountController(UserManager<ApplicationUser> userManager)
     {
-        private readonly UserManager<ApplicationUser> _userManager;
+        _userManager = userManager;
+    }
 
-        public AccountController(UserManager<ApplicationUser> userManager)
+    // GET: api/account/details
+    [HttpGet("details")]
+    public async Task<IActionResult> GetUserDetails()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var user = await _userManager.FindByIdAsync(userId);
+
+        if (user == null)
         {
-            _userManager = userManager;
+            return NotFound("User not found.");
         }
 
-        // GET: api/account/details
-        [HttpGet("details")]
-        public async Task<IActionResult> GetUserDetails()
+        var userDetails = new UserDetails
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _userManager.FindByIdAsync(userId);
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber // Added PhoneNumber
+        };
 
-            if (user == null)
-            {
-                return NotFound("User not found.");
-            }
+        return Ok(userDetails);
+    }
 
-            var userDetails = new UserDetails
-            {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                PhoneNumber = user.PhoneNumber // Added PhoneNumber
-            };
+    // PUT: api/account/details
+    [HttpPut("details")]
+    public async Task<IActionResult> UpdateUserDetails([FromBody] UpdateUserDetailsRequest request)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var user = await _userManager.FindByIdAsync(userId);
 
-            return Ok(userDetails);
+        if (user == null)
+        {
+            return NotFound("User not found.");
         }
 
-        // PUT: api/account/details
-        [HttpPut("details")]
-        public async Task<IActionResult> UpdateUserDetails([FromBody] UpdateUserDetailsRequest request)
+        user.FirstName = request.FirstName;
+        user.LastName = request.LastName;
+        user.PhoneNumber = request.PhoneNumber; // Added PhoneNumber update
+
+        var result = await _userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _userManager.FindByIdAsync(userId);
-
-            if (user == null)
-            {
-                return NotFound("User not found.");
-            }
-
-            user.FirstName = request.FirstName;
-            user.LastName = request.LastName;
-            user.PhoneNumber = request.PhoneNumber; // Added PhoneNumber update
-
-            var result = await _userManager.UpdateAsync(user);
-
-            if (!result.Succeeded)
-            {
-                return BadRequest(result.Errors);
-            }
-
-            return Ok(new { message = "Details updated successfully." });
+            return BadRequest(result.Errors);
         }
+
+        return Ok(new { message = "Details updated successfully." });
     }
 }

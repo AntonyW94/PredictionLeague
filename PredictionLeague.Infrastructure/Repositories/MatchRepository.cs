@@ -1,44 +1,43 @@
 ﻿using Dapper;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
+using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
-namespace PredictionLeague.Infrastructure.Repositories
+namespace PredictionLeague.Infrastructure.Repositories;
+
+public class MatchRepository : IMatchRepository
 {
-    public class MatchRepository : IMatchRepository
+    private readonly IDbConnectionFactory _connectionFactory;
+    private IDbConnection Connection => _connectionFactory.CreateConnection();
+
+    public MatchRepository(IDbConnectionFactory connectionFactory)
     {
-        private readonly string _connectionString;
+        _connectionFactory = connectionFactory;
+    }
 
-        public MatchRepository(IConfiguration configuration)
-        {
-            _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-        }
-
-        private IDbConnection Connection => new SqlConnection(_connectionString);
-
-        public async Task AddAsync(Match match)
-        {
-            using var dbConnection = Connection;
-            var sql = @"
+    public async Task AddAsync(Match match)
+    {
+        const string sql = @"
                 INSERT INTO [Matches] ([RoundId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status])
                 VALUES (@RoundId, @HomeTeamId, @AwayTeamId, @MatchDateTime, @Status);";
-            await dbConnection.ExecuteAsync(sql, match);
-        }
 
-        public async Task<Match?> GetByIdAsync(int id)
-        {
-            using var dbConnection = Connection;
-            const string sql = @"SELECT m.* FROM [Matches] m WHERE m.[Id] = @Id;";
-            
-            return await dbConnection.QuerySingleOrDefaultAsync<Match>(sql, new { Id = id });
-        }
+        using var dbConnection = Connection;
+        await dbConnection.ExecuteAsync(sql, match);
+    }
 
-        public async Task<IEnumerable<Match>> GetByRoundIdAsync(int roundId)
-        {
-            using var connection = Connection;
-            const string sql = @"
+    public async Task<Match?> GetByIdAsync(int id)
+    {
+        const string sql = @"SELECT m.* FROM [Matches] m WHERE m.[Id] = @Id;";
+
+
+        using var dbConnection = Connection;
+        return await dbConnection.QuerySingleOrDefaultAsync<Match>(sql, new { Id = id });
+    }
+
+    public async Task<IEnumerable<Match>> GetByRoundIdAsync(int roundId)
+    {
+        const string sql = @"
                 SELECT
                     m.*,
                     ht.*,
@@ -49,24 +48,24 @@ namespace PredictionLeague.Infrastructure.Repositories
                 WHERE m.[RoundId] = @RoundId
                 ORDER BY m.[MatchDateTime];";
 
-            var matches = await connection.QueryAsync<Match, Team, Team, Match>(
-                sql,
-                (match, homeTeam, awayTeam) =>
-                {
-                    match.HomeTeam = homeTeam;
-                    match.AwayTeam = awayTeam;
-                    return match;
-                },
-                new { RoundId = roundId },
-                splitOn: "Id,Id" // Split on the "Id" column for the home and away teams
-            );
-            return matches;
-        }
+        using var connection = Connection;
+        var matches = await connection.QueryAsync<Match, Team, Team, Match>(
+            sql,
+            (match, homeTeam, awayTeam) =>
+            {
+                match.HomeTeam = homeTeam;
+                match.AwayTeam = awayTeam;
+                return match;
+            },
+            new { RoundId = roundId },
+            splitOn: "Id,Id"
+        );
+        return matches;
+    }
 
-        public async Task UpdateAsync(Match match)
-        {
-            using var dbConnection = Connection;
-            var sql = @"
+    public async Task UpdateAsync(Match match)
+    {
+        const string sql = @"
                 UPDATE [Matches]
                 SET [RoundId] = @RoundId,
                     [HomeTeamId] = @HomeTeamId,
@@ -76,15 +75,16 @@ namespace PredictionLeague.Infrastructure.Repositories
                     [ActualHomeTeamScore] = @ActualHomeTeamScore,
                     [ActualAwayTeamScore] = @ActualAwayTeamScore
                 WHERE [Id] = @Id;";
-            
-            await dbConnection.ExecuteAsync(sql, match);
-        }
 
-        public async Task DeleteByRoundIdAsync(int roundId)
-        {
-            using var connection = Connection;
-            const string sql = "DELETE FROM [Matches] WHERE [RoundId] = @RoundId;";
-            await connection.ExecuteAsync(sql, new { RoundId = roundId });
-        }
+        using var dbConnection = Connection;
+        await dbConnection.ExecuteAsync(sql, match);
+    }
+
+    public async Task DeleteByRoundIdAsync(int roundId)
+    {
+        const string sql = "DELETE FROM [Matches] WHERE [RoundId] = @RoundId;";
+
+        using var connection = Connection;
+        await connection.ExecuteAsync(sql, new { RoundId = roundId });
     }
 }

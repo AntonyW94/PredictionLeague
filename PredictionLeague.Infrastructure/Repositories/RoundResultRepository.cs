@@ -1,33 +1,31 @@
 ﻿using Dapper;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
+using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
 namespace PredictionLeague.Infrastructure.Repositories;
 
 public class RoundResultRepository : IRoundResultRepository
 {
-    private readonly string _connectionString;
+    private readonly IDbConnectionFactory _connectionFactory;
+    private IDbConnection Connection => _connectionFactory.CreateConnection();
 
-    public RoundResultRepository(IConfiguration configuration)
+    public RoundResultRepository(IDbConnectionFactory connectionFactory)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        _connectionFactory = connectionFactory;
     }
-
-    private IDbConnection Connection => new SqlConnection(_connectionString);
 
     public async Task<IEnumerable<RoundResult>> GetByRoundIdAsync(int roundId)
     {
+        const string sql = "SELECT gwr.* FROM [RoundResults] r WHERE r.[RoundId] = @RoundId;";
+        
         using var dbConnection = Connection;
-        var sql = "SELECT gwr.* FROM [RoundResults] r WHERE r.[RoundId] = @RoundId;";
         return await dbConnection.QueryAsync<RoundResult>(sql, new { RoundId = roundId });
     }
 
     public async Task UpsertAsync(RoundResult result)
     {
-        using var dbConnection = Connection;
         const string sql = @"
                 MERGE INTO [RoundResults] AS t
                 USING (VALUES (@RoundId, @UserId)) AS s ([RoundId], [UserId])
@@ -37,6 +35,8 @@ public class RoundResultRepository : IRoundResultRepository
                 WHEN NOT MATCHED BY TARGET THEN
                     INSERT ([RoundId], [UserId], [TotalPoints])
                     VALUES (@RoundId, @UserId, @TotalPoints);";
+        
+        using var dbConnection = Connection;
         await dbConnection.ExecuteAsync(sql, result);
     }
 }

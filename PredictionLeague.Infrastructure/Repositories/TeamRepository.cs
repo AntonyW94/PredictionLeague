@@ -1,40 +1,38 @@
 ﻿using Dapper;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using PredictionLeague.Core.Models;
 using PredictionLeague.Core.Repositories;
+using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
-namespace PredictionLeague.Infrastructure.Repositories
+namespace PredictionLeague.Infrastructure.Repositories;
+
+public class TeamRepository : ITeamRepository
 {
-    public class TeamRepository : ITeamRepository
+    private readonly IDbConnectionFactory _connectionFactory;
+    private IDbConnection Connection => _connectionFactory.CreateConnection();
+
+    public TeamRepository(IDbConnectionFactory connectionFactory)
     {
-        private readonly string _connectionString;
+        _connectionFactory = connectionFactory;
+    }
 
-        public TeamRepository(IConfiguration configuration)
-        {
-            _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-        }
-
-        private IDbConnection Connection => new SqlConnection(_connectionString);
-
-        public async Task<IEnumerable<Team>> GetAllAsync()
-        {
-            using var connection = Connection;
-            const string sql = @"
+    public async Task<IEnumerable<Team>> GetAllAsync()
+    {
+        const string sql = @"
                 SELECT 
                     [Id], 
                     [Name], 
                     [LogoUrl] 
                 FROM [Teams] 
                 ORDER BY [Name];";
-            return await connection.QueryAsync<Team>(sql);
-        }
+            
+        using var connection = Connection;
+        return await connection.QueryAsync<Team>(sql);
+    }
 
-        public async Task<Team> AddAsync(Team team)
-        {
-            using var connection = Connection;
-            const string sql = @"
+    public async Task<Team> AddAsync(Team team)
+    {
+        const string sql = @"
                 INSERT INTO [Teams] 
                 (
                     [Name], 
@@ -46,33 +44,35 @@ namespace PredictionLeague.Infrastructure.Repositories
                     @Name, 
                     @LogoUrl
                 );";
-            var newTeam = await connection.QuerySingleAsync<Team>(sql, team);
-            return newTeam;
-        }
+            
+        using var connection = Connection;
+        return await connection.QuerySingleAsync<Team>(sql, team);
+    }
 
-        public async Task<Team?> GetByIdAsync(int id)
-        {
-            using var connection = Connection;
-            const string sql = @"
+    public async Task<Team?> GetByIdAsync(int id)
+    {
+        const string sql = @"
                 SELECT 
                     [Id], 
                     [Name], 
                     [LogoUrl] 
                 FROM [Teams] 
                 WHERE [Id] = @Id;";
-            return await connection.QuerySingleOrDefaultAsync<Team>(sql, new { Id = id });
-        }
+            
+        using var connection = Connection;
+        return await connection.QuerySingleOrDefaultAsync<Team>(sql, new { Id = id });
+    }
 
-        public async Task UpdateAsync(Team team)
-        {
-            using var connection = Connection;
-            const string sql = @"
+    public async Task UpdateAsync(Team team)
+    {
+        const string sql = @"
                 UPDATE [Teams] 
                 SET 
                     [Name] = @Name, 
                     [LogoUrl] = @LogoUrl 
                 WHERE [Id] = @Id;";
-            await connection.ExecuteAsync(sql, team);
-        }
+            
+        using var connection = Connection;
+        await connection.ExecuteAsync(sql, team);
     }
 }
