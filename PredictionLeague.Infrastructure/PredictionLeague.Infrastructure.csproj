@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PredictionLeague.Core\PredictionLeague.Core.csproj" />
+    <ProjectReference Include="..\PredictionLeague.Application\PredictionLeague.Application.csproj" />
   </ItemGroup>
 
 </Project>

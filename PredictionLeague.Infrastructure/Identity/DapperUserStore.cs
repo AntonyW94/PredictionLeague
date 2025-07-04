@@ -1,18 +1,12 @@
-﻿// In PredictionLeague.Infrastructure/Identity/DapperUserStore.cs
-using Dapper;
+﻿using Dapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
-using PredictionLeague.Core.Models;
-using System.Collections.Generic;
+using PredictionLeague.Domain.Models;
 using System.Data;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace PredictionLeague.Infrastructure.Identity;
 
-// >> UPDATED: Added IUserRoleStore<ApplicationUser> interface
 public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailStore<ApplicationUser>, IUserRoleStore<ApplicationUser>
 {
     private readonly string _connectionString;
@@ -144,9 +138,11 @@ public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailSt
     }
 
     public void Dispose() { }
+   
     #endregion
 
     #region IUserRoleStore Methods
+    
     public async Task AddToRoleAsync(ApplicationUser user, string roleName, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -216,5 +212,6 @@ public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailSt
         var users = await connection.QueryAsync<ApplicationUser>(sql, new { NormalizedName = roleName.ToUpper() });
         return users.ToList();
     }
+    
     #endregion
 }

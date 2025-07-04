@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using PredictionLeague.Core.Models;
-using PredictionLeague.Core.Repositories;
-using PredictionLeague.Core.Services;
+using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Infrastructure.Data;
 using PredictionLeague.Infrastructure.Identity;
 using PredictionLeague.Infrastructure.Repositories;
@@ -18,7 +18,7 @@ builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();
 builder.Services.AddScoped<IMatchRepository, MatchRepository>();
 builder.Services.AddScoped<IRoundRepository, RoundRepository>();
 builder.Services.AddScoped<IRoundResultRepository, RoundResultRepository>();
-builder.Services.AddScoped<ISeasonRepository, SeasonRepository>(); 
+builder.Services.AddScoped<ISeasonRepository, SeasonRepository>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
 

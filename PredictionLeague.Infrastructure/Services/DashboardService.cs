@@ -1,5 +1,5 @@
-﻿using PredictionLeague.Core.Repositories;
-using PredictionLeague.Core.Services;
+﻿using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Shared.Dashboard;
 
 namespace PredictionLeague.Infrastructure.Services;

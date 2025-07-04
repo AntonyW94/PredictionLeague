@@ -1,6 +1,6 @@
-﻿using PredictionLeague.Core.Models;
-using PredictionLeague.Core.Repositories;
-using PredictionLeague.Core.Services;
+﻿using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Shared.Admin;
 using PredictionLeague.Shared.Admin.Leagues;
 using PredictionLeague.Shared.Admin.Matches;
@@ -22,7 +22,7 @@ public class AdminService : IAdminService
     private readonly ILeagueRepository _leagueRepository;
     private readonly IPredictionService _predictionService;
     private readonly ISeasonService _seasonService;
-   
+
     public AdminService(
         ISeasonRepository seasonRepository,
         IRoundRepository roundRepository,
@@ -41,7 +41,7 @@ public class AdminService : IAdminService
     }
 
     #region Seasons
-       
+
     public async Task<IEnumerable<SeasonDto>> GetAllSeasonsAsync() => await _seasonService.GetAllAsync();
 
     public async Task CreateSeasonAsync(CreateSeasonRequest request)
@@ -49,7 +49,7 @@ public class AdminService : IAdminService
         var season = new Season { Name = request.Name, StartDate = request.StartDate, EndDate = request.EndDate, IsActive = true };
         await _seasonRepository.AddAsync(season);
     }
-      
+
     public async Task UpdateSeasonAsync(int id, UpdateSeasonRequest request)
     {
         var season = await _seasonRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException("Season not found.");
@@ -85,7 +85,7 @@ public class AdminService : IAdminService
         }
         return roundsToReturn;
     }
-        
+
     public async Task<RoundDetailsDto> GetRoundByIdAsync(int roundId)
     {
         var round = await _roundRepository.GetByIdAsync(roundId) ?? throw new KeyNotFoundException("Round not found.");
@@ -190,7 +190,7 @@ public class AdminService : IAdminService
         }
         return leagueDtos;
     }
-        
+
     public async Task CreateLeagueAsync(CreateLeagueRequest request, string administratorId)
     {
         var newLeague = new League { SeasonId = request.SeasonId, Name = request.Name, EntryCode = string.IsNullOrWhiteSpace(request.EntryCode) ? null : request.EntryCode, AdministratorUserId = administratorId };

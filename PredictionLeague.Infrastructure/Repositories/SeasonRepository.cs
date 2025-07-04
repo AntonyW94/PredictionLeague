@@ -1,6 +1,6 @@
 ﻿using Dapper;
-using PredictionLeague.Core.Models;
-using PredictionLeague.Core.Repositories;
+using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
@@ -49,7 +49,7 @@ public class SeasonRepository : ISeasonRepository
                     @EndDate,
                     @IsActive
                 );";
-            
+
         using var connection = Connection;
         await connection.ExecuteAsync(sql, season);
     }
@@ -64,7 +64,7 @@ public class SeasonRepository : ISeasonRepository
                     [EndDate] = @EndDate,
                     [IsActive] = @IsActive
                 WHERE [Id] = @Id;";
-          
+
         using var connection = Connection;
         await connection.ExecuteAsync(sql, season);
     }

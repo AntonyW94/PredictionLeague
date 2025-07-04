@@ -1,6 +1,6 @@
-﻿using PredictionLeague.Core.Models;
-using PredictionLeague.Core.Repositories;
-using PredictionLeague.Core.Services;
+﻿using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Shared.Dashboard;
 using PredictionLeague.Shared.Predictions;
 
@@ -122,7 +122,7 @@ public class PredictionService : IPredictionService
                 continue;
 
             var predictions = await _predictionRepository.GetByMatchIdAsync(match.Id);
-               
+
             foreach (var prediction in predictions)
             {
                 var points = CalculatePoints(

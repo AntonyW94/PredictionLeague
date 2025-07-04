@@ -1,6 +1,6 @@
 ﻿using PredictionLeague.Shared.Leaderboards;
 
-namespace PredictionLeague.Core.Services;
+namespace PredictionLeague.Application.Services;
 
 public interface ILeaderboardService
 {

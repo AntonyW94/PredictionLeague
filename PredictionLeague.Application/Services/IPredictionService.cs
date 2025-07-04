@@ -1,6 +1,6 @@
 ﻿using PredictionLeague.Shared.Predictions;
 
-namespace PredictionLeague.Core.Services;
+namespace PredictionLeague.Application.Services;
 
 public interface IPredictionService
 {

@@ -1,6 +1,6 @@
 ﻿using Dapper;
-using PredictionLeague.Core.Models;
-using PredictionLeague.Core.Repositories;
+using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
@@ -83,7 +83,7 @@ public class LeagueRepository : ILeagueRepository
                     l.* FROM [Leagues] l
                 INNER JOIN [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
                 WHERE lm.[UserId] = @UserId;";
-        
+
         using var connection = Connection;
         return await connection.QueryAsync<League>(sql, new { UserId = userId });
     }
@@ -103,7 +103,7 @@ public class LeagueRepository : ILeagueRepository
                     [Name] = @Name,
                     [EntryCode] = @EntryCode
                 WHERE [Id] = @Id;";
-   
+
         using var connection = Connection;
         await connection.ExecuteAsync(sql, league);
     }

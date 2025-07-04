@@ -1,6 +1,6 @@
 ﻿using Dapper;
-using PredictionLeague.Core.Models;
-using PredictionLeague.Core.Repositories;
+using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
@@ -76,7 +76,7 @@ public class RoundRepository : IRoundRepository
                     [Deadline] = @Deadline
                 WHERE [Id] = @Id;";
         using var connection = Connection;
-          
+
         await connection.ExecuteAsync(sql, round);
     }
 }

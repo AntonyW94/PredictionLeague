@@ -1,6 +1,6 @@
-﻿namespace PredictionLeague.Core.Models;
+﻿using Microsoft.AspNetCore.Identity;
 
-using Microsoft.AspNetCore.Identity;
+namespace PredictionLeague.Domain.Models;
 
 public class ApplicationUser : IdentityUser
 {

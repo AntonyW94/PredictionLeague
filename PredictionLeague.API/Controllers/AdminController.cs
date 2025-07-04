@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PredictionLeague.Core.Services;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Shared.Admin;
 using PredictionLeague.Shared.Admin.Leagues;
 using PredictionLeague.Shared.Admin.Results;

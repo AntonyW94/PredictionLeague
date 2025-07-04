@@ -1,6 +1,6 @@
 ﻿using Dapper;
-using PredictionLeague.Core.Models;
-using PredictionLeague.Core.Repositories;
+using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
@@ -19,7 +19,7 @@ public class RoundResultRepository : IRoundResultRepository
     public async Task<IEnumerable<RoundResult>> GetByRoundIdAsync(int roundId)
     {
         const string sql = "SELECT gwr.* FROM [RoundResults] r WHERE r.[RoundId] = @RoundId;";
-        
+
         using var dbConnection = Connection;
         return await dbConnection.QueryAsync<RoundResult>(sql, new { RoundId = roundId });
     }
@@ -35,7 +35,7 @@ public class RoundResultRepository : IRoundResultRepository
                 WHEN NOT MATCHED BY TARGET THEN
                     INSERT ([RoundId], [UserId], [TotalPoints])
                     VALUES (@RoundId, @UserId, @TotalPoints);";
-        
+
         using var dbConnection = Connection;
         await dbConnection.ExecuteAsync(sql, result);
     }

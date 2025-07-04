@@ -1,4 +1,4 @@
-﻿namespace PredictionLeague.Core.Models;
+﻿namespace PredictionLeague.Domain.Models;
 
 public class LeagueMember
 {

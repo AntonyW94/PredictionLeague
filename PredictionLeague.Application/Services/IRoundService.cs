@@ -1,6 +1,6 @@
-﻿using PredictionLeague.Core.Models;
+﻿using PredictionLeague.Domain.Models;
 
-namespace PredictionLeague.Core.Services;
+namespace PredictionLeague.Application.Services;
 
 public interface IRoundService
 {

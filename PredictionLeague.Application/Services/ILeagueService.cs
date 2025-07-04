@@ -1,7 +1,7 @@
-﻿using PredictionLeague.Core.Models;
+﻿using PredictionLeague.Domain.Models;
 using PredictionLeague.Shared.Leagues;
 
-namespace PredictionLeague.Core.Services;
+namespace PredictionLeague.Application.Services;
 
 public interface ILeagueService
 {

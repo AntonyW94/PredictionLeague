@@ -1,6 +1,6 @@
 ﻿using PredictionLeague.Shared.Admin.Seasons;
 
-namespace PredictionLeague.Core.Services;
+namespace PredictionLeague.Application.Services;
 
 public interface ISeasonService
 {

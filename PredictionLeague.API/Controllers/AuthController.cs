@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using PredictionLeague.Core.Models;
-using PredictionLeague.Core.Services;
+using PredictionLeague.Application.Services;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Shared.Auth;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

@@ -1,6 +1,6 @@
 ﻿using Dapper;
-using PredictionLeague.Core.Models;
-using PredictionLeague.Core.Repositories;
+using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
@@ -25,7 +25,7 @@ public class TeamRepository : ITeamRepository
                     [LogoUrl] 
                 FROM [Teams] 
                 ORDER BY [Name];";
-            
+
         using var connection = Connection;
         return await connection.QueryAsync<Team>(sql);
     }
@@ -44,7 +44,7 @@ public class TeamRepository : ITeamRepository
                     @Name, 
                     @LogoUrl
                 );";
-            
+
         using var connection = Connection;
         return await connection.QuerySingleAsync<Team>(sql, team);
     }
@@ -58,7 +58,7 @@ public class TeamRepository : ITeamRepository
                     [LogoUrl] 
                 FROM [Teams] 
                 WHERE [Id] = @Id;";
-            
+
         using var connection = Connection;
         return await connection.QuerySingleOrDefaultAsync<Team>(sql, new { Id = id });
     }
@@ -71,7 +71,7 @@ public class TeamRepository : ITeamRepository
                     [Name] = @Name, 
                     [LogoUrl] = @LogoUrl 
                 WHERE [Id] = @Id;";
-            
+
         using var connection = Connection;
         await connection.ExecuteAsync(sql, team);
     }

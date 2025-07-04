@@ -1,4 +1,4 @@
-﻿using PredictionLeague.Core.Models;
+﻿using PredictionLeague.Domain.Models;
 using PredictionLeague.Shared.Admin;
 using PredictionLeague.Shared.Admin.Leagues;
 using PredictionLeague.Shared.Admin.Results;
@@ -7,7 +7,7 @@ using PredictionLeague.Shared.Admin.Seasons;
 using PredictionLeague.Shared.Admin.Teams;
 using PredictionLeague.Shared.Leagues;
 
-namespace PredictionLeague.Core.Services;
+namespace PredictionLeague.Application.Services;
 
 public interface IAdminService
 {

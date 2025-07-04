@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using PredictionLeague.Core.Services;
+using PredictionLeague.Application.Services;
 
 namespace PredictionLeague.API.Controllers;
 
