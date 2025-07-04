@@ -18,9 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PredictionLeague.Application\PredictionLeague.Application.csproj" />
     <ProjectReference Include="..\PredictionLeague.Infrastructure\PredictionLeague.Infrastructure.csproj" />
-    <ProjectReference Include="..\PredictionLeague.Shared\PredictionLeague.Shared.csproj" />
   </ItemGroup>
 
 </Project>
