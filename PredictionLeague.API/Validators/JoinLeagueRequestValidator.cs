@@ -3,6 +3,7 @@ using PredictionLeague.Shared.Leagues;
 
 namespace PredictionLeague.API.Validators;
 
+// ReSharper disable once UnusedType.Global
 public class JoinLeagueRequestValidator : AbstractValidator<JoinLeagueRequest>
 {
     public JoinLeagueRequestValidator()

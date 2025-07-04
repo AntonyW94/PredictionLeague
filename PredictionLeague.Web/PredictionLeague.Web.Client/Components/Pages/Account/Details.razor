@@ -105,16 +105,45 @@
         _errorMessage = null;
         _successMessage = null;
 
-        var response = await Http.PutAsJsonAsync("api/account/details", _model);
+        if (_model == null)
+        {
+            _errorMessage = "Model data is missing. Please try again.";
+            _isBusy = false;
+            return;
+        }
+      
+        var request = new UpdateUserDetailsRequest
+        {
+            FirstName = _model.FirstName,
+            LastName = _model.LastName,
+            PhoneNumber = _model.PhoneNumber
+        };
+
+        var response = await Http.PutAsJsonAsync("api/account/details", request);
         if (response.IsSuccessStatusCode)
         {
             _successMessage = "Your details have been updated successfully.";
         }
+        else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            try
+            {
+                var errorContent = await response.Content.ReadFromJsonAsync<System.Text.Json.Nodes.JsonNode>();
+
+                _errorMessage = errorContent?["errors"]?
+                    .AsObject().FirstOrDefault().Value?
+                    .AsArray().FirstOrDefault()?.ToString();
+            }
+            catch
+            {
+                _errorMessage = "An unknown validation error occurred.";
+            }
+        }
         else
         {
-            _errorMessage = "There was an error updating your details. Please try again.";
+            _errorMessage = "An unexpected error occurred. Please try again.";
         }
-
+      
         _isBusy = false;
     }
 }

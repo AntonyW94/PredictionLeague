@@ -1,8 +1,10 @@
 ﻿@page "/admin/leagues/edit/{LeagueId:int}"
+
 @attribute [Authorize(Roles = "Administrator")]
+
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
-@using Microsoft.AspNetCore.Authorization
+
 @using PredictionLeague.Shared.Admin.Leagues
 
 <PageTitle>Edit League</PageTitle>
@@ -22,6 +24,7 @@
                 {
                     <div class="alert alert-danger">@_errorMessage</div>
                 }
+
                 @if (!string.IsNullOrEmpty(_successMessage))
                 {
                     <div class="alert alert-success">@_successMessage</div>
@@ -31,10 +34,12 @@
                     <label for="name" class="form-label text-white">League Name</label>
                     <InputText id="name" class="form-control" @bind-Value="_model.Name" />
                 </div>
+
                 <div class="mb-3">
                     <label for="entryCode" class="form-label text-white">Entry Code (optional)</label>
                     <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" />
                 </div>
+
                 <div class="d-flex justify-content-between mt-4">
                     <button type="button" class="btn pink-button" @onclick='() => NavigationManager.NavigateTo("/admin/leagues")'>Cancel</button>
                     <button type="submit" class="btn green-button" disabled="@_isBusy">Save Changes</button>
@@ -65,9 +70,17 @@
         _isBusy = true;
         _errorMessage = null;
         _successMessage = null;
+        
         var response = await Http.PutAsJsonAsync($"api/admin/leagues/{LeagueId}", _model);
-        if (response.IsSuccessStatusCode) { _successMessage = "League updated successfully!"; }
-        else { _errorMessage = "Error updating league."; }
+        if (response.IsSuccessStatusCode)
+        {
+            _successMessage = "League updated successfully!";
+        }
+        else
+        {
+            _errorMessage = "Error updating league.";
+        }
+
         _isBusy = false;
     }
 }

@@ -21,7 +21,7 @@ public class SeasonsController : ControllerBase
         return Ok(seasons);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetSeasonById(int id)
     {
         var season = await _seasonService.GetByIdAsync(id);

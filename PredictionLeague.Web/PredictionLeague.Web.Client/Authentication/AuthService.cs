@@ -34,22 +34,26 @@ public class AuthService : IAuthService
     {
         var result = await _httpClient.PostAsJsonAsync("api/auth/register", registerRequest);
         var content = await result.Content.ReadFromJsonAsync<RegisterResponse>(_options);
-        return content;
+        
+        return content ?? new RegisterResponse { IsSuccess = false, Message = "Registration failed" };
     }
 
     public async Task<AuthResponse> Login(LoginRequest loginRequest)
     {
         var result = await _httpClient.PostAsJsonAsync("api/auth/login", loginRequest);
+      
         var content = await result.Content.ReadFromJsonAsync<AuthResponse>(_options);
+        if (content == null)
+            return new AuthResponse { IsSuccess = false, Message = "Login failed" };
 
-        if (result.IsSuccessStatusCode && !string.IsNullOrEmpty(content.Token))
-        {
-            await _localStorage.SetItemAsync("authToken", content.Token);
-            ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(content.Token);
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", content.Token);
-        }
+        if (!result.IsSuccessStatusCode || string.IsNullOrEmpty(content.Token)) 
+            return content;
+        
+        await _localStorage.SetItemAsync("authToken", content.Token);
+        ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(content.Token);
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", content.Token);
 
-        return content;
+        return content; 
     }
 
     public async Task Logout()

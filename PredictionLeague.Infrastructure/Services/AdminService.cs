@@ -122,27 +122,31 @@ public class AdminService : IAdminService
     public async Task CreateRoundAsync(CreateRoundRequest request)
     {
         using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+        
         var round = new Round { SeasonId = request.SeasonId, RoundNumber = request.RoundNumber, StartDate = request.StartDate, Deadline = request.Deadline };
         var createdRound = await _roundRepository.AddAsync(round);
-        foreach (var matchRequest in request.Matches)
+      
+        foreach (var match in request.Matches.Select(matchRequest => new Match { RoundId = createdRound.Id, HomeTeamId = matchRequest.HomeTeamId, AwayTeamId = matchRequest.AwayTeamId, MatchDateTime = matchRequest.MatchDateTime }))
         {
-            var match = new Match { RoundId = createdRound.Id, HomeTeamId = matchRequest.HomeTeamId, AwayTeamId = matchRequest.AwayTeamId, MatchDateTime = matchRequest.MatchDateTime };
             await _matchRepository.AddAsync(match);
         }
+        
         scope.Complete();
     }
 
     public async Task UpdateRoundAsync(int roundId, UpdateRoundRequest request)
     {
         using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+       
         var round = await _roundRepository.GetByIdAsync(roundId) ?? throw new KeyNotFoundException("Round not found.");
         round.StartDate = request.StartDate;
         round.Deadline = request.Deadline;
+      
         await _roundRepository.UpdateAsync(round);
         await _matchRepository.DeleteByRoundIdAsync(roundId);
-        foreach (var matchRequest in request.Matches)
+       
+        foreach (var match in request.Matches.Select(matchRequest => new Match { RoundId = roundId, HomeTeamId = matchRequest.HomeTeamId, AwayTeamId = matchRequest.AwayTeamId, MatchDateTime = matchRequest.MatchDateTime }))
         {
-            var match = new Match { RoundId = roundId, HomeTeamId = matchRequest.HomeTeamId, AwayTeamId = matchRequest.AwayTeamId, MatchDateTime = matchRequest.MatchDateTime };
             await _matchRepository.AddAsync(match);
         }
 
@@ -219,19 +223,18 @@ public class AdminService : IAdminService
             foreach (var result in results)
             {
                 var match = await _matchRepository.GetByIdAsync(result.MatchId);
-                if (match != null)
-                {
-                    match.ActualHomeTeamScore = result.HomeScore;
-                    match.ActualAwayTeamScore = result.AwayScore;
-                    match.Status = MatchStatus.Completed;
-                    await _matchRepository.UpdateAsync(match);
-                }
+                if (match == null)
+                    continue;
+                
+                match.ActualHomeTeamScore = result.HomeScore;
+                match.ActualAwayTeamScore = result.AwayScore;
+                match.Status = MatchStatus.Completed;
+               
+                await _matchRepository.UpdateAsync(match);
             }
             scope.Complete();
         }
 
-        // After saving the scores, trigger the points calculation for the affected round.
-        // We assume all results in a single submission are for the same round.
         var firstMatch = await _matchRepository.GetByIdAsync(results.First().MatchId);
         if (firstMatch != null)
             await _predictionService.CalculatePointsForRoundAsync(firstMatch.RoundId);

@@ -16,7 +16,7 @@ public class LeaderboardController : ControllerBase
 
     // GET: api/leaderboard/round/5
     // GET: api/leaderboard/round/5?leagueId=10
-    [HttpGet("round/{roundId}")]
+    [HttpGet("round/{roundId:int}")]
     public async Task<IActionResult> GetRoundLeaderboard(int roundId, [FromQuery] int? leagueId)
     {
         var leaderboard = await _leaderboardService.GetRoundLeaderboardAsync(roundId, leagueId);
@@ -25,7 +25,7 @@ public class LeaderboardController : ControllerBase
 
     // Placeholder for monthly leaderboard
     // GET: api/leaderboard/monthly/2024/8?leagueId=10
-    [HttpGet("monthly/{year}/{month}")]
+    [HttpGet("monthly/{year:int}/{month:int}")]
     public async Task<IActionResult> GetMonthlyLeaderboard(int year, int month, [FromQuery] int? leagueId)
     {
         var leaderboard = await _leaderboardService.GetMonthlyLeaderboardAsync(year, month, leagueId);
@@ -34,7 +34,7 @@ public class LeaderboardController : ControllerBase
 
     // Placeholder for yearly leaderboard
     // GET: api/leaderboard/yearly/3?leagueId=10
-    [HttpGet("yearly/{seasonId}")]
+    [HttpGet("yearly/{seasonId:int}")]
     public async Task<IActionResult> GetYearlyLeaderboard(int seasonId, [FromQuery] int? leagueId)
     {
         var leaderboard = await _leaderboardService.GetYearlyLeaderboardAsync(seasonId, leagueId);

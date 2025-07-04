@@ -35,45 +35,46 @@ public class DashboardService : IDashboardService
         foreach (var seasonId in seasonIds)
         {
             var currentRound = await _roundRepository.GetCurrentRoundAsync(seasonId);
-            if (currentRound != null)
-            {
-                var season = await _seasonRepository.GetByIdAsync(seasonId);
-                var matches = await _matchRepository.GetByRoundIdAsync(currentRound.Id);
-                var userPredictions = await _predictionRepository.GetByUserIdAndRoundIdAsync(userId, currentRound.Id);
+            if (currentRound == null) 
+                continue;
+            
+            var season = await _seasonRepository.GetByIdAsync(seasonId);
+            var matches = await _matchRepository.GetByRoundIdAsync(currentRound.Id);
+            var userPredictions = await _predictionRepository.GetByUserIdAndRoundIdAsync(userId, currentRound.Id);
 
-                upcomingRounds.Add(new UpcomingRoundDto
+            upcomingRounds.Add(new UpcomingRoundDto
+            {
+                Id = currentRound.Id,
+                SeasonName = season?.Name ?? "Unknown Season",
+                RoundNumber = currentRound.RoundNumber,
+                Deadline = currentRound.Deadline,
+                Matches = matches.Select(m =>
                 {
-                    Id = currentRound.Id,
-                    SeasonName = season?.Name ?? "Unknown Season",
-                    RoundNumber = currentRound.RoundNumber,
-                    Deadline = currentRound.Deadline,
-                    Matches = matches.Select(m =>
+                    var prediction = userPredictions.FirstOrDefault(p => p.MatchId == m.Id);
+                    return new MatchPredictionDto
                     {
-                        var prediction = userPredictions.FirstOrDefault(p => p.MatchId == m.Id);
-                        return new MatchPredictionDto
-                        {
-                            MatchId = m.Id,
-                            MatchDateTime = m.MatchDateTime,
-                            HomeTeamName = m.HomeTeam!.Name,
-                            HomeTeamLogoUrl = m.HomeTeam.LogoUrl!,
-                            AwayTeamName = m.AwayTeam!.Name,
-                            AwayTeamLogoUrl = m.AwayTeam.LogoUrl!,
-                            PredictedHomeScore = prediction?.PredictedHomeScore,
-                            PredictedAwayScore = prediction?.PredictedAwayScore
-                        };
-                    }).ToList()
-                });
-            }
+                        MatchId = m.Id,
+                        MatchDateTime = m.MatchDateTime,
+                        HomeTeamName = m.HomeTeam!.Name,
+                        HomeTeamLogoUrl = m.HomeTeam.LogoUrl!,
+                        AwayTeamName = m.AwayTeam!.Name,
+                        AwayTeamLogoUrl = m.AwayTeam.LogoUrl!,
+                        PredictedHomeScore = prediction?.PredictedHomeScore,
+                        PredictedAwayScore = prediction?.PredictedAwayScore
+                    };
+                }).ToList()
+            });
         }
 
         var allPublicLeagues = await _leagueRepository.GetPublicLeaguesAsync();
         var userLeagueIds = userLeagues.Select(l => l.Id).ToHashSet();
-
-        var publicLeagueDtos = new List<PublicLeagueDto>();
+        var publicLeagues = new List<PublicLeagueDto>();
+       
         foreach (var league in allPublicLeagues)
         {
             var season = await _seasonRepository.GetByIdAsync(league.SeasonId);
-            publicLeagueDtos.Add(new PublicLeagueDto
+            
+            publicLeagues.Add(new PublicLeagueDto
             {
                 Id = league.Id,
                 Name = league.Name,
@@ -85,7 +86,7 @@ public class DashboardService : IDashboardService
         return new DashboardDto
         {
             UpcomingRounds = upcomingRounds,
-            PublicLeagues = publicLeagueDtos.ToList()
+            PublicLeagues = publicLeagues.ToList()
         };
     }
 }

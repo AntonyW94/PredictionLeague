@@ -63,9 +63,7 @@ public class LeaguesController : ControllerBase
         }
     }
 
-    // >> ADDED METHOD <<
-    // POST: api/leagues/{leagueId}/join (for public leagues)
-    [HttpPost("{leagueId}/join")]
+    [HttpPost("{leagueId:int}/join")]
     public async Task<IActionResult> JoinPublicLeague(int leagueId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -85,8 +83,7 @@ public class LeaguesController : ControllerBase
         }
     }
 
-    // GET: api/leagues/{leagueId}
-    [HttpGet("{leagueId}")]
+    [HttpGet("{leagueId:int}")]
     public async Task<IActionResult> GetLeagueById(int leagueId)
     {
         // Note: Implementation for this would require a new GetByIdAsync method in ILeagueService

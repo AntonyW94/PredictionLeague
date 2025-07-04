@@ -4,7 +4,6 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 
-@using Microsoft.AspNetCore.Authorization
 @using PredictionLeague.Shared.Admin
 @using PredictionLeague.Shared.Admin.Seasons
 @using PredictionLeague.Shared.Admin.Teams
@@ -27,6 +26,7 @@
                 {
                     <div class="alert alert-danger">@_errorMessage</div>
                 }
+
                 @if (!string.IsNullOrEmpty(_successMessage))
                 {
                     <div class="alert alert-success">@_successMessage</div>
@@ -37,10 +37,12 @@
                         <label for="roundNumber" class="form-label text-white">Round Number</label>
                         <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
                     </div>
+
                     <div class="col-md-4 mb-3">
                         <label for="startDate" class="form-label text-white">Round Start Date</label>
                         <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" @onchange="OnStartDateChanged" />
                     </div>
+
                     <div class="col-md-4 mb-3">
                         <label for="deadline" class="form-label text-white">Prediction Deadline</label>
                         <InputDate Type="InputDateType.DateTimeLocal" id="deadline" class="form-control" @bind-Value="_model.Deadline" />
@@ -180,7 +182,7 @@
         {
             var season = await Http.GetFromJsonAsync<SeasonDto>($"api/seasons/{SeasonId}");
             _seasonName = season?.Name ?? "Unknown";
-            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/teams") ?? new();
+            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/teams") ?? new List<TeamDto>();
         }
         catch (Exception)
         {
@@ -192,17 +194,19 @@
 
     private void OnStartDateChanged(ChangeEventArgs e)
     {
-        if (DateTime.TryParse(e.Value?.ToString(), out var newDate))
+        if (!DateTime.TryParse(e.Value?.ToString(), out var newDate))
+            return;
+
+        _model.StartDate = newDate.Date;
+
+        foreach (var match in _model.Matches)
         {
-            _model.StartDate = newDate.Date;
-            foreach (var match in _model.Matches)
-            {
-                match.MatchDateTime = newDate.Date;
-            }
+            match.MatchDateTime = newDate.Date;
         }
     }
 
     private void AddMatch() => _model.Matches.Add(new CreateMatchRequest { MatchDateTime = _model.StartDate });
+
     private void RemoveMatch(int index)
     {
         if (index >= 0 && index < _model.Matches.Count) { _model.Matches.RemoveAt(index); }
@@ -210,8 +214,7 @@
 
     private string? GetTeamLogoUrl(int teamId)
     {
-        if (teamId < 1) return "https://placehold.co/25x25/transparent/transparent?text=";
-        return _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl;
+        return teamId < 1 ? "https://placehold.co/25x25/transparent/transparent?text=" : _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl;
     }
 
     private async Task HandleCreateRound()
@@ -224,7 +227,7 @@
         if (response.IsSuccessStatusCode)
         {
             _successMessage = "Round created successfully!";
-            _model = new() { SeasonId = SeasonId };
+            _model = new CreateRoundRequest { SeasonId = SeasonId };
             for (var i = 0; i < 10; i++)
             {
                 _model.Matches.Add(new CreateMatchRequest { MatchDateTime = DateTime.Now });

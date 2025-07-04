@@ -21,7 +21,7 @@ public class TeamsController : ControllerBase
         return Ok(teams);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetTeamById(int id)
     {
         var team = await _teamService.GetByIdAsync(id);

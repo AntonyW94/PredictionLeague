@@ -9,8 +9,7 @@ public class LeaderboardService : ILeaderboardService
     private readonly IRoundResultRepository _roundResultRepository;
 
     private readonly ILeagueRepository _leagueRepository;
-    // In a real app, you would have a user repository to get user names
-    // private readonly IUserRepository _userRepository;
+    //private readonly IUserRepository _userRepository;
 
     public LeaderboardService(IRoundResultRepository roundResultRepository, ILeagueRepository leagueRepository)
     {
@@ -35,7 +34,7 @@ public class LeaderboardService : ILeaderboardService
             {
                 Rank = index + 1,
                 UserId = r.UserId,
-                UserName = "User " + r.UserId.Substring(0, 5), // Placeholder for username
+                UserName = "User " + r.UserId[..5],
                 TotalPoints = r.TotalPoints
             }).ToList();
 
@@ -44,15 +43,11 @@ public class LeaderboardService : ILeaderboardService
 
     public Task<IEnumerable<LeaderboardEntry>> GetMonthlyLeaderboardAsync(int year, int month, int? leagueId = null)
     {
-        // This would require a more complex repository method to fetch rounds within a month,
-        // then aggregate the results.
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 
     public Task<IEnumerable<LeaderboardEntry>> GetYearlyLeaderboardAsync(int seasonId, int? leagueId = null)
     {
-        // This would require a more complex repository method to fetch all rounds for a year,
-        // then aggregate the results.
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 }

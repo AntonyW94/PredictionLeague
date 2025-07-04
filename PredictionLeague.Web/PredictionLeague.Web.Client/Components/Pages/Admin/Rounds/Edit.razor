@@ -4,7 +4,6 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 
-@using Microsoft.AspNetCore.Authorization
 @using PredictionLeague.Shared.Admin.Matches
 @using PredictionLeague.Shared.Admin.Rounds
 @using PredictionLeague.Shared.Admin.Teams
@@ -169,7 +168,6 @@
         try
         {
             var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/admin/rounds/{RoundId}");
-
             if (roundDetails != null)
             {
                 _seasonId = roundDetails.Round.SeasonId;
@@ -186,7 +184,7 @@
                 };
             }
 
-            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/teams") ?? new();
+            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/teams") ?? new List<TeamDto>();
         }
         catch (Exception)
         {
@@ -196,17 +194,19 @@
 
     private void OnStartDateChanged(ChangeEventArgs e)
     {
-        if (DateTime.TryParse(e.Value?.ToString(), out var newDate) && _model != null)
+        if (!DateTime.TryParse(e.Value?.ToString(), out var newDate) || _model == null)
+            return;
+
+        _model.StartDate = newDate.Date;
+
+        foreach (var match in _model.Matches)
         {
-            _model.StartDate = newDate.Date;
-            foreach (var match in _model.Matches)
-            {
-                match.MatchDateTime = newDate.Date;
-            }
+            match.MatchDateTime = newDate.Date;
         }
     }
 
     private void AddMatch() => _model?.Matches.Add(new UpdateMatchRequest { MatchDateTime = _model.StartDate });
+   
     private void RemoveMatch(int index)
     {
         if (_model != null && index >= 0 && index < _model.Matches.Count)
@@ -226,13 +226,17 @@
         _isBusy = true;
         _errorMessage = null;
         _successMessage = null;
+     
         var response = await Http.PutAsJsonAsync($"api/admin/rounds/{RoundId}", _model);
-
         if (response.IsSuccessStatusCode)
         {
             _successMessage = "Round updated successfully!";
         }
-        else { _errorMessage = "Error updating round."; }
+        else
+        {
+            _errorMessage = "Error updating round.";
+        }
+
         _isBusy = false;
     }
 

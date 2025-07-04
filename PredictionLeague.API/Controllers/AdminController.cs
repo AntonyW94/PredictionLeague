@@ -40,7 +40,7 @@ public class AdminController : ControllerBase
         return Ok(new { message = "Season created successfully." });
     }
 
-    [HttpPut("seasons/{id}")]
+    [HttpPut("seasons/{id:int}")]
     public async Task<IActionResult> UpdateSeason(int id, [FromBody] UpdateSeasonRequest request)
     {
         await _adminService.UpdateSeasonAsync(id, request);
@@ -51,14 +51,14 @@ public class AdminController : ControllerBase
 
     #region Rounds
 
-    [HttpGet("seasons/{seasonId}/rounds")]
+    [HttpGet("seasons/{seasonId:int}/rounds")]
     public async Task<IActionResult> GetRoundsForSeason(int seasonId)
     {
         var rounds = await _adminService.GetRoundsForSeasonAsync(seasonId);
         return Ok(rounds);
     }
 
-    [HttpGet("rounds/{roundId}")]
+    [HttpGet("rounds/{roundId:int}")]
     public async Task<IActionResult> GetRoundById(int roundId)
     {
         try
@@ -79,7 +79,7 @@ public class AdminController : ControllerBase
         return Ok(new { message = "Round and matches created successfully." });
     }
 
-    [HttpPut("rounds/{roundId}")]
+    [HttpPut("rounds/{roundId:int}")]
     public async Task<IActionResult> UpdateRound(int roundId, [FromBody] UpdateRoundRequest request)
     {
         await _adminService.UpdateRoundAsync(roundId, request);
@@ -97,7 +97,7 @@ public class AdminController : ControllerBase
         return CreatedAtAction(nameof(TeamsController.GetTeamById), "Teams", new { id = createdTeam.Id }, createdTeam);
     }
 
-    [HttpPut("teams/{id}")]
+    [HttpPut("teams/{id:int}")]
     public async Task<IActionResult> UpdateTeam(int id, [FromBody] UpdateTeamRequest request)
     {
         await _adminService.UpdateTeamAsync(id, request);
@@ -123,7 +123,7 @@ public class AdminController : ControllerBase
         return Ok(new { message = "League created successfully." });
     }
 
-    [HttpPut("leagues/{id}")]
+    [HttpPut("leagues/{id:int}")]
     public async Task<IActionResult> UpdateLeague(int id, [FromBody] UpdateLeagueRequest request)
     {
         await _adminService.UpdateLeagueAsync(id, request);

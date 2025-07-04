@@ -100,7 +100,6 @@
         _successMessage = null;
 
         var result = await AuthService.Register(_model);
-
         if (result.IsSuccess)
         {
             _successMessage = "Registration successful! You will be redirected to the login page shortly.";

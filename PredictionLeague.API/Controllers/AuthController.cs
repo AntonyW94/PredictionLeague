@@ -14,59 +14,50 @@ namespace PredictionLeague.API.Controllers;
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
-    private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConfiguration _configuration;
     private readonly ILeagueService _leagueService;
+    private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
 
-    public AuthController(UserManager<ApplicationUser> userManager, IConfiguration configuration, RoleManager<IdentityRole> roleManager, ILeagueService leagueService)
+    public AuthController(IConfiguration configuration, ILeagueService leagueService, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
     {
-        _userManager = userManager;
         _configuration = configuration;
-        _roleManager = roleManager;
         _leagueService = leagueService;
+        _userManager = userManager;
+        _roleManager = roleManager;
     }
 
-    // POST: api/auth/register
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         var userExists = await _userManager.FindByEmailAsync(request.Email);
         if (userExists != null)
-        {
             return BadRequest(new AuthResponse { IsSuccess = false, Message = "User with this email already exists." });
-        }
 
         var newUser = new ApplicationUser
         {
             FirstName = request.FirstName,
             LastName = request.LastName,
             Email = request.Email,
-            UserName = request.Email // Use email as username
+            UserName = request.Email
         };
 
         var result = await _userManager.CreateAsync(newUser, request.Password);
         if (!result.Succeeded)
-        {
-            // In a real app, you might want to format these errors better.
             return BadRequest(new AuthResponse { IsSuccess = false, Message = "User creation failed.", Token = string.Join(", ", result.Errors.Select(e => e.Description)) });
-        }
            
         var defaultLeague = await _leagueService.GetDefaultPublicLeagueAsync();
         if (defaultLeague != null)
-        {
             await _leagueService.JoinPublicLeagueAsync(defaultLeague.Id, newUser.Id);
-        }
             
-        const string defaultRole = "Player";
+        const ApplicationUserRole defaultRole = ApplicationUserRole.Player;
             
-        if (await _roleManager.RoleExistsAsync(defaultRole))
-            await _userManager.AddToRoleAsync(newUser, defaultRole);
+        if (await _roleManager.RoleExistsAsync(defaultRole.ToString()))
+            await _userManager.AddToRoleAsync(newUser, defaultRole.ToString());
 
         return Ok(new AuthResponse { IsSuccess = true, Message = "User created successfully." });
     }
 
-    // POST: api/auth/login
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -86,34 +77,38 @@ public class AuthController : ControllerBase
     {
         try
         {
+            if (string.IsNullOrEmpty(user.Email))
+                throw new ArgumentException("User email is null or empty, cannot generate a token.", nameof(user));
+
             var jwtSettings = _configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["Secret"];
             var issuer = jwtSettings["Issuer"];
             var audience = jwtSettings["Audience"];
-
             var userRoles = await _userManager.GetRolesAsync(user);
-
+            var secretKey = jwtSettings["Secret"];
+         
+            if (string.IsNullOrEmpty(secretKey))
+                throw new InvalidOperationException("JWT Secret key is not configured.");
+           
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id), // 'sub' is a standard claim for user ID
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id), 
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
-                // Add custom claims like FirstName if needed
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), 
                 new Claim("FirstName", user.FirstName),
                 new Claim("LastName", user.LastName),
                 new Claim("FullName", $"{user.FirstName} {user.LastName}")
-            }.Union(userRoles.Select(role => new Claim(ClaimTypes.Role, role))); // Add roles to the token claims;
+            }.Union(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.UtcNow.AddDays(7); // Token expiry date
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var expires = DateTime.UtcNow.AddDays(7);
 
             var token = new JwtSecurityToken(
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
                 expires: expires,
-                signingCredentials: creds
+                signingCredentials: credentials
             );
 
             return new AuthResponse

@@ -8,7 +8,7 @@ using System.Security.Claims;
 namespace PredictionLeague.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/[controller]/details")]
 [Authorize]
 public class AccountController : ControllerBase
 {
@@ -19,52 +19,61 @@ public class AccountController : ControllerBase
         _userManager = userManager;
     }
 
-    // GET: api/account/details
-    [HttpGet("details")]
+    [HttpGet]
     public async Task<IActionResult> GetUserDetails()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var user = await _userManager.FindByIdAsync(userId);
+        if (userId == null)
+            return Unauthorized("User ID could not be found in the token.");
 
+        var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
-        {
             return NotFound("User not found.");
-        }
+        
+        if (user.Email == null)
+            return NotFound("Email not found for the user.");
 
         var userDetails = new UserDetails
         {
             FirstName = user.FirstName,
             LastName = user.LastName,
             Email = user.Email,
-            PhoneNumber = user.PhoneNumber // Added PhoneNumber
+            PhoneNumber = user.PhoneNumber
         };
 
         return Ok(userDetails);
     }
 
-    // PUT: api/account/details
-    [HttpPut("details")]
+    [HttpPut]
     public async Task<IActionResult> UpdateUserDetails([FromBody] UpdateUserDetailsRequest request)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var user = await _userManager.FindByIdAsync(userId);
+        if (userId == null)
+            return Unauthorized("User ID could not be found in the token.");
 
+        var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
-        {
             return NotFound("User not found.");
+
+        if (!ModelState.IsValid)
+        {
+            var errorMessage = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .FirstOrDefault() ?? "An unknown validation error occurred.";
+
+            return BadRequest(errorMessage);
         }
 
         user.FirstName = request.FirstName;
         user.LastName = request.LastName;
-        user.PhoneNumber = request.PhoneNumber; // Added PhoneNumber update
+        user.PhoneNumber = request.PhoneNumber;
 
         var result = await _userManager.UpdateAsync(user);
-
+       
         if (!result.Succeeded)
-        {
             return BadRequest(result.Errors);
-        }
-
+        
         return Ok(new { message = "Details updated successfully." });
     }
 }

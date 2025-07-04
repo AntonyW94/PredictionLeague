@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
     <PropertyGroup>
+        <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
-        <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
+        <!--<NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
+        <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>-->
     </PropertyGroup>
 
     <ItemGroup>

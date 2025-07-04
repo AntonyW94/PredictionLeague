@@ -18,11 +18,12 @@ public class PredictionsController : ControllerBase
         _predictionService = predictionService;
     }
 
-    [HttpGet("{roundId}")]
+    [HttpGet("{roundId:int}")]
     public async Task<IActionResult> GetPredictionPageData(int roundId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var pageData = await _predictionService.GetPredictionPageDataAsync(roundId, userId!);
+       
         return Ok(pageData);
     }
 
@@ -32,7 +33,11 @@ public class PredictionsController : ControllerBase
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Unauthorized("User ID could not be found in the token.");
+            
             await _predictionService.SubmitPredictionsAsync(userId, request);
+           
             return Ok(new { message = "Predictions submitted successfully." });
         }
         catch (InvalidOperationException ex)
@@ -41,7 +46,6 @@ public class PredictionsController : ControllerBase
         }
         catch (Exception)
         {
-            // Generic error for unexpected issues
             return StatusCode(500, "An unexpected error occurred.");
         }
     }

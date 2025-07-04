@@ -29,15 +29,8 @@ public class PredictionService : IPredictionService
             throw new InvalidOperationException("The prediction deadline has passed for this round.");
         }
 
-        foreach (var predictionDto in request.Predictions)
+        foreach (var prediction in request.Predictions.Select(predictionDto => new UserPrediction { MatchId = predictionDto.MatchId, UserId = userId, PredictedHomeScore = predictionDto.PredictedHomeScore, PredictedAwayScore = predictionDto.PredictedAwayScore }))
         {
-            var prediction = new UserPrediction
-            {
-                MatchId = predictionDto.MatchId,
-                UserId = userId,
-                PredictedHomeScore = predictionDto.PredictedHomeScore,
-                PredictedAwayScore = predictionDto.PredictedAwayScore
-            };
             await _predictionRepository.UpsertAsync(prediction);
         }
     }
@@ -45,10 +38,8 @@ public class PredictionService : IPredictionService
     public async Task CalculatePointsForMatchAsync(int matchId)
     {
         var match = await _matchRepository.GetByIdAsync(matchId);
-        if (match == null || match.Status != MatchStatus.Completed || match.ActualHomeTeamScore == null || match.ActualAwayTeamScore == null)
-        {
+        if (match is not { Status: MatchStatus.Completed } || match.ActualHomeTeamScore == null || match.ActualAwayTeamScore == null)
             throw new InvalidOperationException("Match is not completed or scores are not set.");
-        }
 
         var predictions = await _predictionRepository.GetByMatchIdAsync(matchId);
 
@@ -63,7 +54,7 @@ public class PredictionService : IPredictionService
             // We need to update the prediction record with the points.
             // The current UpsertAsync only handles score submission, so a new method is needed.
             // For now, we will assume an Update method exists in the repository.
-            // await _predictionRepository.UpdateAsync(prediction);
+            //await _predictionRepository.UpdateAsync(prediction);
         }
         // This highlights a need to enhance IUserPredictionRepository with an Update method.
     }

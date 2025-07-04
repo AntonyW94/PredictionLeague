@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -35,6 +36,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddUserStore<DapperUserStore>()
     .AddRoleStore<DapperRoleStore>()
     .AddDefaultTokenProviders();
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["Secret"];

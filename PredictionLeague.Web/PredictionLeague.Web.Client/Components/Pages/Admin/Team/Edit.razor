@@ -5,7 +5,6 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 
-@using Microsoft.AspNetCore.Authorization
 @using PredictionLeague.Shared.Admin.Teams
 
 <PageTitle>Edit Team</PageTitle>
@@ -81,7 +80,7 @@
         var team = await Http.GetFromJsonAsync<TeamDto>($"api/teams/{TeamId}");
         if (team != null)
         {
-            _model = new UpdateTeamRequest { Name = team.Name, LogoUrl = team.LogoUrl };
+            _model = new UpdateTeamRequest { Name = team.Name, LogoUrl = team.LogoUrl! };
         }
     }
 

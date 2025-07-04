@@ -28,7 +28,7 @@ public class MatchRepository : IMatchRepository
 
     public async Task<Match?> GetByIdAsync(int id)
     {
-        const string sql = @"SELECT m.* FROM [Matches] m WHERE m.[Id] = @Id;";
+        const string sql = "SELECT m.* FROM [Matches] m WHERE m.[Id] = @Id;";
 
 
         using var dbConnection = Connection;
