@@ -6,10 +6,12 @@ public class UpdateResultRequest
 {
     [Required]
     public int MatchId { get; init; }
+    
     [Required]
-    [Range(0, 99)]
+    [Range(0, 9)]
     public int HomeScore { get; init; }
+    
     [Required]
-    [Range(0, 99)]
+    [Range(0, 9)]
     public int AwayScore { get; init; }
 }

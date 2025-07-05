@@ -45,18 +45,14 @@ public class PredictionService : IPredictionService
 
         foreach (var prediction in predictions)
         {
-            prediction.PointsAwarded = CalculatePoints(
+            var points = CalculatePoints(
                 match.ActualHomeTeamScore.Value,
                 match.ActualAwayTeamScore.Value,
                 prediction.PredictedHomeScore,
                 prediction.PredictedAwayScore);
 
-            // We need to update the prediction record with the points.
-            // The current UpsertAsync only handles score submission, so a new method is needed.
-            // For now, we will assume an Update method exists in the repository.
-            //await _predictionRepository.UpdateAsync(prediction);
+            await _predictionRepository.UpdatePointsAsync(prediction.Id, points);
         }
-        // This highlights a need to enhance IUserPredictionRepository with an Update method.
     }
 
     private static int CalculatePoints(int actualHome, int actualAway, int predictedHome, int predictedAway)

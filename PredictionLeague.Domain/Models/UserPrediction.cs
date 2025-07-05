@@ -7,7 +7,7 @@ public class UserPrediction
     public string UserId { get; init; } = string.Empty;
     public int PredictedHomeScore { get; init; }
     public int PredictedAwayScore { get; init; }
-    public int? PointsAwarded { get; set; }
+    public int? PointsAwarded { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
 }
