@@ -76,11 +76,11 @@
                                 </InputSelect>
                             </div>
 
-                            <div class="col-auto"><div class="logo-wrapper @(_model.Matches[matchIndex].HomeTeamId > 0 ? "visible" : "")"><img src="@GetTeamLogoUrl(_model.Matches[matchIndex].HomeTeamId)" class="match-logo" /></div></div>
+                            <div class="col-auto"><div class="logo-wrapper @(_model.Matches[matchIndex].HomeTeamId > 0 ? "visible" : "")"><img src="@GetTeamLogoUrl(_model.Matches[matchIndex].HomeTeamId)" class="match-logo" alt="Home Team Logo" /></div></div>
                           
                             <div class="col-auto text-white fw-bold">vs</div>
                           
-                            <div class="col-auto"><div class="logo-wrapper @(_model.Matches[matchIndex].AwayTeamId > 0 ? "visible" : "")"><img src="@GetTeamLogoUrl(_model.Matches[matchIndex].AwayTeamId)" class="match-logo" /></div></div>
+                            <div class="col-auto"><div class="logo-wrapper @(_model.Matches[matchIndex].AwayTeamId > 0 ? "visible" : "")"><img src="@GetTeamLogoUrl(_model.Matches[matchIndex].AwayTeamId)" class="match-logo" alt="Away Team Logo" /></div></div>
                           
                             <div class="col">
                                 <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].AwayTeamId">

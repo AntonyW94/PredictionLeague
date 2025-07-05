@@ -2,14 +2,14 @@
 
 public class MatchDto
 {
-    public int Id { get; set; }
-    public int HomeTeamId { get; set; }
-    public string HomeTeamName { get; set; } = string.Empty;
-    public string HomeTeamLogoUrl { get; set; } = string.Empty;
-    public int AwayTeamId { get; set; }
-    public string AwayTeamName { get; set; } = string.Empty;
-    public string AwayTeamLogoUrl { get; set; } = string.Empty;
-    public DateTime MatchDateTime { get; set; }
-    public int? ActualHomeScore { get; set; }
-    public int? ActualAwayScore { get; set; }
+    public int Id { get; init; }
+    public int HomeTeamId { get; init; }
+    public string HomeTeamName { get; init; } = string.Empty;
+    public string HomeTeamLogoUrl { get; init; } = string.Empty;
+    public int AwayTeamId { get; init; }
+    public string AwayTeamName { get; init; } = string.Empty;
+    public string AwayTeamLogoUrl { get; init; } = string.Empty;
+    public DateTime MatchDateTime { get; init; }
+    public int? ActualHomeScore { get; init; }
+    public int? ActualAwayScore { get; init; }
 }

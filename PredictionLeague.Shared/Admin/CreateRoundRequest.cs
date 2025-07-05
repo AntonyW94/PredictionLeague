@@ -17,5 +17,5 @@ public class CreateRoundRequest
     [Required]
     public DateTime Deadline { get; set; }
 
-    public List<CreateMatchRequest> Matches { get; set; } = new();
+    public List<CreateMatchRequest> Matches { get; } = new();
 }

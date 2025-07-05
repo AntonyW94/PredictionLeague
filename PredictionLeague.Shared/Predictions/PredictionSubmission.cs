@@ -5,11 +5,11 @@ namespace PredictionLeague.Shared.Predictions;
 public class PredictionSubmission
 {
     [Required]
-    public int MatchId { get; set; }
+    public int MatchId { get; init; }
 
     [Range(0, 99)]
-    public int PredictedHomeScore { get; set; }
+    public int PredictedHomeScore { get; init; }
 
     [Range(0, 99)]
-    public int PredictedAwayScore { get; set; }
+    public int PredictedAwayScore { get; init; }
 }

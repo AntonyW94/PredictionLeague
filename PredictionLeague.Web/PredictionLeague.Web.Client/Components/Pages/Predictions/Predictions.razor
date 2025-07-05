@@ -42,11 +42,10 @@
                             </div>
                             <div class="prediction-card-body">
                                 <div class="team-display">
-                                    <img src="@match.HomeTeamLogoUrl" class="match-logo" />
+                                    <img src="@match.HomeTeamLogoUrl" class="match-logo" alt="Home Team Logo" />
                                     <span class="team-name">@match.HomeTeamName</span>
                                 </div>
                                 <div class="score-input-group">
-                                    <!-- Home Score Stepper -->
                                     <div class="score-input-stepper">
                                         <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, true, 1)" disabled="@_pageData.IsPastDeadline">
                                             <span class="bi bi-caret-up-fill"></span>
@@ -57,7 +56,6 @@
                                         </button>
                                     </div>
                                     <span class="vs-separator">-</span>
-                                    <!-- Away Score Stepper -->
                                     <div class="score-input-stepper">
                                         <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, false, 1)" disabled="@_pageData.IsPastDeadline">
                                             <span class="bi bi-caret-up-fill"></span>
@@ -69,7 +67,7 @@
                                     </div>
                                 </div>
                                 <div class="team-display">
-                                    <img src="@match.AwayTeamLogoUrl" class="match-logo" />
+                                    <img src="@match.AwayTeamLogoUrl" class="match-logo" alt="Away Team Logo" />
                                     <span class="team-name">@match.AwayTeamName</span>
                                 </div>
                             </div>
@@ -107,7 +105,7 @@
     public int RoundId { get; set; }
 
     private PredictionPageDto? _pageData;
-    private SubmitPredictionsRequest _model = new();
+    private readonly SubmitPredictionsRequest _model = new();
     private bool _isLoading = true;
     private bool _isBusy;
     private string? _errorMessage;
@@ -139,7 +137,7 @@
         finally { _isLoading = false; }
     }
 
-    private void UpdateScore(MatchPredictionDto match, bool isHomeTeam, int delta)
+    private static void UpdateScore(MatchPredictionDto match, bool isHomeTeam, int delta)
     {
         if (isHomeTeam)
         {

@@ -4,10 +4,10 @@ namespace PredictionLeague.Shared.Predictions;
 
 public class PredictionPageDto
 {
-    public int RoundId { get; set; }
-    public int RoundNumber { get; set; }
-    public string SeasonName { get; set; } = string.Empty;
-    public DateTime Deadline { get; set; }
-    public bool IsPastDeadline { get; set; }
-    public List<MatchPredictionDto> Matches { get; set; } = new();
+    public int RoundId { get; init; }
+    public int RoundNumber { get; init; }
+    public string SeasonName { get; init; } = string.Empty;
+    public DateTime Deadline { get; init; }
+    public bool IsPastDeadline { get; init; }
+    public List<MatchPredictionDto> Matches { get; init; } = new();
 }

@@ -2,9 +2,9 @@
 
 public class LeagueDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string SeasonName { get; set; } = string.Empty;
-    public int MemberCount { get; set; }
-    public string EntryCode { get; set; } = "Public";
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string SeasonName { get; init; } = string.Empty;
+    public int MemberCount { get; init; }
+    public string EntryCode { get; init; } = "Public";
 }

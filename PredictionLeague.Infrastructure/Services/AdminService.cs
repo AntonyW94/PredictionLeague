@@ -126,8 +126,17 @@ public class AdminService : IAdminService
         var round = new Round { SeasonId = request.SeasonId, RoundNumber = request.RoundNumber, StartDate = request.StartDate, Deadline = request.Deadline };
         var createdRound = await _roundRepository.AddAsync(round);
       
-        foreach (var match in request.Matches.Select(matchRequest => new Match { RoundId = createdRound.Id, HomeTeamId = matchRequest.HomeTeamId, AwayTeamId = matchRequest.AwayTeamId, MatchDateTime = matchRequest.MatchDateTime }))
+        foreach (var matchRequest in request.Matches)
         {
+            var match = new Match
+            {
+                RoundId = createdRound.Id,
+                HomeTeamId = matchRequest.HomeTeamId,
+                AwayTeamId = matchRequest.AwayTeamId,
+                MatchDateTime = matchRequest.MatchDateTime,
+                Status = MatchStatus.Scheduled
+            };
+
             await _matchRepository.AddAsync(match);
         }
         

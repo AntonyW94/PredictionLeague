@@ -60,7 +60,7 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         NotifyAuthenticationStateChanged(authState);
     }
 
-    private IList<Claim> ParseClaims(JwtSecurityToken tokenContent)
+    private static IList<Claim> ParseClaims(JwtSecurityToken tokenContent)
     {
         var claims = tokenContent.Claims.ToList();
         claims.Add(new Claim(ClaimTypes.Name, tokenContent.Subject));

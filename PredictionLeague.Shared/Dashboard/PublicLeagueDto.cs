@@ -2,8 +2,8 @@
 
 public class PublicLeagueDto
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string SeasonName { get; set; } = string.Empty;
-    public bool IsMember { get; set; }
+    public int Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string SeasonName { get; init; } = string.Empty;
+    public bool IsMember { get; init; }
 }

@@ -22,7 +22,7 @@ public class DapperRoleStore : IRoleStore<IdentityRole>
     {
         cancellationToken.ThrowIfCancellationRequested();
         using var connection = Connection;
-        var sql = @"
+        const string sql = @"
                 INSERT INTO [AspNetRoles] 
                 (
                     [Id], 
@@ -45,7 +45,7 @@ public class DapperRoleStore : IRoleStore<IdentityRole>
     {
         cancellationToken.ThrowIfCancellationRequested();
         using var connection = Connection;
-        var sql = "DELETE FROM [AspNetRoles] WHERE [Id] = @Id;";
+        const string sql = "DELETE FROM [AspNetRoles] WHERE [Id] = @Id;";
         await connection.ExecuteAsync(sql, new { role.Id });
         return IdentityResult.Success;
     }
@@ -54,7 +54,7 @@ public class DapperRoleStore : IRoleStore<IdentityRole>
     {
         cancellationToken.ThrowIfCancellationRequested();
         using var connection = Connection;
-        var sql = "SELECT * FROM [AspNetRoles] WHERE [Id] = @Id;";
+        const string sql = "SELECT * FROM [AspNetRoles] WHERE [Id] = @Id;";
         return await connection.QuerySingleOrDefaultAsync<IdentityRole>(sql, new { Id = roleId });
     }
 
@@ -62,7 +62,7 @@ public class DapperRoleStore : IRoleStore<IdentityRole>
     {
         cancellationToken.ThrowIfCancellationRequested();
         using var connection = Connection;
-        var sql = "SELECT * FROM [AspNetRoles] WHERE [NormalizedName] = @NormalizedName;";
+        const string sql = "SELECT * FROM [AspNetRoles] WHERE [NormalizedName] = @NormalizedName;";
         return await connection.QuerySingleOrDefaultAsync<IdentityRole>(sql, new { NormalizedName = normalizedRoleName });
     }
 
@@ -99,7 +99,7 @@ public class DapperRoleStore : IRoleStore<IdentityRole>
     {
         cancellationToken.ThrowIfCancellationRequested();
         using var connection = Connection;
-        var sql = @"
+        const string sql = @"
                 UPDATE [AspNetRoles] SET
                     [Name] = @Name, 
                     [NormalizedName] = @NormalizedName, 
@@ -111,6 +111,5 @@ public class DapperRoleStore : IRoleStore<IdentityRole>
 
     public void Dispose()
     {
-        // Nothing to dispose.
     }
 }

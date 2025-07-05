@@ -2,10 +2,10 @@
 
 public class RoundDto
 {
-    public int Id { get; set; }
-    public int SeasonId { get; set; }
-    public int RoundNumber { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime Deadline { get; set; }
-    public int MatchCount { get; set; }
+    public int Id { get; init; }
+    public int SeasonId { get; init; }
+    public int RoundNumber { get; init; }
+    public DateTime StartDate { get; init; }
+    public DateTime Deadline { get; init; }
+    public int MatchCount { get; init; }
 }
