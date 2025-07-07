@@ -34,5 +34,5 @@ public interface IAdminService
     Task ApproveLeagueMemberAsync(int leagueId, string memberId);
 
     //Matches
-    Task UpdateMatchResultsAsync(List<UpdateResultRequest>? results);
+    Task UpdateMatchResultsAsync(List<UpdateMatchResultsRequest>? results);
 }

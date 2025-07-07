@@ -150,7 +150,7 @@ public class AdminController : ControllerBase
     #region Matches
 
     [HttpPut("results")]
-    public async Task<IActionResult> UpdateResults([FromBody] List<UpdateResultRequest>? request)
+    public async Task<IActionResult> UpdateResults([FromBody] List<UpdateMatchResultsRequest>? request)
     {
         await _adminService.UpdateMatchResultsAsync(request);
         return Ok(new { message = "Results updated and points calculated successfully." });

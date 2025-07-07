@@ -156,7 +156,7 @@
         _successMessage = null;
 
         var resultsToUpdate = _matches!
-            .Select(m => new UpdateResultRequest
+            .Select(m => new UpdateMatchResultsRequest
             {
                 MatchId = m.Id,
                 HomeScore = m.ActualHomeScore ?? 0,

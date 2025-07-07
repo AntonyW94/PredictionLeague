@@ -16,6 +16,18 @@ public class SeasonService : ISeasonService
         _roundRepository = roundRepository;
     }
 
+    #region Create
+
+    public async Task CreateAsync(CreateSeasonRequest request)
+    {
+        var season = new Season { Name = request.Name, StartDate = request.StartDate, EndDate = request.EndDate, IsActive = true };
+        await _seasonRepository.AddAsync(season);
+    }
+
+    #endregion
+
+    #region Read
+
     public async Task<IEnumerable<SeasonDto>> GetAllAsync()
     {
         var seasons = await _seasonRepository.GetAllAsync();
@@ -52,4 +64,22 @@ public class SeasonService : ISeasonService
             RoundCount = rounds.Count()
         };
     }
+
+    #endregion
+
+    #region Update
+
+    public async Task UpdateAsync(int id, UpdateSeasonRequest request)
+    {
+        var season = await _seasonRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException("Season not found.");
+
+        season.Name = request.Name;
+        season.StartDate = request.StartDate;
+        season.EndDate = request.EndDate;
+        season.IsActive = request.IsActive;
+
+        await _seasonRepository.UpdateAsync(season);
+    }
+
+    #endregion
 }

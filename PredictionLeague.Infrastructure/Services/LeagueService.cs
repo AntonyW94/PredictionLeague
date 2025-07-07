@@ -1,6 +1,7 @@
 ﻿using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Models;
+using PredictionLeague.Shared.Admin.Leagues;
 using PredictionLeague.Shared.Leagues;
 
 namespace PredictionLeague.Infrastructure.Services;
@@ -8,13 +9,17 @@ namespace PredictionLeague.Infrastructure.Services;
 public class LeagueService : ILeagueService
 {
     private readonly ILeagueRepository _leagueRepository;
+    private readonly ISeasonRepository _seasonRepository;
 
-    public LeagueService(ILeagueRepository leagueRepository)
+    public LeagueService(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository)
     {
         _leagueRepository = leagueRepository;
+        _seasonRepository = seasonRepository;
     }
 
-    public async Task<League> CreateLeagueAsync(CreateLeagueRequest request, string administratorUserId)
+    #region Create
+
+    public async Task<League> CreateAsync(CreateLeagueRequest request, string administratorUserId)
     {
         var league = new League
         {
@@ -23,7 +28,7 @@ public class LeagueService : ILeagueService
             AdministratorUserId = administratorUserId,
             EntryCode = string.IsNullOrWhiteSpace(request.EntryCode) ? null : request.EntryCode
         };
-        
+
         await _leagueRepository.CreateAsync(league);
 
         var leagueMember = new LeagueMember
@@ -39,10 +44,58 @@ public class LeagueService : ILeagueService
         return league;
     }
 
+    #endregion
+
+    #region Read
+
+    public async Task<IEnumerable<LeagueDto>> GetAllAsync()
+    {
+        var leagues = await _leagueRepository.GetAllAsync();
+        var leaguesToReturn = new List<LeagueDto>();
+
+        foreach (var league in leagues)
+        {
+            var season = await _seasonRepository.GetByIdAsync(league.SeasonId);
+            var members = await _leagueRepository.GetMembersByLeagueIdAsync(league.Id);
+
+            leaguesToReturn.Add(new LeagueDto
+            {
+                Id = league.Id,
+                Name = league.Name,
+                SeasonName = season?.Name ?? "N/A",
+                MemberCount = members.Count(),
+                EntryCode = league.EntryCode ?? "Public"
+            });
+        }
+
+        return leaguesToReturn;
+    }
+
     public async Task<IEnumerable<League>> GetLeaguesForUserAsync(string userId)
     {
         return await _leagueRepository.GetLeaguesByUserIdAsync(userId);
     }
+
+    public async Task<League?> GetDefaultPublicLeagueAsync()
+    {
+        return await _leagueRepository.GetDefaultPublicLeagueAsync();
+    }
+
+    #endregion
+
+    #region Update
+
+    public async Task UpdateAsync(int id, UpdateLeagueRequest request)
+    {
+        var league = await _leagueRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException("League not found.");
+
+        league.Name = request.Name;
+        league.EntryCode = string.IsNullOrWhiteSpace(request.EntryCode) ? null : request.EntryCode;
+
+        await _leagueRepository.UpdateAsync(league);
+    }
+
+    #endregion
 
     public async Task JoinLeagueAsync(string entryCode, string userId)
     {
@@ -66,17 +119,13 @@ public class LeagueService : ILeagueService
             Status = "Pending",
             JoinedAt = DateTime.UtcNow
         };
-        
+
         await _leagueRepository.AddMemberAsync(newMember);
     }
 
     public async Task ApproveLeagueMemberAsync(int leagueId, string memberId)
     {
-        // In a real app, you would add more logic here, e.g.,
-        // - Check if the current user is the league administrator.
-        // - Update the member's status from "Pending" to "Approved".
-        // This is a placeholder for now.
-        await Task.CompletedTask;
+        await _leagueRepository.UpdateMemberStatusAsync(leagueId, memberId, "Approved");
     }
 
     public async Task JoinPublicLeagueAsync(int leagueId, string userId)
@@ -90,10 +139,5 @@ public class LeagueService : ILeagueService
         };
 
         await _leagueRepository.AddMemberAsync(newMember);
-    }
-
-    public async Task<League?> GetDefaultPublicLeagueAsync()
-    {
-        return await _leagueRepository.GetDefaultPublicLeagueAsync();
     }
 }

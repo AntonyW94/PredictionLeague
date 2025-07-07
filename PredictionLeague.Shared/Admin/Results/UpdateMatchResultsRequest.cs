@@ -2,7 +2,7 @@
 
 namespace PredictionLeague.Shared.Admin.Results;
 
-public class UpdateResultRequest
+public class UpdateMatchResultsRequest
 {
     [Required]
     public int MatchId { get; init; }

@@ -31,7 +31,7 @@ public class LeaguesController : ControllerBase
 
         try
         {
-            var newLeague = await _leagueService.CreateLeagueAsync(request, userId);
+            var newLeague = await _leagueService.CreateAsync(request, userId);
             // Return a 201 Created status with the location of the new resource and the created object.
             return CreatedAtAction(nameof(GetLeagueById), new { leagueId = newLeague.Id }, newLeague);
         }

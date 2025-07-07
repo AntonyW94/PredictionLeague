@@ -1,5 +1,6 @@
 ﻿using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Shared.Admin.Teams;
 
 namespace PredictionLeague.Infrastructure.Services;
@@ -12,6 +13,23 @@ public class TeamService : ITeamService
     {
         _teamRepository = teamRepository;
     }
+   
+    #region Create
+
+    public async Task<Team> CreateAsync(CreateTeamRequest request)
+    {
+        var newTeam = new Team
+        {
+            Name = request.Name, 
+            LogoUrl = request.LogoUrl
+        };
+        
+        return await _teamRepository.AddAsync(newTeam);
+    }
+
+    #endregion
+
+    #region Read
 
     public async Task<IEnumerable<TeamDto>> GetAllAsync()
     {
@@ -37,4 +55,20 @@ public class TeamService : ITeamService
             LogoUrl = team.LogoUrl
         };
     }
+
+    #endregion
+
+    #region Update
+
+    public async Task UpdateAsync(int id, UpdateTeamRequest request)
+    {
+        var team = await _teamRepository.GetByIdAsync(id) ?? throw new KeyNotFoundException("Team not found.");
+      
+        team.Name = request.Name;
+        team.LogoUrl = request.LogoUrl;
+        
+        await _teamRepository.UpdateAsync(team);
+    }
+    
+    #endregion
 }
