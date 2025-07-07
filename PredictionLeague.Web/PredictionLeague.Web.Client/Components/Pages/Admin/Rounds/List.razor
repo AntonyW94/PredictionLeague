@@ -80,5 +80,5 @@
     private void AddRound() { NavigationManager.NavigateTo($"/admin/seasons/{SeasonId}/create-round"); }
     private void EditRound(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/edit/{roundId}");
     private void Back() => NavigationManager.NavigateTo($"/admin/seasons/edit/{SeasonId}");
-    private void EnterResults(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/{roundId}/results");
+    private void EnterResults(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/{roundId}/submit-results");
 }

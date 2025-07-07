@@ -28,6 +28,7 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
 builder.Services.AddScoped<ILeagueService, LeagueService>();
 builder.Services.AddScoped<ILeagueMemberService, LeagueMemberService>();
+builder.Services.AddScoped<IMatchService, MatchService>();
 builder.Services.AddScoped<IPredictionService, PredictionService>();
 builder.Services.AddScoped<IRoundService, RoundService>();
 builder.Services.AddScoped<ISeasonService, SeasonService>();

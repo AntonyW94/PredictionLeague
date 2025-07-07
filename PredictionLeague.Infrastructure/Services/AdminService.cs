@@ -82,7 +82,7 @@ public class AdminService : IAdminService
 
     #region Matches
 
-    public async Task UpdateMatchResultsAsync(List<UpdateMatchResultsRequest>? results) => await _matchService.UpdateMatchResultsAsync(results);
+    public async Task UpdateMatchResultsAsync(int roundId, List<UpdateMatchResultsRequest>? results) => await _matchService.UpdateMatchResultsAsync(roundId, results);
 
     #endregion
 }

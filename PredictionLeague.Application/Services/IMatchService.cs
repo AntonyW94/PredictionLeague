@@ -4,5 +4,5 @@ namespace PredictionLeague.Application.Services;
 
 public interface IMatchService
 {
-    Task UpdateMatchResultsAsync(List<UpdateMatchResultsRequest>? results);
+    Task UpdateMatchResultsAsync(int roundId, List<UpdateMatchResultsRequest>? results);
 }

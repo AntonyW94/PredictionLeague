@@ -1,4 +1,4 @@
-﻿@page "/admin/rounds/{RoundId:int}/results"
+﻿@page "/admin/rounds/{RoundId:int}/submit-results"
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
@@ -163,16 +163,11 @@
                 AwayScore = m.ActualAwayScore ?? 0
             }).ToList();
 
-        var response = await Http.PutAsJsonAsync("api/admin/results", resultsToUpdate);
-
+        var response = await Http.PutAsJsonAsync($"api/admin/rounds/{RoundId}/submit-results", resultsToUpdate);
         if (response.IsSuccessStatusCode)
-        {
             _successMessage = "Results saved and points calculated successfully!";
-        }
         else
-        {
             _errorMessage = "There was an error saving the results.";
-        }
 
         _isBusy = false;
     }

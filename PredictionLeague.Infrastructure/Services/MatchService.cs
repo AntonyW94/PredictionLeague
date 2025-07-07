@@ -1,4 +1,5 @@
-﻿using PredictionLeague.Application.Services;
+﻿using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Shared.Admin.Results;
 using System.Transactions;
@@ -7,7 +8,16 @@ namespace PredictionLeague.Infrastructure.Services
 {
     public class MatchService : IMatchService
     {
-        public Task UpdateMatchResultsAsync(List<UpdateMatchResultsRequest>? results)
+        private readonly IMatchRepository _matchRepository;
+        private readonly IPredictionService _predictionService;
+
+        public MatchService(IMatchRepository matchRepository, IPredictionService predictionService)
+        {
+            _matchRepository = matchRepository;
+            _predictionService = predictionService;
+        }
+
+        public async Task UpdateMatchResultsAsync(int roundId, List<UpdateMatchResultsRequest>? results)
         {
             if (results == null || !results.Any())
                 return;
@@ -22,16 +32,14 @@ namespace PredictionLeague.Infrastructure.Services
 
                     match.ActualHomeTeamScore = result.HomeScore;
                     match.ActualAwayTeamScore = result.AwayScore;
-                    match.Status = MatchStatus.Completed;
+                    match.Status = match.MatchDateTime < DateTime.Now ? MatchStatus.Completed : MatchStatus.Scheduled;
 
                     await _matchRepository.UpdateAsync(match);
                 }
                 scope.Complete();
             }
 
-            var firstMatch = await _matchRepository.GetByIdAsync(results.First().MatchId);
-            if (firstMatch != null)
-                await _predictionService.CalculatePointsForRoundAsync(firstMatch.RoundId);
+            await _predictionService.CalculatePointsForRoundAsync(roundId);
         }
     }
 }
