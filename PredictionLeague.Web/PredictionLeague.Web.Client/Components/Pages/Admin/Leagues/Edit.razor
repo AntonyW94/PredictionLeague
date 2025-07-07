@@ -40,10 +40,7 @@
                     <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" />
                 </div>
 
-                <div class="d-flex justify-content-between mt-4">
-                    <button type="button" class="btn pink-button" @onclick='() => NavigationManager.NavigateTo("/admin/leagues")'>Cancel</button>
-                    <button type="submit" class="btn green-button" disabled="@_isBusy">Save Changes</button>
-                </div>
+                <BackAndSaveButtons BackText="Back to Leagues" OnBackClick="Back" BusyText="Saving..." IsBusy="_isBusy"></BackAndSaveButtons>
             </EditForm>
         }
     </div>
@@ -83,4 +80,6 @@
 
         _isBusy = false;
     }
+
+    private void Back() => NavigationManager.NavigateTo("/admin/leagues");
 }

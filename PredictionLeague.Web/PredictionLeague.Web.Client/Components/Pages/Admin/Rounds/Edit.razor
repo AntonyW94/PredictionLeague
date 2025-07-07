@@ -130,25 +130,8 @@
                         </div>
                     </div>
                 }
-
-                <div class="d-flex justify-content-between mt-4">
-                    <button type="button" class="btn pink-button d-flex align-items-center" @onclick="Back">
-                        <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Rounds
-                    </button>
-
-                    <button type="submit" class="btn green-button d-flex align-items-center" disabled="@_isBusy">
-                        @if (_isBusy)
-                        {
-                            <span class="spinner-border spinner-border-sm"></span>
-                            <span class="ms-2">Saving...</span>
-                        }
-                        else
-                        {
-                            <span class="bi bi-check-circle-fill me-2"></span>
-                            <span>Save</span>
-                        }
-                    </button>
-                </div>
+                
+                <BackAndSaveButtons BackText="Back to Rounds" OnBackClick="Back" BusyText="Saving..." IsBusy="_isBusy"></BackAndSaveButtons>
             </EditForm>
         }
     </div>

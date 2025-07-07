@@ -1,5 +1,8 @@
 ﻿@page "/account/details"
+
 @inject HttpClient Http
+@inject NavigationManager NavigationManager ;
+
 @using PredictionLeague.Shared.Account
 
 <PageTitle>My Details</PageTitle>
@@ -51,20 +54,8 @@
                             <InputText id="phoneNumber" class="form-control" @bind-Value="_model.PhoneNumber" />
                             <ValidationMessage For="@(() => _model.PhoneNumber)" />
                         </div>
-
-                        <div class="d-grid mt-4">
-                            <button type="submit" class="btn green-button" disabled="@_isBusy">
-                                @if (_isBusy)
-                                {
-                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                    <span> Saving...</span>
-                                }
-                                else
-                                {
-                                    <span>Update Details</span>
-                                }
-                            </button>
-                        </div>
+                        
+                        <BackAndSaveButtons BackText="Back to Dashboard" OnBackClick="Back" BusyText="Saving..." IsBusy="_isBusy" ></BackAndSaveButtons>
                     </EditForm>
                 }
             </div>
@@ -146,4 +137,6 @@
       
         _isBusy = false;
     }
+    
+    private void Back() => NavigationManager.NavigateTo("/dashboard");
 }

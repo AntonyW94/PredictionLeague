@@ -1,0 +1,41 @@
+﻿<div class="d-flex justify-content-between mt-4">
+    @if (BackVisible)
+    {
+        <button type="button" class="btn pink-button d-flex align-items-center" @onclick="OnBackClick">
+            <span class="bi bi-arrow-left-circle-fill me-2"></span> @BackText
+        </button>
+    }
+
+    <button type="submit" class="btn green-button d-flex align-items-center" disabled="@IsBusy">
+        @if (IsBusy)
+        {
+            <span class="spinner-border spinner-border-sm"></span>
+            <span> @BusyText</span>
+        }
+        else
+        {
+            <span class="bi bi-check-circle-fill me-2"></span>
+            <span>@SubmitText</span>
+        }
+    </button>
+</div>
+
+@code {
+    [Parameter]
+    public string? BackText { get; set; } = "Back";
+
+    [Parameter]
+    public EventCallback OnBackClick { get; set; }
+
+    [Parameter]
+    public bool BackVisible { get; set; } = true;
+
+    [Parameter]
+    public string? SubmitText { get; set; } = "Save";
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+
+    [Parameter]
+    public string? BusyText { get; set; } = "Saving...";
+}
