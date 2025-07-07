@@ -23,9 +23,18 @@ public class LeagueService : ILeagueService
             AdministratorUserId = administratorUserId,
             EntryCode = string.IsNullOrWhiteSpace(request.EntryCode) ? null : request.EntryCode
         };
-
+        
         await _leagueRepository.CreateAsync(league);
-        await _leagueRepository.AddMemberAsync(league.Id, administratorUserId);
+
+        var leagueMember = new LeagueMember
+        {
+            LeagueId = league.Id,
+            UserId = administratorUserId,
+            JoinedAt = DateTime.UtcNow,
+            Status = "Approved"
+        };
+
+        await _leagueRepository.AddMemberAsync(leagueMember);
 
         return league;
     }
@@ -43,17 +52,44 @@ public class LeagueService : ILeagueService
         if (league == null)
             throw new Exception("Invalid league entry code.");
 
+        if (league.EntryDeadline.HasValue && league.EntryDeadline.Value < DateTime.UtcNow)
+            throw new Exception("The deadline to join this league has passed.");
+
         var members = await _leagueRepository.GetMembersByLeagueIdAsync(league.Id);
         if (members.Any(m => m.UserId == userId))
             return;
 
-        await _leagueRepository.AddMemberAsync(league.Id, userId);
+        var newMember = new LeagueMember
+        {
+            LeagueId = league.Id,
+            UserId = userId,
+            Status = "Pending",
+            JoinedAt = DateTime.UtcNow
+        };
+        
+        await _leagueRepository.AddMemberAsync(newMember);
+    }
+
+    public async Task ApproveLeagueMemberAsync(int leagueId, string memberId)
+    {
+        // In a real app, you would add more logic here, e.g.,
+        // - Check if the current user is the league administrator.
+        // - Update the member's status from "Pending" to "Approved".
+        // This is a placeholder for now.
+        await Task.CompletedTask;
     }
 
     public async Task JoinPublicLeagueAsync(int leagueId, string userId)
     {
-        // In a real app, you would add more validation here.
-        await _leagueRepository.AddMemberAsync(leagueId, userId);
+        var newMember = new LeagueMember
+        {
+            LeagueId = leagueId,
+            UserId = userId,
+            Status = "Pending",
+            JoinedAt = DateTime.UtcNow
+        };
+
+        await _leagueRepository.AddMemberAsync(newMember);
     }
 
     public async Task<League?> GetDefaultPublicLeagueAsync()

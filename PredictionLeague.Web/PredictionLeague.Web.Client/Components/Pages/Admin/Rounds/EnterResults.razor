@@ -10,7 +10,7 @@
 <PageTitle>Enter Results - Round @_roundNumber</PageTitle>
 
 <div class="page-container">
-    <div class="form-container wide">
+    <div class="form-container extra-wide">
         <h3 class="text-center fw-bold text-white mb-4">Enter Results for Round @_roundNumber</h3>
 
         @if (_isLoading)
@@ -25,6 +25,7 @@
                 {
                     <div class="alert alert-danger">@_errorMessage</div>
                 }
+
                 @if (!string.IsNullOrEmpty(_successMessage))
                 {
                     <div class="alert alert-success">@_successMessage</div>
@@ -34,19 +35,44 @@
                     @foreach (var match in _matches)
                     {
                         <div class="prediction-card">
+                            <div class="prediction-card-header">
+                                @match.MatchDateTime.ToString("dddd dd MMMM, HH:mm")
+                            </div>
                             <div class="prediction-card-body">
                                 <div class="team-display">
                                     <img src="@match.HomeTeamLogoUrl" class="match-logo" alt="Home Team Logo" />
-                                    <span class="team-name">@match.HomeTeamName</span>
+                                    <span class="team-name d-none d-sm-block">@match.HomeTeamName</span>
                                 </div>
+
                                 <div class="score-input-group">
-                                    <InputNumber class="form-control score-input" @bind-Value="match.ActualHomeScore" />
+                                    <div class="score-input-stepper">
+                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, true, 1)">
+                                            <span class="bi bi-caret-up-fill"></span>
+                                        </button>
+
+                                        <div class="score-value">@match.ActualHomeScore</div>
+
+                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, true, -1)">
+                                            <span class="bi bi-caret-down-fill"></span>
+                                        </button>
+                                    </div>
+
                                     <span class="vs-separator">-</span>
-                                    <InputNumber class="form-control score-input" @bind-Value="match.ActualAwayScore" />
+
+                                    <div class="score-input-stepper">
+                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, false, 1)">
+                                            <span class="bi bi-caret-up-fill"></span>
+                                        </button>
+                                        <div class="score-value">@match.ActualAwayScore</div>
+                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, false, -1)">
+                                            <span class="bi bi-caret-down-fill"></span>
+                                        </button>
+                                    </div>
                                 </div>
+
                                 <div class="team-display">
                                     <img src="@match.AwayTeamLogoUrl" class="match-logo" alt="Away Team Logo" />
-                                    <span class="team-name">@match.AwayTeamName</span>
+                                    <span class="team-name d-none d-sm-block">@match.AwayTeamName</span>
                                 </div>
                             </div>
                         </div>
@@ -60,9 +86,9 @@
                         {
                             <span class="spinner-border spinner-border-sm"></span>
                             <span> Saving...</span>
-     }
-    else
-    {
+                        }
+                        else
+                        {
                             <span>Save Results & Calculate Points</span>
                         }
                     </button>
@@ -96,6 +122,7 @@
                 _matches = roundDetails.Matches.Select(m => new MatchResultDto
                 {
                     Id = m.Id,
+                    MatchDateTime = m.MatchDateTime,
                     HomeTeamName = m.HomeTeamName,
                     HomeTeamLogoUrl = m.HomeTeamLogoUrl,
                     AwayTeamName = m.AwayTeamName,
@@ -112,6 +139,26 @@
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private static void UpdateScore(MatchResultDto match, bool isHomeTeam, int delta)
+    {
+        if (isHomeTeam)
+        {
+            var currentScore = match.ActualHomeScore ?? 0;
+           
+            var newScore = currentScore + delta;
+            if (newScore >= 0 && newScore <= 9)
+                match.ActualHomeScore = newScore;
+        }
+        else
+        {
+            var currentScore = match.ActualAwayScore ?? 0;
+            
+            var newScore = currentScore + delta;
+            if (newScore >= 0 && newScore <= 9)
+                match.ActualAwayScore = newScore;
         }
     }
 

@@ -1,4 +1,5 @@
-﻿using PredictionLeague.Application.Repositories;
+﻿using Microsoft.AspNetCore.Identity;
+using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Shared.Admin;
@@ -22,6 +23,7 @@ public class AdminService : IAdminService
     private readonly ILeagueRepository _leagueRepository;
     private readonly IPredictionService _predictionService;
     private readonly ISeasonService _seasonService;
+    private readonly UserManager<ApplicationUser> _userManager; 
 
     public AdminService(
         ISeasonRepository seasonRepository,
@@ -29,7 +31,9 @@ public class AdminService : IAdminService
         IMatchRepository matchRepository,
         ITeamRepository teamRepository,
         ILeagueRepository leagueRepository,
-        IPredictionService predictionService, ISeasonService seasonService)
+        IPredictionService predictionService,
+        ISeasonService seasonService, 
+        UserManager<ApplicationUser> userManager)
     {
         _seasonRepository = seasonRepository;
         _roundRepository = roundRepository;
@@ -38,6 +42,7 @@ public class AdminService : IAdminService
         _leagueRepository = leagueRepository;
         _predictionService = predictionService;
         _seasonService = seasonService;
+        _userManager = userManager;
     }
 
     #region Seasons
@@ -216,6 +221,33 @@ public class AdminService : IAdminService
         league.Name = request.Name;
         league.EntryCode = string.IsNullOrWhiteSpace(request.EntryCode) ? null : request.EntryCode;
         await _leagueRepository.UpdateAsync(league);
+    }
+    
+    public async Task<IEnumerable<LeagueMemberDto>> GetLeagueMembersAsync(int leagueId)
+    {
+        var members = await _leagueRepository.GetMembersByLeagueIdAsync(leagueId);
+        var membersToReturn = new List<LeagueMemberDto>();
+
+        foreach (var member in members)
+        {
+            var user = await _userManager.FindByIdAsync(member.UserId);
+            if (user != null)
+            {
+                membersToReturn.Add(new LeagueMemberDto
+                {
+                    UserId = member.UserId,
+                    FullName = $"{user.FirstName} {user.LastName}",
+                    JoinedAt = member.JoinedAt,
+                    Status = member.Status
+                });
+            }
+        }
+        return membersToReturn;
+    }
+   
+    public async Task ApproveLeagueMemberAsync(int leagueId, string memberId)
+    {
+        await _leagueRepository.UpdateMemberStatusAsync(leagueId, memberId, "Approved");
     }
 
     #endregion

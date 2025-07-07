@@ -43,6 +43,12 @@
                                             <NavLink href="@($"/predictions/{round.Id}")" class="btn green-button w-100">
                                                 Predict Now
                                             </NavLink>
+                                            
+                                            <AuthorizeView Roles="Administrator">
+                                                <NavLink href="@($"/admin/rounds/{round.Id}/results")" class="btn light-cyan-button w-100 mt-3">
+                                                    Enter Results
+                                                </NavLink>
+                                            </AuthorizeView>
                                         </div>
                                     </div>
                                 }
@@ -61,6 +67,17 @@
                                 <p class="text-white fw-bold text-center">There are currently no upcoming rounds available for you to predict. Please check back later.</p>
                             </div>
                         }
+                    </div>
+                </div>
+
+                <!-- Leaderboards Column -->
+                <div class="col-lg-4 mb-4">
+                    <div class="dashboard-card h-100">
+                        <h3 class="text-white text-center fw-bold mb-4">Leaderboards</h3>
+                        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
+                            <span class="bi bi-trophy-fill" style="font-size: 4rem; color: var(--pl-green);"></span>
+                            <p class="mt-3 text-white fw-bold text-center">Leaderboard feature coming soon!</p>
+                        </div>
                     </div>
                 </div>
 
@@ -98,17 +115,6 @@
                                 <p class="text-white fw-bold text-center">There are currently no leagues available for you to join. Please check back later.</p>
                             </div>
                         }
-                    </div>
-                </div>
-
-                <!-- Leaderboards Column -->
-                <div class="col-lg-4 mb-4">
-                    <div class="dashboard-card h-100">
-                        <h3 class="text-white text-center fw-bold mb-4">Leaderboards</h3>
-                        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
-                            <span class="bi bi-trophy-fill" style="font-size: 4rem; color: var(--pl-green);"></span>
-                            <p class="mt-3 text-white fw-bold text-center">Leaderboard feature coming soon!</p>
-                        </div>
                     </div>
                 </div>
             </div>

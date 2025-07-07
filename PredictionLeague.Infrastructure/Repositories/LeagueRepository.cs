@@ -33,12 +33,12 @@ public class LeagueRepository : ILeagueRepository
         return await connection.QueryAsync<League>(sql);
     }
 
-    public async Task AddMemberAsync(int leagueId, string userId)
+    public async Task AddMemberAsync(LeagueMember member)
     {
-        const string sql = "INSERT INTO LeagueMembers (LeagueId, UserId) VALUES (@LeagueId, @UserId);";
-
+        const string sql = "INSERT INTO LeagueMembers (LeagueId, UserId, Status, JoinedAt) VALUES (@LeagueId, @UserId, @Status, @JoinedAt);";
+       
         using var dbConnection = Connection;
-        await dbConnection.ExecuteAsync(sql, new { LeagueId = leagueId, UserId = userId });
+        await dbConnection.ExecuteAsync(sql, member);
     }
 
     public async Task CreateAsync(League league)
@@ -106,5 +106,13 @@ public class LeagueRepository : ILeagueRepository
 
         using var connection = Connection;
         await connection.ExecuteAsync(sql, league);
+    }
+
+    public async Task UpdateMemberStatusAsync(int leagueId, string userId, string status)
+    {
+        const string sql = "UPDATE [LeagueMembers] SET [Status] = @Status WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId;";
+       
+        using var connection = Connection;
+        await connection.ExecuteAsync(sql, new { Status = status, LeagueId = leagueId, UserId = userId });
     }
 }

@@ -30,6 +30,8 @@ public interface IAdminService
     Task<IEnumerable<LeagueDto>> GetAllLeaguesAsync();
     Task CreateLeagueAsync(CreateLeagueRequest request, string administratorId);
     Task UpdateLeagueAsync(int id, UpdateLeagueRequest request);
+    Task<IEnumerable<LeagueMemberDto>> GetLeagueMembersAsync(int leagueId);
+    Task ApproveLeagueMemberAsync(int leagueId, string memberId);
 
     //Matches
     Task UpdateMatchResultsAsync(List<UpdateResultRequest>? results);

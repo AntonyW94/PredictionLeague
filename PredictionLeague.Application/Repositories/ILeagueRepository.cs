@@ -11,6 +11,7 @@ public interface ILeagueRepository
     Task<League?> GetDefaultPublicLeagueAsync();
     Task CreateAsync(League league);
     Task UpdateAsync(League league);
-    Task AddMemberAsync(int leagueId, string userId);
+    Task AddMemberAsync(LeagueMember member);
     Task<IEnumerable<LeagueMember>> GetMembersByLeagueIdAsync(int leagueId);
+    Task UpdateMemberStatusAsync(int leagueId, string userId, string status);
 }

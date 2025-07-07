@@ -30,7 +30,7 @@
 
 .prediction-card-body {
     background-color: var(--pl-purple);
-    padding: 1.5rem;
+    padding: 1.0rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -46,13 +46,13 @@
 
     .team-display .match-logo {
         height: 60px;
-        margin-bottom: 0.5rem;
     }
 
     .team-display .team-name {
         font-weight: 500;
-        min-height: 40px; /* Ensures consistent height */
+        min-height: 40px;
         font-size: 14px;
+        margin-top: 0.5em;
     }
 
 /* --- >> NEW STYLES FOR SCORE STEPPER << --- */
@@ -60,6 +60,7 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+    padding: 1.0rem;
 }
 
 .score-input-stepper {

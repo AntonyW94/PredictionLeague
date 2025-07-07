@@ -131,6 +131,20 @@ public class AdminController : ControllerBase
         return Ok(new { message = "League updated successfully." });
     }
 
+    [HttpGet("leagues/{leagueId}/members")]
+    public async Task<IActionResult> GetLeagueMembers(int leagueId)
+    {
+        var members = await _adminService.GetLeagueMembersAsync(leagueId);
+        return Ok(members);
+    }
+
+    [HttpPost("leagues/{leagueId}/members/{memberId}/approve")]
+    public async Task<IActionResult> ApproveLeagueMember(int leagueId, string memberId)
+    {
+        await _adminService.ApproveLeagueMemberAsync(leagueId, memberId);
+        return Ok(new { message = "Member approved successfully." });
+    }
+    
     #endregion
 
     #region Matches
