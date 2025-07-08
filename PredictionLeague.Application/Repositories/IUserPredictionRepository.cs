@@ -1,4 +1,5 @@
 ﻿using PredictionLeague.Domain.Models;
+using PredictionLeague.Shared.Leaderboards;
 
 namespace PredictionLeague.Application.Repositories;
 
@@ -8,4 +9,6 @@ public interface IUserPredictionRepository
     Task<IEnumerable<UserPrediction>> GetByUserIdAndRoundIdAsync(string userId, int roundId);
     Task UpsertAsync(UserPrediction prediction);
     Task UpdatePointsAsync(int predictionId, int points);
+    Task<IEnumerable<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId);
+    Task<IEnumerable<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month, int year);
 }

@@ -6,48 +6,45 @@ namespace PredictionLeague.Infrastructure.Services;
 
 public class LeaderboardService : ILeaderboardService
 {
-    private readonly IRoundResultRepository _roundResultRepository;
-
     private readonly ILeagueRepository _leagueRepository;
-    //private readonly IUserRepository _userRepository;
+    private readonly ISeasonRepository _seasonRepository;
+    private readonly IUserPredictionRepository _predictionRepository;
 
-    public LeaderboardService(IRoundResultRepository roundResultRepository, ILeagueRepository leagueRepository)
+    public LeaderboardService(
+        ILeagueRepository leagueRepository,
+        ISeasonRepository seasonRepository,
+        IUserPredictionRepository predictionRepository)
     {
-        _roundResultRepository = roundResultRepository;
         _leagueRepository = leagueRepository;
+        _seasonRepository = seasonRepository;
+        _predictionRepository = predictionRepository;
     }
 
-    public async Task<IEnumerable<LeaderboardEntry>> GetRoundLeaderboardAsync(int roundId, int? leagueId = null)
+    public async Task<LeaderboardDto> GetOverallLeaderboardAsync(int leagueId)
     {
-        var results = await _roundResultRepository.GetByRoundIdAsync(roundId);
+        var league = await _leagueRepository.GetByIdAsync(leagueId) ?? throw new KeyNotFoundException("League not found.");
+        var season = await _seasonRepository.GetByIdAsync(league.SeasonId) ?? throw new KeyNotFoundException("Season not found.");
+        var entries = await _predictionRepository.GetOverallLeaderboardAsync(leagueId);
 
-        if (leagueId.HasValue)
+        return new LeaderboardDto
         {
-            var leagueMembers = await _leagueRepository.GetMembersByLeagueIdAsync(leagueId.Value);
-            var memberIds = leagueMembers.Select(m => m.UserId).ToHashSet();
-            results = results.Where(r => memberIds.Contains(r.UserId));
-        }
-
-        var leaderboard = results
-            .OrderByDescending(r => r.TotalPoints)
-            .Select((r, index) => new LeaderboardEntry
-            {
-                Rank = index + 1,
-                UserId = r.UserId,
-                UserName = "User " + r.UserId[..5],
-                TotalPoints = r.TotalPoints
-            }).ToList();
-
-        return leaderboard;
+            LeagueName = league.Name,
+            SeasonName = season.Name,
+            Entries = entries.ToList()
+        };
     }
 
-    public Task<IEnumerable<LeaderboardEntry>> GetMonthlyLeaderboardAsync(int year, int month, int? leagueId = null)
+    public async Task<LeaderboardDto> GetMonthlyLeaderboardAsync(int leagueId, int month, int year)
     {
-        throw new NotImplementedException();
-    }
+        var league = await _leagueRepository.GetByIdAsync(leagueId) ?? throw new KeyNotFoundException("League not found.");
+        var season = await _seasonRepository.GetByIdAsync(league.SeasonId) ?? throw new KeyNotFoundException("Season not found.");
+        var entries = await _predictionRepository.GetMonthlyLeaderboardAsync(leagueId, month, year);
 
-    public Task<IEnumerable<LeaderboardEntry>> GetYearlyLeaderboardAsync(int seasonId, int? leagueId = null)
-    {
-        throw new NotImplementedException();
+        return new LeaderboardDto
+        {
+            LeagueName = league.Name,
+            SeasonName = season.Name,
+            Entries = entries.ToList()
+        };
     }
 }

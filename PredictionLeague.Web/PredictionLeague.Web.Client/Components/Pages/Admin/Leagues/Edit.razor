@@ -55,11 +55,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var league = await Http.GetFromJsonAsync<LeagueDto>($"api/leagues/{LeagueId}"); // Assumes a public endpoint exists
+        var league = await Http.GetFromJsonAsync<LeagueDto>($"api/leagues/{LeagueId}");
         if (league != null)
-        {
             _model = new UpdateLeagueRequest { Name = league.Name, EntryCode = league.EntryCode };
-        }
     }
 
     private async Task HandleUpdateLeague()
@@ -70,13 +68,9 @@
         
         var response = await Http.PutAsJsonAsync($"api/admin/leagues/{LeagueId}", _model);
         if (response.IsSuccessStatusCode)
-        {
             _successMessage = "League updated successfully!";
-        }
         else
-        {
             _errorMessage = "Error updating league.";
-        }
 
         _isBusy = false;
     }
