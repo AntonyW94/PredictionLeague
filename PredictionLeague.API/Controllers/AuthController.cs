@@ -62,14 +62,12 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
-
         if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
         {
             return Unauthorized(new AuthResponse { IsSuccess = false, Message = "Invalid email or password." });
         }
 
         var tokenResponse = await GenerateJwtToken(user);
-
         return Ok(tokenResponse);
     }
 
