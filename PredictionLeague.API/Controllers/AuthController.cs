@@ -234,7 +234,7 @@ public class AuthController : ControllerBase
             new Claim("FirstName", user.FirstName),
             new Claim("LastName", user.LastName),
             new Claim("FullName", $"{user.FirstName} {user.LastName}")
-        }.Union(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+        }.Union(userRoles.Select(role => new Claim("role", role)));
 
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var jwtSecret = jwtSettings["Secret"];

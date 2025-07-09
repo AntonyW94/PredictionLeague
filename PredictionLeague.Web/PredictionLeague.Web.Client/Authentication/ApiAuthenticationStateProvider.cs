@@ -99,8 +99,11 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(token);
-        var identity = new ClaimsIdentity(jwtToken.Claims, "jwt");
-
+        var identity = new ClaimsIdentity(jwtToken.Claims,
+            "jwt",
+            "FullName",
+            "role"); 
+        
         return new ClaimsPrincipal(identity);
     }
 }
