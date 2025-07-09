@@ -7,7 +7,7 @@ using System.Data;
 
 namespace PredictionLeague.Infrastructure.Identity;
 
-public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailStore<ApplicationUser>, IUserRoleStore<ApplicationUser>
+public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailStore<ApplicationUser>, IUserRoleStore<ApplicationUser>, IUserLoginStore<ApplicationUser>
 {
     private readonly string _connectionString;
 
@@ -138,11 +138,11 @@ public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailSt
     }
 
     public void Dispose() { }
-   
+
     #endregion
 
     #region IUserRoleStore Methods
-    
+
     public async Task AddToRoleAsync(ApplicationUser user, string roleName, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -212,6 +212,73 @@ public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailSt
         var users = await connection.QueryAsync<ApplicationUser>(sql, new { NormalizedName = roleName.ToUpper() });
         return users.ToList();
     }
-    
+
+    #endregion
+
+    #region IUserLoginStore Methods
+
+    public async Task AddLoginAsync(ApplicationUser user, UserLoginInfo login, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        using var connection = Connection;
+        const string sql = @"
+                INSERT INTO [AspNetUserLogins] 
+                (
+                    [LoginProvider], 
+                    [ProviderKey], 
+                    [ProviderDisplayName], 
+                    [UserId]
+                )
+                VALUES 
+                (
+                    @LoginProvider, 
+                    @ProviderKey, 
+                    @ProviderDisplayName, 
+                    @UserId
+                );";
+        await connection.ExecuteAsync(sql, new
+        {
+            login.LoginProvider,
+            login.ProviderKey,
+            login.ProviderDisplayName,
+            UserId = user.Id
+        });
+    }
+
+    public async Task RemoveLoginAsync(ApplicationUser user, string loginProvider, string providerKey, CancellationToken cancellationToken)
+    {
+        const string sql = "DELETE FROM [AspNetUserLogins] WHERE [LoginProvider] = @LoginProvider AND [ProviderKey] = @ProviderKey AND [UserId] = @UserId;";
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        using var connection = Connection;
+        await connection.ExecuteAsync(sql, new { LoginProvider = loginProvider, ProviderKey = providerKey, UserId = user.Id });
+    }
+
+    public async Task<IList<UserLoginInfo>> GetLoginsAsync(ApplicationUser user, CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT * FROM [AspNetUserLogins] WHERE [UserId] = @UserId;";
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        using var connection = Connection;
+        var logins = await connection.QueryAsync<UserLoginInfo>(sql, new { UserId = user.Id });
+
+        return logins.ToList();
+    }
+
+    public async Task<ApplicationUser?> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+                SELECT u.* FROM [AspNetUsers] u
+                INNER JOIN [AspNetUserLogins] l ON l.[UserId] = u.[Id]
+                WHERE l.[LoginProvider] = @LoginProvider AND l.[ProviderKey] = @ProviderKey;";
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        using var connection = Connection;
+        return await connection.QuerySingleOrDefaultAsync<ApplicationUser>(sql, new { LoginProvider = loginProvider, ProviderKey = providerKey });
+    }
+
     #endregion
 }

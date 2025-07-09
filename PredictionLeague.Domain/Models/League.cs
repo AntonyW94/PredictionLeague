@@ -8,5 +8,5 @@ public class League
     public string AdministratorUserId { get; init; } = string.Empty;
     public string? EntryCode { get; set; }
     public DateTime CreatedAt { get; init; }
-    public DateTime? EntryDeadline { get; set; }
+    public DateTime? EntryDeadline { get; init; }
 }

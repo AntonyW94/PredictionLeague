@@ -1,9 +1,6 @@
-﻿using Blazored.LocalStorage;
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using PredictionLeague.Shared.Auth;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace PredictionLeague.Web.Client.Authentication;
 
@@ -11,17 +8,12 @@ public class AuthService : IAuthService
 {
     private readonly HttpClient _httpClient;
     private readonly AuthenticationStateProvider _authenticationStateProvider;
-    private readonly ILocalStorageService _localStorage;
-    private readonly JsonSerializerOptions _options;
 
     public AuthService(HttpClient httpClient,
-        AuthenticationStateProvider authenticationStateProvider,
-        ILocalStorageService localStorage)
+        AuthenticationStateProvider authenticationStateProvider)
     {
         _httpClient = httpClient;
         _authenticationStateProvider = authenticationStateProvider;
-        _localStorage = localStorage;
-        _options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
     }
 
     public async Task<bool> JoinPublicLeagueAsync(int leagueId)
@@ -33,33 +25,21 @@ public class AuthService : IAuthService
     public async Task<RegisterResponse> Register(RegisterRequest registerRequest)
     {
         var result = await _httpClient.PostAsJsonAsync("api/auth/register", registerRequest);
-        var content = await result.Content.ReadFromJsonAsync<RegisterResponse>(_options);
-        
-        return content ?? new RegisterResponse { IsSuccess = false, Message = "Registration failed" };
+        return await result.Content.ReadFromJsonAsync<RegisterResponse>() ?? new RegisterResponse { IsSuccess = false, Message = "Failed to process server response." };
     }
 
     public async Task<AuthResponse> Login(LoginRequest loginRequest)
     {
         var result = await _httpClient.PostAsJsonAsync("api/auth/login", loginRequest);
-      
-        var content = await result.Content.ReadFromJsonAsync<AuthResponse>(_options);
-        if (content == null)
-            return new AuthResponse { IsSuccess = false, Message = "Login failed" };
-
-        if (!result.IsSuccessStatusCode || string.IsNullOrEmpty(content.Token)) 
-            return content;
+        var authResponse = await result.Content.ReadFromJsonAsync<AuthResponse>();
+        if (authResponse != null && authResponse.IsSuccess)
+            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).Login(authResponse);
         
-        await _localStorage.SetItemAsync("authToken", content.Token);
-        ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(content.Token);
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", content.Token);
-
-        return content; 
+        return authResponse ?? new AuthResponse { IsSuccess = false, Message = "Failed to process server response." };
     }
 
     public async Task Logout()
     {
-        await _localStorage.RemoveItemAsync("authToken");
-        ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOut();
-        _httpClient.DefaultRequestHeaders.Authorization = null;
+        await ((ApiAuthenticationStateProvider)_authenticationStateProvider).Logout();
     }
 }

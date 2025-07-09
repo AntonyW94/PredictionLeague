@@ -1,68 +1,106 @@
-﻿using Blazored.LocalStorage;
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
+using PredictionLeague.Shared.Auth;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Security.Claims;
 
 namespace PredictionLeague.Web.Client.Authentication;
 
 public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 {
-    private readonly ILocalStorageService _localStorage;
     private readonly HttpClient _httpClient;
-    private readonly JwtSecurityTokenHandler _jwtSecurityTokenHandler = new();
+    private ClaimsPrincipal _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
 
-    public ApiAuthenticationStateProvider(ILocalStorageService localStorage, HttpClient httpClient)
+    public ApiAuthenticationStateProvider(HttpClient httpClient)
     {
-        _localStorage = localStorage;
         _httpClient = httpClient;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        var savedToken = await _localStorage.GetItemAsync<string>("authToken");
+        _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
 
-        if (string.IsNullOrWhiteSpace(savedToken))
+        var authResponse = await RefreshAccessToken();
+        if (authResponse != null && authResponse.IsSuccess && !string.IsNullOrEmpty(authResponse.Token))
         {
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.Token);
+            _currentUser = CreateClaimsPrincipalFromToken(authResponse.Token);
         }
-
-        var tokenContent = _jwtSecurityTokenHandler.ReadJwtToken(savedToken);
-        var expiry = tokenContent.ValidTo;
-        if (expiry < DateTime.UtcNow)
+        else
         {
-            await _localStorage.RemoveItemAsync("authToken");
-            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+            _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
         }
-
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", savedToken);
-
-        var claims = ParseClaims(tokenContent);
-        var user = new ClaimsPrincipal(new ClaimsIdentity(claims, "jwt"));
-
-        return new AuthenticationState(user);
+        
+        return new AuthenticationState(_currentUser);
     }
 
-    public void MarkUserAsAuthenticated(string token)
+    public Task Login(AuthResponse? authResponse)
     {
-        var tokenContent = _jwtSecurityTokenHandler.ReadJwtToken(token);
-        var claims = ParseClaims(tokenContent);
-        var authenticatedUser = new ClaimsPrincipal(new ClaimsIdentity(claims, "jwt"));
-        var authState = Task.FromResult(new AuthenticationState(authenticatedUser));
-        NotifyAuthenticationStateChanged(authState);
+        if (authResponse != null && authResponse.IsSuccess && !string.IsNullOrEmpty(authResponse.Token))
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.Token);
+            _currentUser = CreateClaimsPrincipalFromToken(authResponse.Token);
+        }
+        else
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+            _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
+        }
+        
+        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));
+
+        return Task.CompletedTask;
     }
 
-    public void MarkUserAsLoggedOut()
+    public async Task NotifyUserAuthentication()
     {
-        var anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
-        var authState = Task.FromResult(new AuthenticationState(anonymousUser));
-        NotifyAuthenticationStateChanged(authState);
+        var authResponse = await RefreshAccessToken();
+        if (authResponse != null && authResponse.IsSuccess && !string.IsNullOrEmpty(authResponse.Token))
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.Token);
+            _currentUser = CreateClaimsPrincipalFromToken(authResponse.Token);
+        }
+        
+        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));
     }
 
-    private static IList<Claim> ParseClaims(JwtSecurityToken tokenContent)
+    public async Task Logout()
     {
-        var claims = tokenContent.Claims.ToList();
-        claims.Add(new Claim(ClaimTypes.Name, tokenContent.Subject));
-        return claims;
+        await _httpClient.PostAsync("api/auth/logout", null);
+        
+        _httpClient.DefaultRequestHeaders.Authorization = null;
+        _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
+       
+        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));
+    }
+
+    private async Task<AuthResponse?> RefreshAccessToken()
+    {
+        try
+        {
+            var response = await _httpClient.PostAsync("api/auth/refresh-token", null);
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<AuthResponse>();
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static ClaimsPrincipal CreateClaimsPrincipalFromToken(string token)
+    {
+        if (string.IsNullOrEmpty(token))
+            return new ClaimsPrincipal(new ClaimsIdentity());
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var jwtToken = tokenHandler.ReadJwtToken(token);
+        var identity = new ClaimsIdentity(jwtToken.Claims, "jwt");
+
+        return new ClaimsPrincipal(identity);
     }
 }

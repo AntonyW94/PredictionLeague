@@ -1,0 +1,42 @@
+﻿@page "/auth/external-login-callback"
+
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthStateProvider
+
+@attribute [AllowAnonymous]
+
+@using Microsoft.AspNetCore.WebUtilities
+
+<div class="page-container">
+    <div class="text-center text-white">
+        <h3>Finalizing login...</h3>
+        <p>This should only take a moment.</p>
+        <div class="spinner-border mt-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _hasProcessed;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_hasProcessed)
+        {
+            _hasProcessed = true;
+
+            var uri = new Uri(NavigationManager.Uri);
+
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var errorValue))
+            {
+                NavigationManager.NavigateTo($"/auth/login?error={Uri.EscapeDataString(errorValue.ToString())}");
+            }
+            else
+            {
+                await ((ApiAuthenticationStateProvider)AuthStateProvider).NotifyUserAuthentication();
+                NavigationManager.NavigateTo("/dashboard", forceLoad: true);
+            }
+        }
+    }
+}

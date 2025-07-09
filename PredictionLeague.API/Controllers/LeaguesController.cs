@@ -84,7 +84,7 @@ public class LeaguesController : ControllerBase
     }
 
     [HttpGet("{leagueId:int}")]
-    public async Task<IActionResult> GetLeagueById(int leagueId)
+    public IActionResult GetLeagueById(int leagueId)
     {
         // Note: Implementation for this would require a new GetByIdAsync method in ILeagueService
         // and ILeagueRepository. For now, it serves as a target for CreatedAtAction.
