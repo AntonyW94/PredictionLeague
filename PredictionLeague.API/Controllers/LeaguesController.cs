@@ -54,7 +54,7 @@ public class LeaguesController : ControllerBase
 
         try
         {
-            await _leagueService.JoinLeagueAsync(JoinLeagueRequest.EntryCode, userId);
+            await _leagueService.JoinLeagueAsync(request.EntryCode, userId);
             return Ok(new { message = "Successfully joined league." });
         }
         catch (Exception ex)
