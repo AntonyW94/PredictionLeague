@@ -17,14 +17,12 @@ public class LeaderboardController : ControllerBase
     [HttpGet("overall")]
     public async Task<IActionResult> GetOverallLeaderboard(int leagueId)
     {
-        var leaderboard = await _leaderboardService.GetOverallLeaderboardAsync(leagueId);
-        return Ok(leaderboard);
+        return Ok(await _leaderboardService.GetOverallLeaderboardAsync(leagueId));
     }
     
     [HttpGet("monthly")]
     public async Task<IActionResult> GetMonthlyLeaderboard(int leagueId, [FromQuery] int month, [FromQuery] int year)
     {
-        var leaderboard = await _leaderboardService.GetMonthlyLeaderboardAsync(leagueId, month, year);
-        return Ok(leaderboard);
+        return Ok(await _leaderboardService.GetMonthlyLeaderboardAsync(leagueId, month, year));
     }
 }

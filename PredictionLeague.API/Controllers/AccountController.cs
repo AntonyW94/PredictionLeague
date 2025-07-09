@@ -70,10 +70,9 @@ public class AccountController : ControllerBase
         user.PhoneNumber = request.PhoneNumber;
 
         var result = await _userManager.UpdateAsync(user);
-       
-        if (!result.Succeeded)
-            return BadRequest(result.Errors);
+        if (result.Succeeded)
+            return Ok(new { message = "Details updated successfully." }); 
         
-        return Ok(new { message = "Details updated successfully." });
+        return BadRequest(result.Errors);
     }
 }

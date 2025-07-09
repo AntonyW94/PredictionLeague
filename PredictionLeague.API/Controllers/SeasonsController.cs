@@ -17,8 +17,7 @@ public class SeasonsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllSeasons()
     {
-        var seasons = await _seasonService.GetAllAsync();
-        return Ok(seasons);
+        return Ok(await _seasonService.GetAllAsync());
     }
 
     [HttpGet("{id:int}")]
@@ -26,9 +25,8 @@ public class SeasonsController : ControllerBase
     {
         var season = await _seasonService.GetByIdAsync(id);
         if (season == null)
-        {
             return NotFound();
-        }
+
         return Ok(season);
     }
 }

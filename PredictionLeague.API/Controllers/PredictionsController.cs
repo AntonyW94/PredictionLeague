@@ -22,31 +22,18 @@ public class PredictionsController : ControllerBase
     public async Task<IActionResult> GetPredictionPageData(int roundId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var pageData = await _predictionService.GetPredictionPageDataAsync(roundId, userId!);
-       
-        return Ok(pageData);
+        return Ok(await _predictionService.GetPredictionPageDataAsync(roundId, userId!));
     }
 
     [HttpPost]
     public async Task<IActionResult> SubmitPredictions([FromBody] SubmitPredictionsRequest request)
     {
-        try
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
-                return Unauthorized("User ID could not be found in the token.");
-            
-            await _predictionService.SubmitPredictionsAsync(userId, request);
-           
-            return Ok(new { message = "Predictions submitted successfully." });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, "An unexpected error occurred.");
-        }
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId == null)
+            return Unauthorized("User ID could not be found in the token.");
+
+        await _predictionService.SubmitPredictionsAsync(userId, request);
+
+        return Ok(new { message = "Predictions submitted successfully." });
     }
 }

@@ -30,8 +30,7 @@ public class AdminController : ControllerBase
     [HttpGet("seasons")]
     public async Task<IActionResult> GetAllSeasons()
     {
-        var seasons = await _adminService.GetAllSeasonsAsync();
-        return Ok(seasons);
+        return Ok(await _adminService.GetAllSeasonsAsync());
     }
 
     [HttpPost("seasons")]
@@ -55,22 +54,17 @@ public class AdminController : ControllerBase
     [HttpGet("seasons/{seasonId:int}/rounds")]
     public async Task<IActionResult> GetRoundsForSeason(int seasonId)
     {
-        var rounds = await _adminService.GetRoundsForSeasonAsync(seasonId);
-        return Ok(rounds);
+        return Ok(await _adminService.GetRoundsForSeasonAsync(seasonId));
     }
 
     [HttpGet("rounds/{roundId:int}")]
     public async Task<IActionResult> GetRoundById(int roundId)
     {
-        try
-        {
-            var roundDetails = await _adminService.GetRoundByIdAsync(roundId);
-            return Ok(roundDetails);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        var roundDetails = await _adminService.GetRoundByIdAsync(roundId);
+        if (roundDetails == null)
+            return NotFound();
+
+        return Ok(roundDetails);
     }
 
     [HttpPost("round")]
@@ -134,8 +128,7 @@ public class AdminController : ControllerBase
     [HttpGet("leagues/{leagueId:int}/members")]
     public async Task<IActionResult> GetLeagueMembers(int leagueId)
     {
-        var members = await _adminService.GetLeagueMembersAsync(leagueId);
-        return Ok(members);
+        return Ok(await _adminService.GetLeagueMembersAsync(leagueId));
     }
 
     [HttpPost("leagues/{leagueId:int}/members/{memberId}/approve")]
@@ -144,7 +137,7 @@ public class AdminController : ControllerBase
         await _adminService.ApproveLeagueMemberAsync(leagueId, memberId);
         return Ok(new { message = "Member approved successfully." });
     }
-    
+
     #endregion
 
     #region Matches

@@ -50,7 +50,7 @@ public class AdminService : IAdminService
 
     public async Task CreateRoundAsync(CreateRoundRequest request) => await _roundService.CreateAsync(request);
 
-    public async Task<RoundDetailsDto> GetRoundByIdAsync(int roundId) => await _roundService.GetByIdAsync(roundId);
+    public async Task<RoundDetailsDto?> GetRoundByIdAsync(int roundId) => await _roundService.GetByIdAsync(roundId);
 
     public async Task<IEnumerable<RoundDto>> GetRoundsForSeasonAsync(int seasonId) => await _roundService.FetchBySeasonIdAsync(seasonId);
 

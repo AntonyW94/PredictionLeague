@@ -59,9 +59,12 @@ public class RoundService : IRoundService
 
     #region Read
 
-    public async Task<RoundDetailsDto> GetByIdAsync(int roundId)
+    public async Task<RoundDetailsDto?> GetByIdAsync(int roundId)
     {
-        var round = await _roundRepository.GetByIdAsync(roundId) ?? throw new KeyNotFoundException("Round not found.");
+        var round = await _roundRepository.GetByIdAsync(roundId);
+        if (round == null)
+            return null;
+
         var matches = await _matchRepository.GetByRoundIdAsync(roundId);
 
         var response = new RoundDetailsDto

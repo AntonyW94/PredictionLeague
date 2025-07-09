@@ -21,7 +21,6 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> GetDashboardData()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var dashboardData = await _dashboardService.GetDashboardDataAsync(userId!);
-        return Ok(dashboardData);
+        return Ok(await _dashboardService.GetDashboardDataAsync(userId!));
     }
 }
