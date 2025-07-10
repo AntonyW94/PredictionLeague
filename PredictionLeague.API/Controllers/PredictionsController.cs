@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Shared.Predictions;
@@ -12,10 +13,12 @@ namespace PredictionLeague.API.Controllers;
 public class PredictionsController : ControllerBase
 {
     private readonly IPredictionService _predictionService;
+    private readonly IValidator<SubmitPredictionsRequest> _validator;
 
-    public PredictionsController(IPredictionService predictionService)
+    public PredictionsController(IPredictionService predictionService, IValidator<SubmitPredictionsRequest> validator)
     {
         _predictionService = predictionService;
+        _validator = validator;
     }
 
     [HttpGet("{roundId:int}")]
@@ -28,12 +31,24 @@ public class PredictionsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> SubmitPredictions([FromBody] SubmitPredictionsRequest request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null)
-            return Unauthorized("User ID could not be found in the token.");
+        var validationResult = await _validator.ValidateAsync(request);
 
-        await _predictionService.SubmitPredictionsAsync(userId, request);
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors);
 
-        return Ok(new { message = "Predictions submitted successfully." });
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Unauthorized("User ID could not be found in the token.");
+
+            await _predictionService.SubmitPredictionsAsync(userId, request);
+
+            return Ok(new { message = "Predictions submitted successfully." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }
