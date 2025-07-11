@@ -1,9 +1,10 @@
 ﻿using FluentValidation;
 using PredictionLeague.Shared.Leagues;
+using System.Diagnostics.CodeAnalysis;
 
-namespace PredictionLeague.API.Validators;
+namespace PredictionLeague.Application.Validators.Leagues;
 
-// ReSharper disable once UnusedType.Global
+[SuppressMessage("ReSharper", "UnusedType.Global")]
 public class JoinLeagueRequestValidator : AbstractValidator<JoinLeagueRequest>
 {
     public JoinLeagueRequestValidator()

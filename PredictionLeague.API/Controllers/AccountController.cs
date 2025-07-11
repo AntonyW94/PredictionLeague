@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Domain.Models;
@@ -13,10 +14,12 @@ namespace PredictionLeague.API.Controllers;
 public class AccountController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IValidator<UpdateUserDetailsRequest> _validator;
 
-    public AccountController(UserManager<ApplicationUser> userManager)
+    public AccountController(UserManager<ApplicationUser> userManager, IValidator<UpdateUserDetailsRequest> validator)
     {
         _userManager = userManager;
+        _validator = validator;
     }
 
     [HttpGet]
@@ -47,6 +50,10 @@ public class AccountController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> UpdateUserDetails([FromBody] UpdateUserDetailsRequest request)
     {
+        var validationResult = await _validator.ValidateAsync(request);
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors);
+
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (userId == null)
             return Unauthorized("User ID could not be found in the token.");

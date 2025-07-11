@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using PredictionLeague.Shared.Predictions;
 
-namespace PredictionLeague.API.Validators;
+namespace PredictionLeague.Application.Validators.Predictions;
 
 public class PredictionSubmissionValidator : AbstractValidator<PredictionSubmission>
 {
