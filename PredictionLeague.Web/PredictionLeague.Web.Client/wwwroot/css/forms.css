@@ -35,52 +35,45 @@
 
 
 /* Validation */
-
-.validation-message {
-    color: var(--pl-pink);
-    font-size: 0.875em;
-    font-weight: 500;
-    display: block;
+.message-box-solid {
+    color: white;
+    border-radius: var(--bs-border-radius);
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
     margin-top: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    background-color: rgba(233, 0, 82, 0.1);
-    border-radius: var(--bs-border-radius);
-    border: 1px solid rgba(233, 0, 82, 0.2);
 }
 
-    .validation-message::before {
-        font-family: 'bootstrap-icons';
-        content: "\f335";
+    .message-box-solid::before {
+        display: inline-block;
+        font-family: bootstrap-icons !important;
+        font-style: normal;
+        font-weight: normal !important;
+        font-variant: normal;
+        text-transform: none;
+        line-height: 1;
+        vertical-align: -.125em;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
         margin-right: 0.5em;
+        font-size: 1.1em;
     }
 
-.api-error-summary {
-    color: var(--pl-alert-error-text);
-    background-color: var(--pl-alert-error-bg);
-    border: 1px solid var(--pl-alert-error-border);
-    padding: 1rem;
-    border-radius: var(--bs-border-radius);
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-}
-
-    .api-error-summary .bi {
-        color: var(--pl-pink);
+    .message-box-solid.error {
+        background-color: var(--pl-pink);
     }
 
-.api-success-summary {
-    color: var(--pl-alert-success-text);
-    background-color: var(--pl-alert-success-bg);
-    border: 1px solid var(--pl-alert-success-border);
-    padding: 1rem;
-    border-radius: var(--bs-border-radius);
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-}
+        .message-box-solid.error::before {
+            content: "\F333";
+        }
 
-    .api-success-summary .bi {
-        color: var(--pl-green);
-        text-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    .message-box-solid.success {
+        background-color: var(--pl-green);
     }
+
+        .message-box-solid.success::before {
+            content: "\F26B";
+        }

@@ -33,19 +33,19 @@
                         <div class="mb-3">
                             <label for="firstName" class="form-label text-white">First Name</label>
                             <InputText id="firstName" class="form-control" @bind-Value="_model.FirstName" />
-                            <ValidationMessage For="@(() => _model.FirstName)" />
+                            <StyledValidationMessage For="@(() => _model.FirstName)" />
                         </div>
 
                         <div class="mb-3">
                             <label for="lastName" class="form-label text-white">Last Name</label>
                             <InputText id="lastName" class="form-control" @bind-Value="_model.LastName" />
-                            <ValidationMessage For="@(() => _model.LastName)" />
+                            <StyledValidationMessage For="@(() => _model.LastName)" />
                         </div>
 
                         <div class="mb-3">
                             <label for="phoneNumber" class="form-label text-white">Phone Number (UK Mobile)</label>
                             <InputText id="phoneNumber" class="form-control" @bind-Value="_model.PhoneNumber" />
-                            <ValidationMessage For="@(() => _model.PhoneNumber)" />
+                            <StyledValidationMessage For="@(() => _model.PhoneNumber)" />
                         </div>
                         
                         <BackAndSaveButtons BackText="Back to Dashboard" OnBackClick="Back" BusyText="Saving..." IsBusy="_isBusy" ></BackAndSaveButtons>

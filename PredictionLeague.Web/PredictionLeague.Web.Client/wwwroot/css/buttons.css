@@ -60,6 +60,20 @@
         font-size: 24px;
     }
 
+.password-toggle-btn {
+    background-color: white;
+    color: var(--pl-purple);
+    border: none;
+    transition: color 0.2s ease-in-out; 
+}
+
+    .password-toggle-btn:hover,
+    .password-toggle-btn:active,
+    .password-toggle-btn:focus {
+        color: var(--pl-green);
+        background-color: white;
+    }
+
 /* Social Buttons */
 .social-btn {
     display: flex;

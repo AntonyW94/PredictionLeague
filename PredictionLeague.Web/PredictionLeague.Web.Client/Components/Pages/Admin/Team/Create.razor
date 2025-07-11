@@ -19,13 +19,13 @@
             <div class="mb-3">
                 <label for="name" class="form-label text-white">Team Name</label>
                 <InputText id="name" class="form-control" @bind-Value="_model.Name" />
-                <ValidationMessage For="@(() => _model.Name)" />
+                <StyledValidationMessage For="@(() => _model.Name)" />
             </div>
 
             <div class="mb-3">
                 <label for="logoUrl" class="form-label text-white">Logo URL</label>
                 <InputText id="logoUrl" class="form-control" @bind-Value="_model.LogoUrl" />
-                <ValidationMessage For="@(() => _model.LogoUrl)" />
+                <StyledValidationMessage For="@(() => _model.LogoUrl)" />
             </div>
             
             <BackAndSaveButtons BackText="Back to Teams" OnBackClick="Back" BusyText="Creating Team..." IsBusy="_isBusy"></BackAndSaveButtons>

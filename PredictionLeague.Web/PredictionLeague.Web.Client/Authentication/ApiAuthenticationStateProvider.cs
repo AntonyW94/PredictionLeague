@@ -86,9 +86,12 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 
             return null;
         }
-        catch
+        catch (HttpRequestException ex)
         {
-            return null;
+            if (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                return null;
+
+            throw;
         }
     }
 

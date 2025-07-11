@@ -175,17 +175,17 @@ public class AuthController : ControllerBase
     {
         var refreshToken = Request.Cookies["refreshToken"];
         if (string.IsNullOrEmpty(refreshToken))
-            return Unauthorized(new AuthResponse { Message = "Refresh token not found." });
+            return Ok(new AuthResponse { IsSuccess = false, Message = "Refresh token not found." });
 
         using var connection = _connectionFactory.CreateConnection();
 
         var storedToken = await connection.QuerySingleOrDefaultAsync<RefreshToken>("SELECT * FROM RefreshTokens WHERE Token = @Token", new { Token = refreshToken });
         if (storedToken is not { IsActive: true })
-            return Unauthorized(new AuthResponse { Message = "Invalid or expired refresh token." });
+            return Ok(new AuthResponse { IsSuccess = false, Message = "Invalid or expired refresh token." });
 
         var user = await _userManager.FindByIdAsync(storedToken.UserId);
         if (user == null)
-            return Unauthorized(new AuthResponse { Message = "User not found." });
+            return Ok(new AuthResponse { IsSuccess = false, Message = "User not found." });
 
         return Ok(await GenerateAccessToken(user));
     }

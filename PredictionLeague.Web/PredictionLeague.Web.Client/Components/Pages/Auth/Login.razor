@@ -29,18 +29,23 @@
                            @bind-Value="_model.Email" 
                            data-lpignore="true" 
                            autocomplete="off" />
-                <ValidationMessage For="@(() => _model.Email)" />
+                <StyledValidationMessage For="@(() => _model.Email)" />
             </div>
 
             <div class="mb-3">
                 <label for="password" class="form-label text-white">Password</label>
-                <InputText id="password" 
-                           type="password" 
-                           class="form-control" 
-                           @bind-Value="_model.Password" 
-                           data-lpignore="true" 
-                           autocomplete="new-password" />
-                <ValidationMessage For="@(() => _model.Password)" />
+                <div class="input-group">
+                    <InputText id="password"
+                               type="@(_showPassword ? "text" : "password")"
+                               class="form-control"
+                               @bind-Value="_model.Password"
+                               data-lpignore="true"
+                               autocomplete="new-password" />
+                    <button type="button" class="btn password-toggle-btn" @onclick="TogglePasswordVisibility">
+                        <i class="bi @(_showPassword ? "bi-eye-slash-fill" : "bi-eye-fill")"></i>
+                    </button>
+                </div>
+                <StyledValidationMessage For="@(() => _model.Password)" />
             </div>
 
             <div class="d-grid mt-4">
@@ -84,7 +89,8 @@
     private readonly LoginRequest _model = new();
     private string? _errorMessage;
     private bool _isBusy;
-    
+    private bool _showPassword;
+
     protected override void OnInitialized()
     {
         var uri = new Uri(NavigationManager.Uri);
@@ -92,6 +98,11 @@
         {
             _errorMessage = errorValue;
         }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        _showPassword = !_showPassword;
     }
 
     private async Task HandleLogin()
