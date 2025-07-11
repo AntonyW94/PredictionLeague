@@ -16,7 +16,7 @@
         </div>
 
         <EditForm Model="_model" OnValidSubmit="HandleCreateSeason">
-            <DataAnnotationsValidator />
+            <FluentValidationValidator />
 
             @if (!string.IsNullOrEmpty(_errorMessage))
             {

@@ -1,8 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using FluentValidation;
+﻿using FluentValidation;
 using PredictionLeague.Shared.Admin.Seasons;
+using System.Diagnostics.CodeAnalysis;
 
-namespace PredictionLeague.Application.Validators.Admin.Seasons;
+namespace PredictionLeague.Validators.Admin.Seasons;
 
 [SuppressMessage("ReSharper", "UnusedType.Global")]
 public class UpdateSeasonRequestValidator : AbstractValidator<UpdateSeasonRequest>

@@ -13,7 +13,7 @@
     <div class="form-container">
         <h3 class="text-center fw-bold text-white mb-4">Create New Team</h3>
         <EditForm Model="_model" OnValidSubmit="HandleCreateTeam">
-            <DataAnnotationsValidator />
+            <FluentValidationValidator />
 
             @if (!string.IsNullOrEmpty(_errorMessage))
             {

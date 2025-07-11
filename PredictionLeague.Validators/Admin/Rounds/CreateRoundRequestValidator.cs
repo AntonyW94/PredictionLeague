@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using PredictionLeague.Application.Validators.Admin.Matches;
 using PredictionLeague.Shared.Admin.Rounds;
+using PredictionLeague.Validators.Admin.Matches;
 using System.Diagnostics.CodeAnalysis;
 
-namespace PredictionLeague.Application.Validators.Admin.Rounds;
+namespace PredictionLeague.Validators.Admin.Rounds;
 
 [SuppressMessage("ReSharper", "UnusedType.Global")]
 public class CreateRoundRequestValidator : AbstractValidator<CreateRoundRequest>

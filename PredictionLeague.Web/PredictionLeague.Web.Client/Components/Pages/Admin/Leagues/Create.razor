@@ -14,7 +14,7 @@
     <div class="form-container">
         <h3 class="text-center fw-bold text-white mb-4">Create New League</h3>
         <EditForm Model="_model" OnValidSubmit="HandleCreateLeague">
-            <DataAnnotationsValidator />
+            <FluentValidationValidator />
             @if (!string.IsNullOrEmpty(_errorMessage))
             {
                 <div class="alert alert-danger">@_errorMessage</div>

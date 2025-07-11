@@ -2,7 +2,7 @@
 using PredictionLeague.Shared.Admin.Matches;
 using System.Diagnostics.CodeAnalysis;
 
-namespace PredictionLeague.Application.Validators.Admin.Matches;
+namespace PredictionLeague.Validators.Admin.Matches;
 
 [SuppressMessage("ReSharper", "UnusedType.Global")]
 public class UpdateMatchRequestValidator : AbstractValidator<UpdateMatchRequest>

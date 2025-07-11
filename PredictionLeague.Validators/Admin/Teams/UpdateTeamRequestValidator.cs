@@ -1,8 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using FluentValidation;
+﻿using FluentValidation;
 using PredictionLeague.Shared.Admin.Teams;
+using System.Diagnostics.CodeAnalysis;
 
-namespace PredictionLeague.Application.Validators.Admin.Teams;
+namespace PredictionLeague.Validators.Admin.Teams;
 
 [SuppressMessage("ReSharper", "UnusedType.Global")]
 public class UpdateTeamRequestValidator : AbstractValidator<UpdateTeamRequest>

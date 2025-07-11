@@ -1,8 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using FluentValidation;
+﻿using FluentValidation;
 using PredictionLeague.Shared.Admin.Matches;
+using System.Diagnostics.CodeAnalysis;
 
-namespace PredictionLeague.Application.Validators.Admin.Matches;
+namespace PredictionLeague.Validators.Admin.Matches;
 
 [SuppressMessage("ReSharper", "UnusedType.Global")]
 public class CreateMatchRequestValidator : AbstractValidator<CreateMatchRequest>

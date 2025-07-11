@@ -10,6 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Blazored.FluentValidation" Version="2.2.0" />
         <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
         <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.17" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.17" />
@@ -21,6 +22,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\PredictionLeague.Shared\PredictionLeague.Shared.csproj" />
+      <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
     </ItemGroup>
 
 </Project>

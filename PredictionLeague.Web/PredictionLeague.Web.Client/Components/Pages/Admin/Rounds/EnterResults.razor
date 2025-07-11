@@ -20,7 +20,7 @@
         else if (_matches != null)
         {
             <EditForm Model="_matches" OnValidSubmit="HandleSaveResults">
-                <DataAnnotationsValidator />
+                <FluentValidationValidator />
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
                     <div class="alert alert-danger">@_errorMessage</div>

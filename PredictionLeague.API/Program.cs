@@ -11,6 +11,7 @@ using PredictionLeague.Infrastructure.Data;
 using PredictionLeague.Infrastructure.Identity;
 using PredictionLeague.Infrastructure.Repositories;
 using PredictionLeague.Infrastructure.Services;
+using PredictionLeague.Validators.Auth;
 using Serilog;
 using System.Text;
 
@@ -54,7 +55,7 @@ builder.Services.ConfigureExternalCookie(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 });
 
-builder.Services.AddValidatorsFromAssemblyContaining<IAdminService>();
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["Secret"];

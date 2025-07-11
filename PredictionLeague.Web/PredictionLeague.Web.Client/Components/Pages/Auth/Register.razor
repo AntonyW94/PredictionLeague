@@ -15,7 +15,7 @@
         </div>
 
         <EditForm Model="_model" OnValidSubmit="HandleRegistration" FormName="registerForm">
-            <DataAnnotationsValidator />
+            <FluentValidationValidator />
 
             @if (!string.IsNullOrEmpty(_errorMessage))
             {

@@ -19,7 +19,7 @@
         </div>
 
         <EditForm Model="_model" OnValidSubmit="HandleLogin" FormName="loginForm">
-            <DataAnnotationsValidator />
+            <FluentValidationValidator />
 
             @if (!string.IsNullOrEmpty(_errorMessage))
             {

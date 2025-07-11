@@ -7,13 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
+    <PackageReference Include="FluentValidation" Version="12.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PredictionLeague.Domain\PredictionLeague.Domain.csproj" />
     <ProjectReference Include="..\PredictionLeague.Shared\PredictionLeague.Shared.csproj" />
-    <ProjectReference Include="..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
   </ItemGroup>
 
 </Project>

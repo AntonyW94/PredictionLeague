@@ -2,7 +2,7 @@
 using PredictionLeague.Shared.Predictions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace PredictionLeague.Application.Validators.Predictions;
+namespace PredictionLeague.Validators.Predictions;
 
 [SuppressMessage("ReSharper", "UnusedType.Global")]
 public class SubmitPredictionsRequestValidator : AbstractValidator<SubmitPredictionsRequest>

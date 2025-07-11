@@ -22,7 +22,7 @@
         else
         {
             <EditForm Model="_model" OnValidSubmit="HandleUpdateSeason">
-                <DataAnnotationsValidator />
+                <FluentValidationValidator />
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
                     <div class="alert alert-danger">@_errorMessage</div>

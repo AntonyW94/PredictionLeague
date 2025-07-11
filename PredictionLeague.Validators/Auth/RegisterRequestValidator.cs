@@ -2,7 +2,7 @@
 using PredictionLeague.Shared.Auth;
 using System.Diagnostics.CodeAnalysis;
 
-namespace PredictionLeague.Application.Validators.Auth;
+namespace PredictionLeague.Validators.Auth;
 
 [SuppressMessage("ReSharper", "UnusedType.Global")]
 public class RegisterRequestValidator : AbstractValidator<RegisterRequest>

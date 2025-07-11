@@ -23,7 +23,7 @@
             </div>
 
             <EditForm Model="_model" OnValidSubmit="HandleSubmitPredictions">
-                <DataAnnotationsValidator />
+                <FluentValidationValidator />
                 @if (!string.IsNullOrEmpty(_errorMessage))
                 {
                     <div class="alert alert-danger">@_errorMessage</div>

@@ -2,7 +2,7 @@
 using PredictionLeague.Shared.Account;
 using System.Diagnostics.CodeAnalysis;
 
-namespace PredictionLeague.Application.Validators.Account;
+namespace PredictionLeague.Validators.Account;
 
 [SuppressMessage("ReSharper", "UnusedType.Global")]
 public class UpdateUserDetailsRequestValidator : AbstractValidator<UpdateUserDetailsRequest>

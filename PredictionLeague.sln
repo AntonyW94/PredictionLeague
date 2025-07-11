@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Domain", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Application", "PredictionLeague.Application\PredictionLeague.Application.csproj", "{A2EF96AD-2C3D-4703-8D0D-4372B9C16195}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Validators", "PredictionLeague.Validators\PredictionLeague.Validators.csproj", "{E7A7E256-FDAB-43FF-BCCE-0D7A2DD0AB86}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{A2EF96AD-2C3D-4703-8D0D-4372B9C16195}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2EF96AD-2C3D-4703-8D0D-4372B9C16195}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2EF96AD-2C3D-4703-8D0D-4372B9C16195}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E7A7E256-FDAB-43FF-BCCE-0D7A2DD0AB86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E7A7E256-FDAB-43FF-BCCE-0D7A2DD0AB86}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E7A7E256-FDAB-43FF-BCCE-0D7A2DD0AB86}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E7A7E256-FDAB-43FF-BCCE-0D7A2DD0AB86}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
