@@ -24,7 +24,7 @@
         .responsive-table tr {
             margin-bottom: 1.5rem;
             border: 1px solid var(--pl-purple-dark);
-            border-radius: 8px;
+            border-radius: var(--bs-border-radius);
             overflow: hidden;
             background-color: var(--pl-light-purple);
         }

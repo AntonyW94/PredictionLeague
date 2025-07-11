@@ -23,14 +23,8 @@
         {
             <EditForm Model="_model" OnValidSubmit="HandleUpdateSeason">
                 <FluentValidationValidator />
-                @if (!string.IsNullOrEmpty(_errorMessage))
-                {
-                    <div class="alert alert-danger">@_errorMessage</div>
-                }
-                @if (!string.IsNullOrEmpty(_successMessage))
-                {
-                    <div class="alert alert-success">@_successMessage</div>
-                }
+                <ApiError Message="@_errorMessage" />
+                <ApiSuccess Message="@_successMessage" />
 
                 <div class="mb-3">
                     <label for="name" class="form-label text-white">Season Name</label>

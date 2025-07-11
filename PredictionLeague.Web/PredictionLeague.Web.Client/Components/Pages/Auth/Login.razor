@@ -20,11 +20,7 @@
 
         <EditForm Model="_model" OnValidSubmit="HandleLogin" FormName="loginForm">
             <FluentValidationValidator />
-
-            @if (!string.IsNullOrEmpty(_errorMessage))
-            {
-                <div class="alert alert-danger" role="alert">@_errorMessage</div>
-            }
+            <ApiError Message="@_errorMessage" />
 
             <div class="mb-3">
                 <label for="email" class="form-label text-white">Email address</label>

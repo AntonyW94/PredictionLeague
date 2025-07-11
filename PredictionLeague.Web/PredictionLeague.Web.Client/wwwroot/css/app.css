@@ -22,6 +22,17 @@
     --pl-light-cyan: #03c2b4;
     --content-bg: #f4f7f6;
     --light-text: #EAEAEA;
+    --pl-alert-success-bg: #d1e7dd;
+    --pl-alert-success-border: #badbcc;
+    --pl-alert-success-text: #0f5132;
+    --pl-alert-error-bg: #f8d7da;
+    --pl-alert-error-border: #f5c2c7;
+    --pl-alert-error-text: #842029;
+    --bs-border-radius: 3px;
+    --bs-border-radius-sm: 3px;
+    --bs-border-radius-lg: 3px;
+    --bs-border-radius-xl: 3px;
+    --bs-border-radius-xxl: 3px;
 }
 
 html, body {

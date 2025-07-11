@@ -21,15 +21,8 @@
         {
             <EditForm Model="_matches" OnValidSubmit="HandleSaveResults">
                 <FluentValidationValidator />
-                @if (!string.IsNullOrEmpty(_errorMessage))
-                {
-                    <div class="alert alert-danger">@_errorMessage</div>
-                }
-
-                @if (!string.IsNullOrEmpty(_successMessage))
-                {
-                    <div class="alert alert-success">@_successMessage</div>
-                }
+                <ApiError Message="@_errorMessage" />
+                <ApiSuccess Message="@_successMessage" />
 
                 <div class="prediction-grid">
                     @foreach (var match in _matches)

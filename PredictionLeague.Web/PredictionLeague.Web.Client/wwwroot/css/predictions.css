@@ -16,7 +16,7 @@
 
 .prediction-card {
     background-color: var(--pl-light-purple);
-    border-radius: 8px;
+    border-radius: var(--bs-border-radius);
     overflow: hidden;
     color: white;
 }
@@ -81,7 +81,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: var(--bs-border-radius);
 }
 
 .stepper-btn {

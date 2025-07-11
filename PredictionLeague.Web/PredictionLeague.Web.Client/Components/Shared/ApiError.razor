@@ -1,0 +1,12 @@
+﻿@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="api-error-summary mb-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        @Message
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+}

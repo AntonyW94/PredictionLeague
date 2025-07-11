@@ -13,6 +13,7 @@
 .navbar-nav .nav-item .nav-link,
 .navbar-nav .nav-item .navbar-text {
     color: white !important;
+    font-weight: 700;
 }
 
 .admin-toggle {
@@ -30,7 +31,7 @@
 /* Hover effect styles for desktop */
 .navbar-nav > .nav-item {
     transition: background-color 0.2s ease-in-out;
-    border-radius: 4px;
+    border-radius: var(--bs-border-radius);
 }
 
     .navbar-nav > .nav-item:not(.no-hover):hover {

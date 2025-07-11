@@ -10,7 +10,7 @@
 .admin-table-container {
     background-color: var(--pl-light-purple);
     padding: 2.5rem;
-    border-radius: 8px;
+    border-radius: var(--bs-border-radius);
     max-width: 900px;
     margin: auto;
 }
@@ -28,7 +28,7 @@
 .hero-image {
     height: 110px;
     background-color: white;
-    border-radius: 5%;
+    border-radius: var(--bs-border-radius);
 }
 
 @media (max-width: 768px) {

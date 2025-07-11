@@ -21,16 +21,9 @@
                 {
                     <EditForm Model="_model" OnValidSubmit="HandleUpdateDetails" Context="editFormContext">
                         <FluentValidationValidator />
-
-                        @if (!string.IsNullOrEmpty(_errorMessage))
-                        {
-                            <div class="alert alert-danger" role="alert">@_errorMessage</div>
-                        }
-                        @if (!string.IsNullOrEmpty(_successMessage))
-                        {
-                            <div class="alert alert-success" role="alert">@_successMessage</div>
-                        }
-
+                        <ApiError Message="@_errorMessage" />
+                        <ApiSuccess Message="@_successMessage" />
+                        
                         <div class="mb-3">
                             <label for="email" class="form-label text-white">Email Address</label>
                             <InputText id="email" class="form-control" @bind-Value="_model.Email" disabled />
