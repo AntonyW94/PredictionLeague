@@ -53,7 +53,7 @@ public class AuthController : ControllerBase
         var result = await _userManager.CreateAsync(newUser, request.Password);
         if (!result.Succeeded)
             return BadRequest(new AuthResponse { IsSuccess = false, Message = "User creation failed.", Token = string.Join(", ", result.Errors.Select(e => e.Description)) });
-        
+
         await _userManager.AddToRoleAsync(newUser, nameof(ApplicationUserRole.Player));
         return Ok(new AuthResponse { IsSuccess = true, Message = "User created successfully." });
 
@@ -75,10 +75,18 @@ public class AuthController : ControllerBase
 
     [HttpGet("google-login")]
     [AllowAnonymous]
-    public IActionResult GoogleLogin([FromQuery] string returnUrl)
+    public IActionResult GoogleLogin([FromQuery] string returnUrl, [FromQuery] string source)
     {
         var callbackUrl = Url.Action(nameof(GoogleCallback), "Auth", new { returnUrl });
-        var properties = new AuthenticationProperties { RedirectUri = callbackUrl };
+        var properties = new AuthenticationProperties
+        {
+            RedirectUri = callbackUrl,
+            Items =
+            {
+                ["source"] = source
+            }
+        };
+
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
@@ -88,32 +96,37 @@ public class AuthController : ControllerBase
     {
         try
         {
+            var errorSourcePage = "/login"; // Default to login page
+
             var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+            if (authenticateResult.Properties != null && authenticateResult.Properties.Items.TryGetValue("source", out var source) && source == "register")
+                errorSourcePage = "/register";
+
             if (!authenticateResult.Succeeded || authenticateResult.Principal == null)
             {
                 _logger.LogWarning("Google authentication failed. The external cookie was not found or was invalid.");
-                return Redirect($"{returnUrl}?error=Authentication with external provider failed.");
+                return Redirect($"{errorSourcePage}?error=Authentication with external provider failed.");
             }
 
             var providerKey = authenticateResult.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(providerKey))
             {
                 _logger.LogWarning("Could not find NameIdentifier claim from external provider.");
-                return Redirect($"{returnUrl}?error=Could not determine user identifier from external provider.");
+                return Redirect($"{errorSourcePage}?error=Could not determine user identifier from external provider.");
             }
 
             if (!authenticateResult.Properties.Items.TryGetValue(".AuthScheme", out var provider))
             {
                 _logger.LogWarning("Could not find .AuthScheme in authentication properties.");
-                return Redirect($"{returnUrl}?error=Could not determine login provider details.");
+                return Redirect($"{errorSourcePage}?error=Could not determine login provider details.");
             }
 
             if (string.IsNullOrEmpty(provider))
             {
                 _logger.LogWarning(".AuthScheme in authentication properties was null.");
-                return Redirect($"{returnUrl}?error=.AuthScheme in authentication properties was null.");
+                return Redirect($"{errorSourcePage}?error=.AuthScheme in authentication properties was null.");
             }
-            
+
             var externalLoginInfo = new ExternalLoginInfo(authenticateResult.Principal, provider, providerKey, provider);
 
             var user = await _userManager.FindByLoginAsync(externalLoginInfo.LoginProvider, externalLoginInfo.ProviderKey);
@@ -121,10 +134,10 @@ public class AuthController : ControllerBase
             {
                 var email = externalLoginInfo.Principal.FindFirstValue(ClaimTypes.Email);
                 if (string.IsNullOrEmpty(email))
-                    return Redirect($"{returnUrl}?error=Could not retrieve email from Google.");
+                    return Redirect($"{errorSourcePage}?error=Could not retrieve email from Google.");
 
                 user = await _userManager.FindByEmailAsync(email);
-              
+
                 if (user == null)
                 {
                     user = new ApplicationUser { UserName = email, Email = email, FirstName = externalLoginInfo.Principal.FindFirstValue(ClaimTypes.GivenName) ?? "", LastName = externalLoginInfo.Principal.FindFirstValue(ClaimTypes.Surname) ?? "", EmailConfirmed = true };
@@ -132,17 +145,17 @@ public class AuthController : ControllerBase
                     if (createResult.Succeeded)
                         await _userManager.AddToRoleAsync(user, nameof(ApplicationUserRole.Player));
                     else
-                        return Redirect($"{returnUrl}?error=There was a problem creating your account.");
+                        return Redirect($"{errorSourcePage}?error=There was a problem creating your account.");
                 }
-                
+
                 await _userManager.AddLoginAsync(user, externalLoginInfo);
             }
 
             var refreshToken = await GenerateAndStoreRefreshToken(user);
             SetTokenCookie(refreshToken.Token);
-           
+
             var script = $"<html><body><script>window.location = '{returnUrl}';</script></body></html>";
-            
+
             return new ContentResult
             {
                 Content = script,
