@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using PredictionLeague.Application.Data;
 using System.Data;
 
 namespace PredictionLeague.Infrastructure.Data;

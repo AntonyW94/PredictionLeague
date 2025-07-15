@@ -1,11 +1,11 @@
-﻿@page "/auth/login"
+﻿@page "/authentication/login"
 
-@inject IAuthService AuthService
+@inject IAuthenticationService AuthenticationService
 @inject IConfiguration Configuration
 @inject NavigationManager NavigationManager
 
 @using Microsoft.AspNetCore.WebUtilities
-@using PredictionLeague.Contracts.Auth
+@using PredictionLeague.Contracts.Authentication
 
 <PageTitle>Login</PageTitle>
 
@@ -111,7 +111,7 @@
         _isBusy = true;
         _errorMessage = null;
 
-        var result = await AuthService.Login(_model);
+        var result = await AuthenticationService.Login(_model);
         if (result.IsSuccess)
         {
             NavigationManager.NavigateTo("/");
@@ -129,8 +129,8 @@
         _errorMessage = null;
 
         var apiBaseUrl = Configuration["ApiBaseUrl"];
-        var returnUrl = NavigationManager.BaseUri + "auth/external-login-callback";
-        var googleLoginUrl = $"{apiBaseUrl}/api/auth/google-login?returnUrl={Uri.EscapeDataString(returnUrl)}&source=login";
+        var returnUrl = NavigationManager.BaseUri + "authentication/external-login-callback";
+        var googleLoginUrl = $"{apiBaseUrl}/api/authentication/google-login?returnUrl={Uri.EscapeDataString(returnUrl)}&source=login";
 
         NavigationManager.NavigateTo(googleLoginUrl, forceLoad: true);
     }

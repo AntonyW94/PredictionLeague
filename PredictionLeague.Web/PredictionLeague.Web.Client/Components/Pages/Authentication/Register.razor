@@ -1,8 +1,8 @@
-﻿@page "/auth/register"
+﻿@page "/authentication/register"
 @using Microsoft.AspNetCore.WebUtilities
-@using PredictionLeague.Contracts.Auth
+@using PredictionLeague.Contracts.Authentication
 
-@inject IAuthService AuthService
+@inject IAuthenticationService AuthenticationService
 @inject IConfiguration Configuration
 @inject NavigationManager NavigationManager
 
@@ -121,12 +121,12 @@
         _errorMessage = null;
         _successMessage = null;
 
-        var result = await AuthService.Register(_model);
+        var result = await AuthenticationService.Register(_model);
         if (result.IsSuccess)
         {
             _successMessage = "Registration successful! You will be redirected to the login page shortly.";
             await Task.Delay(2000);
-            NavigationManager.NavigateTo("/auth/login");
+            NavigationManager.NavigateTo("/authentication/login");
         }
         else
         {
@@ -141,8 +141,8 @@
         _errorMessage = null;
 
         var apiBaseUrl = Configuration["ApiBaseUrl"];
-        var returnUrl = NavigationManager.BaseUri + "auth/external-login-callback";
-        var googleLoginUrl = $"{apiBaseUrl}/api/auth/google-login?returnUrl={Uri.EscapeDataString(returnUrl)}&source=register";
+        var returnUrl = NavigationManager.BaseUri + "authentication/external-login-callback";
+        var googleLoginUrl = $"{apiBaseUrl}/api/authentication/google-login?returnUrl={Uri.EscapeDataString(returnUrl)}&source=register";
 
         NavigationManager.NavigateTo(googleLoginUrl, forceLoad: true);
     }

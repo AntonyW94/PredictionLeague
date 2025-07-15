@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
-using PredictionLeague.Contracts.Auth;
+using PredictionLeague.Contracts.Authentication;
 using System.Diagnostics.CodeAnalysis;
 
-namespace PredictionLeague.Validators.Auth;
+namespace PredictionLeague.Validators.Authentication;
 
 [SuppressMessage("ReSharper", "UnusedType.Global")]
 public class RegisterRequestValidator : AbstractValidator<RegisterRequest>

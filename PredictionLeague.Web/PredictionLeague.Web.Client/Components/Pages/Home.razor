@@ -13,9 +13,9 @@
                     <h1 class="display-5 fw-bold text-white">Welcome to the Prediction League</h1>
                     <p class="fs-4 col-md-8 mx-auto">Think you know the Premier League? Prove it. Predict the scores for every match, every week, and compete against friends and rivals to top the leaderboard.</p>
                     <div class="d-flex justify-content-center align-items-center mt-4 gap-3">
-                        <NavLink class="btn btn-lg light-cyan-button" href="auth/login">Login</NavLink>
+                        <NavLink class="btn btn-lg light-cyan-button" href="authentication/login">Login</NavLink>
                         <span class="text-white fw-bold">or</span>
-                        <NavLink class="btn btn-lg green-button" href="auth/register">Register Now</NavLink>
+                        <NavLink class="btn btn-lg green-button" href="authentication/register">Register Now</NavLink>
                     </div>
                 </div>
             </div>
@@ -51,8 +51,8 @@
 @code {
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
 
         if (user.Identity?.IsAuthenticated ?? false)
         {

@@ -1,4 +1,4 @@
-﻿namespace PredictionLeague.Contracts.Auth;
+﻿namespace PredictionLeague.Contracts.Authentication;
 
 public class RegisterRequest
 {

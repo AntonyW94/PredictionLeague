@@ -1,7 +1,7 @@
 ﻿using Dapper;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Models;
-using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
 namespace PredictionLeague.Infrastructure.Repositories;
@@ -36,7 +36,7 @@ public class LeagueRepository : ILeagueRepository
     public async Task AddMemberAsync(LeagueMember member)
     {
         const string sql = "INSERT INTO LeagueMembers (LeagueId, UserId, Status, JoinedAt) VALUES (@LeagueId, @UserId, @Status, @JoinedAt);";
-       
+
         using var dbConnection = Connection;
         await dbConnection.ExecuteAsync(sql, member);
     }
@@ -111,7 +111,7 @@ public class LeagueRepository : ILeagueRepository
     public async Task UpdateMemberStatusAsync(int leagueId, string userId, string status)
     {
         const string sql = "UPDATE [LeagueMembers] SET [Status] = @Status WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId;";
-       
+
         using var connection = Connection;
         await connection.ExecuteAsync(sql, new { Status = status, LeagueId = leagueId, UserId = userId });
     }

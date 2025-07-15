@@ -1,6 +1,6 @@
 ﻿using System.Data;
 
-namespace PredictionLeague.Infrastructure.Data;
+namespace PredictionLeague.Application.Data;
 
 public interface IDbConnectionFactory
 {

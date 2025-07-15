@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
-using PredictionLeague.Contracts.Auth;
+using PredictionLeague.Contracts.Authentication;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -21,11 +21,11 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
     {
         _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
 
-        var authResponse = await RefreshAccessToken();
-        if (authResponse != null && authResponse.IsSuccess && !string.IsNullOrEmpty(authResponse.Token))
+        var authenticationResponse = await RefreshAccessToken();
+        if (authenticationResponse != null && authenticationResponse.IsSuccess && !string.IsNullOrEmpty(authenticationResponse.Token))
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.Token);
-            _currentUser = CreateClaimsPrincipalFromToken(authResponse.Token);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authenticationResponse.Token);
+            _currentUser = CreateClaimsPrincipalFromToken(authenticationResponse.Token);
         }
         else
         {
@@ -36,12 +36,12 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         return new AuthenticationState(_currentUser);
     }
 
-    public Task Login(AuthResponse? authResponse)
+    public Task Login(AuthenticationResponse? authenticationResponse)
     {
-        if (authResponse != null && authResponse.IsSuccess && !string.IsNullOrEmpty(authResponse.Token))
+        if (authenticationResponse != null && authenticationResponse.IsSuccess && !string.IsNullOrEmpty(authenticationResponse.Token))
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.Token);
-            _currentUser = CreateClaimsPrincipalFromToken(authResponse.Token);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authenticationResponse.Token);
+            _currentUser = CreateClaimsPrincipalFromToken(authenticationResponse.Token);
         }
         else
         {
@@ -56,11 +56,11 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 
     public async Task NotifyUserAuthentication()
     {
-        var authResponse = await RefreshAccessToken();
-        if (authResponse != null && authResponse.IsSuccess && !string.IsNullOrEmpty(authResponse.Token))
+        var authenticationResponse = await RefreshAccessToken();
+        if (authenticationResponse != null && authenticationResponse.IsSuccess && !string.IsNullOrEmpty(authenticationResponse.Token))
         {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.Token);
-            _currentUser = CreateClaimsPrincipalFromToken(authResponse.Token);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authenticationResponse.Token);
+            _currentUser = CreateClaimsPrincipalFromToken(authenticationResponse.Token);
         }
         
         NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));
@@ -68,7 +68,7 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 
     public async Task Logout()
     {
-        await _httpClient.PostAsync("api/auth/logout", null);
+        await _httpClient.PostAsync("api/authentication/logout", null);
         
         _httpClient.DefaultRequestHeaders.Authorization = null;
         _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
@@ -76,13 +76,13 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));
     }
 
-    private async Task<AuthResponse?> RefreshAccessToken()
+    private async Task<AuthenticationResponse?> RefreshAccessToken()
     {
         try
         {
-            var response = await _httpClient.PostAsync("api/auth/refresh-token", null);
+            var response = await _httpClient.PostAsync("api/authentication/refresh-token", null);
             if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<AuthResponse>();
+                return await response.Content.ReadFromJsonAsync<AuthenticationResponse>();
 
             return null;
         }

@@ -1,4 +1,4 @@
-﻿@inject IAuthService AuthService
+﻿@inject IAuthenticationService AuthenticationService
 @inject NavigationManager NavigationManager
 
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
@@ -82,10 +82,10 @@
                 <NotAuthorized>
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item mx-1">
-                            <NavLink class="nav-link" href="auth/login">Login</NavLink>
+                            <NavLink class="nav-link" href="authentication/login">Login</NavLink>
                         </li>
                         <li class="nav-item mx-1">
-                            <NavLink class="nav-link" href="auth/register">Register</NavLink>
+                            <NavLink class="nav-link" href="authentication/register">Register</NavLink>
                         </li>
                     </ul>
                 </NotAuthorized>
@@ -100,7 +100,7 @@
     
     private async Task LogoutUser()
     {
-        await AuthService.Logout();
+        await AuthenticationService.Logout();
         NavigationManager.NavigateTo("/", forceLoad: true);
     }
 }

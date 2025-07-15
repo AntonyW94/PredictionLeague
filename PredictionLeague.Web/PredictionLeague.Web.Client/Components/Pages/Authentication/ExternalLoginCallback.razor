@@ -1,4 +1,4 @@
-﻿@page "/auth/external-login-callback"
+﻿@page "/authentication/external-login-callback"
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
@@ -30,7 +30,7 @@
 
             if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var errorValue))
             {
-                NavigationManager.NavigateTo($"/auth/login?error={Uri.EscapeDataString(errorValue.ToString())}");
+                NavigationManager.NavigateTo($"/authentication/login?error={Uri.EscapeDataString(errorValue.ToString())}");
             }
             else
             {

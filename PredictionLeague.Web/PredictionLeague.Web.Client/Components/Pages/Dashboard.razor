@@ -3,7 +3,7 @@
 @attribute [Authorize]
 
 @inject HttpClient Http
-@inject IAuthService AuthService
+@inject IAuthenticationService AuthenticationService
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -160,7 +160,7 @@
 
     private async Task JoinLeague(int leagueId)
     {
-        var result = await AuthService.JoinPublicLeagueAsync(leagueId);
+        var result = await AuthenticationService.JoinPublicLeagueAsync(leagueId);
         if (result)
         {
             _isLoading = true;

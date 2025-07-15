@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Models;
@@ -24,6 +25,7 @@ public static class DependencyInjection
         
         services.AddScoped<ILeagueRepository, LeagueRepository>();
         services.AddScoped<IMatchRepository, MatchRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
         services.AddScoped<IRoundResultRepository, RoundResultRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
@@ -31,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
 
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ILeaderboardService, LeaderboardService>();
         services.AddScoped<ILeagueMemberService, LeagueMemberService>();

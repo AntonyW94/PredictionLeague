@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Infrastructure.Data;

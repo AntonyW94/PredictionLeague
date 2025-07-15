@@ -1,15 +1,15 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
-using PredictionLeague.Contracts.Auth;
+using PredictionLeague.Contracts.Authentication;
 using System.Net.Http.Json;
 
 namespace PredictionLeague.Web.Client.Authentication;
 
-public class AuthService : IAuthService
+public class AuthenticationService : IAuthenticationService
 {
     private readonly HttpClient _httpClient;
     private readonly AuthenticationStateProvider _authenticationStateProvider;
 
-    public AuthService(HttpClient httpClient,
+    public AuthenticationService(HttpClient httpClient,
         AuthenticationStateProvider authenticationStateProvider)
     {
         _httpClient = httpClient;
@@ -24,18 +24,18 @@ public class AuthService : IAuthService
 
     public async Task<RegisterResponse> Register(RegisterRequest registerRequest)
     {
-        var result = await _httpClient.PostAsJsonAsync("api/auth/register", registerRequest);
+        var result = await _httpClient.PostAsJsonAsync("api/authentication/register", registerRequest);
         return await result.Content.ReadFromJsonAsync<RegisterResponse>() ?? new RegisterResponse { IsSuccess = false, Message = "Failed to process server response." };
     }
 
-    public async Task<AuthResponse> Login(LoginRequest loginRequest)
+    public async Task<AuthenticationResponse> Login(LoginRequest loginRequest)
     {
-        var result = await _httpClient.PostAsJsonAsync("api/auth/login", loginRequest);
-        var authResponse = await result.Content.ReadFromJsonAsync<AuthResponse>();
-        if (authResponse != null && authResponse.IsSuccess)
-            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).Login(authResponse);
+        var result = await _httpClient.PostAsJsonAsync("api/authentication/login", loginRequest);
+        var authenticationResponse = await result.Content.ReadFromJsonAsync<AuthenticationResponse>();
+        if (authenticationResponse != null && authenticationResponse.IsSuccess)
+            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).Login(authenticationResponse);
         
-        return authResponse ?? new AuthResponse { IsSuccess = false, Message = "Failed to process server response." };
+        return authenticationResponse ?? new AuthenticationResponse { IsSuccess = false, Message = "Failed to process server response." };
     }
 
     public async Task Logout()

@@ -1,11 +1,11 @@
-﻿using PredictionLeague.Contracts.Auth;
+﻿using PredictionLeague.Contracts.Authentication;
 
 namespace PredictionLeague.Web.Client.Authentication;
 
-public interface IAuthService
+public interface IAuthenticationService
 {
     Task<RegisterResponse> Register(RegisterRequest registerRequest);
-    Task<AuthResponse> Login(LoginRequest loginRequest);
+    Task<AuthenticationResponse> Login(LoginRequest loginRequest);
     Task Logout();
     Task<bool> JoinPublicLeagueAsync(int leagueId);
 }
