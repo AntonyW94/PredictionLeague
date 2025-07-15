@@ -1,4 +1,4 @@
-﻿using PredictionLeague.Shared.Leaderboards;
+﻿using PredictionLeague.Contracts.Leaderboards;
 
 namespace PredictionLeague.Application.Services;
 

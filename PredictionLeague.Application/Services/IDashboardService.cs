@@ -1,4 +1,5 @@
-﻿using PredictionLeague.Shared.Dashboard;
+﻿
+using PredictionLeague.Contracts.Dashboard;
 
 namespace PredictionLeague.Application.Services;
 

@@ -1,11 +1,10 @@
 ﻿@page "/admin/leagues/{LeagueId:int}/edit"
+@using PredictionLeague.Contracts.Admin.Leagues
 
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
-
-@using PredictionLeague.Shared.Admin.Leagues
 
 <PageTitle>Edit League</PageTitle>
 

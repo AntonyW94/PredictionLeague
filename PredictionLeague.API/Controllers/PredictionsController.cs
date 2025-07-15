@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Services;
-using PredictionLeague.Shared.Predictions;
+using PredictionLeague.Contracts.Predictions;
 using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;

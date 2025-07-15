@@ -1,5 +1,5 @@
-﻿using PredictionLeague.Domain.Models;
-using PredictionLeague.Shared.Admin.Rounds;
+﻿using PredictionLeague.Contracts.Admin.Rounds;
+using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Services;
 
@@ -10,5 +10,5 @@ public interface IRoundService
     Task<IEnumerable<RoundDto>> FetchBySeasonIdAsync(int seasonId);
     Task UpdateAsync(int roundId, UpdateRoundRequest request);
     Task UpdateResultsAsync(int roundId, IEnumerable<Match> completedMatches);
-    
+
 }

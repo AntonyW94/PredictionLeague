@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
     <ProjectReference Include="..\PredictionLeague.Domain\PredictionLeague.Domain.csproj" />
-    <ProjectReference Include="..\PredictionLeague.Shared\PredictionLeague.Shared.csproj" />
     <ProjectReference Include="..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
   </ItemGroup>
 

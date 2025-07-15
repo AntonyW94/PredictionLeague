@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Services;
-using PredictionLeague.Shared.Leagues;
+using PredictionLeague.Contracts.Leagues;
 using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;
@@ -26,7 +26,7 @@ public class LeaguesController : ControllerBase
             return Unauthorized();
 
         var newLeague = await _leagueService.CreateAsync(request, userId);
-        
+
         return CreatedAtAction(nameof(GetLeagueById), new { leagueId = newLeague.Id }, newLeague);
     }
 
@@ -38,7 +38,7 @@ public class LeaguesController : ControllerBase
             return Unauthorized();
 
         await _leagueService.JoinLeagueAsync(request.EntryCode, userId);
-        
+
         return Ok(new { message = "Successfully joined league." });
     }
 
@@ -50,7 +50,7 @@ public class LeaguesController : ControllerBase
             return Unauthorized();
 
         await _leagueService.JoinPublicLeagueAsync(leagueId, userId);
-        
+
         return Ok(new { message = "Successfully joined league." });
     }
 

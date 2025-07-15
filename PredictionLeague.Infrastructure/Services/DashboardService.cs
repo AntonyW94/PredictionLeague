@@ -1,6 +1,6 @@
 ﻿using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
-using PredictionLeague.Shared.Dashboard;
+using PredictionLeague.Contracts.Dashboard;
 
 namespace PredictionLeague.Infrastructure.Services;
 
@@ -35,9 +35,9 @@ public class DashboardService : IDashboardService
         foreach (var seasonId in seasonIds)
         {
             var currentRound = await _roundRepository.GetCurrentRoundAsync(seasonId);
-            if (currentRound == null) 
+            if (currentRound == null)
                 continue;
-            
+
             var season = await _seasonRepository.GetByIdAsync(seasonId);
             var matches = await _matchRepository.GetByRoundIdAsync(currentRound.Id);
             var userPredictions = await _predictionRepository.GetByUserIdAndRoundIdAsync(userId, currentRound.Id);
@@ -69,11 +69,11 @@ public class DashboardService : IDashboardService
         var allPublicLeagues = await _leagueRepository.GetPublicLeaguesAsync();
         var userLeagueIds = userLeagues.Select(l => l.Id).ToHashSet();
         var publicLeagues = new List<PublicLeagueDto>();
-       
+
         foreach (var league in allPublicLeagues)
         {
             var season = await _seasonRepository.GetByIdAsync(league.SeasonId);
-            
+
             publicLeagues.Add(new PublicLeagueDto
             {
                 Id = league.Id,
@@ -82,7 +82,7 @@ public class DashboardService : IDashboardService
                 IsMember = userLeagueIds.Contains(league.Id)
             });
         }
-            
+
         return new DashboardDto
         {
             UpcomingRounds = upcomingRounds,

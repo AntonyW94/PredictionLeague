@@ -1,4 +1,4 @@
-﻿using PredictionLeague.Shared.Auth;
+﻿using PredictionLeague.Contracts.Auth;
 
 namespace PredictionLeague.Web.Client.Authentication;
 

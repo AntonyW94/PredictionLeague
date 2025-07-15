@@ -1,6 +1,6 @@
 ﻿using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
-using PredictionLeague.Shared.Leaderboards;
+using PredictionLeague.Contracts.Leaderboards;
 
 namespace PredictionLeague.Infrastructure.Services;
 

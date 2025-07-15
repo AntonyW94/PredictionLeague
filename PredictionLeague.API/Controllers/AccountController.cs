@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using PredictionLeague.Contracts.Account;
 using PredictionLeague.Domain.Models;
-using PredictionLeague.Shared.Account;
 using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;

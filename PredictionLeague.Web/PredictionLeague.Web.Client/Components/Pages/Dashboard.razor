@@ -1,10 +1,9 @@
 ﻿@page "/dashboard"
+@using PredictionLeague.Contracts.Dashboard
 @attribute [Authorize]
 
 @inject HttpClient Http
 @inject IAuthService AuthService
-
-@using PredictionLeague.Shared.Dashboard
 
 <PageTitle>Dashboard</PageTitle>
 

@@ -1,4 +1,4 @@
-﻿using PredictionLeague.Shared.Predictions;
+﻿using PredictionLeague.Contracts.Predictions;
 
 namespace PredictionLeague.Application.Services;
 

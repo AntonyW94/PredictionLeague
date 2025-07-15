@@ -3,9 +3,8 @@
 @attribute [Authorize]
 
 @inject HttpClient Http
-
-@using PredictionLeague.Shared.Predictions
-@using PredictionLeague.Shared.Dashboard
+@using PredictionLeague.Contracts.Dashboard
+@using PredictionLeague.Contracts.Predictions
 
 <PageTitle>Predictions - Round @(_pageData?.RoundNumber)</PageTitle>
 
@@ -119,7 +118,7 @@
                 }
 
                 _model.RoundId = _pageData.RoundId;
-                _model.Predictions = _pageData.Matches.Select(m => new PredictionSubmission
+                _model.Predictions = _pageData.Matches.Select(m => new PredictionSubmissionDto
                 {
                     MatchId = m.MatchId,
                     PredictedHomeScore = m.PredictedHomeScore ?? 0,
@@ -161,7 +160,7 @@
 
         if (_pageData != null)
         {
-            _model.Predictions = _pageData.Matches.Select(m => new PredictionSubmission
+            _model.Predictions = _pageData.Matches.Select(m => new PredictionSubmissionDto
             {
                 MatchId = m.MatchId,
                 PredictedHomeScore = m.PredictedHomeScore ?? 0,

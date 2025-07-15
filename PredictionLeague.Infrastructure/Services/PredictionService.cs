@@ -1,8 +1,8 @@
 ﻿using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
+using PredictionLeague.Contracts.Dashboard;
+using PredictionLeague.Contracts.Predictions;
 using PredictionLeague.Domain.Models;
-using PredictionLeague.Shared.Dashboard;
-using PredictionLeague.Shared.Predictions;
 
 namespace PredictionLeague.Infrastructure.Services;
 

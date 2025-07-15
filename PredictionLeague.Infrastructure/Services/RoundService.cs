@@ -1,8 +1,8 @@
 ﻿using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
+using PredictionLeague.Contracts.Admin.Matches;
+using PredictionLeague.Contracts.Admin.Rounds;
 using PredictionLeague.Domain.Models;
-using PredictionLeague.Shared.Admin.Matches;
-using PredictionLeague.Shared.Admin.Rounds;
 using System.Transactions;
 
 namespace PredictionLeague.Infrastructure.Services;

@@ -1,10 +1,10 @@
-﻿using PredictionLeague.Domain.Models;
-using PredictionLeague.Shared.Admin.Leagues;
-using PredictionLeague.Shared.Admin.Results;
-using PredictionLeague.Shared.Admin.Rounds;
-using PredictionLeague.Shared.Admin.Seasons;
-using PredictionLeague.Shared.Admin.Teams;
-using PredictionLeague.Shared.Leagues;
+﻿using PredictionLeague.Contracts.Admin.Leagues;
+using PredictionLeague.Contracts.Admin.Results;
+using PredictionLeague.Contracts.Admin.Rounds;
+using PredictionLeague.Contracts.Admin.Seasons;
+using PredictionLeague.Contracts.Admin.Teams;
+using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Services;
 

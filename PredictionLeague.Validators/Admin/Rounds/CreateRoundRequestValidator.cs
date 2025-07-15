@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using PredictionLeague.Shared.Admin.Rounds;
+using PredictionLeague.Contracts.Admin.Rounds;
 using PredictionLeague.Validators.Admin.Matches;
 using System.Diagnostics.CodeAnalysis;
 

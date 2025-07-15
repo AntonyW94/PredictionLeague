@@ -1,12 +1,11 @@
 ﻿@page "/admin/leagues/create"
+@using PredictionLeague.Contracts.Admin.Seasons
+@using PredictionLeague.Contracts.Leagues
 
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
-
-@using PredictionLeague.Shared.Admin.Seasons
-@using PredictionLeague.Shared.Leagues
 
 <PageTitle>Create League</PageTitle>
 

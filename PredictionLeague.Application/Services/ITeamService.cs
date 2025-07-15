@@ -1,5 +1,5 @@
-﻿using PredictionLeague.Domain.Models;
-using PredictionLeague.Shared.Admin.Teams;
+﻿using PredictionLeague.Contracts.Admin.Teams;
+using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Services;
 

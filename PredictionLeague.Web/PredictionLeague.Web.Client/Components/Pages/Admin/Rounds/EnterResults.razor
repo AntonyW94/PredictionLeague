@@ -1,11 +1,10 @@
 ﻿@page "/admin/rounds/{RoundId:int}/submit-results"
+@using PredictionLeague.Contracts.Admin.Results
+@using PredictionLeague.Contracts.Admin.Rounds
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
-
-@using PredictionLeague.Shared.Admin.Results
-@using PredictionLeague.Shared.Admin.Rounds
 
 <PageTitle>Enter Results - Round @_roundNumber</PageTitle>
 

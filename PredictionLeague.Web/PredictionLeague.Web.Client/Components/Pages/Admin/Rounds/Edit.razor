@@ -1,12 +1,11 @@
 ﻿@page "/admin/rounds/edit/{RoundId:int}"
+@using PredictionLeague.Contracts.Admin.Matches
+@using PredictionLeague.Contracts.Admin.Rounds
+@using PredictionLeague.Contracts.Admin.Teams
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
-
-@using PredictionLeague.Shared.Admin.Matches
-@using PredictionLeague.Shared.Admin.Rounds
-@using PredictionLeague.Shared.Admin.Teams
 
 <PageTitle>Edit Round</PageTitle>
 

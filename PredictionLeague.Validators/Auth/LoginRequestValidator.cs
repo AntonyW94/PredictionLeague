@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using PredictionLeague.Shared.Auth;
+using PredictionLeague.Contracts.Auth;
 using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Validators.Auth;

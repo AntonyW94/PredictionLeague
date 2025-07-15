@@ -1,7 +1,7 @@
 ﻿using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
+using PredictionLeague.Contracts.Admin.Results;
 using PredictionLeague.Domain.Models;
-using PredictionLeague.Shared.Admin.Results;
 using System.Transactions;
 
 namespace PredictionLeague.Infrastructure.Services;

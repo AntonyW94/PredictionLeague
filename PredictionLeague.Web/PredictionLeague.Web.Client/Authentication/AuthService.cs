@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
-using PredictionLeague.Shared.Auth;
+using PredictionLeague.Contracts.Auth;
 using System.Net.Http.Json;
 
 namespace PredictionLeague.Web.Client.Authentication;

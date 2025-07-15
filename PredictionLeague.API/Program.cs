@@ -4,45 +4,15 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using PredictionLeague.API.Middleware;
-using PredictionLeague.Application.Repositories;
-using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Models;
-using PredictionLeague.Infrastructure.Data;
-using PredictionLeague.Infrastructure.Identity;
-using PredictionLeague.Infrastructure.Repositories;
-using PredictionLeague.Infrastructure.Services;
+using PredictionLeague.Infrastructure;
 using PredictionLeague.Validators.Auth;
 using Serilog;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
-
-builder.Services.AddScoped<ILeagueRepository, LeagueRepository>();
-builder.Services.AddScoped<IMatchRepository, MatchRepository>();
-builder.Services.AddScoped<IRoundRepository, RoundRepository>();
-builder.Services.AddScoped<IRoundResultRepository, RoundResultRepository>();
-builder.Services.AddScoped<ISeasonRepository, SeasonRepository>();
-builder.Services.AddScoped<ITeamRepository, TeamRepository>();
-builder.Services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
-
-builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddScoped<IDashboardService, DashboardService>();
-builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
-builder.Services.AddScoped<ILeagueService, LeagueService>();
-builder.Services.AddScoped<ILeagueMemberService, LeagueMemberService>();
-builder.Services.AddScoped<IMatchService, MatchService>();
-builder.Services.AddScoped<IPredictionService, PredictionService>();
-builder.Services.AddScoped<IRoundService, RoundService>();
-builder.Services.AddScoped<ISeasonService, SeasonService>();
-builder.Services.AddScoped<ITeamService, TeamService>();
-
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-    .AddUserStore<DapperUserStore>()
-    .AddRoleStore<DapperRoleStore>()
-    .AddSignInManager<SignInManager<ApplicationUser>>()
-    .AddDefaultTokenProviders();
+builder.Services.AddInfrastructureServices();
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {

@@ -1,11 +1,10 @@
 ﻿@page "/admin/seasons/{SeasonId:int}/rounds"
+@using PredictionLeague.Contracts.Admin.Rounds
 
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
-
-@using PredictionLeague.Shared.Admin.Rounds
 
 <PageTitle>Manage Rounds</PageTitle>
 

@@ -1,6 +1,6 @@
-﻿using PredictionLeague.Domain.Models;
-using PredictionLeague.Shared.Admin.Leagues;
-using PredictionLeague.Shared.Leagues;
+﻿using PredictionLeague.Contracts.Admin.Leagues;
+using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Services;
 

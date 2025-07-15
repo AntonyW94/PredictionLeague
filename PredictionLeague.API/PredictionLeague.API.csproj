@@ -19,7 +19,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\PredictionLeague.Application\PredictionLeague.Application.csproj" />
+        <ProjectReference Include="..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
         <ProjectReference Include="..\PredictionLeague.Infrastructure\PredictionLeague.Infrastructure.csproj" />
+        <ProjectReference Include="..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
     </ItemGroup>
 
 </Project>

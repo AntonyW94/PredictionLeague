@@ -21,7 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\PredictionLeague.Shared\PredictionLeague.Shared.csproj" />
+      <ProjectReference Include="..\..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
       <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
     </ItemGroup>
 

@@ -1,4 +1,4 @@
-﻿using PredictionLeague.Shared.Admin.Seasons;
+﻿using PredictionLeague.Contracts.Admin.Seasons;
 
 namespace PredictionLeague.Application.Services;
 

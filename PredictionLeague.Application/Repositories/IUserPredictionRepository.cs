@@ -1,5 +1,5 @@
-﻿using PredictionLeague.Domain.Models;
-using PredictionLeague.Shared.Leaderboards;
+﻿using PredictionLeague.Contracts.Leaderboards;
+using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Repositories;
 
