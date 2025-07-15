@@ -18,8 +18,6 @@ public interface IAdminService
     // Rounds
     Task<IEnumerable<RoundDto>> GetRoundsForSeasonAsync(int seasonId);
     Task<RoundDetailsDto?> GetRoundByIdAsync(int roundId);
-    Task CreateRoundAsync(CreateRoundRequest request);
-    Task UpdateRoundAsync(int roundId, UpdateRoundRequest request);
 
     // Teams
     Task<Team> CreateTeamAsync(CreateTeamRequest request);

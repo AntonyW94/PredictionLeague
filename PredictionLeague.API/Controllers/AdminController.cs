@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PredictionLeague.Application.Features.Admin.Rounds.Commands;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Admin.Leagues;
 using PredictionLeague.Contracts.Admin.Results;
@@ -18,10 +20,12 @@ namespace PredictionLeague.API.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly IAdminService _adminService;
+    private readonly IMediator _mediator;
 
-    public AdminController(IAdminService adminService)
+    public AdminController(IAdminService adminService, IMediator mediator)
     {
         _adminService = adminService;
+        _mediator = mediator;
     }
 
     #region Seasons
@@ -69,14 +73,23 @@ public class AdminController : ControllerBase
     [HttpPost("round")]
     public async Task<IActionResult> CreateRound([FromBody] CreateRoundRequest request)
     {
-        await _adminService.CreateRoundAsync(request);
+        await _mediator.Send((CreateRoundCommand)request);
         return Ok(new { message = "Round and matches created successfully." });
     }
 
     [HttpPut("rounds/{roundId:int}")]
     public async Task<IActionResult> UpdateRound(int roundId, [FromBody] UpdateRoundRequest request)
     {
-        await _adminService.UpdateRoundAsync(roundId, request);
+        var command = new UpdateRoundCommand
+        {
+            RoundId = roundId,
+            StartDate = request.StartDate,
+            Deadline = request.Deadline,
+            Matches = request.Matches
+        };
+
+        await _mediator.Send(command);
+
         return Ok(new { message = "Round updated successfully." });
     }
 

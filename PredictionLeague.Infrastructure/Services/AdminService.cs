@@ -47,13 +47,9 @@ public class AdminService : IAdminService
 
     #region Rounds
 
-    public async Task CreateRoundAsync(CreateRoundRequest request) => await _roundService.CreateAsync(request);
-
     public async Task<RoundDetailsDto?> GetRoundByIdAsync(int roundId) => await _roundService.GetByIdAsync(roundId);
 
     public async Task<IEnumerable<RoundDto>> GetRoundsForSeasonAsync(int seasonId) => await _roundService.FetchBySeasonIdAsync(seasonId);
-
-    public async Task UpdateRoundAsync(int roundId, UpdateRoundRequest request) => await _roundService.UpdateAsync(roundId, request);
 
     #endregion
 
