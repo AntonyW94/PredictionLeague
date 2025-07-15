@@ -16,6 +16,12 @@ public static class DependencyInjection
     {
         services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
 
+        services.AddIdentity<ApplicationUser, IdentityRole>()
+            .AddUserStore<DapperUserStore>()
+            .AddRoleStore<DapperRoleStore>()
+            .AddSignInManager<SignInManager<ApplicationUser>>()
+            .AddDefaultTokenProviders();
+        
         services.AddScoped<ILeagueRepository, LeagueRepository>();
         services.AddScoped<IMatchRepository, MatchRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
@@ -27,18 +33,12 @@ public static class DependencyInjection
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ILeaderboardService, LeaderboardService>();
-        services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<ILeagueMemberService, LeagueMemberService>();
+        services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<IMatchService, MatchService>();
         services.AddScoped<IPredictionService, PredictionService>();
         services.AddScoped<IRoundService, RoundService>();
         services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<ITeamService, TeamService>();
-
-        services.AddIdentity<ApplicationUser, IdentityRole>()
-            .AddUserStore<DapperUserStore>()
-            .AddRoleStore<DapperRoleStore>()
-            .AddSignInManager<SignInManager<ApplicationUser>>()
-            .AddDefaultTokenProviders();
     }
 }
