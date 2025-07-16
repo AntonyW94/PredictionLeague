@@ -37,7 +37,6 @@ public class TeamsController : ControllerBase
         return team == null ? NotFound() : Ok(team);
     }
 
-
     [HttpPost("create")]
     public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
     {

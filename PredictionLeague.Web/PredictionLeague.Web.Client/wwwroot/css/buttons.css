@@ -1,4 +1,6 @@
-﻿.green-button {
+﻿.green-button,
+.green-button:disabled,
+.green-button:active {
     background-color: var(--pl-green);
     color: white;
     font-weight: bold;
@@ -10,7 +12,9 @@
         color: var(--pl-green);
     }
 
-.pink-button {
+.pink-button,
+.pink-button:disabled,
+.pink-button:active {
     background-color: var(--pl-pink);
     color: white;
     font-weight: bold;
@@ -21,7 +25,9 @@
         color: var(--pl-pink);
     }
 
-.dark-pink-button {
+.dark-pink-button,
+.dark-pink-button:disabled,
+.dark-pink-button:active {
     background-color: var(--pl-dark-pink);
     color: white;
     font-weight: bold;
@@ -32,7 +38,9 @@
         color: var(--pl-dark-pink);
     }
 
-.light-cyan-button {
+.light-cyan-button,
+.light-cyan-button:disabled,
+.light-cyan-button:active {
     background-color: var(--pl-light-cyan);
     color: white;
     font-weight: bold;
@@ -43,7 +51,9 @@
         color: var(--pl-light-cyan);
     }
 
-.back-button {
+.back-button,
+.back-button:disabled,
+.back-button:active {
     position: absolute;
     top: 50%;
     left: 0;
@@ -64,7 +74,7 @@
     background-color: white;
     color: var(--pl-purple);
     border: none;
-    transition: color 0.2s ease-in-out; 
+    transition: color 0.2s ease-in-out;
 }
 
     .password-toggle-btn:hover,
@@ -114,6 +124,6 @@
         color: black;
     }
 
-    .apple-btn:hover .social-icon{
-        fill: black;
-    }
+        .apple-btn:hover .social-icon {
+            fill: black;
+        }

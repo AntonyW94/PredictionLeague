@@ -4,11 +4,11 @@ using PredictionLeague.Contracts.Admin.Teams;
 
 namespace PredictionLeague.Application.Features.Admin.Teams.Queries;
 
-public class GetAllTeamsQueryHandler : IRequestHandler<FetchAllTeamsQuery, IEnumerable<TeamDto>>
+public class FetchAllTeamsQueryHandler : IRequestHandler<FetchAllTeamsQuery, IEnumerable<TeamDto>>
 {
     private readonly ITeamRepository _teamRepository;
 
-    public GetAllTeamsQueryHandler(ITeamRepository teamRepository)
+    public FetchAllTeamsQueryHandler(ITeamRepository teamRepository)
     {
         _teamRepository = teamRepository;
     }

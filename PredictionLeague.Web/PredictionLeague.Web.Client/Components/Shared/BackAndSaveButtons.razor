@@ -2,17 +2,17 @@
     @if (BackVisible)
     {
         <button type="button" class="btn pink-button d-flex align-items-center" @onclick="OnBackClick">
-            <span class="bi bi-arrow-left-circle-fill me-2"></span> @BackText
+            <span class="bi bi-arrow-left-circle-fill me-2"></span>@BackText
         </button>
     }
-    
+
     @if (SaveVisible)
-    {  
+    {
         <button type="submit" class="btn green-button d-flex align-items-center" disabled="@IsBusy">
             @if (IsBusy)
             {
-                <span class="spinner-border spinner-border-sm"></span>
-                <span> @BusyText</span>
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                <span>@BusyText</span>
             }
             else
             {

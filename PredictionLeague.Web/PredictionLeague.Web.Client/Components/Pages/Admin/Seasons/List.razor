@@ -1,9 +1,11 @@
 ﻿@page "/admin/seasons"
-@using PredictionLeague.Contracts.Admin.Seasons
+
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using PredictionLeague.Contracts.Admin.Seasons
 
 <PageTitle>Manage Seasons</PageTitle>
 
@@ -58,6 +60,6 @@
 
 @code {
     private List<SeasonDto>? _seasons;
-    protected override async Task OnInitializedAsync() { _seasons = await Http.GetFromJsonAsync<List<SeasonDto>>("api/admin/seasons"); }
+    protected override async Task OnInitializedAsync() { _seasons = await Http.GetFromJsonAsync<List<SeasonDto>>("api/seasons"); }
     private void EditSeason(int seasonId) { NavigationManager.NavigateTo($"/admin/seasons/edit/{seasonId}"); }
 }

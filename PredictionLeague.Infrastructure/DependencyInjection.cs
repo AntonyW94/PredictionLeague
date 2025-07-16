@@ -41,6 +41,5 @@ public static class DependencyInjection
         services.AddScoped<IMatchService, MatchService>();
         services.AddScoped<IPredictionService, PredictionService>();
         services.AddScoped<IRoundService, RoundService>();
-        services.AddScoped<ISeasonService, SeasonService>();
     }
 }

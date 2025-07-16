@@ -1,0 +1,40 @@
+﻿using MediatR;
+using PredictionLeague.Application.Repositories;
+using PredictionLeague.Contracts.Admin.Seasons;
+
+namespace PredictionLeague.Application.Features.Admin.Seasons.Queries;
+
+public class FetchAllSeasonsQueryHandler : IRequestHandler<FetchAllSeasonsQuery, IEnumerable<SeasonDto>>
+{
+    private readonly ISeasonRepository _seasonRepository;
+    private readonly IRoundRepository _roundRepository;
+
+    public FetchAllSeasonsQueryHandler(ISeasonRepository seasonRepository, IRoundRepository roundRepository)
+    {
+        _seasonRepository = seasonRepository;
+        _roundRepository = roundRepository;
+    }
+
+    public async Task<IEnumerable<SeasonDto>> Handle(FetchAllSeasonsQuery request, CancellationToken cancellationToken)
+    {
+        var seasons = await _seasonRepository.GetAllAsync();
+        var seasonsToReturn = new List<SeasonDto>();
+
+        foreach (var season in seasons)
+        {
+            var rounds = await _roundRepository.GetBySeasonIdAsync(season.Id);
+
+            seasonsToReturn.Add(new SeasonDto
+            {
+                Id = season.Id,
+                Name = season.Name,
+                StartDate = season.StartDate,
+                EndDate = season.EndDate,
+                IsActive = season.IsActive,
+                RoundCount = rounds.Count()
+            });
+        }
+
+        return seasonsToReturn;
+    }
+}

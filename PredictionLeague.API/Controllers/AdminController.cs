@@ -27,30 +27,6 @@ public class AdminController : ControllerBase
         _mediator = mediator;
     }
 
-    #region Seasons
-
-    [HttpGet("seasons")]
-    public async Task<IActionResult> GetAllSeasons()
-    {
-        return Ok(await _adminService.GetAllSeasonsAsync());
-    }
-
-    [HttpPost("seasons")]
-    public async Task<IActionResult> CreateSeason([FromBody] CreateSeasonRequest request)
-    {
-        await _adminService.CreateSeasonAsync(request);
-        return Ok(new { message = "Season created successfully." });
-    }
-
-    [HttpPut("seasons/{id:int}")]
-    public async Task<IActionResult> UpdateSeason(int id, [FromBody] UpdateSeasonRequest request)
-    {
-        await _adminService.UpdateSeasonAsync(id, request);
-        return Ok(new { message = "Season updated successfully." });
-    }
-
-    #endregion
-
     #region Rounds
 
     [HttpGet("seasons/{seasonId:int}/rounds")]

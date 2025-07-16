@@ -1,10 +1,11 @@
 ﻿@page "/admin/teams/edit/{TeamId:int}"
-@using PredictionLeague.Contracts.Admin.Teams
 
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using PredictionLeague.Contracts.Admin.Teams
 
 <PageTitle>Edit Team</PageTitle>
 
@@ -54,7 +55,11 @@
         var team = await Http.GetFromJsonAsync<TeamDto>($"api/teams/{TeamId}");
         if (team != null)
         {
-            _model = new UpdateTeamRequest { Name = team.Name, LogoUrl = team.LogoUrl! };
+            _model = new UpdateTeamRequest
+            {
+                Name = team.Name,
+                LogoUrl = team.LogoUrl!
+            };
         }
     }
 
@@ -63,15 +68,24 @@
         _isBusy = true;
         _errorMessage = null;
         _successMessage = null;
+
         var response = await Http.PutAsJsonAsync($"api/teams/{TeamId}/update", _model);
         if (response.IsSuccessStatusCode)
         {
             _successMessage = "Team updated successfully!";
+            StateHasChanged();
+
             await Task.Delay(1500);
-            NavigationManager.NavigateTo("/admin/teams");
+            
+            Back();
         }
-        else { _errorMessage = "There was an error updating the team."; }
+        else
+        {
+            _errorMessage = "There was an error updating the team.";
+        }
+
         _isBusy = false;
+        StateHasChanged();
     }
 
     private void Back() => NavigationManager.NavigateTo("/admin/teams");

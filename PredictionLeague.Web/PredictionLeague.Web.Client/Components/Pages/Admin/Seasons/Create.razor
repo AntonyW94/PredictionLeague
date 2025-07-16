@@ -1,10 +1,11 @@
 ﻿@page "/admin/seasons/create"
-@using PredictionLeague.Contracts.Admin.Seasons
 
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using PredictionLeague.Contracts.Admin.Seasons
 
 <PageTitle>Create Season</PageTitle>
 
@@ -36,14 +37,14 @@
                 <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
                 <StyledValidationMessage For="@(() => _model.EndDate)" />
             </div>
-            
+
             <BackAndSaveButtons BackText="Back to Seasons" OnBackClick="Back" BusyText="Creating Season..." IsBusy="_isBusy"></BackAndSaveButtons>
         </EditForm>
     </div>
 </div>
 
 @code {
-    private CreateSeasonRequest _model = new()
+    private readonly CreateSeasonRequest _model = new()
     {
         StartDate = DateTime.Today,
         EndDate = DateTime.Today.AddMonths(9)
@@ -59,15 +60,15 @@
         _errorMessage = null;
         _successMessage = null;
 
-        var response = await Http.PostAsJsonAsync("api/admin/season", _model);
+        var response = await Http.PostAsJsonAsync("api/seasons/create", _model);
         if (response.IsSuccessStatusCode)
         {
             _successMessage = "Season created successfully!";
-            _model = new CreateSeasonRequest
-            {
-                StartDate = DateTime.Today,
-                EndDate = DateTime.Today.AddMonths(9)
-            };
+            StateHasChanged();
+
+            await Task.Delay(1500);
+
+            Back();
         }
         else
         {
@@ -75,8 +76,8 @@
         }
 
         _isBusy = false;
+        StateHasChanged();
     }
 
     private void Back() => NavigationManager.NavigateTo("/admin/seasons");
-
 }
