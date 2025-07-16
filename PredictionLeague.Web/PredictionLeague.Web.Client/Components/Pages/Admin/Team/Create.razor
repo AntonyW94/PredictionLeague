@@ -42,7 +42,7 @@
         _isBusy = true;
         _errorMessage = null;
 
-        var response = await Http.PostAsJsonAsync("api/admin/teams", _model);
+        var response = await Http.PostAsJsonAsync("api/teams/create", _model);
         if (response.IsSuccessStatusCode)
             NavigationManager.NavigateTo("/admin/teams");
         else

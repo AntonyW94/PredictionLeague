@@ -7,7 +7,6 @@ using PredictionLeague.Contracts.Admin.Leagues;
 using PredictionLeague.Contracts.Admin.Results;
 using PredictionLeague.Contracts.Admin.Rounds;
 using PredictionLeague.Contracts.Admin.Seasons;
-using PredictionLeague.Contracts.Admin.Teams;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Models;
 using System.Security.Claims;
@@ -91,24 +90,6 @@ public class AdminController : ControllerBase
         await _mediator.Send(command);
 
         return Ok(new { message = "Round updated successfully." });
-    }
-
-    #endregion
-
-    #region Teams
-
-    [HttpPost("teams")]
-    public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
-    {
-        var createdTeam = await _adminService.CreateTeamAsync(request);
-        return CreatedAtAction(nameof(TeamsController.GetTeamById), "Teams", new { id = createdTeam.Id }, createdTeam);
-    }
-
-    [HttpPut("teams/{id:int}")]
-    public async Task<IActionResult> UpdateTeam(int id, [FromBody] UpdateTeamRequest request)
-    {
-        await _adminService.UpdateTeamAsync(id, request);
-        return Ok(new { message = "Team updated successfully." });
     }
 
     #endregion

@@ -3,9 +3,7 @@ using PredictionLeague.Contracts.Admin.Leagues;
 using PredictionLeague.Contracts.Admin.Results;
 using PredictionLeague.Contracts.Admin.Rounds;
 using PredictionLeague.Contracts.Admin.Seasons;
-using PredictionLeague.Contracts.Admin.Teams;
 using PredictionLeague.Contracts.Leagues;
-using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Infrastructure.Services;
 
@@ -16,15 +14,13 @@ public class AdminService : IAdminService
     private readonly IMatchService _matchService;
     private readonly IRoundService _roundService;
     private readonly ISeasonService _seasonService;
-    private readonly ITeamService _teamService;
 
     public AdminService(
         ILeagueMemberService leagueMemberService,
         ILeagueService leagueService,
         IMatchService matchService,
         IRoundService roundService,
-        ISeasonService seasonService,
-        ITeamService teamService
+        ISeasonService seasonService
         )
     {
         _leagueMemberService = leagueMemberService;
@@ -32,7 +28,6 @@ public class AdminService : IAdminService
         _matchService = matchService;
         _roundService = roundService;
         _seasonService = seasonService;
-        _teamService = teamService;
     }
 
     #region Seasons
@@ -50,14 +45,6 @@ public class AdminService : IAdminService
     public async Task<RoundDetailsDto?> GetRoundByIdAsync(int roundId) => await _roundService.GetByIdAsync(roundId);
 
     public async Task<IEnumerable<RoundDto>> GetRoundsForSeasonAsync(int seasonId) => await _roundService.FetchBySeasonIdAsync(seasonId);
-
-    #endregion
-
-    #region Teams
-
-    public async Task<Team> CreateTeamAsync(CreateTeamRequest request) => await _teamService.CreateAsync(request);
-
-    public async Task UpdateTeamAsync(int id, UpdateTeamRequest request) => await _teamService.UpdateAsync(id, request);
 
     #endregion
 

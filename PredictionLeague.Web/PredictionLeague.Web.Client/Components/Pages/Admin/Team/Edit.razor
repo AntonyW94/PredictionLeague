@@ -63,7 +63,7 @@
         _isBusy = true;
         _errorMessage = null;
         _successMessage = null;
-        var response = await Http.PutAsJsonAsync($"api/admin/teams/{TeamId}", _model);
+        var response = await Http.PutAsJsonAsync($"api/teams/{TeamId}/update", _model);
         if (response.IsSuccessStatusCode)
         {
             _successMessage = "Team updated successfully!";

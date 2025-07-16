@@ -2,9 +2,7 @@
 using PredictionLeague.Contracts.Admin.Results;
 using PredictionLeague.Contracts.Admin.Rounds;
 using PredictionLeague.Contracts.Admin.Seasons;
-using PredictionLeague.Contracts.Admin.Teams;
 using PredictionLeague.Contracts.Leagues;
-using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Services;
 
@@ -18,10 +16,6 @@ public interface IAdminService
     // Rounds
     Task<IEnumerable<RoundDto>> GetRoundsForSeasonAsync(int seasonId);
     Task<RoundDetailsDto?> GetRoundByIdAsync(int roundId);
-
-    // Teams
-    Task<Team> CreateTeamAsync(CreateTeamRequest request);
-    Task UpdateTeamAsync(int id, UpdateTeamRequest request);
 
     // Leagues
     Task<IEnumerable<LeagueDto>> GetAllLeaguesAsync();
