@@ -1,10 +1,12 @@
 ﻿@page "/admin/rounds/{RoundId:int}/submit-results"
-@using PredictionLeague.Contracts.Admin.Results
-@using PredictionLeague.Contracts.Admin.Rounds
+
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using PredictionLeague.Contracts.Admin.Results
+@using PredictionLeague.Contracts.Admin.Rounds
 
 <PageTitle>Enter Results - Round @_roundNumber</PageTitle>
 
@@ -93,7 +95,7 @@
     {
         try
         {
-            var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/admin/rounds/{RoundId}");
+            var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/rounds/{RoundId}");
             if (roundDetails != null)
             {
                 _seasonId = roundDetails.Round.SeasonId;
@@ -155,7 +157,7 @@
                 AwayScore = m.ActualAwayScore ?? 0
             }).ToList();
 
-        var response = await Http.PutAsJsonAsync($"api/admin/rounds/{RoundId}/submit-results", resultsToUpdate);
+        var response = await Http.PutAsJsonAsync($"api/rounds/{RoundId}/submit-results", resultsToUpdate);
         if (response.IsSuccessStatusCode)
             _successMessage = "Results saved and points calculated successfully!";
         else

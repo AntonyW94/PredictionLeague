@@ -1,10 +1,11 @@
 ﻿@page "/admin/seasons/{SeasonId:int}/rounds"
-@using PredictionLeague.Contracts.Admin.Rounds
 
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using PredictionLeague.Contracts.Admin.Rounds
 
 <PageTitle>Manage Rounds</PageTitle>
 
@@ -68,7 +69,7 @@
     {
         try
         {
-            _rounds = await Http.GetFromJsonAsync<List<RoundDto>>($"api/admin/seasons/{SeasonId}/rounds");
+            _rounds = await Http.GetFromJsonAsync<List<RoundDto>>($"api/rounds/by-season/{SeasonId}");
         }
         catch (Exception)
         {

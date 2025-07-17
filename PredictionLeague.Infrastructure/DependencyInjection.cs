@@ -22,7 +22,7 @@ public static class DependencyInjection
             .AddRoleStore<DapperRoleStore>()
             .AddSignInManager<SignInManager<ApplicationUser>>()
             .AddDefaultTokenProviders();
-        
+
         services.AddScoped<ILeagueRepository, LeagueRepository>();
         services.AddScoped<IMatchRepository, MatchRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -40,6 +40,5 @@ public static class DependencyInjection
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<IMatchService, MatchService>();
         services.AddScoped<IPredictionService, PredictionService>();
-        services.AddScoped<IRoundService, RoundService>();
     }
 }

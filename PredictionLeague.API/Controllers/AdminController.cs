@@ -1,12 +1,8 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PredictionLeague.Application.Features.Admin.Rounds.Commands;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Admin.Leagues;
-using PredictionLeague.Contracts.Admin.Results;
-using PredictionLeague.Contracts.Admin.Rounds;
-using PredictionLeague.Contracts.Admin.Seasons;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Models;
 using System.Security.Claims;
@@ -26,49 +22,6 @@ public class AdminController : ControllerBase
         _adminService = adminService;
         _mediator = mediator;
     }
-
-    #region Rounds
-
-    [HttpGet("seasons/{seasonId:int}/rounds")]
-    public async Task<IActionResult> GetRoundsForSeason(int seasonId)
-    {
-        return Ok(await _adminService.GetRoundsForSeasonAsync(seasonId));
-    }
-
-    [HttpGet("rounds/{roundId:int}")]
-    public async Task<IActionResult> GetRoundById(int roundId)
-    {
-        var roundDetails = await _adminService.GetRoundByIdAsync(roundId);
-        if (roundDetails == null)
-            return NotFound();
-
-        return Ok(roundDetails);
-    }
-
-    [HttpPost("round")]
-    public async Task<IActionResult> CreateRound([FromBody] CreateRoundRequest request)
-    {
-        await _mediator.Send((CreateRoundCommand)request);
-        return Ok(new { message = "Round and matches created successfully." });
-    }
-
-    [HttpPut("rounds/{roundId:int}")]
-    public async Task<IActionResult> UpdateRound(int roundId, [FromBody] UpdateRoundRequest request)
-    {
-        var command = new UpdateRoundCommand
-        {
-            RoundId = roundId,
-            StartDate = request.StartDate,
-            Deadline = request.Deadline,
-            Matches = request.Matches
-        };
-
-        await _mediator.Send(command);
-
-        return Ok(new { message = "Round updated successfully." });
-    }
-
-    #endregion
 
     #region Leagues
 
@@ -105,17 +58,6 @@ public class AdminController : ControllerBase
     {
         await _adminService.ApproveLeagueMemberAsync(leagueId, memberId);
         return Ok(new { message = "Member approved successfully." });
-    }
-
-    #endregion
-
-    #region Matches
-
-    [HttpPut("rounds/{roundId:int}/submit-results")]
-    public async Task<IActionResult> SubmitResults(int roundId, [FromBody] List<UpdateMatchResultsRequest>? request)
-    {
-        await _adminService.UpdateMatchResultsAsync(roundId, request);
-        return Ok(new { message = "Results updated and points calculated successfully." });
     }
 
     #endregion

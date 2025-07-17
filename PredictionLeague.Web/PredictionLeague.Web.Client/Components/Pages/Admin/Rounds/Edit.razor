@@ -1,11 +1,13 @@
 ﻿@page "/admin/rounds/edit/{RoundId:int}"
-@using PredictionLeague.Contracts.Admin.Matches
-@using PredictionLeague.Contracts.Admin.Rounds
-@using PredictionLeague.Contracts.Admin.Teams
+
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using PredictionLeague.Contracts.Admin.Matches
+@using PredictionLeague.Contracts.Admin.Rounds
+@using PredictionLeague.Contracts.Admin.Teams
 
 <PageTitle>Edit Round</PageTitle>
 
@@ -142,7 +144,7 @@
     {
         try
         {
-            var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/admin/rounds/{RoundId}");
+            var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/rounds/{RoundId}");
             if (roundDetails != null)
             {
                 _seasonId = roundDetails.Round.SeasonId;
@@ -202,7 +204,7 @@
         _errorMessage = null;
         _successMessage = null;
      
-        var response = await Http.PutAsJsonAsync($"api/admin/rounds/{RoundId}", _model);
+        var response = await Http.PutAsJsonAsync($"api/rounds/{RoundId}/update", _model);
         if (response.IsSuccessStatusCode)
         {
             _successMessage = "Round updated successfully!";

@@ -51,7 +51,7 @@
     private string? _errorMessage;
     private string? _successMessage;
 
-    protected override async Task OnInitializedAsync() { _seasons = await Http.GetFromJsonAsync<List<SeasonDto>>("api/admin/seasons") ?? new List<SeasonDto>(); }
+    protected override async Task OnInitializedAsync() { _seasons = await Http.GetFromJsonAsync<List<SeasonDto>>("api/seasons") ?? new List<SeasonDto>(); }
 
     private async Task HandleCreateLeague()
     {
