@@ -1,9 +1,11 @@
 ﻿@page "/leagues/{LeagueId:int}/leaderboard"
-@using PredictionLeague.Contracts.Leaderboards
+
 @attribute [Authorize]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using PredictionLeague.Contracts.Leaderboards
 
 <PageTitle>@(_overallLeaderboard?.LeagueName) Leaderboard</PageTitle>
 

@@ -5,6 +5,7 @@ using PredictionLeague.Application.Features.Admin.Seasons.Commands;
 using PredictionLeague.Application.Features.Admin.Seasons.Queries;
 using PredictionLeague.Contracts.Admin.Seasons;
 using PredictionLeague.Domain.Models;
+using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;
 
@@ -26,13 +27,11 @@ public class SeasonsController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> CreateSeason([FromBody] CreateSeasonRequest request)
     {
-        var command = new CreateSeasonCommand
-        {
-            Name = request.Name,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate
-        };
-
+        var creatorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(creatorId))
+            return Unauthorized();
+        
+        var command = new CreateSeasonCommand(request, creatorId);
         await _mediator.Send(command);
 
         return Ok(new { message = "Season created successfully." });

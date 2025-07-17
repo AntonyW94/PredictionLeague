@@ -1,10 +1,9 @@
-﻿@page "/admin/leagues/{LeagueId:int}/edit"
-@using PredictionLeague.Contracts.Admin.Leagues
-
-@attribute [Authorize(Roles = "Administrator")]
+﻿@page "/leagues/{LeagueId:int}/edit"
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+
+@using PredictionLeague.Contracts.Admin.Leagues
 
 <PageTitle>Edit League</PageTitle>
 
@@ -58,7 +57,7 @@
         _errorMessage = null;
         _successMessage = null;
         
-        var response = await Http.PutAsJsonAsync($"api/admin/leagues/{LeagueId}", _model);
+        var response = await Http.PutAsJsonAsync($"api/leagues/{LeagueId}/update", _model);
         if (response.IsSuccessStatusCode)
             _successMessage = "League updated successfully!";
         else
@@ -67,5 +66,5 @@
         _isBusy = false;
     }
 
-    private void Back() => NavigationManager.NavigateTo("/admin/leagues");
+    private void Back() => NavigationManager.NavigateTo("/leagues");
 }

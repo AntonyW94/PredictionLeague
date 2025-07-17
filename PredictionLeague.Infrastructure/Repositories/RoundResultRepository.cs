@@ -2,7 +2,6 @@
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Models;
-using PredictionLeague.Infrastructure.Data;
 using System.Data;
 
 namespace PredictionLeague.Infrastructure.Repositories;

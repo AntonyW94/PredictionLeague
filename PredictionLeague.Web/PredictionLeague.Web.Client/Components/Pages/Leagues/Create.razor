@@ -1,0 +1,96 @@
+﻿@page "/leagues/create"
+
+@attribute [Authorize]
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@using PredictionLeague.Contracts.Leagues
+
+<PageTitle>Create League</PageTitle>
+
+<div class="page-container">
+    <div class="form-container">
+        <h3 class="text-center fw-bold text-white mb-4">Create New League</h3>
+        
+        @if (_pageData == null)
+        {
+            <p class="text-center text-white"><em>Loading Create League...</em></p>
+        }
+        else
+        {
+            <EditForm Model="_model" OnValidSubmit="HandleCreateLeague">
+                <FluentValidationValidator />
+                <ApiError Message="@_errorMessage" />
+                <ApiSuccess Message="@_successMessage" />
+
+                <div class="mb-3">
+                    <label for="season" class="form-label text-white">Season</label>
+                    <InputSelect id="season" class="form-select" @bind-Value="_model.SeasonId">
+                        <option value="0">-- Select a Season --</option>
+                        @foreach (var season in _pageData.Seasons)
+                        {
+                            <option value="@season.Id">@season.Name</option>
+                        }
+                    </InputSelect>
+                    <StyledValidationMessage For="@(() => _model.SeasonId)" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="name" class="form-label text-white">League Name</label>
+                    <InputText id="name" class="form-control" @bind-Value="_model.Name" />
+                    <StyledValidationMessage For="@(() => _model.Name)" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="entryCode" class="form-label text-white">
+                        Entry Code
+                    </label> <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" />
+                    <StyledValidationMessage For="@(() => _model.EntryCode)" />
+                </div>
+
+                <BackAndSaveButtons BackText="Back to Leagues" OnBackClick="Back" BusyText="Creating League..." IsBusy="_isBusy"></BackAndSaveButtons>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    private CreateLeaguePageData? _pageData;
+    private readonly CreateLeagueRequest _model = new();
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _pageData = await Http.GetFromJsonAsync<CreateLeaguePageData>("api/leagues/create-data");
+    }
+
+    private async Task HandleCreateLeague()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+     
+        var response = await Http.PostAsJsonAsync("api/leagues/create", _model);
+        if (response.IsSuccessStatusCode)
+        {
+            _successMessage = "League created successfully!";
+            StateHasChanged();
+
+            await Task.Delay(1500);
+
+            Back();
+        }
+        else
+        {
+            _errorMessage = "Error creating league.";
+        }
+
+        _isBusy = false;
+        StateHasChanged();
+    }
+
+    private void Back() => NavigationManager.NavigateTo("/leagues");
+}

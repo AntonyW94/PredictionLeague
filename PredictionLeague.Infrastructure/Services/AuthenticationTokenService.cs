@@ -1,13 +1,12 @@
 ﻿
 using Dapper;
-using global::PredictionLeague.Contracts.Authentication;
-using global::PredictionLeague.Domain.Models;
-using global::PredictionLeague.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Services;
+using PredictionLeague.Contracts.Authentication;
+using PredictionLeague.Domain.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -28,7 +27,6 @@ public class AuthenticationTokenService : IAuthenticationTokenService
         _connectionFactory = connectionFactory;
     }
 
-    // Move the GenerateAccessToken method here
     public async Task<AuthenticationResponse> GenerateAccessToken(ApplicationUser user)
     {
         var userRoles = await _userManager.GetRolesAsync(user);

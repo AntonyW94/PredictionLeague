@@ -32,13 +32,9 @@ public static class DependencyInjection
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
 
-        services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ILeaderboardService, LeaderboardService>();
-        services.AddScoped<ILeagueMemberService, LeagueMemberService>();
-        services.AddScoped<ILeagueService, LeagueService>();
-        services.AddScoped<IMatchService, MatchService>();
         services.AddScoped<IPredictionService, PredictionService>();
     }
 }

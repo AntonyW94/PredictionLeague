@@ -1,64 +1,177 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using FluentValidation;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PredictionLeague.Application.Services;
+using PredictionLeague.Application.Features.Leagues.Commands;
+using PredictionLeague.Application.Features.Leagues.Queries;
+using PredictionLeague.Contracts.Admin.Leagues;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Models;
 using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class LeaguesController : ControllerBase
 {
-    private readonly ILeagueService _leagueService;
+    private readonly IMediator _mediator;
+    private readonly IValidator<CreateLeagueRequest> _createLeagueValidator;
 
-    public LeaguesController(ILeagueService leagueService)
+    public LeaguesController(IMediator mediator, IValidator<CreateLeagueRequest> createLeagueValidator)
     {
-        _leagueService = leagueService;
+        _mediator = mediator;
+        _createLeagueValidator = createLeagueValidator;
     }
 
-    [HttpPost]
+    #region Create
+
+    [HttpPost("create")]
     public async Task<IActionResult> CreateLeague([FromBody] CreateLeagueRequest request)
     {
+        var validationResult = await _createLeagueValidator.ValidateAsync(request);
+        if (!validationResult.IsValid)
+            return BadRequest(validationResult.Errors);
+
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
-        var newLeague = await _leagueService.CreateAsync(request, userId);
+        var command = new CreateLeagueCommand(request, userId);
+        var newLeague = await _mediator.Send(command);
 
         return CreatedAtAction(nameof(GetLeagueById), new { leagueId = newLeague.Id }, newLeague);
     }
 
+    #endregion
+
+    #region Read
+
+    [HttpGet]
+    public async Task<IActionResult> FetchAll()
+    {
+        var query = new FetchAllLeaguesQuery();
+
+        return Ok(await _mediator.Send(query));
+    }
+
+    [HttpGet("{leagueId:int}")]
+    public async Task<IActionResult> GetLeagueById(int leagueId)
+    {
+        var query = new GetLeagueByIdQuery(leagueId);
+        var result = await _mediator.Send(query);
+
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpGet("{leagueId:int}/members")]
+    [Authorize]
+    public async Task<IActionResult> FetchLeagueMembers(int leagueId)
+    {
+        var query = new FetchLeagueMembersQuery(leagueId);
+        var result = await _mediator.Send(query);
+
+        return result == null ? NotFound() : Ok(result);
+    }
+
+    [HttpGet("create-data")]
+    [Authorize]
+    public async Task<IActionResult> GetCreateLeaguePageData()
+    {
+        var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
+        var query = new GetCreateLeaguePageDataQuery(isAdmin);
+        var pageData = await _mediator.Send(query);
+
+        return Ok(pageData);
+    }
+
+    #endregion
+
+    #region Update
+
+    [HttpPut("{leagueId:int}/update")]
+    public async Task<IActionResult> UpdateLeague(int leagueId, [FromBody] UpdateLeagueRequest request)
+    {
+        var command = new UpdateLeagueCommand(leagueId, request);
+        await _mediator.Send(command);
+
+        return Ok(new { message = "League updated successfully." });
+    }
+
     [HttpPost("join")]
+    [Authorize]
     public async Task<IActionResult> JoinLeague([FromBody] JoinLeagueRequest request)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
-        await _leagueService.JoinLeagueAsync(request.EntryCode, userId);
+        var command = new JoinLeagueCommand(request.EntryCode, userId);
 
-        return Ok(new { message = "Successfully joined league." });
+        try
+        {
+            await _mediator.Send(command);
+            return Ok(new { message = "Successfully joined league." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost("{leagueId:int}/join")]
+    [Authorize]
     public async Task<IActionResult> JoinPublicLeague(int leagueId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
+        if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+        var command = new JoinLeagueCommand(leagueId, userId);
+
+        try
+        {
+            await _mediator.Send(command);
+            return Ok(new { message = "Successfully joined league." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{leagueId:int}/members/{memberId}/approve")]
+    [Authorize]
+    public async Task<IActionResult> ApproveLeagueMember(int leagueId, string memberId)
+    {
+        var approvingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(approvingUserId))
             return Unauthorized();
 
-        await _leagueService.JoinPublicLeagueAsync(leagueId, userId);
+        var command = new ApproveLeagueMemberCommand(leagueId, memberId, approvingUserId);
 
-        return Ok(new { message = "Successfully joined league." });
+        try
+        {
+            await _mediator.Send(command);
+            return Ok(new { message = "Member approved successfully." });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Forbid(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 
-    [HttpGet("{leagueId:int}")]
-    public IActionResult GetLeagueById(int leagueId)
-    {
-        // Note: Implementation for this would require a new GetByIdAsync method in ILeagueService
-        // and ILeagueRepository. For now, it serves as a target for CreatedAtAction.
-        return Ok(new { message = $"Endpoint to get league {leagueId}." });
-    }
+    #endregion
 }
