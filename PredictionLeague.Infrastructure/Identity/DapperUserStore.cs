@@ -1,7 +1,7 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Domain.Models;
 using System.Data;
 
@@ -9,14 +9,14 @@ namespace PredictionLeague.Infrastructure.Identity;
 
 public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailStore<ApplicationUser>, IUserRoleStore<ApplicationUser>, IUserLoginStore<ApplicationUser>
 {
-    private readonly string _connectionString;
+    private readonly IDbConnectionFactory _connectionFactory;
 
-    public DapperUserStore(IConfiguration configuration)
+    public DapperUserStore(IConfiguration configuration, IDbConnectionFactory connectionFactory)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        _connectionFactory = connectionFactory;
     }
 
-    private IDbConnection Connection => new SqlConnection(_connectionString);
+    private IDbConnection Connection => _connectionFactory.CreateConnection();
 
     #region IUserStore, IUserPasswordStore, IUserEmailStore Methods
     public async Task<IdentityResult> CreateAsync(ApplicationUser user, CancellationToken cancellationToken)

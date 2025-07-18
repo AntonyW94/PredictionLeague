@@ -1,22 +1,21 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using PredictionLeague.Application.Data;
 using System.Data;
 
 namespace PredictionLeague.Infrastructure.Identity;
 
 public class DapperRoleStore : IRoleStore<IdentityRole>
 {
-    private readonly string _connectionString;
+    private readonly IDbConnectionFactory _connectionFactory;
 
-    public DapperRoleStore(IConfiguration configuration)
+    public DapperRoleStore(IConfiguration configuration, IDbConnectionFactory connectionFactory)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection")
-                            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+        _connectionFactory = connectionFactory;
     }
 
-    private IDbConnection Connection => new SqlConnection(_connectionString);
+    private IDbConnection Connection => _connectionFactory.CreateConnection();
 
     public async Task<IdentityResult> CreateAsync(IdentityRole role, CancellationToken cancellationToken)
     {
