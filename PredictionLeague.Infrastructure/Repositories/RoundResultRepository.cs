@@ -16,14 +16,6 @@ public class RoundResultRepository : IRoundResultRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<IEnumerable<RoundResult>> GetByRoundIdAsync(int roundId)
-    {
-        const string sql = "SELECT gwr.* FROM [RoundResults] r WHERE r.[RoundId] = @RoundId;";
-
-        using var dbConnection = Connection;
-        return await dbConnection.QueryAsync<RoundResult>(sql, new { RoundId = roundId });
-    }
-
     public async Task UpsertAsync(RoundResult result)
     {
         const string sql = @"

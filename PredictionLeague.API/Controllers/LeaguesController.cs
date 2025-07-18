@@ -5,14 +5,13 @@ using PredictionLeague.Application.Features.Leagues.Commands;
 using PredictionLeague.Application.Features.Leagues.Queries;
 using PredictionLeague.Contracts.Admin.Leagues;
 using PredictionLeague.Contracts.Leagues;
-using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;
 
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class LeaguesController : ControllerBase
+public class LeaguesController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -26,11 +25,7 @@ public class LeaguesController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> CreateLeague([FromBody] CreateLeagueRequest request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
-
-        var command = new CreateLeagueCommand(request, userId);
+        var command = new CreateLeagueCommand(request, CurrentUserId);
         var newLeague = await _mediator.Send(command);
 
         return CreatedAtAction(nameof(GetLeagueById), new { leagueId = newLeague.Id }, newLeague);
@@ -94,11 +89,7 @@ public class LeaguesController : ControllerBase
     [Authorize]
     public async Task<IActionResult> JoinLeague([FromBody] JoinLeagueRequest request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
-
-        var command = new JoinLeagueCommand(request.EntryCode, userId);
+        var command = new JoinLeagueCommand(request.EntryCode, CurrentUserId);
 
         try
         {
@@ -119,10 +110,7 @@ public class LeaguesController : ControllerBase
     [Authorize]
     public async Task<IActionResult> JoinPublicLeague(int leagueId)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-        var command = new JoinLeagueCommand(leagueId, userId);
+        var command = new JoinLeagueCommand(leagueId, CurrentUserId);
 
         try
         {
@@ -143,11 +131,7 @@ public class LeaguesController : ControllerBase
     [Authorize]
     public async Task<IActionResult> ApproveLeagueMember(int leagueId, string memberId)
     {
-        var approvingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(approvingUserId))
-            return Unauthorized();
-
-        var command = new ApproveLeagueMemberCommand(leagueId, memberId, approvingUserId);
+        var command = new ApproveLeagueMemberCommand(leagueId, memberId, CurrentUserId);
 
         try
         {

@@ -24,6 +24,12 @@ public class ErrorHandlingMiddleware
         {
             await _next(context);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new { message = ex.Message }));
+        }
         catch (IdentityUpdateException ex)
         {
             context.Response.ContentType = "application/json";

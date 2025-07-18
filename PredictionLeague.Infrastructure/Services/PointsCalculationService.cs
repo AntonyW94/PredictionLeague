@@ -5,9 +5,6 @@ using PredictionLeague.Domain.Services;
 
 namespace PredictionLeague.Infrastructure.Services;
 
-/// <summary>
-/// An Application Service responsible for the logic of calculating points for predictions.
-/// </summary>
 public class PointsCalculationService : IPointsCalculationService
 {
     private readonly IUserPredictionRepository _predictionRepository;
@@ -20,9 +17,7 @@ public class PointsCalculationService : IPointsCalculationService
     public async Task CalculatePointsForMatchAsync(Match match)
     {
         if (match.ActualHomeTeamScore == null || match.ActualAwayTeamScore == null)
-        {
             return;
-        }
 
         var predictions = await _predictionRepository.GetByMatchIdAsync(match.Id);
 

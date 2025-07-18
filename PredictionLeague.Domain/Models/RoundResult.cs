@@ -1,9 +1,18 @@
-﻿namespace PredictionLeague.Domain.Models;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace PredictionLeague.Domain.Models;
+
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class RoundResult
 {
-    public int Id { get; init; }
-    public int RoundId { get; init; }
-    public string UserId { get; init; } = string.Empty;
-    public int TotalPoints { get; init; }
+    public int RoundId { get; }
+    public string UserId { get; }
+    public int TotalPoints { get; }
+
+    public RoundResult(int roundId, string userId, int totalPoints)
+    {
+        RoundId = roundId;
+        UserId = userId;
+        TotalPoints = totalPoints;
+    }
 }

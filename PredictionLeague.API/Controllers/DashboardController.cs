@@ -2,14 +2,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Dashboard.Queries;
-using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class DashboardController : ControllerBase
+public class DashboardController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -21,11 +20,7 @@ public class DashboardController : ControllerBase
     [HttpGet("dashboard-data")]
     public async Task<IActionResult> GetDashboardData()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
-
-        var query = new GetDashboardDataQuery(userId);
+        var query = new GetDashboardDataQuery(CurrentUserId);
         var result = await _mediator.Send(query);
 
         return Ok(result);

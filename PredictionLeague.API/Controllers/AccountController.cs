@@ -4,14 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Account.Commands;
 using PredictionLeague.Application.Features.Account.Queries;
 using PredictionLeague.Contracts.Account;
-using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]/details")]
 [Authorize]
-public class AccountController : ControllerBase
+public class AccountController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -23,11 +22,7 @@ public class AccountController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetUserDetails()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized("User ID could not be found in the token.");
-
-        var query = new GetUserQuery(userId);
+        var query = new GetUserQuery(CurrentUserId);
         var userDetails = await _mediator.Send(query);
 
         return userDetails == null ? NotFound("User not found.") : Ok(userDetails);
@@ -36,11 +31,7 @@ public class AccountController : ControllerBase
     [HttpPut]
     public async Task<IActionResult> UpdateUserDetails([FromBody] UpdateUserDetailsRequest request)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized("User ID could not be found in the token.");
-
-        var command = new UpdateUserDetailsCommand(request, userId);
+        var command = new UpdateUserDetailsCommand(request, CurrentUserId);
         await _mediator.Send(command);
 
         return Ok(new { message = "Details updated successfully." });

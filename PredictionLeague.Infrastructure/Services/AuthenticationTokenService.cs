@@ -1,9 +1,7 @@
-﻿
-using Dapper;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using PredictionLeague.Application.Data;
+using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
 using PredictionLeague.Domain.Models;
@@ -18,13 +16,13 @@ public class AuthenticationTokenService : IAuthenticationTokenService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConfiguration _configuration;
-    private readonly IDbConnectionFactory _connectionFactory;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-    public AuthenticationTokenService(UserManager<ApplicationUser> userManager, IConfiguration configuration, IDbConnectionFactory connectionFactory)
+    public AuthenticationTokenService(UserManager<ApplicationUser> userManager, IConfiguration configuration, IRefreshTokenRepository refreshTokenRepository)
     {
         _userManager = userManager;
         _configuration = configuration;
-        _connectionFactory = connectionFactory;
+        _refreshTokenRepository = refreshTokenRepository;
     }
 
     public async Task<AuthenticationResponse> GenerateAccessToken(ApplicationUser user)
@@ -79,8 +77,7 @@ public class AuthenticationTokenService : IAuthenticationTokenService
             Created = DateTime.UtcNow
         };
 
-        using var connection = _connectionFactory.CreateConnection();
-        await connection.ExecuteAsync("INSERT INTO RefreshTokens (UserId, Token, Expires, Created) VALUES (@UserId, @Token, @Expires, @Created)", refreshToken);
+        await _refreshTokenRepository.AddAsync(refreshToken);
 
         return refreshToken;
     }

@@ -57,22 +57,6 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         }
     }
 
-    private async Task CalculatePointsForMatchAsync(Match match)
-    {
-        var predictions = await _predictionRepository.GetByMatchIdAsync(match.Id);
-
-        foreach (var prediction in predictions)
-        {
-            var points = CalculatePoints(
-                match.ActualHomeTeamScore!.Value,
-                match.ActualAwayTeamScore!.Value,
-                prediction.PredictedHomeScore,
-                prediction.PredictedAwayScore);
-
-            await _predictionRepository.UpdatePointsAsync(prediction.Id, points);
-        }
-    }
-
     private async Task AggregateResultsForRoundAsync(int roundId)
     {
         var matchesInRound = await _matchRepository.GetByRoundIdAsync(roundId);
@@ -93,24 +77,8 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
 
         foreach (var score in userScores)
         {
-            var roundResult = new RoundResult
-            {
-                RoundId = roundId,
-                UserId = score.UserId,
-                TotalPoints = score.TotalPoints
-            };
+            var roundResult = new RoundResult(roundId, score.UserId, score.TotalPoints);
             await _roundResultRepository.UpsertAsync(roundResult);
         }
-    }
-
-    private static int CalculatePoints(int actualHome, int actualAway, int predictedHome, int predictedAway)
-    {
-        if (actualHome == predictedHome && actualAway == predictedAway)
-            return 5;
-
-        var actualResult = Math.Sign(actualHome - actualAway);
-        var predictedResult = Math.Sign(predictedHome - predictedAway);
-
-        return actualResult == predictedResult ? 3 : 0;
     }
 }
