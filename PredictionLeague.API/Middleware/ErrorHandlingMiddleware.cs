@@ -60,6 +60,15 @@ public class ErrorHandlingMiddleware
            
             await context.Response.WriteAsync(JsonSerializer.Serialize(errors));
         }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Entity not found: {Message}", ex.Message);
+            
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+            
+            await context.Response.WriteAsync(JsonSerializer.Serialize(new { message = ex.Message }));
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unhandled exception has occurred.");
