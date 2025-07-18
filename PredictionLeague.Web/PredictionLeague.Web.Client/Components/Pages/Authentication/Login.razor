@@ -112,13 +112,9 @@
 
         var result = await AuthenticationService.LoginAsync(_model);
         if (result.IsSuccess)
-        {
             NavigationManager.NavigateTo("/");
-        }
         else
-        {
             _errorMessage = result.Message;
-        }
 
         _isBusy = false;
     }
