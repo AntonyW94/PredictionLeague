@@ -113,11 +113,17 @@ public class AuthenticationController : ControllerBase
                 errorSourcePage = "/register";
 
             if (!authenticateResult.Succeeded || authenticateResult.Principal == null)
+            {
+                _logger.LogError("External authentication with Google failed. AuthenticateResult.Succeeded was false.");
                 return RedirectWithError(errorSourcePage, "Authentication with external provider failed.");
+            }
 
             var providerKey = authenticateResult.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(providerKey) || !authenticateResult.Properties.Items.TryGetValue(".AuthScheme", out var provider) || string.IsNullOrEmpty(provider))
+            {
+                _logger.LogError("Could not determine user identifier or provider from external provider callback.");
                 return RedirectWithError(errorSourcePage, "Could not determine user identifier from external provider.");
+            }
 
             var command = new LoginWithGoogleCommand(authenticateResult.Principal, provider, providerKey);
             var result = await _mediator.Send(command);

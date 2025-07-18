@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Models;
 
@@ -6,10 +7,12 @@ namespace PredictionLeague.Application.Features.Leagues.Commands;
 
 public class JoinLeagueCommandHandler : IRequestHandler<JoinLeagueCommand>
 {
+    private readonly ILogger<JoinLeagueCommandHandler> _logger;
     private readonly ILeagueRepository _leagueRepository;
 
-    public JoinLeagueCommandHandler(ILeagueRepository leagueRepository)
+    public JoinLeagueCommandHandler(ILogger<JoinLeagueCommandHandler> logger, ILeagueRepository leagueRepository)
     {
+        _logger = logger;
         _leagueRepository = leagueRepository;
     }
 
@@ -25,7 +28,10 @@ public class JoinLeagueCommandHandler : IRequestHandler<JoinLeagueCommand>
             throw new InvalidOperationException("Either a LeagueId or an EntryCode must be provided.");
 
         if (league == null)
+        {
+            _logger.LogWarning("Failed attempt to join a league (League ID: {LeagueId}, Entry Code: {EntryCode}).", request.LeagueId, request.EntryCode);
             throw new KeyNotFoundException("The specified league could not be found.");
+        }
         
         if (league.EntryDeadline.HasValue && league.EntryDeadline.Value < DateTime.UtcNow)
             throw new InvalidOperationException("The deadline to join this league has passed.");

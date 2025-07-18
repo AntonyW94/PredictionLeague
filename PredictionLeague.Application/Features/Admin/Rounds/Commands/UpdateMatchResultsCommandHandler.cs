@@ -9,7 +9,7 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
 public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResultsCommand>
 {
-    private ILogger<UpdateMatchResultsCommandHandler> _logger;
+    private readonly ILogger<UpdateMatchResultsCommandHandler> _logger;
     private readonly IMatchRepository _matchRepository;
     private readonly IUserPredictionRepository _predictionRepository;
     private readonly IRoundResultRepository _roundResultRepository;
@@ -41,7 +41,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
                 var match = await _matchRepository.GetByIdAsync(result.MatchId);
                 if (match == null)
                 {
-                    _logger.LogWarning("Match (ID: {MatchId}) not found while updating results.", result.MatchId);
+                    _logger.LogWarning("Attempted to update results for a non-existent Match (ID: {MatchId}).", result.MatchId);
                     continue;
                 }
 
