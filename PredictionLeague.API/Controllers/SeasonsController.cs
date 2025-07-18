@@ -49,10 +49,10 @@ public class SeasonsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetById(int id)
+    [HttpGet("{seasonId:int}")]
+    public async Task<IActionResult> GetById(int seasonId)
     {
-        var query = new GetSeasonByIdQuery { Id = id };
+        var query = new GetSeasonByIdQuery(seasonId);
 
         var season = await _mediator.Send(query);
         return season == null ? NotFound() : Ok(season);
@@ -62,17 +62,10 @@ public class SeasonsController : ControllerBase
 
     #region Update
 
-    [HttpPut("{id:int}/update")]
-    public async Task<IActionResult> UpdateSeason(int id, [FromBody] UpdateSeasonRequest request)
+    [HttpPut("{seasonId:int}/update")]
+    public async Task<IActionResult> UpdateSeason(int seasonId, [FromBody] UpdateSeasonRequest request)
     {
-        var command = new UpdateSeasonCommand
-        {
-            Id = id,
-            Name = request.Name,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
-            IsActive = request.IsActive
-        };
+        var command = new UpdateSeasonCommand(seasonId, request);
 
         await _mediator.Send(command);
         return Ok(new { message = "Season updated successfully." });

@@ -4,12 +4,12 @@ using PredictionLeague.Contracts.Admin.Rounds;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Queries;
 
-public class GetRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSeasonQuery, IEnumerable<RoundDto>>
+public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSeasonQuery, IEnumerable<RoundDto>>
 {
     private readonly IRoundRepository _roundRepository;
     private readonly IMatchRepository _matchRepository;
 
-    public GetRoundsForSeasonQueryHandler(IRoundRepository roundRepository, IMatchRepository matchRepository)
+    public FetchRoundsForSeasonQueryHandler(IRoundRepository roundRepository, IMatchRepository matchRepository)
     {
         _roundRepository = roundRepository;
         _matchRepository = matchRepository;

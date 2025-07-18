@@ -31,15 +31,10 @@ public class AuthenticationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var command = new RegisterCommand
-        {
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Email = request.Email,
-            Password = request.Password
-        };
+        var command = new RegisterCommand(request);
 
         var result = await _mediator.Send(command);
+        
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
@@ -47,11 +42,7 @@ public class AuthenticationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var command = new LoginCommand
-        {
-            Email = request.Email,
-            Password = request.Password
-        };
+        var command = new LoginCommand(request);
 
         var result = await _mediator.Send(command);
         if (!result.IsSuccess)
@@ -67,10 +58,11 @@ public class AuthenticationController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> RefreshToken()
     {
-        var command = new RefreshTokenCommand
-        {
-            RefreshToken = Request.Cookies["refreshToken"]
-        };
+        var refreshToken = Request.Cookies["refreshToken"];
+        if (refreshToken == null)
+            return Ok();
+        
+        var command = new RefreshTokenCommand(refreshToken);
 
         var result = await _mediator.Send(command);
 
@@ -81,14 +73,12 @@ public class AuthenticationController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Logout()
     {
-        var command = new LogoutCommand
-        {
-            RefreshToken = Request.Cookies["refreshToken"]
-        };
+        var command = new LogoutCommand(Request.Cookies["refreshToken"]);
 
         await _mediator.Send(command);
 
         Response.Cookies.Delete("refreshToken");
+        
         return Ok(new { message = "Logged out successfully." });
     }
 

@@ -5,5 +5,10 @@ namespace PredictionLeague.Application.Features.Admin.Seasons.Queries;
 
 public class GetSeasonByIdQuery : IRequest<SeasonDto?>
 {
-    public int Id { get; init; }
+    public int Id { get; }
+
+    public GetSeasonByIdQuery(int seasonId)
+    {
+        Id = seasonId;
+    }
 }

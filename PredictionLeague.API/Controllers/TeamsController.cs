@@ -24,43 +24,39 @@ public class TeamsController : ControllerBase
     public async Task<IActionResult> GetAllTeams()
     {
         var query = new FetchAllTeamsQuery();
+        
         var result = await _mediator.Send(query);
+        
         return Ok(result);
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<IActionResult> GetTeamById(int id)
+    [HttpGet("{teamId:int}")]
+    public async Task<IActionResult> GetTeamById(int teamId)
     {
-        var query = new GetTeamByIdQuery { Id = id };
+        var query = new GetTeamByIdQuery(teamId);
 
         var team = await _mediator.Send(query);
+        
         return team == null ? NotFound() : Ok(team);
     }
 
     [HttpPost("create")]
     public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
     {
-        var command = new CreateTeamCommand
-        {
-            Name = request.Name,
-            LogoUrl = request.LogoUrl
-        };
+        var command = new CreateTeamCommand(request);
 
         var createdTeam = await _mediator.Send(command);
+        
         return CreatedAtAction(nameof(GetTeamById), "Teams", new { id = createdTeam.Id }, createdTeam);
     }
 
-    [HttpPut("{id:int}/update")]
-    public async Task<IActionResult> UpdateTeam(int id, [FromBody] UpdateTeamRequest request)
+    [HttpPut("{teamId:int}/update")]
+    public async Task<IActionResult> UpdateTeam(int teamId, [FromBody] UpdateTeamRequest request)
     {
-        var command = new UpdateTeamCommand
-        {
-            Id = id,
-            Name = request.Name,
-            LogoUrl = request.LogoUrl
-        };
+        var command = new UpdateTeamCommand(teamId, request);
 
         await _mediator.Send(command);
+        
         return Ok(new { message = "Team updated successfully." });
     }
 }

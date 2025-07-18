@@ -7,8 +7,8 @@ public class GetLeagueByIdQuery : IRequest<LeagueDto?>
 {
     public int Id { get; }
     
-    public GetLeagueByIdQuery(int id)
+    public GetLeagueByIdQuery(int leagueId)
     {
-        Id = id;
+        Id = leagueId;
     }
 }

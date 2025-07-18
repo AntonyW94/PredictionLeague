@@ -68,13 +68,7 @@ public class RoundsController : ControllerBase
     [HttpPut("{roundId:int}/update")]
     public async Task<IActionResult> UpdateRound(int roundId, [FromBody] UpdateRoundRequest request)
     {
-        var command = new UpdateRoundCommand
-        {
-            RoundId = roundId,
-            StartDate = request.StartDate,
-            Deadline = request.Deadline,
-            Matches = request.Matches
-        };
+        var command = new UpdateRoundCommand(roundId, request);
 
         await _mediator.Send(command);
 

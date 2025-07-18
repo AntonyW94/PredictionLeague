@@ -5,5 +5,10 @@ namespace PredictionLeague.Application.Features.Authentication.Commands.RefreshT
 
 public class RefreshTokenCommand : IRequest<AuthenticationResponse>
 {
-    public string? RefreshToken { get; init; }
+    public string? RefreshToken { get; }
+
+    public RefreshTokenCommand(string refreshToken)
+    {
+        RefreshToken = refreshToken;
+    }
 }
