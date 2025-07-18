@@ -30,7 +30,7 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
             LeagueId = league.Id,
             UserId = request.CreatingUserId,
             JoinedAt = DateTime.UtcNow,
-            Status = "Approved"
+            Status = LeagueMemberStatus.Approved
         };
 
         await _leagueRepository.AddMemberAsync(leagueMember);

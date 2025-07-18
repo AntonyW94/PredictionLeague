@@ -44,7 +44,7 @@ public class JoinLeagueCommandHandler : IRequestHandler<JoinLeagueCommand>
         {
             LeagueId = league.Id,
             UserId = request.JoiningUserId,
-            Status = "Pending",
+            Status = LeagueMemberStatus.Pending,
             JoinedAt = DateTime.UtcNow
         };
 

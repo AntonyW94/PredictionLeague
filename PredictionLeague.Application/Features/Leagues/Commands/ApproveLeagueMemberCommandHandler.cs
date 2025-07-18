@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 
@@ -19,6 +20,6 @@ public class ApproveLeagueMemberCommandHandler : IRequestHandler<ApproveLeagueMe
         if (league.AdministratorUserId != request.ApprovingUserId)
             throw new UnauthorizedAccessException("You are not authorized to approve members for this league.");
 
-        await _leagueRepository.UpdateMemberStatusAsync(request.LeagueId, request.MemberId, "Approved");
+        await _leagueRepository.UpdateMemberStatusAsync(request.LeagueId, request.MemberId, LeagueMemberStatus.Approved);
     }
 }

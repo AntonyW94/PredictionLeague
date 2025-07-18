@@ -44,7 +44,7 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand>
             LeagueId = publicLeague.Id,
             UserId = request.CreatorId,
             JoinedAt = DateTime.UtcNow,
-            Status = "Approved"
+            Status = LeagueMemberStatus.Approved
         };
         await _leagueRepository.AddMemberAsync(leagueMember);
 

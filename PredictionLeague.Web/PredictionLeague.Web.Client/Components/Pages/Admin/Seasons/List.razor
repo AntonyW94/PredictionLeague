@@ -1,6 +1,6 @@
 ﻿@page "/admin/seasons"
 
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [Authorize(Roles = RoleNames.Administrator)]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager

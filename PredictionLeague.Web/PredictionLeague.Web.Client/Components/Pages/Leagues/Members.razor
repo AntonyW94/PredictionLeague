@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Leagues
+@using PredictionLeague.Domain.Models
 
 <PageTitle>Manage League Members</PageTitle>
 
@@ -35,14 +36,9 @@
                             <td data-label="Name" class="header-cell">@member.FullName</td>
                             <td data-label="Joined At">@member.JoinedAt.ToString("dd MMM yyyy")</td>
                             <td data-label="Status">
-                                @if (member.Status == "Approved")
-                                {
-                                    <span class="badge green-button">@member.Status</span>
-                                }
-                                else
-                                {
-                                    <span class="badge dark-pink-button">@member.Status</span>
-                                }
+                                <span class="badge @GetStatusClass(member.Status)"> 
+                                    @member.Status.ToString()
+                                </span>
                             </td>
 
                             <td data-label="Actions" class="actions-cell">
@@ -93,6 +89,17 @@
             await LoadMembersAsync();
 
         // Handle error
+    }
+
+    private static string GetStatusClass(LeagueMemberStatus status)
+    {
+        return status switch
+        {
+            LeagueMemberStatus.Approved => "green-button",
+            LeagueMemberStatus.Pending => "dark-pink-button",
+            LeagueMemberStatus.Rejected => "pink-button",
+            _ => "btn-secondary"
+        };
     }
 
     private void BackToLeagues()

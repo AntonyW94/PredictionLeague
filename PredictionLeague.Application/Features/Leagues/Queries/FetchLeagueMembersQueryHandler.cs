@@ -37,7 +37,7 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
                     FullName = $"{user.FirstName} {user.LastName}",
                     JoinedAt = member.JoinedAt,
                     Status = member.Status,
-                    CanBeApproved = member.Status == "Pending" && league.AdministratorUserId == member.UserId
+                    CanBeApproved = member.Status == LeagueMemberStatus.Pending && league.AdministratorUserId == member.UserId
                 });
             }
         }

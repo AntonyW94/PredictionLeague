@@ -16,7 +16,7 @@
             <AuthorizeView>
                 <Authorized>
                     <ul class="navbar-nav w-100 d-none d-lg-flex">
-                        @if (context.User.IsInRole("Administrator"))
+                        @if (context.User.IsInRole(RoleNames.Administrator))
                         {
                             <li class="nav-item dropdown py-0 d-flex align-items-center">
                                 <a class="nav-link dropdown-toggle admin-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -58,7 +58,7 @@
                             <li class="nav-item"><button class="btn nav-link mobile-nav-sub-item text-start" @onclick="LogoutUser">Logout</button></li>
                         }
 
-                        @if (context.User.IsInRole("Administrator"))
+                        @if (context.User.IsInRole(RoleNames.Administrator))
                         {
                             <li class="nav-item">
                                 <button class="btn nav-link mobile-nav-header w-100 text-start" @onclick="() => _isAdminMenuOpen = !_isAdminMenuOpen">

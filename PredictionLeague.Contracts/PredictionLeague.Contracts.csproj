@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PredictionLeague.Domain\PredictionLeague.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -110,12 +110,12 @@ public class LeagueRepository : ILeagueRepository
         await connection.ExecuteAsync(sql, league);
     }
 
-    public async Task UpdateMemberStatusAsync(int leagueId, string userId, string status)
+    public async Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status)
     {
         const string sql = "UPDATE [LeagueMembers] SET [Status] = @Status WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId;";
 
         using var connection = Connection;
-        await connection.ExecuteAsync(sql, new { Status = status, LeagueId = leagueId, UserId = userId });
+        await connection.ExecuteAsync(sql, new { Status = status.ToString(), LeagueId = leagueId, UserId = userId });
     }
 
     #endregion

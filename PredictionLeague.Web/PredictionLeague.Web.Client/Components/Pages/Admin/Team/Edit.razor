@@ -1,6 +1,6 @@
 ﻿@page "/admin/teams/edit/{TeamId:int}"
 
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [Authorize(Roles = RoleNames.Administrator)]
 
 @inject HttpClient Http
 

@@ -1,6 +1,6 @@
 ﻿@page "/admin/rounds/edit/{RoundId:int}"
 
-@attribute [Authorize(Roles = "Administrator")]
+@attribute [Authorize(Roles = RoleNames.Administrator)]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager

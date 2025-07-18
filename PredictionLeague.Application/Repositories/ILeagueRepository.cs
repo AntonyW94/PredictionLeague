@@ -25,7 +25,7 @@ public interface ILeagueRepository
     #region Update
 
     Task UpdateAsync(League league);
-    Task UpdateMemberStatusAsync(int leagueId, string userId, string status);
+    Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status);
 
     #endregion
 }
