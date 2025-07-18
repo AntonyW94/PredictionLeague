@@ -1,10 +1,10 @@
-﻿using PredictionLeague.Application.Repositories;
-using PredictionLeague.Application.Services;
+﻿using MediatR;
+using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Dashboard;
 
-namespace PredictionLeague.Infrastructure.Services;
+namespace PredictionLeague.Application.Features.Dashboard.Queries;
 
-public class DashboardService : IDashboardService
+public class GetDashboardDataQueryHandler : IRequestHandler<GetDashboardDataQuery, DashboardDto>
 {
     private readonly IRoundRepository _roundRepository;
     private readonly IMatchRepository _matchRepository;
@@ -12,7 +12,7 @@ public class DashboardService : IDashboardService
     private readonly ILeagueRepository _leagueRepository;
     private readonly ISeasonRepository _seasonRepository;
 
-    public DashboardService(
+    public GetDashboardDataQueryHandler(
         IRoundRepository roundRepository,
         IMatchRepository matchRepository,
         IUserPredictionRepository predictionRepository,
@@ -26,9 +26,9 @@ public class DashboardService : IDashboardService
         _seasonRepository = seasonRepository;
     }
 
-    public async Task<DashboardDto> GetDashboardDataAsync(string userId)
+    public async Task<DashboardDto> Handle(GetDashboardDataQuery request, CancellationToken cancellationToken)
     {
-        var userLeagues = (await _leagueRepository.GetLeaguesByUserIdAsync(userId)).ToList();
+        var userLeagues = (await _leagueRepository.GetLeaguesByUserIdAsync(request.UserId)).ToList();
         var seasonIds = userLeagues.Select(l => l.SeasonId).Distinct();
         var upcomingRounds = new List<UpcomingRoundDto>();
 
@@ -40,7 +40,7 @@ public class DashboardService : IDashboardService
 
             var season = await _seasonRepository.GetByIdAsync(seasonId);
             var matches = await _matchRepository.GetByRoundIdAsync(currentRound.Id);
-            var userPredictions = await _predictionRepository.GetByUserIdAndRoundIdAsync(userId, currentRound.Id);
+            var userPredictions = await _predictionRepository.GetByUserIdAndRoundIdAsync(request.UserId, currentRound.Id);
 
             upcomingRounds.Add(new UpcomingRoundDto
             {
