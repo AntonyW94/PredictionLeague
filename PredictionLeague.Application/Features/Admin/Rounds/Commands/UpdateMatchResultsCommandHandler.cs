@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Models;
 using System.Transactions;
 
@@ -10,15 +11,18 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
     private readonly IMatchRepository _matchRepository;
     private readonly IUserPredictionRepository _predictionRepository;
     private readonly IRoundResultRepository _roundResultRepository;
+    private readonly IPointsCalculationService _pointsService;
 
     public UpdateMatchResultsCommandHandler(
         IMatchRepository matchRepository,
         IUserPredictionRepository predictionRepository,
-        IRoundResultRepository roundResultRepository)
+        IRoundResultRepository roundResultRepository,
+        IPointsCalculationService pointsService)
     {
         _matchRepository = matchRepository;
         _predictionRepository = predictionRepository;
         _roundResultRepository = roundResultRepository;
+        _pointsService = pointsService;
     }
 
     public async Task Handle(UpdateMatchResultsCommand request, CancellationToken cancellationToken)
@@ -39,7 +43,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
                 match.Status = result.IsFinal ? MatchStatus.Completed : MatchStatus.InProgress;
 
                 await _matchRepository.UpdateAsync(match);
-                await CalculatePointsForMatchAsync(match);
+                await _pointsService.CalculatePointsForMatchAsync(match);
             }
             scope.Complete();
         }

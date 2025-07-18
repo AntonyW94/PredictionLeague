@@ -168,15 +168,12 @@
             }).ToList();
         }
 
-        var response = await Http.PostAsJsonAsync("api/predictions", _model);
+        var response = await Http.PostAsJsonAsync("api/predictions/submit", _model);
         if (response.IsSuccessStatusCode)
-        {
             _successMessage = "Your predictions have been saved successfully!";
-        }
         else
-        {
             _errorMessage = "There was an error saving your predictions.";
-        }
+     
         _isBusy = false;
     }
 }

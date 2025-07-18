@@ -32,7 +32,7 @@ public static class DependencyInjection
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
 
-        services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
-        services.AddScoped<IPredictionService, PredictionService>();
+        services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>(); 
+        services.AddScoped<IPointsCalculationService, PointsCalculationService>();
     }
 }
