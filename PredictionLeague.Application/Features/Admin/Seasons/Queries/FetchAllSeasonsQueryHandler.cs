@@ -24,15 +24,14 @@ public class FetchAllSeasonsQueryHandler : IRequestHandler<FetchAllSeasonsQuery,
         {
             var rounds = await _roundRepository.GetBySeasonIdAsync(season.Id);
 
-            seasonsToReturn.Add(new SeasonDto
-            {
-                Id = season.Id,
-                Name = season.Name,
-                StartDate = season.StartDate,
-                EndDate = season.EndDate,
-                IsActive = season.IsActive,
-                RoundCount = rounds.Count()
-            });
+            seasonsToReturn.Add(new SeasonDto(
+                season.Id,
+                season.Name,
+                season.StartDate,
+                season.EndDate,
+                season.IsActive,
+                rounds.Count()
+            ));
         }
 
         return seasonsToReturn;

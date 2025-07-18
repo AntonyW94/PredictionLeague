@@ -22,15 +22,14 @@ public class GetSeasonByIdQueryHandler : IRequestHandler<GetSeasonByIdQuery, Sea
             return null;
 
         var rounds = await _roundRepository.GetBySeasonIdAsync(request.Id);
-       
-        return new SeasonDto
-        {
-            Id = season.Id,
-            Name = season.Name,
-            StartDate = season.StartDate,
-            EndDate = season.EndDate,
-            IsActive = season.IsActive,
-            RoundCount = rounds.Count()
-        };
+
+        return new SeasonDto(
+            season.Id,
+            season.Name,
+            season.StartDate,
+            season.EndDate,
+            season.IsActive,
+            rounds.Count()
+        );
     }
 }

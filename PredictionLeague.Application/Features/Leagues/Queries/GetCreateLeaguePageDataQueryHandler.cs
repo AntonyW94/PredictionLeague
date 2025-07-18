@@ -20,11 +20,10 @@ public class GetCreateLeaguePageDataQueryHandler : IRequestHandler<GetCreateLeag
 
         return new CreateLeaguePageData
         {
-            Seasons = seasons.Select(s => new SeasonDto
-            {
-                Id = s.Id,
-                Name = s.Name
-            }).ToList()
+            Seasons = seasons.Select(season => new SeasonLookupDto(
+                season.Id,
+                season.Name
+            )).ToList()
         };
     }
 }
