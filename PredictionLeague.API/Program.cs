@@ -1,10 +1,12 @@
 using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using PredictionLeague.API.Middleware;
 using PredictionLeague.Application;
+using PredictionLeague.Application.Common.Behaviours;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Infrastructure;
 using PredictionLeague.Validators.Authentication;
@@ -15,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructureServices();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(IAssemblyMarker).Assembly));
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
 
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {

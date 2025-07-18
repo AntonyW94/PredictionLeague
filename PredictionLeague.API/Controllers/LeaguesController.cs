@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Leagues.Commands;
@@ -16,12 +15,10 @@ namespace PredictionLeague.API.Controllers;
 public class LeaguesController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IValidator<CreateLeagueRequest> _createLeagueValidator;
 
-    public LeaguesController(IMediator mediator, IValidator<CreateLeagueRequest> createLeagueValidator)
+    public LeaguesController(IMediator mediator)
     {
         _mediator = mediator;
-        _createLeagueValidator = createLeagueValidator;
     }
 
     #region Create
@@ -29,10 +26,6 @@ public class LeaguesController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> CreateLeague([FromBody] CreateLeagueRequest request)
     {
-        var validationResult = await _createLeagueValidator.ValidateAsync(request);
-        if (!validationResult.IsValid)
-            return BadRequest(validationResult.Errors);
-
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();

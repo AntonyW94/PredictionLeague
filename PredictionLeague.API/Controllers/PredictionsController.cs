@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using MediatR;
+﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Predictions.Commands;
@@ -14,13 +13,11 @@ namespace PredictionLeague.API.Controllers;
 [Authorize]
 public class PredictionsController : ControllerBase
 {
-    private readonly IValidator<SubmitPredictionsRequest> _submitValidator;
     private readonly IMediator _mediator;
 
-    public PredictionsController(IMediator mediator, IValidator<SubmitPredictionsRequest> submitValidator)
+    public PredictionsController(IMediator mediator)
     {
         _mediator = mediator;
-        _submitValidator = submitValidator;
     }
 
     [HttpGet("{roundId:int}")]
@@ -39,10 +36,6 @@ public class PredictionsController : ControllerBase
     [HttpPost("submit")]
     public async Task<IActionResult> Submit([FromBody] SubmitPredictionsRequest request)
     {
-        var validationResult = await _submitValidator.ValidateAsync(request);
-        if (!validationResult.IsValid)
-            return BadRequest(validationResult.Errors);
-
         try
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

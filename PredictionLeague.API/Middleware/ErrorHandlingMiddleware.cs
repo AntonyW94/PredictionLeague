@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using FluentValidation;
+using PredictionLeague.Application.Common.Exceptions;
+using System.Net;
 using System.Text.Json;
 
 namespace PredictionLeague.API.Middleware;
@@ -22,6 +24,20 @@ public class ErrorHandlingMiddleware
         {
             await _next(context);
         }
+        catch (IdentityUpdateException ex)
+        {
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            var errors = ex.Errors.Select(e => new { e.Code, e.Description });
+            await context.Response.WriteAsync(JsonSerializer.Serialize(errors));
+        }
+        catch (ValidationException ex)
+        {
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+            var errors = ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage });
+            await context.Response.WriteAsync(JsonSerializer.Serialize(errors));
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unhandled exception has occurred.");
@@ -38,8 +54,6 @@ public class ErrorHandlingMiddleware
             ? new { message = exception.Message, details = exception.StackTrace }
             : new { message = "An internal server error has occurred.", details = (string?)null };
 
-        var json = JsonSerializer.Serialize(response);
-
-        await context.Response.WriteAsync(json);
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 }

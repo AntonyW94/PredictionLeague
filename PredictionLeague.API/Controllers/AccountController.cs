@@ -1,9 +1,9 @@
-﻿using FluentValidation;
+﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using PredictionLeague.Application.Features.Account.Commands;
+using PredictionLeague.Application.Features.Account.Queries;
 using PredictionLeague.Contracts.Account;
-using PredictionLeague.Domain.Models;
 using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;
@@ -13,73 +13,36 @@ namespace PredictionLeague.API.Controllers;
 [Authorize]
 public class AccountController : ControllerBase
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly IValidator<UpdateUserDetailsRequest> _validator;
+    private readonly IMediator _mediator;
 
-    public AccountController(UserManager<ApplicationUser> userManager, IValidator<UpdateUserDetailsRequest> validator)
+    public AccountController(IMediator mediator)
     {
-        _userManager = userManager;
-        _validator = validator;
+        _mediator = mediator;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetUserDetails()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null)
+        if (string.IsNullOrEmpty(userId))
             return Unauthorized("User ID could not be found in the token.");
 
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null)
-            return NotFound("User not found.");
-        
-        if (user.Email == null)
-            return NotFound("Email not found for the user.");
+        var query = new GetUserQuery(userId);
+        var userDetails = await _mediator.Send(query);
 
-        var userDetails = new UserDetails
-        {
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = user.Email,
-            PhoneNumber = user.PhoneNumber
-        };
-
-        return Ok(userDetails);
+        return userDetails == null ? NotFound("User not found.") : Ok(userDetails);
     }
 
     [HttpPut]
     public async Task<IActionResult> UpdateUserDetails([FromBody] UpdateUserDetailsRequest request)
     {
-        var validationResult = await _validator.ValidateAsync(request);
-        if (!validationResult.IsValid)
-            return BadRequest(validationResult.Errors);
-
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null)
+        if (string.IsNullOrEmpty(userId))
             return Unauthorized("User ID could not be found in the token.");
 
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null)
-            return NotFound("User not found.");
+        var command = new UpdateUserDetailsCommand(request, userId);
+        await _mediator.Send(command);
 
-        if (!ModelState.IsValid)
-        {
-            var errorMessage = ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage)
-                .FirstOrDefault() ?? "An unknown validation error occurred.";
-
-            return BadRequest(errorMessage);
-        }
-
-        user.FirstName = request.FirstName;
-        user.LastName = request.LastName;
-        user.PhoneNumber = request.PhoneNumber;
-
-        var result = await _userManager.UpdateAsync(user);
-        if (result.Succeeded)
-            return Ok(new { message = "Details updated successfully." }); 
-        
-        return BadRequest(result.Errors);
+        return Ok(new { message = "Details updated successfully." });
     }
 }
