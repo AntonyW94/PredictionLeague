@@ -11,5 +11,6 @@ public static class DependencyInjection
         services.AddTransient<CookieHandler>();
         services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+        services.AddScoped<ViewModels.DashboardViewModel>();
     }
 }

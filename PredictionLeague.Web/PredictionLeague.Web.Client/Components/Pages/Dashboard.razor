@@ -2,16 +2,15 @@
 
 @attribute [Authorize]
 
-@inject HttpClient Http
-@inject IAuthenticationService AuthenticationService
+@inject DashboardViewModel ViewModel
 
-@using PredictionLeague.Contracts.Dashboard
+@using PredictionLeague.Web.Client.ViewModels
 
 <PageTitle>Dashboard</PageTitle>
 
 <div class="page-container">
     <div class="dashboard-container">
-        @if (_isLoading)
+        @if (ViewModel.IsLoading)
         {
             <p class="text-center text-white"><em>Loading your dashboard...</em></p>
         }
@@ -21,18 +20,18 @@
                 <div class="col-lg-4 mb-4">
                     <div class="dashboard-card h-100">
                         <h3 class="text-white text-center fw-bold mb-4">Upcoming Rounds</h3>
-                        @if (_dashboardData?.UpcomingRounds != null && _dashboardData.UpcomingRounds.Any())
+                        @if (ViewModel.DashboardData?.UpcomingRounds != null && ViewModel.DashboardData.UpcomingRounds.Any())
                         {
                             <div class="carousel-container">
-                                @if (_dashboardData.UpcomingRounds.Count > 1)
+                                @if (ViewModel.DashboardData.UpcomingRounds.Count > 1)
                                 {
-                                    <button class="carousel-btn" @onclick="ShowPreviousRound" disabled="@(_currentRoundIndex == 0)">
+                                    <button class="carousel-btn" @onclick="ViewModel.ShowPreviousRound" disabled="@(ViewModel.CurrentRoundIndex == 0)">
                                         <span class="bi bi-chevron-left"></span>
                                     </button>
                                 }
 
                                 @{
-                                    var round = _dashboardData.UpcomingRounds[_currentRoundIndex];
+                                    var round = ViewModel.DashboardData.UpcomingRounds[ViewModel.CurrentRoundIndex];
                                     <div class="round-card">
                                         <div class="round-card-header">
                                             <h5 class="mb-0 fw-bold text-white">@round.SeasonName</h5>
@@ -53,9 +52,9 @@
                                     </div>
                                 }
 
-                                @if (_dashboardData.UpcomingRounds.Count > 1)
+                                @if (ViewModel.DashboardData.UpcomingRounds.Count > 1)
                                 {
-                                    <button class="carousel-btn" @onclick="ShowNextRound" disabled="@(_currentRoundIndex >= _dashboardData.UpcomingRounds.Count - 1)">
+                                    <button class="carousel-btn" @onclick="ViewModel.ShowNextRound" disabled="@(ViewModel.CurrentRoundIndex >= ViewModel.DashboardData.UpcomingRounds.Count - 1)">
                                         <span class="bi bi-chevron-right"></span>
                                     </button>
                                 }
@@ -70,7 +69,6 @@
                     </div>
                 </div>
 
-                <!-- Leaderboards Column -->
                 <div class="col-lg-4 mb-4">
                     <div class="dashboard-card h-100">
                         <h3 class="text-white text-center fw-bold mb-4">Leaderboards</h3>
@@ -81,15 +79,14 @@
                     </div>
                 </div>
 
-                <!-- Joinable Leagues Column -->
                 <div class="col-lg-4 mb-4">
                     <div class="dashboard-card h-100">
                         <h3 class="text-white text-center fw-bold mb-3">Leagues</h3>
-                        @if (_dashboardData?.PublicLeagues != null && _dashboardData.PublicLeagues.Any())
+                        @if (ViewModel.DashboardData?.PublicLeagues != null && ViewModel.DashboardData.PublicLeagues.Any())
                         {
                             <div class="leagues-list-container">
                                 <div class="list-group">
-                                    @foreach (var league in _dashboardData.PublicLeagues)
+                                    @foreach (var league in ViewModel.DashboardData.PublicLeagues)
                                     {
                                         <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center joinable-league-item">
                                             <div>
@@ -102,7 +99,7 @@
                                             }
                                             else
                                             {
-                                                <button class="btn btn-sm dark-pink-button" @onclick="() => JoinLeagueAsync(league.Id)">Join</button>
+                                                <button class="btn btn-sm dark-pink-button" @onclick="() => ViewModel.JoinLeagueAsync(league.Id)">Join</button>
                                             }
                                         </div>
                                     }
@@ -123,49 +120,8 @@
 </div>
 
 @code {
-    private DashboardDto? _dashboardData;
-    private bool _isLoading = true;
-    private int _currentRoundIndex;
-
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            _dashboardData = await Http.GetFromJsonAsync<DashboardDto>("api/dashboard/dashboard-data");
-        }
-        catch (Exception)
-        {
-            // Handle error, e.g., show an error message
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private void ShowPreviousRound()
-    {
-        if (_currentRoundIndex > 0)
-        {
-            _currentRoundIndex--;
-        }
-    }
-
-    private void ShowNextRound()
-    {
-        if (_dashboardData != null && _currentRoundIndex < _dashboardData.UpcomingRounds.Count - 1)
-        {
-            _currentRoundIndex++;
-        }
-    }
-
-    private async Task JoinLeagueAsync(int leagueId)
-    {
-        var result = await AuthenticationService.JoinPublicLeagueAsync(leagueId);
-        if (result)
-        {
-            _isLoading = true;
-            await OnInitializedAsync();
-        }
+        await ViewModel.LoadDashboardDataAsync();
     }
 }
