@@ -60,8 +60,8 @@ public class AuthenticationController : ControllerBase
     {
         var refreshToken = Request.Cookies["refreshToken"];
         if (refreshToken == null)
-            return Ok();
-        
+            return Ok(new AuthenticationResponse { IsSuccess = false });
+
         var command = new RefreshTokenCommand(refreshToken);
 
         var result = await _mediator.Send(command);
