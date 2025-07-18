@@ -3,7 +3,6 @@
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
-@inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Admin.Teams
 
@@ -12,32 +11,33 @@
 <div class="page-container">
     <div class="form-container">
         <h3 class="text-center fw-bold text-white mb-4">Edit Team</h3>
-
         @if (_model == null)
         {
             <p class="text-center text-white"><em>Loading team...</em></p>
         }
         else
         {
-            <EditForm Model="_model" OnValidSubmit="HandleUpdateTeam">
-                <FluentValidationValidator />
-                <ApiError Message="@_errorMessage" />
-                <ApiSuccess Message="@_successMessage" />
+            <BaseFormComponent TModel="UpdateTeamRequest"
+                               Model="_model"
+                               SubmitAction="HandleUpdateTeam"
+                               SuccessRedirectUrl="/admin/teams"
+                               BackUrl="/admin/teams"
+                               SuccessAlertMessage="Team updated successfully!"
+                               BusyText="Saving...">
+                <ChildContent>
+                    <div class="mb-3">
+                        <label for="name" class="form-label text-white">Team Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="_model.Name" />
+                        <StyledValidationMessage For="@(() => _model.Name)" />
+                    </div>
 
-                <div class="mb-3">
-                    <label for="name" class="form-label text-white">Team Name</label>
-                    <InputText id="name" class="form-control" @bind-Value="_model.Name" />
-                    <StyledValidationMessage For="@(() => _model.Name)" />
-                </div>
-
-                <div class="mb-3">
-                    <label for="logoUrl" class="form-label text-white">Logo URL</label>
-                    <InputText id="logoUrl" class="form-control" @bind-Value="_model.LogoUrl" />
-                    <StyledValidationMessage For="@(() => _model.LogoUrl)" />
-                </div>
-                
-                <BackAndSaveButtons BackText="Back to Teams" OnBackClick="Back" BusyText="Saving..." IsBusy="_isBusy"></BackAndSaveButtons>
-            </EditForm>
+                    <div class="mb-3">
+                        <label for="logoUrl" class="form-label text-white">Logo URL</label>
+                        <InputText id="logoUrl" class="form-control" @bind-Value="_model.LogoUrl" />
+                        <StyledValidationMessage For="@(() => _model.LogoUrl)" />
+                    </div>
+                </ChildContent>
+            </BaseFormComponent>
         }
     </div>
 </div>
@@ -46,10 +46,7 @@
 @code {
     [Parameter] public int TeamId { get; set; }
     private UpdateTeamRequest? _model;
-    private bool _isBusy;
-    private string? _errorMessage;
-    private string? _successMessage;
-
+  
     protected override async Task OnInitializedAsync()
     {
         var team = await Http.GetFromJsonAsync<TeamDto>($"api/teams/{TeamId}");
@@ -63,30 +60,8 @@
         }
     }
 
-    private async Task HandleUpdateTeam()
+    private Task<HttpResponseMessage> HandleUpdateTeam()
     {
-        _isBusy = true;
-        _errorMessage = null;
-        _successMessage = null;
-
-        var response = await Http.PutAsJsonAsync($"api/teams/{TeamId}/update", _model);
-        if (response.IsSuccessStatusCode)
-        {
-            _successMessage = "Team updated successfully!";
-            StateHasChanged();
-
-            await Task.Delay(1500);
-            
-            Back();
-        }
-        else
-        {
-            _errorMessage = "There was an error updating the team.";
-        }
-
-        _isBusy = false;
-        StateHasChanged();
+        return Http.PutAsJsonAsync($"api/teams/{TeamId}/update", _model);
     }
-
-    private void Back() => NavigationManager.NavigateTo("/admin/teams");
 }

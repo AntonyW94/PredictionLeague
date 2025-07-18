@@ -1,0 +1,64 @@
+﻿@typeparam TModel
+@inject NavigationManager NavigationManager
+
+<EditForm Model="Model" OnValidSubmit="HandleSubmitAsync">
+    <FluentValidationValidator />
+
+    <ApiError Message="@ErrorMessage" />
+    <ApiSuccess Message="@SuccessMessage" />
+
+    @ChildContent
+
+    <BackAndSaveButtons OnBackClick="Back"
+                        IsBusy="IsBusy"
+                        BackText="@BackText"
+                        SubmitText="@SubmitText"
+                        BusyText="@BusyText" />
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
+    [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = null!;
+    [Parameter, EditorRequired] public Func<Task<HttpResponseMessage>> SubmitAction { get; set; } = null!;
+    [Parameter] public string SuccessRedirectUrl { get; set; } = "/";
+    [Parameter] public string BackUrl { get; set; } = "/";
+    [Parameter] public string SuccessAlertMessage { get; set; } = "Saved successfully!";
+    [Parameter] public string ErrorAlertMessage { get; set; } = "An error occurred while saving.";
+    [Parameter] public string BackText { get; set; } = "Back";
+    [Parameter] public string SubmitText { get; set; } = "Save";
+    [Parameter] public string BusyText { get; set; } = "Saving...";
+
+    protected bool IsBusy { get; private set; }
+    private string? ErrorMessage { get; set; }
+    private string? SuccessMessage { get; set; }
+
+    private async Task HandleSubmitAsync()
+    {
+        IsBusy = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
+       
+        StateHasChanged();
+
+        var response = await SubmitAction();
+        if (response.IsSuccessStatusCode)
+        {
+            SuccessMessage = SuccessAlertMessage;
+            StateHasChanged();
+      
+            await Task.Delay(1500);
+    
+            NavigationManager.NavigateTo(SuccessRedirectUrl, forceLoad: true);
+        }
+        else
+        {
+            ErrorMessage = ErrorAlertMessage;
+        }
+
+        IsBusy = false;
+       
+        StateHasChanged();
+    }
+
+    protected void Back() => NavigationManager.NavigateTo(BackUrl);
+}

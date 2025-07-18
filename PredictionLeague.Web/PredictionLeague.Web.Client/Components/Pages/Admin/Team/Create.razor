@@ -3,7 +3,6 @@
 @attribute [Authorize(Roles = "Administrator")]
 
 @inject HttpClient Http
-@inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Admin.Teams
 
@@ -12,58 +11,35 @@
 <div class="page-container">
     <div class="form-container">
         <h3 class="text-center fw-bold text-white mb-4">Create New Team</h3>
-        <EditForm Model="_model" OnValidSubmit="HandleCreateTeam">
-            <FluentValidationValidator />
-            <ApiError Message="@_errorMessage" />
-            <ApiSuccess Message="@_successMessage" />
+        <BaseFormComponent TModel="CreateTeamRequest"
+                           Model="_model"
+                           SubmitAction="HandleCreateTeam"
+                           SuccessRedirectUrl="/admin/teams"
+                           BackUrl="/admin/teams"
+                           SuccessAlertMessage="Team created successfully!"
+                           BusyText="Creating Team...">
+            <ChildContent>
+                <div class="mb-3">
+                    <label for="name" class="form-label text-white">Team Name</label>
+                    <InputText id="name" class="form-control" @bind-Value="_model.Name" />
+                    <StyledValidationMessage For="@(() => _model.Name)" />
+                </div>
 
-            <div class="mb-3">
-                <label for="name" class="form-label text-white">Team Name</label>
-                <InputText id="name" class="form-control" @bind-Value="_model.Name" />
-                <StyledValidationMessage For="@(() => _model.Name)" />
-            </div>
-
-            <div class="mb-3">
-                <label for="logoUrl" class="form-label text-white">Logo URL</label>
-                <InputText id="logoUrl" class="form-control" @bind-Value="_model.LogoUrl" />
-                <StyledValidationMessage For="@(() => _model.LogoUrl)" />
-            </div>
-            
-            <BackAndSaveButtons BackText="Back to Teams" OnBackClick="Back" BusyText="Creating Team..." IsBusy="_isBusy"></BackAndSaveButtons>
-        </EditForm>
+                <div class="mb-3">
+                    <label for="logoUrl" class="form-label text-white">Logo URL</label>
+                    <InputText id="logoUrl" class="form-control" @bind-Value="_model.LogoUrl" />
+                    <StyledValidationMessage For="@(() => _model.LogoUrl)" />
+                </div>
+            </ChildContent>
+        </BaseFormComponent>
     </div>
 </div>
 
 @code {
     private readonly CreateTeamRequest _model = new();
-    private bool _isBusy;
-    private string? _errorMessage;
-    private string? _successMessage;
-
-    private async Task HandleCreateTeam()
+   
+    private Task<HttpResponseMessage> HandleCreateTeam()
     {
-        _isBusy = true;
-        _errorMessage = null;
-        _successMessage = null;
-
-        var response = await Http.PostAsJsonAsync("api/teams/create", _model);
-        if (response.IsSuccessStatusCode)
-        {
-            _successMessage = "Team created successfully!";
-            StateHasChanged();
-
-            await Task.Delay(1500);
-
-            Back();
-        }
-        else
-        {
-            _errorMessage = "There was an error creating the team.";
-        }
-
-        _isBusy = false;
-        StateHasChanged();
+        return Http.PostAsJsonAsync("api/teams/create", _model);
     }
-
-    private void Back() => NavigationManager.NavigateTo("/admin/teams");
 }

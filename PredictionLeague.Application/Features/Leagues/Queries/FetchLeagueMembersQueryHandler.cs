@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
 using PredictionLeague.Application.Repositories;
-using PredictionLeague.Contracts.Admin.Leagues;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Models;
 
