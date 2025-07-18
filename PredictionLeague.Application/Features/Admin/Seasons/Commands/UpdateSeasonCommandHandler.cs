@@ -24,9 +24,7 @@ public class UpdateSeasonCommandHandler : IRequestHandler<UpdateSeasonCommand>
             throw new KeyNotFoundException("Season not found.");
         }
 
-        season.Name = request.Name;
-        season.IsActive = request.IsActive;
-        season.SetDates(request.StartDate, request.EndDate);
+        season.UpdateDetails(request.Name, request.StartDate, request.EndDate, request.IsActive);
 
         await _seasonRepository.UpdateAsync(season);
     }

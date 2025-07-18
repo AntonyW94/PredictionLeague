@@ -17,13 +17,7 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand>
 
     public async Task Handle(CreateSeasonCommand request, CancellationToken cancellationToken)
     {
-        var season = new Season
-        {
-            Name = request.Name,
-            IsActive = true
-        };
-
-        season.SetDates(request.StartDate, request.EndDate);
+        var season = Season.Create(request.Name, request.StartDate, request.EndDate, true);
 
         await _seasonRepository.AddAsync(season);
 

@@ -1,22 +1,48 @@
-﻿namespace PredictionLeague.Domain.Models;
+﻿using Ardalis.GuardClauses;
+using PredictionLeague.Domain.Common.Guards.Season;
+
+namespace PredictionLeague.Domain.Models;
 
 public class Season
 {
     public int Id { get; init; }
-    public string Name { get; set; } = string.Empty;
+    public string Name { get; private set; } = string.Empty;
     public DateTime StartDate { get; private set; }
     public DateTime EndDate { get; private set; }
-    public bool IsActive { get; set; }
+    public bool IsActive { get; private set; }
 
-    public void SetDates(DateTime startDate, DateTime endDate)
+    private Season() { }
+
+    public static Season Create(string name, DateTime startDate, DateTime endDate, bool isActive)
     {
-        if (endDate <= startDate)
-            throw new ArgumentException("End date must be after the start date.");
+        Validate(name, startDate, endDate);
 
-        if (endDate > startDate.AddMonths(10))
-            throw new ArgumentException("A season cannot span more than 10 months.");
+        var season = new Season
+        {
+            Name = name,
+            StartDate = startDate,
+            EndDate = endDate,
+            IsActive = isActive
+        };
 
+        return season;
+    }
+
+    public void UpdateDetails(string name, DateTime startDate, DateTime endDate, bool isActive)
+    {
+        Validate(name, startDate, endDate);
+
+        Name = name;
         StartDate = startDate;
         EndDate = endDate;
+        IsActive = isActive;
+    }
+
+    private static void Validate(string name, DateTime startDate, DateTime endDate)
+    {
+        Guard.Against.NullOrWhiteSpace(name, nameof(name));
+        Guard.Against.Default(startDate, nameof(startDate));
+        Guard.Against.Default(endDate, nameof(endDate));
+        Guard.Against.InvalidSeasonDuration(startDate, endDate);
     }
 }

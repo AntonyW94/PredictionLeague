@@ -10,10 +10,9 @@ public class Team
 
     private Team() { }
 
-    public static Team Create(string name, string? logoUrl)
+    public static Team Create(string name, string logoUrl)
     {
-        Guard.Against.NullOrWhiteSpace(name, nameof(Name));
-        Guard.Against.NullOrWhiteSpace(logoUrl, nameof(LogoUrl));
+        Validate(name, logoUrl);
 
         return new Team
         {
@@ -22,12 +21,17 @@ public class Team
         };
     }
 
-    public void UpdateDetails(string newName, string? newLogoUrl)
+    public void UpdateDetails(string name, string logoUrl)
     {
-        Guard.Against.NullOrWhiteSpace(newName, nameof(Name));
-        Guard.Against.NullOrWhiteSpace(newLogoUrl, nameof(LogoUrl));
+        Validate(name, logoUrl);
 
-        Name = newName;
-        LogoUrl = newLogoUrl;
+        Name = name;
+        LogoUrl = logoUrl;
+    }
+
+    private static void Validate(string name, string logoUrl)
+    {
+        Guard.Against.NullOrWhiteSpace(name, nameof(name));
+        Guard.Against.NullOrWhiteSpace(logoUrl, nameof(logoUrl));
     }
 }
