@@ -1,14 +1,21 @@
+using PredictionLeague.API;
+using PredictionLeague.API.Middleware;
+using PredictionLeague.Infrastructure;
+using PredictionLeague.Infrastructure.Data;
+using Serilog;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services for API controllers
 builder.Services.AddControllers();
+builder.Services.AddInfrastructureServices();
+builder.Services.AddPresentationServices(builder.Configuration);
+builder.Services.AddAuthenticationServices(builder.Configuration);
+builder.Services.AddHostedService<DatabaseInitialiser>();
+builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    // This tells the server to serve the Blazor WebAssembly files
     app.UseWebAssemblyDebugging();
 }
 else
@@ -17,19 +24,15 @@ else
     app.UseHsts();
 }
 
+app.UseSerilogRequestLogging();
+app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
-
-// This serves the static files from the Client project's wwwroot folder (like index.html, css, etc.)
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
-
 app.UseRouting();
-
-// This maps your API controllers (e.g., AuthController, LeaguesController)
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
-
-// This is a fallback that ensures any route not handled by the API
-// is sent to the Blazor app's index.html file to handle client-side routing.
 app.MapFallbackToFile("index.html");
 
 app.Run();

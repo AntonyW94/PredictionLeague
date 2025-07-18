@@ -8,59 +8,43 @@ using PredictionLeague.Application.Common.Behaviours;
 using PredictionLeague.Validators.Authentication;
 using System.Text;
 
-namespace PredictionLeague.API
+namespace PredictionLeague.API;
+
+public static class DependencyInjection
 {
-    public static class DependencyInjection
+    public static void AddPresentationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        public static void AddPresentationServices(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+        services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
         
-            services.AddMediatR(cfg =>
-            {
-                cfg.RegisterServicesFromAssembly(typeof(IAssemblyMarker).Assembly);
-
-                var mediatRKey = configuration["MediatR:LicenseKey"];
-
-                if (!string.IsNullOrEmpty(mediatRKey))
-                    cfg.LicenseKey = mediatRKey;
-            });
-
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
-
-            services.AddControllers();
-            services.AddEndpointsApiExplorer();
-            services.AddSwaggerGen();
-
-            services.AddCors(options =>
-            {
-                options.AddPolicy("AllowSpecificOrigin", policy =>
-                {
-                    var allowedOrigins = configuration["AllowedOrigins"];
-
-                    if (!string.IsNullOrEmpty(allowedOrigins))
-                    {
-                        policy.WithOrigins(allowedOrigins.Split(','))
-                            .AllowAnyMethod()
-                            .AllowAnyHeader()
-                            .AllowCredentials();
-                    }
-                });
-            });
-        }
-
-        public static void AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration)
+        services.AddMediatR(cfg =>
         {
-            services.ConfigureExternalCookie(options =>
-            {
-                options.Cookie.SameSite = SameSiteMode.None;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            });
+            cfg.RegisterServicesFromAssembly(typeof(IAssemblyMarker).Assembly);
 
-            var jwtSettings = configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret Not Found");
+            var mediatRKey = configuration["MediatR:LicenseKey"];
 
-            services.AddAuthentication(options =>
+            if (!string.IsNullOrEmpty(mediatRKey))
+                cfg.LicenseKey = mediatRKey;
+        });
+
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
+
+        services.AddControllers();
+        services.AddEndpointsApiExplorer();
+        services.AddSwaggerGen();
+    }
+
+    public static void AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.ConfigureExternalCookie(options =>
+        {
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        });
+
+        var jwtSettings = configuration.GetSection("JwtSettings");
+        var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret Not Found");
+
+        services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -88,18 +72,13 @@ namespace PredictionLeague.API
                 options.SignInScheme = IdentityConstants.ExternalScheme;
             });
 
-            services.AddAuthorization(options =>
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("ApiUser", policy =>
             {
-                options.AddPolicy("ApiUser", policy =>
-                {
-                    policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
-                    policy.RequireAuthenticatedUser();
-                });
-
-                //options.FallbackPolicy = new AuthorizationPolicyBuilder()
-                //    .RequireAssertion(context => true)
-                //    .Build();
+                policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
+                policy.RequireAuthenticatedUser();
             });
-        }
+        });
     }
 }
