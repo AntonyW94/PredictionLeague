@@ -21,7 +21,7 @@ public class PredictionsController : ControllerBase
     }
 
     [HttpGet("{roundId:int}")]
-    public async Task<IActionResult> GetPredictionPageData(int roundId)
+    public async Task<IActionResult> GetPredictionPageDataAsync(int roundId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
@@ -34,7 +34,7 @@ public class PredictionsController : ControllerBase
     }
 
     [HttpPost("submit")]
-    public async Task<IActionResult> Submit([FromBody] SubmitPredictionsRequest request)
+    public async Task<IActionResult> SubmitAsync([FromBody] SubmitPredictionsRequest request)
     {
         try
         {

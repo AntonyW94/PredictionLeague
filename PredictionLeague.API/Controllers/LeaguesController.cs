@@ -22,12 +22,12 @@ public class LeaguesController : ApiControllerBase
     #region Create
 
     [HttpPost("create")]
-    public async Task<IActionResult> CreateLeague([FromBody] CreateLeagueRequest request)
+    public async Task<IActionResult> CreateLeagueAsync([FromBody] CreateLeagueRequest request)
     {
         var command = new CreateLeagueCommand(request, CurrentUserId);
         var newLeague = await _mediator.Send(command);
 
-        return CreatedAtAction(nameof(GetLeagueById), new { leagueId = newLeague.Id }, newLeague);
+        return CreatedAtAction(nameof(GetLeagueByIdAsync).Replace("Async", string.Empty), new { leagueId = newLeague.Id }, newLeague);
     }
 
     #endregion
@@ -35,7 +35,7 @@ public class LeaguesController : ApiControllerBase
     #region Read
 
     [HttpGet]
-    public async Task<IActionResult> FetchAll()
+    public async Task<IActionResult> FetchAllAsync()
     {
         var query = new FetchAllLeaguesQuery();
 
@@ -43,7 +43,7 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}")]
-    public async Task<IActionResult> GetLeagueById(int leagueId)
+    public async Task<IActionResult> GetLeagueByIdAsync(int leagueId)
     {
         var query = new GetLeagueByIdQuery(leagueId);
         var result = await _mediator.Send(query);
@@ -53,7 +53,7 @@ public class LeaguesController : ApiControllerBase
 
     [HttpGet("{leagueId:int}/members")]
     [Authorize]
-    public async Task<IActionResult> FetchLeagueMembers(int leagueId)
+    public async Task<IActionResult> FetchLeagueMembersAsync(int leagueId)
     {
         var query = new FetchLeagueMembersQuery(leagueId);
         var result = await _mediator.Send(query);
@@ -63,7 +63,7 @@ public class LeaguesController : ApiControllerBase
 
     [HttpGet("create-data")]
     [Authorize]
-    public async Task<IActionResult> GetCreateLeaguePageData()
+    public async Task<IActionResult> GetCreateLeaguePageDataAsync()
     {
         var query = new GetCreateLeaguePageDataQuery();
         var pageData = await _mediator.Send(query);
@@ -76,7 +76,7 @@ public class LeaguesController : ApiControllerBase
     #region Update
 
     [HttpPut("{leagueId:int}/update")]
-    public async Task<IActionResult> UpdateLeague(int leagueId, [FromBody] UpdateLeagueRequest request)
+    public async Task<IActionResult> UpdateLeagueAsync(int leagueId, [FromBody] UpdateLeagueRequest request)
     {
         var command = new UpdateLeagueCommand(leagueId, request);
         await _mediator.Send(command);
@@ -86,23 +86,23 @@ public class LeaguesController : ApiControllerBase
 
     [HttpPost("join")]
     [Authorize]
-    public async Task<IActionResult> JoinLeague([FromBody] JoinLeagueRequest request)
+    public async Task<IActionResult> JoinLeagueAsync([FromBody] JoinLeagueRequest request)
     {
         var command = new JoinLeagueCommand(request.EntryCode, CurrentUserId);
-        return await HandleJoinLeague(() => _mediator.Send(command));
+        return await HandleJoinLeagueAsync(() => _mediator.Send(command));
     }
 
     [HttpPost("{leagueId:int}/join")]
     [Authorize]
-    public async Task<IActionResult> JoinPublicLeague(int leagueId)
+    public async Task<IActionResult> JoinPublicLeagueAsync(int leagueId)
     {
         var command = new JoinLeagueCommand(leagueId, CurrentUserId);
-        return await HandleJoinLeague(() => _mediator.Send(command));
+        return await HandleJoinLeagueAsync(() => _mediator.Send(command));
     }
 
     [HttpPost("{leagueId:int}/members/{memberId}/approve")]
     [Authorize]
-    public async Task<IActionResult> ApproveLeagueMember(int leagueId, string memberId)
+    public async Task<IActionResult> ApproveLeagueMemberAsync(int leagueId, string memberId)
     {
         var command = new ApproveLeagueMemberCommand(leagueId, memberId, CurrentUserId);
 
@@ -126,7 +126,7 @@ public class LeaguesController : ApiControllerBase
     #region Dashboard
 
     [HttpGet("{leagueId:int}/leaderboard/overall")]
-    public async Task<IActionResult> GetOverallLeaderboard(int leagueId)
+    public async Task<IActionResult> GetOverallLeaderboardAsync(int leagueId)
     {
         var query = new GetOverallLeaderboardQuery(leagueId);
         var result = await _mediator.Send(query);
@@ -136,7 +136,7 @@ public class LeaguesController : ApiControllerBase
 
 
     [HttpGet("{leagueId:int}/leaderboard/monthly/{month:int}")]
-    public async Task<IActionResult> GetMonthlyLeaderboard(int leagueId, int month)
+    public async Task<IActionResult> GetMonthlyLeaderboardAsync(int leagueId, int month)
     {
         var query = new GetMonthlyLeaderboardQuery(leagueId, month);
         var result = await _mediator.Send(query);
@@ -145,7 +145,7 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}/leaderboard/round/{roundId:int}")]
-    public async Task<IActionResult> GetRoundLeaderboard(int leagueId, int roundId)
+    public async Task<IActionResult> GetRoundLeaderboardAsync(int leagueId, int roundId)
     {
         var query = new GetRoundLeaderboardQuery(leagueId, roundId);
         var result = await _mediator.Send(query);
@@ -155,7 +155,7 @@ public class LeaguesController : ApiControllerBase
 
     #endregion
 
-    private async Task<IActionResult> HandleJoinLeague(Func<Task> joinAction)
+    private async Task<IActionResult> HandleJoinLeagueAsync(Func<Task> joinAction)
     {
         try
         {

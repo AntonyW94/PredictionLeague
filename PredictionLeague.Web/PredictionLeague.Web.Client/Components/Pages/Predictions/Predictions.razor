@@ -3,6 +3,7 @@
 @attribute [Authorize]
 
 @inject HttpClient Http
+
 @using PredictionLeague.Contracts.Dashboard
 @using PredictionLeague.Contracts.Predictions
 
@@ -21,7 +22,7 @@
                 <span class="badge bg-danger">Deadline: @_pageData.Deadline.ToString("ddd dd MMM, HH:mm")</span>
             </div>
 
-            <EditForm Model="_model" OnValidSubmit="HandleSubmitPredictions">
+            <EditForm Model="_model" OnValidSubmit="HandleSubmitPredictionsAsync">
                 <FluentValidationValidator />
                 <ApiError Message="@_errorMessage" />
                 <ApiSuccess Message="@_successMessage" />
@@ -76,9 +77,10 @@
                             {
                                 <span class="spinner-border spinner-border-sm"></span>
                                 <span> Saving...</span>
-         }
-        else
-        {
+                            }
+
+                            else
+                            {
                                 <span>Save Predictions</span>
                             }
                         </button>
@@ -152,7 +154,7 @@
         }
     }
 
-    private async Task HandleSubmitPredictions()
+    private async Task HandleSubmitPredictionsAsync()
     {
         _isBusy = true;
         _errorMessage = null;

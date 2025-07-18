@@ -19,7 +19,7 @@
                 }
                 else if (_model != null)
                 {
-                    <EditForm Model="_model" OnValidSubmit="HandleUpdateDetails" Context="editFormContext">
+                    <EditForm Model="_model" OnValidSubmit="HandleUpdateDetailsAsync" Context="editFormContext">
                         <FluentValidationValidator />
                         <ApiError Message="@_errorMessage" />
                         <ApiSuccess Message="@_successMessage" />
@@ -83,7 +83,7 @@
         }
     }
 
-    private async Task HandleUpdateDetails()
+    private async Task HandleUpdateDetailsAsync()
     {
         _isBusy = true;
         _errorMessage = null;

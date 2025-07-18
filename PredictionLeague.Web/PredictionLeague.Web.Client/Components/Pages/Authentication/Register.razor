@@ -1,10 +1,11 @@
 ﻿@page "/authentication/register"
-@using Microsoft.AspNetCore.WebUtilities
-@using PredictionLeague.Contracts.Authentication
 
 @inject IAuthenticationService AuthenticationService
 @inject IConfiguration Configuration
 @inject NavigationManager NavigationManager
+
+@using Microsoft.AspNetCore.WebUtilities
+@using PredictionLeague.Contracts.Authentication
 
 <PageTitle>Register</PageTitle>
 
@@ -18,7 +19,7 @@
             <h3 class="text-center fw-bold text-white mb-0">Register</h3>
         </div>
 
-        <EditForm Model="_model" OnValidSubmit="HandleRegistration" FormName="registerForm">
+        <EditForm Model="_model" OnValidSubmit="HandleRegistrationAsync" FormName="registerForm">
             <FluentValidationValidator />
             <ApiError Message="@_errorMessage" />
             <ApiSuccess Message="@_successMessage" />
@@ -115,13 +116,13 @@
         _showPassword = !_showPassword;
     }
 
-    private async Task HandleRegistration()
+    private async Task HandleRegistrationAsync()
     {
         _isBusy = true;
         _errorMessage = null;
         _successMessage = null;
 
-        var result = await AuthenticationService.Register(_model);
+        var result = await AuthenticationService.RegisterAsync(_model);
         if (result.IsSuccess)
         {
             _successMessage = "Registration successful! You will be redirected to the login page shortly.";

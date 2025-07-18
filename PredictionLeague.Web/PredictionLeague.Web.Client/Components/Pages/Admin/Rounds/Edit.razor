@@ -21,7 +21,7 @@
         }
         else
         {
-            <EditForm Model="_model" OnValidSubmit="HandleUpdateRound">
+            <EditForm Model="_model" OnValidSubmit="HandleUpdateRoundAsync">
                 <FluentValidationValidator />
                 <ApiError Message="@_errorMessage" />
                 <ApiSuccess Message="@_successMessage" />
@@ -198,7 +198,7 @@
         return _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl ?? "";
     }
 
-    private async Task HandleUpdateRound()
+    private async Task HandleUpdateRoundAsync()
     {
         _isBusy = true;
         _errorMessage = null;

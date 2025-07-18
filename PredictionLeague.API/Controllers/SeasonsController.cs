@@ -25,7 +25,7 @@ public class SeasonsController : ControllerBase
     #region Create 
 
     [HttpPost("create")]
-    public async Task<IActionResult> CreateSeason([FromBody] CreateSeasonRequest request)
+    public async Task<IActionResult> CreateSeasonAsync([FromBody] CreateSeasonRequest request)
     {
         var creatorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(creatorId))
@@ -42,7 +42,7 @@ public class SeasonsController : ControllerBase
     #region Read
 
     [HttpGet]
-    public async Task<IActionResult> FetchAll()
+    public async Task<IActionResult> FetchAllAsync()
     {
         var query = new FetchAllSeasonsQuery();
         var result = await _mediator.Send(query);
@@ -50,7 +50,7 @@ public class SeasonsController : ControllerBase
     }
 
     [HttpGet("{seasonId:int}")]
-    public async Task<IActionResult> GetById(int seasonId)
+    public async Task<IActionResult> GetByIdAsync(int seasonId)
     {
         var query = new GetSeasonByIdQuery(seasonId);
 
@@ -63,7 +63,7 @@ public class SeasonsController : ControllerBase
     #region Update
 
     [HttpPut("{seasonId:int}/update")]
-    public async Task<IActionResult> UpdateSeason(int seasonId, [FromBody] UpdateSeasonRequest request)
+    public async Task<IActionResult> UpdateSeasonAsync(int seasonId, [FromBody] UpdateSeasonRequest request)
     {
         var command = new UpdateSeasonCommand(seasonId, request);
 

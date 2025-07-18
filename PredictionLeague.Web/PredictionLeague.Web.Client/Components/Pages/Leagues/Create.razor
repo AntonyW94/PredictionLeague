@@ -19,7 +19,7 @@
         }
         else
         {
-            <EditForm Model="_model" OnValidSubmit="HandleCreateLeague">
+            <EditForm Model="_model" OnValidSubmit="HandleCreateLeagueAsync">
                 <FluentValidationValidator />
                 <ApiError Message="@_errorMessage" />
                 <ApiSuccess Message="@_successMessage" />
@@ -67,7 +67,7 @@
         _pageData = await Http.GetFromJsonAsync<CreateLeaguePageData>("api/leagues/create-data");
     }
 
-    private async Task HandleCreateLeague()
+    private async Task HandleCreateLeagueAsync()
     {
         _isBusy = true;
         _errorMessage = null;

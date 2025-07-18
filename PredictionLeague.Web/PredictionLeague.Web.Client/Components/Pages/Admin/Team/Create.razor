@@ -13,7 +13,7 @@
         <h3 class="text-center fw-bold text-white mb-4">Create New Team</h3>
         <BaseFormComponent TModel="CreateTeamRequest"
                            Model="_model"
-                           SubmitAction="HandleCreateTeam"
+                           SubmitAction="HandleCreateTeamAsync"
                            SuccessRedirectUrl="/admin/teams"
                            BackUrl="/admin/teams"
                            SuccessAlertMessage="Team created successfully!"
@@ -38,7 +38,7 @@
 @code {
     private readonly CreateTeamRequest _model = new();
    
-    private Task<HttpResponseMessage> HandleCreateTeam()
+    private Task<HttpResponseMessage> HandleCreateTeamAsync()
     {
         return Http.PostAsJsonAsync("api/teams/create", _model);
     }

@@ -1,4 +1,5 @@
 ﻿@page "/"
+
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -52,11 +53,9 @@
     protected override async Task OnInitializedAsync()
     {
         var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+       
         var user = authenticationState.User;
-
         if (user.Identity?.IsAuthenticated ?? false)
-        {
             NavigationManager.NavigateTo("/dashboard");
-        }
     }
 }

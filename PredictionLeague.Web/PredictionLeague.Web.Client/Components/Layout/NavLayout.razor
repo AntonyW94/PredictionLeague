@@ -100,7 +100,7 @@
     
     private async Task LogoutUser()
     {
-        await AuthenticationService.Logout();
+        await AuthenticationService.LogoutAsync();
         NavigationManager.NavigateTo("/", forceLoad: true);
     }
 }

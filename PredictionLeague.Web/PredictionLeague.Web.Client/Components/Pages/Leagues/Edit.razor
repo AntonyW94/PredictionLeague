@@ -16,7 +16,7 @@
         }
         else
         {
-            <EditForm Model="_model" OnValidSubmit="HandleUpdateLeague">
+            <EditForm Model="_model" OnValidSubmit="HandleUpdateLeagueAsync">
                 <FluentValidationValidator />
                 <ApiError Message="@_errorMessage" />
                 <ApiSuccess Message="@_successMessage" />
@@ -51,7 +51,7 @@
             _model = new UpdateLeagueRequest { Name = league.Name, EntryCode = league.EntryCode };
     }
 
-    private async Task HandleUpdateLeague()
+    private async Task HandleUpdateLeagueAsync()
     {
         _isBusy = true;
         _errorMessage = null;

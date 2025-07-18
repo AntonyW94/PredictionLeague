@@ -24,7 +24,7 @@ public class RoundsController : ControllerBase
     #region Create
 
     [HttpPost("create")]
-    public async Task<IActionResult> CreateRound([FromBody] CreateRoundRequest request)
+    public async Task<IActionResult> CreateRoundAsync([FromBody] CreateRoundRequest request)
     {
         var command = new CreateRoundCommand
         {
@@ -45,7 +45,7 @@ public class RoundsController : ControllerBase
     #region Read
 
     [HttpGet("by-season/{seasonId:int}")]
-    public async Task<IActionResult> FetchRoundsForSeason(int seasonId)
+    public async Task<IActionResult> FetchRoundsForSeasonAsync(int seasonId)
     {
         var query = new FetchRoundsForSeasonQuery(seasonId);
         var result = await _mediator.Send(query);
@@ -53,7 +53,7 @@ public class RoundsController : ControllerBase
     }
 
     [HttpGet("{roundId:int}")]
-    public async Task<IActionResult> GetRoundById(int roundId)
+    public async Task<IActionResult> GetRoundByIdAsync(int roundId)
     {
         var query = new GetRoundByIdQuery(roundId);
         var roundDetails = await _mediator.Send(query);
@@ -66,7 +66,7 @@ public class RoundsController : ControllerBase
     #region Update
 
     [HttpPut("{roundId:int}/update")]
-    public async Task<IActionResult> UpdateRound(int roundId, [FromBody] UpdateRoundRequest request)
+    public async Task<IActionResult> UpdateRoundAsync(int roundId, [FromBody] UpdateRoundRequest request)
     {
         var command = new UpdateRoundCommand(roundId, request);
 
@@ -76,7 +76,7 @@ public class RoundsController : ControllerBase
     }
 
     [HttpPut("{roundId:int}/submit-results")]
-    public async Task<IActionResult> SubmitResults(int roundId, [FromBody] List<UpdateMatchResultsRequest> request)
+    public async Task<IActionResult> SubmitResultsAsync(int roundId, [FromBody] List<UpdateMatchResultsRequest> request)
     {
         var command = new UpdateMatchResultsCommand(roundId, request);
         await _mediator.Send(command);

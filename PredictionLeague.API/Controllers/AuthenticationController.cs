@@ -29,7 +29,7 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> RegisterAsync([FromBody] RegisterRequest request)
     {
         var command = new RegisterCommand(request);
 
@@ -40,7 +40,7 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request)
     {
         var command = new LoginCommand(request);
 
@@ -56,7 +56,7 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost("refresh-token")]
     [AllowAnonymous]
-    public async Task<IActionResult> RefreshToken()
+    public async Task<IActionResult> RefreshTokenAsync()
     {
         var refreshToken = Request.Cookies["refreshToken"];
         if (refreshToken == null)
@@ -71,7 +71,7 @@ public class AuthenticationController : ControllerBase
 
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> LogoutAsync()
     {
         var command = new LogoutCommand(Request.Cookies["refreshToken"]);
 
@@ -86,7 +86,7 @@ public class AuthenticationController : ControllerBase
     [AllowAnonymous]
     public IActionResult GoogleLogin([FromQuery] string returnUrl, [FromQuery] string source)
     {
-        var callbackUrl = Url.Action(nameof(GoogleCallback), "Authentication", new { returnUrl });
+        var callbackUrl = Url.Action(nameof(GoogleCallbackAsync).Replace("Async", string.Empty), "Authentication", new { returnUrl });
         var properties = new AuthenticationProperties
         {
             RedirectUri = callbackUrl,
@@ -101,7 +101,7 @@ public class AuthenticationController : ControllerBase
 
     [HttpGet("signin-google")]
     [AllowAnonymous]
-    public async Task<IActionResult> GoogleCallback(string returnUrl)
+    public async Task<IActionResult> GoogleCallbackAsync(string returnUrl)
     {
         var errorSourcePage = "/login";
 

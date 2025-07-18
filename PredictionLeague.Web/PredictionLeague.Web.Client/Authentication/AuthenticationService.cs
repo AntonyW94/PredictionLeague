@@ -22,13 +22,13 @@ public class AuthenticationService : IAuthenticationService
         return result.IsSuccessStatusCode;
     }
 
-    public async Task<RegisterResponse> Register(RegisterRequest registerRequest)
+    public async Task<RegisterResponse> RegisterAsync(RegisterRequest registerRequest)
     {
         var result = await _httpClient.PostAsJsonAsync("api/authentication/register", registerRequest);
         return await result.Content.ReadFromJsonAsync<RegisterResponse>() ?? new RegisterResponse { IsSuccess = false, Message = "Failed to process server response." };
     }
 
-    public async Task<AuthenticationResponse> Login(LoginRequest loginRequest)
+    public async Task<AuthenticationResponse> LoginAsync(LoginRequest loginRequest)
     {
         var result = await _httpClient.PostAsJsonAsync("api/authentication/login", loginRequest);
         var authenticationResponse = await result.Content.ReadFromJsonAsync<AuthenticationResponse>();
@@ -38,7 +38,7 @@ public class AuthenticationService : IAuthenticationService
         return authenticationResponse ?? new AuthenticationResponse { IsSuccess = false, Message = "Failed to process server response." };
     }
 
-    public async Task Logout()
+    public async Task LogoutAsync()
     {
         await ((ApiAuthenticationStateProvider)_authenticationStateProvider).Logout();
     }

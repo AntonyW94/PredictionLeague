@@ -21,7 +21,7 @@ public class TeamsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllTeams()
+    public async Task<IActionResult> GetAllTeamsAsync()
     {
         var query = new FetchAllTeamsQuery();
         
@@ -31,7 +31,7 @@ public class TeamsController : ControllerBase
     }
 
     [HttpGet("{teamId:int}")]
-    public async Task<IActionResult> GetTeamById(int teamId)
+    public async Task<IActionResult> GetTeamByIdAsync(int teamId)
     {
         var query = new GetTeamByIdQuery(teamId);
 
@@ -41,17 +41,17 @@ public class TeamsController : ControllerBase
     }
 
     [HttpPost("create")]
-    public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
+    public async Task<IActionResult> CreateTeamAsync([FromBody] CreateTeamRequest request)
     {
         var command = new CreateTeamCommand(request);
 
         var createdTeam = await _mediator.Send(command);
         
-        return CreatedAtAction(nameof(GetTeamById), "Teams", new { id = createdTeam.Id }, createdTeam);
+        return CreatedAtAction(nameof(GetTeamByIdAsync).Replace("Async", string.Empty), "Teams", new { id = createdTeam.Id }, createdTeam);
     }
 
     [HttpPut("{teamId:int}/update")]
-    public async Task<IActionResult> UpdateTeam(int teamId, [FromBody] UpdateTeamRequest request)
+    public async Task<IActionResult> UpdateTeamAsync(int teamId, [FromBody] UpdateTeamRequest request)
     {
         var command = new UpdateTeamCommand(teamId, request);
 

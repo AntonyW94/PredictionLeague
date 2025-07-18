@@ -19,7 +19,7 @@
             <h3 class="text-center fw-bold text-white mb-4">Login</h3>
         </div>
 
-        <EditForm Model="_model" OnValidSubmit="HandleLogin" FormName="loginForm">
+        <EditForm Model="_model" OnValidSubmit="HandleLoginAsync" FormName="loginForm">
             <FluentValidationValidator />
             <ApiError Message="@_errorMessage" />
 
@@ -95,10 +95,9 @@
     protected override void OnInitialized()
     {
         var uri = new Uri(NavigationManager.Uri);
+        
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var errorValue))
-        {
             _errorMessage = errorValue;
-        }
     }
 
     private void TogglePasswordVisibility()
@@ -106,12 +105,12 @@
         _showPassword = !_showPassword;
     }
 
-    private async Task HandleLogin()
+    private async Task HandleLoginAsync()
     {
         _isBusy = true;
         _errorMessage = null;
 
-        var result = await AuthenticationService.Login(_model);
+        var result = await AuthenticationService.LoginAsync(_model);
         if (result.IsSuccess)
         {
             NavigationManager.NavigateTo("/");

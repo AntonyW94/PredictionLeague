@@ -20,7 +20,7 @@
         }
         else if (_matches != null)
         {
-            <EditForm Model="_matches" OnValidSubmit="HandleSaveResults">
+            <EditForm Model="_matches" OnValidSubmit="HandleSaveResultsAsync">
                 <FluentValidationValidator />
                 <ApiError Message="@_errorMessage" />
                 <ApiSuccess Message="@_successMessage" />
@@ -143,7 +143,7 @@
         }
     }
 
-    private async Task HandleSaveResults()
+    private async Task HandleSaveResultsAsync()
     {
         _isBusy = true;
         _errorMessage = null;

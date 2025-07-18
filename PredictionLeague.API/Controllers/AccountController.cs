@@ -20,7 +20,7 @@ public class AccountController : ApiControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetUserDetails()
+    public async Task<IActionResult> GetUserDetailsAsync()
     {
         var query = new GetUserQuery(CurrentUserId);
         var userDetails = await _mediator.Send(query);
@@ -29,7 +29,7 @@ public class AccountController : ApiControllerBase
     }
 
     [HttpPut]
-    public async Task<IActionResult> UpdateUserDetails([FromBody] UpdateUserDetailsRequest request)
+    public async Task<IActionResult> UpdateUserDetailsAsync([FromBody] UpdateUserDetailsRequest request)
     {
         var command = new UpdateUserDetailsCommand(request, CurrentUserId);
         await _mediator.Send(command);

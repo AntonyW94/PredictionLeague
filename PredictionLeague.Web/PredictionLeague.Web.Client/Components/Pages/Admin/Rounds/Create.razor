@@ -22,7 +22,7 @@
         }
         else
         {
-            <EditForm Model="_model" OnValidSubmit="HandleCreateRound">
+            <EditForm Model="_model" OnValidSubmit="HandleCreateRoundAsync">
                 <FluentValidationValidator />
                 <ApiError Message="@_errorMessage" />
                 <ApiSuccess Message="@_successMessage" />
@@ -196,7 +196,7 @@
         return teamId < 1 ? "https://placehold.co/25x25/transparent/transparent?text=" : _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl;
     }
 
-    private async Task HandleCreateRound()
+    private async Task HandleCreateRoundAsync()
     {
         _isBusy = true;
         _errorMessage = null;

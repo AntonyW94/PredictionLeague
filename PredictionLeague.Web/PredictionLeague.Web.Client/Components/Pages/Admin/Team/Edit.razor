@@ -19,7 +19,7 @@
         {
             <BaseFormComponent TModel="UpdateTeamRequest"
                                Model="_model"
-                               SubmitAction="HandleUpdateTeam"
+                               SubmitAction="HandleUpdateTeamAsync"
                                SuccessRedirectUrl="/admin/teams"
                                BackUrl="/admin/teams"
                                SuccessAlertMessage="Team updated successfully!"
@@ -60,7 +60,7 @@
         }
     }
 
-    private Task<HttpResponseMessage> HandleUpdateTeam()
+    private Task<HttpResponseMessage> HandleUpdateTeamAsync()
     {
         return Http.PutAsJsonAsync($"api/teams/{TeamId}/update", _model);
     }

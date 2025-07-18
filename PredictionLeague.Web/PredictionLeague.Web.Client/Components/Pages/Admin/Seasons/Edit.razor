@@ -21,7 +21,7 @@
         }
         else
         {
-            <EditForm Model="_model" OnValidSubmit="HandleUpdateSeason">
+            <EditForm Model="_model" OnValidSubmit="HandleUpdateSeasonAsync">
                 <FluentValidationValidator />
                 <ApiError Message="@_errorMessage" />
                 <ApiSuccess Message="@_successMessage" />
@@ -89,7 +89,7 @@
         }
     }
 
-    private async Task HandleUpdateSeason()
+    private async Task HandleUpdateSeasonAsync()
     {
         _isBusy = true;
         _errorMessage = null;

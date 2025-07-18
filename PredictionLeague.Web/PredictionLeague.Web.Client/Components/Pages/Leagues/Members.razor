@@ -48,7 +48,7 @@
                             <td data-label="Actions" class="actions-cell">
                                 @if (member.CanBeApproved)
                                 {
-                                    <button class="btn btn-sm light-cyan-button" @onclick="() => ApproveMember(member.UserId)">Approve</button>
+                                    <button class="btn btn-sm light-cyan-button" @onclick="() => ApproveMemberAsync(member.UserId)">Approve</button>
                                 }
                             </td>
                         </tr>
@@ -71,10 +71,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadMembers();
+        await LoadMembersAsync();
     }
 
-    private async Task LoadMembers()
+    private async Task LoadMembersAsync()
     {
         try
         {
@@ -86,11 +86,11 @@
         }
     }
 
-    private async Task ApproveMember(string memberId)
+    private async Task ApproveMemberAsync(string memberId)
     {
         var response = await Http.PostAsync($"api/leagues/{LeagueId}/members/{memberId}/approve", null);
         if (response.IsSuccessStatusCode)
-            await LoadMembers();
+            await LoadMembersAsync();
 
         // Handle error
     }

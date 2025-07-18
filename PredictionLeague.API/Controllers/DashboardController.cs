@@ -18,7 +18,7 @@ public class DashboardController : ApiControllerBase
     }
 
     [HttpGet("dashboard-data")]
-    public async Task<IActionResult> GetDashboardData()
+    public async Task<IActionResult> GetDashboardDataAsync()
     {
         var query = new GetDashboardDataQuery(CurrentUserId);
         var result = await _mediator.Send(query);
