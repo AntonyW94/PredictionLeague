@@ -16,14 +16,6 @@ public class GetTeamByIdQueryHandler : IRequestHandler<GetTeamByIdQuery, TeamDto
     public async Task<TeamDto?> Handle(GetTeamByIdQuery request, CancellationToken cancellationToken)
     {
         var team = await _teamRepository.GetByIdAsync(request.Id);
-        if (team == null)
-            return null;
-
-        return new TeamDto
-        {
-            Id = team.Id,
-            Name = team.Name,
-            LogoUrl = team.LogoUrl
-        };
+        return team == null ? null : new TeamDto(team.Id, team.Name, team.LogoUrl);
     }
 }

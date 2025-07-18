@@ -23,9 +23,8 @@ public class UpdateTeamCommandHandler : IRequestHandler<UpdateTeamCommand>
             _logger.LogWarning("Attempted to update non-existent Team (ID: {TeamId}).", request.Id);
             throw new KeyNotFoundException($"Team with ID {request.Id} not found.");
         }
-        
-        team.Name = request.Name;
-        team.LogoUrl = request.LogoUrl;
+
+        team.UpdateDetails(request.Name, request.LogoUrl);
 
         await _teamRepository.UpdateAsync(team);
     }

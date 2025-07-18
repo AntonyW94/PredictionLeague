@@ -16,12 +16,6 @@ public class FetchAllTeamsQueryHandler : IRequestHandler<FetchAllTeamsQuery, IEn
     public async Task<IEnumerable<TeamDto>> Handle(FetchAllTeamsQuery request, CancellationToken cancellationToken)
     {
         var teams = await _teamRepository.GetAllAsync();
-
-        return teams.Select(t => new TeamDto
-        {
-            Id = t.Id,
-            Name = t.Name,
-            LogoUrl = t.LogoUrl
-        });
+        return teams.Select(team => new TeamDto(team.Id, team.Name, team.LogoUrl));
     }
 }

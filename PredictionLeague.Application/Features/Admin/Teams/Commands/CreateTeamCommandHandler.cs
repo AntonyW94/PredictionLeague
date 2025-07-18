@@ -1,10 +1,11 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Contracts.Admin.Teams;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Admin.Teams.Commands;
 
-public class CreateTeamCommandHandler : IRequestHandler<CreateTeamCommand, Team>
+public class CreateTeamCommandHandler : IRequestHandler<CreateTeamCommand, TeamDto>
 {
     private readonly ITeamRepository _teamRepository;
 
@@ -13,14 +14,11 @@ public class CreateTeamCommandHandler : IRequestHandler<CreateTeamCommand, Team>
         _teamRepository = teamRepository;
     }
 
-    public async Task<Team> Handle(CreateTeamCommand request, CancellationToken cancellationToken)
+    public async Task<TeamDto> Handle(CreateTeamCommand request, CancellationToken cancellationToken)
     {
-        var newTeam = new Team
-        {
-            Name = request.Name,
-            LogoUrl = request.LogoUrl
-        };
+        var team = Team.Create(request.Name, request.LogoUrl);
 
-        return await _teamRepository.AddAsync(newTeam);
+        var createdTeam = await _teamRepository.AddAsync(team);
+        return new TeamDto(createdTeam.Id, createdTeam.Name, createdTeam.LogoUrl);
     }
 }
