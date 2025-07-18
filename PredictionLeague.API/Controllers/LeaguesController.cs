@@ -90,20 +90,7 @@ public class LeaguesController : ApiControllerBase
     public async Task<IActionResult> JoinLeague([FromBody] JoinLeagueRequest request)
     {
         var command = new JoinLeagueCommand(request.EntryCode, CurrentUserId);
-
-        try
-        {
-            await _mediator.Send(command);
-            return Ok(new { message = "Successfully joined league." });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return await HandleJoinLeague(() => _mediator.Send(command));
     }
 
     [HttpPost("{leagueId:int}/join")]
@@ -111,20 +98,7 @@ public class LeaguesController : ApiControllerBase
     public async Task<IActionResult> JoinPublicLeague(int leagueId)
     {
         var command = new JoinLeagueCommand(leagueId, CurrentUserId);
-
-        try
-        {
-            await _mediator.Send(command);
-            return Ok(new { message = "Successfully joined league." });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return await HandleJoinLeague(() => _mediator.Send(command));
     }
 
     [HttpPost("{leagueId:int}/members/{memberId}/approve")]
@@ -181,4 +155,21 @@ public class LeaguesController : ApiControllerBase
     }
 
     #endregion
+
+    private async Task<IActionResult> HandleJoinLeague(Func<Task> joinAction)
+    {
+        try
+        {
+            await joinAction();
+            return Ok(new { message = "Successfully joined league." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }
