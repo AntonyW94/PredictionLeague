@@ -26,27 +26,35 @@ public class ErrorHandlingMiddleware
         }
         catch (UnauthorizedAccessException ex)
         {
+            _logger.LogWarning(ex, "Unauthorized access attempt: {Message}", ex.Message);
+
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+           
             await context.Response.WriteAsync(JsonSerializer.Serialize(new { message = ex.Message }));
         }
         catch (IdentityUpdateException ex)
         {
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+          
             var errors = ex.Errors.Select(e => new { e.Code, e.Description });
+          
             await context.Response.WriteAsync(JsonSerializer.Serialize(errors));
         }
         catch (ValidationException ex)
         {
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+          
             var errors = ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage });
+           
             await context.Response.WriteAsync(JsonSerializer.Serialize(errors));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unhandled exception has occurred.");
+          
             await HandleExceptionAsync(context, ex);
         }
     }
