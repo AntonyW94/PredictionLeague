@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Leagues.Commands;
 using PredictionLeague.Application.Features.Leagues.Queries;
-using PredictionLeague.Contracts.Admin.Leagues;
 using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.API.Controllers;

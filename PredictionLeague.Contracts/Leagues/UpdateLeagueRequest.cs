@@ -1,4 +1,4 @@
-﻿namespace PredictionLeague.Contracts.Admin.Leagues;
+﻿namespace PredictionLeague.Contracts.Leagues;
 
 public class UpdateLeagueRequest
 {

@@ -1,6 +1,4 @@
-﻿using PredictionLeague.Contracts.Admin.Leagues;
-
-namespace PredictionLeague.Contracts.Leagues;
+﻿namespace PredictionLeague.Contracts.Leagues;
 
 public class LeagueMembersPageDto
 {

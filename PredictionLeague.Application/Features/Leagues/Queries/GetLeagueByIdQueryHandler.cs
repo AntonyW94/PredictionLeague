@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
-using PredictionLeague.Contracts.Admin.Leagues;
+using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;
 

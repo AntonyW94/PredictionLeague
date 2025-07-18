@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using PredictionLeague.Contracts.Admin.Leagues;
+using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 
