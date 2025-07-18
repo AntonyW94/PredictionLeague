@@ -3,8 +3,8 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using PredictionLeague.Application;
 using PredictionLeague.Application.Common.Behaviours;
+using PredictionLeague.Application.Common.Interfaces;
 using PredictionLeague.Validators.Authentication;
 using System.Text;
 
@@ -19,7 +19,8 @@ public static class DependencyInjection
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(IAssemblyMarker).Assembly);
-
+            cfg.AddOpenBehavior(typeof(TransactionBehaviour<,>));
+            
             var mediatRKey = configuration["MediatR:LicenseKey"];
 
             if (!string.IsNullOrEmpty(mediatRKey))

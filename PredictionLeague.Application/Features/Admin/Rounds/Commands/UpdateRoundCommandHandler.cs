@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Models;
-using System.Transactions;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
@@ -18,8 +17,6 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
 
     public async Task Handle(UpdateRoundCommand request, CancellationToken cancellationToken)
     {
-        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-
         var round = await _roundRepository.GetByIdAsync(request.RoundId) ?? throw new KeyNotFoundException($"Round with ID {request.RoundId} was not found.");
 
         round.StartDate = request.StartDate;
@@ -38,10 +35,8 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
                 MatchDateTime = matchRequest.MatchDateTime,
                 Status = MatchStatus.Scheduled
             };
-            
+
             await _matchRepository.AddAsync(match);
         }
-
-        scope.Complete();
     }
 }

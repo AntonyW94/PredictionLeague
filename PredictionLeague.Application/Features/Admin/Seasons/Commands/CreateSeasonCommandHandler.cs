@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Models;
-using System.Transactions;
 
 namespace PredictionLeague.Application.Features.Admin.Seasons.Commands;
 
@@ -18,16 +17,14 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand>
 
     public async Task Handle(CreateSeasonCommand request, CancellationToken cancellationToken)
     {
-        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-
         var season = new Season
         {
             Name = request.Name,
             IsActive = true
         };
-            
+
         season.SetDates(request.StartDate, request.EndDate);
-            
+
         await _seasonRepository.AddAsync(season);
 
         var publicLeague = new League
@@ -47,7 +44,5 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand>
             Status = LeagueMemberStatus.Approved
         };
         await _leagueRepository.AddMemberAsync(leagueMember);
-
-        scope.Complete();
     }
 }

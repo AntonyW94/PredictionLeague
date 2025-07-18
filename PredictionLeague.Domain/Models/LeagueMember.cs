@@ -5,5 +5,5 @@ public class LeagueMember
     public int LeagueId { get; init; }
     public string UserId { get; init; } = string.Empty;
     public DateTime JoinedAt { get; init; }
-    public LeagueMemberStatus Status { get; set; } = LeagueMemberStatus.Pending;
+    public LeagueMemberStatus Status { get; init; } = LeagueMemberStatus.Pending;
 }

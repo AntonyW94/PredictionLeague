@@ -1,9 +1,10 @@
 ﻿using MediatR;
+using PredictionLeague.Application.Common.Interfaces;
 using PredictionLeague.Contracts.Admin.Results;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
-public class UpdateMatchResultsCommand : IRequest
+public class UpdateMatchResultsCommand : IRequest, ITransactionalRequest
 {
     public int RoundId { get; }
     public List<UpdateMatchResultsRequest>? Results { get; }

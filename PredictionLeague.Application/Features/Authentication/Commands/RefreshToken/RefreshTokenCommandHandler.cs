@@ -40,12 +40,10 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
         }
         
         var user = await _userManager.FindByIdAsync(storedToken.UserId);
-        if (user == null)
-        {
-            _logger.LogWarning("User (ID: {UserId}) from a valid refresh token was not found.", storedToken.UserId);
-            return new AuthenticationResponse { IsSuccess = false, Message = "User not found." };
-        }
+        if (user != null) 
+            return await _tokenService.GenerateAccessToken(user);
         
-        return await _tokenService.GenerateAccessToken(user);
+        _logger.LogWarning("User (ID: {UserId}) from a valid refresh token was not found.", storedToken.UserId);
+        return new AuthenticationResponse { IsSuccess = false, Message = "User not found." };
     }
 }

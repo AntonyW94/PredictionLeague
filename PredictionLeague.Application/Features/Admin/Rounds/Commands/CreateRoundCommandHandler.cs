@@ -1,7 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Models;
-using System.Transactions;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
@@ -18,8 +17,6 @@ public class CreateRoundCommandHandler : IRequestHandler<CreateRoundCommand>
 
     public async Task Handle(CreateRoundCommand request, CancellationToken cancellationToken)
     {
-        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-
         var round = new Round
         {
             SeasonId = request.SeasonId,
@@ -43,7 +40,5 @@ public class CreateRoundCommandHandler : IRequestHandler<CreateRoundCommand>
 
             await _matchRepository.AddAsync(match);
         }
-
-        scope.Complete();
     }
 }

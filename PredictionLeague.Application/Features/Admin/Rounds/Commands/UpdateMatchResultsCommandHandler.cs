@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Models;
-using System.Transactions;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
@@ -34,25 +33,21 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         if (request.Results == null || !request.Results.Any())
             return;
 
-        using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+        foreach (var result in request.Results)
         {
-            foreach (var result in request.Results)
+            var match = await _matchRepository.GetByIdAsync(result.MatchId);
+            if (match == null)
             {
-                var match = await _matchRepository.GetByIdAsync(result.MatchId);
-                if (match == null)
-                {
-                    _logger.LogWarning("Attempted to update results for a non-existent Match (ID: {MatchId}).", result.MatchId);
-                    continue;
-                }
-
-                match.ActualHomeTeamScore = result.HomeScore;
-                match.ActualAwayTeamScore = result.AwayScore;
-                match.Status = result.IsFinal ? MatchStatus.Completed : MatchStatus.InProgress;
-
-                await _matchRepository.UpdateAsync(match);
-                await _pointsService.CalculatePointsForMatchAsync(match);
+                _logger.LogWarning("Attempted to update results for a non-existent Match (ID: {MatchId}).", result.MatchId);
+                continue;
             }
-            scope.Complete();
+
+            match.ActualHomeTeamScore = result.HomeScore;
+            match.ActualAwayTeamScore = result.AwayScore;
+            match.Status = result.IsFinal ? MatchStatus.Completed : MatchStatus.InProgress;
+
+            await _matchRepository.UpdateAsync(match);
+            await _pointsService.CalculatePointsForMatchAsync(match);
         }
 
         await AggregateResultsForRoundAsync(request.RoundId);

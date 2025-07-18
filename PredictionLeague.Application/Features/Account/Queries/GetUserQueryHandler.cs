@@ -20,18 +20,19 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, UserDetails?>
     public async Task<UserDetails?> Handle(GetUserQuery request, CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByIdAsync(request.UserId);
-        if (user == null)
+        if (user != null)
         {
-            _logger.LogInformation("Details requested for non-existent User (ID: {UserId}).", request.UserId);
-            return null;
+            return new UserDetails
+            {
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email ?? string.Empty,
+                PhoneNumber = user.PhoneNumber
+            };
         }
 
-        return new UserDetails
-        {
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = user.Email ?? string.Empty,
-            PhoneNumber = user.PhoneNumber
-        };
+        _logger.LogInformation("Details requested for non-existent User (ID: {UserId}).", request.UserId);
+        return null;
+
     }
 }
