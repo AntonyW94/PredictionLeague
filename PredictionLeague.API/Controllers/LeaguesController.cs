@@ -6,7 +6,6 @@ using PredictionLeague.Application.Features.Leagues.Commands;
 using PredictionLeague.Application.Features.Leagues.Queries;
 using PredictionLeague.Contracts.Admin.Leagues;
 using PredictionLeague.Contracts.Leagues;
-using PredictionLeague.Domain.Models;
 using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;
@@ -79,8 +78,7 @@ public class LeaguesController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCreateLeaguePageData()
     {
-        var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
-        var query = new GetCreateLeaguePageDataQuery(isAdmin);
+        var query = new GetCreateLeaguePageDataQuery();
         var pageData = await _mediator.Send(query);
 
         return Ok(pageData);
@@ -171,6 +169,38 @@ public class LeaguesController : ControllerBase
         {
             return NotFound(ex.Message);
         }
+    }
+
+    #endregion
+
+    #region Dashboard
+
+    [HttpGet("{leagueId:int}/leaderboard/overall")]
+    public async Task<IActionResult> GetOverallLeaderboard(int leagueId)
+    {
+        var query = new GetOverallLeaderboardQuery(leagueId);
+        var result = await _mediator.Send(query);
+
+        return Ok(result);
+    }
+
+
+    [HttpGet("{leagueId:int}/leaderboard/monthly/{month:int}")]
+    public async Task<IActionResult> GetMonthlyLeaderboard(int leagueId, int month)
+    {
+        var query = new GetMonthlyLeaderboardQuery(leagueId, month);
+        var result = await _mediator.Send(query);
+
+        return Ok(result);
+    }
+
+    [HttpGet("{leagueId:int}/leaderboard/round/{roundId:int}")]
+    public async Task<IActionResult> GetRoundLeaderboard(int leagueId, int roundId)
+    {
+        var query = new GetRoundLeaderboardQuery(leagueId, roundId);
+        var result = await _mediator.Send(query);
+
+        return Ok(result);
     }
 
     #endregion

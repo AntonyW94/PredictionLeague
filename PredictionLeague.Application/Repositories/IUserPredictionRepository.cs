@@ -10,5 +10,6 @@ public interface IUserPredictionRepository
     Task UpsertAsync(UserPrediction prediction);
     Task UpdatePointsAsync(int predictionId, int points);
     Task<IEnumerable<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId);
-    Task<IEnumerable<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month, int year);
+    Task<IEnumerable<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month);
+    Task<IEnumerable<LeaderboardEntryDto>> GetRoundLeaderboardAsync(int leagueId, int roundId);
 }

@@ -36,11 +36,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
 
                 match.ActualHomeTeamScore = result.HomeScore;
                 match.ActualAwayTeamScore = result.AwayScore;
-
-                if (result.IsFinal)
-                    match.Status = MatchStatus.Completed;
-                else
-                    match.Status = MatchStatus.InProgress;
+                match.Status = result.IsFinal ? MatchStatus.Completed : MatchStatus.InProgress;
 
                 await _matchRepository.UpdateAsync(match);
                 await CalculatePointsForMatchAsync(match);

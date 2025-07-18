@@ -23,10 +23,17 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand>
         var season = new Season
         {
             Name = request.Name,
-            StartDate = request.StartDate,
-            EndDate = request.EndDate,
             IsActive = true
         };
+       
+        try
+        {
+            season.SetDates(request.StartDate, request.EndDate);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new FluentValidation.ValidationException(ex.Message);
+        }
 
         await _seasonRepository.AddAsync(season);
 

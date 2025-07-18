@@ -5,7 +5,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 
-@using PredictionLeague.Contracts.Leaderboards
+@using PredictionLeague.Contracts.Leagues
 
 <PageTitle>@(_overallLeaderboard?.LeagueName) Leaderboard</PageTitle>
 
@@ -62,15 +62,13 @@
     [Parameter]
     public int LeagueId { get; set; }
 
-    private LeaderboardDto? _overallLeaderboard;
-    private LeaderboardDto? _monthlyLeaderboard;
+    private LeagueDashboardDto? _overallLeaderboard;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            _overallLeaderboard = await Http.GetFromJsonAsync<LeaderboardDto>($"api/leaderboard/{LeagueId}/overall");
-            _monthlyLeaderboard = await Http.GetFromJsonAsync<LeaderboardDto>($"api/leaderboard/{LeagueId}/monthly");
+            _overallLeaderboard = await Http.GetFromJsonAsync<LeagueDashboardDto>($"api/league/{LeagueId}/leaderboard/overall");
         }
         catch (Exception)
         {

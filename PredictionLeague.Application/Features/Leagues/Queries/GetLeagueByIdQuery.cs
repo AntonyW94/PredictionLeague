@@ -5,7 +5,7 @@ namespace PredictionLeague.Application.Features.Leagues.Queries;
 
 public class GetLeagueByIdQuery : IRequest<LeagueDto?>
 {
-    public int Id { get; init; }
+    public int Id { get; }
     
     public GetLeagueByIdQuery(int id)
     {

@@ -35,36 +35,6 @@ public class PredictionService : IPredictionService
         }
     }
 
-    public async Task CalculatePointsForMatchAsync(int matchId)
-    {
-        var match = await _matchRepository.GetByIdAsync(matchId);
-        if (match is not { Status: MatchStatus.Completed } || match.ActualHomeTeamScore == null || match.ActualAwayTeamScore == null)
-            throw new InvalidOperationException("Match is not completed or scores are not set.");
-
-        var predictions = await _predictionRepository.GetByMatchIdAsync(matchId);
-
-        foreach (var prediction in predictions)
-        {
-            var points = CalculatePoints(
-                match.ActualHomeTeamScore.Value,
-                match.ActualAwayTeamScore.Value,
-                prediction.PredictedHomeScore,
-                prediction.PredictedAwayScore);
-
-            await _predictionRepository.UpdatePointsAsync(prediction.Id, points);
-        }
-    }
-
-    private static int CalculatePoints(int actualHome, int actualAway, int predictedHome, int predictedAway)
-    {
-        if (actualHome == predictedHome && actualAway == predictedAway)
-            return 5;
-
-        var actualResult = Math.Sign(actualHome - actualAway);
-        var predictedResult = Math.Sign(predictedHome - predictedAway);
-        return actualResult == predictedResult ? 3 : 0;
-    }
-
     public async Task<PredictionPageDto> GetPredictionPageDataAsync(int roundId, string userId)
     {
         var round = await _roundRepository.GetByIdAsync(roundId) ?? throw new KeyNotFoundException("Round not found.");
@@ -97,29 +67,5 @@ public class PredictionService : IPredictionService
         };
 
         return pageData;
-    }
-
-    public async Task CalculatePointsForRoundAsync(int roundId)
-    {
-        var matchesInRound = await _matchRepository.GetByRoundIdAsync(roundId);
-
-        foreach (var match in matchesInRound)
-        {
-            if (match.Status != MatchStatus.Completed || match.ActualHomeTeamScore == null || match.ActualAwayTeamScore == null)
-                continue;
-
-            var predictions = await _predictionRepository.GetByMatchIdAsync(match.Id);
-
-            foreach (var prediction in predictions)
-            {
-                var points = CalculatePoints(
-                    match.ActualHomeTeamScore.Value,
-                    match.ActualAwayTeamScore.Value,
-                    prediction.PredictedHomeScore,
-                    prediction.PredictedAwayScore);
-
-                await _predictionRepository.UpdatePointsAsync(prediction.Id, points);
-            }
-        }
     }
 }

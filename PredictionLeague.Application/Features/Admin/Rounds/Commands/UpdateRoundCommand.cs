@@ -1,10 +1,9 @@
 ﻿using MediatR;
 using PredictionLeague.Contracts.Admin.Rounds;
 
-namespace PredictionLeague.Application.Features.Admin.Rounds.Commands
+namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
+
+public class UpdateRoundCommand : UpdateRoundRequest, IRequest
 {
-    public class UpdateRoundCommand : UpdateRoundRequest, IRequest
-    {
-        public int RoundId { get; set; }
-    }
+    public int RoundId { get; init; }
 }

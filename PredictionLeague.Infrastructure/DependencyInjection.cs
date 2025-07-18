@@ -33,7 +33,6 @@ public static class DependencyInjection
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
 
         services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
-        services.AddScoped<ILeaderboardService, LeaderboardService>();
         services.AddScoped<IPredictionService, PredictionService>();
     }
 }

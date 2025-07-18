@@ -1,6 +1,8 @@
-﻿namespace PredictionLeague.Contracts.Leaderboards;
+﻿using PredictionLeague.Contracts.Leaderboards;
 
-public class LeaderboardDto
+namespace PredictionLeague.Contracts.Leagues;
+
+public class LeagueDashboardDto
 {
     public string LeagueName { get; init; } = string.Empty;
     public string SeasonName { get; init; } = string.Empty;

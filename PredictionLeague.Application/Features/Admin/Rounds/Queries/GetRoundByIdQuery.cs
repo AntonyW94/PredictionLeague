@@ -5,7 +5,7 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Queries;
 
 public class GetRoundByIdQuery : IRequest<RoundDetailsDto?>
 {
-    public int RoundId { get; set; }
+    public int RoundId { get; }
 
     public GetRoundByIdQuery(int roundId)
     {

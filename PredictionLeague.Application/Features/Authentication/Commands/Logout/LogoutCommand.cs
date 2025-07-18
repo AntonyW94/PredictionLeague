@@ -4,5 +4,5 @@ namespace PredictionLeague.Application.Features.Authentication.Commands.Logout;
 
 public class LogoutCommand : IRequest
 {
-    public string? RefreshToken { get; set; }
+    public string? RefreshToken { get; init; }
 }

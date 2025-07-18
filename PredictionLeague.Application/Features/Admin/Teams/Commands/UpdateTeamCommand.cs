@@ -5,5 +5,5 @@ namespace PredictionLeague.Application.Features.Admin.Teams.Commands;
 
 public class UpdateTeamCommand : UpdateTeamRequest, IRequest
 {
-    public int Id { get; set; }
+    public int Id { get; init; }
 }

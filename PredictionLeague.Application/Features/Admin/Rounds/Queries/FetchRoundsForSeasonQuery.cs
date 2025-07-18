@@ -5,7 +5,7 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Queries;
 
 public class FetchRoundsForSeasonQuery : IRequest<IEnumerable<RoundDto>>
 {
-    public int SeasonId { get; set; }
+    public int SeasonId { get; }
 
     public FetchRoundsForSeasonQuery(int seasonId)
     {

@@ -67,65 +67,96 @@ public class UserPredictionRepository : IUserPredictionRepository
     {
         const string sql = @"
             SELECT
-                ROW_NUMBER() OVER (ORDER BY SUM(ISNULL(up.PointsAwarded, 0)) DESC) AS Rank,
-                u.FirstName + ' ' + u.LastName AS PlayerName,
-                SUM(ISNULL(up.PointsAwarded, 0)) AS TotalPoints
+                ROW_NUMBER() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS [Rank],
+                u.[FirstName] + ' ' + u.[LastName] AS [PlayerName],
+                SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints]
             FROM
-                LeagueMembers lm
+                [LeagueMembers] lm
             INNER JOIN
-                AspNetUsers u ON lm.UserId = u.Id
+                [AspNetUsers] u ON lm.[UserId] = u.[Id]
             INNER JOIN
-                Leagues l ON lm.LeagueId = l.Id
+                [Leagues] l ON lm.[LeagueId] = l.[Id]
             LEFT JOIN
-                UserPredictions up ON u.Id = up.UserId
+                [UserPredictions] up ON u.[Id] = up.[UserId]
             LEFT JOIN
-                Matches m ON up.MatchId = m.Id
+                [Matches] m ON up.[MatchId] = m.[Id]
             LEFT JOIN
-                Rounds r ON m.RoundId = r.Id AND r.SeasonId = l.SeasonId
+                [Rounds] r ON m.[RoundId] = r.[Id] AND r.[SeasonId] = l.[SeasonId]
             WHERE
-                lm.LeagueId = @LeagueId 
+                lm.[LeagueId] = @LeagueId AND lm.[Status] = 'Approved'
             GROUP BY
-                u.Id, 
-                u.FirstName,
-                u.LastName
+                u.[Id], 
+                u.[FirstName],
+                u.[LastName]
             ORDER BY
-                TotalPoints DESC,
-                PlayerName ASC;";
+                [TotalPoints] DESC,
+                [PlayerName] ASC;";
 
         using var connection = Connection;
         return await connection.QueryAsync<LeaderboardEntryDto>(sql, new { LeagueId = leagueId });
     }
 
-    public async Task<IEnumerable<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month, int year)
+    public async Task<IEnumerable<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month)
     {
         const string sql = @"
             SELECT
-                ROW_NUMBER() OVER (ORDER BY SUM(ISNULL(up.PointsAwarded, 0)) DESC) AS Rank,
-                u.FirstName + ' ' + u.LastName AS PlayerName,
-                SUM(ISNULL(up.PointsAwarded, 0)) AS TotalPoints
+                ROW_NUMBER() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS [Rank],
+                u.[FirstName] + ' ' + u.[LastName] AS [PlayerName],
+                SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints]
             FROM
-                LeagueMembers lm
+                [LeagueMembers] lm
             INNER JOIN
-                AspNetUsers u ON lm.UserId = u.Id
+                [AspNetUsers] u ON lm.[UserId] = u.[Id]
             INNER JOIN
-                Leagues l ON lm.LeagueId = l.Id
+                [Leagues] l ON lm.[LeagueId] = l.[Id]
             LEFT JOIN
-                UserPredictions up ON u.Id = up.UserId
+                [UserPredictions] up ON u.[Id] = up.[UserId]
             LEFT JOIN
-                Matches m ON up.MatchId = m.Id
+                [Matches] m ON up.[MatchId] = m.[Id]
             LEFT JOIN
-                Rounds r ON m.RoundId = r.Id AND r.SeasonId = l.SeasonId  AND MONTH(r.StartDate) = @Month AND YEAR(r.StartDate) = @Year
+                [Rounds] r ON m.[RoundId] = r.[Id] AND r.[SeasonId] = l.[SeasonId] AND MONTH(r.[StartDate]) = @Month
             WHERE
-                lm.LeagueId = @LeagueId
+                lm.[LeagueId] = @LeagueId AND lm.[Status] = 'Approved'
             GROUP BY
-                u.Id,
-                u.FirstName,
-                u.LastName
+                u.[Id],
+                u.[FirstName],
+                u.[LastName]
             ORDER BY
-                TotalPoints DESC, 
-                PlayerName ASC;";
+                [TotalPoints] DESC, 
+                [PlayerName] ASC;";
 
         using var connection = Connection;
-        return await connection.QueryAsync<LeaderboardEntryDto>(sql, new { LeagueId = leagueId, Month = month, Year = year });
+        return await connection.QueryAsync<LeaderboardEntryDto>(sql, new { LeagueId = leagueId, Month = month });
+    }
+
+    public async Task<IEnumerable<LeaderboardEntryDto>> GetRoundLeaderboardAsync(int leagueId, int roundId)
+    {
+        const string sql = @"
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS [Rank],
+            u.[FirstName] + ' ' + u.[LastName] AS [PlayerName],
+            SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints]
+        FROM
+            [LeagueMembers] lm
+        INNER JOIN
+            [AspNetUsers] u ON lm.[UserId] = u.[Id]
+        INNER JOIN
+            [Leagues] l ON lm.[LeagueId] = l.[Id]
+        LEFT JOIN
+            [UserPredictions] up ON u.[Id] = up.[UserId]
+        LEFT JOIN
+            [Matches] m ON up.[MatchId] = m.[Id] AND m.[RoundId] = @RoundId
+        WHERE
+            lm.[LeagueId] = @LeagueId AND lm.[Status] = 'Approved'
+        GROUP BY
+            u.[Id],
+            u.[FirstName],
+            u.[LastName]
+        ORDER BY
+            [TotalPoints] DESC, 
+            [PlayerName] ASC;";
+
+        using var connection = Connection;
+        return await connection.QueryAsync<LeaderboardEntryDto>(sql, new { LeagueId = leagueId, RoundId = roundId });
     }
 }

@@ -47,7 +47,7 @@ public class TeamsController : ControllerBase
         };
 
         var createdTeam = await _mediator.Send(command);
-        return CreatedAtAction(nameof(TeamsController.GetTeamById), "Teams", new { id = createdTeam.Id }, createdTeam);
+        return CreatedAtAction(nameof(GetTeamById), "Teams", new { id = createdTeam.Id }, createdTeam);
     }
 
     [HttpPut("{id:int}/update")]
