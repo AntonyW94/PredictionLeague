@@ -9,8 +9,8 @@ public class UpdateMatchResultsRequestValidator : AbstractValidator<UpdateMatchR
 {
     public UpdateMatchResultsRequestValidator()
     {
-        RuleFor(x => x.MatchId).GreaterThan(0);
-        RuleFor(x => x.HomeScore).InclusiveBetween(0, 9);
-        RuleFor(x => x.AwayScore).InclusiveBetween(0, 9);
+        RuleFor(x => x.MatchId).GreaterThan(0).WithMessage("A valid Match ID must be provided.");
+        RuleFor(x => x.HomeScore).InclusiveBetween(0, 9).WithMessage("Home score must be between 0 and 9.");
+        RuleFor(x => x.AwayScore).InclusiveBetween(0, 9).WithMessage("Away score must be between 0 and 9.");
     }
 }

@@ -9,8 +9,13 @@ public class CreateTeamRequestValidator : AbstractValidator<CreateTeamRequest>
 {
     public CreateTeamRequestValidator()
     {
-        RuleFor(x => x.Name).NotEmpty().Length(2, 100);
-        RuleFor(x => x.LogoUrl).NotEmpty().Must(BeAValidUrl).WithMessage("A valid logo URL is required.");
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Please enter a team name.")
+            .Length(2, 100).WithMessage("The team name must be between 2 and 100 characters.");
+
+        RuleFor(x => x.LogoUrl)
+            .NotEmpty().WithMessage("Please provide a URL for the team's logo.")
+            .Must(BeAValidUrl).WithMessage("A valid logo URL is required.");
     }
 
     private bool BeAValidUrl(string url)

@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Admin.Leagues;
 
@@ -6,11 +7,13 @@ namespace PredictionLeague.Application.Features.Leagues.Queries;
 
 public class FetchAllLeaguesQueryHandler : IRequestHandler<FetchAllLeaguesQuery, IEnumerable<LeagueDto>>
 {
+    private readonly ILogger<FetchAllLeaguesQueryHandler> _logger;
     private readonly ILeagueRepository _leagueRepository;
     private readonly ISeasonRepository _seasonRepository;
 
-    public FetchAllLeaguesQueryHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository)
+    public FetchAllLeaguesQueryHandler(ILogger<FetchAllLeaguesQueryHandler> logger, ILeagueRepository leagueRepository, ISeasonRepository seasonRepository)
     {
+        _logger = logger;
         _leagueRepository = leagueRepository;
         _seasonRepository = seasonRepository;
     }
@@ -25,7 +28,7 @@ public class FetchAllLeaguesQueryHandler : IRequestHandler<FetchAllLeaguesQuery,
             var season = await _seasonRepository.GetByIdAsync(league.SeasonId);
             if (season == null)
             {
-                //Add error logging here
+                _logger.LogWarning("Season not found for League (ID: {LeagueId}). Skipping league.", league.Id);
                 continue;
             }
 

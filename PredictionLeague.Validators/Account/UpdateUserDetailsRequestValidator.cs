@@ -10,12 +10,12 @@ public class UpdateUserDetailsRequestValidator : AbstractValidator<UpdateUserDet
     public UpdateUserDetailsRequestValidator()
     {
         RuleFor(x => x.FirstName)
-            .NotEmpty()
-            .Length(2, 50);
+            .NotEmpty().WithMessage("Please enter your first name")
+            .Length(2, 50).WithMessage("Your first name must be between 2 and 50 characters");
 
         RuleFor(x => x.LastName)
-            .NotEmpty()
-            .Length(2, 50);
+            .NotEmpty().WithMessage("Please enter your last name")
+            .Length(2, 50).WithMessage("Your last name must be between 2 and 50 characters");
 
         RuleFor(x => x.PhoneNumber)
             .Matches(@"^07\d{9}$").WithMessage("Please enter a valid 11-digit UK mobile number starting with 07.")

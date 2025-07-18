@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Models;
@@ -8,17 +9,20 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
 public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResultsCommand>
 {
+    private ILogger<UpdateMatchResultsCommandHandler> _logger;
     private readonly IMatchRepository _matchRepository;
     private readonly IUserPredictionRepository _predictionRepository;
     private readonly IRoundResultRepository _roundResultRepository;
     private readonly IPointsCalculationService _pointsService;
 
     public UpdateMatchResultsCommandHandler(
+        ILogger<UpdateMatchResultsCommandHandler> logger,
         IMatchRepository matchRepository,
         IUserPredictionRepository predictionRepository,
         IRoundResultRepository roundResultRepository,
         IPointsCalculationService pointsService)
     {
+        _logger = logger;
         _matchRepository = matchRepository;
         _predictionRepository = predictionRepository;
         _roundResultRepository = roundResultRepository;
@@ -36,7 +40,10 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
             {
                 var match = await _matchRepository.GetByIdAsync(result.MatchId);
                 if (match == null)
+                {
+                    _logger.LogWarning("Match (ID: {MatchId}) not found while updating results.", result.MatchId);
                     continue;
+                }
 
                 match.ActualHomeTeamScore = result.HomeScore;
                 match.ActualAwayTeamScore = result.AwayScore;
