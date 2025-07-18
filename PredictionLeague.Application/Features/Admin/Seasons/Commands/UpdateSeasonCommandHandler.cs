@@ -26,15 +26,7 @@ public class UpdateSeasonCommandHandler : IRequestHandler<UpdateSeasonCommand>
 
         season.Name = request.Name;
         season.IsActive = request.IsActive;
-
-        try
-        {
-            season.SetDates(request.StartDate, request.EndDate);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new FluentValidation.ValidationException(ex.Message);
-        }
+        season.SetDates(request.StartDate, request.EndDate);
 
         await _seasonRepository.UpdateAsync(season);
     }

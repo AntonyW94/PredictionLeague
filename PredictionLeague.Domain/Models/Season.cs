@@ -10,9 +10,12 @@ public class Season
 
     public void SetDates(DateTime startDate, DateTime endDate)
     {
+        if (endDate <= startDate)
+            throw new ArgumentException("End date must be after the start date.");
+
         if (endDate > startDate.AddMonths(10))
             throw new ArgumentException("A season cannot span more than 10 months.");
-    
+
         StartDate = startDate;
         EndDate = endDate;
     }

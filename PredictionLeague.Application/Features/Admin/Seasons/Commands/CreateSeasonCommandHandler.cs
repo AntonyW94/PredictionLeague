@@ -25,16 +25,9 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand>
             Name = request.Name,
             IsActive = true
         };
-       
-        try
-        {
-            season.SetDates(request.StartDate, request.EndDate);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new FluentValidation.ValidationException(ex.Message);
-        }
-
+            
+        season.SetDates(request.StartDate, request.EndDate);
+            
         await _seasonRepository.AddAsync(season);
 
         var publicLeague = new League
