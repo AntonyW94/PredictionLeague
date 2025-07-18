@@ -1,4 +1,4 @@
-﻿namespace PredictionLeague.Contracts.Dashboard;
+﻿namespace PredictionLeague.Contracts.Leagues;
 
 public class PublicLeagueDto
 {

@@ -1,4 +1,6 @@
-﻿namespace PredictionLeague.Contracts.Dashboard;
+﻿using PredictionLeague.Contracts.Leagues;
+
+namespace PredictionLeague.Contracts.Dashboard;
 
 public class DashboardDto
 {

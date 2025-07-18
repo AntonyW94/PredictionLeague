@@ -1,4 +1,6 @@
-﻿namespace PredictionLeague.Contracts.Dashboard;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace PredictionLeague.Contracts.Dashboard;
 
 public class UpcomingRoundDto
 {
@@ -6,6 +8,7 @@ public class UpcomingRoundDto
     public string SeasonName { get; init; } = string.Empty;
     public int RoundNumber { get; init; }
     public DateTime Deadline { get; init; }
-    // ReSharper disable once UnusedAutoPropertyAccessor.Global
+    
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
     public List<MatchPredictionDto> Matches { get; init; } = new();
 }
