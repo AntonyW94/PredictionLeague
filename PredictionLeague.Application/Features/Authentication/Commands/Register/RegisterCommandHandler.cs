@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
 using PredictionLeague.Domain.Common.Enumerations;
@@ -12,13 +11,11 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Authentic
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAuthenticationTokenService _tokenService;
-    private readonly IConfiguration _configuration;
 
-    public RegisterCommandHandler(UserManager<ApplicationUser> userManager, IAuthenticationTokenService tokenService, IConfiguration configuration)
+    public RegisterCommandHandler(UserManager<ApplicationUser> userManager, IAuthenticationTokenService tokenService)
     {
         _userManager = userManager;
         _tokenService = tokenService;
-        _configuration = configuration;
     }
 
     public async Task<AuthenticationResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -27,23 +24,19 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Authentic
         if (userExists != null)
             return new FailedAuthenticationResponse("User with this email already exists.");
 
-        var newUser = new ApplicationUser
-        {
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            Email = request.Email,
-            UserName = request.Email
-        };
-
+        var newUser = ApplicationUser.Create(
+            request.FirstName,
+            request.LastName,
+            request.Email
+        );
+        
         var result = await _userManager.CreateAsync(newUser, request.Password);
         if (!result.Succeeded)
             throw new Common.Exceptions.IdentityUpdateException(result.Errors);
-        
+
         await _userManager.AddToRoleAsync(newUser, nameof(ApplicationUserRole.Player));
 
-        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(newUser, cancellationToken);
-        var expiryMinutes = double.Parse(_configuration["JwtSettings:ExpiryMinutes"]!);
-        var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
+        var (accessToken, refreshToken, expiresAt) = await _tokenService.GenerateTokensAsync(newUser, cancellationToken);
 
         return new SuccessfulAuthenticationResponse(
             AccessToken: accessToken,

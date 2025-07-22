@@ -44,6 +44,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
         await _dbConnection.QueryAsync<RoundDto, MatchInRoundDto?, bool>(
             sql,
             cancellationToken,
+            param: new { request.Id },
             map: (round, match) =>
             {
                 if (roundDetails == null)

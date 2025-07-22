@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
 using PredictionLeague.Domain.Models;
@@ -11,13 +10,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAuthenticationTokenService _tokenService;
-    private readonly IConfiguration _configuration;
 
-    public LoginCommandHandler(UserManager<ApplicationUser> userManager, IAuthenticationTokenService tokenService, IConfiguration configuration)
+    public LoginCommandHandler(UserManager<ApplicationUser> userManager, IAuthenticationTokenService tokenService)
     {
         _userManager = userManager;
         _tokenService = tokenService;
-        _configuration = configuration;
     }
 
     public async Task<AuthenticationResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
@@ -26,9 +23,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
         if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
             return new FailedAuthenticationResponse("Invalid email or password.");
 
-        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
-        var expiryMinutes = double.Parse(_configuration["JwtSettings:ExpiryMinutes"]!);
-        var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
+        var (accessToken, refreshToken, expiresAt) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
 
         return new SuccessfulAuthenticationResponse(
             AccessToken: accessToken,

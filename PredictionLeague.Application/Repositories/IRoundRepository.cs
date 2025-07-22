@@ -11,9 +11,7 @@ public interface IRoundRepository
     #endregion
 
     #region Read
-    
-    Task<IEnumerable<Round>> FetchBySeasonIdAsync(int seasonId, CancellationToken cancellationToken);
-    Task<Round?> GetCurrentRoundAsync(int seasonId, CancellationToken cancellationToken);
+
     Task<Round?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     #endregion

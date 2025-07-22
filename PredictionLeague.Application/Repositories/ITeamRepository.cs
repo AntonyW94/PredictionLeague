@@ -12,7 +12,6 @@ public interface ITeamRepository
 
     #region Read
 
-    Task<IEnumerable<Team>> FetchAllAsync(CancellationToken cancellationToken); 
     Task<Team?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     #endregion

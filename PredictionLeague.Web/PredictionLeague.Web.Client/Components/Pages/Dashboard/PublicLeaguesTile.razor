@@ -1,0 +1,59 @@
+﻿@inject ViewModels.Dashboard.PublicLeaguesViewModel ViewModel
+
+<div class="dashboard-card h-100">
+    <h3 class="text-white text-center fw-bold mb-4">Leagues</h3>
+    @if (ViewModel.IsLoading)
+    {
+        <p class="text-center text-white"><em>Loading Leagues...</em></p>
+    }
+    else if (ViewModel.PublicLeagues.Any())
+    {
+        <div class="list-group flex-grow-1">
+            @foreach (var league in ViewModel.PublicLeagues)
+            {
+                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center joinable-league-item">
+                    <div>
+                        <h6 class="mb-0 fw-bold text-white">@league.Name</h6>
+                        <small class="text-white-50">@league.SeasonName</small>
+                    </div>
+                    @if (league.IsMember)
+                    {
+                        <button class="btn btn-sm btn-secondary" disabled>Joined</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm dark-pink-button"
+                                @onclick="() => HandleJoinLeagueAsync(league.Id)"
+                                disabled="@_isBusy">
+                            Join
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="text-white fw-bold text-center">There are currently no upcoming rounds available.</p>
+    }
+</div>
+
+@code {
+    private bool _isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ViewModel.LoadPublicLeaguesAsync();
+    }
+
+    private async Task HandleJoinLeagueAsync(int leagueId)
+    {
+        _isBusy = true;
+
+        await ViewModel.JoinLeagueAsync(leagueId);
+
+        _isBusy = false;
+
+        StateHasChanged();
+    }
+}

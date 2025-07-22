@@ -1,0 +1,23 @@
+﻿@page "/dashboard"
+
+@attribute [Authorize]
+
+<PageTitle>Dashboard</PageTitle>
+
+<div class="page-container">
+    <div class="dashboard-container">
+        <div class="row align-items-stretch">
+            <div class="col-lg-4 mb-4">
+                <UpcomingRoundsTile />
+            </div>
+
+            <div class="col-lg-4 mb-4">
+                <LeaderboardsTile />
+            </div>
+
+            <div class="col-lg-4 mb-4">
+                <PublicLeaguesTile />
+            </div>
+        </div>
+    </div>
+</div>

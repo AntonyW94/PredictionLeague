@@ -24,7 +24,7 @@ public class AuthenticationTokenService : IAuthenticationTokenService
         _refreshTokenRepository = refreshTokenRepository;
     }
 
-    public async Task<(string AccessToken, string RefreshToken)> GenerateTokensAsync(ApplicationUser user, CancellationToken cancellationToken)
+    public async Task<(string AccessToken, string RefreshToken, DateTime ExpiresAt)> GenerateTokensAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
         var userRoles = await _userManager.GetRolesAsync(user);
 
@@ -39,13 +39,16 @@ public class AuthenticationTokenService : IAuthenticationTokenService
         }.Union(userRoles.Select(role => new Claim("role", role)));
 
         var jwtSettings = _configuration.GetSection("JwtSettings");
+        var expiryMinutes = double.Parse(jwtSettings["ExpiryMinutes"]!);
+        var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!));
 
         var token = new JwtSecurityToken(
             issuer: jwtSettings["Issuer"],
             audience: jwtSettings["Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpiryMinutes"]!)),
+            expires: expiresAt,
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
         );
 
@@ -61,6 +64,6 @@ public class AuthenticationTokenService : IAuthenticationTokenService
 
         await _refreshTokenRepository.CreateAsync(refreshToken, cancellationToken);
 
-        return (accessToken, refreshToken.Token);
+        return (accessToken, refreshToken.Token, expiresAt);
     }
 }

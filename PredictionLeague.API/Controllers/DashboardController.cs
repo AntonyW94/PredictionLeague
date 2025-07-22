@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Dashboard.Queries;
 using PredictionLeague.Contracts.Dashboard;
+using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.API.Controllers;
 
@@ -18,13 +19,19 @@ public class DashboardController : ApiControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet("dashboard-data")]
-    [ProducesResponseType(typeof(DashboardDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<DashboardDto>> GetDashboardDataAsync(CancellationToken cancellationToken)
+    [HttpGet("upcoming-rounds")]
+    [ProducesResponseType(typeof(IEnumerable<UpcomingRoundDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<UpcomingRoundDto>>> GetUpcomingRoundsAsync(CancellationToken cancellationToken)
     {
-        var query = new GetDashboardDataQuery(CurrentUserId);
-        var result = await _mediator.Send(query, cancellationToken);
+        var query = new GetUpcomingRoundsQuery(CurrentUserId);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
 
-        return Ok(result);
+    [HttpGet("public-leagues")]
+    [ProducesResponseType(typeof(IEnumerable<PublicLeagueDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<PublicLeagueDto>>> GetPublicLeaguesAsync(CancellationToken cancellationToken)
+    {
+        var query = new GetPublicLeaguesQuery(CurrentUserId);
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 }
