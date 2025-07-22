@@ -34,14 +34,13 @@ public class AuthenticationController : ApiControllerBase
     {
         var command = new RegisterCommand(request.FirstName, request.LastName, request.Email, request.Password);
         var result = await _mediator.Send(command, cancellationToken);
-     
-        if (result is SuccessfulAuthenticationResponse success)
-        {
-            SetTokenCookie(success.RefreshTokenForCookie);
-            return Ok(success);
-        }
 
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
+        if (result is not SuccessfulAuthenticationResponse success) 
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        
+        SetTokenCookie(success.RefreshTokenForCookie);
+        return Ok(success);
+
     }
 
     [HttpPost("login")]
@@ -53,13 +52,12 @@ public class AuthenticationController : ApiControllerBase
         var command = new LoginCommand(request);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result is SuccessfulAuthenticationResponse success)
-        {
-            SetTokenCookie(success.RefreshTokenForCookie);
-            return Ok(result);
-        }
+        if (result is not SuccessfulAuthenticationResponse success) 
+            return Unauthorized(result);
+        
+        SetTokenCookie(success.RefreshTokenForCookie);
+        return Ok(result);
 
-        return Unauthorized(result);
     }
 
     [HttpPost("refresh-token")]
@@ -75,13 +73,12 @@ public class AuthenticationController : ApiControllerBase
         var command = new RefreshTokenCommand(refreshToken);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result is SuccessfulAuthenticationResponse success)
-        {
-            SetTokenCookie(success.RefreshTokenForCookie);
-            return Ok(success);
-        }
+        if (result is not SuccessfulAuthenticationResponse success) 
+            return BadRequest(result);
+        
+        SetTokenCookie(success.RefreshTokenForCookie);
+        return Ok(success);
 
-        return BadRequest(result);
     }
 
     [HttpPost("logout")]
@@ -89,7 +86,7 @@ public class AuthenticationController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> LogoutAsync(CancellationToken cancellationToken)
     {
-        var command = new LogoutCommand(CurrentUserId, Request.Cookies["refreshToken"]);
+        var command = new LogoutCommand(CurrentUserId);
         await _mediator.Send(command, cancellationToken);
 
         Response.Cookies.Delete("refreshToken");
@@ -125,16 +122,18 @@ public class AuthenticationController : ApiControllerBase
         var command = new LoginWithGoogleCommand(authenticateResult, source);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result is SuccessfulAuthenticationResponse success)
+        switch (result)
         {
-            SetTokenCookie(success.RefreshTokenForCookie);
-            return RedirectWithScript(returnUrl);
+            case SuccessfulAuthenticationResponse success:
+                SetTokenCookie(success.RefreshTokenForCookie);
+                return RedirectWithScript(returnUrl);
+           
+            case ExternalLoginFailedAuthenticationResponse failure:
+                return RedirectWithError(failure.Source, failure.Message);
+          
+            default:
+                return RedirectWithError(source, "An unknown authentication error occurred.");
         }
-
-        if (result is ExternalLoginFailedAuthenticationResponse failure)
-            return RedirectWithError(failure.Source, failure.Message);
-
-        return RedirectWithError(source, "An unknown authentication error occurred.");
     }
 
     private void SetTokenCookie(string token)

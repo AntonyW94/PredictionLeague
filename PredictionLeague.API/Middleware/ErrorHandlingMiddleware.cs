@@ -24,7 +24,7 @@ public class ErrorHandlingMiddleware
         {
             await _next(context);
         }
-        catch (Exception ex) when (ex is KeyNotFoundException || ex is ArgumentNullException || ex is NotFoundException)
+        catch (Exception ex) when (ex is KeyNotFoundException or ArgumentNullException or NotFoundException)
         {
             _logger.LogWarning("Not Found Error: {Message}", ex.Message);
             await HandleKnownExceptionAsync(context, HttpStatusCode.NotFound, new { message = "The requested resource was not found." });

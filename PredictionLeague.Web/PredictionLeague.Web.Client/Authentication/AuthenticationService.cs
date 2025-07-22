@@ -34,34 +34,21 @@ public class AuthenticationService : IAuthenticationService
         if (response.IsSuccessStatusCode)
         {
             var successResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
-            if (successResponse != null)
-            {
-                ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(successResponse);
-                return successResponse;
-            }
-        }
-        else
-        {
-            var failureResponse = await response.Content.ReadFromJsonAsync<FailedAuthenticationResponse>();
-            if (failureResponse != null)
-                return failureResponse;
+            if (successResponse == null) 
+                return new FailedAuthenticationResponse("Failed to process server response.");
+         
+            ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(successResponse);
+            return successResponse;
         }
 
-        return new FailedAuthenticationResponse("Failed to process server response.");
+        var failureResponse = await response.Content.ReadFromJsonAsync<FailedAuthenticationResponse>();
+        return failureResponse ?? new FailedAuthenticationResponse("Failed to process server response.");
     }
     
-    //public async Task<AuthenticationResponse> LoginAsync(LoginRequest loginRequest)
-    //{
-    //    var result = await _httpClient.PostAsJsonAsync("api/authentication/login", loginRequest);
-    //    var authenticationResponse = await result.Content.ReadFromJsonAsync<AuthenticationResponse>();
-    //    if (authenticationResponse != null && authenticationResponse.IsSuccess)
-    //        await ((ApiAuthenticationStateProvider)_authenticationStateProvider).Login(authenticationResponse);
-        
-    //    return authenticationResponse ?? new FailedAuthenticationResponse("Failed to process server response.");
-    //}
-
     public async Task LogoutAsync()
     {
-        await ((ApiAuthenticationStateProvider)_authenticationStateProvider).Logout();
+        await _httpClient.PostAsync("api/authentication/logout", null);
+
+        ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOut();
     }
 }

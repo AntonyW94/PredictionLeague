@@ -1,5 +1,8 @@
-﻿namespace PredictionLeague.Domain.Common.Enumerations;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace PredictionLeague.Domain.Common.Enumerations;
+
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public enum MatchStatus
 {
     Scheduled, 

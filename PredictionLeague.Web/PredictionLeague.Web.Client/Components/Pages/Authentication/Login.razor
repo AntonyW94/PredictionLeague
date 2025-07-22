@@ -111,17 +111,19 @@
         _errorMessage = null;
 
         var result = await AuthenticationService.LoginAsync(_model);
-        if (result is SuccessfulAuthenticationResponse)
+        switch (result)
         {
-            NavigationManager.NavigateTo("/");
-        }
-        else if (result is FailedAuthenticationResponse failure)
-        {
-            _errorMessage = failure.Message;
-        }
-        else
-        {
-            _errorMessage = "An unknown error occurred.";
+            case SuccessfulAuthenticationResponse:
+                NavigationManager.NavigateTo("/");
+                break;
+
+            case FailedAuthenticationResponse failure:
+                _errorMessage = failure.Message;
+                break;
+
+            default:
+                _errorMessage = "An unknown error occurred.";
+                break;
         }
         _isBusy = false;
     }

@@ -46,7 +46,7 @@
                     <label for="entryCode" class="form-label text-white">
                         Entry Code
                     </label> <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" />
-                    <StyledValidationMessage For="@(() => _model.EntryCode)" />
+                    <StyledValidationMessage For="@(() => _model.EntryCode!)" />
                 </div>
 
                 <BackAndSaveButtons BackText="Back to Leagues" OnBackClick="Back" BusyText="Creating League..." IsBusy="_isBusy"></BackAndSaveButtons>

@@ -52,14 +52,6 @@ public class UserPredictionRepository : IUserPredictionRepository
         return Connection.ExecuteAsync(command);
     }
 
-    public async Task UpdatePointsAsync(int predictionId, int points)
-    {
-        const string sql = "UPDATE [UserPredictions] SET [PointsAwarded] = @Points WHERE [Id] = @PredictionId;";
-
-        using var connection = Connection;
-        await connection.ExecuteAsync(sql, new { Points = points, PredictionId = predictionId });
-    }
-
     public async Task<IEnumerable<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId)
     {
         const string sql = @"

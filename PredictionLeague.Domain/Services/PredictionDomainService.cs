@@ -1,8 +1,10 @@
 ﻿using Ardalis.GuardClauses;
 using PredictionLeague.Domain.Models;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Domain.Services;
 
+[SuppressMessage("ReSharper", "MemberCanBeMadeStatic.Global")]
 public class PredictionDomainService
 {
     public IEnumerable<UserPrediction> SubmitPredictions(Round round, string userId, IEnumerable<(int MatchId, int HomeScore, int AwayScore)> predictedScores)

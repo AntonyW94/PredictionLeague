@@ -57,9 +57,9 @@ public class GetDashboardDataQueryHandler : IRequestHandler<GetDashboardDataQuer
                         MatchId = m.Id,
                         MatchDateTime = m.MatchDateTime,
                         HomeTeamName = m.HomeTeam!.Name,
-                        HomeTeamLogoUrl = m.HomeTeam.LogoUrl!,
+                        HomeTeamLogoUrl = m.HomeTeam.LogoUrl,
                         AwayTeamName = m.AwayTeam!.Name,
-                        AwayTeamLogoUrl = m.AwayTeam.LogoUrl!,
+                        AwayTeamLogoUrl = m.AwayTeam.LogoUrl,
                         PredictedHomeScore = prediction?.PredictedHomeScore,
                         PredictedAwayScore = prediction?.PredictedAwayScore
                     };

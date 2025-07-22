@@ -52,24 +52,6 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(anonymousUser)));
     }
     
-    //public Task Login(AuthenticationResponse? authenticationResponse)
-    //{
-    //    if (authenticationResponse != null && authenticationResponse.IsSuccess && !string.IsNullOrEmpty(authenticationResponse.AccessToken))
-    //    {
-    //        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authenticationResponse.AccessToken);
-    //        _currentUser = CreateClaimsPrincipalFromToken(authenticationResponse.AccessToken);
-    //    }
-    //    else
-    //    {
-    //        _httpClient.DefaultRequestHeaders.Authorization = null;
-    //        _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
-    //    }
-        
-    //    NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));
-
-    //    return Task.CompletedTask;
-    //}
-
     public async Task NotifyUserAuthentication()
     {
         var authenticationResponse = await RefreshAccessToken();
@@ -82,15 +64,6 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));
     }
 
-    public async Task Logout()
-    {
-        await _httpClient.PostAsync("api/authentication/logout", null);
-        
-        _httpClient.DefaultRequestHeaders.Authorization = null;
-        _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
-       
-        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));
-    }
     private async Task<SuccessfulAuthenticationResponse?> RefreshAccessToken()
     {
         try
@@ -103,7 +76,7 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         }
         catch (HttpRequestException ex)
         {
-            if (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized || ex.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            if (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.BadRequest)
                 return null;
 
             throw;
