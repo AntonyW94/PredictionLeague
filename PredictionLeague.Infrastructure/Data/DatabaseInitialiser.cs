@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PredictionLeague.Domain.Models;
+using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Infrastructure.Data;
 

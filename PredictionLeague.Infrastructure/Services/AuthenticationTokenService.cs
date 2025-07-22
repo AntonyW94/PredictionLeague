@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
-using PredictionLeague.Contracts.Authentication;
 using PredictionLeague.Domain.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -25,14 +24,14 @@ public class AuthenticationTokenService : IAuthenticationTokenService
         _refreshTokenRepository = refreshTokenRepository;
     }
 
-    public async Task<AuthenticationResponse> GenerateAccessToken(ApplicationUser user)
+    public async Task<(string AccessToken, string RefreshToken)> GenerateTokensAsync(ApplicationUser user)
     {
         var userRoles = await _userManager.GetRolesAsync(user);
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email ?? throw new Exception("User Email is Null when Generating Access Token")),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim("FirstName", user.FirstName),
             new Claim("LastName", user.LastName),
@@ -40,45 +39,28 @@ public class AuthenticationTokenService : IAuthenticationTokenService
         }.Union(userRoles.Select(role => new Claim("role", role)));
 
         var jwtSettings = _configuration.GetSection("JwtSettings");
-        var jwtSecret = jwtSettings["Secret"];
-        if (jwtSecret == null)
-            throw new Exception("JWT Secret Not Found");
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!));
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
+        var token = new JwtSecurityToken(
+            issuer: jwtSettings["Issuer"],
+            audience: jwtSettings["Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpiryMinutes"]!)),
+            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+        );
 
-        var expires = DateTime.UtcNow.AddMinutes(15);
+        var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
 
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = expires,
-            Issuer = jwtSettings["Issuer"],
-            Audience = jwtSettings["Audience"],
-            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
-        };
-
-        var token = new JwtSecurityTokenHandler().CreateToken(tokenDescriptor);
-
-        return new AuthenticationResponse
-        {
-            IsSuccess = true,
-            Token = new JwtSecurityTokenHandler().WriteToken(token),
-            ExpiresAt = expires
-        };
-    }
-
-    public async Task<RefreshToken> GenerateAndStoreRefreshToken(ApplicationUser user)
-    {
         var refreshToken = new RefreshToken
         {
             UserId = user.Id,
             Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-            Expires = DateTime.UtcNow.AddDays(7),
+            Expires = DateTime.UtcNow.AddDays(double.Parse(jwtSettings["RefreshTokenExpiryDays"]!)),
             Created = DateTime.UtcNow
         };
 
-        await _refreshTokenRepository.AddAsync(refreshToken);
+        await _refreshTokenRepository.CreateAsync(refreshToken);
 
-        return refreshToken;
+        return (accessToken, refreshToken.Token);
     }
 }

@@ -17,14 +17,6 @@ public class UserPredictionRepository : IUserPredictionRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<IEnumerable<UserPrediction>> GetByMatchIdAsync(int matchId)
-    {
-        const string sql = "SELECT up.* FROM [UserPredictions] up WHERE up.[MatchId] = @MatchId;";
-
-        using var dbConnection = Connection;
-        return await dbConnection.QueryAsync<UserPrediction>(sql, new { MatchId = matchId });
-    }
-
     public async Task<IEnumerable<UserPrediction>> GetByUserIdAndRoundIdAsync(string userId, int roundId)
     {
         const string sql = @"
@@ -36,23 +28,28 @@ public class UserPredictionRepository : IUserPredictionRepository
         return await connection.QueryAsync<UserPrediction>(sql, new { UserId = userId, RoundId = roundId });
     }
 
-    public async Task UpsertAsync(UserPrediction prediction)
+    public Task UpsertBatchAsync(IEnumerable<UserPrediction> predictions, CancellationToken cancellationToken)
     {
         const string sql = @"
-                MERGE INTO [UserPredictions] AS t
-                USING (VALUES (@MatchId, @UserId)) AS s ([MatchId], [UserId])
-                ON t.[MatchId] = s.[MatchId] AND t.[UserId] = s.[UserId]
-                WHEN MATCHED THEN
-                    UPDATE SET
-                        [PredictedHomeScore] = @PredictedHomeScore,
-                        [PredictedAwayScore] = @PredictedAwayScore,
-                        [UpdatedAt] = GETDATE()
-                WHEN NOT MATCHED BY TARGET THEN
-                    INSERT ([MatchId], [UserId], [PredictedHomeScore], [PredictedAwayScore], [PointsAwarded], [CreatedAt], [UpdatedAt])
-                    VALUES (@MatchId, @UserId, @PredictedHomeScore, @PredictedAwayScore, NULL, GETDATE(), GETDATE());";
+        MERGE INTO [dbo].[UserPredictions] AS target
+        USING (SELECT @UserId AS UserId, @MatchId AS MatchId) AS source
+        ON (target.[UserId] = source.[UserId] AND target.[MatchId] = source.[MatchId])
+        WHEN MATCHED THEN
+            UPDATE SET 
+                [PredictedHomeScore] = @PredictedHomeScore,
+                [PredictedAwayScore] = @PredictedAwayScore,
+                [UpdatedAt] = @UpdatedAt
+        WHEN NOT MATCHED THEN
+            INSERT ([MatchId], [UserId], [PredictedHomeScore], [PredictedAwayScore], [PointsAwarded], [CreatedAt], [UpdatedAt])
+            VALUES (@MatchId, @UserId, @PredictedHomeScore, @PredictedAwayScore, @PointsAwarded, @CreatedAt, @UpdatedAt);";
+        
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: predictions,
+            cancellationToken: cancellationToken
+        );
 
-        using var dbConnection = Connection;
-        await dbConnection.ExecuteAsync(sql, prediction);
+        return Connection.ExecuteAsync(command);
     }
 
     public async Task UpdatePointsAsync(int predictionId, int points)

@@ -24,7 +24,13 @@ public class LeaguesController : ApiControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> CreateLeagueAsync([FromBody] CreateLeagueRequest request)
     {
-        var command = new CreateLeagueCommand(request, CurrentUserId);
+        var command = new CreateLeagueCommand(
+            request.Name,
+            request.SeasonId,
+            CurrentUserId,
+            request.EntryCode,
+            request.EntryDeadline);
+        
         var newLeague = await _mediator.Send(command);
 
         return CreatedAtAction(nameof(GetLeagueByIdAsync).Replace("Async", string.Empty), new { leagueId = newLeague.Id }, newLeague);
@@ -88,7 +94,7 @@ public class LeaguesController : ApiControllerBase
     [Authorize]
     public async Task<IActionResult> JoinLeagueAsync([FromBody] JoinLeagueRequest request)
     {
-        var command = new JoinLeagueCommand(request.EntryCode, CurrentUserId);
+        var command = new JoinLeagueCommand(CurrentUserId, null, request.EntryCode);
         return await HandleJoinLeagueAsync(() => _mediator.Send(command));
     }
 
@@ -96,7 +102,7 @@ public class LeaguesController : ApiControllerBase
     [Authorize]
     public async Task<IActionResult> JoinPublicLeagueAsync(int leagueId)
     {
-        var command = new JoinLeagueCommand(leagueId, CurrentUserId);
+        var command = new JoinLeagueCommand(CurrentUserId, leagueId, null);
         return await HandleJoinLeagueAsync(() => _mediator.Send(command));
     }
 

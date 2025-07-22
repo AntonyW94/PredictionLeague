@@ -37,7 +37,7 @@
         IsBusy = true;
         ErrorMessage = null;
         SuccessMessage = null;
-       
+
         StateHasChanged();
 
         var response = await SubmitAction();
@@ -45,18 +45,32 @@
         {
             SuccessMessage = SuccessAlertMessage;
             StateHasChanged();
-      
+
             await Task.Delay(1500);
-    
+
             NavigationManager.NavigateTo(SuccessRedirectUrl, forceLoad: true);
         }
         else
         {
-            ErrorMessage = ErrorAlertMessage;
+            if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                try
+                {
+                    var errorContent = await response.Content.ReadFromJsonAsync<System.Text.Json.Nodes.JsonNode>();
+                    ErrorMessage = errorContent?["errors"]?.ToString() ?? errorContent?["message"]?.ToString();
+                }
+                catch
+                {
+                    ErrorMessage = "An unknown validation error occurred.";
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(ErrorMessage))
+                ErrorMessage = ErrorAlertMessage;
         }
 
         IsBusy = false;
-       
+
         StateHasChanged();
     }
 

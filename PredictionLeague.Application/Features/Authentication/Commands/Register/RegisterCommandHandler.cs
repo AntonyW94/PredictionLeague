@@ -1,24 +1,31 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
+using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Authentication.Commands.Register;
 
-public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterResponse>
+public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthenticationResponse>
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IAuthenticationTokenService _tokenService;
+    private readonly IConfiguration _configuration;
 
-    public RegisterCommandHandler(UserManager<ApplicationUser> userManager)
+    public RegisterCommandHandler(UserManager<ApplicationUser> userManager, IAuthenticationTokenService tokenService, IConfiguration configuration)
     {
         _userManager = userManager;
+        _tokenService = tokenService;
+        _configuration = configuration;
     }
 
-    public async Task<RegisterResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
+    public async Task<AuthenticationResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
         var userExists = await _userManager.FindByEmailAsync(request.Email);
         if (userExists != null)
-            return new RegisterResponse { IsSuccess = false, Message = "User with this email already exists." };
+            return new FailedAuthenticationResponse("User with this email already exists.");
 
         var newUser = new ApplicationUser
         {
@@ -30,13 +37,18 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 
         var result = await _userManager.CreateAsync(newUser, request.Password);
         if (!result.Succeeded)
-        {
-            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            return new RegisterResponse { IsSuccess = false, Message = $"User creation failed: {errors}" };
-        }
-
+            throw new Common.Exceptions.IdentityUpdateException(result.Errors);
+        
         await _userManager.AddToRoleAsync(newUser, nameof(ApplicationUserRole.Player));
 
-        return new RegisterResponse { IsSuccess = true, Message = "User created successfully." };
+        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(newUser);
+        var expiryMinutes = double.Parse(_configuration["JwtSettings:ExpiryMinutes"]!);
+        var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
+
+        return new SuccessfulAuthenticationResponse(
+            AccessToken: accessToken,
+            RefreshTokenForCookie: refreshToken,
+            ExpiresAt: expiresAt
+        );
     }
 }

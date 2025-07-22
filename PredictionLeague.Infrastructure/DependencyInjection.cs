@@ -4,6 +4,7 @@ using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Models;
+using PredictionLeague.Domain.Services;
 using PredictionLeague.Infrastructure.Data;
 using PredictionLeague.Infrastructure.Identity;
 using PredictionLeague.Infrastructure.Repositories;
@@ -16,6 +17,7 @@ public static class DependencyInjection
     public static void AddInfrastructureServices(this IServiceCollection services)
     {
         services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
+        services.AddScoped<IApplicationReadDbConnection, DapperReadDbConnection>();
 
         services.AddIdentity<ApplicationUser, IdentityRole>()
             .AddUserStore<DapperUserStore>()
@@ -27,12 +29,12 @@ public static class DependencyInjection
         services.AddScoped<IMatchRepository, MatchRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
-        services.AddScoped<IRoundResultRepository, RoundResultRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
 
+        services.AddScoped<PredictionDomainService>();
+        
         services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>(); 
-        services.AddScoped<IPointsCalculationService, PointsCalculationService>();
     }
 }

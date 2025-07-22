@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;

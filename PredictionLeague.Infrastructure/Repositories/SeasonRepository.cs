@@ -16,6 +16,43 @@ public class SeasonRepository : ISeasonRepository
         _connectionFactory = connectionFactory;
     }
 
+    #region Create
+
+    public async Task<Season> CreateAsync(Season season)
+    {
+        const string sql = @"
+                INSERT INTO [Seasons]
+                (
+                    [Name],
+                    [StartDate],
+                    [EndDate],
+                    [IsActive]
+                )
+                VALUES
+                (
+                    @Name,
+                    @StartDate,
+                    @EndDate,
+                    @IsActive
+                );
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+        var newSeasonId = await Connection.ExecuteScalarAsync<int>(sql, new
+        {
+            season.Name,
+            season.StartDate,
+            season.EndDate,
+            season.IsActive
+        });
+
+        typeof(Season).GetProperty(nameof(Season.Id))?.SetValue(season, newSeasonId);
+        return season;
+    }
+
+    #endregion
+
+    #region Read
+
     public async Task<IEnumerable<Season>> GetAllAsync()
     {
         const string sql = "SELECT * FROM [Seasons] ORDER BY [StartDate] DESC;";
@@ -32,27 +69,9 @@ public class SeasonRepository : ISeasonRepository
         return await connection.QuerySingleOrDefaultAsync<Season>(sql, new { Id = id });
     }
 
-    public async Task AddAsync(Season season)
-    {
-        const string sql = @"
-                INSERT INTO [Seasons]
-                (
-                    [Name],
-                    [StartDate],
-                    [EndDate],
-                    [IsActive]
-                )
-                VALUES
-                (
-                    @Name,
-                    @StartDate,
-                    @EndDate,
-                    @IsActive
-                );";
+    #endregion
 
-        using var connection = Connection;
-        await connection.ExecuteAsync(sql, season);
-    }
+    #region Update
 
     public async Task UpdateAsync(Season season)
     {
@@ -68,4 +87,6 @@ public class SeasonRepository : ISeasonRepository
         using var connection = Connection;
         await connection.ExecuteAsync(sql, season);
     }
+
+    #endregion
 }

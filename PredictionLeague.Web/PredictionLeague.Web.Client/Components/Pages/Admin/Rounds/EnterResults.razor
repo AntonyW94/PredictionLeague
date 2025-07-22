@@ -2,31 +2,30 @@
 
 @attribute [Authorize(Roles = RoleNames.Administrator)]
 
-@inject HttpClient Http
-@inject NavigationManager NavigationManager
+@inject EnterResultsViewModel ViewModel
 
-@using PredictionLeague.Contracts.Admin.Results
-@using PredictionLeague.Contracts.Admin.Rounds
+@using PredictionLeague.Domain.Common.Enumerations
+@using PredictionLeague.Web.Client.ViewModels.Admin.Rounds
 
-<PageTitle>Enter Results - Round @_roundNumber</PageTitle>
+<PageTitle>Enter Results - Round @ViewModel.RoundNumber</PageTitle>
 
 <div class="page-container">
     <div class="form-container extra-wide">
-        <h3 class="text-center fw-bold text-white mb-4">Enter Results for Round @_roundNumber</h3>
+        <h3 class="text-center fw-bold text-white mb-4">Enter Results for Round @ViewModel.RoundNumber</h3>
 
-        @if (_isLoading)
+        @if (ViewModel.IsLoading)
         {
             <p class="text-center text-white"><em>Loading matches...</em></p>
         }
-        else if (_matches != null)
+        else if (ViewModel.Matches.Any())
         {
-            <EditForm Model="_matches" OnValidSubmit="HandleSaveResultsAsync">
+            <EditForm Model="ViewModel.Matches" OnValidSubmit="() => ViewModel.HandleSaveResultsAsync(RoundId)">
                 <FluentValidationValidator />
-                <ApiError Message="@_errorMessage" />
-                <ApiSuccess Message="@_successMessage" />
+                <ApiError Message="@ViewModel.ErrorMessage" />
+                <ApiSuccess Message="@ViewModel.SuccessMessage" />
 
                 <div class="prediction-grid">
-                    @foreach (var match in _matches)
+                    @foreach (var match in ViewModel.Matches)
                     {
                         <div class="prediction-card">
                             <div class="prediction-card-header">
@@ -40,13 +39,11 @@
 
                                 <div class="score-input-group">
                                     <div class="score-input-stepper">
-                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, true, 1)">
+                                        <button type="button" class="stepper-btn" @onclick="() => match.UpdateScore(true, 1)">
                                             <span class="bi bi-caret-up-fill"></span>
                                         </button>
-
-                                        <div class="score-value">@match.ActualHomeScore</div>
-
-                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, true, -1)">
+                                        <div class="score-value">@match.HomeScore</div>
+                                        <button type="button" class="stepper-btn" @onclick="() => match.UpdateScore(true, -1)">
                                             <span class="bi bi-caret-down-fill"></span>
                                         </button>
                                     </div>
@@ -54,11 +51,11 @@
                                     <span class="vs-separator">-</span>
 
                                     <div class="score-input-stepper">
-                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, false, 1)">
+                                        <button type="button" class="stepper-btn" @onclick="() => match.UpdateScore(false, 1)">
                                             <span class="bi bi-caret-up-fill"></span>
                                         </button>
-                                        <div class="score-value">@match.ActualAwayScore</div>
-                                        <button type="button" class="stepper-btn" @onclick="() => UpdateScore(match, false, -1)">
+                                        <div class="score-value">@match.AwayScore</div>
+                                        <button type="button" class="stepper-btn" @onclick="() => match.UpdateScore(false, -1)">
                                             <span class="bi bi-caret-down-fill"></span>
                                         </button>
                                     </div>
@@ -69,12 +66,30 @@
                                     <span class="team-name d-none d-sm-block">@match.AwayTeamName</span>
                                 </div>
                             </div>
+
+                            <div class="prediction-card-footer">
+                                @{
+                                    var statusInputId = $"status-{match.MatchId}";
+                                }
+                                <label for="@statusInputId" class="form-label text-white-50 small">Status</label>
+
+                                <InputSelect id="@statusInputId" class="form-select form-select-sm bg-dark text-white" @bind-Value="match.Status">
+                                    @foreach (var status in Enum.GetValues(typeof(MatchStatus)))
+                                    {
+                                        <option value="@status">@status</option>
+                                    }
+                                </InputSelect>
+                            </div>
                         </div>
                     }
                 </div>
 
-                <BackAndSaveButtons BackText="Back to Rounds" OnBackClick="Back" BusyText="Saving..." IsBusy="_isBusy"></BackAndSaveButtons>
+                <BackAndSaveButtons BackText="Back to Rounds" OnBackClick="ViewModel.BackToRounds" BusyText="Saving..." IsBusy="ViewModel.IsBusy"></BackAndSaveButtons>
             </EditForm>
+        }
+        else
+        {
+            <p class="text-center text-white">There are no matches for this round.</p>
         }
     </div>
 </div>
@@ -83,91 +98,8 @@
     [Parameter]
     public int RoundId { get; set; }
 
-    private List<MatchResultDto>? _matches;
-    private int _seasonId;
-    private int _roundNumber;
-    private bool _isLoading = true;
-    private bool _isBusy;
-    private string? _errorMessage;
-    private string? _successMessage;
-
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/rounds/{RoundId}");
-            if (roundDetails != null)
-            {
-                _seasonId = roundDetails.Round.SeasonId;
-                _roundNumber = roundDetails.Round.RoundNumber;
-                _matches = roundDetails.Matches.Select(m => new MatchResultDto
-                {
-                    Id = m.Id,
-                    MatchDateTime = m.MatchDateTime,
-                    HomeTeamName = m.HomeTeamName,
-                    HomeTeamLogoUrl = m.HomeTeamLogoUrl,
-                    AwayTeamName = m.AwayTeamName,
-                    AwayTeamLogoUrl = m.AwayTeamLogoUrl,
-                    ActualHomeScore = m.ActualHomeScore,
-                    ActualAwayScore = m.ActualAwayScore
-                }).ToList();
-            }
-        }
-        catch (Exception)
-        {
-            _errorMessage = "Could not load round details.";
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private static void UpdateScore(MatchResultDto match, bool isHomeTeam, int delta)
-    {
-        if (isHomeTeam)
-        {
-            var currentScore = match.ActualHomeScore ?? 0;
-           
-            var newScore = currentScore + delta;
-            if (newScore >= 0 && newScore <= 9)
-                match.ActualHomeScore = newScore;
-        }
-        else
-        {
-            var currentScore = match.ActualAwayScore ?? 0;
-            
-            var newScore = currentScore + delta;
-            if (newScore >= 0 && newScore <= 9)
-                match.ActualAwayScore = newScore;
-        }
-    }
-
-    private async Task HandleSaveResultsAsync()
-    {
-        _isBusy = true;
-        _errorMessage = null;
-        _successMessage = null;
-
-        var resultsToUpdate = _matches!
-            .Select(m => new UpdateMatchResultsRequest
-            {
-                MatchId = m.Id,
-                HomeScore = m.ActualHomeScore ?? 0,
-                AwayScore = m.ActualAwayScore ?? 0
-            }).ToList();
-
-        var response = await Http.PutAsJsonAsync($"api/rounds/{RoundId}/submit-results", resultsToUpdate);
-        if (response.IsSuccessStatusCode)
-            _successMessage = "Results saved and points calculated successfully!";
-        else
-            _errorMessage = "There was an error saving the results.";
-
-        _isBusy = false;
-    }
-
-    private void Back()
-    {
-        NavigationManager.NavigateTo($"/admin/seasons/{_seasonId}/rounds");
+        await ViewModel.LoadRoundDetails(RoundId);
     }
 }

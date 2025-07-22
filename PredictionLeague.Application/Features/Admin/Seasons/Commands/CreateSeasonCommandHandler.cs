@@ -1,10 +1,12 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Contracts.Admin.Seasons;
+using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Admin.Seasons.Commands;
 
-public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand>
+public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, SeasonDto>
 {
     private readonly ISeasonRepository _seasonRepository;
     private readonly ILeagueRepository _leagueRepository;
@@ -15,28 +17,40 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand>
         _leagueRepository = leagueRepository;
     }
 
-    public async Task Handle(CreateSeasonCommand request, CancellationToken cancellationToken)
+    public async Task<SeasonDto> Handle(CreateSeasonCommand request, CancellationToken cancellationToken)
     {
-        var season = Season.Create(request.Name, request.StartDate, request.EndDate, true);
+        var season = Season.Create(
+            request.Name,
+            request.StartDate,
+            request.EndDate,
+            request.IsActive);
 
-        await _seasonRepository.AddAsync(season);
+        var createdSeason = await _seasonRepository.CreateAsync(season);
 
-        var publicLeague = new League
-        {
-            Name = $"{season.Name} Official",
-            SeasonId = season.Id,
-            AdministratorUserId = request.CreatorId,
-            EntryCode = null
-        };
+        var publicLeague = League.Create(
+            createdSeason.Id,
+            $"Official {request.Name} League",
+            request.CreatorId, 
+            null,
+            null
+        ); 
+        
+        publicLeague.AddMember(request.CreatorId);
+
         await _leagueRepository.CreateAsync(publicLeague);
+        
+        var adminMember = publicLeague.Members.First();
+        adminMember.Approve();
+        
+        await _leagueRepository.UpdateMemberStatusAsync(publicLeague.Id, request.CreatorId, LeagueMemberStatus.Approved);
 
-        var leagueMember = new LeagueMember
-        {
-            LeagueId = publicLeague.Id,
-            UserId = request.CreatorId,
-            JoinedAt = DateTime.UtcNow,
-            Status = LeagueMemberStatus.Approved
-        };
-        await _leagueRepository.AddMemberAsync(leagueMember);
+        return new SeasonDto(
+            createdSeason.Id,
+            createdSeason.Name,
+            createdSeason.StartDate,
+            createdSeason.EndDate,
+            createdSeason.IsActive,
+            0
+        );
     }
 }

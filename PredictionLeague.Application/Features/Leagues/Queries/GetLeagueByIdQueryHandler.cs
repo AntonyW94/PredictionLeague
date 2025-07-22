@@ -26,12 +26,12 @@ public class GetLeagueByIdQueryHandler : IRequestHandler<GetLeagueByIdQuery, Lea
             return null;
 
         return new LeagueDto
-        {
-            Id = league.Id,
-            Name = league.Name,
-            SeasonName = season.Name,
-            MemberCount = (await _leagueRepository.GetMembersByLeagueIdAsync(league.Id)).Count(),
-            EntryCode = league.EntryCode ?? "Public"
-        };
+        (
+            league.Id,
+            league.Name,
+            season.Name,
+            (await _leagueRepository.GetMembersByLeagueIdAsync(league.Id)).Count(),
+            league.EntryCode ?? "Public"
+        );
     }
 }

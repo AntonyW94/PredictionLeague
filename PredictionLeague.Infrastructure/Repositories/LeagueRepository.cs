@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 using System.Data;
 
@@ -9,34 +10,55 @@ namespace PredictionLeague.Infrastructure.Repositories;
 public class LeagueRepository : ILeagueRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;
+    private IDbConnection Connection => _connectionFactory.CreateConnection();
 
+    private const string GetLeaguesWithMembersSql = @"
+        SELECT 
+            l.*, 
+            lm.*
+        FROM [dbo].[Leagues] l
+        LEFT JOIN [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]";
+   
     public LeagueRepository(IDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
     }
 
-    private IDbConnection Connection => _connectionFactory.CreateConnection();
-
     #region Create
 
-    public async Task CreateAsync(League league)
+    public async Task<League> CreateAsync(League league)
     {
         const string sql = @"
-                INSERT INTO Leagues (Name, SeasonId, AdministratorUserId, EntryCode, CreatedAt)
-                OUTPUT INSERTED.Id
-                VALUES (@Name, @SeasonId, @AdministratorUserId, @EntryCode, GETDATE());";
+            INSERT INTO [dbo].[Leagues] ([Name], [SeasonId], [AdministratorUserId], [EntryCode], [CreatedAt], [EntryDeadline])
+            VALUES (@Name, @SeasonId, @AdministratorUserId, @EntryCode, @CreatedAt, @EntryDeadline);
+            SELECT CAST(SCOPE_IDENTITY() as int);";
 
-        using var dbConnection = Connection;
-        var newId = await dbConnection.QuerySingleAsync<int>(sql, league);
-        league.Id = newId;
+        var newLeagueId = await Connection.ExecuteScalarAsync<int>(sql, league);
+        typeof(League).GetProperty(nameof(League.Id))?.SetValue(league, newLeagueId);
+
+        foreach (var member in league.Members)
+        {
+            typeof(LeagueMember).GetProperty(nameof(LeagueMember.LeagueId))?.SetValue(member, newLeagueId);
+            await AddMemberAsync(member);
+        }
+        
+        return league;
     }
 
-    public async Task AddMemberAsync(LeagueMember member)
+    public Task AddMemberAsync(LeagueMember member)
     {
-        const string sql = "INSERT INTO LeagueMembers (LeagueId, UserId, Status, JoinedAt) VALUES (@LeagueId, @UserId, @Status, @JoinedAt);";
+        const string sql = @"
+            INSERT INTO [dbo].[LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAt], [ApprovedAt])
+            VALUES (@LeagueId, @UserId, @Status, @JoinedAt, @ApprovedAt);";
 
-        using var dbConnection = Connection;
-        await dbConnection.ExecuteAsync(sql, member);
+        return Connection.ExecuteAsync(sql, new
+        {
+            member.LeagueId,
+            member.UserId,
+            Status = member.Status.ToString(),
+            member.JoinedAt,
+            member.ApprovedAt
+        });
     }
 
     #endregion
@@ -45,53 +67,75 @@ public class LeagueRepository : ILeagueRepository
 
     public async Task<League?> GetByIdAsync(int id)
     {
-        using var dbConnection = Connection;
-        const string sql = "SELECT * FROM Leagues WHERE Id = @Id;";
-        return await dbConnection.QuerySingleOrDefaultAsync<League>(sql, new { Id = id });
+        const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[Id] = @Id;";
+       
+        var leagues = await QueryAndMapLeagues(sql, new { Id = id });
+        return leagues.FirstOrDefault();
     }
 
     public async Task<League?> GetByEntryCodeAsync(string? entryCode)
     {
-        const string sql = "SELECT * FROM Leagues WHERE EntryCode = @EntryCode;";
-
-        using var dbConnection = Connection;
-        return await dbConnection.QuerySingleOrDefaultAsync<League>(sql, new { EntryCode = entryCode });
+        const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[EntryCode] = @EntryCode;";
+       
+        var leagues = await QueryAndMapLeagues(sql, new { EntryCode = entryCode });
+        return leagues.FirstOrDefault();
     }
 
     public async Task<IEnumerable<League>> GetAllAsync()
     {
-        const string sql = "SELECT * FROM [Leagues];";
-
-        using var connection = Connection;
-        return await connection.QueryAsync<League>(sql);
+        return await QueryAndMapLeagues(GetLeaguesWithMembersSql);
     }
 
     public async Task<IEnumerable<League>> GetPublicLeaguesAsync()
     {
-        const string sql = "SELECT * FROM [Leagues] WHERE [EntryCode] IS NULL;";
-
-        using var connection = Connection;
-        return await connection.QueryAsync<League>(sql);
+        const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[EntryCode] IS NULL;";
+        
+        return await QueryAndMapLeagues(sql);
     }
 
     public async Task<IEnumerable<League>> GetLeaguesByUserIdAsync(string userId)
     {
-        const string sql = @"
-                SELECT 
-                    l.* FROM [Leagues] l
-                INNER JOIN [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
-                WHERE lm.[UserId] = @UserId;";
-
-        using var connection = Connection;
-        return await connection.QueryAsync<League>(sql, new { UserId = userId });
+        const string sql = $"{GetLeaguesWithMembersSql} WHERE lm.[UserId] = @UserId;";
+        
+        return await QueryAndMapLeagues(sql, new { UserId = userId });
     }
 
     public async Task<IEnumerable<LeagueMember>> GetMembersByLeagueIdAsync(int leagueId)
     {
-        const string sql = "SELECT * FROM LeagueMembers WHERE LeagueId = @LeagueId;";
+        const string sql = "SELECT * FROM [dbo].[LeagueMembers] WHERE [LeagueId] = @LeagueId;";
+        return await Connection.QueryAsync<LeagueMember>(sql, new { LeagueId = leagueId });
+    }
 
-        using var dbConnection = Connection;
-        return await dbConnection.QueryAsync<LeagueMember>(sql, new { LeagueId = leagueId });
+    public async Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId)
+    {
+        const string sql = @"
+            SELECT
+                l.*, lm.*, up.*
+            FROM [dbo].[Leagues] l
+            INNER JOIN [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+            LEFT JOIN [dbo].[UserPredictions] up ON lm.[UserId] = up.[UserId] AND up.[MatchId] IN (SELECT Id FROM Matches WHERE RoundId = @RoundId)
+            WHERE l.[SeasonId] = @SeasonId;";
+
+        var queryResult = await Connection.QueryAsync<League, LeagueMember, UserPrediction, (League, LeagueMember, UserPrediction?)>(
+            sql,
+            (league, member, prediction) => (league, member, prediction),
+            new { SeasonId = seasonId, RoundId = roundId },
+            splitOn: "LeagueId,Id"
+        );
+
+        var groupedLeagues = queryResult.GroupBy(x => x.Item1.Id).Select(leagueGroup =>
+        {
+            var firstLeague = leagueGroup.First().Item1;
+            var members = leagueGroup.GroupBy(x => new { x.Item2.LeagueId, x.Item2.UserId }).Select(memberGroup =>
+            {
+                var firstMember = memberGroup.First().Item2;
+                var predictions = memberGroup.Select(x => x.Item3).Where(p => p != null).ToList();
+                return new LeagueMember(firstMember.LeagueId, firstMember.UserId, firstMember.Status, firstMember.JoinedAt, firstMember.ApprovedAt, predictions);
+            }).ToList();
+            return new League(firstLeague.Id, firstLeague.Name, firstLeague.SeasonId, firstLeague.AdministratorUserId, firstLeague.EntryCode, firstLeague.CreatedAt, firstLeague.EntryDeadline, members);
+        });
+
+        return groupedLeagues;
     }
 
     #endregion
@@ -101,21 +145,78 @@ public class LeagueRepository : ILeagueRepository
     public async Task UpdateAsync(League league)
     {
         const string sql = @"
-                UPDATE [Leagues] SET
-                    [Name] = @Name,
-                    [EntryCode] = @EntryCode
-                WHERE [Id] = @Id;";
+            UPDATE [dbo].[Leagues]
+            SET [Name] = @Name,
+                [EntryCode] = @EntryCode,
+                [EntryDeadline] = @EntryDeadline
+            WHERE [Id] = @Id;";
 
-        using var connection = Connection;
-        await connection.ExecuteAsync(sql, league);
+        await Connection.ExecuteAsync(sql, league);
     }
 
     public async Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status)
     {
-        const string sql = "UPDATE [LeagueMembers] SET [Status] = @Status WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId;";
+        const string sql = @"
+            UPDATE [dbo].[LeagueMembers]
+            SET [Status] = @Status,
+                [ApprovedAt] = CASE WHEN @Status = 'Approved' THEN GETUTCDATE() ELSE [ApprovedAt] END
+            WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId;";
 
-        using var connection = Connection;
-        await connection.ExecuteAsync(sql, new { Status = status.ToString(), LeagueId = leagueId, UserId = userId });
+        await Connection.ExecuteAsync(sql, new { Status = status.ToString(), LeagueId = leagueId, UserId = userId });
+    }
+    
+    public async Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate)
+    {
+        const string sql = @"
+            UPDATE [dbo].[UserPredictions]
+            SET [PointsAwarded] = @PointsAwarded,
+                [UpdatedAt] = GETUTCDATE()
+            WHERE [Id] = @Id;";
+
+        var filteredPredictions = predictionsToUpdate
+            .Where(p => p.PointsAwarded.HasValue)
+            .Select(p => new { p.Id, p.PointsAwarded })
+            .ToList();
+
+        if (filteredPredictions.Any())
+            await Connection.ExecuteAsync(sql, filteredPredictions);
+
+        await Task.CompletedTask;
+    }
+
+    #endregion
+
+    #region Private Helper Methods
+
+    private async Task<IEnumerable<League>> QueryAndMapLeagues(string sql, object? param = null)
+    {
+        var queryResult = await Connection.QueryAsync<League, LeagueMember?, (League League, LeagueMember? LeagueMember)>(
+            sql,
+            (league, member) => (league, member),
+            param,
+            splitOn: "LeagueId"
+        );
+
+        var groupedLeagues = queryResult
+            .GroupBy(x => x.League.Id)
+            .Select(g =>
+            {
+                var firstLeague = g.First().League;
+                var members = g.Select(x => x.LeagueMember).Where(m => m != null).ToList();
+                
+                return new League(
+                    firstLeague.Id,
+                    firstLeague.Name,
+                    firstLeague.SeasonId,
+                    firstLeague.AdministratorUserId,
+                    firstLeague.EntryCode,
+                    firstLeague.CreatedAt,
+                    firstLeague.EntryDeadline,
+                    members
+                );
+            });
+
+        return groupedLeagues;
     }
 
     #endregion

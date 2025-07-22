@@ -30,7 +30,7 @@ public class TeamRepository : ITeamRepository
         return await connection.QueryAsync<Team>(sql);
     }
 
-    public async Task<Team> AddAsync(Team team)
+    public async Task<Team> CreateAsync(Team team)
     {
         const string sql = @"
                 INSERT INTO [Teams] 

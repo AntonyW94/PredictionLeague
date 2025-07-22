@@ -1,22 +1,10 @@
 ﻿using MediatR;
+using PredictionLeague.Application.Common.Interfaces;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 
-public class JoinLeagueCommand : IRequest
-{
-    public int? LeagueId { get; }
-    public string? EntryCode { get; }
-    public string JoiningUserId { get; }
-
-    public JoinLeagueCommand(int leagueId, string joiningUserId)
-    {
-        LeagueId = leagueId;
-        JoiningUserId = joiningUserId;
-    }
-
-    public JoinLeagueCommand(string entryCode, string joiningUserId)
-    {
-        EntryCode = entryCode;
-        JoiningUserId = joiningUserId;
-    }
-}
+public record JoinLeagueCommand(
+    string JoiningUserId,
+    int? LeagueId,
+    string? EntryCode
+) : IRequest, ITransactionalRequest;

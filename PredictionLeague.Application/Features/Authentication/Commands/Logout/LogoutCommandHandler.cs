@@ -14,8 +14,7 @@ public class LogoutCommandHandler : IRequestHandler<LogoutCommand>
 
     public async Task Handle(LogoutCommand request, CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrEmpty(request.RefreshToken))
-            await _refreshTokenRepository.RevokeAsync(request.RefreshToken);
+        await _refreshTokenRepository.RevokeAllForUserAsync(request.UserId, cancellationToken);
     }
 }
 

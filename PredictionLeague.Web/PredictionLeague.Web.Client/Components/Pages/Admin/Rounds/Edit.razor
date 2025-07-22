@@ -14,7 +14,7 @@
 <div class="page-container">
     <div class="form-container wide">
         <h3 class="text-center fw-bold text-white mb-4">Edit Round</h3>
-      
+
         @if (_model == null)
         {
             <p class="text-center text-white"><em>Loading...</em></p>
@@ -27,6 +27,11 @@
                 <ApiSuccess Message="@_successMessage" />
 
                 <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="roundNumber" class="form-label text-white">Round Number</label>
+                        <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
+                    </div>
+
                     <div class="col-md-4 mb-3">
                         <label for="startDate" class="form-label text-white">Round Start Date</label>
                         <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" @onchange="OnStartDateChanged" />
@@ -124,7 +129,7 @@
                         </div>
                     </div>
                 }
-                
+
                 <BackAndSaveButtons BackText="Back to Rounds" OnBackClick="Back" BusyText="Saving..." IsBusy="_isBusy"></BackAndSaveButtons>
             </EditForm>
         }
@@ -150,6 +155,7 @@
                 _seasonId = roundDetails.Round.SeasonId;
                 _model = new UpdateRoundRequest
                 {
+                    RoundNumber = roundDetails.Round.RoundNumber,
                     StartDate = roundDetails.Round.StartDate,
                     Deadline = roundDetails.Round.Deadline,
                     Matches = roundDetails.Matches.Select(m => new UpdateMatchRequest
@@ -183,7 +189,7 @@
     }
 
     private void AddMatch() => _model?.Matches.Add(new UpdateMatchRequest { MatchDateTime = _model.StartDate });
-   
+
     private void RemoveMatch(int index)
     {
         if (_model != null && index >= 0 && index < _model.Matches.Count)
@@ -203,7 +209,7 @@
         _isBusy = true;
         _errorMessage = null;
         _successMessage = null;
-     
+
         var response = await Http.PutAsJsonAsync($"api/rounds/{RoundId}/update", _model);
         if (response.IsSuccessStatusCode)
         {

@@ -4,8 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Admin.Seasons.Commands;
 using PredictionLeague.Application.Features.Admin.Seasons.Queries;
 using PredictionLeague.Contracts.Admin.Seasons;
-using PredictionLeague.Domain.Models;
-using System.Security.Claims;
+using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.API.Controllers;
 
@@ -13,7 +12,7 @@ namespace PredictionLeague.API.Controllers;
 [Route("api/[controller]")]
 [Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 
-public class SeasonsController : ControllerBase
+public class SeasonsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -27,14 +26,16 @@ public class SeasonsController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> CreateSeasonAsync([FromBody] CreateSeasonRequest request)
     {
-        var creatorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(creatorId))
-            return Unauthorized();
-        
-        var command = new CreateSeasonCommand(request, creatorId);
-        await _mediator.Send(command);
+        var command = new CreateSeasonCommand(
+            request.Name,
+            request.StartDate,
+            request.EndDate,
+            CurrentUserId,
+            request.IsActive
+        );
 
-        return Ok(new { message = "Season created successfully." });
+        var newSeasonDto = await _mediator.Send(command);
+        return CreatedAtAction("GetById", new { seasonId = newSeasonDto.Id }, newSeasonDto);
     }
 
     #endregion
@@ -65,7 +66,12 @@ public class SeasonsController : ControllerBase
     [HttpPut("{seasonId:int}/update")]
     public async Task<IActionResult> UpdateSeasonAsync(int seasonId, [FromBody] UpdateSeasonRequest request)
     {
-        var command = new UpdateSeasonCommand(seasonId, request);
+        var command = new UpdateSeasonCommand(
+            seasonId,
+            request.Name,
+            request.StartDate,
+            request.EndDate,
+            request.IsActive);
 
         await _mediator.Send(command);
         return Ok(new { message = "Season updated successfully." });

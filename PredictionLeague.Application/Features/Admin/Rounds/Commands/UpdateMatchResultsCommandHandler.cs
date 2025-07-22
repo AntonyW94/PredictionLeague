@@ -1,86 +1,55 @@
-﻿using MediatR;
-using Microsoft.Extensions.Logging;
+﻿using Ardalis.GuardClauses;
+using MediatR;
 using PredictionLeague.Application.Repositories;
-using PredictionLeague.Application.Services;
-using PredictionLeague.Domain.Models;
+using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
 public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResultsCommand>
 {
-    private readonly ILogger<UpdateMatchResultsCommandHandler> _logger;
-    private readonly IMatchRepository _matchRepository;
-    private readonly IUserPredictionRepository _predictionRepository;
-    private readonly IRoundResultRepository _roundResultRepository;
-    private readonly IPointsCalculationService _pointsService;
+    private readonly IRoundRepository _roundRepository;
+    private readonly ILeagueRepository _leagueRepository;
 
-    public UpdateMatchResultsCommandHandler(
-        ILogger<UpdateMatchResultsCommandHandler> logger,
-        IMatchRepository matchRepository,
-        IUserPredictionRepository predictionRepository,
-        IRoundResultRepository roundResultRepository,
-        IPointsCalculationService pointsService)
+    public UpdateMatchResultsCommandHandler(IRoundRepository roundRepository, ILeagueRepository leagueRepository)
     {
-        _logger = logger;
-        _matchRepository = matchRepository;
-        _predictionRepository = predictionRepository;
-        _roundResultRepository = roundResultRepository;
-        _pointsService = pointsService;
+        _roundRepository = roundRepository;
+        _leagueRepository = leagueRepository;
     }
 
     public async Task Handle(UpdateMatchResultsCommand request, CancellationToken cancellationToken)
     {
-        if (request.Results == null || !request.Results.Any())
+        var round = await _roundRepository.GetByIdAsync(request.RoundId);
+        Guard.Against.NotFound(request.RoundId, round, $"Round (ID: {request.RoundId}) was not found during Update Match Results.");
+
+        foreach (var matchResult in request.Matches)
+        {
+            var matchToUpdate = round.Matches.FirstOrDefault(m => m.Id == matchResult.MatchId);
+            matchToUpdate?.UpdateScore(matchResult.HomeScore, matchResult.AwayScore, matchResult.Status);
+        }
+
+        await _roundRepository.UpdateAsync(round);
+
+        var matchesWithScores = round.Matches
+            .Where(m => m.Status != MatchStatus.Scheduled)
+            .ToList();
+
+        if (!matchesWithScores.Any())
             return;
+        
+        var leaguesToScore = (await _leagueRepository.GetLeaguesForScoringAsync(round.SeasonId, round.Id)).ToList();
 
-        foreach (var result in request.Results)
+        foreach (var league in leaguesToScore)
         {
-            var match = await _matchRepository.GetByIdAsync(result.MatchId);
-            if (match == null)
+            foreach (var scoredMatch in matchesWithScores)
             {
-                _logger.LogWarning("Attempted to update results for a non-existent Match (ID: {MatchId}).", result.MatchId);
-                continue;
+                league.ScoreMatch(scoredMatch);
             }
-
-            match.ActualHomeTeamScore = result.HomeScore;
-            match.ActualAwayTeamScore = result.AwayScore;
-            match.Status = result.IsFinal ? MatchStatus.Completed : MatchStatus.InProgress;
-
-            await _matchRepository.UpdateAsync(match);
-            await _pointsService.CalculatePointsForMatchAsync(match);
         }
 
-        await AggregateResultsForRoundAsync(request.RoundId);
+        var allUpdatedPredictions = leaguesToScore
+            .SelectMany(l => l.Members)
+            .SelectMany(m => m.Predictions);
 
-        var allMatchesInRound = await _matchRepository.GetByRoundIdAsync(request.RoundId);
-        if (allMatchesInRound.All(m => m.Status == MatchStatus.Completed))
-        {
-            // TODO: Calculate Winnings Here
-        }
-    }
-
-    private async Task AggregateResultsForRoundAsync(int roundId)
-    {
-        var matchesInRound = await _matchRepository.GetByRoundIdAsync(roundId);
-        var allPredictionsForRound = new List<UserPrediction>();
-
-        foreach (var match in matchesInRound)
-        {
-            allPredictionsForRound.AddRange(await _predictionRepository.GetByMatchIdAsync(match.Id));
-        }
-
-        var userScores = allPredictionsForRound
-            .GroupBy(p => p.UserId)
-            .Select(g => new
-            {
-                UserId = g.Key,
-                TotalPoints = g.Sum(p => p.PointsAwarded ?? 0)
-            });
-
-        foreach (var score in userScores)
-        {
-            var roundResult = new RoundResult(roundId, score.UserId, score.TotalPoints);
-            await _roundResultRepository.UpsertAsync(roundResult);
-        }
+        await _leagueRepository.UpdatePredictionPointsAsync(allUpdatedPredictions);
     }
 }

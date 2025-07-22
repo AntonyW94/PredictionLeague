@@ -1,16 +1,10 @@
 ﻿using MediatR;
+using PredictionLeague.Application.Common.Interfaces;
 using PredictionLeague.Contracts.Predictions;
 
 namespace PredictionLeague.Application.Features.Predictions.Commands;
 
-public class SubmitPredictionsCommand : SubmitPredictionsRequest, IRequest
-{
-    public string UserId { get; }
-
-    public SubmitPredictionsCommand(SubmitPredictionsRequest request, string userId)
-    {
-        RoundId = request.RoundId;
-        Predictions = request.Predictions;
-        UserId = userId;
-    }
-}
+public record SubmitPredictionsCommand(
+    string UserId,
+    int RoundId,
+    IEnumerable<PredictionSubmissionDto> Predictions) : IRequest, ITransactionalRequest;

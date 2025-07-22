@@ -1,42 +1,40 @@
-﻿using MediatR;
+﻿using Ardalis.GuardClauses;
+using MediatR;
 using PredictionLeague.Application.Repositories;
-using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
 public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
 {
     private readonly IRoundRepository _roundRepository;
-    private readonly IMatchRepository _matchRepository;
 
-    public UpdateRoundCommandHandler(IRoundRepository roundRepository, IMatchRepository matchRepository)
+    public UpdateRoundCommandHandler(IRoundRepository roundRepository)
     {
         _roundRepository = roundRepository;
-        _matchRepository = matchRepository;
     }
 
     public async Task Handle(UpdateRoundCommand request, CancellationToken cancellationToken)
     {
-        var round = await _roundRepository.GetByIdAsync(request.RoundId) ?? throw new KeyNotFoundException($"Round with ID {request.RoundId} was not found.");
+        var round = await _roundRepository.GetByIdAsync(request.RoundId);
+        Guard.Against.Null(round, $"Round (ID: {request.RoundId}) was not found.");
 
-        round.StartDate = request.StartDate;
-        round.Deadline = request.Deadline;
-        await _roundRepository.UpdateAsync(round);
+        round.UpdateDetails(
+            request.RoundNumber,
+            request.StartDate,
+            request.Deadline
+        );
 
-        await _matchRepository.DeleteByRoundIdAsync(request.RoundId);
+        round.ClearMatches();
 
-        foreach (var matchRequest in request.Matches)
+        foreach (var matchToAdd in request.Matches)
         {
-            var match = new Match
-            {
-                RoundId = request.RoundId,
-                HomeTeamId = matchRequest.HomeTeamId,
-                AwayTeamId = matchRequest.AwayTeamId,
-                MatchDateTime = matchRequest.MatchDateTime,
-                Status = MatchStatus.Scheduled
-            };
-
-            await _matchRepository.AddAsync(match);
+            round.AddMatch(
+                matchToAdd.HomeTeamId,
+                matchToAdd.AwayTeamId,
+                matchToAdd.MatchDateTime
+            );
         }
+
+        await _roundRepository.UpdateAsync(round);
     }
 }

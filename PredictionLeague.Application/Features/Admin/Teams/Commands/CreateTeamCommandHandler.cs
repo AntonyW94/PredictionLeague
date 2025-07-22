@@ -18,7 +18,7 @@ public class CreateTeamCommandHandler : IRequestHandler<CreateTeamCommand, TeamD
     {
         var team = Team.Create(request.Name, request.LogoUrl);
 
-        var createdTeam = await _teamRepository.AddAsync(team);
+        var createdTeam = await _teamRepository.CreateAsync(team);
         return new TeamDto(createdTeam.Id, createdTeam.Name, createdTeam.LogoUrl);
     }
 }

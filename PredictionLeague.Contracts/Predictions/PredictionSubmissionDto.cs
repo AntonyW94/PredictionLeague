@@ -1,8 +1,7 @@
 ﻿namespace PredictionLeague.Contracts.Predictions;
 
-public class PredictionSubmissionDto
-{
-    public int MatchId { get; init; }
-    public int PredictedHomeScore { get; init; }
-    public int PredictedAwayScore { get; init; }
-}
+public record PredictionSubmissionDto(
+    int MatchId,
+    int HomeScore,
+    int AwayScore
+);

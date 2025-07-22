@@ -1,4 +1,4 @@
-﻿using PredictionLeague.Domain.Models;
+﻿using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Contracts;
 

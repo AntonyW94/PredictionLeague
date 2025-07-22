@@ -8,7 +8,7 @@ using PredictionLeague.Contracts.Account;
 namespace PredictionLeague.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]/details")]
+[Route("api/[controller]")]
 [Authorize]
 public class AccountController : ApiControllerBase
 {
@@ -19,21 +19,28 @@ public class AccountController : ApiControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetUserDetailsAsync()
+    [HttpGet("details")]
+    [ProducesResponseType(typeof(UserDetails), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserDetails>> GetUserDetailsAsync()
     {
         var query = new GetUserQuery(CurrentUserId);
         var userDetails = await _mediator.Send(query);
+      
+        if (userDetails == null)
+            return NotFound(); 
 
-        return userDetails == null ? NotFound("User not found.") : Ok(userDetails);
+        return Ok(userDetails);
     }
 
-    [HttpPut]
+    [HttpPut("details")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateUserDetailsAsync([FromBody] UpdateUserDetailsRequest request)
     {
-        var command = new UpdateUserDetailsCommand(request, CurrentUserId);
+        var command = new UpdateUserDetailsCommand(CurrentUserId, request.FirstName, request.LastName, request.PhoneNumber);
         await _mediator.Send(command);
 
-        return Ok(new { message = "Details updated successfully." });
+        return NoContent();
     }
 }

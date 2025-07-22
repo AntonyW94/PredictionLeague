@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using PredictionLeague.Web.Client.Authentication;
+using PredictionLeague.Web.Client.ViewModels.Admin.Rounds;
 
 namespace PredictionLeague.Web.Client;
 
@@ -9,8 +10,12 @@ public static class DependencyInjection
     {
         services.AddAuthorizationCore();
         services.AddTransient<CookieHandler>();
+      
         services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
+       
         services.AddScoped<IAuthenticationService, AuthenticationService>();
+     
         services.AddScoped<ViewModels.DashboardViewModel>();
+        services.AddScoped<EnterResultsViewModel>();
     }
 }

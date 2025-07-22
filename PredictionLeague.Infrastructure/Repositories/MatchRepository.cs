@@ -16,25 +16,6 @@ public class MatchRepository : IMatchRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task AddAsync(Match match)
-    {
-        const string sql = @"
-                INSERT INTO [Matches] ([RoundId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status])
-                VALUES (@RoundId, @HomeTeamId, @AwayTeamId, @MatchDateTime, @Status);";
-
-        using var dbConnection = Connection;
-        await dbConnection.ExecuteAsync(sql, match);
-    }
-
-    public async Task<Match?> GetByIdAsync(int id)
-    {
-        const string sql = "SELECT m.* FROM [Matches] m WHERE m.[Id] = @Id;";
-
-
-        using var dbConnection = Connection;
-        return await dbConnection.QuerySingleOrDefaultAsync<Match>(sql, new { Id = id });
-    }
-
     public async Task<IEnumerable<Match>> GetByRoundIdAsync(int roundId)
     {
         const string sql = @"
@@ -61,30 +42,5 @@ public class MatchRepository : IMatchRepository
             splitOn: "Id,Id"
         );
         return matches;
-    }
-
-    public async Task UpdateAsync(Match match)
-    {
-        const string sql = @"
-                UPDATE [Matches]
-                SET [RoundId] = @RoundId,
-                    [HomeTeamId] = @HomeTeamId,
-                    [AwayTeamId] = @AwayTeamId,
-                    [MatchDateTime] = @MatchDateTime,
-                    [Status] = @Status,
-                    [ActualHomeTeamScore] = @ActualHomeTeamScore,
-                    [ActualAwayTeamScore] = @ActualAwayTeamScore
-                WHERE [Id] = @Id;";
-
-        using var dbConnection = Connection;
-        await dbConnection.ExecuteAsync(sql, match);
-    }
-
-    public async Task DeleteByRoundIdAsync(int roundId)
-    {
-        const string sql = "DELETE FROM [Matches] WHERE [RoundId] = @RoundId;";
-
-        using var connection = Connection;
-        await connection.ExecuteAsync(sql, new { RoundId = roundId });
     }
 }

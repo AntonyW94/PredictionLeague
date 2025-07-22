@@ -1,37 +1,36 @@
-﻿using MediatR;
+﻿using Ardalis.GuardClauses;
+using MediatR;
 using PredictionLeague.Application.Repositories;
-using PredictionLeague.Domain.Models;
+using PredictionLeague.Domain.Services;
 
 namespace PredictionLeague.Application.Features.Predictions.Commands;
 
 public class SubmitPredictionsCommandHandler : IRequestHandler<SubmitPredictionsCommand>
 {
     private readonly IRoundRepository _roundRepository;
-    private readonly IUserPredictionRepository _predictionRepository;
+    private readonly IUserPredictionRepository _userPredictionRepository;
+    private readonly PredictionDomainService _predictionDomainService;
 
-    public SubmitPredictionsCommandHandler(IRoundRepository roundRepository, IUserPredictionRepository predictionRepository)
+    public SubmitPredictionsCommandHandler(IRoundRepository roundRepository, IUserPredictionRepository userPredictionRepository, PredictionDomainService predictionDomainService)
     {
         _roundRepository = roundRepository;
-        _predictionRepository = predictionRepository;
+        _userPredictionRepository = userPredictionRepository;
+        _predictionDomainService = predictionDomainService;
     }
 
     public async Task Handle(SubmitPredictionsCommand request, CancellationToken cancellationToken)
     {
-        var round = await _roundRepository.GetByIdAsync(request.RoundId) ?? throw new KeyNotFoundException("The specified round could not be found.");
-        if (round.Deadline < DateTime.UtcNow)
-            throw new InvalidOperationException("The prediction deadline has passed for this round.");
+        var round = await _roundRepository.GetByIdAsync(request.RoundId);
 
-        foreach (var predictionDto in request.Predictions)
-        {
-            var prediction = new UserPrediction
-            {
-                MatchId = predictionDto.MatchId,
-                UserId = request.UserId,
-                PredictedHomeScore = predictionDto.PredictedHomeScore,
-                PredictedAwayScore = predictionDto.PredictedAwayScore
-            };
-            
-            await _predictionRepository.UpsertAsync(prediction);
-        }
+        Guard.Against.NotFound(request.RoundId, round, $"Round (ID: {request.RoundId}) was not found.");
+
+        var predictedScores = request.Predictions.Select(p => (p.MatchId, p.HomeScore, p.AwayScore));
+
+        var predictions = _predictionDomainService.SubmitPredictions(
+            round,
+            request.UserId,
+            predictedScores);
+
+        await _userPredictionRepository.UpsertBatchAsync(predictions, cancellationToken);
     }
 }

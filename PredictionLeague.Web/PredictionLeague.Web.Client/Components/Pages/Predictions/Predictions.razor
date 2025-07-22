@@ -121,11 +121,11 @@
 
                 _model.RoundId = _pageData.RoundId;
                 _model.Predictions = _pageData.Matches.Select(m => new PredictionSubmissionDto
-                {
-                    MatchId = m.MatchId,
-                    PredictedHomeScore = m.PredictedHomeScore ?? 0,
-                    PredictedAwayScore = m.PredictedAwayScore ?? 0
-                }).ToList();
+                (
+                    m.MatchId,
+                    m.PredictedHomeScore ?? 0,
+                    m.PredictedAwayScore ?? 0
+                )).ToList();
             }
         }
         catch (Exception) { _errorMessage = "Could not load prediction data."; }
@@ -163,11 +163,11 @@
         if (_pageData != null)
         {
             _model.Predictions = _pageData.Matches.Select(m => new PredictionSubmissionDto
-            {
-                MatchId = m.MatchId,
-                PredictedHomeScore = m.PredictedHomeScore ?? 0,
-                PredictedAwayScore = m.PredictedAwayScore ?? 0
-            }).ToList();
+            (
+                m.MatchId,
+                m.PredictedHomeScore ?? 0,
+                m.PredictedAwayScore ?? 0
+            )).ToList();
         }
 
         var response = await Http.PostAsJsonAsync("api/predictions/submit", _model);

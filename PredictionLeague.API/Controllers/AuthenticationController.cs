@@ -10,151 +10,147 @@ using PredictionLeague.Application.Features.Authentication.Commands.Logout;
 using PredictionLeague.Application.Features.Authentication.Commands.RefreshToken;
 using PredictionLeague.Application.Features.Authentication.Commands.Register;
 using PredictionLeague.Contracts.Authentication;
-using System.Security.Claims;
 
 namespace PredictionLeague.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthenticationController : ControllerBase
+public class AuthenticationController : ApiControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly ILogger<AuthenticationController> _logger;
+    private readonly IConfiguration _configuration;
 
-    public AuthenticationController(IMediator mediator, ILogger<AuthenticationController> logger)
+    public AuthenticationController(IMediator mediator, IConfiguration configuration)
     {
         _mediator = mediator;
-        _logger = logger;
+        _configuration = configuration;
     }
 
     [HttpPost("register")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RegisterAsync([FromBody] RegisterRequest request)
     {
-        var command = new RegisterCommand(request);
-
+        var command = new RegisterCommand(request.FirstName, request.LastName, request.Email, request.Password);
         var result = await _mediator.Send(command);
-        
+     
+        if (result is SuccessfulAuthenticationResponse success)
+        {
+            SetTokenCookie(success.RefreshTokenForCookie);
+            return Ok(success);
+        }
+
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request)
     {
         var command = new LoginCommand(request);
-
         var result = await _mediator.Send(command);
-        if (!result.IsSuccess)
-            return Unauthorized(result);
 
-        if (result.RefreshTokenForCookie != null)
-            SetTokenCookie(result.RefreshTokenForCookie);
+        if (result is SuccessfulAuthenticationResponse success)
+        {
+            SetTokenCookie(success.RefreshTokenForCookie);
+            return Ok(result);
+        }
 
-        return Ok(result);
+        return Unauthorized(result);
     }
 
     [HttpPost("refresh-token")]
     [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RefreshTokenAsync()
     {
         var refreshToken = Request.Cookies["refreshToken"];
         if (refreshToken == null)
-            return Ok(new AuthenticationResponse { IsSuccess = false });
+            return BadRequest(new { message = "Refresh token is missing." });
 
         var command = new RefreshTokenCommand(refreshToken);
-
         var result = await _mediator.Send(command);
 
-        return Ok(result);
+        if (result is SuccessfulAuthenticationResponse success)
+        {
+            SetTokenCookie(success.RefreshTokenForCookie);
+            return Ok(success);
+        }
+
+        return BadRequest(result);
     }
 
     [HttpPost("logout")]
     [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> LogoutAsync()
     {
-        var command = new LogoutCommand(Request.Cookies["refreshToken"]);
-
+        var command = new LogoutCommand(CurrentUserId, Request.Cookies["refreshToken"]);
         await _mediator.Send(command);
 
         Response.Cookies.Delete("refreshToken");
-        
-        return Ok(new { message = "Logged out successfully." });
+
+        return NoContent();
     }
 
     [HttpGet("google-login")]
     [AllowAnonymous]
     public IActionResult GoogleLogin([FromQuery] string returnUrl, [FromQuery] string source)
     {
-        var callbackUrl = Url.Action(nameof(GoogleCallbackAsync).Replace("Async", string.Empty), "Authentication", new { returnUrl });
+        var callbackUrl = Url.Action(nameof(GoogleCallbackAsync).Replace("Async", string.Empty));
         var properties = new AuthenticationProperties
         {
             RedirectUri = callbackUrl,
             Items =
             {
-                ["source"] = source
+                { "returnUrl", returnUrl },
+                { "source", source }
             }
         };
 
         return Challenge(properties, GoogleDefaults.AuthenticationScheme);
     }
 
-    [HttpGet("signin-google")]
+    [HttpGet("signin-google", Name = "GoogleCallback")]
     [AllowAnonymous]
-    public async Task<IActionResult> GoogleCallbackAsync(string returnUrl)
+    public async Task<IActionResult> GoogleCallbackAsync()
     {
-        var errorSourcePage = "/login";
+        var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+        var returnUrl = authenticateResult.Properties?.Items["returnUrl"] ?? "/";
+        var source = authenticateResult.Properties?.Items["source"] ?? "/login";
+        var command = new LoginWithGoogleCommand(authenticateResult, source);
+        var result = await _mediator.Send(command);
 
-        try
+        if (result is SuccessfulAuthenticationResponse success)
         {
-            var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
-
-            if (authenticateResult.Properties != null && authenticateResult.Properties.Items.TryGetValue("source", out var source) && source == "register")
-                errorSourcePage = "/register";
-
-            if (!authenticateResult.Succeeded || authenticateResult.Principal == null)
-            {
-                _logger.LogError("External authentication with Google failed. AuthenticateResult.Succeeded was false.");
-                return RedirectWithError(errorSourcePage, "Authentication with external provider failed.");
-            }
-
-            var providerKey = authenticateResult.Principal.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(providerKey) || !authenticateResult.Properties.Items.TryGetValue(".AuthScheme", out var provider) || string.IsNullOrEmpty(provider))
-            {
-                _logger.LogError("Could not determine user identifier or provider from external provider callback.");
-                return RedirectWithError(errorSourcePage, "Could not determine user identifier from external provider.");
-            }
-
-            var command = new LoginWithGoogleCommand(authenticateResult.Principal, provider, providerKey);
-            var result = await _mediator.Send(command);
-
-            if (!result.IsSuccess)
-                return RedirectWithError(errorSourcePage, result.Message);
-
-            if (result.RefreshTokenForCookie != null)
-                SetTokenCookie(result.RefreshTokenForCookie);
-
+            SetTokenCookie(success.RefreshTokenForCookie);
             return RedirectWithScript(returnUrl);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "An unexpected error occurred during Google callback processing.");
-            return RedirectWithError(errorSourcePage, "An unexpected error occurred. Please try again.");
-        }
+
+        if (result is ExternalLoginFailedAuthenticationResponse failure)
+            return RedirectWithError(failure.Source, failure.Message);
+
+        return RedirectWithError(source, "An unknown authentication error occurred.");
     }
 
     private void SetTokenCookie(string token)
     {
+        var expiryDays = double.Parse(_configuration["JwtSettings:RefreshTokenExpiryDays"]!);
+
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Expires = DateTime.UtcNow.AddDays(7),
+            Expires = DateTime.UtcNow.AddDays(expiryDays),
             Secure = true,
             SameSite = SameSiteMode.Strict
         };
         Response.Cookies.Append("refreshToken", token, cookieOptions);
     }
-
+    
     private IActionResult RedirectWithError(string returnUrl, string error)
     {
         var redirectUrl = $"{returnUrl}?error={Uri.EscapeDataString(error)}";
@@ -163,7 +159,20 @@ public class AuthenticationController : ControllerBase
 
     private IActionResult RedirectWithScript(string returnUrl)
     {
-        var script = $"<html><body><script>window.location = '{returnUrl}';</script></body></html>";
+        var script = $@"
+        <html>
+            <body>
+                <script>
+                    if (window.opener) {{
+                        window.opener.location = '{returnUrl}';
+                        window.close();
+                    }} else {{
+                        window.location = '{returnUrl}';
+                    }}
+                </script>
+            </body>
+        </html>";
+
         return Content(script, "text/html");
     }
 }

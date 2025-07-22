@@ -1,15 +1,18 @@
 ﻿using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace PredictionLeague.Application.Common.Behaviours;
 
 public class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : IRequest<TResponse>
 {
     private readonly IEnumerable<IValidator<TRequest>> _validators;
+    private readonly ILogger<ValidationBehaviour<TRequest, TResponse>> _logger;
 
-    public ValidationBehaviour(IEnumerable<IValidator<TRequest>> validators)
+    public ValidationBehaviour(IEnumerable<IValidator<TRequest>> validators, ILogger<ValidationBehaviour<TRequest, TResponse>> logger)
     {
         _validators = validators;
+        _logger = logger;
     }
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
@@ -26,9 +29,10 @@ public class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TReque
             .Where(f => f != null)
             .ToList();
 
-        if (failures.Count != 0)
-            throw new ValidationException(failures);
-
-        return await next(cancellationToken);
+        if (!failures.Any())
+            return await next(cancellationToken);
+        
+        _logger.LogWarning("Validation failed for {RequestName}. Errors: {@ValidationErrors}", typeof(TRequest).Name, failures);
+        throw new ValidationException(failures);
     }
 }

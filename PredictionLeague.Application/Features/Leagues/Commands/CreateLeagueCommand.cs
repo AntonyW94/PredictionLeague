@@ -1,18 +1,13 @@
 ﻿using MediatR;
+using PredictionLeague.Application.Common.Interfaces;
 using PredictionLeague.Contracts.Leagues;
-using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 
-public class CreateLeagueCommand : CreateLeagueRequest, IRequest<League>
-{
-    public string CreatingUserId { get; }
-
-    public CreateLeagueCommand(CreateLeagueRequest request, string creatingUserId)
-    {
-        SeasonId = request.SeasonId;
-        Name = request.Name;
-        EntryCode = request.EntryCode;
-        CreatingUserId = creatingUserId;
-    }
-}
+public record CreateLeagueCommand(
+    string Name,
+    int SeasonId,
+    string CreatingUserId,
+    string? EntryCode,
+    DateTime? EntryDeadline
+) : IRequest<LeagueDto>, ITransactionalRequest;

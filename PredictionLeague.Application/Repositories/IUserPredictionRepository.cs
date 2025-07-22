@@ -5,11 +5,18 @@ namespace PredictionLeague.Application.Repositories;
 
 public interface IUserPredictionRepository
 {
-    Task<IEnumerable<UserPrediction>> GetByMatchIdAsync(int matchId);
+    #region Create
+    
+    Task UpsertBatchAsync(IEnumerable<UserPrediction> predictions, CancellationToken cancellationToken);
+    
+    #endregion
+
+    #region Read
+
     Task<IEnumerable<UserPrediction>> GetByUserIdAndRoundIdAsync(string userId, int roundId);
-    Task UpsertAsync(UserPrediction prediction);
-    Task UpdatePointsAsync(int predictionId, int points);
     Task<IEnumerable<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId);
     Task<IEnumerable<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month);
     Task<IEnumerable<LeaderboardEntryDto>> GetRoundLeaderboardAsync(int leagueId, int roundId);
+ 
+    #endregion
 }

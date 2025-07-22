@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
-using PredictionLeague.Domain.Models;
+using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 

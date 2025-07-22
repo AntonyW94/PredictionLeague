@@ -1,6 +1,5 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
-using PredictionLeague.Contracts.Admin.Matches;
 using PredictionLeague.Contracts.Admin.Rounds;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Queries;
@@ -18,11 +17,11 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
 
     public async Task<RoundDetailsDto?> Handle(GetRoundByIdQuery request, CancellationToken cancellationToken)
     {
-        var round = await _roundRepository.GetByIdAsync(request.RoundId);
+        var round = await _roundRepository.GetByIdAsync(request.Id);
         if (round == null)
             return null;
 
-        var matches = await _matchRepository.GetByRoundIdAsync(request.RoundId);
+        var matches = await _matchRepository.GetByRoundIdAsync(request.Id);
 
         var response = new RoundDetailsDto
         {
@@ -34,19 +33,20 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
                 StartDate = round.StartDate,
                 Deadline = round.Deadline
             },
-            Matches = matches.Select(m => new MatchDto
-            {
-                Id = m.Id,
-                HomeTeamId = m.HomeTeamId,
-                HomeTeamName = m.HomeTeam?.Name ?? "N/A",
-                HomeTeamLogoUrl = m.HomeTeam?.LogoUrl ?? "",
-                AwayTeamId = m.AwayTeamId,
-                AwayTeamName = m.AwayTeam?.Name ?? "N/A",
-                AwayTeamLogoUrl = m.AwayTeam?.LogoUrl ?? "",
-                MatchDateTime = m.MatchDateTime,
-                ActualHomeScore = m.ActualHomeTeamScore,
-                ActualAwayScore = m.ActualAwayTeamScore
-            }).ToList()
+            Matches = matches.Select(m => new MatchInRoundDto
+            (
+                m.Id,
+                m.MatchDateTime,
+                m.HomeTeamId,
+                m.HomeTeam?.Name ?? "N/A",
+                m.HomeTeam?.LogoUrl ?? "",
+                m.AwayTeamId,
+                m.AwayTeam?.Name ?? "N/A",
+                m.AwayTeam?.LogoUrl ?? "",
+                m.ActualHomeTeamScore,
+                m.ActualAwayTeamScore,
+                m.Status
+            )).ToList()
         };
 
         return response;

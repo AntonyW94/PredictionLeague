@@ -5,14 +5,14 @@ using PredictionLeague.Application.Features.Admin.Rounds.Commands;
 using PredictionLeague.Application.Features.Admin.Rounds.Queries;
 using PredictionLeague.Contracts.Admin.Results;
 using PredictionLeague.Contracts.Admin.Rounds;
-using PredictionLeague.Domain.Models;
+using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.API.Controllers;
 
 [Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 [ApiController]
 [Route("api/[controller]")]
-public class RoundsController : ControllerBase
+public class RoundsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 
@@ -26,14 +26,13 @@ public class RoundsController : ControllerBase
     [HttpPost("create")]
     public async Task<IActionResult> CreateRoundAsync([FromBody] CreateRoundRequest request)
     {
-        var command = new CreateRoundCommand
-        {
-            SeasonId = request.SeasonId,
-            RoundNumber = request.RoundNumber,
-            StartDate = request.StartDate,
-            Deadline = request.Deadline,
-            Matches = request.Matches
-        };
+        var command = new CreateRoundCommand(
+            request.SeasonId,
+            request.RoundNumber,
+            request.StartDate,
+            request.Deadline,
+            request.Matches
+        );
 
         await _mediator.Send(command);
 
@@ -68,7 +67,12 @@ public class RoundsController : ControllerBase
     [HttpPut("{roundId:int}/update")]
     public async Task<IActionResult> UpdateRoundAsync(int roundId, [FromBody] UpdateRoundRequest request)
     {
-        var command = new UpdateRoundCommand(roundId, request);
+        var command = new UpdateRoundCommand(
+            roundId, 
+            request.RoundNumber,
+            request.StartDate, 
+            request.Deadline, 
+            request.Matches);
 
         await _mediator.Send(command);
 
@@ -76,12 +80,13 @@ public class RoundsController : ControllerBase
     }
 
     [HttpPut("{roundId:int}/submit-results")]
-    public async Task<IActionResult> SubmitResultsAsync(int roundId, [FromBody] List<UpdateMatchResultsRequest> request)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> SubmitResultsAsync(int roundId, [FromBody] List<MatchResultDto> matches)
     {
-        var command = new UpdateMatchResultsCommand(roundId, request);
-        await _mediator.Send(command);
+        var command = new UpdateMatchResultsCommand(roundId, matches);
 
-        return Ok(new { message = "Results updated and points calculated successfully." });
+        await _mediator.Send(command);
+        return NoContent();
     }
     
     #endregion

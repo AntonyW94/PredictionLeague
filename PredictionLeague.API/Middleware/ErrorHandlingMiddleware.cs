@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using PredictionLeague.Application.Common.Exceptions;
+﻿using PredictionLeague.Application.Common.Exceptions;
 using System.Net;
 using System.Text.Json;
 
@@ -9,9 +8,9 @@ public class ErrorHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ErrorHandlingMiddleware> _logger;
-    private readonly IHostEnvironment _env;
+    private readonly IWebHostEnvironment _env;
 
-    public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger, IHostEnvironment env)
+    public ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger, IWebHostEnvironment env)
     {
         _next = next;
         _logger = logger;
@@ -24,60 +23,51 @@ public class ErrorHandlingMiddleware
         {
             await _next(context);
         }
+        catch (Exception ex) when (ex is KeyNotFoundException || ex is ArgumentNullException)
+        {
+            _logger.LogWarning("Not Found Error: {Message}", ex.Message);
+            await HandleKnownExceptionAsync(context, HttpStatusCode.NotFound, new { message = "The requested resource was not found." });
+        }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(ex, "Invalid argument violation: {Message}", ex.Message);
-          
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-          
-            await context.Response.WriteAsync(JsonSerializer.Serialize(new { message = ex.Message }));
+            _logger.LogWarning("Invalid Argument/Business Rule Error: {Message}", ex.Message);
+            await HandleKnownExceptionAsync(context, HttpStatusCode.BadRequest, new { message = ex.Message });
         }
-        catch (UnauthorizedAccessException ex)
+        catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Unauthorized access attempt: {Message}", ex.Message);
-
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-           
-            await context.Response.WriteAsync(JsonSerializer.Serialize(new { message = ex.Message }));
+            _logger.LogWarning("Invalid Operation Error: {Message}", ex.Message);
+            await HandleKnownExceptionAsync(context, HttpStatusCode.BadRequest, new { message = ex.Message });
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            _logger.LogWarning("Validation Error: {Errors}", ex.Errors);
+            await HandleKnownExceptionAsync(context, HttpStatusCode.BadRequest, new { errors = ex.Errors });
         }
         catch (IdentityUpdateException ex)
         {
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-          
-            var errors = ex.Errors.Select(e => new { e.Code, e.Description });
-          
-            await context.Response.WriteAsync(JsonSerializer.Serialize(errors));
+            _logger.LogWarning("Identity Update Error: {Message}", ex.Errors);
+            await HandleKnownExceptionAsync(context, HttpStatusCode.BadRequest, new { errors = ex.Errors.Select(e => e.Description) });
         }
-        catch (ValidationException ex)
+        catch (UnauthorizedAccessException ex)
         {
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-          
-            var errors = ex.Errors.Select(e => new { e.PropertyName, e.ErrorMessage });
-           
-            await context.Response.WriteAsync(JsonSerializer.Serialize(errors));
-        }
-        catch (KeyNotFoundException ex)
-        {
-            _logger.LogWarning(ex, "Entity not found: {Message}", ex.Message);
-            
-            context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.NotFound;
-            
-            await context.Response.WriteAsync(JsonSerializer.Serialize(new { message = ex.Message }));
+            _logger.LogWarning("Authorization Error: {Message}", ex.Message);
+            await HandleKnownExceptionAsync(context, HttpStatusCode.Unauthorized, new { message = "You are not authorized to perform this action." });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unhandled exception has occurred.");
-          
-            await HandleExceptionAsync(context, ex);
+            await HandleUnhandledExceptionAsync(context, ex);
         }
     }
 
-    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static Task HandleKnownExceptionAsync(HttpContext context, HttpStatusCode statusCode, object errorResponse)
+    {
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode = (int)statusCode;
+        return context.Response.WriteAsync(JsonSerializer.Serialize(errorResponse));
+    }
+
+    private Task HandleUnhandledExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
@@ -86,6 +76,6 @@ public class ErrorHandlingMiddleware
             ? new { message = exception.Message, details = exception.StackTrace }
             : new { message = "An internal server error has occurred.", details = (string?)null };
 
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+        return context.Response.WriteAsync(JsonSerializer.Serialize(response));
     }
 }

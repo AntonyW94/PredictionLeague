@@ -4,14 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Admin.Teams.Commands;
 using PredictionLeague.Application.Features.Admin.Teams.Queries;
 using PredictionLeague.Contracts.Admin.Teams;
-using PredictionLeague.Domain.Models;
+using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
-public class TeamsController : ControllerBase
+public class TeamsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
 

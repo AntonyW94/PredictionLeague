@@ -1,5 +1,5 @@
-﻿using MediatR;
-using Microsoft.Extensions.Logging;
+﻿using Ardalis.GuardClauses;
+using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Models;
 
@@ -7,47 +7,35 @@ namespace PredictionLeague.Application.Features.Leagues.Commands;
 
 public class JoinLeagueCommandHandler : IRequestHandler<JoinLeagueCommand>
 {
-    private readonly ILogger<JoinLeagueCommandHandler> _logger;
     private readonly ILeagueRepository _leagueRepository;
 
-    public JoinLeagueCommandHandler(ILogger<JoinLeagueCommandHandler> logger, ILeagueRepository leagueRepository)
+    public JoinLeagueCommandHandler(ILeagueRepository leagueRepository)
     {
-        _logger = logger;
         _leagueRepository = leagueRepository;
     }
 
     public async Task Handle(JoinLeagueCommand request, CancellationToken cancellationToken)
     {
-        League? league;
+        var league = await FetchLeague(request);
+        Guard.Against.Null(league, "The specified league could not be found.");
 
+        var existingMemberIds = league.Members.Select(m => m.UserId).ToList();
+
+        league.AddMember(request.JoiningUserId);
+
+        var newMember = league.Members.FirstOrDefault(m => !existingMemberIds.Contains(m.UserId));
+        if (newMember != null)
+            await _leagueRepository.AddMemberAsync(newMember);
+    }
+
+    private async Task<League?> FetchLeague(JoinLeagueCommand request)
+    {
         if (request.LeagueId.HasValue)
-            league = await _leagueRepository.GetByIdAsync(request.LeagueId.Value);
-        else if (!string.IsNullOrWhiteSpace(request.EntryCode))
-            league = await _leagueRepository.GetByEntryCodeAsync(request.EntryCode);
-        else
-            throw new InvalidOperationException("Either a LeagueId or an EntryCode must be provided.");
+            return await _leagueRepository.GetByIdAsync(request.LeagueId.Value);
 
-        if (league == null)
-        {
-            _logger.LogWarning("Failed attempt to join a league (League ID: {LeagueId}, Entry Code: {EntryCode}).", request.LeagueId, request.EntryCode);
-            throw new KeyNotFoundException("The specified league could not be found.");
-        }
-        
-        if (league.EntryDeadline.HasValue && league.EntryDeadline.Value < DateTime.UtcNow)
-            throw new InvalidOperationException("The deadline to join this league has passed.");
+        if (!string.IsNullOrWhiteSpace(request.EntryCode))
+            return await _leagueRepository.GetByEntryCodeAsync(request.EntryCode);
 
-        var members = await _leagueRepository.GetMembersByLeagueIdAsync(league.Id);
-        if (members.Any(m => m.UserId == request.JoiningUserId))
-            return;
-
-        var newMember = new LeagueMember
-        {
-            LeagueId = league.Id,
-            UserId = request.JoiningUserId,
-            Status = LeagueMemberStatus.Pending,
-            JoinedAt = DateTime.UtcNow
-        };
-
-        await _leagueRepository.AddMemberAsync(newMember);
+        throw new InvalidOperationException("Either a LeagueId or an EntryCode must be provided.");
     }
 }

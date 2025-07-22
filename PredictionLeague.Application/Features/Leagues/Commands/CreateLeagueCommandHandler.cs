@@ -1,40 +1,53 @@
-﻿using MediatR;
+﻿using Ardalis.GuardClauses;
+using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 
-public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, League>
+public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, LeagueDto>
 {
     private readonly ILeagueRepository _leagueRepository;
+    private readonly ISeasonRepository _seasonRepository;
 
-    public CreateLeagueCommandHandler(ILeagueRepository leagueRepository)
+    public CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository)
     {
         _leagueRepository = leagueRepository;
+        _seasonRepository = seasonRepository;
     }
 
-    public async Task<League> Handle(CreateLeagueCommand request, CancellationToken cancellationToken)
+    public async Task<LeagueDto> Handle(CreateLeagueCommand request, CancellationToken cancellationToken)
     {
-        var league = new League
-        {
-            Name = request.Name,
-            SeasonId = request.SeasonId,
-            AdministratorUserId = request.CreatingUserId,
-            EntryCode = string.IsNullOrWhiteSpace(request.EntryCode) ? null : request.EntryCode
-        };
+        var league = League.Create(
+             request.SeasonId,
+             request.Name,
+             request.CreatingUserId,
+             request.EntryCode,
+             request.EntryDeadline
+         );
 
-        await _leagueRepository.CreateAsync(league);
+        league.AddMember(request.CreatingUserId);
 
-        var leagueMember = new LeagueMember
-        {
-            LeagueId = league.Id,
-            UserId = request.CreatingUserId,
-            JoinedAt = DateTime.UtcNow,
-            Status = LeagueMemberStatus.Approved
-        };
+        var createdLeague = await _leagueRepository.CreateAsync(league);
 
-        await _leagueRepository.AddMemberAsync(leagueMember);
+        await _leagueRepository.UpdateMemberStatusAsync(
+            createdLeague.Id,
+            request.CreatingUserId,
+            LeagueMemberStatus.Approved
+        );
+       
+        
+        var season = await _seasonRepository.GetByIdAsync(createdLeague.SeasonId);
+        Guard.Against.Null(season, $"Season with ID {createdLeague.SeasonId} was not found.");
 
-        return league;
+        return new LeagueDto(
+            createdLeague.Id,
+            createdLeague.Name,
+            season.Name,
+            1, 
+            createdLeague.EntryCode ?? "Public"
+        );
     }
 }

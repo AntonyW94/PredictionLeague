@@ -1,4 +1,4 @@
-﻿namespace PredictionLeague.Domain.Models;
+﻿namespace PredictionLeague.Domain.Common.Enumerations;
 
 public enum ApplicationUserRole
 {

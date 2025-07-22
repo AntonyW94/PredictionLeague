@@ -4,8 +4,22 @@ namespace PredictionLeague.Application.Repositories;
 
 public interface ISeasonRepository
 {
+    #region Create
+
+    Task<Season> CreateAsync(Season season);
+
+    #endregion
+
+    #region Read
+
     Task<IEnumerable<Season>> GetAllAsync();
     Task<Season?> GetByIdAsync(int id);
-    Task AddAsync(Season season);
+
+    #endregion
+
+    #region Update
+    
     Task UpdateAsync(Season request);
+    
+    #endregion
 }
