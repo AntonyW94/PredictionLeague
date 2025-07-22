@@ -1,54 +1,62 @@
 ﻿using MediatR;
-using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Admin.Rounds;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Queries;
 
 public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, RoundDetailsDto?>
 {
-    private readonly IRoundRepository _roundRepository;
-    private readonly IMatchRepository _matchRepository;
+    private readonly IApplicationReadDbConnection _dbConnection;
 
-    public GetRoundByIdQueryHandler(IRoundRepository roundRepository, IMatchRepository matchRepository)
+    public GetRoundByIdQueryHandler(IApplicationReadDbConnection dbConnection)
     {
-        _roundRepository = roundRepository;
-        _matchRepository = matchRepository;
+        _dbConnection = dbConnection;
     }
 
     public async Task<RoundDetailsDto?> Handle(GetRoundByIdQuery request, CancellationToken cancellationToken)
     {
-        var round = await _roundRepository.GetByIdAsync(request.Id, cancellationToken);
-        if (round == null)
-            return null;
+        const string sql = @"
+            SELECT
+                r.[Id],
+                r.[SeasonId],
+                r.[RoundNumber],
+                r.[StartDate],
+                r.[Deadline],
+                m.[Id],
+                m.[MatchDateTime],
+                m.[HomeTeamId],
+                ht.[Name] AS HomeTeamName,
+                ht.[LogoUrl] AS HomeTeamLogoUrl,
+                m.[AwayTeamId],
+                at.[Name] AS AwayTeamName,
+                at.[LogoUrl] AS AwayTeamLogoUrl,
+                m.[ActualHomeTeamScore],
+                m.[ActualAwayTeamScore],
+                m.[Status]
+            FROM [dbo].[Rounds] r
+            LEFT JOIN [dbo].[Matches] m ON r.[Id] = m.[RoundId]
+            LEFT JOIN [dbo].[Teams] ht ON m.[HomeTeamId] = ht.[Id]
+            LEFT JOIN [dbo].[Teams] at ON m.[AwayTeamId] = at.[Id]
+            WHERE r.[Id] = @Id;";
 
-        var matches = await _matchRepository.GetByRoundIdAsync(request.Id, cancellationToken);
+        RoundDetailsDto? roundDetails = null;
 
-        var response = new RoundDetailsDto
-        {
-            Round = new RoundDto
+        await _dbConnection.QueryAsync<RoundDto, MatchInRoundDto?, bool>(
+            sql,
+            cancellationToken,
+            map: (round, match) =>
             {
-                Id = round.Id,
-                SeasonId = round.SeasonId,
-                RoundNumber = round.RoundNumber,
-                StartDate = round.StartDate,
-                Deadline = round.Deadline
-            },
-            Matches = matches.Select(m => new MatchInRoundDto
-            (
-                m.Id,
-                m.MatchDateTime,
-                m.HomeTeamId,
-                m.HomeTeam?.Name ?? "N/A",
-                m.HomeTeam?.LogoUrl ?? "",
-                m.AwayTeamId,
-                m.AwayTeam?.Name ?? "N/A",
-                m.AwayTeam?.LogoUrl ?? "",
-                m.ActualHomeTeamScore,
-                m.ActualAwayTeamScore,
-                m.Status
-            )).ToList()
-        };
+                if (roundDetails == null)
+                    roundDetails = new RoundDetailsDto { Round = round };
 
-        return response;
+                if (match != null)
+                    roundDetails.Matches.Add(match);
+
+                return true;
+            },
+            splitOn: "Id"
+        );
+
+        return roundDetails;
     }
 }

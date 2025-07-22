@@ -30,7 +30,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         await _roundRepository.UpdateAsync(round, cancellationToken);
 
         var matchesWithScores = round.Matches
-            .Where(m => m.Status != MatchStatus.Scheduled)
+            .Where(m => m.Status != MatchStatus.Scheduled && m.ActualHomeTeamScore.HasValue && m.ActualAwayTeamScore.HasValue)
             .ToList();
 
         if (!matchesWithScores.Any())

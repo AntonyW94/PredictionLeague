@@ -1,39 +1,33 @@
 ﻿using MediatR;
-using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Admin.Rounds;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Queries;
 
 public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSeasonQuery, IEnumerable<RoundDto>>
 {
-    private readonly IRoundRepository _roundRepository;
-    private readonly IMatchRepository _matchRepository;
+    private readonly IApplicationReadDbConnection _dbConnection;
 
-    public FetchRoundsForSeasonQueryHandler(IRoundRepository roundRepository, IMatchRepository matchRepository)
+    public FetchRoundsForSeasonQueryHandler(IApplicationReadDbConnection dbConnection)
     {
-        _roundRepository = roundRepository;
-        _matchRepository = matchRepository;
+        _dbConnection = dbConnection;
     }
 
     public async Task<IEnumerable<RoundDto>> Handle(FetchRoundsForSeasonQuery request, CancellationToken cancellationToken)
     {
-        var rounds = await _roundRepository.FetchBySeasonIdAsync(request.SeasonId, cancellationToken);
-        var roundsToReturn = new List<RoundDto>();
+        const string sql = @"
+            SELECT
+                r.[Id],
+                r.[RoundNumber],
+                r.[StartDate],
+                r.[Deadline],
+                COUNT(m.[Id]) AS MatchCount
+            FROM [dbo].[Rounds] r
+            LEFT JOIN [dbo].[Matches] m ON r.[Id] = m.[RoundId]
+            WHERE r.[SeasonId] = @SeasonId
+            GROUP BY r.[Id], r.[RoundNumber], r.[StartDate], r.[Deadline]
+            ORDER BY r.[RoundNumber];";
 
-        foreach (var round in rounds)
-        {
-            var matches = await _matchRepository.GetByRoundIdAsync(round.Id, cancellationToken);
-            
-            roundsToReturn.Add(new RoundDto
-            {
-                Id = round.Id,
-                RoundNumber = round.RoundNumber,
-                StartDate = round.StartDate,
-                Deadline = round.Deadline,
-                MatchCount = matches.Count()
-            });
-        }
-
-        return roundsToReturn;
+        return await _dbConnection.QueryAsync<RoundDto>(sql, cancellationToken, new { request.SeasonId });
     }
 }

@@ -24,6 +24,6 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, UserDetails?>
             FROM [dbo].[AspNetUsers]
             WHERE [Id] = @UserId;";
 
-        return await _dbConnection.QuerySingleOrDefaultAsync<UserDetails>(sql, new { request.UserId });
+        return await _dbConnection.QuerySingleOrDefaultAsync<UserDetails>(sql, cancellationToken, new { request.UserId });
     }
 }
