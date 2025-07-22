@@ -8,9 +8,9 @@ using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.API.Controllers;
 
+[Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 public class TeamsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -20,43 +20,69 @@ public class TeamsController : ApiControllerBase
         _mediator = mediator;
     }
 
+    #region Create
+
+    [HttpPost("create")]
+    [ProducesResponseType(typeof(TeamDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateTeamAsync([FromBody] CreateTeamRequest request, CancellationToken cancellationToken)
+    {
+        var command = new CreateTeamCommand(
+            request.Name,
+            request.LogoUrl
+        );
+
+        var createdTeam = await _mediator.Send(command, cancellationToken);
+
+        return CreatedAtAction("GetTeamById", new { teamId = createdTeam.Id }, createdTeam);
+    }
+
+    #endregion
+
+    #region Read
+
     [HttpGet]
-    public async Task<IActionResult> GetAllTeamsAsync()
+    [ProducesResponseType(typeof(IEnumerable<TeamDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<TeamDto>>> FetchAllTeamsAsync(CancellationToken cancellationToken)
     {
         var query = new FetchAllTeamsQuery();
-        
-        var result = await _mediator.Send(query);
-        
-        return Ok(result);
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{teamId:int}")]
-    public async Task<IActionResult> GetTeamByIdAsync(int teamId)
+    [ProducesResponseType(typeof(TeamDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TeamDto>> GetTeamByIdAsync(int teamId, CancellationToken cancellationToken)
     {
         var query = new GetTeamByIdQuery(teamId);
-
-        var team = await _mediator.Send(query);
+        var team = await _mediator.Send(query, cancellationToken);
+       
+        if (team == null)
+            return NotFound();
         
-        return team == null ? NotFound() : Ok(team);
+        return Ok(team);
     }
 
-    [HttpPost("create")]
-    public async Task<IActionResult> CreateTeamAsync([FromBody] CreateTeamRequest request)
-    {
-        var command = new CreateTeamCommand(request);
+    #endregion
 
-        var createdTeam = await _mediator.Send(command);
-        
-        return CreatedAtAction(nameof(GetTeamByIdAsync).Replace("Async", string.Empty), "Teams", new { id = createdTeam.Id }, createdTeam);
-    }
+    #region Update
 
     [HttpPut("{teamId:int}/update")]
-    public async Task<IActionResult> UpdateTeamAsync(int teamId, [FromBody] UpdateTeamRequest request)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateTeamAsync(int teamId, [FromBody] UpdateTeamRequest request, CancellationToken cancellationToken)
     {
-        var command = new UpdateTeamCommand(teamId, request);
-
-        await _mediator.Send(command);
+        var command = new UpdateTeamCommand(
+            teamId,
+            request.Name,
+            request.LogoUrl
+        );
         
-        return Ok(new { message = "Team updated successfully." });
+        await _mediator.Send(command, cancellationToken);
+
+        return NoContent();
     }
+
+    #endregion
 }

@@ -24,7 +24,9 @@ public class RoundsController : ApiControllerBase
     #region Create
 
     [HttpPost("create")]
-    public async Task<IActionResult> CreateRoundAsync([FromBody] CreateRoundRequest request)
+    [ProducesResponseType(typeof(RoundDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateRoundAsync([FromBody] CreateRoundRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateRoundCommand(
             request.SeasonId,
@@ -34,9 +36,9 @@ public class RoundsController : ApiControllerBase
             request.Matches
         );
 
-        await _mediator.Send(command);
+        var newRound = await _mediator.Send(command, cancellationToken);
 
-        return Ok(new { message = "Round and matches created successfully." });
+        return CreatedAtAction("GetRoundById", new { roundId = newRound.Id }, newRound);
     }
 
     #endregion
@@ -44,50 +46,60 @@ public class RoundsController : ApiControllerBase
     #region Read
 
     [HttpGet("by-season/{seasonId:int}")]
-    public async Task<IActionResult> FetchRoundsForSeasonAsync(int seasonId)
+    [ProducesResponseType(typeof(IEnumerable<RoundDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<RoundDto>>> FetchRoundsForSeasonAsync(int seasonId, CancellationToken cancellationToken)
     {
         var query = new FetchRoundsForSeasonQuery(seasonId);
-        var result = await _mediator.Send(query);
-        return Ok(result);
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{roundId:int}")]
-    public async Task<IActionResult> GetRoundByIdAsync(int roundId)
+    [ProducesResponseType(typeof(RoundDetailsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RoundDetailsDto>> GetRoundByIdAsync(int roundId, CancellationToken cancellationToken)
     {
         var query = new GetRoundByIdQuery(roundId);
-        var roundDetails = await _mediator.Send(query);
+        var roundDetails = await _mediator.Send(query, cancellationToken);
 
-        return roundDetails == null ? NotFound() : Ok(roundDetails);
+        if (roundDetails == null)
+            return NotFound();
+        
+        return Ok(roundDetails);
     }
-    
+
     #endregion
 
     #region Update
 
     [HttpPut("{roundId:int}/update")]
-    public async Task<IActionResult> UpdateRoundAsync(int roundId, [FromBody] UpdateRoundRequest request)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateRoundAsync(int roundId, [FromBody] UpdateRoundRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateRoundCommand(
-            roundId, 
+            roundId,
             request.RoundNumber,
-            request.StartDate, 
-            request.Deadline, 
+            request.StartDate,
+            request.Deadline,
             request.Matches);
 
-        await _mediator.Send(command);
+        await _mediator.Send(command, cancellationToken);
 
-        return Ok(new { message = "Round updated successfully." });
-    }
-
-    [HttpPut("{roundId:int}/submit-results")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> SubmitResultsAsync(int roundId, [FromBody] List<MatchResultDto> matches)
-    {
-        var command = new UpdateMatchResultsCommand(roundId, matches);
-
-        await _mediator.Send(command);
         return NoContent();
     }
-    
+
+    [HttpPut("{roundId:int}/results")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SubmitResultsAsync(int roundId, [FromBody] List<MatchResultDto> matches, CancellationToken cancellationToken)
+    {
+        var command = new UpdateMatchResultsCommand(roundId, matches);
+        await _mediator.Send(command, cancellationToken);
+      
+        return NoContent();
+    }
+
     #endregion
 }

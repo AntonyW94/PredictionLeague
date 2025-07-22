@@ -7,9 +7,9 @@ using PredictionLeague.Contracts.Predictions;
 
 namespace PredictionLeague.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class PredictionsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -20,31 +20,27 @@ public class PredictionsController : ApiControllerBase
     }
 
     [HttpGet("{roundId:int}")]
-    public async Task<IActionResult> GetPredictionPageDataAsync(int roundId)
+    [ProducesResponseType(typeof(IEnumerable<PredictionPageDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PredictionPageDto>> GetPredictionPageDataAsync(int roundId, CancellationToken cancellationToken)
     {
         var query = new GetPredictionPageDataQuery(roundId, CurrentUserId);
-        var result = await _mediator.Send(query);
-
-        return Ok(result);
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
     [HttpPost("submit")]
-    public async Task<IActionResult> SubmitAsync([FromBody] SubmitPredictionsRequest request)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SubmitAsync([FromBody] SubmitPredictionsRequest request, CancellationToken cancellationToken)
     {
-        try
-        {
-            var command = new SubmitPredictionsCommand(CurrentUserId, request.RoundId, request.Predictions);
-            await _mediator.Send(command);
+        var command = new SubmitPredictionsCommand(
+            CurrentUserId,
+            request.RoundId,
+            request.Predictions
+        );
+        
+        await _mediator.Send(command, cancellationToken);
 
-            return Ok(new { message = "Predictions submitted successfully." });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
+        return NoContent();
     }
 }

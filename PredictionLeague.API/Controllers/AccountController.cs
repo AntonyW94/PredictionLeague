@@ -7,9 +7,9 @@ using PredictionLeague.Contracts.Account;
 
 namespace PredictionLeague.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class AccountController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -22,10 +22,10 @@ public class AccountController : ApiControllerBase
     [HttpGet("details")]
     [ProducesResponseType(typeof(UserDetails), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserDetails>> GetUserDetailsAsync()
+    public async Task<ActionResult<UserDetails>> GetUserDetailsAsync(CancellationToken cancellationToken)
     {
         var query = new GetUserQuery(CurrentUserId);
-        var userDetails = await _mediator.Send(query);
+        var userDetails = await _mediator.Send(query, cancellationToken);
       
         if (userDetails == null)
             return NotFound(); 
@@ -36,10 +36,10 @@ public class AccountController : ApiControllerBase
     [HttpPut("details")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateUserDetailsAsync([FromBody] UpdateUserDetailsRequest request)
+    public async Task<IActionResult> UpdateUserDetailsAsync([FromBody] UpdateUserDetailsRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateUserDetailsCommand(CurrentUserId, request.FirstName, request.LastName, request.PhoneNumber);
-        await _mediator.Send(command);
+        await _mediator.Send(command, cancellationToken);
 
         return NoContent();
     }

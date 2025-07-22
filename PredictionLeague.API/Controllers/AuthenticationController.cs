@@ -30,10 +30,10 @@ public class AuthenticationController : ApiControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RegisterAsync([FromBody] RegisterRequest request)
+    public async Task<IActionResult> RegisterAsync([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
         var command = new RegisterCommand(request.FirstName, request.LastName, request.Email, request.Password);
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
      
         if (result is SuccessfulAuthenticationResponse success)
         {
@@ -48,10 +48,10 @@ public class AuthenticationController : ApiControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request)
+    public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
         var command = new LoginCommand(request);
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result is SuccessfulAuthenticationResponse success)
         {
@@ -66,14 +66,14 @@ public class AuthenticationController : ApiControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RefreshTokenAsync()
+    public async Task<IActionResult> RefreshTokenAsync(CancellationToken cancellationToken)
     {
         var refreshToken = Request.Cookies["refreshToken"];
         if (refreshToken == null)
             return BadRequest(new { message = "Refresh token is missing." });
 
         var command = new RefreshTokenCommand(refreshToken);
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result is SuccessfulAuthenticationResponse success)
         {
@@ -87,10 +87,10 @@ public class AuthenticationController : ApiControllerBase
     [HttpPost("logout")]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> LogoutAsync()
+    public async Task<IActionResult> LogoutAsync(CancellationToken cancellationToken)
     {
         var command = new LogoutCommand(CurrentUserId, Request.Cookies["refreshToken"]);
-        await _mediator.Send(command);
+        await _mediator.Send(command, cancellationToken);
 
         Response.Cookies.Delete("refreshToken");
 
@@ -101,7 +101,7 @@ public class AuthenticationController : ApiControllerBase
     [AllowAnonymous]
     public IActionResult GoogleLogin([FromQuery] string returnUrl, [FromQuery] string source)
     {
-        var callbackUrl = Url.Action(nameof(GoogleCallbackAsync).Replace("Async", string.Empty));
+        var callbackUrl = Url.Action("GoogleCallback");
         var properties = new AuthenticationProperties
         {
             RedirectUri = callbackUrl,
@@ -117,13 +117,13 @@ public class AuthenticationController : ApiControllerBase
 
     [HttpGet("signin-google", Name = "GoogleCallback")]
     [AllowAnonymous]
-    public async Task<IActionResult> GoogleCallbackAsync()
+    public async Task<IActionResult> GoogleCallbackAsync(CancellationToken cancellationToken)
     {
         var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
         var returnUrl = authenticateResult.Properties?.Items["returnUrl"] ?? "/";
         var source = authenticateResult.Properties?.Items["source"] ?? "/login";
         var command = new LoginWithGoogleCommand(authenticateResult, source);
-        var result = await _mediator.Send(command);
+        var result = await _mediator.Send(command, cancellationToken);
 
         if (result is SuccessfulAuthenticationResponse success)
         {

@@ -4,13 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Admin.Seasons.Commands;
 using PredictionLeague.Application.Features.Admin.Seasons.Queries;
 using PredictionLeague.Contracts.Admin.Seasons;
+using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.API.Controllers;
 
+[Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 
 public class SeasonsController : ApiControllerBase
 {
@@ -24,7 +25,9 @@ public class SeasonsController : ApiControllerBase
     #region Create 
 
     [HttpPost("create")]
-    public async Task<IActionResult> CreateSeasonAsync([FromBody] CreateSeasonRequest request)
+    [ProducesResponseType(typeof(SeasonDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateSeasonAsync([FromBody] CreateSeasonRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateSeasonCommand(
             request.Name,
@@ -34,7 +37,8 @@ public class SeasonsController : ApiControllerBase
             request.IsActive
         );
 
-        var newSeasonDto = await _mediator.Send(command);
+        var newSeasonDto = await _mediator.Send(command, cancellationToken);
+
         return CreatedAtAction("GetById", new { seasonId = newSeasonDto.Id }, newSeasonDto);
     }
 
@@ -43,20 +47,25 @@ public class SeasonsController : ApiControllerBase
     #region Read
 
     [HttpGet]
-    public async Task<IActionResult> FetchAllAsync()
+    [ProducesResponseType(typeof(IEnumerable<SeasonDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<SeasonDto>>> FetchAllAsync(CancellationToken cancellationToken)
     {
         var query = new FetchAllSeasonsQuery();
-        var result = await _mediator.Send(query);
-        return Ok(result);
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{seasonId:int}")]
-    public async Task<IActionResult> GetByIdAsync(int seasonId)
+    [ProducesResponseType(typeof(LeagueDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SeasonDto>> GetByIdAsync(int seasonId, CancellationToken cancellationToken)
     {
         var query = new GetSeasonByIdQuery(seasonId);
+        var season = await _mediator.Send(query, cancellationToken);
 
-        var season = await _mediator.Send(query);
-        return season == null ? NotFound() : Ok(season);
+        if (season == null)
+            return NotFound();
+
+        return Ok(season);
     }
 
     #endregion
@@ -64,7 +73,10 @@ public class SeasonsController : ApiControllerBase
     #region Update
 
     [HttpPut("{seasonId:int}/update")]
-    public async Task<IActionResult> UpdateSeasonAsync(int seasonId, [FromBody] UpdateSeasonRequest request)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateSeasonAsync(int seasonId, [FromBody] UpdateSeasonRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateSeasonCommand(
             seasonId,
@@ -73,8 +85,9 @@ public class SeasonsController : ApiControllerBase
             request.EndDate,
             request.IsActive);
 
-        await _mediator.Send(command);
-        return Ok(new { message = "Season updated successfully." });
+        await _mediator.Send(command, cancellationToken);
+
+        return NoContent();
     }
 
     #endregion

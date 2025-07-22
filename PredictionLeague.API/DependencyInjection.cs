@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
-using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using PredictionLeague.Application.Common.Behaviours;
 using PredictionLeague.Application.Common.Interfaces;
+using PredictionLeague.Infrastructure.Authentication.Settings;
 using PredictionLeague.Validators.Authentication;
 using System.Text;
 
@@ -12,38 +12,24 @@ namespace PredictionLeague.API;
 
 public static class DependencyInjection
 {
-    public static void AddPresentationServices(this IServiceCollection services, IConfiguration configuration)
+    public static void AddApiServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
-        
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssembly(typeof(IAssemblyMarker).Assembly);
-            cfg.AddOpenBehavior(typeof(TransactionBehaviour<,>));
-            
-            var mediatRKey = configuration["MediatR:LicenseKey"];
-
-            if (!string.IsNullOrEmpty(mediatRKey))
-                cfg.LicenseKey = mediatRKey;
-        });
-
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
-
         services.AddControllers();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
+
+        var jwtSettings = new JwtSettings();
+        configuration.Bind(JwtSettings.SectionName, jwtSettings);
+        services.AddSingleton(jwtSettings);
+
+        services.AddAppAuthentication(configuration);
+        services.AddApplicationServices(configuration);
     }
-
-    public static void AddAuthenticationServices(this IServiceCollection services, IConfiguration configuration)
+    
+    private static void AddAppAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
-        services.ConfigureExternalCookie(options =>
-        {
-            options.Cookie.SameSite = SameSiteMode.None;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        });
-
-        var jwtSettings = configuration.GetSection("JwtSettings");
-        var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret Not Found");
+        var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()!;
+        var googleSettings = configuration.GetSection(GoogleAuthSettings.SectionName).Get<GoogleAuthSettings>()!;
 
         services.AddAuthentication(options =>
             {
@@ -59,27 +45,35 @@ public static class DependencyInjection
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwtSettings["Issuer"],
-                    ValidAudience = jwtSettings["Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+                    ValidIssuer = jwtSettings.Issuer,
+                    ValidAudience = jwtSettings.Audience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
                 };
             })
             .AddGoogle(options =>
             {
-                var googleAuthSection = configuration.GetSection("Authentication:Google");
-                options.ClientId = googleAuthSection["ClientId"] ?? throw new InvalidOperationException("Google ClientId Not Found");
-                options.ClientSecret = googleAuthSection["ClientSecret"] ?? throw new InvalidOperationException("Google ClientSecret Not Found");
+                options.ClientId = googleSettings.ClientId;
+                options.ClientSecret = googleSettings.ClientSecret;
                 options.CallbackPath = "/signin-google";
                 options.SignInScheme = IdentityConstants.ExternalScheme;
             });
 
-        services.AddAuthorization(options =>
+        services.AddAuthorization();
+    }
+    
+    private static void AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+
+        services.AddMediatR(cfg =>
         {
-            options.AddPolicy("ApiUser", policy =>
-            {
-                policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
-                policy.RequireAuthenticatedUser();
-            });
+            cfg.RegisterServicesFromAssembly(typeof(IAssemblyMarker).Assembly);
+            cfg.AddOpenBehavior(typeof(ValidationBehaviour<,>));
+            cfg.AddOpenBehavior(typeof(TransactionBehaviour<,>));
+
+            var mediatRKey = configuration["MediatR:LicenseKey"];
+            if (!string.IsNullOrEmpty(mediatRKey))
+                cfg.LicenseKey = mediatRKey;
         });
     }
 }

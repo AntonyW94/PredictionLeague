@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Leagues.Commands;
 using PredictionLeague.Application.Features.Leagues.Queries;
+using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.API.Controllers;
@@ -22,7 +23,9 @@ public class LeaguesController : ApiControllerBase
     #region Create
 
     [HttpPost("create")]
-    public async Task<IActionResult> CreateLeagueAsync([FromBody] CreateLeagueRequest request)
+    [ProducesResponseType(typeof(LeagueDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateLeagueAsync([FromBody] CreateLeagueRequest request, CancellationToken cancellationToken)
     {
         var command = new CreateLeagueCommand(
             request.Name,
@@ -30,10 +33,10 @@ public class LeaguesController : ApiControllerBase
             CurrentUserId,
             request.EntryCode,
             request.EntryDeadline);
-        
-        var newLeague = await _mediator.Send(command);
 
-        return CreatedAtAction(nameof(GetLeagueByIdAsync).Replace("Async", string.Empty), new { leagueId = newLeague.Id }, newLeague);
+        var newLeague = await _mediator.Send(command, cancellationToken);
+
+        return CreatedAtAction("GetLeagueById", new { leagueId = newLeague.Id }, newLeague);
     }
 
     #endregion
@@ -41,40 +44,47 @@ public class LeaguesController : ApiControllerBase
     #region Read
 
     [HttpGet]
-    public async Task<IActionResult> FetchAllAsync()
+    [ProducesResponseType(typeof(IEnumerable<LeagueDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<LeagueDto>>> FetchAllAsync(CancellationToken cancellationToken)
     {
         var query = new FetchAllLeaguesQuery();
-
-        return Ok(await _mediator.Send(query));
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{leagueId:int}")]
-    public async Task<IActionResult> GetLeagueByIdAsync(int leagueId)
+    [ProducesResponseType(typeof(LeagueDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<LeagueDto>> GetLeagueByIdAsync(int leagueId, CancellationToken cancellationToken)
     {
         var query = new GetLeagueByIdQuery(leagueId);
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(query, cancellationToken);
 
-        return result == null ? NotFound() : Ok(result);
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
     }
 
     [HttpGet("{leagueId:int}/members")]
-    [Authorize]
-    public async Task<IActionResult> FetchLeagueMembersAsync(int leagueId)
+    [ProducesResponseType(typeof(LeagueMembersPageDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<LeagueMembersPageDto>> FetchLeagueMembersAsync(int leagueId, CancellationToken cancellationToken)
     {
         var query = new FetchLeagueMembersQuery(leagueId);
-        var result = await _mediator.Send(query);
+        var result = await _mediator.Send(query, cancellationToken);
 
-        return result == null ? NotFound() : Ok(result);
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
     }
 
     [HttpGet("create-data")]
-    [Authorize]
-    public async Task<IActionResult> GetCreateLeaguePageDataAsync()
+    [ProducesResponseType(typeof(CreateLeaguePageData), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CreateLeaguePageData>> GetCreateLeaguePageDataAsync(CancellationToken cancellationToken)
     {
         var query = new GetCreateLeaguePageDataQuery();
-        var pageData = await _mediator.Send(query);
-
-        return Ok(pageData);
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
     #endregion
@@ -82,49 +92,50 @@ public class LeaguesController : ApiControllerBase
     #region Update
 
     [HttpPut("{leagueId:int}/update")]
-    public async Task<IActionResult> UpdateLeagueAsync(int leagueId, [FromBody] UpdateLeagueRequest request)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateLeagueAsync(int leagueId, [FromBody] UpdateLeagueRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateLeagueCommand(leagueId, request);
-        await _mediator.Send(command);
+        await _mediator.Send(command, cancellationToken);
 
-        return Ok(new { message = "League updated successfully." });
+        return NoContent();
     }
 
     [HttpPost("join")]
-    [Authorize]
-    public async Task<IActionResult> JoinLeagueAsync([FromBody] JoinLeagueRequest request)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> JoinLeagueAsync([FromBody] JoinLeagueRequest request, CancellationToken cancellationToken)
     {
         var command = new JoinLeagueCommand(CurrentUserId, null, request.EntryCode);
-        return await HandleJoinLeagueAsync(() => _mediator.Send(command));
+        await _mediator.Send(command, cancellationToken);
+
+        return NoContent();
     }
 
     [HttpPost("{leagueId:int}/join")]
-    [Authorize]
-    public async Task<IActionResult> JoinPublicLeagueAsync(int leagueId)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> JoinPublicLeagueAsync(int leagueId, CancellationToken cancellationToken)
     {
         var command = new JoinLeagueCommand(CurrentUserId, leagueId, null);
-        return await HandleJoinLeagueAsync(() => _mediator.Send(command));
+        await _mediator.Send(command, cancellationToken);
+
+        return NoContent();
     }
 
     [HttpPost("{leagueId:int}/members/{memberId}/approve")]
-    [Authorize]
-    public async Task<IActionResult> ApproveLeagueMemberAsync(int leagueId, string memberId)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ApproveLeagueMemberAsync(int leagueId, string memberId, CancellationToken cancellationToken)
     {
         var command = new ApproveLeagueMemberCommand(leagueId, memberId, CurrentUserId);
+        await _mediator.Send(command, cancellationToken);
 
-        try
-        {
-            await _mediator.Send(command);
-            return Ok(new { message = "Member approved successfully." });
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Forbid(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
+        return NoContent();
     }
 
     #endregion
@@ -132,49 +143,29 @@ public class LeaguesController : ApiControllerBase
     #region Dashboard
 
     [HttpGet("{leagueId:int}/leaderboard/overall")]
-    public async Task<IActionResult> GetOverallLeaderboardAsync(int leagueId)
+    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboardAsync(int leagueId, CancellationToken cancellationToken)
     {
         var query = new GetOverallLeaderboardQuery(leagueId);
-        var result = await _mediator.Send(query);
-
-        return Ok(result);
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
 
     [HttpGet("{leagueId:int}/leaderboard/monthly/{month:int}")]
-    public async Task<IActionResult> GetMonthlyLeaderboardAsync(int leagueId, int month)
+    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetMonthlyLeaderboardAsync(int leagueId, int month, CancellationToken cancellationToken)
     {
         var query = new GetMonthlyLeaderboardQuery(leagueId, month);
-        var result = await _mediator.Send(query);
-
-        return Ok(result);
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{leagueId:int}/leaderboard/round/{roundId:int}")]
-    public async Task<IActionResult> GetRoundLeaderboardAsync(int leagueId, int roundId)
+    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetRoundLeaderboardAsync(int leagueId, int roundId, CancellationToken cancellationToken)
     {
         var query = new GetRoundLeaderboardQuery(leagueId, roundId);
-        var result = await _mediator.Send(query);
-
-        return Ok(result);
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
     #endregion
-
-    private async Task<IActionResult> HandleJoinLeagueAsync(Func<Task> joinAction)
-    {
-        try
-        {
-            await joinAction();
-            return Ok(new { message = "Successfully joined league." });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
-    }
 }
