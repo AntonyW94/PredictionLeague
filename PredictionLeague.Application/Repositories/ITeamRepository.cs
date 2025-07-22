@@ -6,20 +6,20 @@ public interface ITeamRepository
 {
     #region Create
 
-    Task<Team> CreateAsync(Team team);
+    Task<Team> CreateAsync(Team team, CancellationToken cancellationToken);
 
     #endregion
 
     #region Read
 
-    Task<IEnumerable<Team>> GetAllAsync(); 
-    Task<Team?> GetByIdAsync(int id);
+    Task<IEnumerable<Team>> FetchAllAsync(CancellationToken cancellationToken); 
+    Task<Team?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     #endregion
 
     #region Update
     
-    Task UpdateAsync(Team team);
+    Task UpdateAsync(Team team, CancellationToken cancellationToken);
 
     #endregion
 }

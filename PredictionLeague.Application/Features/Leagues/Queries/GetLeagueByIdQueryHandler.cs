@@ -17,11 +17,11 @@ public class GetLeagueByIdQueryHandler : IRequestHandler<GetLeagueByIdQuery, Lea
 
     public async Task<LeagueDto?> Handle(GetLeagueByIdQuery request, CancellationToken cancellationToken)
     {
-        var league = await _leagueRepository.GetByIdAsync(request.Id);
+        var league = await _leagueRepository.GetByIdAsync(request.Id, cancellationToken);
         if (league == null)
             return null;
 
-        var season = await _seasonRepository.GetByIdAsync(league.SeasonId);
+        var season = await _seasonRepository.GetByIdAsync(league.SeasonId, cancellationToken);
         if (season == null)
             return null;
 
@@ -30,7 +30,7 @@ public class GetLeagueByIdQueryHandler : IRequestHandler<GetLeagueByIdQuery, Lea
             league.Id,
             league.Name,
             season.Name,
-            (await _leagueRepository.GetMembersByLeagueIdAsync(league.Id)).Count(),
+            (await _leagueRepository.GetMembersByLeagueIdAsync(league.Id, cancellationToken)).Count(),
             league.EntryCode ?? "Public"
         );
     }

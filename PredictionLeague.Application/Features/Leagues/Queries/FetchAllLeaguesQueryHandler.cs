@@ -20,12 +20,12 @@ public class FetchAllLeaguesQueryHandler : IRequestHandler<FetchAllLeaguesQuery,
 
     public async Task<IEnumerable<LeagueDto>> Handle(FetchAllLeaguesQuery request, CancellationToken cancellationToken)
     {
-        var leagues = await _leagueRepository.GetAllAsync();
+        var leagues = await _leagueRepository.GetAllAsync(cancellationToken);
         var leaguesToReturn = new List<LeagueDto>();
 
         foreach (var league in leagues)
         {
-            var season = await _seasonRepository.GetByIdAsync(league.SeasonId);
+            var season = await _seasonRepository.GetByIdAsync(league.SeasonId, cancellationToken);
             if (season == null)
             {
                 _logger.LogWarning("Season not found for League (ID: {LeagueId}). Skipping league.", league.Id);
@@ -37,7 +37,7 @@ public class FetchAllLeaguesQueryHandler : IRequestHandler<FetchAllLeaguesQuery,
                 league.Id,
                 league.Name,
                 season.Name,
-                (await _leagueRepository.GetMembersByLeagueIdAsync(league.Id)).Count(),
+                (await _leagueRepository.GetMembersByLeagueIdAsync(league.Id, cancellationToken)).Count(),
                 league.EntryCode ?? "Public"
             ));
         }

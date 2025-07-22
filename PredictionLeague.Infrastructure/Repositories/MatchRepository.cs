@@ -16,7 +16,9 @@ public class MatchRepository : IMatchRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<IEnumerable<Match>> GetByRoundIdAsync(int roundId)
+    #region Read
+
+    public async Task<IEnumerable<Match>> GetByRoundIdAsync(int roundId, CancellationToken cancellationToken)
     {
         const string sql = @"
                 SELECT
@@ -29,18 +31,24 @@ public class MatchRepository : IMatchRepository
                 WHERE m.[RoundId] = @RoundId
                 ORDER BY m.[MatchDateTime];";
 
-        using var connection = Connection;
-        var matches = await connection.QueryAsync<Match, Team, Team, Match>(
-            sql,
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { RoundId = roundId },
+            cancellationToken: cancellationToken
+        );
+
+        var matches = await Connection.QueryAsync<Match, Team, Team, Match>(
+            command,
             (match, homeTeam, awayTeam) =>
             {
                 match.HomeTeam = homeTeam;
                 match.AwayTeam = awayTeam;
                 return match;
             },
-            new { RoundId = roundId },
             splitOn: "Id,Id"
         );
         return matches;
     }
+
+    #endregion
 }

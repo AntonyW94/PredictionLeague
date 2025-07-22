@@ -15,11 +15,11 @@ public class ApproveLeagueMemberCommandHandler : IRequestHandler<ApproveLeagueMe
 
     public async Task Handle(ApproveLeagueMemberCommand request, CancellationToken cancellationToken)
     {
-        var league = await _leagueRepository.GetByIdAsync(request.LeagueId) ?? throw new KeyNotFoundException($"League with ID {request.LeagueId} not found.");
+        var league = await _leagueRepository.GetByIdAsync(request.LeagueId, cancellationToken) ?? throw new KeyNotFoundException($"League with ID {request.LeagueId} not found.");
 
         if (league.AdministratorUserId != request.ApprovingUserId)
             throw new UnauthorizedAccessException("You are not authorized to approve members for this league.");
 
-        await _leagueRepository.UpdateMemberStatusAsync(request.LeagueId, request.MemberId, LeagueMemberStatus.Approved);
+        await _leagueRepository.UpdateMemberStatusAsync(request.LeagueId, request.MemberId, LeagueMemberStatus.Approved, cancellationToken);
     }
 }

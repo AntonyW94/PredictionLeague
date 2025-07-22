@@ -16,7 +16,7 @@ public class GetCreateLeaguePageDataQueryHandler : IRequestHandler<GetCreateLeag
 
     public async Task<CreateLeaguePageData> Handle(GetCreateLeaguePageDataQuery request, CancellationToken cancellationToken)
     {
-        var seasons = await _seasonRepository.GetAllAsync();
+        var seasons = await _seasonRepository.FetchAllAsync(cancellationToken);
 
         return new CreateLeaguePageData
         {

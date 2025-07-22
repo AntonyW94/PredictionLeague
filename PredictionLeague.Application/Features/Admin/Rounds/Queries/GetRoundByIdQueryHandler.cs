@@ -17,11 +17,11 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
 
     public async Task<RoundDetailsDto?> Handle(GetRoundByIdQuery request, CancellationToken cancellationToken)
     {
-        var round = await _roundRepository.GetByIdAsync(request.Id);
+        var round = await _roundRepository.GetByIdAsync(request.Id, cancellationToken);
         if (round == null)
             return null;
 
-        var matches = await _matchRepository.GetByRoundIdAsync(request.Id);
+        var matches = await _matchRepository.GetByRoundIdAsync(request.Id, cancellationToken);
 
         var response = new RoundDetailsDto
         {

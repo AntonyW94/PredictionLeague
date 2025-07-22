@@ -18,7 +18,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
 
     public async Task Handle(UpdateMatchResultsCommand request, CancellationToken cancellationToken)
     {
-        var round = await _roundRepository.GetByIdAsync(request.RoundId);
+        var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
         Guard.Against.NotFound(request.RoundId, round, $"Round (ID: {request.RoundId}) was not found during Update Match Results.");
 
         foreach (var matchResult in request.Matches)
@@ -27,7 +27,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
             matchToUpdate?.UpdateScore(matchResult.HomeScore, matchResult.AwayScore, matchResult.Status);
         }
 
-        await _roundRepository.UpdateAsync(round);
+        await _roundRepository.UpdateAsync(round, cancellationToken);
 
         var matchesWithScores = round.Matches
             .Where(m => m.Status != MatchStatus.Scheduled)
@@ -36,7 +36,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         if (!matchesWithScores.Any())
             return;
         
-        var leaguesToScore = (await _leagueRepository.GetLeaguesForScoringAsync(round.SeasonId, round.Id)).ToList();
+        var leaguesToScore = (await _leagueRepository.GetLeaguesForScoringAsync(round.SeasonId, round.Id, cancellationToken)).ToList();
 
         foreach (var league in leaguesToScore)
         {
@@ -50,6 +50,6 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
             .SelectMany(l => l.Members)
             .SelectMany(m => m.Predictions);
 
-        await _leagueRepository.UpdatePredictionPointsAsync(allUpdatedPredictions);
+        await _leagueRepository.UpdatePredictionPointsAsync(allUpdatedPredictions, cancellationToken);
     }
 }

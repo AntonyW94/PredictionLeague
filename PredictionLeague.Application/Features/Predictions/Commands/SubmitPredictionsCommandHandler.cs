@@ -20,7 +20,7 @@ public class SubmitPredictionsCommandHandler : IRequestHandler<SubmitPredictions
 
     public async Task Handle(SubmitPredictionsCommand request, CancellationToken cancellationToken)
     {
-        var round = await _roundRepository.GetByIdAsync(request.RoundId);
+        var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
 
         Guard.Against.NotFound(request.RoundId, round, $"Round (ID: {request.RoundId}) was not found.");
 

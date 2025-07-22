@@ -41,7 +41,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Authentic
         
         await _userManager.AddToRoleAsync(newUser, nameof(ApplicationUserRole.Player));
 
-        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(newUser);
+        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(newUser, cancellationToken);
         var expiryMinutes = double.Parse(_configuration["JwtSettings:ExpiryMinutes"]!);
         var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
 

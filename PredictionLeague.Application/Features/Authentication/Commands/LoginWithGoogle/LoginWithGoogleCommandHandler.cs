@@ -74,7 +74,7 @@ public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleComm
                     throw new IdentityUpdateException(addLoginResult.Errors);
             }
         }
-        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(user);
+        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
 
         var expiryMinutes = double.Parse(_configuration["JwtSettings:ExpiryMinutes"]!);
         var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);

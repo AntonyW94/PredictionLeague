@@ -7,28 +7,28 @@ public interface ILeagueRepository
 {
     #region Create
 
-    Task<League> CreateAsync(League league);
-    Task AddMemberAsync(LeagueMember member);
+    Task<League> CreateAsync(League league, CancellationToken cancellationToken);
+    Task AddMemberAsync(LeagueMember member, CancellationToken cancellationToken);
 
     #endregion
 
     #region Read
 
-    Task<League?> GetByIdAsync(int id);
-    Task<League?> GetByEntryCodeAsync(string entryCode);
-    Task<IEnumerable<League>> GetAllAsync();
-    Task<IEnumerable<League>> GetPublicLeaguesAsync();
-    Task<IEnumerable<League>> GetLeaguesByUserIdAsync(string userId);
-    Task<IEnumerable<LeagueMember>> GetMembersByLeagueIdAsync(int leagueId);
-    Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId);
+    Task<League?> GetByIdAsync(int id, CancellationToken cancellationToken);
+    Task<League?> GetByEntryCodeAsync(string entryCode, CancellationToken cancellationToken);
+    Task<IEnumerable<League>> GetAllAsync(CancellationToken cancellationToken);
+    Task<IEnumerable<League>> GetPublicLeaguesAsync(CancellationToken cancellationToken);
+    Task<IEnumerable<League>> GetLeaguesByUserIdAsync(string userId, CancellationToken cancellationToken);
+    Task<IEnumerable<LeagueMember>> GetMembersByLeagueIdAsync(int leagueId, CancellationToken cancellationToken);
+    Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken);
 
     #endregion
 
     #region Update
 
-    Task UpdateAsync(League league);
-    Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status);
-    Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate);
+    Task UpdateAsync(League league, CancellationToken cancellationToken);
+    Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status, CancellationToken cancellationToken);
+    Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate, CancellationToken cancellationToken);
 
     #endregion
 }

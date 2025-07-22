@@ -35,7 +35,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
         if (string.IsNullOrEmpty(request.RefreshToken))
             return new FailedAuthenticationResponse("Refresh token not found.");
 
-        var storedToken = await _refreshTokenRepository.GetByTokenAsync(request.RefreshToken);
+        var storedToken = await _refreshTokenRepository.GetByTokenAsync(request.RefreshToken, cancellationToken);
         if (storedToken is not { IsActive: true })
         {
             _logger.LogWarning("Invalid or expired refresh token presented: {RefreshToken}", request.RefreshToken);
@@ -45,7 +45,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
         var user = await _userManager.FindByIdAsync(storedToken.UserId);
         if (user != null)
         {
-            var (accessToken, newRefreshToken) = await _tokenService.GenerateTokensAsync(user);
+            var (accessToken, newRefreshToken) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
             var expiryMinutes = double.Parse(_configuration["JwtSettings:ExpiryMinutes"]!);
             var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
             

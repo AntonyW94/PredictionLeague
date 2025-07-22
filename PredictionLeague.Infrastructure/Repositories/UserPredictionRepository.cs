@@ -17,16 +17,7 @@ public class UserPredictionRepository : IUserPredictionRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<IEnumerable<UserPrediction>> GetByUserIdAndRoundIdAsync(string userId, int roundId)
-    {
-        const string sql = @"
-            SELECT up.* FROM [UserPredictions] up
-            INNER JOIN [Matches] m ON up.[MatchId] = m.[Id]
-            WHERE up.[UserId] = @UserId AND m.[RoundId] = @RoundId;";
-
-        using var connection = Connection;
-        return await connection.QueryAsync<UserPrediction>(sql, new { UserId = userId, RoundId = roundId });
-    }
+    #region Create
 
     public Task UpsertBatchAsync(IEnumerable<UserPrediction> predictions, CancellationToken cancellationToken)
     {
@@ -42,7 +33,7 @@ public class UserPredictionRepository : IUserPredictionRepository
         WHEN NOT MATCHED THEN
             INSERT ([MatchId], [UserId], [PredictedHomeScore], [PredictedAwayScore], [PointsAwarded], [CreatedAt], [UpdatedAt])
             VALUES (@MatchId, @UserId, @PredictedHomeScore, @PredictedAwayScore, @PointsAwarded, @CreatedAt, @UpdatedAt);";
-        
+
         var command = new CommandDefinition(
             commandText: sql,
             parameters: predictions,
@@ -52,7 +43,27 @@ public class UserPredictionRepository : IUserPredictionRepository
         return Connection.ExecuteAsync(command);
     }
 
-    public async Task<IEnumerable<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId)
+    #endregion
+
+    #region Read
+
+    public async Task<IEnumerable<UserPrediction>> FetchByUserIdAndRoundIdAsync(string userId, int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT up.* FROM [UserPredictions] up
+            INNER JOIN [Matches] m ON up.[MatchId] = m.[Id]
+            WHERE up.[UserId] = @UserId AND m.[RoundId] = @RoundId;";
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { UserId = userId, RoundId = roundId },
+            cancellationToken: cancellationToken
+        );
+
+        return await Connection.QueryAsync<UserPrediction>(command);
+    }
+
+    public async Task<IEnumerable<LeaderboardEntryDto>> FetchOverallLeaderboardAsync(int leagueId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT
@@ -81,11 +92,16 @@ public class UserPredictionRepository : IUserPredictionRepository
                 [TotalPoints] DESC,
                 [PlayerName] ASC;";
 
-        using var connection = Connection;
-        return await connection.QueryAsync<LeaderboardEntryDto>(sql, new { LeagueId = leagueId });
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { LeagueId = leagueId },
+            cancellationToken: cancellationToken
+        );
+
+        return await Connection.QueryAsync<LeaderboardEntryDto>(command);
     }
 
-    public async Task<IEnumerable<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month)
+    public async Task<IEnumerable<LeaderboardEntryDto>> FetchMonthlyLeaderboardAsync(int leagueId, int month, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT
@@ -114,11 +130,16 @@ public class UserPredictionRepository : IUserPredictionRepository
                 [TotalPoints] DESC, 
                 [PlayerName] ASC;";
 
-        using var connection = Connection;
-        return await connection.QueryAsync<LeaderboardEntryDto>(sql, new { LeagueId = leagueId, Month = month });
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { LeagueId = leagueId, Month = month },
+            cancellationToken: cancellationToken
+        );
+
+        return await Connection.QueryAsync<LeaderboardEntryDto>(command);
     }
 
-    public async Task<IEnumerable<LeaderboardEntryDto>> GetRoundLeaderboardAsync(int leagueId, int roundId)
+    public async Task<IEnumerable<LeaderboardEntryDto>> FetchRoundLeaderboardAsync(int leagueId, int roundId, CancellationToken cancellationToken)
     {
         const string sql = @"
         SELECT
@@ -145,7 +166,14 @@ public class UserPredictionRepository : IUserPredictionRepository
             [TotalPoints] DESC, 
             [PlayerName] ASC;";
 
-        using var connection = Connection;
-        return await connection.QueryAsync<LeaderboardEntryDto>(sql, new { LeagueId = leagueId, RoundId = roundId });
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { LeagueId = leagueId, RoundId = roundId },
+            cancellationToken: cancellationToken
+        );
+
+        return await Connection.QueryAsync<LeaderboardEntryDto>(command);
     }
+
+    #endregion
 }

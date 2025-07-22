@@ -17,7 +17,7 @@ public class UpdateTeamCommandHandler : IRequestHandler<UpdateTeamCommand>
 
     public async Task Handle(UpdateTeamCommand request, CancellationToken cancellationToken)
     {
-        var team = await _teamRepository.GetByIdAsync(request.Id);
+        var team = await _teamRepository.GetByIdAsync(request.Id, cancellationToken);
         if (team == null)
         {
             _logger.LogWarning("Attempted to update non-existent Team (ID: {TeamId}).", request.Id);
@@ -26,6 +26,6 @@ public class UpdateTeamCommandHandler : IRequestHandler<UpdateTeamCommand>
 
         team.UpdateDetails(request.Name, request.LogoUrl);
 
-        await _teamRepository.UpdateAsync(team);
+        await _teamRepository.UpdateAsync(team, cancellationToken);
     }
 }

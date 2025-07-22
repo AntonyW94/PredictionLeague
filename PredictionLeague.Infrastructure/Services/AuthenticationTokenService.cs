@@ -24,7 +24,7 @@ public class AuthenticationTokenService : IAuthenticationTokenService
         _refreshTokenRepository = refreshTokenRepository;
     }
 
-    public async Task<(string AccessToken, string RefreshToken)> GenerateTokensAsync(ApplicationUser user)
+    public async Task<(string AccessToken, string RefreshToken)> GenerateTokensAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
         var userRoles = await _userManager.GetRolesAsync(user);
 
@@ -59,7 +59,7 @@ public class AuthenticationTokenService : IAuthenticationTokenService
             Created = DateTime.UtcNow
         };
 
-        await _refreshTokenRepository.CreateAsync(refreshToken);
+        await _refreshTokenRepository.CreateAsync(refreshToken, cancellationToken);
 
         return (accessToken, refreshToken.Token);
     }

@@ -15,6 +15,6 @@ public class GetRoundLeaderboardQueryHandler : IRequestHandler<GetRoundLeaderboa
 
     public async Task<IEnumerable<LeaderboardEntryDto>> Handle(GetRoundLeaderboardQuery request, CancellationToken cancellationToken)
     {
-        return await _predictionRepository.GetRoundLeaderboardAsync(request.LeagueId, request.RoundId);
+        return await _predictionRepository.FetchRoundLeaderboardAsync(request.LeagueId, request.RoundId, cancellationToken);
     }
 }

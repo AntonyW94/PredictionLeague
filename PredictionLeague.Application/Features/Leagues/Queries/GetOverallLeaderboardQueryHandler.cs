@@ -15,6 +15,6 @@ public class GetOverallLeaderboardQueryHandler : IRequestHandler<GetOverallLeade
 
     public async Task<IEnumerable<LeaderboardEntryDto>> Handle(GetOverallLeaderboardQuery request, CancellationToken cancellationToken)
     {
-        return await _predictionRepository.GetOverallLeaderboardAsync(request.LeagueId);
+        return await _predictionRepository.FetchOverallLeaderboardAsync(request.LeagueId, cancellationToken);
     }
 }

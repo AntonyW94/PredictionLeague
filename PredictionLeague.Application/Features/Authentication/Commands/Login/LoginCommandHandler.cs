@@ -26,7 +26,7 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
         if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
             return new FailedAuthenticationResponse("Invalid email or password.");
 
-        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(user);
+        var (accessToken, refreshToken) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
         var expiryMinutes = double.Parse(_configuration["JwtSettings:ExpiryMinutes"]!);
         var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
 

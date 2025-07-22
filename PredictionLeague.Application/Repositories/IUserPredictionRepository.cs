@@ -13,10 +13,10 @@ public interface IUserPredictionRepository
 
     #region Read
 
-    Task<IEnumerable<UserPrediction>> GetByUserIdAndRoundIdAsync(string userId, int roundId);
-    Task<IEnumerable<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId);
-    Task<IEnumerable<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month);
-    Task<IEnumerable<LeaderboardEntryDto>> GetRoundLeaderboardAsync(int leagueId, int roundId);
+    Task<IEnumerable<UserPrediction>> FetchByUserIdAndRoundIdAsync(string userId, int roundId, CancellationToken cancellationToken);
+    Task<IEnumerable<LeaderboardEntryDto>> FetchOverallLeaderboardAsync(int leagueId, CancellationToken cancellationToken);
+    Task<IEnumerable<LeaderboardEntryDto>> FetchMonthlyLeaderboardAsync(int leagueId, int month, CancellationToken cancellationToken);
+    Task<IEnumerable<LeaderboardEntryDto>> FetchRoundLeaderboardAsync(int leagueId, int roundId, CancellationToken cancellationToken);
  
     #endregion
 }

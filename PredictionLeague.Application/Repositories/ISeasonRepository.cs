@@ -6,20 +6,20 @@ public interface ISeasonRepository
 {
     #region Create
 
-    Task<Season> CreateAsync(Season season);
+    Task<Season> CreateAsync(Season season, CancellationToken cancellationToken);
 
     #endregion
 
     #region Read
 
-    Task<IEnumerable<Season>> GetAllAsync();
-    Task<Season?> GetByIdAsync(int id);
+    Task<IEnumerable<Season>> FetchAllAsync(CancellationToken cancellationToken);
+    Task<Season?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     #endregion
 
     #region Update
     
-    Task UpdateAsync(Season request);
+    Task UpdateAsync(Season request, CancellationToken cancellationToken);
     
     #endregion
 }

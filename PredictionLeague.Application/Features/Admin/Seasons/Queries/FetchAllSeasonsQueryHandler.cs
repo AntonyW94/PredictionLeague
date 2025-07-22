@@ -17,12 +17,12 @@ public class FetchAllSeasonsQueryHandler : IRequestHandler<FetchAllSeasonsQuery,
 
     public async Task<IEnumerable<SeasonDto>> Handle(FetchAllSeasonsQuery request, CancellationToken cancellationToken)
     {
-        var seasons = await _seasonRepository.GetAllAsync();
+        var seasons = await _seasonRepository.FetchAllAsync(cancellationToken);
         var seasonsToReturn = new List<SeasonDto>();
 
         foreach (var season in seasons)
         {
-            var rounds = await _roundRepository.GetBySeasonIdAsync(season.Id);
+            var rounds = await _roundRepository.FetchBySeasonIdAsync(season.Id, cancellationToken);
 
             seasonsToReturn.Add(new SeasonDto(
                 season.Id,

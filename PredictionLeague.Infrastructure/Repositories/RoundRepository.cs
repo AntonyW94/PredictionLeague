@@ -31,20 +31,28 @@ public class RoundRepository : IRoundRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<Round> CreateAsync(Round round)
+    #region Create
+
+    public async Task<Round> CreateAsync(Round round, CancellationToken cancellationToken)
     {
         const string sql = @"
             INSERT INTO [dbo].[Rounds] ([SeasonId], [RoundNumber], [StartDate], [Deadline])
             VALUES (@SeasonId, @RoundNumber, @StartDate, @Deadline);
             SELECT CAST(SCOPE_IDENTITY() as int);";
 
-        var newRoundId = await Connection.ExecuteScalarAsync<int>(sql, new
-        {
-            round.SeasonId,
-            round.RoundNumber,
-            round.StartDate,
-            round.Deadline
-        });
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new
+            {
+                round.SeasonId,
+                round.RoundNumber,
+                round.StartDate,
+                round.Deadline
+            },
+            cancellationToken: cancellationToken
+        );
+
+        var newRoundId = await Connection.ExecuteScalarAsync<int>(command);
 
         if (round.Matches.Any())
         {
@@ -56,21 +64,32 @@ public class RoundRepository : IRoundRepository
                 m.MatchDateTime,
                 Status = m.Status.ToString()
             }).ToList();
-
-            await Connection.ExecuteAsync(AddMatchSql, matchesToInsert);
+         
+            var insertMatchesCommand = new CommandDefinition(
+                commandText: AddMatchSql,
+                parameters: matchesToInsert,
+                cancellationToken: cancellationToken
+            );
+            
+            await Connection.ExecuteAsync(insertMatchesCommand);
         }
 
         typeof(Round).GetProperty(nameof(Round.Id))?.SetValue(round, newRoundId);
         return round;
     }
 
-    public async Task<IEnumerable<Round>> GetBySeasonIdAsync(int seasonId)
+    #endregion
+
+    #region Read
+
+    public async Task<IEnumerable<Round>> FetchBySeasonIdAsync(int seasonId, CancellationToken cancellationToken)
     {
         const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[SeasonId] = @SeasonId ORDER BY r.[RoundNumber];";
-        var roundDictionary = await QueryAndMapRounds(sql, new { SeasonId = seasonId });
-        return roundDictionary.Values;
+       
+        return (await QueryAndMapRounds(sql, cancellationToken, new { SeasonId = seasonId })).Values;
     }
-    public async Task<Round?> GetCurrentRoundAsync(int seasonId)
+ 
+    public async Task<Round?> GetCurrentRoundAsync(int seasonId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT TOP 1 r.*, m.*
@@ -78,16 +97,21 @@ public class RoundRepository : IRoundRepository
             LEFT JOIN [dbo].[Matches] m ON r.[Id] = m.[RoundId]
             WHERE r.[SeasonId] = @SeasonId AND r.[StartDate] > GETUTCDATE()
             ORDER BY r.[StartDate] ASC;";
-        return await QueryAndMapRound(sql, new { SeasonId = seasonId });
+   
+        return await QueryAndMapRound(sql, cancellationToken, new { SeasonId = seasonId });
     }
 
-    public async Task<Round?> GetByIdAsync(int roundId)
+    public async Task<Round?> GetByIdAsync(int roundId, CancellationToken cancellationToken)
     {
         const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = @RoundId;";
-        return await QueryAndMapRound(sql, new { RoundId = roundId });
+        return await QueryAndMapRound(sql, cancellationToken, new { RoundId = roundId });
     }
 
-    public async Task UpdateAsync(Round round)
+    #endregion
+
+    #region Update
+
+    public async Task UpdateAsync(Round round, CancellationToken cancellationToken)
     {
         const string deleteMatchesSql = "DELETE FROM [dbo].[Matches] WHERE [RoundId] = @RoundId;";
         const string updateRoundSql = @"
@@ -97,8 +121,21 @@ public class RoundRepository : IRoundRepository
                 [Deadline] = @Deadline
             WHERE [Id] = @Id;";
 
-        await Connection.ExecuteAsync(deleteMatchesSql, new { RoundId = round.Id });
-        await Connection.ExecuteAsync(updateRoundSql, round);
+        var deleteMatchesCommand = new CommandDefinition(
+            commandText: deleteMatchesSql,
+            parameters: new { RoundId = round.Id },
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(deleteMatchesCommand);
+
+        var updateRoundCommand = new CommandDefinition(
+            commandText: updateRoundSql,
+            parameters: round,
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(updateRoundCommand);
 
         if (round.Matches.Any())
         {
@@ -111,24 +148,36 @@ public class RoundRepository : IRoundRepository
                 Status = m.Status.ToString()
             }).ToList();
 
-            await Connection.ExecuteAsync(AddMatchSql, matchesToInsert);
+            var insertMatchesCommand = new CommandDefinition(
+                commandText: AddMatchSql,
+                parameters: matchesToInsert,
+                cancellationToken: cancellationToken
+            );
+
+            await Connection.ExecuteAsync(insertMatchesCommand);
         }
     }
 
+    #endregion
+
     #region Private Helper Methods
 
-    private async Task<Round?> QueryAndMapRound(string sql, object? param = null)
+    private async Task<Round?> QueryAndMapRound(string sql, CancellationToken cancellationToken, object? param = null)
     {
-        var roundDictionary = await QueryAndMapRounds(sql, param);
-        return roundDictionary.Values.FirstOrDefault();
+        return (await QueryAndMapRounds(sql, cancellationToken, param)).Values.FirstOrDefault();
     }
 
-    private async Task<Dictionary<int, Round>> QueryAndMapRounds(string sql, object? param = null)
+    private async Task<Dictionary<int, Round>> QueryAndMapRounds(string sql, CancellationToken cancellationToken, object? param = null)
     {
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: param,
+            cancellationToken: cancellationToken
+        );
+        
         var queryResult = await Connection.QueryAsync<Round, Match?, (Round Round, Match? Match)>(
-            sql,
+            command,
             (round, match) => (round, match),
-            param,
             splitOn: "Id"
         );
 

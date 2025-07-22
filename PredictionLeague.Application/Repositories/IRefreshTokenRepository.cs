@@ -6,13 +6,13 @@ public interface IRefreshTokenRepository
 {
     #region Create
 
-    Task CreateAsync(RefreshToken token);
+    Task CreateAsync(RefreshToken token, CancellationToken cancellationToken);
 
     #endregion
 
     #region Read
 
-    Task<RefreshToken?> GetByTokenAsync(string token);
+    Task<RefreshToken?> GetByTokenAsync(string token, CancellationToken cancellationToken);
 
     #endregion
 

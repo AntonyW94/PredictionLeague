@@ -29,19 +29,19 @@ public class GetDashboardDataQueryHandler : IRequestHandler<GetDashboardDataQuer
 
     public async Task<DashboardDto> Handle(GetDashboardDataQuery request, CancellationToken cancellationToken)
     {
-        var userLeagues = (await _leagueRepository.GetLeaguesByUserIdAsync(request.UserId)).ToList();
+        var userLeagues = (await _leagueRepository.GetLeaguesByUserIdAsync(request.UserId, cancellationToken)).ToList();
         var seasonIds = userLeagues.Select(l => l.SeasonId).Distinct();
         var upcomingRounds = new List<UpcomingRoundDto>();
 
         foreach (var seasonId in seasonIds)
         {
-            var currentRound = await _roundRepository.GetCurrentRoundAsync(seasonId);
+            var currentRound = await _roundRepository.GetCurrentRoundAsync(seasonId, cancellationToken);
             if (currentRound == null)
                 continue;
 
-            var season = await _seasonRepository.GetByIdAsync(seasonId);
-            var matches = await _matchRepository.GetByRoundIdAsync(currentRound.Id);
-            var userPredictions = await _predictionRepository.GetByUserIdAndRoundIdAsync(request.UserId, currentRound.Id);
+            var season = await _seasonRepository.GetByIdAsync(seasonId, cancellationToken);
+            var matches = await _matchRepository.GetByRoundIdAsync(currentRound.Id, cancellationToken);
+            var userPredictions = await _predictionRepository.FetchByUserIdAndRoundIdAsync(request.UserId, currentRound.Id, cancellationToken);
 
             upcomingRounds.Add(new UpcomingRoundDto
             {
@@ -67,13 +67,13 @@ public class GetDashboardDataQueryHandler : IRequestHandler<GetDashboardDataQuer
             });
         }
 
-        var allPublicLeagues = await _leagueRepository.GetPublicLeaguesAsync();
+        var allPublicLeagues = await _leagueRepository.GetPublicLeaguesAsync(cancellationToken);
         var userLeagueIds = userLeagues.Select(l => l.Id).ToHashSet();
         var publicLeagues = new List<PublicLeagueDto>();
 
         foreach (var league in allPublicLeagues)
         {
-            var season = await _seasonRepository.GetByIdAsync(league.SeasonId);
+            var season = await _seasonRepository.GetByIdAsync(league.SeasonId, cancellationToken);
 
             publicLeagues.Add(new PublicLeagueDto
             {

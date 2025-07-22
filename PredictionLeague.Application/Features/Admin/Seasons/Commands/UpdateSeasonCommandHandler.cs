@@ -15,11 +15,11 @@ public class UpdateSeasonCommandHandler : IRequestHandler<UpdateSeasonCommand>
 
     public async Task Handle(UpdateSeasonCommand request, CancellationToken cancellationToken)
     {
-        var season = await _seasonRepository.GetByIdAsync(request.Id);
+        var season = await _seasonRepository.GetByIdAsync(request.Id, cancellationToken);
         Guard.Against.NotFound(request.Id, season, $"Season (ID: {request.Id}) not found during update.");
 
         season.UpdateDetails(request.Name, request.StartDate, request.EndDate, request.IsActive);
 
-        await _seasonRepository.UpdateAsync(season);
+        await _seasonRepository.UpdateAsync(season, cancellationToken);
     }
 }

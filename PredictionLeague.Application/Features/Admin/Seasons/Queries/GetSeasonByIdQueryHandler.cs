@@ -17,11 +17,11 @@ public class GetSeasonByIdQueryHandler : IRequestHandler<GetSeasonByIdQuery, Sea
     
     public async Task<SeasonDto?> Handle(GetSeasonByIdQuery request, CancellationToken cancellationToken)
     {
-        var season = await _seasonRepository.GetByIdAsync(request.Id);
+        var season = await _seasonRepository.GetByIdAsync(request.Id, cancellationToken);
         if (season == null)
             return null;
 
-        var rounds = await _roundRepository.GetBySeasonIdAsync(request.Id);
+        var rounds = await _roundRepository.FetchBySeasonIdAsync(request.Id, cancellationToken);
 
         return new SeasonDto(
             season.Id,

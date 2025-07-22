@@ -6,21 +6,21 @@ public interface IRoundRepository
 {
     #region Create
 
-    Task<Round> CreateAsync(Round round);
+    Task<Round> CreateAsync(Round round, CancellationToken cancellationToken);
 
     #endregion
 
     #region Read
     
-    Task<IEnumerable<Round>> GetBySeasonIdAsync(int seasonId);
-    Task<Round?> GetCurrentRoundAsync(int seasonId);
-    Task<Round?> GetByIdAsync(int id);
+    Task<IEnumerable<Round>> FetchBySeasonIdAsync(int seasonId, CancellationToken cancellationToken);
+    Task<Round?> GetCurrentRoundAsync(int seasonId, CancellationToken cancellationToken);
+    Task<Round?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     #endregion
 
     #region Update
     
-    Task UpdateAsync(Round round);
+    Task UpdateAsync(Round round, CancellationToken cancellationToken);
 
     #endregion
 }

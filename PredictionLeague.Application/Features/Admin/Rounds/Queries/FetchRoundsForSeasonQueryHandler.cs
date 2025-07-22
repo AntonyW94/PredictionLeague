@@ -17,12 +17,12 @@ public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSe
 
     public async Task<IEnumerable<RoundDto>> Handle(FetchRoundsForSeasonQuery request, CancellationToken cancellationToken)
     {
-        var rounds = await _roundRepository.GetBySeasonIdAsync(request.SeasonId);
+        var rounds = await _roundRepository.FetchBySeasonIdAsync(request.SeasonId, cancellationToken);
         var roundsToReturn = new List<RoundDto>();
 
         foreach (var round in rounds)
         {
-            var matches = await _matchRepository.GetByRoundIdAsync(round.Id);
+            var matches = await _matchRepository.GetByRoundIdAsync(round.Id, cancellationToken);
             
             roundsToReturn.Add(new RoundDto
             {

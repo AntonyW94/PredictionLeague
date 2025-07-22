@@ -16,21 +16,9 @@ public class TeamRepository : ITeamRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<IEnumerable<Team>> GetAllAsync()
-    {
-        const string sql = @"
-                SELECT 
-                    [Id], 
-                    [Name], 
-                    [LogoUrl] 
-                FROM [Teams] 
-                ORDER BY [Name];";
+    #region Create
 
-        using var connection = Connection;
-        return await connection.QueryAsync<Team>(sql);
-    }
-
-    public async Task<Team> CreateAsync(Team team)
+    public async Task<Team> CreateAsync(Team team, CancellationToken cancellationToken)
     {
         const string sql = @"
                 INSERT INTO [Teams] 
@@ -44,12 +32,39 @@ public class TeamRepository : ITeamRepository
                     @Name, 
                     @LogoUrl
                 );";
-
-        using var connection = Connection;
-        return await connection.QuerySingleAsync<Team>(sql, team);
+       
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: team,
+            cancellationToken: cancellationToken
+        );
+        
+        return await Connection.QuerySingleAsync<Team>(command);
     }
 
-    public async Task<Team?> GetByIdAsync(int id)
+    #endregion
+
+    #region Read
+
+    public async Task<IEnumerable<Team>> FetchAllAsync(CancellationToken cancellationToken)
+    {
+        const string sql = @"
+                SELECT 
+                    [Id], 
+                    [Name], 
+                    [LogoUrl] 
+                FROM [Teams] 
+                ORDER BY [Name];";
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            cancellationToken: cancellationToken
+        );
+
+        return await Connection.QueryAsync<Team>(command);
+    }
+
+    public async Task<Team?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         const string sql = @"
                 SELECT 
@@ -58,12 +73,21 @@ public class TeamRepository : ITeamRepository
                     [LogoUrl] 
                 FROM [Teams] 
                 WHERE [Id] = @Id;";
+      
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { Id = id },
+            cancellationToken: cancellationToken
+        );
 
-        using var connection = Connection;
-        return await connection.QuerySingleOrDefaultAsync<Team>(sql, new { Id = id });
+        return await Connection.QuerySingleOrDefaultAsync<Team>(command);
     }
 
-    public async Task UpdateAsync(Team team)
+    #endregion
+
+    #region Update
+
+    public async Task UpdateAsync(Team team, CancellationToken cancellationToken)
     {
         const string sql = @"
                 UPDATE [Teams] 
@@ -72,7 +96,14 @@ public class TeamRepository : ITeamRepository
                     [LogoUrl] = @LogoUrl 
                 WHERE [Id] = @Id;";
 
-        using var connection = Connection;
-        await connection.ExecuteAsync(sql, team);
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: team,
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(command);
     }
+
+    #endregion
 }

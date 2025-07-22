@@ -27,7 +27,7 @@ public class CreateRoundCommandHandler : IRequestHandler<CreateRoundCommand, Rou
             round.AddMatch(matchToAdd.HomeTeamId, matchToAdd.AwayTeamId, matchToAdd.MatchDateTime);
         }
 
-        var createdRound = await _roundRepository.CreateAsync(round);
+        var createdRound = await _roundRepository.CreateAsync(round, cancellationToken);
         
         return new RoundDto
         {

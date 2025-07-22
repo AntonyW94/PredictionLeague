@@ -18,7 +18,7 @@ public class SeasonRepository : ISeasonRepository
 
     #region Create
 
-    public async Task<Season> CreateAsync(Season season)
+    public async Task<Season> CreateAsync(Season season, CancellationToken cancellationToken)
     {
         const string sql = @"
                 INSERT INTO [Seasons]
@@ -37,13 +37,19 @@ public class SeasonRepository : ISeasonRepository
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-        var newSeasonId = await Connection.ExecuteScalarAsync<int>(sql, new
-        {
-            season.Name,
-            season.StartDate,
-            season.EndDate,
-            season.IsActive
-        });
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new
+            {
+                season.Name,
+                season.StartDate,
+                season.EndDate,
+                season.IsActive
+            },
+            cancellationToken: cancellationToken
+        );
+
+        var newSeasonId = await Connection.ExecuteScalarAsync<int>(command);
 
         typeof(Season).GetProperty(nameof(Season.Id))?.SetValue(season, newSeasonId);
         return season;
@@ -53,27 +59,36 @@ public class SeasonRepository : ISeasonRepository
 
     #region Read
 
-    public async Task<IEnumerable<Season>> GetAllAsync()
+    public async Task<IEnumerable<Season>> FetchAllAsync(CancellationToken cancellationToken)
     {
         const string sql = "SELECT * FROM [Seasons] ORDER BY [StartDate] DESC;";
-
-        using var connection = Connection;
-        return await connection.QueryAsync<Season>(sql);
+      
+        var command = new CommandDefinition(
+            commandText: sql,
+            cancellationToken: cancellationToken
+        );
+        
+        return await Connection.QueryAsync<Season>(command);
     }
 
-    public async Task<Season?> GetByIdAsync(int id)
+    public async Task<Season?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         const string sql = "SELECT * FROM [Seasons] WHERE [Id] = @Id;";
+       
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { Id = id },
+            cancellationToken: cancellationToken
+        );
 
-        using var connection = Connection;
-        return await connection.QuerySingleOrDefaultAsync<Season>(sql, new { Id = id });
+        return await Connection.QuerySingleOrDefaultAsync<Season>(command);
     }
 
     #endregion
 
     #region Update
 
-    public async Task UpdateAsync(Season season)
+    public async Task UpdateAsync(Season season, CancellationToken cancellationToken)
     {
         const string sql = @"
                 UPDATE [Seasons]
@@ -83,9 +98,14 @@ public class SeasonRepository : ISeasonRepository
                     [EndDate] = @EndDate,
                     [IsActive] = @IsActive
                 WHERE [Id] = @Id;";
+       
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: season,
+            cancellationToken: cancellationToken
+        );
 
-        using var connection = Connection;
-        await connection.ExecuteAsync(sql, season);
+        await Connection.ExecuteAsync(command);
     }
 
     #endregion

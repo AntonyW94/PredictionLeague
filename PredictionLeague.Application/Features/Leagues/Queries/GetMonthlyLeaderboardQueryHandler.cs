@@ -15,6 +15,6 @@ public class GetMonthlyLeaderboardQueryHandler : IRequestHandler<GetMonthlyLeade
 
     public async Task<IEnumerable<LeaderboardEntryDto>> Handle(GetMonthlyLeaderboardQuery request, CancellationToken cancellationToken)
     {
-        return await _predictionRepository.GetMonthlyLeaderboardAsync(request.LeagueId, request.Month);
+        return await _predictionRepository.FetchMonthlyLeaderboardAsync(request.LeagueId, request.Month, cancellationToken);
     }
 }

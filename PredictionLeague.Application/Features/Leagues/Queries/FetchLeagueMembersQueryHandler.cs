@@ -20,11 +20,11 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
 
     public async Task<LeagueMembersPageDto?> Handle(FetchLeagueMembersQuery request, CancellationToken cancellationToken)
     {
-        var league = await _leagueRepository.GetByIdAsync(request.LeagueId);
+        var league = await _leagueRepository.GetByIdAsync(request.LeagueId, cancellationToken);
         if (league == null)
             return null;
 
-        var members = await _leagueRepository.GetMembersByLeagueIdAsync(request.LeagueId);
+        var members = await _leagueRepository.GetMembersByLeagueIdAsync(request.LeagueId, cancellationToken);
         var memberDtos = new List<LeagueMemberDto>();
 
         foreach (var member in members)

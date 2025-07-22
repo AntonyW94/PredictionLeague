@@ -14,11 +14,11 @@ public class UpdateLeagueCommandHandler : IRequestHandler<UpdateLeagueCommand>
 
     public async Task Handle(UpdateLeagueCommand request, CancellationToken cancellationToken)
     {
-        var leagueToUpdate = await _leagueRepository.GetByIdAsync(request.Id) ?? throw new KeyNotFoundException($"League with ID {request.Id} not found.");
+        var leagueToUpdate = await _leagueRepository.GetByIdAsync(request.Id, cancellationToken) ?? throw new KeyNotFoundException($"League with ID {request.Id} not found.");
 
         leagueToUpdate.Name = request.Name;
         leagueToUpdate.EntryCode = string.IsNullOrWhiteSpace(request.EntryCode) ? null : request.EntryCode;
 
-        await _leagueRepository.UpdateAsync(leagueToUpdate);
+        await _leagueRepository.UpdateAsync(leagueToUpdate, cancellationToken);
     }
 }

@@ -25,7 +25,7 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
             request.EndDate,
             request.IsActive);
 
-        var createdSeason = await _seasonRepository.CreateAsync(season);
+        var createdSeason = await _seasonRepository.CreateAsync(season, cancellationToken);
 
         var publicLeague = League.Create(
             createdSeason.Id,
@@ -37,12 +37,12 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
         
         publicLeague.AddMember(request.CreatorId);
 
-        await _leagueRepository.CreateAsync(publicLeague);
+        await _leagueRepository.CreateAsync(publicLeague, cancellationToken);
         
         var adminMember = publicLeague.Members.First();
         adminMember.Approve();
         
-        await _leagueRepository.UpdateMemberStatusAsync(publicLeague.Id, request.CreatorId, LeagueMemberStatus.Approved);
+        await _leagueRepository.UpdateMemberStatusAsync(publicLeague.Id, request.CreatorId, LeagueMemberStatus.Approved, cancellationToken);
 
         return new SeasonDto(
             createdSeason.Id,

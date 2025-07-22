@@ -30,16 +30,17 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
 
         league.AddMember(request.CreatingUserId);
 
-        var createdLeague = await _leagueRepository.CreateAsync(league);
+        var createdLeague = await _leagueRepository.CreateAsync(league, cancellationToken);
 
         await _leagueRepository.UpdateMemberStatusAsync(
             createdLeague.Id,
             request.CreatingUserId,
-            LeagueMemberStatus.Approved
+            LeagueMemberStatus.Approved,
+            cancellationToken
         );
        
         
-        var season = await _seasonRepository.GetByIdAsync(createdLeague.SeasonId);
+        var season = await _seasonRepository.GetByIdAsync(createdLeague.SeasonId, cancellationToken);
         Guard.Against.Null(season, $"Season with ID {createdLeague.SeasonId} was not found.");
 
         return new LeagueDto(

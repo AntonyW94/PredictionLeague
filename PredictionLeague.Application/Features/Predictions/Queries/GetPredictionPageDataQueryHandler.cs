@@ -26,10 +26,10 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
 
     public async Task<PredictionPageDto> Handle(GetPredictionPageDataQuery request, CancellationToken cancellationToken)
     {
-        var round = await _roundRepository.GetByIdAsync(request.RoundId) ?? throw new KeyNotFoundException("Round not found.");
-        var season = await _seasonRepository.GetByIdAsync(round.SeasonId) ?? throw new KeyNotFoundException("Season not found.");
-        var matches = await _matchRepository.GetByRoundIdAsync(request.RoundId);
-        var userPredictions = await _predictionRepository.GetByUserIdAndRoundIdAsync(request.UserId, request.RoundId);
+        var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken) ?? throw new KeyNotFoundException("Round not found.");
+        var season = await _seasonRepository.GetByIdAsync(round.SeasonId, cancellationToken) ?? throw new KeyNotFoundException("Season not found.");
+        var matches = await _matchRepository.GetByRoundIdAsync(request.RoundId, cancellationToken);
+        var userPredictions = await _predictionRepository.FetchByUserIdAndRoundIdAsync(request.UserId, request.RoundId, cancellationToken);
 
         var pageData = new PredictionPageDto
         {

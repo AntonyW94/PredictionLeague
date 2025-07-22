@@ -18,7 +18,7 @@ public class LeagueRepository : ILeagueRepository
             lm.*
         FROM [dbo].[Leagues] l
         LEFT JOIN [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]";
-   
+
     public LeagueRepository(IDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
@@ -26,87 +26,103 @@ public class LeagueRepository : ILeagueRepository
 
     #region Create
 
-    public async Task<League> CreateAsync(League league)
+    public async Task<League> CreateAsync(League league, CancellationToken cancellationToken)
     {
         const string sql = @"
             INSERT INTO [dbo].[Leagues] ([Name], [SeasonId], [AdministratorUserId], [EntryCode], [CreatedAt], [EntryDeadline])
             VALUES (@Name, @SeasonId, @AdministratorUserId, @EntryCode, @CreatedAt, @EntryDeadline);
             SELECT CAST(SCOPE_IDENTITY() as int);";
 
-        var newLeagueId = await Connection.ExecuteScalarAsync<int>(sql, league);
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: league,
+            cancellationToken: cancellationToken
+        );
+
+        var newLeagueId = await Connection.ExecuteScalarAsync<int>(command);
         typeof(League).GetProperty(nameof(League.Id))?.SetValue(league, newLeagueId);
 
         foreach (var member in league.Members)
         {
             typeof(LeagueMember).GetProperty(nameof(LeagueMember.LeagueId))?.SetValue(member, newLeagueId);
-            await AddMemberAsync(member);
+            await AddMemberAsync(member, cancellationToken);
         }
-        
+
         return league;
     }
 
-    public Task AddMemberAsync(LeagueMember member)
+    public Task AddMemberAsync(LeagueMember member, CancellationToken cancellationToken)
     {
         const string sql = @"
             INSERT INTO [dbo].[LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAt], [ApprovedAt])
             VALUES (@LeagueId, @UserId, @Status, @JoinedAt, @ApprovedAt);";
 
-        return Connection.ExecuteAsync(sql, new
-        {
-            member.LeagueId,
-            member.UserId,
-            Status = member.Status.ToString(),
-            member.JoinedAt,
-            member.ApprovedAt
-        });
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new
+            {
+                member.LeagueId,
+                member.UserId,
+                Status = member.Status.ToString(),
+                member.JoinedAt,
+                member.ApprovedAt
+            },
+            cancellationToken: cancellationToken
+        );
+
+        return Connection.ExecuteAsync(command);
     }
 
     #endregion
 
     #region Read
 
-    public async Task<League?> GetByIdAsync(int id)
+    public async Task<League?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[Id] = @Id;";
-       
-        var leagues = await QueryAndMapLeagues(sql, new { Id = id });
-        return leagues.FirstOrDefault();
+
+        return (await QueryAndMapLeagues(sql, cancellationToken, new { Id = id })).FirstOrDefault();
     }
 
-    public async Task<League?> GetByEntryCodeAsync(string? entryCode)
+    public async Task<League?> GetByEntryCodeAsync(string? entryCode, CancellationToken cancellationToken)
     {
         const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[EntryCode] = @EntryCode;";
-       
-        var leagues = await QueryAndMapLeagues(sql, new { EntryCode = entryCode });
-        return leagues.FirstOrDefault();
+
+        return (await QueryAndMapLeagues(sql, cancellationToken, new { EntryCode = entryCode })).FirstOrDefault();
     }
 
-    public async Task<IEnumerable<League>> GetAllAsync()
+    public async Task<IEnumerable<League>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return await QueryAndMapLeagues(GetLeaguesWithMembersSql);
+        return await QueryAndMapLeagues(GetLeaguesWithMembersSql, cancellationToken);
     }
 
-    public async Task<IEnumerable<League>> GetPublicLeaguesAsync()
+    public async Task<IEnumerable<League>> GetPublicLeaguesAsync(CancellationToken cancellationToken)
     {
         const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[EntryCode] IS NULL;";
-        
-        return await QueryAndMapLeagues(sql);
+
+        return await QueryAndMapLeagues(sql, cancellationToken);
     }
 
-    public async Task<IEnumerable<League>> GetLeaguesByUserIdAsync(string userId)
+    public async Task<IEnumerable<League>> GetLeaguesByUserIdAsync(string userId, CancellationToken cancellationToken)
     {
         const string sql = $"{GetLeaguesWithMembersSql} WHERE lm.[UserId] = @UserId;";
-        
-        return await QueryAndMapLeagues(sql, new { UserId = userId });
+
+        return await QueryAndMapLeagues(sql, cancellationToken, new { UserId = userId });
     }
 
-    public async Task<IEnumerable<LeagueMember>> GetMembersByLeagueIdAsync(int leagueId)
+    public async Task<IEnumerable<LeagueMember>> GetMembersByLeagueIdAsync(int leagueId, CancellationToken cancellationToken)
     {
         const string sql = "SELECT * FROM [dbo].[LeagueMembers] WHERE [LeagueId] = @LeagueId;";
-        return await Connection.QueryAsync<LeagueMember>(sql, new { LeagueId = leagueId });
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { LeagueId = leagueId },
+            cancellationToken: cancellationToken
+        );
+        
+        return await Connection.QueryAsync<LeagueMember>(command);
     }
 
-    public async Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId)
+    public async Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT
@@ -115,11 +131,16 @@ public class LeagueRepository : ILeagueRepository
             INNER JOIN [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
             LEFT JOIN [dbo].[UserPredictions] up ON lm.[UserId] = up.[UserId] AND up.[MatchId] IN (SELECT Id FROM Matches WHERE RoundId = @RoundId)
             WHERE l.[SeasonId] = @SeasonId;";
+       
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { SeasonId = seasonId, RoundId = roundId },
+            cancellationToken: cancellationToken
+        );
 
         var queryResult = await Connection.QueryAsync<League, LeagueMember, UserPrediction, (League, LeagueMember, UserPrediction?)>(
-            sql,
+            command,
             (league, member, prediction) => (league, member, prediction),
-            new { SeasonId = seasonId, RoundId = roundId },
             splitOn: "LeagueId,Id"
         );
 
@@ -142,7 +163,7 @@ public class LeagueRepository : ILeagueRepository
 
     #region Update
 
-    public async Task UpdateAsync(League league)
+    public async Task UpdateAsync(League league, CancellationToken cancellationToken)
     {
         const string sql = @"
             UPDATE [dbo].[Leagues]
@@ -151,10 +172,16 @@ public class LeagueRepository : ILeagueRepository
                 [EntryDeadline] = @EntryDeadline
             WHERE [Id] = @Id;";
 
-        await Connection.ExecuteAsync(sql, league);
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: league,
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(command);
     }
 
-    public async Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status)
+    public async Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status, CancellationToken cancellationToken)
     {
         const string sql = @"
             UPDATE [dbo].[LeagueMembers]
@@ -162,10 +189,16 @@ public class LeagueRepository : ILeagueRepository
                 [ApprovedAt] = CASE WHEN @Status = 'Approved' THEN GETUTCDATE() ELSE [ApprovedAt] END
             WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId;";
 
-        await Connection.ExecuteAsync(sql, new { Status = status.ToString(), LeagueId = leagueId, UserId = userId });
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { Status = status.ToString(), LeagueId = leagueId, UserId = userId },
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(command);
     }
-    
-    public async Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate)
+
+    public async Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate, CancellationToken cancellationToken)
     {
         const string sql = @"
             UPDATE [dbo].[UserPredictions]
@@ -179,7 +212,15 @@ public class LeagueRepository : ILeagueRepository
             .ToList();
 
         if (filteredPredictions.Any())
-            await Connection.ExecuteAsync(sql, filteredPredictions);
+        {
+            var command = new CommandDefinition(
+                commandText: sql,
+                parameters: filteredPredictions,
+                cancellationToken: cancellationToken
+            );
+
+            await Connection.ExecuteAsync(command);
+        }
 
         await Task.CompletedTask;
     }
@@ -188,12 +229,17 @@ public class LeagueRepository : ILeagueRepository
 
     #region Private Helper Methods
 
-    private async Task<IEnumerable<League>> QueryAndMapLeagues(string sql, object? param = null)
+    private async Task<IEnumerable<League>> QueryAndMapLeagues(string sql, CancellationToken cancellationToken, object? param = null)
     {
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: param,
+            cancellationToken: cancellationToken
+        );
+       
         var queryResult = await Connection.QueryAsync<League, LeagueMember?, (League League, LeagueMember? LeagueMember)>(
-            sql,
+            command,
             (league, member) => (league, member),
-            param,
             splitOn: "LeagueId"
         );
 
@@ -203,7 +249,7 @@ public class LeagueRepository : ILeagueRepository
             {
                 var firstLeague = g.First().League;
                 var members = g.Select(x => x.LeagueMember).Where(m => m != null).ToList();
-                
+
                 return new League(
                     firstLeague.Id,
                     firstLeague.Name,

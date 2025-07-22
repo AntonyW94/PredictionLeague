@@ -15,7 +15,7 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
 
     public async Task Handle(UpdateRoundCommand request, CancellationToken cancellationToken)
     {
-        var round = await _roundRepository.GetByIdAsync(request.RoundId);
+        var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
         Guard.Against.Null(round, $"Round (ID: {request.RoundId}) was not found.");
 
         round.UpdateDetails(
@@ -35,6 +35,6 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
             );
         }
 
-        await _roundRepository.UpdateAsync(round);
+        await _roundRepository.UpdateAsync(round, cancellationToken);
     }
 }
