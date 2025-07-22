@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Ardalis.GuardClauses;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using PredictionLeague.Application.Repositories;
 
@@ -18,12 +19,8 @@ public class UpdateTeamCommandHandler : IRequestHandler<UpdateTeamCommand>
     public async Task Handle(UpdateTeamCommand request, CancellationToken cancellationToken)
     {
         var team = await _teamRepository.GetByIdAsync(request.Id, cancellationToken);
-        if (team == null)
-        {
-            _logger.LogWarning("Attempted to update non-existent Team (ID: {TeamId}).", request.Id);
-            throw new KeyNotFoundException($"Team with ID {request.Id} not found.");
-        }
-
+        Guard.Against.NotFound(request.Id, team, $"Team (ID: {request.Id}) not found.");
+        
         team.UpdateDetails(request.Name, request.LogoUrl);
 
         await _teamRepository.UpdateAsync(team, cancellationToken);

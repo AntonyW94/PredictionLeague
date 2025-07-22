@@ -3,12 +3,4 @@ using PredictionLeague.Contracts.Admin.Seasons;
 
 namespace PredictionLeague.Application.Features.Admin.Seasons.Queries;
 
-public class GetSeasonByIdQuery : IRequest<SeasonDto?>
-{
-    public int Id { get; }
-
-    public GetSeasonByIdQuery(int seasonId)
-    {
-        Id = seasonId;
-    }
-}
+public record GetSeasonByIdQuery(int Id) : IRequest<SeasonDto?>;

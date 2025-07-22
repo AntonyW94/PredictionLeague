@@ -49,7 +49,7 @@ public class AuthenticationController : ApiControllerBase
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
-        var command = new LoginCommand(request);
+        var command = new LoginCommand(request.Email, request.Password);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result is not SuccessfulAuthenticationResponse success) 

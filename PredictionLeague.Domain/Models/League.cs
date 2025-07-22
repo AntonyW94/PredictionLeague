@@ -58,6 +58,22 @@ public class League
             CreatedAt = DateTime.UtcNow
         };
     }
+   
+    public static League CreateOfficialPublicLeague(int seasonId, string seasonName, string administratorUserId)
+    {
+        var league = Create(
+            seasonId,
+            $"Official {seasonName} League",
+            administratorUserId,
+            null,
+            null
+        );
+        
+        league.AddMember(administratorUserId);
+        league.ApproveMember(administratorUserId, administratorUserId);
+
+        return league;
+    }
 
     public void AddMember(string userId)
     {

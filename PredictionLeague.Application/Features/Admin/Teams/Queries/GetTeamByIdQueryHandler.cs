@@ -1,21 +1,28 @@
 ﻿using MediatR;
-using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Admin.Teams;
 
 namespace PredictionLeague.Application.Features.Admin.Teams.Queries;
 
 public class GetTeamByIdQueryHandler : IRequestHandler<GetTeamByIdQuery, TeamDto?>
 {
-    private readonly ITeamRepository _teamRepository;
+    private readonly IApplicationReadDbConnection _dbConnection;
 
-    public GetTeamByIdQueryHandler(ITeamRepository teamRepository)
+    public GetTeamByIdQueryHandler(IApplicationReadDbConnection dbConnection)
     {
-        _teamRepository = teamRepository;
+        _dbConnection = dbConnection;
     }
 
     public async Task<TeamDto?> Handle(GetTeamByIdQuery request, CancellationToken cancellationToken)
     {
-        var team = await _teamRepository.GetByIdAsync(request.Id, cancellationToken);
-        return team == null ? null : new TeamDto(team.Id, team.Name, team.LogoUrl);
+        const string sql = @"
+            SELECT
+                [Id],
+                [Name],
+                [LogoUrl]
+            FROM [dbo].[Teams]
+            WHERE [Id] = @Id";
+
+        return await _dbConnection.QuerySingleOrDefaultAsync<TeamDto>(sql, cancellationToken, new { request.Id });
     }
 }

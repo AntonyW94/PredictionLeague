@@ -1,39 +1,33 @@
 ﻿using MediatR;
-using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Admin.Seasons;
 
 namespace PredictionLeague.Application.Features.Admin.Seasons.Queries;
 
 public class FetchAllSeasonsQueryHandler : IRequestHandler<FetchAllSeasonsQuery, IEnumerable<SeasonDto>>
 {
-    private readonly ISeasonRepository _seasonRepository;
-    private readonly IRoundRepository _roundRepository;
+    private readonly IApplicationReadDbConnection _dbConnection;
 
-    public FetchAllSeasonsQueryHandler(ISeasonRepository seasonRepository, IRoundRepository roundRepository)
+    public FetchAllSeasonsQueryHandler(IApplicationReadDbConnection dbConnection)
     {
-        _seasonRepository = seasonRepository;
-        _roundRepository = roundRepository;
+        _dbConnection = dbConnection;
     }
 
     public async Task<IEnumerable<SeasonDto>> Handle(FetchAllSeasonsQuery request, CancellationToken cancellationToken)
     {
-        var seasons = await _seasonRepository.FetchAllAsync(cancellationToken);
-        var seasonsToReturn = new List<SeasonDto>();
+        const string sql = @"
+            SELECT
+                s.[Id],
+                s.[Name],
+                s.[StartDate],
+                s.[EndDate],
+                s.[IsActive],
+                COUNT(r.[Id]) AS RoundCount
+            FROM [dbo].[Seasons] s
+            LEFT JOIN [dbo].[Rounds] r ON s.[Id] = r.[SeasonId]
+            GROUP BY s.[Id], s.[Name], s.[StartDate], s.[EndDate], s.[IsActive]
+            ORDER BY s.[StartDate] DESC;";
 
-        foreach (var season in seasons)
-        {
-            var rounds = await _roundRepository.FetchBySeasonIdAsync(season.Id, cancellationToken);
-
-            seasonsToReturn.Add(new SeasonDto(
-                season.Id,
-                season.Name,
-                season.StartDate,
-                season.EndDate,
-                season.IsActive,
-                rounds.Count()
-            ));
-        }
-
-        return seasonsToReturn;
+        return await _dbConnection.QueryAsync<SeasonDto>(sql, cancellationToken);
     }
 }
