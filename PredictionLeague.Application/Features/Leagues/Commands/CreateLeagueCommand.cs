@@ -7,6 +7,7 @@ namespace PredictionLeague.Application.Features.Leagues.Commands;
 public record CreateLeagueCommand(
     string Name,
     int SeasonId,
+    decimal Price,
     string CreatingUserId,
     string? EntryCode,
     DateTime EntryDeadline

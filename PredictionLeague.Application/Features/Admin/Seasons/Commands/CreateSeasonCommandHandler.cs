@@ -28,9 +28,11 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
 
         var publicLeague = League.CreateOfficialPublicLeague(
             createdSeason.Id,
-            createdSeason.Name,
+            createdSeason.Name, 
+            0,
             request.CreatorId,
-            request.StartDate
+            request.StartDate,
+            createdSeason
         );
 
         await _leagueRepository.CreateAsync(publicLeague, cancellationToken);

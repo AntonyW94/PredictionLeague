@@ -7,4 +7,4 @@ public record SeasonDto(
     DateTime EndDate,
     bool IsActive,
     int RoundCount
-) : SeasonLookupDto(Id, Name);
+) : SeasonLookupDto(Id, Name, StartDate);

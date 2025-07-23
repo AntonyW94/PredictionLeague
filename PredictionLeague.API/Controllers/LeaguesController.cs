@@ -30,6 +30,7 @@ public class LeaguesController : ApiControllerBase
         var command = new CreateLeagueCommand(
             request.Name,
             request.SeasonId,
+            request.Price,
             CurrentUserId,
             request.EntryCode,
             request.EntryDeadline);
@@ -97,7 +98,13 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateLeagueAsync(int leagueId, [FromBody] UpdateLeagueRequest request, CancellationToken cancellationToken)
     {
-        var command = new UpdateLeagueCommand(leagueId, request.Name, request.EntryCode, request.EntryDeadline);
+        var command = new UpdateLeagueCommand(
+            leagueId, 
+            request.Name,
+            request.Price,
+            request.EntryCode, 
+            request.EntryDeadline);
+        
         await _mediator.Send(command, cancellationToken);
 
         return NoContent();

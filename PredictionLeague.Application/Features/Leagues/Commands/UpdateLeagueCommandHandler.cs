@@ -21,6 +21,7 @@ public class UpdateLeagueCommandHandler : IRequestHandler<UpdateLeagueCommand>
       
         league.UpdateDetails(
             request.Name,
+            request.Price,
             request.EntryCode,
             request.EntryDeadline
         );

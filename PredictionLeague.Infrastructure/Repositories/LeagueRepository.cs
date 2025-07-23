@@ -29,8 +29,26 @@ public class LeagueRepository : ILeagueRepository
     public async Task<League> CreateAsync(League league, CancellationToken cancellationToken)
     {
         const string sql = @"
-            INSERT INTO [dbo].[Leagues] ([Name], [SeasonId], [AdministratorUserId], [EntryCode], [CreatedAt], [EntryDeadline])
-            VALUES (@Name, @SeasonId, @AdministratorUserId, @EntryCode, @CreatedAt, @EntryDeadline);
+            INSERT INTO [dbo].[Leagues] 
+            (
+                [Name], 
+                [SeasonId], 
+                [Price], 
+                [AdministratorUserId], 
+                [EntryCode], 
+                [CreatedAt], 
+                [EntryDeadline]
+            )
+            VALUES 
+            (
+                @Name, 
+                @SeasonId, 
+                @Price, 
+                @AdministratorUserId, 
+                @EntryCode, 
+                @CreatedAt, 
+                @EntryDeadline
+            );
             SELECT CAST(SCOPE_IDENTITY() as int);";
 
         var command = new CommandDefinition(
@@ -104,20 +122,26 @@ public class LeagueRepository : ILeagueRepository
             parameters: new { LeagueId = leagueId },
             cancellationToken: cancellationToken
         );
-        
+
         return await Connection.QueryAsync<LeagueMember>(command);
     }
 
     public async Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT
-                l.*, lm.*, up.*
-            FROM [dbo].[Leagues] l
-            INNER JOIN [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
-            LEFT JOIN [dbo].[UserPredictions] up ON lm.[UserId] = up.[UserId] AND up.[MatchId] IN (SELECT Id FROM Matches WHERE RoundId = @RoundId)
-            WHERE l.[SeasonId] = @SeasonId;";
-       
+        SELECT
+            l.*, 
+            lm.*, 
+            up.*
+        FROM 
+            [dbo].[Leagues] l
+        INNER JOIN 
+            [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+        LEFT JOIN 
+            [dbo].[UserPredictions] up ON lm.[UserId] = up.[UserId] AND up.[MatchId] IN (SELECT Id FROM Matches WHERE RoundId = @RoundId)
+        WHERE 
+            l.[SeasonId] = @SeasonId;";
+
         var command = new CommandDefinition(
             commandText: sql,
             parameters: new { SeasonId = seasonId, RoundId = roundId },
@@ -139,7 +163,19 @@ public class LeagueRepository : ILeagueRepository
                 var predictions = memberGroup.Select(x => x.Item3).Where(p => p != null).ToList();
                 return new LeagueMember(firstMember.LeagueId, firstMember.UserId, firstMember.Status, firstMember.JoinedAt, firstMember.ApprovedAt, predictions);
             }).ToList();
-            return new League(firstLeague.Id, firstLeague.Name, firstLeague.SeasonId, firstLeague.AdministratorUserId, firstLeague.EntryCode, firstLeague.CreatedAt, firstLeague.EntryDeadline, members);
+
+            return new League(
+                firstLeague.Id,
+                firstLeague.Name,
+                firstLeague.Price,
+                firstLeague.SeasonId,
+                firstLeague.AdministratorUserId,
+                firstLeague.EntryCode,
+                firstLeague.CreatedAt,
+                firstLeague.EntryDeadline,
+                members,
+                null
+            );
         });
 
         return groupedLeagues;
@@ -153,6 +189,7 @@ public class LeagueRepository : ILeagueRepository
         const string updateLeagueSql = @"
             UPDATE [dbo].[Leagues]
             SET [Name] = @Name,
+                [Price] = @Price,
                 [EntryCode] = @EntryCode,
                 [EntryDeadline] = @EntryDeadline
             WHERE [Id] = @Id;";
@@ -162,7 +199,7 @@ public class LeagueRepository : ILeagueRepository
             league,
             cancellationToken: cancellationToken
         );
-        
+
         await Connection.ExecuteAsync(leagueCommand);
 
         const string deleteMembersSql = "DELETE FROM [dbo].[LeagueMembers] WHERE [LeagueId] = @LeagueId;";
@@ -172,7 +209,7 @@ public class LeagueRepository : ILeagueRepository
             new { LeagueId = league.Id },
             cancellationToken: cancellationToken
         );
-        
+
         await Connection.ExecuteAsync(deleteCommand);
 
         if (league.Members.Any())
@@ -249,7 +286,7 @@ public class LeagueRepository : ILeagueRepository
             parameters: param,
             cancellationToken: cancellationToken
         );
-       
+
         var queryResult = await Connection.QueryAsync<League, LeagueMember?, (League League, LeagueMember? LeagueMember)>(
             command,
             (league, member) => (league, member),
@@ -266,12 +303,14 @@ public class LeagueRepository : ILeagueRepository
                 return new League(
                     firstLeague.Id,
                     firstLeague.Name,
+                    firstLeague.Price,
                     firstLeague.SeasonId,
                     firstLeague.AdministratorUserId,
                     firstLeague.EntryCode,
                     firstLeague.CreatedAt,
                     firstLeague.EntryDeadline,
-                    members
+                    members,
+                    null
                 );
             });
 

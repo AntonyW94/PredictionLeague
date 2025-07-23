@@ -4,9 +4,10 @@ namespace PredictionLeague.Domain.Models;
 
 public class League
 {
-    public int Id { get; private set; }
+    public int Id { get; init; }
     public string Name { get; private set; } = string.Empty;
     public int SeasonId { get; private set; }
+    public decimal Price { get; private set; }
     public string AdministratorUserId { get; private init; } = string.Empty;
     public string? EntryCode { get; private set; }
     public DateTime CreatedAt { get; private set; }
@@ -14,13 +15,27 @@ public class League
 
     private readonly List<LeagueMember> _members = new();
     public IReadOnlyCollection<LeagueMember> Members => _members.AsReadOnly();
+  
+    private readonly List<LeaguePrizeSetting> _prizeSettings = new();
+    public IReadOnlyCollection<LeaguePrizeSetting> PrizeSettings => _prizeSettings.AsReadOnly();
 
     private League() { }
 
-    public League(int id, string name, int seasonId, string administratorUserId, string? entryCode, DateTime createdAt, DateTime entryDeadline, IEnumerable<LeagueMember?>? members)
+    public League(
+        int id,
+        string name, 
+        decimal price, 
+        int seasonId,
+        string administratorUserId, 
+        string? entryCode, 
+        DateTime createdAt,
+        DateTime entryDeadline, 
+        IEnumerable<LeagueMember?>? members, 
+        IEnumerable<LeaguePrizeSetting?>? prizeSettings)
     {
         Id = id;
         Name = name;
+        Price = price;
         SeasonId = seasonId;
         AdministratorUserId = administratorUserId;
         EntryCode = entryCode;
@@ -28,7 +43,10 @@ public class League
         EntryDeadline = entryDeadline;
 
         if (members != null)
-            _members.AddRange(members.Where(m => m != null).Select(m => (LeagueMember)m!));
+            _members.AddRange(members.Where(m => m != null).Select(m => m!));
+        
+        if (prizeSettings != null)
+            _prizeSettings.AddRange(prizeSettings.Where(p => p != null).Select(p => p!));
     }
 
     #region Factory Methods
@@ -36,15 +54,20 @@ public class League
     public static League Create(
         int seasonId,
         string name,
+        decimal price,
         string administratorUserId,
         string? entryCode,
-        DateTime entryDeadline)
+        DateTime entryDeadline,
+        Season season)
     {
         Guard.Against.NegativeOrZero(seasonId, nameof(seasonId));
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
         Guard.Against.NullOrWhiteSpace(administratorUserId, nameof(administratorUserId));
         Guard.Against.Expression(d => d <= DateTime.UtcNow, entryDeadline, "Entry deadline must be in the future.");
-
+       
+        if (entryDeadline.Date >= season.StartDate.Date)
+            throw new ArgumentException("Entry deadline must be at least one day before the season start date.", nameof(entryDeadline));
+        
         if (entryCode != null && entryCode.Length != 6)
             throw new ArgumentException("Private league entry code must be 6 characters.", nameof(entryCode));
 
@@ -52,6 +75,7 @@ public class League
         {
             SeasonId = seasonId,
             Name = name,
+            Price = price,
             AdministratorUserId = administratorUserId,
             EntryCode = entryCode,
             EntryDeadline = entryDeadline,
@@ -65,14 +89,16 @@ public class League
     }
 
 
-    public static League CreateOfficialPublicLeague(int seasonId, string seasonName, string administratorUserId, DateTime entryDeadline)
+    public static League CreateOfficialPublicLeague(int seasonId, string seasonName, decimal price, string administratorUserId, DateTime entryDeadline, Season season)
     {
         var league = Create(
             seasonId,
             $"Official {seasonName} League",
+            price,
             administratorUserId,
             null,
-            entryDeadline
+            entryDeadline,
+            season
         );
 
         return league;
@@ -82,15 +108,17 @@ public class League
 
     #region Business Logic Methods
 
-    public void UpdateDetails(string newName, string? newEntryCode, DateTime newEntryDeadline)
+    public void UpdateDetails(string newName, decimal newPrice, string? newEntryCode, DateTime newEntryDeadline)
     {
         Guard.Against.NullOrWhiteSpace(newName, nameof(newName));
+        Guard.Against.Negative(newPrice, nameof(newPrice));
         Guard.Against.Expression(d => d <= DateTime.UtcNow, newEntryDeadline, "Entry deadline must be in the future.");
 
         if (newEntryCode != null && newEntryCode.Length != 6)
             throw new ArgumentException("Private league entry code must be 6 characters.", nameof(newEntryCode));
 
         Name = newName;
+        Price = newPrice;
         EntryCode = newEntryCode;
         EntryDeadline = newEntryDeadline;
     }
@@ -129,6 +157,12 @@ public class League
         {
             member.ScorePredictionForMatch(completedMatch);
         }
+    }
+
+    public void DefinePrizes(IEnumerable<LeaguePrizeSetting> prizes)
+    {
+        _prizeSettings.Clear();
+        _prizeSettings.AddRange(prizes);
     }
 
     #endregion

@@ -19,7 +19,8 @@ public class GetCreateLeaguePageDataQueryHandler : IRequestHandler<GetCreateLeag
         const string sql = @"
             SELECT
                 s.[Id],
-                s.[Name]
+                s.[Name],
+                s.[StartDate]
             FROM [Seasons] s
             WHERE s.[IsActive] = 1
             ORDER BY s.[StartDate] DESC;";

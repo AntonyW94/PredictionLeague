@@ -3,7 +3,6 @@
 @attribute [Authorize]
 
 @inject HttpClient Http
-@inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Leagues
 
@@ -19,38 +18,61 @@
         }
         else
         {
-            <EditForm Model="_model" OnValidSubmit="HandleCreateLeagueAsync">
-                <FluentValidationValidator />
-                <ApiError Message="@_errorMessage" />
-                <ApiSuccess Message="@_successMessage" />
+            <BaseFormComponent TModel="CreateLeagueRequest"
+                               Model="_model"
+                               SubmitAction="HandleCreateLeagueAsync"
+                               SuccessRedirectUrl="/leagues"
+                               BackUrl="/leagues"
+                               SuccessAlertMessage="League created successfully!"
+                               BusyText="Creating League...">
+                <ChildContent>
+                    <div class="mb-3">
+                        <label for="season" class="form-label text-white">Season</label>
+                        <InputSelect id="season" class="form-select" @bind-Value="_model.SeasonId" @onchange="OnSeasonSelected">
+                            @if (_pageData.Seasons.Count != 1)
+                            {
+                                <option value="0">-- Select a Season --</option>
+                            }
 
-                <div class="mb-3">
-                    <label for="season" class="form-label text-white">Season</label>
-                    <InputSelect id="season" class="form-select" @bind-Value="_model.SeasonId">
-                        <option value="0">-- Select a Season --</option>
-                        @foreach (var season in _pageData.Seasons)
-                        {
-                            <option value="@season.Id">@season.Name</option>
-                        }
-                    </InputSelect>
-                    <StyledValidationMessage For="@(() => _model.SeasonId)" />
-                </div>
+                            @foreach (var season in _pageData.Seasons)
+                            {
+                                <option value="@season.Id">@season.Name</option>
+                            }
+                        </InputSelect>
+                        <StyledValidationMessage For="@(() => _model.SeasonId)" />
+                    </div>
 
-                <div class="mb-3">
-                    <label for="name" class="form-label text-white">League Name</label>
-                    <InputText id="name" class="form-control" @bind-Value="_model.Name" />
-                    <StyledValidationMessage For="@(() => _model.Name)" />
-                </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label text-white">League Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="_model.Name" disabled="@ShouldDisableFields" />
+                        <StyledValidationMessage For="@(() => _model.Name)" />
+                    </div>
 
-                <div class="mb-3">
-                    <label for="entryCode" class="form-label text-white">
-                        Entry Code
-                    </label> <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" />
-                    <StyledValidationMessage For="@(() => _model.EntryCode!)" />
-                </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label text-white">Entry Fee (£)</label>
+                            <InputNumber id="price" class="form-control" @bind-Value="_model.Price" placeholder="0.00" disabled="@ShouldDisableFields" />
+                            <div class="form-text text-white-50">Enter 0 for a free-to-play league.</div>
+                            <StyledValidationMessage For="@(() => _model.Price)" />
+                        </div>
 
-                <BackAndSaveButtons BackText="Back to Leagues" OnBackClick="Back" BusyText="Creating League..." IsBusy="_isBusy"></BackAndSaveButtons>
-            </EditForm>
+                        <div class="col-md-6 mb-3">
+                            <label for="entryDeadline" class="form-label text-white">Entry Deadline</label>
+                            <InputDate id="entryDeadline" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.EntryDeadline" max="@MaxDate" disabled="@ShouldDisableFields" />
+                            <div class="form-text text-white-50">Deadline must be before the season starts.</div>
+                            <StyledValidationMessage For="@(() => _model.EntryDeadline)" />
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="entryCode" class="form-label text-white">
+                            Entry Code (optional - leave blank for a public league)
+                        </label>
+                        <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" placeholder="e.g., A1B2C3" disabled="@ShouldDisableFields" />
+                        <StyledValidationMessage For="@(() => _model.EntryCode!)" />
+                    </div>
+                </ChildContent>
+            </BaseFormComponent>
         }
     </div>
 </div>
@@ -58,39 +80,47 @@
 @code {
     private CreateLeaguePageData? _pageData;
     private readonly CreateLeagueRequest _model = new();
-    private bool _isBusy;
-    private string? _errorMessage;
-    private string? _successMessage;
+    private bool ShouldDisableFields => _pageData?.Seasons.Count != 1 && _model.SeasonId == 0;
+    private string? MaxDate { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         _pageData = await Http.GetFromJsonAsync<CreateLeaguePageData>("api/leagues/create-data");
+       
+        if (_pageData?.Seasons.Count == 1)
+        {
+            var singleSeason = _pageData.Seasons.First();
+            _model.SeasonId = singleSeason.Id;
+            UpdateDeadlineAndMaxDate(singleSeason.StartDate);
+        }
     }
 
-    private async Task HandleCreateLeagueAsync()
+    private void OnSeasonSelected(ChangeEventArgs e)
     {
-        _isBusy = true;
-        _errorMessage = null;
-        _successMessage = null;
-     
-        var response = await Http.PostAsJsonAsync("api/leagues/create", _model);
-        if (response.IsSuccessStatusCode)
+        var selectedSeasonId = int.Parse(e.Value?.ToString() ?? "0");
+        _model.SeasonId = selectedSeasonId;
+
+        if (selectedSeasonId > 0 && _pageData != null)
         {
-            _successMessage = "League created successfully!";
-            StateHasChanged();
-
-            await Task.Delay(1500);
-
-            Back();
+            var selectedSeason = _pageData.Seasons.FirstOrDefault(s => s.Id == selectedSeasonId);
+            if (selectedSeason != null)
+                UpdateDeadlineAndMaxDate(selectedSeason.StartDate);
         }
         else
         {
-            _errorMessage = "Error creating league.";
+            MaxDate = null;
         }
-
-        _isBusy = false;
-        StateHasChanged();
     }
 
-    private void Back() => NavigationManager.NavigateTo("/leagues");
+    private void UpdateDeadlineAndMaxDate(DateTime seasonStartDate)
+    {
+        var deadline = seasonStartDate.AddDays(-1);
+        _model.EntryDeadline = deadline;
+        MaxDate = deadline.ToString("yyyy-MM-dd");
+    }
+
+    private Task<HttpResponseMessage> HandleCreateLeagueAsync()
+    {
+        return Http.PostAsJsonAsync("api/leagues/create", _model);
+    }
 }

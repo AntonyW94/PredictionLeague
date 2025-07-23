@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Leagues
+@using System.Globalization
 
 <PageTitle>Manage Leagues</PageTitle>
 
@@ -28,6 +29,8 @@
                     <tr>
                         <th>League Name</th>
                         <th>Season</th>
+                        <th>Entry Fee</th>
+                        <th>Entry Deadline</th>
                         <th>Entry Code</th>
                         <th>Members</th>
                         <th></th>
@@ -39,6 +42,8 @@
                         <tr>
                             <td data-label="League Name" class="header-cell">@league.Name</td>
                             <td data-label="Season">@league.SeasonName</td>
+                            <td data-label="Entry Fee">@league.Price.ToString("C", new CultureInfo("en-GB"))</td>
+                            <td data-label="Entry Deadline">@league.EntryDeadline.ToString("dd MMM yyyy, HH:mm")</td>
                             <td data-label="Entry Code">@league.EntryCode</td>
                             <td data-label="Members" class="action-cell">
                                 <a href="/leagues/@league.Id/members" class="btn btn-sm dark-pink-button">

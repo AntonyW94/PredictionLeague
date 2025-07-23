@@ -4,4 +4,6 @@ public record PublicLeagueDto(
     int Id, 
     string Name, 
     string SeasonName,
+    decimal Price,
+    DateTime EntryDeadline,
     bool IsMember);
