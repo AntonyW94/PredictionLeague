@@ -4,13 +4,13 @@ namespace PredictionLeague.Domain.Models;
 
 public class League
 {
-    public int Id { get; init; }
-    public string Name { get; set; } = string.Empty;
-    public int SeasonId { get; init; }
-    public string AdministratorUserId { get; init; } = string.Empty;
-    public string? EntryCode { get; set; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime EntryDeadline { get; set; }
+    public int Id { get; private set; }
+    public string Name { get; private set; } = string.Empty;
+    public int SeasonId { get; private set; }
+    public string AdministratorUserId { get; private init; } = string.Empty;
+    public string? EntryCode { get; private set; }
+    public DateTime CreatedAt { get; private set; }
+    public DateTime EntryDeadline { get; private set; }
 
     private readonly List<LeagueMember> _members = new();
     public IReadOnlyCollection<LeagueMember> Members => _members.AsReadOnly();
@@ -30,6 +30,8 @@ public class League
         if (members != null)
             _members.AddRange(members.Where(m => m != null).Select(m => (LeagueMember)m!));
     }
+
+    #region Factory Methods
 
     public static League Create(
         int seasonId,
@@ -56,13 +58,29 @@ public class League
             CreatedAt = DateTime.UtcNow
         };
 
-        var adminMember = LeagueMember.Create(league.Id, administratorUserId);
-        adminMember.Approve();
-
-        league._members.Add(adminMember);
+        league.AddMember(administratorUserId);
+        league.ApproveMember(administratorUserId, administratorUserId);
 
         return league;
     }
+
+
+    public static League CreateOfficialPublicLeague(int seasonId, string seasonName, string administratorUserId, DateTime entryDeadline)
+    {
+        var league = Create(
+            seasonId,
+            $"Official {seasonName} League",
+            administratorUserId,
+            null,
+            entryDeadline
+        );
+
+        return league;
+    }
+
+    #endregion
+
+    #region Business Logic Methods
 
     public void UpdateDetails(string newName, string? newEntryCode, DateTime newEntryDeadline)
     {
@@ -75,22 +93,6 @@ public class League
         Name = newName;
         EntryCode = newEntryCode;
         EntryDeadline = newEntryDeadline;
-    }
-
-    public static League CreateOfficialPublicLeague(int seasonId, string seasonName, string administratorUserId, DateTime entryDeadline)
-    {
-        var league = Create(
-            seasonId,
-            $"Official {seasonName} League",
-            administratorUserId,
-            null,
-            entryDeadline
-        );
-
-        league.AddMember(administratorUserId);
-        league.ApproveMember(administratorUserId, administratorUserId);
-
-        return league;
     }
 
     public void AddMember(string userId)
@@ -128,4 +130,6 @@ public class League
             member.ScorePredictionForMatch(completedMatch);
         }
     }
+
+    #endregion
 }
