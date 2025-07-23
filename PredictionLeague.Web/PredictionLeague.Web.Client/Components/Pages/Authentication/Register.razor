@@ -22,7 +22,6 @@
         <EditForm Model="_model" OnValidSubmit="HandleRegistrationAsync" FormName="registerForm">
             <FluentValidationValidator />
             <ApiError Message="@_errorMessage" />
-            <ApiSuccess Message="@_successMessage" />
 
             <div class="mb-3">
                 <label for="firstName" class="form-label text-white">First Name</label>
@@ -98,7 +97,6 @@
 @code {
     private readonly RegisterRequest _model = new();
     private string? _errorMessage;
-    private string? _successMessage;
     private bool _isBusy;
     private bool _showPassword;
 
@@ -120,18 +118,21 @@
     {
         _isBusy = true;
         _errorMessage = null;
-        _successMessage = null;
 
         var result = await AuthenticationService.RegisterAsync(_model);
-        if (result.IsSuccess)
+        switch (result)
         {
-            _successMessage = "Registration successful! You will be redirected to the login page shortly.";
-            await Task.Delay(2000);
-            NavigationManager.NavigateTo("/authentication/login");
-        }
-        else
-        {
-            _errorMessage = result.Message;
+            case SuccessfulAuthenticationResponse:
+                NavigationManager.NavigateTo("/");
+                break;
+
+            case FailedAuthenticationResponse failure:
+                _errorMessage = failure.Message;
+                break;
+
+            default:
+                _errorMessage = "An unknown error occurred.";
+                break;
         }
 
         _isBusy = false;

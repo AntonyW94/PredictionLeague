@@ -21,13 +21,24 @@ public class AuthenticationService : IAuthenticationService
         var result = await _httpClient.PostAsync($"api/leagues/{leagueId}/join", null);
         return result.IsSuccessStatusCode;
     }
-
-    public async Task<RegisterResponse> RegisterAsync(RegisterRequest registerRequest)
+   
+    public async Task<AuthenticationResponse> RegisterAsync(RegisterRequest registerRequest)
     {
-        var result = await _httpClient.PostAsJsonAsync("api/authentication/register", registerRequest);
-        return await result.Content.ReadFromJsonAsync<RegisterResponse>() ?? new RegisterResponse { IsSuccess = false, Message = "Failed to process server response." };
+        var response = await _httpClient.PostAsJsonAsync("api/authentication/register", registerRequest);
+        if (response.IsSuccessStatusCode)
+        {
+            var successResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
+            if (successResponse == null) 
+                return new FailedAuthenticationResponse("Failed to process server response.");
+          
+            ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(successResponse);
+            return successResponse;
+        }
+
+        var failureResponse = await response.Content.ReadFromJsonAsync<FailedAuthenticationResponse>();
+        return failureResponse ?? new FailedAuthenticationResponse("Failed to process server response.");
     }
-  
+    
     public async Task<AuthenticationResponse> LoginAsync(LoginRequest loginRequest)
     {
         var response = await _httpClient.PostAsJsonAsync("api/authentication/login", loginRequest);
