@@ -21,17 +21,23 @@ public class GetLeagueByIdQueryHandler : IRequestHandler<GetLeagueByIdQuery, Lea
                 l.[Name],
                 s.[Name] AS SeasonName,
                 COUNT(lm.[UserId]) AS MemberCount,
+                l.[Price],
                 ISNULL(l.[EntryCode], 'Public') AS EntryCode,
                 l.[EntryDeadline]
-            FROM [dbo].[Leagues] l
-            JOIN [dbo].[Seasons] s ON l.[SeasonId] = s.[Id]
-            LEFT JOIN [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
-            WHERE l.[Id] = @Id
+            FROM 
+                [dbo].[Leagues] l
+            JOIN 
+                [dbo].[Seasons] s ON l.[SeasonId] = s.[Id]
+            LEFT JOIN 
+                [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+            WHERE 
+                l.[Id] = @Id
             GROUP BY
                 l.[Id],
                 l.[Name],
                 s.[Name],
-                l.[EntryCode],
+                l.[Price],
+                ISNULL(l.[EntryCode], 'Public'),
                 l.[EntryDeadline];";
 
         return await _dbConnection.QuerySingleOrDefaultAsync<LeagueDto>(
