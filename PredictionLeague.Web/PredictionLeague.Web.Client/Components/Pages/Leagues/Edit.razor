@@ -26,6 +26,13 @@
                                BusyText="Saving...">
                 <ChildContent>
                     <div class="mb-3">
+                        <label class="form-label text-white">Season</label>
+                        <div class="form-control-plaintext" style="background-color: var(--pl-light-purple); color: white; font-weight: bold;">
+                            @_seasonName
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="name" class="form-label text-white">League Name</label>
                         <InputText id="name" class="form-control" @bind-Value="_model.Name" />
                         <StyledValidationMessage For="@(() => _model.Name)" />
@@ -38,16 +45,20 @@
                             <StyledValidationMessage For="@(() => _model.Price)" />
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="entryDeadline" class="form-label text-white">Entry Deadline</label>
-                            <InputDate id="entryDeadline" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.EntryDeadline" />
-                            <StyledValidationMessage For="@(() => _model.EntryDeadline)" />
+                            @if (_entryCodeForDisplay != "Public")
+                            {
+                                <label class="form-label text-white">Entry Code</label>
+                                <div class="form-control-plaintext" style="font-size: 1.3rem; color: var(--pl-cyan); font-weight: bold; font-family: monospace; padding-top: 5px;">
+                                    @_entryCodeForDisplay
+                                </div>
+                            }
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="entryCode" class="form-label text-white">Entry Code</label>
-                        <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" />
-                        <StyledValidationMessage For="@(() => _model.EntryCode!)" />
+                        <label for="entryDeadline" class="form-label text-white">Entry Deadline</label>
+                        <InputDate id="entryDeadline" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.EntryDeadline" />
+                        <StyledValidationMessage For="@(() => _model.EntryDeadline)" />
                     </div>
                 </ChildContent>
             </BaseFormComponent>
@@ -58,6 +69,8 @@
 @code {
     [Parameter] public int LeagueId { get; set; }
     private UpdateLeagueRequest? _model;
+    private string? _entryCodeForDisplay;
+    private string? _seasonName;
 
     protected override async Task OnInitializedAsync()
     {
@@ -68,9 +81,10 @@
             {
                 Name = league.Name,
                 Price = league.Price,
-                EntryCode = league.EntryCode,
                 EntryDeadline = league.EntryDeadline
             };
+            _entryCodeForDisplay = league.EntryCode;
+            _seasonName = league.SeasonName;
         }
     }
 

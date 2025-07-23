@@ -15,9 +15,5 @@ public class CreateLeagueRequestValidator : AbstractValidator<CreateLeagueReques
 
         RuleFor(x => x.SeasonId)
             .GreaterThan(0).WithMessage("You must select a valid season for the league.");
-
-        RuleFor(x => x.EntryCode)
-            .NotEmpty().WithMessage("An entry code is required for private leagues.")
-            .Length(6).WithMessage("The entry code must be exactly 6 characters.");
     }
 }

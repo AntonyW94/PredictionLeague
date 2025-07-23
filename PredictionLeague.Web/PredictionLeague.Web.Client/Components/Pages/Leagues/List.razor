@@ -55,7 +55,16 @@
                                 </div>
                                 <div class="league-card-row">
                                     <dt>Entry Code</dt>
-                                    <dd>@league.EntryCode</dd>
+                                    <dd>
+                                        @if (league.EntryCode == "Public")
+                                        {
+                                            @league.EntryCode
+                                        }
+                                        else
+                                        {
+                                            <code>@league.EntryCode</code>
+                                        }
+                                    </dd>
                                 </div>
                             </dl>
                         </div>

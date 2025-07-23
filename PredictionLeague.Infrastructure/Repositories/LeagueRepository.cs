@@ -181,6 +181,25 @@ public class LeagueRepository : ILeagueRepository
         return groupedLeagues;
     }
 
+    public async Task<bool> DoesEntryCodeExistAsync(string entryCode, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT 
+                COUNT(1) 
+            FROM 
+                [dbo].[Leagues] 
+            WHERE 
+                [EntryCode] = @EntryCode;";
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { EntryCode = entryCode },
+            cancellationToken: cancellationToken
+        );
+
+        return await Connection.ExecuteScalarAsync<int>(command) > 0;
+    }
+
     #endregion
 
     #region Update

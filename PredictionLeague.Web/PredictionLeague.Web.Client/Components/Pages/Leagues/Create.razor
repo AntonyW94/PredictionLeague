@@ -63,14 +63,6 @@
                             <StyledValidationMessage For="@(() => _model.EntryDeadline)" />
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="entryCode" class="form-label text-white">
-                            Entry Code (optional - leave blank for a public league)
-                        </label>
-                        <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" placeholder="e.g., A1B2C3" disabled="@ShouldDisableFields" />
-                        <StyledValidationMessage For="@(() => _model.EntryCode!)" />
-                    </div>
                 </ChildContent>
             </BaseFormComponent>
         }

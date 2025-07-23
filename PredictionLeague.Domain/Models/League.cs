@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using System.Text;
 
 namespace PredictionLeague.Domain.Models;
 
@@ -15,7 +16,7 @@ public class League
 
     private readonly List<LeagueMember> _members = new();
     public IReadOnlyCollection<LeagueMember> Members => _members.AsReadOnly();
-  
+
     private readonly List<LeaguePrizeSetting> _prizeSettings = new();
     public IReadOnlyCollection<LeaguePrizeSetting> PrizeSettings => _prizeSettings.AsReadOnly();
 
@@ -23,14 +24,14 @@ public class League
 
     public League(
         int id,
-        string name, 
-        decimal price, 
+        string name,
+        decimal price,
         int seasonId,
-        string administratorUserId, 
-        string? entryCode, 
+        string administratorUserId,
+        string? entryCode,
         DateTime createdAt,
-        DateTime entryDeadline, 
-        IEnumerable<LeagueMember?>? members, 
+        DateTime entryDeadline,
+        IEnumerable<LeagueMember?>? members,
         IEnumerable<LeaguePrizeSetting?>? prizeSettings)
     {
         Id = id;
@@ -44,7 +45,7 @@ public class League
 
         if (members != null)
             _members.AddRange(members.Where(m => m != null).Select(m => m!));
-        
+
         if (prizeSettings != null)
             _prizeSettings.AddRange(prizeSettings.Where(p => p != null).Select(p => p!));
     }
@@ -56,20 +57,12 @@ public class League
         string name,
         decimal price,
         string administratorUserId,
-        string? entryCode,
         DateTime entryDeadline,
         Season season)
     {
-        Guard.Against.NegativeOrZero(seasonId, nameof(seasonId));
-        Guard.Against.NullOrWhiteSpace(name, nameof(name));
+        Validate(name, entryDeadline, season);
         Guard.Against.NullOrWhiteSpace(administratorUserId, nameof(administratorUserId));
-        Guard.Against.Expression(d => d <= DateTime.UtcNow, entryDeadline, "Entry deadline must be in the future.");
-       
-        if (entryDeadline.Date >= season.StartDate.Date)
-            throw new ArgumentException("Entry deadline must be at least one day before the season start date.", nameof(entryDeadline));
-        
-        if (entryCode != null && entryCode.Length != 6)
-            throw new ArgumentException("Private league entry code must be 6 characters.", nameof(entryCode));
+        Guard.Against.NegativeOrZero(seasonId, nameof(seasonId));
 
         var league = new League
         {
@@ -77,7 +70,7 @@ public class League
             Name = name,
             Price = price,
             AdministratorUserId = administratorUserId,
-            EntryCode = entryCode,
+            EntryCode = null,
             EntryDeadline = entryDeadline,
             CreatedAt = DateTime.UtcNow
         };
@@ -88,6 +81,15 @@ public class League
         return league;
     }
 
+    private static void Validate(string name, DateTime entryDeadline, Season season)
+    {
+        Guard.Against.NullOrWhiteSpace(name, nameof(name));
+        Guard.Against.Expression(d => d <= DateTime.UtcNow, entryDeadline, "Entry deadline must be in the future.");
+
+        if (entryDeadline.Date >= season.StartDate.Date)
+            throw new ArgumentException("Entry deadline must be at least one day before the season start date.", nameof(entryDeadline));
+    }
+
 
     public static League CreateOfficialPublicLeague(int seasonId, string seasonName, decimal price, string administratorUserId, DateTime entryDeadline, Season season)
     {
@@ -96,7 +98,6 @@ public class League
             $"Official {seasonName} League",
             price,
             administratorUserId,
-            null,
             entryDeadline,
             season
         );
@@ -108,18 +109,33 @@ public class League
 
     #region Business Logic Methods
 
-    public void UpdateDetails(string newName, decimal newPrice, string? newEntryCode, DateTime newEntryDeadline)
+    public async Task GenerateEntryCode(Func<string, Task<bool>> isCodeUnique)
     {
-        Guard.Against.NullOrWhiteSpace(newName, nameof(newName));
-        Guard.Against.Negative(newPrice, nameof(newPrice));
-        Guard.Against.Expression(d => d <= DateTime.UtcNow, newEntryDeadline, "Entry deadline must be in the future.");
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var random = new Random();
+        var codeBuilder = new StringBuilder(6);
+        string newCode;
 
-        if (newEntryCode != null && newEntryCode.Length != 6)
-            throw new ArgumentException("Private league entry code must be 6 characters.", nameof(newEntryCode));
+        do
+        {
+            codeBuilder.Clear();
+            for (var i = 0; i < 6; i++)
+            {
+                codeBuilder.Append(chars[random.Next(chars.Length)]);
+            }
+            newCode = codeBuilder.ToString();
+        }
+        while (!await isCodeUnique(newCode));
+
+        EntryCode = newCode;
+    }
+
+    public void UpdateDetails(string newName, decimal newPrice, DateTime newEntryDeadline, Season season)
+    {
+        Validate(newName, newEntryDeadline, season);
 
         Name = newName;
         Price = newPrice;
-        EntryCode = newEntryCode;
         EntryDeadline = newEntryDeadline;
     }
 

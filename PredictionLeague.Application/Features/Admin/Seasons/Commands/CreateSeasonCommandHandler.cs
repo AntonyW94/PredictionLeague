@@ -31,7 +31,7 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
             createdSeason.Name, 
             0,
             request.CreatorId,
-            request.StartDate,
+            createdSeason.StartDate.AddDays(-1),
             createdSeason
         );
 

@@ -6,5 +6,4 @@ public record UpdateLeagueCommand(
     int Id,
     string Name,
     decimal Price,
-    string? EntryCode,
     DateTime EntryDeadline) : IRequest;
