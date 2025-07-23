@@ -28,15 +28,15 @@ public class CreateRoundCommandHandler : IRequestHandler<CreateRoundCommand, Rou
         }
 
         var createdRound = await _roundRepository.CreateAsync(round, cancellationToken);
-        
+
         return new RoundDto
-        {
-            Id = createdRound.Id,
-            SeasonId = createdRound.SeasonId,
-            RoundNumber = createdRound.RoundNumber,
-            StartDate = createdRound.StartDate,
-            Deadline = createdRound.Deadline,
-            MatchCount = createdRound.Matches.Count
-        };
+        (
+            createdRound.Id,
+            createdRound.SeasonId,
+            createdRound.RoundNumber,
+            createdRound.StartDate,
+            createdRound.Deadline,
+            createdRound.Matches.Count
+        );
     }
 }

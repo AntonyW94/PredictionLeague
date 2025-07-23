@@ -44,13 +44,13 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
             {
                 LeagueName = members.First().LeagueName,
                 Members = members.Select(m => new LeagueMemberDto
-                {
-                    UserId = m.UserId,
-                    FullName = m.FullName,
-                    JoinedAt = m.JoinedAt,
-                    Status = m.Status,
-                    CanBeApproved = m.CanBeApproved
-                }).ToList()
+                (
+                    m.UserId,
+                    m.FullName,
+                    m.JoinedAt,
+                    m.Status,
+                    m.CanBeApproved
+                )).ToList()
             };
         }
 
