@@ -1,0 +1,67 @@
+﻿.league-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; 
+    gap: 1.5rem;
+}
+
+.league-card {
+    background-color: var(--pl-purple);
+    border-radius: var(--bs-border-radius);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    flex-basis: 350px;
+    flex-grow: 1;
+    max-width: 400px;
+}
+
+
+.league-card-header {
+    background-color: var(--pl-purple-dark);
+    padding: 1rem 1.5rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.league-card-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+}
+
+.league-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--pl-purple-dark);
+}
+
+    .league-card-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .league-card-row dt {
+        font-weight: normal;
+        color: var(--light-text);
+    }
+
+    .league-card-row dd {
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+
+.league-card-footer {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    display: flex;
+    gap: 1rem;
+}
+
+    .league-card-footer .btn {
+        flex-grow: 1;
+    }

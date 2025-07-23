@@ -22,41 +22,56 @@
         {
             <p class="text-center text-white"><em>Loading...</em></p>
         }
+        else if (!_leagues.Any())
+        {
+            <p class="text-center text-white">No leagues have been created yet.</p>
+        }
         else
         {
-            <table class="table striped-table responsive-table">
-                <thead>
-                    <tr>
-                        <th>League Name</th>
-                        <th>Season</th>
-                        <th>Entry Fee</th>
-                        <th>Entry Deadline</th>
-                        <th>Entry Code</th>
-                        <th>Members</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var league in _leagues)
-                    {
-                        <tr>
-                            <td data-label="League Name" class="header-cell">@league.Name</td>
-                            <td data-label="Season">@league.SeasonName</td>
-                            <td data-label="Entry Fee">@league.Price.ToString("C", new CultureInfo("en-GB"))</td>
-                            <td data-label="Entry Deadline">@league.EntryDeadline.ToString("dd MMM yyyy, HH:mm")</td>
-                            <td data-label="Entry Code">@league.EntryCode</td>
-                            <td data-label="Members" class="action-cell">
-                                <a href="/leagues/@league.Id/members" class="btn btn-sm dark-pink-button">
-                                    @league.MemberCount<span class="d-md-none">@(league.MemberCount == 1 ? " Member" : " Members")</span>
-                                </a>
-                            </td>
-                            <td data-label="Actions" class="actions-cell">
-                                <button class="btn btn-sm green-button w-100" @onclick="() => EditLeague(league.Id)">Edit</button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <div class="league-grid">
+                @foreach (var league in _leagues)
+                {
+                    <div class="league-card">
+                        <div class="league-card-header">
+                            <span>@league.Name</span>
+                
+                            <a href="@($"/leagues/{league.Id}/prizes")" class="btn btn-sm light-cyan-button" title="Edit Prizes">
+                                <span class="bi bi-trophy-fill"></span>
+                            </a>
+                        </div>
+                        <div class="league-card-body">
+                            <dl class="mb-0">
+                                <div class="league-card-row">
+                                    <dt>Season</dt>
+                                    <dd>@league.SeasonName</dd>
+                                </div>
+                                <div class="league-card-row">
+                                    <dt>Entry Fee</dt>
+                                    <dd>@league.Price.ToString("C", new CultureInfo("en-GB"))</dd>
+                                </div>
+                                <div class="league-card-row">
+                                    <dt>Entry Deadline</dt>
+                                    <dd>@league.EntryDeadline.ToString("dd MMM yyyy, HH:mm")</dd>
+                                </div>
+                                <div class="league-card-row">
+                                    <dt>Entry Code</dt>
+                                    <dd>@league.EntryCode</dd>
+                                </div>
+                            </dl>
+                        </div>
+                        <div class="league-card-footer">
+                            <a href="/leagues/@league.Id/members" class="btn dark-pink-button">
+                                <span class="bi bi-people-fill me-2"></span>
+                                @league.MemberCount @(league.MemberCount == 1 ? "Member" : "Members")
+                            </a>
+                            <button class="btn green-button" @onclick="() => EditLeague(league.Id)">
+                                <span class="bi bi-pencil-fill me-2"></span>
+                                Edit
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
         }
     </div>
 </div>
