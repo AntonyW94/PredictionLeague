@@ -82,25 +82,6 @@ public class RoundRepository : IRoundRepository
 
     #region Read
 
-    public async Task<IEnumerable<Round>> FetchBySeasonIdAsync(int seasonId, CancellationToken cancellationToken)
-    {
-        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[SeasonId] = @SeasonId ORDER BY r.[RoundNumber];";
-       
-        return (await QueryAndMapRounds(sql, cancellationToken, new { SeasonId = seasonId })).Values;
-    }
- 
-    public async Task<Round?> GetCurrentRoundAsync(int seasonId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            SELECT TOP 1 r.*, m.*
-            FROM [dbo].[Rounds] r
-            LEFT JOIN [dbo].[Matches] m ON r.[Id] = m.[RoundId]
-            WHERE r.[SeasonId] = @SeasonId AND r.[StartDate] > GETUTCDATE()
-            ORDER BY r.[StartDate] ASC;";
-   
-        return await QueryAndMapRound(sql, cancellationToken, new { SeasonId = seasonId });
-    }
-
     public async Task<Round?> GetByIdAsync(int roundId, CancellationToken cancellationToken)
     {
         const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = @RoundId;";

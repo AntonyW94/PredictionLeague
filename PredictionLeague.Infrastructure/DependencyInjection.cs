@@ -26,7 +26,6 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         services.AddScoped<ILeagueRepository, LeagueRepository>();
-        services.AddScoped<IMatchRepository, MatchRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();

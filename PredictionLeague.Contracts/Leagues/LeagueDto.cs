@@ -5,5 +5,6 @@ public record LeagueDto(
     string Name,
     string SeasonName,
     int MemberCount,
-    string EntryCode
+    string EntryCode,
+    DateTime EntryDeadline
 );

@@ -1,37 +1,43 @@
 ﻿using MediatR;
-using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;
 
 public class GetLeagueByIdQueryHandler : IRequestHandler<GetLeagueByIdQuery, LeagueDto?>
 {
-    private readonly ILeagueRepository _leagueRepository;
-    private readonly ISeasonRepository _seasonRepository;
+    private readonly IApplicationReadDbConnection _dbConnection;
 
-    public GetLeagueByIdQueryHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository)
+    public GetLeagueByIdQueryHandler(IApplicationReadDbConnection dbConnection)
     {
-        _leagueRepository = leagueRepository;
-        _seasonRepository = seasonRepository;
+        _dbConnection = dbConnection;
     }
 
     public async Task<LeagueDto?> Handle(GetLeagueByIdQuery request, CancellationToken cancellationToken)
     {
-        var league = await _leagueRepository.GetByIdAsync(request.Id, cancellationToken);
-        if (league == null)
-            return null;
+        const string sql = @"
+            SELECT
+                l.[Id],
+                l.[Name],
+                s.[Name] AS SeasonName,
+                COUNT(lm.[UserId]) AS MemberCount,
+                ISNULL(l.[EntryCode], 'Public') AS EntryCode,
+                l.[EntryDeadline]
+            FROM [dbo].[Leagues] l
+            JOIN [dbo].[Seasons] s ON l.[SeasonId] = s.[Id]
+            LEFT JOIN [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+            WHERE l.[Id] = @Id
+            GROUP BY
+                l.[Id],
+                l.[Name],
+                s.[Name],
+                l.[EntryCode],
+                l.[EntryDeadline];";
 
-        var season = await _seasonRepository.GetByIdAsync(league.SeasonId, cancellationToken);
-        if (season == null)
-            return null;
-
-        return new LeagueDto
-        (
-            league.Id,
-            league.Name,
-            season.Name,
-            (await _leagueRepository.GetMembersByLeagueIdAsync(league.Id, cancellationToken)).Count(),
-            league.EntryCode ?? "Public"
+        return await _dbConnection.QuerySingleOrDefaultAsync<LeagueDto>(
+            sql,
+            cancellationToken,
+            new { request.Id }
         );
     }
 }

@@ -2,7 +2,6 @@
 using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Leagues;
-using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
@@ -28,18 +27,8 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
              request.EntryDeadline
          );
 
-        league.AddMember(request.CreatingUserId);
-
         var createdLeague = await _leagueRepository.CreateAsync(league, cancellationToken);
 
-        await _leagueRepository.UpdateMemberStatusAsync(
-            createdLeague.Id,
-            request.CreatingUserId,
-            LeagueMemberStatus.Approved,
-            cancellationToken
-        );
-       
-        
         var season = await _seasonRepository.GetByIdAsync(createdLeague.SeasonId, cancellationToken);
         Guard.Against.Null(season, $"Season with ID {createdLeague.SeasonId} was not found.");
 
@@ -47,8 +36,9 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
             createdLeague.Id,
             createdLeague.Name,
             season.Name,
-            1, 
-            createdLeague.EntryCode ?? "Public"
+            1,
+            createdLeague.EntryCode ?? "Public",
+            createdLeague.EntryDeadline
         );
     }
 }

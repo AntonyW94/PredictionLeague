@@ -96,20 +96,6 @@ public class LeagueRepository : ILeagueRepository
         return await QueryAndMapLeagues(GetLeaguesWithMembersSql, cancellationToken);
     }
 
-    public async Task<IEnumerable<League>> GetPublicLeaguesAsync(CancellationToken cancellationToken)
-    {
-        const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[EntryCode] IS NULL;";
-
-        return await QueryAndMapLeagues(sql, cancellationToken);
-    }
-
-    public async Task<IEnumerable<League>> GetLeaguesByUserIdAsync(string userId, CancellationToken cancellationToken)
-    {
-        const string sql = $"{GetLeaguesWithMembersSql} WHERE lm.[UserId] = @UserId;";
-
-        return await QueryAndMapLeagues(sql, cancellationToken, new { UserId = userId });
-    }
-
     public async Task<IEnumerable<LeagueMember>> GetMembersByLeagueIdAsync(int leagueId, CancellationToken cancellationToken)
     {
         const string sql = "SELECT * FROM [dbo].[LeagueMembers] WHERE [LeagueId] = @LeagueId;";
@@ -162,23 +148,50 @@ public class LeagueRepository : ILeagueRepository
     #endregion
 
     #region Update
-
     public async Task UpdateAsync(League league, CancellationToken cancellationToken)
     {
-        const string sql = @"
+        const string updateLeagueSql = @"
             UPDATE [dbo].[Leagues]
             SET [Name] = @Name,
                 [EntryCode] = @EntryCode,
                 [EntryDeadline] = @EntryDeadline
             WHERE [Id] = @Id;";
 
-        var command = new CommandDefinition(
-            commandText: sql,
-            parameters: league,
+        var leagueCommand = new CommandDefinition(
+            updateLeagueSql,
+            league,
             cancellationToken: cancellationToken
         );
+        
+        await Connection.ExecuteAsync(leagueCommand);
 
-        await Connection.ExecuteAsync(command);
+        const string deleteMembersSql = "DELETE FROM [dbo].[LeagueMembers] WHERE [LeagueId] = @LeagueId;";
+
+        var deleteCommand = new CommandDefinition(
+            deleteMembersSql,
+            new { LeagueId = league.Id },
+            cancellationToken: cancellationToken
+        );
+        
+        await Connection.ExecuteAsync(deleteCommand);
+
+        if (league.Members.Any())
+        {
+            const string insertMemberSql = @"
+                INSERT INTO [dbo].[LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAt], [ApprovedAt])
+                VALUES (@LeagueId, @UserId, @Status, @JoinedAt, @ApprovedAt);";
+
+            var insertCommand = new CommandDefinition(insertMemberSql, league.Members.Select(m => new
+            {
+                m.LeagueId,
+                m.UserId,
+                Status = m.Status.ToString(),
+                m.JoinedAt,
+                m.ApprovedAt
+            }), cancellationToken: cancellationToken);
+
+            await Connection.ExecuteAsync(insertCommand);
+        }
     }
 
     public async Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status, CancellationToken cancellationToken)

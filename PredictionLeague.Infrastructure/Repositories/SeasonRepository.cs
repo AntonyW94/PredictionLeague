@@ -59,18 +59,6 @@ public class SeasonRepository : ISeasonRepository
 
     #region Read
 
-    public async Task<IEnumerable<Season>> FetchAllAsync(CancellationToken cancellationToken)
-    {
-        const string sql = "SELECT * FROM [Seasons] ORDER BY [StartDate] DESC;";
-      
-        var command = new CommandDefinition(
-            commandText: sql,
-            cancellationToken: cancellationToken
-        );
-        
-        return await Connection.QueryAsync<Season>(command);
-    }
-
     public async Task<Season?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         const string sql = "SELECT * FROM [Seasons] WHERE [Id] = @Id;";

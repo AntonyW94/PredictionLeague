@@ -3,4 +3,4 @@ using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;
 
-public class FetchAllLeaguesQuery : IRequest<IEnumerable<LeagueDto>>;
+public record FetchAllLeaguesQuery : IRequest<IEnumerable<LeagueDto>>;

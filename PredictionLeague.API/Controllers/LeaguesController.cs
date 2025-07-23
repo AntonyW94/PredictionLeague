@@ -70,7 +70,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<LeagueMembersPageDto>> FetchLeagueMembersAsync(int leagueId, CancellationToken cancellationToken)
     {
-        var query = new FetchLeagueMembersQuery(leagueId);
+        var query = new FetchLeagueMembersQuery(leagueId, CurrentUserId);
         var result = await _mediator.Send(query, cancellationToken);
 
         if (result == null)
@@ -97,7 +97,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateLeagueAsync(int leagueId, [FromBody] UpdateLeagueRequest request, CancellationToken cancellationToken)
     {
-        var command = new UpdateLeagueCommand(leagueId, request);
+        var command = new UpdateLeagueCommand(leagueId, request.Name, request.EntryCode, request.EntryDeadline);
         await _mediator.Send(command, cancellationToken);
 
         return NoContent();

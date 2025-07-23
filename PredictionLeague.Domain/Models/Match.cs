@@ -1,11 +1,13 @@
 ﻿using Ardalis.GuardClauses;
 using PredictionLeague.Domain.Common.Enumerations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Domain.Models;
 
 public class Match
 {
-    public int Id { get; init; }
+    public int Id { get; private set; }
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")] 
     public int RoundId { get; private set; }
     public int HomeTeamId { get; private set; }
     public int AwayTeamId { get; private set; }
@@ -14,11 +16,21 @@ public class Match
     public int? ActualHomeTeamScore { get; private set; }
     public int? ActualAwayTeamScore { get; private set; }
 
-    public Team? HomeTeam { get; set; }
-    public Team? AwayTeam { get; set; }
-
     private Match() { }
 
+    [SuppressMessage("ReSharper", "UnusedMember.Global")]
+    public Match(int id, int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTime, MatchStatus status, int? actualHomeTeamScore, int? actualAwayTeamScore)
+    {
+        Id = id;
+        RoundId = roundId;
+        HomeTeamId = homeTeamId;
+        AwayTeamId = awayTeamId;
+        MatchDateTime = matchDateTime;
+        Status = status;
+        ActualHomeTeamScore = actualHomeTeamScore;
+        ActualAwayTeamScore = actualAwayTeamScore;
+    }
+    
     public static Match Create(int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTime)
     {
         Guard.Against.Default(matchDateTime, nameof(matchDateTime));

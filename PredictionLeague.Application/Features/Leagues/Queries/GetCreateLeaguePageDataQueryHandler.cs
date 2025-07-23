@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Admin.Seasons;
 using PredictionLeague.Contracts.Leagues;
 
@@ -7,23 +7,28 @@ namespace PredictionLeague.Application.Features.Leagues.Queries;
 
 public class GetCreateLeaguePageDataQueryHandler : IRequestHandler<GetCreateLeaguePageDataQuery, CreateLeaguePageData>
 {
-    private readonly ISeasonRepository _seasonRepository;
+    private readonly IApplicationReadDbConnection _dbConnection;
 
-    public GetCreateLeaguePageDataQueryHandler(ISeasonRepository seasonRepository)
+    public GetCreateLeaguePageDataQueryHandler(IApplicationReadDbConnection dbConnection)
     {
-        _seasonRepository = seasonRepository;
+        _dbConnection = dbConnection;
     }
 
     public async Task<CreateLeaguePageData> Handle(GetCreateLeaguePageDataQuery request, CancellationToken cancellationToken)
     {
-        var seasons = await _seasonRepository.FetchAllAsync(cancellationToken);
+        const string sql = @"
+            SELECT
+                s.[Id],
+                s.[Name]
+            FROM [Seasons] s
+            WHERE s.[IsActive] = 1
+            ORDER BY s.[StartDate] DESC;";
+
+        var seasons = await _dbConnection.QueryAsync<SeasonLookupDto>(sql, cancellationToken);
 
         return new CreateLeaguePageData
         {
-            Seasons = seasons.Select(season => new SeasonLookupDto(
-                season.Id,
-                season.Name
-            )).ToList()
+            Seasons = seasons.ToList()
         };
     }
 }

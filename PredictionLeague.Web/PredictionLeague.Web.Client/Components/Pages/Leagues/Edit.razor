@@ -48,7 +48,7 @@
     {
         var league = await Http.GetFromJsonAsync<LeagueDto>($"api/leagues/{LeagueId}");
         if (league != null)
-            _model = new UpdateLeagueRequest { Name = league.Name, EntryCode = league.EntryCode };
+            _model = new UpdateLeagueRequest { Name = league.Name, EntryCode = league.EntryCode, EntryDeadline = league.EntryDeadline };
     }
 
     private async Task HandleUpdateLeagueAsync()

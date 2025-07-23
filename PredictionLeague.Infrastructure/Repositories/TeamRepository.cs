@@ -46,24 +46,6 @@ public class TeamRepository : ITeamRepository
 
     #region Read
 
-    public async Task<IEnumerable<Team>> FetchAllAsync(CancellationToken cancellationToken)
-    {
-        const string sql = @"
-                SELECT 
-                    [Id], 
-                    [Name], 
-                    [LogoUrl] 
-                FROM [Teams] 
-                ORDER BY [Name];";
-
-        var command = new CommandDefinition(
-            commandText: sql,
-            cancellationToken: cancellationToken
-        );
-
-        return await Connection.QueryAsync<Team>(command);
-    }
-
     public async Task<Team?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         const string sql = @"

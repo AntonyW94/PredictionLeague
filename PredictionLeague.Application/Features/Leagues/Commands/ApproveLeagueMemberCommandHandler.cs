@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using Ardalis.GuardClauses;
+using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Common.Enumerations;
 
@@ -15,11 +16,15 @@ public class ApproveLeagueMemberCommandHandler : IRequestHandler<ApproveLeagueMe
 
     public async Task Handle(ApproveLeagueMemberCommand request, CancellationToken cancellationToken)
     {
-        var league = await _leagueRepository.GetByIdAsync(request.LeagueId, cancellationToken) ?? throw new KeyNotFoundException($"League with ID {request.LeagueId} not found.");
-
-        if (league.AdministratorUserId != request.ApprovingUserId)
-            throw new UnauthorizedAccessException("You are not authorized to approve members for this league.");
-
-        await _leagueRepository.UpdateMemberStatusAsync(request.LeagueId, request.MemberId, LeagueMemberStatus.Approved, cancellationToken);
+        var league = await _leagueRepository.GetByIdAsync(request.LeagueId, cancellationToken);
+        Guard.Against.NotFound(request.LeagueId, league, $"League with ID {request.LeagueId} not found.");
+       
+        league.ApproveMember(request.MemberId, request.ApprovingUserId);
+       
+        await _leagueRepository.UpdateMemberStatusAsync(
+            request.LeagueId,
+            request.MemberId,
+            LeagueMemberStatus.Approved,
+            cancellationToken);
     }
 }

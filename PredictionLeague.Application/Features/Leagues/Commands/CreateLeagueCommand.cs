@@ -9,5 +9,5 @@ public record CreateLeagueCommand(
     int SeasonId,
     string CreatingUserId,
     string? EntryCode,
-    DateTime? EntryDeadline
+    DateTime EntryDeadline
 ) : IRequest<LeagueDto>, ITransactionalRequest;

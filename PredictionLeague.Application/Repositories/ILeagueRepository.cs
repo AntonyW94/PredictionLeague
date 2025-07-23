@@ -8,7 +8,6 @@ public interface ILeagueRepository
     #region Create
 
     Task<League> CreateAsync(League league, CancellationToken cancellationToken);
-    Task AddMemberAsync(LeagueMember member, CancellationToken cancellationToken);
 
     #endregion
 
@@ -16,8 +15,6 @@ public interface ILeagueRepository
 
     Task<League?> GetByIdAsync(int id, CancellationToken cancellationToken);
     Task<League?> GetByEntryCodeAsync(string entryCode, CancellationToken cancellationToken);
-    Task<IEnumerable<League>> GetAllAsync(CancellationToken cancellationToken);
-    Task<IEnumerable<LeagueMember>> GetMembersByLeagueIdAsync(int leagueId, CancellationToken cancellationToken);
     Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken);
 
     #endregion

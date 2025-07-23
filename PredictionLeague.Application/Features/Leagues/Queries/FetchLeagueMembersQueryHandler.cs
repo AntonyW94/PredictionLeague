@@ -1,52 +1,72 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Identity;
-using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Enumerations;
-using PredictionLeague.Domain.Models;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;
 
 public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembersQuery, LeagueMembersPageDto?>
 {
-    private readonly ILeagueRepository _leagueRepository;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IApplicationReadDbConnection _dbConnection;
 
-    public FetchLeagueMembersQueryHandler(ILeagueRepository leagueRepository, UserManager<ApplicationUser> userManager)
+    public FetchLeagueMembersQueryHandler(IApplicationReadDbConnection dbConnection)
     {
-        _leagueRepository = leagueRepository;
-        _userManager = userManager;
+        _dbConnection = dbConnection;
     }
 
     public async Task<LeagueMembersPageDto?> Handle(FetchLeagueMembersQuery request, CancellationToken cancellationToken)
     {
-        var league = await _leagueRepository.GetByIdAsync(request.LeagueId, cancellationToken);
-        if (league == null)
-            return null;
+        const string sql = @"
+            SELECT
+                l.[Name] AS LeagueName,
+                lm.[UserId],
+                u.[FirstName] + ' ' + u.[LastName] AS FullName,
+                lm.[JoinedAt],
+                lm.[Status],
+                CASE WHEN lm.[Status] = 'Pending' AND l.[AdministratorUserId] = @CurrentUserId THEN 1 ELSE 0 END AS CanBeApproved
+            FROM [dbo].[Leagues] l
+            JOIN [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+            JOIN [dbo].[AspNetUsers] u ON lm.[UserId] = u.[Id]
+            WHERE l.[Id] = @LeagueId
+            ORDER BY FullName;";
 
-        var members = await _leagueRepository.GetMembersByLeagueIdAsync(request.LeagueId, cancellationToken);
-        var memberDtos = new List<LeagueMemberDto>();
-
-        foreach (var member in members)
+        var queryResult = await _dbConnection.QueryAsync<MemberQueryResult>(
+            sql,
+            cancellationToken,
+            new { request.LeagueId, request.CurrentUserId }
+        );
+        
+        var members = queryResult.ToList();
+        if (members.Any())
         {
-            var user = await _userManager.FindByIdAsync(member.UserId);
-            if (user != null)
+            return new LeagueMembersPageDto
             {
-                memberDtos.Add(new LeagueMemberDto
+                LeagueName = members.First().LeagueName,
+                Members = members.Select(m => new LeagueMemberDto
                 {
-                    UserId = member.UserId,
-                    FullName = $"{user.FirstName} {user.LastName}",
-                    JoinedAt = member.JoinedAt,
-                    Status = member.Status,
-                    CanBeApproved = member.Status == LeagueMemberStatus.Pending && league.AdministratorUserId == member.UserId
-                });
-            }
+                    UserId = m.UserId,
+                    FullName = m.FullName,
+                    JoinedAt = m.JoinedAt,
+                    Status = m.Status,
+                    CanBeApproved = m.CanBeApproved
+                }).ToList()
+            };
         }
 
-        return new LeagueMembersPageDto
-        {
-            LeagueName = league.Name,
-            Members = memberDtos.OrderBy(m => m.FullName).ToList()
-        };
+        const string leagueNameSql = "SELECT [Name] FROM [dbo].[Leagues] WHERE [Id] = @LeagueId;";
+        var leagueName = await _dbConnection.QuerySingleOrDefaultAsync<string>(leagueNameSql, cancellationToken, new { request.LeagueId });
+
+        return leagueName == null ? null : new LeagueMembersPageDto { LeagueName = leagueName };
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record MemberQueryResult(
+        string LeagueName,
+        string UserId,
+        string FullName,
+        DateTime JoinedAt,
+        LeagueMemberStatus Status,
+        bool CanBeApproved
+    );
 }
