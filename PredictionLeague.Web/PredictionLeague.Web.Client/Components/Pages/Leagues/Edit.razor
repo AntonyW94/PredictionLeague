@@ -1,7 +1,8 @@
 ﻿@page "/leagues/{LeagueId:int}/edit"
 
+@attribute [Authorize]
+
 @inject HttpClient Http
-@inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Leagues
 
@@ -16,23 +17,40 @@
         }
         else
         {
-            <EditForm Model="_model" OnValidSubmit="HandleUpdateLeagueAsync">
-                <FluentValidationValidator />
-                <ApiError Message="@_errorMessage" />
-                <ApiSuccess Message="@_successMessage" />
+            <BaseFormComponent TModel="UpdateLeagueRequest"
+                               Model="_model"
+                               SubmitAction="HandleUpdateLeagueAsync"
+                               SuccessRedirectUrl="/leagues"
+                               BackUrl="/leagues"
+                               SuccessAlertMessage="League updated successfully!"
+                               BusyText="Saving...">
+                <ChildContent>
+                    <div class="mb-3">
+                        <label for="name" class="form-label text-white">League Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="_model.Name" />
+                        <StyledValidationMessage For="@(() => _model.Name)" />
+                    </div>
 
-                <div class="mb-3">
-                    <label for="name" class="form-label text-white">League Name</label>
-                    <InputText id="name" class="form-control" @bind-Value="_model.Name" />
-                </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label text-white">Entry Fee (£)</label>
+                            <InputNumber id="price" class="form-control" @bind-Value="_model.Price" />
+                            <StyledValidationMessage For="@(() => _model.Price)" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="entryDeadline" class="form-label text-white">Entry Deadline</label>
+                            <InputDate id="entryDeadline" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.EntryDeadline" />
+                            <StyledValidationMessage For="@(() => _model.EntryDeadline)" />
+                        </div>
+                    </div>
 
-                <div class="mb-3">
-                    <label for="entryCode" class="form-label text-white">Entry Code (optional)</label>
-                    <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" />
-                </div>
-
-                <BackAndSaveButtons BackText="Back to Leagues" OnBackClick="Back" BusyText="Saving..." IsBusy="_isBusy"></BackAndSaveButtons>
-            </EditForm>
+                    <div class="mb-3">
+                        <label for="entryCode" class="form-label text-white">Entry Code</label>
+                        <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" />
+                        <StyledValidationMessage For="@(() => _model.EntryCode!)" />
+                    </div>
+                </ChildContent>
+            </BaseFormComponent>
         }
     </div>
 </div>
@@ -40,31 +58,24 @@
 @code {
     [Parameter] public int LeagueId { get; set; }
     private UpdateLeagueRequest? _model;
-    private bool _isBusy;
-    private string? _errorMessage;
-    private string? _successMessage;
 
     protected override async Task OnInitializedAsync()
     {
         var league = await Http.GetFromJsonAsync<LeagueDto>($"api/leagues/{LeagueId}");
         if (league != null)
-            _model = new UpdateLeagueRequest { Name = league.Name, EntryCode = league.EntryCode, EntryDeadline = league.EntryDeadline };
+        {
+            _model = new UpdateLeagueRequest
+            {
+                Name = league.Name,
+                Price = league.Price,
+                EntryCode = league.EntryCode,
+                EntryDeadline = league.EntryDeadline
+            };
+        }
     }
 
-    private async Task HandleUpdateLeagueAsync()
+    private Task<HttpResponseMessage> HandleUpdateLeagueAsync()
     {
-        _isBusy = true;
-        _errorMessage = null;
-        _successMessage = null;
-        
-        var response = await Http.PutAsJsonAsync($"api/leagues/{LeagueId}/update", _model);
-        if (response.IsSuccessStatusCode)
-            _successMessage = "League updated successfully!";
-        else
-            _errorMessage = "Error updating league.";
-
-        _isBusy = false;
+        return Http.PutAsJsonAsync($"api/leagues/{LeagueId}/update", _model);
     }
-
-    private void Back() => NavigationManager.NavigateTo("/leagues");
 }
