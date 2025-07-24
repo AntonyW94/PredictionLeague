@@ -1,5 +1,5 @@
 ﻿using PredictionLeague.Contracts.Leagues;
-using PredictionLeague.Web.Client.Authentication;
+using PredictionLeague.Web.Client.Services.Leagues;
 using System.Net.Http.Json;
 
 namespace PredictionLeague.Web.Client.ViewModels.Dashboard;
@@ -8,14 +8,15 @@ public class PublicLeaguesViewModel
 {
     public List<PublicLeagueDto> PublicLeagues { get; private set; } = new();
     public bool IsLoading { get; private set; } = true;
+    public string? JoinLeagueError { get; private set; }
 
     private readonly HttpClient _http;
-    private readonly IAuthenticationService _authenticationService;
+    private readonly ILeagueService _leagueService;
 
-    public PublicLeaguesViewModel(HttpClient http, IAuthenticationService authenticationService)
+    public PublicLeaguesViewModel(HttpClient http, ILeagueService leagueService)
     {
         _http = http;
-        _authenticationService = authenticationService;
+        _leagueService = leagueService;
     }
 
     public async Task LoadPublicLeaguesAsync()
@@ -25,11 +26,9 @@ public class PublicLeaguesViewModel
         {
             var leagues = await _http.GetFromJsonAsync<List<PublicLeagueDto>>("api/dashboard/public-leagues");
             if (leagues != null)
-            {
                 PublicLeagues = leagues;
-            }
         }
-        catch (Exception)
+        catch
         {
         }
         finally
@@ -40,8 +39,13 @@ public class PublicLeaguesViewModel
 
     public async Task JoinLeagueAsync(int leagueId)
     {
-        var result = await _authenticationService.JoinPublicLeagueAsync(leagueId);
-        if (result)
+        JoinLeagueError = null;
+      
+        var (success, errorMessage) = await _leagueService.JoinPublicLeagueAsync(leagueId); // Change this
+        
+        if (success)
             await LoadPublicLeaguesAsync();
+        else
+            JoinLeagueError = errorMessage;
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace PredictionLeague.Contracts.Leagues;
+﻿using PredictionLeague.Domain.Common.Enumerations;
+
+namespace PredictionLeague.Contracts.Leagues;
 
 public record PublicLeagueDto(
     int Id, 
@@ -6,4 +8,4 @@ public record PublicLeagueDto(
     string SeasonName,
     decimal Price,
     DateTime EntryDeadline,
-    bool IsMember);
+    LeagueMemberStatus? Status);

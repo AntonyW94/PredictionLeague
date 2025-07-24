@@ -27,4 +27,10 @@ public interface ILeagueRepository
     Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate, CancellationToken cancellationToken);
 
     #endregion
+    
+    #region Delete
+
+    Task DeleteAsync(int leagueId, CancellationToken cancellationToken);
+
+    #endregion
 }

@@ -15,13 +15,7 @@ public class AuthenticationService : IAuthenticationService
         _httpClient = httpClient;
         _authenticationStateProvider = authenticationStateProvider;
     }
-
-    public async Task<bool> JoinPublicLeagueAsync(int leagueId)
-    {
-        var result = await _httpClient.PostAsync($"api/leagues/{leagueId}/join", null);
-        return result.IsSuccessStatusCode;
-    }
-   
+    
     public async Task<AuthenticationResponse> RegisterAsync(RegisterRequest registerRequest)
     {
         var response = await _httpClient.PostAsJsonAsync("api/authentication/register", registerRequest);

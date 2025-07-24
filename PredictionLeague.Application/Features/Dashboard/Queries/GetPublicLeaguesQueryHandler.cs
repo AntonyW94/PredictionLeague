@@ -19,10 +19,10 @@ public class GetPublicLeaguesQueryHandler : IRequestHandler<GetPublicLeaguesQuer
             SELECT
                 l.[Id],
                 l.[Name],
-                s.[Name] AS SeasonName,
+                s.[Name] AS 'SeasonName',
                 l.[Price],
-                l.[EntryDeadline],
-                CASE WHEN lm.[UserId] IS NOT NULL THEN 1 ELSE 0 END AS IsMember
+                ISNULL(l.[EntryDeadline], '1900-01-01') AS 'EntryDeadline',
+                lm.[Status] AS 'Status'
             FROM 
                 [dbo].[Leagues] l
             JOIN 
@@ -33,7 +33,7 @@ public class GetPublicLeaguesQueryHandler : IRequestHandler<GetPublicLeaguesQuer
                 l.[EntryCode] IS NULL
             ORDER BY 
                 s.[StartDate] DESC, l.[Name];";
-        
+
         return await _dbConnection.QueryAsync<PublicLeagueDto>(sql, cancellationToken, new { request.UserId });
     }
 }

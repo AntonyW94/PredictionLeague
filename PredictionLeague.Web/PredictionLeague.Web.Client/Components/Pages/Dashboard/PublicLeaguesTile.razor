@@ -1,7 +1,11 @@
-﻿@inject ViewModels.Dashboard.PublicLeaguesViewModel ViewModel
+﻿@using PredictionLeague.Domain.Common.Enumerations
+@inject ViewModels.Dashboard.PublicLeaguesViewModel ViewModel
 
 <div class="dashboard-card h-100">
     <h3 class="text-white text-center fw-bold mb-4">Leagues</h3>
+    
+    <ApiError Message="@ViewModel.JoinLeagueError" />
+
     @if (ViewModel.IsLoading)
     {
         <p class="text-center text-white"><em>Loading Leagues...</em></p>
@@ -16,17 +20,20 @@
                         <h6 class="mb-0 fw-bold text-white">@league.Name</h6>
                         <small class="text-white-50">@league.SeasonName</small>
                     </div>
-                    @if (league.IsMember)
+
+                    @if (league.Status == null)
                     {
-                        <button class="btn btn-sm btn-secondary" disabled>Joined</button>
-                    }
-                    else
-                    {
-                        <button class="btn btn-sm dark-pink-button"
+                        <button class="btn @GetStatusClass(league.Status)"
                                 @onclick="() => HandleJoinLeagueAsync(league.Id)"
                                 disabled="@_isBusy">
                             Join
                         </button>
+                    }
+                    else
+                    {
+                        <span class="status-pill @GetStatusClass(league.Status)">
+                            @league.Status.ToString()
+                        </span>
                     }
                 </div>
             }
@@ -34,7 +41,7 @@
     }
     else
     {
-        <p class="text-white fw-bold text-center">There are currently no upcoming rounds available.</p>
+        <p class="text-white fw-bold text-center">There are currently no public leagues.</p>
     }
 </div>
 
@@ -55,5 +62,16 @@
         _isBusy = false;
 
         StateHasChanged();
+    }
+
+    private static string GetStatusClass(LeagueMemberStatus? status)
+    {
+        return status switch
+        {
+            LeagueMemberStatus.Approved => "green-button",
+            LeagueMemberStatus.Pending => "dark-pink-button",
+            LeagueMemberStatus.Rejected => "pink-button",
+            _ => "dark-pink-button"
+        };
     }
 }

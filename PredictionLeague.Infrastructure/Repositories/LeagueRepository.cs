@@ -69,7 +69,7 @@ public class LeagueRepository : ILeagueRepository
         return league;
     }
 
-    public Task AddMemberAsync(LeagueMember member, CancellationToken cancellationToken)
+    private Task AddMemberAsync(LeagueMember member, CancellationToken cancellationToken)
     {
         const string sql = @"
             INSERT INTO [dbo].[LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAt], [ApprovedAt])
@@ -107,23 +107,6 @@ public class LeagueRepository : ILeagueRepository
         const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[EntryCode] = @EntryCode;";
 
         return (await QueryAndMapLeagues(sql, cancellationToken, new { EntryCode = entryCode })).FirstOrDefault();
-    }
-
-    public async Task<IEnumerable<League>> GetAllAsync(CancellationToken cancellationToken)
-    {
-        return await QueryAndMapLeagues(GetLeaguesWithMembersSql, cancellationToken);
-    }
-
-    public async Task<IEnumerable<LeagueMember>> GetMembersByLeagueIdAsync(int leagueId, CancellationToken cancellationToken)
-    {
-        const string sql = "SELECT * FROM [dbo].[LeagueMembers] WHERE [LeagueId] = @LeagueId;";
-        var command = new CommandDefinition(
-            commandText: sql,
-            parameters: new { LeagueId = leagueId },
-            cancellationToken: cancellationToken
-        );
-
-        return await Connection.QueryAsync<LeagueMember>(command);
     }
 
     public async Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken)
@@ -334,6 +317,27 @@ public class LeagueRepository : ILeagueRepository
             });
 
         return groupedLeagues;
+    }
+
+    #endregion
+    
+    #region Delete
+
+    public async Task DeleteAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+        DELETE FROM [dbo].[LeagueMembers] WHERE [LeagueId] = @LeagueId;
+        DELETE FROM [dbo].[LeaguePrizeSetting] WHERE [LeagueId] = @LeagueId;
+        DELETE FROM [dbo].[Winnings] WHERE [LeagueId] = @LeagueId;
+        DELETE FROM [dbo].[Leagues] WHERE [Id] = @LeagueId;";
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { LeagueId = leagueId },
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(command);
     }
 
     #endregion

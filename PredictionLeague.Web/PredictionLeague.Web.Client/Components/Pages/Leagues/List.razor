@@ -2,6 +2,7 @@
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 
 @using PredictionLeague.Contracts.Leagues
 @using System.Globalization
@@ -17,6 +18,8 @@
                 <span class="d-none d-md-inline ms-2">Create League</span>
             </button>
         </div>
+      
+        <ApiError Message="@_errorMessage" />
 
         @if (_leagues == null)
         {
@@ -77,6 +80,10 @@
                                 <span class="bi bi-pencil-fill me-2"></span>
                                 Edit
                             </button>
+                            <button class="btn pink-button" @onclick="() => DeleteLeague(league.Id, league.Name)">
+                                <span class="bi bi-trash-fill me-2"></span>
+                                Delete
+                            </button>
                         </div>
                     </div>
                 }
@@ -87,6 +94,39 @@
 
 @code {
     private List<LeagueDto>? _leagues;
-    protected override async Task OnInitializedAsync() { _leagues = await Http.GetFromJsonAsync<List<LeagueDto>>("api/leagues"); }
-    private void EditLeague(int leagueId) => NavigationManager.NavigateTo($"/leagues/{leagueId}/edit");
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLeagues();
+    }
+
+    private async Task LoadLeagues()
+    {
+        _leagues = await Http.GetFromJsonAsync<List<LeagueDto>>("api/leagues");
+    }
+
+    private void EditLeague(int leagueId) => NavigationManager.NavigateTo($"/leagues/{leagueId}/edit"); 
+    
+    private async Task DeleteLeague(int leagueId, string leagueName)
+    {
+        var confirmed = await JsRuntime.InvokeAsync<bool>("blazorInterop.showConfirm", new object[] { $"Delete '{leagueName}'?", "This action cannot be undone." });
+        if (confirmed)
+        {
+            try
+            {
+                var response = await Http.DeleteAsync($"api/leagues/{leagueId}");
+                if (response.IsSuccessStatusCode)
+                    await LoadLeagues();
+                else
+                    _errorMessage = $"Error deleting league. Status: {response.StatusCode}";
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = $"An unexpected error occurred: {ex.Message}";
+            }
+            
+            StateHasChanged();
+        }
+    }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Leagues.Commands;
 using PredictionLeague.Application.Features.Leagues.Queries;
+using PredictionLeague.Contracts;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 
@@ -140,6 +141,22 @@ public class LeaguesController : ApiControllerBase
         var command = new ApproveLeagueMemberCommand(leagueId, memberId, CurrentUserId);
         await _mediator.Send(command, cancellationToken);
 
+        return NoContent();
+    }
+
+    #endregion
+
+
+    #region Delete
+
+    [HttpDelete("{leagueId:int}")]
+    [Authorize]
+    public async Task<IActionResult> DeleteLeagueAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        var isAdmin = User.IsInRole(RoleNames.Administrator);
+
+        var command = new DeleteLeagueCommand(leagueId, CurrentUserId, isAdmin);
+        await _mediator.Send(command, cancellationToken);
         return NoContent();
     }
 
