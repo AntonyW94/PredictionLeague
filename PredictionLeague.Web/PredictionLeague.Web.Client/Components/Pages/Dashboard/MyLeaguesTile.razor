@@ -1,0 +1,79 @@
+﻿@inject NavigationManager NavigationManager
+@inject IDashboardStateService DashboardState
+
+@using PredictionLeague.Domain.Common.Enumerations
+@using PredictionLeague.Web.Client.Services.Dashboard
+
+@implements IAsyncDisposable
+
+<div class="dashboard-card h-100">
+    <h3 class="text-white text-center fw-bold mb-4">My Leagues</h3>
+
+    <ApiError Message="@DashboardState.ErrorMessage" />
+
+    @if (DashboardState.IsLoading)
+    {
+        <p class="text-center text-white"><em>Loading my leagues...</em></p>
+    }
+    else if (!DashboardState.MyLeagues.Any())
+    {
+        <p class="text-center text-white">You haven't joined any leagues yet.</p>
+    }
+    else
+    {
+        <div class="list-group flex-grow-1">
+            @foreach (var league in DashboardState.MyLeagues)
+            {
+                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center joinable-league-item">
+                    <div>
+                        <h6 class="mb-0 fw-bold text-white">@league.Name</h6>
+                        <small class="text-white-50">@league.SeasonName</small>
+                    </div>
+
+                    <div class="d-flex align-items-center">
+                        <span class="status-pill @GetStatusClass(league.Status) me-3">
+                            @league.Status.ToString()
+                        </span>
+
+                        <button class="btn btn-sm dark-pink-button"
+                                disabled="@(league.Status != LeagueMemberStatus.Approved)"
+                                @onclick="() => ViewLeagueDashboard(league.Id)">
+                            View
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        DashboardState.OnStateChange += StateHasChanged;
+        await DashboardState.InitializeAsync();
+    }
+
+    private void ViewLeagueDashboard(int leagueId)
+    {
+        NavigationManager.NavigateTo($"/leagues/{leagueId}/leaderboard");
+    }
+
+    private static string GetStatusClass(LeagueMemberStatus status)
+    {
+        return status switch
+        {
+            LeagueMemberStatus.Approved => "bg-pl-green",
+            LeagueMemberStatus.Pending => "bg-pl-dark-pink",
+            LeagueMemberStatus.Rejected => "bg-pl-pink",
+            _ => "bg-pl-light-cyan"
+        };
+    }
+
+
+    public ValueTask DisposeAsync()
+    {
+        DashboardState.OnStateChange -= StateHasChanged;
+        return ValueTask.CompletedTask;
+    }
+}

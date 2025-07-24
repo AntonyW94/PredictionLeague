@@ -27,11 +27,19 @@ public class DashboardController : ApiControllerBase
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 
-    [HttpGet("public-leagues")]
-    [ProducesResponseType(typeof(IEnumerable<PublicLeagueDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<PublicLeagueDto>>> GetPublicLeaguesAsync(CancellationToken cancellationToken)
+    [HttpGet("my-leagues")]
+    [ProducesResponseType(typeof(IEnumerable<MyLeagueDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<MyLeagueDto>>> GetMyLeaguesAsync(CancellationToken cancellationToken)
     {
-        var query = new GetPublicLeaguesQuery(CurrentUserId);
+        var query = new GetMyLeaguesQuery(CurrentUserId);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
+
+    [HttpGet("available-leagues")]
+    [ProducesResponseType(typeof(IEnumerable<AvailableLeagueDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<AvailableLeagueDto>>> GetAvailableLeaguesAsync(CancellationToken cancellationToken)
+    {
+        var query = new GetAvailableLeaguesQuery(CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 }

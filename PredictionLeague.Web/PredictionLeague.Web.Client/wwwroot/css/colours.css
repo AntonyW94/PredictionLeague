@@ -1,0 +1,19 @@
+﻿.bg-pl-green {
+    background-color: var(--pl-green);
+    color: white;
+}
+
+.bg-pl-pink {
+    background-color: var(--pl-pink);
+    color: white;
+}
+
+.bg-pl-dark-pink {
+    background-color: var(--pl-dark-pink);
+    color: white;
+}
+
+.bg-pl-light-cyan {
+    background-color: var(--pl-light-cyan);
+    color: white;
+}
