@@ -61,3 +61,36 @@
     background-color: var(--pl-purple-dark);
     color: white;
 }
+
+.member-card {
+    background-color: var(--pl-purple-dark);
+    padding: 1rem 1.5rem;
+    border-radius: var(--bs-border-radius);
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+}
+
+.member-card-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.member-status-column {
+    background-color: var(--pl-purple);
+    border-radius: var(--bs-border-radius);
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.column-placeholder {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}

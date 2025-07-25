@@ -1,13 +1,13 @@
 ﻿@page "/leagues"
 
-@attribute [Authorize(Roles = RoleNames.Administrator)]
+@attribute [Authorize]
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JsRuntime
 
 @using PredictionLeague.Contracts.Leagues
-@using System.Globalization
 
 <PageTitle>Manage Leagues</PageTitle>
 
@@ -20,72 +20,45 @@
                 <span class="d-none d-md-inline ms-2">Create League</span>
             </button>
         </div>
-      
+
         <ApiError Message="@_errorMessage" />
 
-        @if (_leagues == null)
+        @if (_leaguesData == null)
         {
             <p class="text-center text-white"><em>Loading...</em></p>
         }
-        else if (!_leagues.Any())
-        {
-            <p class="text-center text-white">No leagues have been created yet.</p>
-        }
         else
         {
-            <div class="league-grid">
-                @foreach (var league in _leagues)
+            <div class="row">
+                @if (_isAdmin)
                 {
-                    <div class="league-card">
-                        <div class="league-card-header">
-                            <span>@league.Name</span>
+                    <div class="col-lg-4 mb-4">
+                        <div class="member-status-column">
+                            <h4 class="text-white mb-3">Public Leagues</h4>
+                            <LeagueCardList Leagues="_leaguesData.PublicLeagues"
+                                            OnDeleteLeague="DeleteLeague"
+                                            OnEditLeague="EditLeague" />
+                        </div>
+                    </div>
+                }
                 
-                            <a href="@($"/leagues/{league.Id}/prizes")" class="btn btn-sm light-cyan-button" title="Edit Prizes">
-                                <span class="bi bi-trophy-fill"></span>
-                            </a>
-                        </div>
-                        <div class="league-card-body">
-                            <dl class="mb-0">
-                                <div class="league-card-row">
-                                    <dt>Season</dt>
-                                    <dd>@league.SeasonName</dd>
-                                </div>
-                                <div class="league-card-row">
-                                    <dt>Entry Fee</dt>
-                                    <dd>@league.Price.ToString("C", new CultureInfo("en-GB"))</dd>
-                                </div>
-                                <div class="league-card-row">
-                                    <dt>Entry Deadline</dt>
-                                    <dd>@league.EntryDeadline.ToString("dd MMM yyyy, HH:mm")</dd>
-                                </div>
-                                <div class="league-card-row">
-                                    <dt>Entry Code</dt>
-                                    <dd>
-                                        @if (league.EntryCode == "Public")
-                                        {
-                                            @league.EntryCode
-                                        }
-                                        else
-                                        {
-                                            <code>@league.EntryCode</code>
-                                        }
-                                    </dd>
-                                </div>
-                            </dl>
-                        </div>
-                        <div class="league-card-footer">
-                            <a href="/leagues/@league.Id/members" class="btn dark-pink-button">
-                                <span class="bi bi-people-fill me-2"></span>
-                                @league.MemberCount @(league.MemberCount == 1 ? "Member" : "Members")
-                            </a>
-                            <button class="btn green-button" @onclick="() => EditLeague(league.Id)">
-                                <span class="bi bi-pencil-fill me-2"></span>
-                                Edit
-                            </button>
-                            <button class="btn pink-button" @onclick="() => DeleteLeague(league.Id, league.Name)">
-                                <span class="bi bi-trash-fill me-2"></span>
-                                Delete
-                            </button>
+                <div class="@_myLeaguesColumnClass mb-4">
+                    <div class="member-status-column">
+                        <h4 class="text-white mb-3">My Private Leagues</h4>
+                        <LeagueCardList Leagues="_leaguesData.MyPrivateLeagues"
+                                        OnDeleteLeague="DeleteLeague"
+                                        OnEditLeague="EditLeague" />
+                    </div>
+                </div>
+
+                @if (_isAdmin)
+                {
+                    <div class="col-lg-4 mb-4">
+                        <div class="member-status-column">
+                            <h4 class="text-white mb-3">Other Private Leagues</h4>
+                            <LeagueCardList Leagues="_leaguesData.OtherPrivateLeagues"
+                                            OnDeleteLeague="DeleteLeague"
+                                            OnEditLeague="EditLeague" />
                         </div>
                     </div>
                 }
@@ -95,39 +68,62 @@
 </div>
 
 @code {
-    private List<LeagueDto>? _leagues;
+    private ManageLeaguesDto? _leaguesData;
     private string? _errorMessage;
+    private bool _isAdmin;
+    private string _myLeaguesColumnClass = "col-lg-4";
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _isAdmin = authState.User.IsInRole(RoleNames.Administrator);
+
+        if (!_isAdmin)
+            _myLeaguesColumnClass = "col-lg-12";
+
         await LoadLeagues();
     }
 
     private async Task LoadLeagues()
     {
-        _leagues = await Http.GetFromJsonAsync<List<LeagueDto>>("api/leagues");
+        _errorMessage = null;
+        try
+        {
+            _leaguesData = await Http.GetFromJsonAsync<ManageLeaguesDto>("api/leagues");
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"An error occurred while loading leagues: {ex.Message}";
+        }
     }
 
-    private void EditLeague(int leagueId) => NavigationManager.NavigateTo($"/leagues/{leagueId}/edit"); 
-    
-    private async Task DeleteLeague(int leagueId, string leagueName)
+    private void EditLeague(int leagueId) => NavigationManager.NavigateTo($"/leagues/{leagueId}/edit");
+
+    private async Task DeleteLeague((int leagueId, string leagueName) args)
     {
-        var confirmed = await JsRuntime.InvokeAsync<bool>("blazorInterop.showConfirm", new object[] { $"Delete '{leagueName}'?", "This action cannot be undone." });
+        _errorMessage = null;
+
+        var confirmed = await JsRuntime.InvokeAsync<bool>("blazorInterop.showConfirm", new object[] { $"Delete '{args.leagueName}'?", "This action cannot be undone." });
+
         if (confirmed)
         {
             try
             {
-                var response = await Http.DeleteAsync($"api/leagues/{leagueId}");
+                var response = await Http.DeleteAsync($"api/leagues/{args.leagueId}");
                 if (response.IsSuccessStatusCode)
+                {
                     await LoadLeagues();
+                }
                 else
+                {
                     _errorMessage = $"Error deleting league. Status: {response.StatusCode}";
+                }
             }
             catch (Exception ex)
             {
                 _errorMessage = $"An unexpected error occurred: {ex.Message}";
             }
-            
+
             StateHasChanged();
         }
     }

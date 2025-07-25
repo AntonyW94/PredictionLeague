@@ -160,6 +160,18 @@ public class League
         member.Approve();
     }
 
+    public void RejectMember(string memberToRejectUserId, string rejecterUserId)
+    {
+        if (rejecterUserId != AdministratorUserId)
+            throw new UnauthorizedAccessException("Only the league administrator can reject members.");
+
+        var member = _members.FirstOrDefault(m => m.UserId == memberToRejectUserId);
+        if (member == null)
+            throw new KeyNotFoundException("Member not found in this league.");
+
+        member.Reject();
+    }
+
     public void ScoreMatch(Match completedMatch)
     {
         Guard.Against.Null(completedMatch, nameof(completedMatch));

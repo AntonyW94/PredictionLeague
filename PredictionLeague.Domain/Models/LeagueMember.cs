@@ -58,6 +58,14 @@ public class LeagueMember
         ApprovedAt = DateTime.UtcNow;
     }
     
+    public void Reject()
+    {
+        if (Status != LeagueMemberStatus.Pending)
+            throw new InvalidOperationException("Only pending members can be rejected.");
+
+        Status = LeagueMemberStatus.Rejected;
+    }
+    
     public void ScorePredictionForMatch(Match completedMatch)
     {
         Guard.Against.Null(completedMatch, nameof(completedMatch));

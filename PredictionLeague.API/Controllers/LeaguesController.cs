@@ -6,6 +6,7 @@ using PredictionLeague.Application.Features.Leagues.Queries;
 using PredictionLeague.Contracts;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.API.Controllers;
 
@@ -45,10 +46,12 @@ public class LeaguesController : ApiControllerBase
     #region Read
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<LeagueDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<LeagueDto>>> FetchAllAsync(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ManageLeaguesDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ManageLeaguesDto>> GetManageLeaguesAsync(CancellationToken cancellationToken)
     {
-        var query = new FetchAllLeaguesQuery();
+        var isAdmin = User.IsInRole(RoleNames.Administrator);
+        var query = new GetManageLeaguesQuery(CurrentUserId, isAdmin);
+
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 
@@ -132,15 +135,15 @@ public class LeaguesController : ApiControllerBase
         return NoContent();
     }
 
-    [HttpPost("{leagueId:int}/members/{memberId}/approve")]
+    [HttpPost("{leagueId:int}/members/{memberId}/status")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ApproveLeagueMemberAsync(int leagueId, string memberId, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateLeagueMemberStatusAsync(int leagueId, string memberId, [FromBody] LeagueMemberStatus newStatus, CancellationToken cancellationToken)
     {
-        var command = new ApproveLeagueMemberCommand(leagueId, memberId, CurrentUserId);
+        var command = new UpdateLeagueMemberStatusCommand(leagueId, memberId, CurrentUserId, newStatus);
         await _mediator.Send(command, cancellationToken);
-
+       
         return NoContent();
     }
 

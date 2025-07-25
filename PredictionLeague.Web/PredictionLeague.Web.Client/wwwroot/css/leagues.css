@@ -6,7 +6,7 @@
 }
 
 .league-card {
-    background-color: var(--pl-purple);
+    background-color: var(--pl-purple-dark);
     border-radius: var(--bs-border-radius);
     color: white;
     display: flex;
@@ -15,7 +15,6 @@
     flex-grow: 1;
     max-width: 400px;
 }
-
 
 .league-card-header {
     background-color: var(--pl-purple-dark);

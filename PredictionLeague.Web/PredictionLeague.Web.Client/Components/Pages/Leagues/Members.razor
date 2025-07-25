@@ -20,39 +20,83 @@
         }
         else
         {
-            <table class="table striped-table responsive-table">
-                <thead>
-                    <tr>
-                        <th>Member Name</th>
-                        <th>Joined</th>
-                        <th>Status</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var member in _leagueData.Members)
-                    {
-                        <tr>
-                            <td data-label="Name" class="header-cell">@member.FullName</td>
-                            <td data-label="Joined At">@member.JoinedAt.ToString("dd MMM yyyy")</td>
-                            <td data-label="Status">
-                                <span class="badge @GetStatusClass(member.Status)"> 
-                                    @member.Status.ToString()
-                                </span>
-                            </td>
+            <ApiError Message="@_errorMessage" />
 
-                            <td data-label="Actions" class="actions-cell">
-                                @if (member.CanBeApproved)
-                                {
-                                    <button class="btn btn-sm light-cyan-button" @onclick="() => ApproveMemberAsync(member.UserId)">Approve</button>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="member-status-column">
+                        <h4 class="text-white mb-3">Pending Approval</h4>
+                        @if (_leagueData.Members.Any(m => m.Status == LeagueMemberStatus.Pending))
+                        {
+                            @foreach (var member in _leagueData.Members.Where(m => m.Status == LeagueMemberStatus.Pending))
+                            {
+                                <div class="member-card">
+                                    <div>
+                                        <div class="fw-bold">@member.FullName</div>
+                                        <div class="small text-white-50">Joined: @member.JoinedAt.ToString("dd MMM yyyy")</div>
+                                    </div>
+                                    <div class="member-card-actions">
+                                        <button class="btn btn-sm pink-button" @onclick="() => RejectMemberAsync(member.UserId)">Reject</button>
+                                        <button class="btn btn-sm green-button" @onclick="() => ApproveMemberAsync(member.UserId)">Approve</button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="column-placeholder text-white">No members are currently pending approval.</p>
+                        }
+                    </div>
+                </div>
 
-            <button class="btn pink-button d-flex align-items-center" @onclick="BackToLeagues">
+                <div class="col-md-4 mb-4">
+                    <div class="member-status-column">
+                        <h4 class="text-white mb-3">Approved Members</h4>
+                        @if (_leagueData.Members.Any(m => m.Status == LeagueMemberStatus.Approved))
+                        {
+                            @foreach (var member in _leagueData.Members.Where(m => m.Status == LeagueMemberStatus.Approved))
+                            {
+                                <div class="member-card">
+                                    <div>
+                                        <div class="fw-bold">@member.FullName</div>
+                                        <div class="small text-white-50">Joined: @member.JoinedAt.ToString("dd MMM yyyy")</div>
+                                    </div>
+                                    <span class="status-pill bg-pl-green">Approved</span>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="column-placeholder text-white">No members are currently approved.</p>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                    <div class="member-status-column">
+                        <h4 class="text-white mb-3">Rejected Members</h4>
+                        @if (_leagueData.Members.Any(m => m.Status == LeagueMemberStatus.Rejected))
+                        {
+                            @foreach (var member in _leagueData.Members.Where(m => m.Status == LeagueMemberStatus.Rejected))
+                            {
+                                <div class="member-card">
+                                    <div>
+                                        <div class="fw-bold">@member.FullName</div>
+                                        <div class="small text-white-50">Joined: @member.JoinedAt.ToString("dd MMM yyyy")</div>
+                                    </div>
+                                    <span class="status-pill bg-pl-pink">Rejected</span>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <p class="column-placeholder text-white">No members are currently rejected.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn pink-button d-flex align-items-center mt-3" @onclick="BackToLeagues">
                 <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Leagues
             </button>
         }
@@ -64,6 +108,7 @@
     public int LeagueId { get; set; }
 
     private LeagueMembersPageDto? _leagueData;
+    private string? _errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,34 +117,45 @@
 
     private async Task LoadMembersAsync()
     {
+        _errorMessage = null;
+
         try
         {
             _leagueData = await Http.GetFromJsonAsync<LeagueMembersPageDto>($"api/leagues/{LeagueId}/members");
         }
         catch (Exception)
         {
-            // Handle error
+            _errorMessage = "Could not load league members.";
         }
     }
 
     private async Task ApproveMemberAsync(string memberId)
     {
-        var response = await Http.PostAsync($"api/leagues/{LeagueId}/members/{memberId}/approve", null);
-        if (response.IsSuccessStatusCode)
-            await LoadMembersAsync();
-
-        // Handle error
+        await UpdateMemberStatusAsync(memberId, LeagueMemberStatus.Approved);
     }
 
-    private static string GetStatusClass(LeagueMemberStatus status)
+    private async Task RejectMemberAsync(string memberId)
     {
-        return status switch
+        await UpdateMemberStatusAsync(memberId, LeagueMemberStatus.Rejected);
+    }
+
+    private async Task UpdateMemberStatusAsync(string memberId, LeagueMemberStatus newStatus)
+    {
+        _errorMessage = null;
+        try
         {
-            LeagueMemberStatus.Approved => "green-button",
-            LeagueMemberStatus.Pending => "dark-pink-button",
-            LeagueMemberStatus.Rejected => "pink-button",
-            _ => "btn-secondary"
-        };
+            var response = await Http.PostAsJsonAsync($"api/leagues/{LeagueId}/members/{memberId}/status", newStatus);
+            if (response.IsSuccessStatusCode)
+                await LoadMembersAsync();
+            else
+                _errorMessage = $"Failed to update member status. The server returned a {response.StatusCode} error.";
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"An unexpected error occurred: {ex.Message}";
+        }
+
+        StateHasChanged();
     }
 
     private void BackToLeagues()
