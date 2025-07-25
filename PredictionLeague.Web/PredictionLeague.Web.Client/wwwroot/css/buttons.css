@@ -51,6 +51,15 @@
         color: var(--pl-light-cyan);
     }
 
+.btn.disabled-button,
+.btn.disabled-button:disabled,
+.btn.disabled-button:active {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 .back-button,
 .back-button:disabled,
 .back-button:active {
@@ -83,6 +92,11 @@
         color: var(--pl-green);
         background-color: white;
     }
+
+.btn .bi {
+    vertical-align: middle;
+    line-height: 1;
+}
 
 /* Social Buttons */
 .social-btn {

@@ -2,6 +2,7 @@
 using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Common.Enumerations;
+using PredictionLeague.Domain.Common.Guards.Season;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
@@ -19,7 +20,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
     public async Task Handle(UpdateMatchResultsCommand request, CancellationToken cancellationToken)
     {
         var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
-        Guard.Against.NotFound(request.RoundId, round, $"Round (ID: {request.RoundId}) was not found during Update Match Results.");
+        Guard.Against.EntityNotFound(request.RoundId, round, "Round");
 
         foreach (var matchResult in request.Matches)
         {

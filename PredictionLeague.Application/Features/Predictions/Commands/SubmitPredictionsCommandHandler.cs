@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common.Guards.Season;
 using PredictionLeague.Domain.Services;
 
 namespace PredictionLeague.Application.Features.Predictions.Commands;
@@ -22,7 +23,7 @@ public class SubmitPredictionsCommandHandler : IRequestHandler<SubmitPredictions
     {
         var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
 
-        Guard.Against.NotFound(request.RoundId, round, $"Round (ID: {request.RoundId}) was not found.");
+        Guard.Against.EntityNotFound(request.RoundId, round, "Round");
 
         var predictedScores = request.Predictions.Select(p => (p.MatchId, p.HomeScore, p.AwayScore));
 

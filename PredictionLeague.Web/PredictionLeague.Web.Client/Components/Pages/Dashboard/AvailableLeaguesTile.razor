@@ -1,8 +1,8 @@
 ﻿@inject IDashboardStateService DashboardState
+@inject IJSRuntime JsRuntime
 
 @implements IAsyncDisposable
 
-@using PredictionLeague.Domain.Common.Enumerations
 @using PredictionLeague.Web.Client.Services.Dashboard
 @using System.Globalization
 
@@ -52,16 +52,35 @@
     }
 
     <div class="mt-auto pt-4">
-        <button class="btn light-cyan-button w-100">Join Private League with Code</button>
+        <button class="btn light-cyan-button w-100" @onclick="ShowJoinPrivateLeagueModal">Join Private League with Code</button>
     </div>
 </div>
 
+@if (_showPrivateLeagueModal)
+{
+    <JoinPrivateLeagueModal OnClose="HideJoinPrivateLeagueModal" />
+}
+
 @code {
     private bool _isBusy;
+    private bool _showPrivateLeagueModal;
 
     protected override void OnInitialized()
     {
         DashboardState.OnStateChange += StateHasChanged;
+    }
+
+    private async Task ShowJoinPrivateLeagueModal()
+    {
+        _showPrivateLeagueModal = true;
+        await Task.Delay(50);
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "joinPrivateLeagueModal");
+    }
+    
+    private async Task HideJoinPrivateLeagueModal()
+    {
+        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "joinPrivateLeagueModal");
+        _showPrivateLeagueModal = false;
     }
 
     private async Task HandleJoinLeagueAsync(int leagueId)

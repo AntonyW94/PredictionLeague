@@ -1,5 +1,5 @@
-﻿using Ardalis.GuardClauses;
-using PredictionLeague.Application.Common.Exceptions;
+﻿using PredictionLeague.Application.Common.Exceptions;
+using PredictionLeague.Domain.Common.Exceptions;
 using System.Net;
 using System.Text.Json;
 
@@ -24,10 +24,10 @@ public class ErrorHandlingMiddleware
         {
             await _next(context);
         }
-        catch (Exception ex) when (ex is KeyNotFoundException or ArgumentNullException or NotFoundException)
+        catch (Exception ex) when (ex is KeyNotFoundException or ArgumentNullException or EntityNotFoundException)
         {
             _logger.LogWarning("Not Found Error: {Message}", ex.Message);
-            await HandleKnownExceptionAsync(context, HttpStatusCode.NotFound, new { message = "The requested resource was not found." });
+            await HandleKnownExceptionAsync(context, HttpStatusCode.NotFound, new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {

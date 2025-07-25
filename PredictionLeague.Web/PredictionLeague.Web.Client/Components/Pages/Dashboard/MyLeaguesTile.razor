@@ -34,9 +34,14 @@
                         <span class="status-pill @GetStatusClass(league.Status) me-3">
                             @league.Status.ToString()
                         </span>
+                        
+                        @{
+                            var canViewDashboard = league.Status == LeagueMemberStatus.Approved;
+                        }
 
-                        <button class="btn btn-sm dark-pink-button"
-                                disabled="@(league.Status != LeagueMemberStatus.Approved)"
+                        <button class="btn btn-sm @(canViewDashboard ? "dark-pink-button" : "disabled-button")"
+                                disabled="@(!canViewDashboard)"
+                                title="@(canViewDashboard ? "View League Dashboard" : "Unavailable until approved by the league admin")"
                                 @onclick="() => ViewLeagueDashboard(league.Id)">
                             View
                         </button>

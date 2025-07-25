@@ -1,5 +1,7 @@
 ﻿@page "/leagues"
 
+@attribute [Authorize(Roles = RoleNames.Administrator)]
+
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime

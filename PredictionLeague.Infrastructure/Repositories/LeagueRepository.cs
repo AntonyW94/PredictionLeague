@@ -59,12 +59,10 @@ public class LeagueRepository : ILeagueRepository
 
         var newLeagueId = await Connection.ExecuteScalarAsync<int>(command);
         typeof(League).GetProperty(nameof(League.Id))?.SetValue(league, newLeagueId);
-
-        foreach (var member in league.Members)
-        {
-            typeof(LeagueMember).GetProperty(nameof(LeagueMember.LeagueId))?.SetValue(member, newLeagueId);
-            await AddMemberAsync(member, cancellationToken);
-        }
+       
+        var adminMember = LeagueMember.Create(newLeagueId, league.AdministratorUserId);
+        adminMember.Approve();
+        await AddMemberAsync(adminMember, cancellationToken);
 
         return league;
     }

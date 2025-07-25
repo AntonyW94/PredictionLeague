@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common.Guards.Season;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 
@@ -18,10 +19,10 @@ public class UpdateLeagueCommandHandler : IRequestHandler<UpdateLeagueCommand>
     public async Task Handle(UpdateLeagueCommand request, CancellationToken cancellationToken)
     {
         var league = await _leagueRepository.GetByIdAsync(request.Id, cancellationToken);
-        Guard.Against.NotFound(request.Id, league, $"League (ID: {request.Id}) not found.");
+        Guard.Against.EntityNotFound(request.Id, league, "League");
 
         var season = await _seasonRepository.GetByIdAsync(league.SeasonId, cancellationToken);
-        Guard.Against.NotFound(league.SeasonId, season, $"Season (ID: {league.SeasonId}) was not found.");
+        Guard.Against.EntityNotFound(league.SeasonId, season, "Season");
 
         league.UpdateDetails(
             request.Name,

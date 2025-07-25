@@ -64,7 +64,7 @@ public class League
         Guard.Against.NullOrWhiteSpace(administratorUserId, nameof(administratorUserId));
         Guard.Against.NegativeOrZero(seasonId, nameof(seasonId));
 
-        var league = new League
+        return new League
         {
             SeasonId = seasonId,
             Name = name,
@@ -74,11 +74,6 @@ public class League
             EntryDeadline = entryDeadline,
             CreatedAt = DateTime.UtcNow
         };
-
-        league.AddMember(administratorUserId);
-        league.ApproveMember(administratorUserId, administratorUserId);
-
-        return league;
     }
 
     private static void Validate(string name, DateTime entryDeadline, Season season)

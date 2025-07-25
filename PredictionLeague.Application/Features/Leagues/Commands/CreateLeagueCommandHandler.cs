@@ -2,6 +2,7 @@
 using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Common.Guards.Season;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
@@ -20,7 +21,7 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
     public async Task<LeagueDto> Handle(CreateLeagueCommand request, CancellationToken cancellationToken)
     {
         var season = await _seasonRepository.GetByIdAsync(request.SeasonId, cancellationToken);
-        Guard.Against.NotFound(request.SeasonId, season, $"Season (ID: {request.SeasonId}) was not found.");
+        Guard.Against.EntityNotFound(request.SeasonId, season, "Season");
 
         var league = League.Create(
              request.SeasonId,

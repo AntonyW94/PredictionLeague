@@ -25,7 +25,9 @@
                         <span>Round @round.RoundNumber</span>
                     </div>
                     <div class="round-card-body">
-                        <p class="deadline-text">Deadline: @round.Deadline.ToString("ddd dd MMM, HH:mm")</p>
+                        <span class="status-pill bg-pl-pink mb-3">
+                            Deadline: @round.Deadline.ToString("ddd dd MMM, HH:mm")
+                        </span>
                         <NavLink href="@($"/predictions/{round.Id}")" class="btn green-button w-100">
                             Predict Now
                         </NavLink>

@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common.Guards.Season;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
@@ -18,7 +19,7 @@ public class JoinLeagueCommandHandler : IRequestHandler<JoinLeagueCommand>
     {
         var league = await FetchLeague(request, cancellationToken);
         
-        Guard.Against.NotFound(request.LeagueId ?? 0, league, "The specified league could not be found.");
+        Guard.Against.EntityNotFound(request.LeagueId ?? 0, league, "League");
 
         league.AddMember(request.JoiningUserId);
       

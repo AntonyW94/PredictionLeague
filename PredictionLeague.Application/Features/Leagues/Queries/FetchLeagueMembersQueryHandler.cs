@@ -24,17 +24,23 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
                 u.[FirstName] + ' ' + u.[LastName] AS FullName,
                 lm.[JoinedAt],
                 lm.[Status],
-                CASE WHEN lm.[Status] = 'Pending' AND l.[AdministratorUserId] = @CurrentUserId THEN 1 ELSE 0 END AS CanBeApproved
-            FROM [dbo].[Leagues] l
-            JOIN [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
-            JOIN [dbo].[AspNetUsers] u ON lm.[UserId] = u.[Id]
-            WHERE l.[Id] = @LeagueId
-            ORDER BY FullName;";
-
+                CAST(CASE WHEN lm.[Status] = @Pending AND l.[AdministratorUserId] = @CurrentUserId THEN 1 ELSE 0 END AS bit) AS CanBeApproved
+            
+            FROM 
+                [dbo].[Leagues] l
+            JOIN 
+                [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+            JOIN 
+                [dbo].[AspNetUsers] u ON lm.[UserId] = u.[Id]
+            WHERE 
+                l.[Id] = @LeagueId
+            ORDER BY 
+                FullName;";
+        
         var queryResult = await _dbConnection.QueryAsync<MemberQueryResult>(
             sql,
             cancellationToken,
-            new { request.LeagueId, request.CurrentUserId }
+            new { request.LeagueId, request.CurrentUserId, Pending = nameof(LeagueMemberStatus.Pending) }
         );
         
         var members = queryResult.ToList();

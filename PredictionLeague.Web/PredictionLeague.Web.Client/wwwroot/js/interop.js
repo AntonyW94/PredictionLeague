@@ -15,5 +15,21 @@
                 resolve(result.isConfirmed);
             });
         });
+    },
+    showModal: function (id) {
+        const modalElement = document.getElementById(id);
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        }
+    },
+    hideModal: function (id) {
+        const modalElement = document.getElementById(id);
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.hide();
+            }
+        }
     }
 };

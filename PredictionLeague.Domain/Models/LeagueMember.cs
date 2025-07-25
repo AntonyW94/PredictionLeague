@@ -48,7 +48,7 @@ public class LeagueMember
             ApprovedAt = null
         };
     }
-
+   
     public void Approve()
     {
         if (Status != LeagueMemberStatus.Pending)
