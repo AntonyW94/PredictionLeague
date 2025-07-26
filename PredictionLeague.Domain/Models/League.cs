@@ -9,7 +9,7 @@ public class League
     public string Name { get; private set; } = string.Empty;
     public int SeasonId { get; private set; }
     public decimal Price { get; private set; }
-    public string AdministratorUserId { get; private init; } = string.Empty;
+    public string AdministratorUserId { get; private set; } = string.Empty;
     public string? EntryCode { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime EntryDeadline { get; private set; }
@@ -186,6 +186,12 @@ public class League
     {
         _prizeSettings.Clear();
         _prizeSettings.AddRange(prizes);
+    }
+
+    public void ReassignAdministrator(string newAdministratorUserId)
+    {
+        Guard.Against.NullOrWhiteSpace(newAdministratorUserId, nameof(newAdministratorUserId));
+        AdministratorUserId = newAdministratorUserId;
     }
 
     #endregion

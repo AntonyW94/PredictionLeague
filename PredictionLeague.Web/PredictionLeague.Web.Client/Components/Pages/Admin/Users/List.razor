@@ -1,0 +1,221 @@
+﻿@page "/admin/users"
+
+@attribute [Authorize(Roles = RoleNames.Administrator)]
+
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JsRuntime
+
+@using PredictionLeague.Contracts.Admin.Users
+@using PredictionLeague.Domain.Common.Enumerations
+@using System.Security.Claims
+@using System.Text.Json.Nodes
+
+<PageTitle>User Management</PageTitle>
+
+<div class="page-container">
+    <div class="admin-table-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold text-white mb-0">User Management</h3>
+        </div>
+
+        <ApiError Message="@_errorMessage" />
+
+        @if (_users == null)
+        {
+            <p class="text-center text-white"><em>Loading users...</em></p>
+        }
+        else
+        {
+            <div class="league-grid">
+                @foreach (var user in _users)
+                {
+                    <div class="league-card">
+                        <div class="league-card-header">
+                            <span>@user.FullName</span>
+                            <div class="d-flex align-items-center">
+                                @if (!string.IsNullOrWhiteSpace(user.PasswordHash))
+                                {
+                                    <span class="bi bi-envelope-fill me-2" title="Email & Password"></span>
+                                }
+                                @foreach (var provider in user.SocialProviders)
+                                {
+                                    <span class="bi @GetProviderIcon(provider) me-2" title="@provider"></span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="league-card-body">
+                            <dl class="mb-0">
+                                <div class="league-card-row">
+                                    <dt><span class="bi bi-envelope-at-fill" title="Email"></span></dt>
+                                    <dd>@user.Email</dd>
+                                </div>
+
+                                <div class="league-card-row">
+                                    <dt><span class="bi bi-telephone-fill" title="Phone Number"></span></dt>
+                                    <dd>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "Not Provided" : user.PhoneNumber)</dd>
+                                </div>
+
+                                <div class="league-card-row">
+                                    <dt><span class="bi bi-person-badge-fill" title="Role"></span></dt>
+                                    <dd>
+                                        @if (user.IsAdmin)
+                                        {
+                                            <span class="badge rounded-pill bg-pl-pink">Admin</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge rounded-pill bg-pl-light-cyan">Player</span>
+                                        }
+                                    </dd>
+                                </div>
+                            </dl>
+                        </div>
+                        
+                        @{
+                            var isLoggedInUser = _currentUserId == user.Id;
+                        }
+
+                        <div class="league-card-footer">
+                            <button class="btn @(isLoggedInUser ? "disabled-button" : "green-button") flex-grow-1" @onclick="() => ChangeRole(user)" disabled="@(isLoggedInUser)">
+                                <span class="bi bi-person-badge-fill me-2"></span>Change Role
+                            </button>
+                            <button class="btn @(isLoggedInUser ? "disabled-button" : "pink-button") flex-grow-1" @onclick="() => PrepareToDeleteUser(user)" disabled="@(_currentUserId == user.Id)">
+                                <span class="bi bi-trash-fill me-2"></span>Delete
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<UserDto>? _users;
+    private string? _errorMessage;
+    private string? _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {  
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _errorMessage = null;
+        try
+        {
+            _users = await Http.GetFromJsonAsync<List<UserDto>>("api/admin/users");
+        }
+        catch (Exception)
+        {
+            _errorMessage = "An error occurred while loading the user list. Please try again later.";
+        }
+    }
+
+    private async Task ChangeRole(UserDto user)
+    {
+        _errorMessage = null;
+      
+        var currentRole = user.IsAdmin ? nameof(ApplicationUserRole.Administrator) : nameof(ApplicationUserRole.Player);
+        var newRole = await JsRuntime.InvokeAsync<string?>("blazorInterop.showRoleChangeConfirm", new object[] { user.FullName, currentRole });
+
+        if (!string.IsNullOrEmpty(newRole) && newRole != currentRole)
+        {
+            try
+            {
+                var response = await Http.PostAsJsonAsync($"api/admin/users/{user.Id}/role", newRole);
+                if (response.IsSuccessStatusCode)
+                {
+                    await LoadUsers();
+                }
+                else
+                {
+                    _errorMessage = "An error occurred while changing the user's role.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _errorMessage = $"An unexpected error occurred: {ex.Message}";
+            }
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task PrepareToDeleteUser(UserDto user)
+    {
+        _errorMessage = null;
+
+        try
+        {
+            var ownsLeagues = await Http.GetFromJsonAsync<bool>($"api/admin/users/{user.Id}/owns-leagues");
+            if (ownsLeagues)
+            {
+                var newAdminId = await JsRuntime.InvokeAsync<string?>("blazorInterop.showReassignLeagueConfirm", new object[] { $"Delete '{user.FullName}'?", _users!, user.Id });
+
+                if (!string.IsNullOrEmpty(newAdminId))
+                {
+                    await ExecuteDelete(user.Id, newAdminId);
+                }
+            }
+            else
+            {
+                const string confirmButtonText = "<i class='bi bi-check-circle'></i> <strong>Confirm Deletion</strong>";
+                const string cancelButtonText = "<i class='bi bi-x-circle'></i> <strong>Cancel</strong>";
+             
+                var confirmed = await JsRuntime.InvokeAsync<bool>("blazorInterop.showConfirm", new object[] { $"Delete '{user.FullName}'?", "This action cannot be undone.", confirmButtonText, cancelButtonText });
+                if (confirmed)
+                {
+                    await ExecuteDelete(user.Id, null);
+                }
+            }
+        }
+        catch
+        {
+            _errorMessage = "Could not verify league ownership. Please try again.";
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExecuteDelete(string userId, string? newAdministratorId)
+    {
+        try
+        {
+            var request = new DeleteUserRequest { NewAdministratorId = newAdministratorId };
+            var response = await Http.PostAsJsonAsync($"api/admin/users/{userId}/delete", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadUsers();
+            }
+            else
+            {
+                var errorNode = await response.Content.ReadFromJsonAsync<JsonNode>();
+                _errorMessage = errorNode?["message"]?.ToString() ?? "An error occurred while deleting the user.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"An unexpected error occurred: {ex.Message}";
+        }
+
+        StateHasChanged();
+    }
+
+    private static string GetProviderIcon(string provider)
+    {
+        return provider.ToLower() switch
+        {
+            "google" => "bi-google",
+            "facebook" => "bi-facebook",
+            "microsoft" => "bi-microsoft",
+            _ => "bi-shield-lock-fill"
+        };
+    }
+}

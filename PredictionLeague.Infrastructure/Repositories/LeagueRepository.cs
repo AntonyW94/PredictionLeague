@@ -161,7 +161,23 @@ public class LeagueRepository : ILeagueRepository
 
         return groupedLeagues;
     }
+    
+    public async Task<IEnumerable<League>> GetLeaguesByAdministratorIdAsync(string administratorId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+        SELECT
+            l.*, 
+            lm.*
+        FROM 
+            [dbo].[Leagues] l
+        LEFT JOIN 
+            [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+        WHERE
+            l.[AdministratorUserId] = @AdministratorId;";
 
+        return await QueryAndMapLeagues(sql, cancellationToken, new { AdministratorId = administratorId });
+    }
+    
     public async Task<bool> DoesEntryCodeExistAsync(string entryCode, CancellationToken cancellationToken)
     {
         const string sql = @"
