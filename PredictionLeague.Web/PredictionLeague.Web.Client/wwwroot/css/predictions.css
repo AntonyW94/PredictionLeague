@@ -26,6 +26,9 @@
     padding: 0.75rem 1.5rem;
     text-align: center;
     font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .prediction-card-body {
@@ -35,6 +38,37 @@
     align-items: center;
     justify-content: space-between;
 }
+
+.status-select-pill {
+    border: none;
+    font-weight: bold;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 16px 12px;
+    padding: 0.25rem 2rem 0.25rem 0.75rem;/
+    border-radius: 50rem;
+    font-size: 0.8em;
+}
+
+    .status-select-pill.scheduled {
+        background-color: var(--pl-pink);
+        color: white;
+    }
+
+    .status-select-pill.in-progress {
+        background-color: #EBFF01;
+        color: var(--pl-purple-dark);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2331144a' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    }
+
+    .status-select-pill.completed {
+        background-color: var(--pl-green);
+        color: white;
+    }
 
 .team-display {
     display: flex;

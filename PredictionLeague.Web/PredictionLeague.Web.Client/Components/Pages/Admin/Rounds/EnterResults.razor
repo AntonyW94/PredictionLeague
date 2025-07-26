@@ -29,8 +29,19 @@
                     {
                         <div class="prediction-card">
                             <div class="prediction-card-header">
-                                @match.MatchDateTime.ToString("dddd dd MMMM, HH:mm")
+                                <span>@match.MatchDateTime.ToString("dddd dd MMMM, HH:mm")</span>
+
+                                @{
+                                    var statusClass = $"form-select-sm status-select-pill {GetStatusSelectClass(match.Status)}";
+                                }
+                                <InputSelect class="@statusClass" @bind-Value="match.Status">
+                                    @foreach (var status in Enum.GetValues(typeof(MatchStatus)))
+                                    {
+                                        <option value="@status">@status</option>
+                                    }
+                                </InputSelect>
                             </div>
+
                             <div class="prediction-card-body">
                                 <div class="team-display">
                                     <img src="@match.HomeTeamLogoUrl" class="match-logo" alt="Home Team Logo" />
@@ -66,20 +77,6 @@
                                     <span class="team-name d-none d-sm-block">@match.AwayTeamName</span>
                                 </div>
                             </div>
-
-                            <div class="prediction-card-footer">
-                                @{
-                                    var statusInputId = $"status-{match.MatchId}";
-                                }
-                                <label for="@statusInputId" class="form-label text-white-50 small">Status</label>
-
-                                <InputSelect id="@statusInputId" class="form-select form-select-sm bg-dark text-white" @bind-Value="match.Status">
-                                    @foreach (var status in Enum.GetValues(typeof(MatchStatus)))
-                                    {
-                                        <option value="@status">@status</option>
-                                    }
-                                </InputSelect>
-                            </div>
                         </div>
                     }
                 </div>
@@ -101,5 +98,16 @@
     protected override async Task OnInitializedAsync()
     {
         await ViewModel.LoadRoundDetails(RoundId);
+    }
+
+    private static string GetStatusSelectClass(MatchStatus status)
+    {
+        return status switch
+        {
+            MatchStatus.Scheduled => "scheduled",
+            MatchStatus.InProgress => "in-progress",
+            MatchStatus.Completed => "completed",
+            _ => ""
+        };
     }
 }

@@ -14,70 +14,86 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-white mb-0">Manage Rounds</h3>
             <button class="btn d-flex align-items-center green-button" @onclick="AddRound">
-                <span class="bi bi-plus-circle-fill"></span>
-                <span class="d-none d-md-inline ms-2">Add Round</span>
+                <span class="bi bi-plus-circle-fill me-2"></span>
+                <span class="d-none d-md-inline">Add Round</span>
             </button>
         </div>
 
-        @if (_rounds == null)
+        <ApiError Message="@_errorMessage" />
+
+        @if (_rounds == null && string.IsNullOrEmpty(_errorMessage))
         {
             <p class="text-center text-white"><em>Loading rounds...</em></p>
         }
-        else
+        else if (_rounds?.Any() == false)
         {
-            <table class="table striped-table responsive-table">
-                <thead>
-                    <tr>
-                        <th>Round Number</th>
-                        <th>Start Date</th>
-                        <th>Deadline</th>
-                        <th>Matches</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var round in _rounds)
-                    {
-                        <tr>
-                            <td data-label="Round Number" class="season-name-cell">Round @round.RoundNumber</td>
-                            <td data-label="Start Date">@round.StartDate.ToShortDateString()</td>
-                            <td data-label="Deadline">@round.Deadline.ToString("g")</td>
-                            <td data-label="Matches">@round.MatchCount</td>
-                            <td data-label="Actions" class="actions-cell">
-                                <button class="btn btn-sm green-button" @onclick="() => EditRound(round.Id)">Edit</button>
-                                <button class="btn btn-sm light-cyan-button mt-4" @onclick="() => EnterResults(round.Id)">Enter Results</button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-
-            <div class="d-flex justify-content-between mt-4">
-                <button class="btn pink-button d-flex align-items-center" @onclick="Back">
-                    <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Season
-                </button>
+            <p class="text-center text-white">No rounds have been created for this season yet.</p>
+        }
+        else if (_rounds != null)
+        {
+            <div class="league-grid">
+                @foreach (var round in _rounds)
+                {
+                    <div class="league-card">
+                        <div class="league-card-header">
+                            <span>Round @round.RoundNumber</span>
+                        </div>
+                        <div class="league-card-body">
+                            <dl class="mb-0">
+                                <div class="league-card-row">
+                                    <dt>Start Date</dt>
+                                    <dd>@round.StartDate.ToString("dd MMM yyyy")</dd>
+                                </div>
+                                <div class="league-card-row">
+                                    <dt>Deadline</dt>
+                                    <dd>@round.Deadline.ToString("dd MMM, HH:mm")</dd>
+                                </div>
+                                <div class="league-card-row">
+                                    <dt>Matches</dt>
+                                    <dd>@round.MatchCount</dd>
+                                </div>
+                            </dl>
+                        </div>
+                        <div class="league-card-footer">
+                            <button class="btn green-button flex-grow-1" @onclick="() => EditRound(round.Id)">
+                                <span class="bi bi-pencil-fill me-2"></span>Edit
+                            </button>
+                            <button class="btn light-cyan-button flex-grow-1" @onclick="() => EnterResults(round.Id)">
+                                <span class="bi bi-clipboard2-check-fill me-2"></span>Enter Results
+                            </button>
+                        </div>
+                    </div>
+                }
             </div>
         }
+
+        <div class="mt-4">
+            <button class="btn pink-button d-flex align-items-center" @onclick="Back">
+                <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Season
+            </button>
+        </div>
     </div>
 </div>
 
 @code {
     [Parameter] public int SeasonId { get; set; }
     private List<RoundDto>? _rounds;
+    private string? _errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
+        _errorMessage = null;
         try
         {
             _rounds = await Http.GetFromJsonAsync<List<RoundDto>>($"api/rounds/by-season/{SeasonId}");
         }
         catch (Exception)
         {
-            // Handle error
+            _errorMessage = "An error occurred while loading the rounds for this season.";
         }
     }
 
-    private void AddRound() { NavigationManager.NavigateTo($"/admin/seasons/{SeasonId}/create-round"); }
+    private void AddRound() => NavigationManager.NavigateTo($"/admin/seasons/{SeasonId}/rounds/create");
     private void EditRound(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/edit/{roundId}");
     private void Back() => NavigationManager.NavigateTo($"/admin/seasons/edit/{SeasonId}");
     private void EnterResults(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/{roundId}/results");

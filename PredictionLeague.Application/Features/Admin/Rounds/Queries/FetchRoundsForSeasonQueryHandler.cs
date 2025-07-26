@@ -18,15 +18,17 @@ public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSe
         const string sql = @"
             SELECT
                 r.[Id],
+                r.[SeasonId],
                 r.[RoundNumber],
                 r.[StartDate],
                 r.[Deadline],
-                COUNT(m.[Id]) AS MatchCount
-            FROM [dbo].[Rounds] r
-            LEFT JOIN [dbo].[Matches] m ON r.[Id] = m.[RoundId]
-            WHERE r.[SeasonId] = @SeasonId
-            GROUP BY r.[Id], r.[RoundNumber], r.[StartDate], r.[Deadline]
-            ORDER BY r.[RoundNumber];";
+                (SELECT COUNT(*) FROM [Matches] m WHERE m.[RoundId] = r.[Id]) as MatchCount
+            FROM
+                [dbo].[Rounds] r
+            WHERE
+                r.[SeasonId] = @SeasonId
+            ORDER BY
+                r.[RoundNumber];";
 
         return await _dbConnection.QueryAsync<RoundDto>(sql, cancellationToken, new { request.SeasonId });
     }

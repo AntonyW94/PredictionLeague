@@ -41,6 +41,11 @@ public class Season
         NumberOfRounds = numberOfRounds;
     }
 
+    public void SetIsActive(bool isActive)
+    {
+        IsActive = isActive;
+    }
+
     private static void Validate(string name, DateTime startDate, DateTime endDate, int numberOfRounds)
     {
         Guard.Against.NullOrWhiteSpace(name, nameof(name));

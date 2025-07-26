@@ -53,6 +53,16 @@
         gap: 0.5rem;
     }
 
+.form-check-input {
+    background-color: var(--pl-pink); 
+    border-color: var(--pl-pink);
+}
+
+    .form-check-input:checked {
+        background-color: var(--pl-green); 
+        border-color: var(--pl-green);
+    }
+
 /* Validation */
 .message-box-solid {
     color: white;

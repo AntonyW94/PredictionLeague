@@ -63,9 +63,15 @@ public class EnterResultsViewModel
 
         var response = await _http.PutAsJsonAsync($"api/rounds/{roundId}/results", resultsToUpdate);
         if (response.IsSuccessStatusCode)
+        {
             SuccessMessage = "Results saved and points calculated successfully!";
+            await Task.Delay(1500);
+            _navigationManager.NavigateTo("/dashboard", forceLoad: true);
+        }
         else
+        {
             ErrorMessage = "There was an error saving the results.";
+        }
 
         IsBusy = false;
     }

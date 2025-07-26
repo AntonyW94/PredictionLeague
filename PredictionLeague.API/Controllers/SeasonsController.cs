@@ -92,5 +92,16 @@ public class SeasonsController : ApiControllerBase
         return NoContent();
     }
 
+    [HttpPut("{seasonId:int}/status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateStatusAsync(int seasonId, [FromBody] bool isActive, CancellationToken cancellationToken)
+    {
+        var command = new UpdateSeasonStatusCommand(seasonId, isActive);
+        await _mediator.Send(command, cancellationToken);
+      
+        return NoContent();
+    }
+
     #endregion
 }
