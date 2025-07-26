@@ -3,7 +3,6 @@
 @attribute [Authorize(Roles = RoleNames.Administrator)]
 
 @inject HttpClient Http
-@inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Admin.Seasons
 
@@ -15,31 +14,40 @@
             <h3 class="fw-bold text-white mb-0">Create New Season</h3>
         </div>
 
-        <EditForm Model="_model" OnValidSubmit="HandleCreateSeasonAsync">
-            <FluentValidationValidator />
-            <ApiError Message="@_errorMessage" />
-            <ApiSuccess Message="@_successMessage" />
+        <BaseFormComponent TModel="CreateSeasonRequest"
+                           Model="_model"
+                           SubmitAction="HandleCreateSeasonAsync"
+                           SuccessRedirectUrl="/admin/seasons"
+                           BackUrl="/admin/seasons"
+                           SuccessAlertMessage="Season created successfully!"
+                           BusyText="Creating Season...">
+            <ChildContent>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label for="name" class="form-label text-white">Season Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="_model.Name" placeholder="e.g., 2025/2026" />
+                        <StyledValidationMessage For="@(() => _model.Name)" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="numberOfRounds" class="form-label text-white">Rounds</label>
+                        <InputNumber id="numberOfRounds" class="form-control" @bind-Value="_model.NumberOfRounds" />
+                        <StyledValidationMessage For="@(() => _model.NumberOfRounds)" />
+                    </div>
+                </div>
 
-            <div class="mb-3">
-                <label for="name" class="form-label text-white">Season Name</label>
-                <InputText id="name" class="form-control" @bind-Value="_model.Name" placeholder="e.g., 2024/2025" />
-                <StyledValidationMessage For="@(() => _model.Name)" />
-            </div>
+                <div class="mb-3">
+                    <label for="startDate" class="form-label text-white">Start Date</label>
+                    <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
+                    <StyledValidationMessage For="@(() => _model.StartDate)" />
+                </div>
 
-            <div class="mb-3">
-                <label for="startDate" class="form-label text-white">Start Date</label>
-                <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
-                <StyledValidationMessage For="@(() => _model.StartDate)" />
-            </div>
-
-            <div class="mb-3">
-                <label for="endDate" class="form-label text-white">End Date</label>
-                <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
-                <StyledValidationMessage For="@(() => _model.EndDate)" />
-            </div>
-
-            <BackAndSaveButtons BackText="Back to Seasons" OnBackClick="Back" BusyText="Creating Season..." IsBusy="_isBusy"></BackAndSaveButtons>
-        </EditForm>
+                <div class="mb-3">
+                    <label for="endDate" class="form-label text-white">End Date</label>
+                    <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
+                    <StyledValidationMessage For="@(() => _model.EndDate)" />
+                </div>
+            </ChildContent>
+        </BaseFormComponent>
     </div>
 </div>
 
@@ -47,37 +55,12 @@
     private readonly CreateSeasonRequest _model = new()
     {
         StartDate = DateTime.Today,
-        EndDate = DateTime.Today.AddMonths(9)
+        EndDate = DateTime.Today.AddMonths(9),
+        NumberOfRounds = 38
     };
 
-    private bool _isBusy;
-    private string? _errorMessage;
-    private string? _successMessage;
-
-    private async Task HandleCreateSeasonAsync()
+    private Task<HttpResponseMessage> HandleCreateSeasonAsync()
     {
-        _isBusy = true;
-        _errorMessage = null;
-        _successMessage = null;
-
-        var response = await Http.PostAsJsonAsync("api/seasons/create", _model);
-        if (response.IsSuccessStatusCode)
-        {
-            _successMessage = "Season created successfully!";
-            StateHasChanged();
-
-            await Task.Delay(1500);
-
-            Back();
-        }
-        else
-        {
-            _errorMessage = "There was an error creating the season.";
-        }
-
-        _isBusy = false;
-        StateHasChanged();
+        return Http.PostAsJsonAsync("api/seasons/create", _model);
     }
-
-    private void Back() => NavigationManager.NavigateTo("/admin/seasons");
 }

@@ -19,7 +19,13 @@ public class UpdateSeasonCommandHandler : IRequestHandler<UpdateSeasonCommand>
         var season = await _seasonRepository.GetByIdAsync(request.Id, cancellationToken);
         Guard.Against.EntityNotFound(request.Id, season, "Season");
 
-        season.UpdateDetails(request.Name, request.StartDate, request.EndDate, request.IsActive);
+        season.UpdateDetails(
+            request.Name,
+            request.StartDate,
+            request.EndDate,
+            request.IsActive,
+            request.NumberOfRounds
+        );
 
         await _seasonRepository.UpdateAsync(season, cancellationToken);
     }

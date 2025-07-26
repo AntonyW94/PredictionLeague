@@ -22,11 +22,12 @@ public class FetchAllSeasonsQueryHandler : IRequestHandler<FetchAllSeasonsQuery,
                 s.[StartDate],
                 s.[EndDate],
                 s.[IsActive],
-                COUNT(r.[Id]) AS RoundCount
-            FROM [dbo].[Seasons] s
-            LEFT JOIN [dbo].[Rounds] r ON s.[Id] = r.[SeasonId]
-            GROUP BY s.[Id], s.[Name], s.[StartDate], s.[EndDate], s.[IsActive]
-            ORDER BY s.[StartDate] DESC;";
+                s.[NumberOfRounds],
+                (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id]) as RoundCount
+            FROM 
+                [Seasons] s
+            ORDER BY 
+                s.[StartDate] DESC;";
 
         return await _dbConnection.QueryAsync<SeasonDto>(sql, cancellationToken);
     }

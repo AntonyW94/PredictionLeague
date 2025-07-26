@@ -17,5 +17,8 @@ public abstract class BaseSeasonRequestValidator<T> : AbstractValidator<T> where
         RuleFor(x => x.EndDate)
             .NotEmpty().WithMessage("Please provide an end date for the season.")
             .GreaterThan(x => x.StartDate).WithMessage("The end date must be after the start date.");
+   
+        RuleFor(x => x.NumberOfRounds)
+            .InclusiveBetween(1, 52).WithMessage("Number of rounds must be between 1 and 52.");
     }
 }

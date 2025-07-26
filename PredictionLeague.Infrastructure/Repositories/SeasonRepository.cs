@@ -26,26 +26,22 @@ public class SeasonRepository : ISeasonRepository
                     [Name],
                     [StartDate],
                     [EndDate],
-                    [IsActive]
+                    [IsActive],
+                    [NumberOfRounds]
                 )
                 VALUES
                 (
                     @Name,
                     @StartDate,
                     @EndDate,
-                    @IsActive
+                    @IsActive,
+                    @NumberOfRounds
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
         var command = new CommandDefinition(
             commandText: sql,
-            parameters: new
-            {
-                season.Name,
-                season.StartDate,
-                season.EndDate,
-                season.IsActive
-            },
+            parameters: season,
             cancellationToken: cancellationToken
         );
 
@@ -84,7 +80,8 @@ public class SeasonRepository : ISeasonRepository
                     [Name] = @Name,
                     [StartDate] = @StartDate,
                     [EndDate] = @EndDate,
-                    [IsActive] = @IsActive
+                    [IsActive] = @IsActive,
+                    [NumberOfRounds] = @NumberOfRounds
                 WHERE [Id] = @Id;";
        
         var command = new CommandDefinition(

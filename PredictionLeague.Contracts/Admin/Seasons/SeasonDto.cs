@@ -6,5 +6,6 @@ public record SeasonDto(
     DateTime StartDate,
     DateTime EndDate,
     bool IsActive,
+    int NumberOfRounds, 
     int RoundCount
 ) : SeasonLookupDto(Id, Name, StartDate);

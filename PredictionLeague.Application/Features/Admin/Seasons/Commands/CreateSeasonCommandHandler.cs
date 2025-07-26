@@ -22,7 +22,8 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
             request.Name,
             request.StartDate,
             request.EndDate,
-            request.IsActive);
+            request.IsActive,
+            request.NumberOfRounds);
 
         var createdSeason = await _seasonRepository.CreateAsync(season, cancellationToken);
 
@@ -43,6 +44,7 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
             createdSeason.StartDate,
             createdSeason.EndDate,
             createdSeason.IsActive,
+            createdSeason.NumberOfRounds,
             0
         );
     }

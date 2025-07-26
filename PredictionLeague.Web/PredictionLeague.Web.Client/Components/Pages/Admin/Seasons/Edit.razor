@@ -20,47 +20,57 @@
             <p class="text-center text-white"><em>Loading season...</em></p>
         }
         else
-        {
-            <EditForm Model="_model" OnValidSubmit="HandleUpdateSeasonAsync">
-                <FluentValidationValidator />
-                <ApiError Message="@_errorMessage" />
-                <ApiSuccess Message="@_successMessage" />
-
-                <div class="mb-3">
-                    <label for="name" class="form-label text-white">Season Name</label>
-                    <InputText id="name" class="form-control" @bind-Value="_model.Name" />
-                </div>
-
-                <div class="mb-3">
-                    <label for="startDate" class="form-label text-white">Start Date</label>
-                    <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
-                </div>
-
-                <div class="mb-3">
-                    <label for="endDate" class="form-label text-white">End Date</label>
-                    <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label text-white">Rounds</label>
-                    <div class="d-flex align-items-center">
-                        <span class="badge fs-6 me-3" style="background-color: var(--pl-purple)">@_roundCount</span>
-                        <button type="button" class="btn btn-sm dark-pink-button me-2" @onclick="() => ViewRounds(SeasonId)" title="View Rounds">
-                            <span class="bi bi-eye-fill"></span>
-                        </button>
-                        <button type="button" class="btn btn-sm light-cyan-button" @onclick="() => AddRound(SeasonId)" title="Add Round">
-                            <span class="bi bi-plus-circle-fill"></span>
-                        </button>
+        { 
+            <BaseFormComponent TModel="UpdateSeasonRequest"
+                              Model="_model"
+                              SubmitAction="HandleUpdateSeasonAsync"
+                              SuccessRedirectUrl="/admin/seasons"
+                              BackUrl="/admin/seasons"
+                              SuccessAlertMessage="Season updated successfully!"
+                              BusyText="Saving...">
+                <ChildContent>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="name" class="form-label text-white">Season Name</label>
+                            <InputText id="name" class="form-control" @bind-Value="_model.Name" />
+                            <StyledValidationMessage For="@(() => _model.Name)" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="numberOfRounds" class="form-label text-white">Rounds</label>
+                            <InputNumber id="numberOfRounds" class="form-control" @bind-Value="_model.NumberOfRounds" />
+                            <StyledValidationMessage For="@(() => _model.NumberOfRounds)" />
+                        </div>
                     </div>
-                </div>
 
-                <div class="mb-3 form-check">
-                    <InputCheckbox id="isActive" class="form-check-input" @bind-Value="_model.IsActive" />
-                    <label for="isActive" class="form-check-label text-white">Active</label>
-                </div>
+                    <div class="mb-3">
+                        <label for="startDate" class="form-label text-white">Start Date</label>
+                        <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
+                    </div>
 
-                <BackAndSaveButtons BackText="Back to Seasons" OnBackClick="Back" BusyText="Saving..." IsBusy="_isBusy"></BackAndSaveButtons>
-            </EditForm>
+                    <div class="mb-3">
+                        <label for="endDate" class="form-label text-white">End Date</label>
+                        <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-white">Rounds</label>
+                        <div class="d-flex align-items-center">
+                            <span class="badge fs-6 me-3" style="background-color: var(--pl-purple)">@_roundCount</span>
+                            <button type="button" class="btn btn-sm dark-pink-button me-2" @onclick="() => ViewRounds(SeasonId)" title="View Rounds">
+                                <span class="bi bi-eye-fill"></span>
+                            </button>
+                            <button type="button" class="btn btn-sm light-cyan-button" @onclick="() => AddRound(SeasonId)" title="Add Round">
+                                <span class="bi bi-plus-circle-fill"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <InputCheckbox id="isActive" class="form-check-input" @bind-Value="_model.IsActive" />
+                        <label for="isActive" class="form-check-label text-white">Active</label>
+                    </div>
+                </ChildContent>
+            </BaseFormComponent>
         }
     </div>
 </div>
@@ -69,9 +79,6 @@
     [Parameter] public int SeasonId { get; set; }
     private UpdateSeasonRequest? _model;
     private int _roundCount;
-    private bool _isBusy;
-    private string? _errorMessage;
-    private string? _successMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,38 +90,18 @@
                 Name = seasonDto.Name,
                 StartDate = seasonDto.StartDate,
                 EndDate = seasonDto.EndDate,
-                IsActive = seasonDto.IsActive
+                IsActive = seasonDto.IsActive,
+                NumberOfRounds = seasonDto.NumberOfRounds
             };
             _roundCount = seasonDto.RoundCount;
         }
     }
 
-    private async Task HandleUpdateSeasonAsync()
+    private Task<HttpResponseMessage> HandleUpdateSeasonAsync()
     {
-        _isBusy = true;
-        _errorMessage = null;
-        _successMessage = null;
-
-        var response = await Http.PutAsJsonAsync($"api/seasons/{SeasonId}/update", _model);
-        if (response.IsSuccessStatusCode)
-        {
-            _successMessage = "Season updated successfully!";
-            StateHasChanged();
-
-            await Task.Delay(1500);
-
-            Back();
-        }
-        else
-        {
-            _errorMessage = "Error updating season.";
-        }
-
-        _isBusy = false;
-        StateHasChanged();
+        return Http.PutAsJsonAsync($"api/seasons/{SeasonId}/update", _model);
     }
 
-    private void Back() => NavigationManager.NavigateTo("/admin/seasons");
     private void AddRound(int seasonId) => NavigationManager.NavigateTo($"/admin/seasons/{seasonId}/create-round");
     private void ViewRounds(int seasonId) => NavigationManager.NavigateTo($"/admin/seasons/{seasonId}/rounds");
 }

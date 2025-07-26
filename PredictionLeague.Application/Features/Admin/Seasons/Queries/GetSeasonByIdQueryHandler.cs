@@ -17,15 +17,17 @@ public class GetSeasonByIdQueryHandler : IRequestHandler<GetSeasonByIdQuery, Sea
     {
         const string sql = @"
             SELECT
+                s.[Id],
                 s.[Name],
                 s.[StartDate],
                 s.[EndDate],
                 s.[IsActive],
-                COUNT(r.[Id]) AS RoundCount
-            FROM [dbo].[Seasons] s
-            LEFT JOIN [dbo].[Rounds] r ON s.[Id] = r.[SeasonId]
-            WHERE s.[Id] = @Id
-            GROUP BY s.[Id], s.[Name], s.[StartDate], s.[EndDate], s.[IsActive]";
+                s.[NumberOfRounds],
+                (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id]) as 'RoundCount'
+            FROM 
+                [Seasons] s
+            WHERE
+                s.[Id] = @Id";
 
         return await _dbConnection.QuerySingleOrDefaultAsync<SeasonDto>(sql, cancellationToken, new { request.Id });
     }

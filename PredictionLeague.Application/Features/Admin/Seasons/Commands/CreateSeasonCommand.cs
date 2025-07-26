@@ -9,4 +9,5 @@ public record CreateSeasonCommand(
     DateTime StartDate, 
     DateTime EndDate,
     string CreatorId,
-    bool IsActive) : IRequest<SeasonDto>, ITransactionalRequest;
+    bool IsActive,
+    int NumberOfRounds) : IRequest<SeasonDto>, ITransactionalRequest;

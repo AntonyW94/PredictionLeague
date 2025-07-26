@@ -10,39 +10,43 @@ public class Season
     public DateTime StartDate { get; private set; }
     public DateTime EndDate { get; private set; }
     public bool IsActive { get; private set; }
+    public int NumberOfRounds { get; private set; }
 
     private Season() { }
 
-    public static Season Create(string name, DateTime startDate, DateTime endDate, bool isActive)
+    public static Season Create(string name, DateTime startDate, DateTime endDate, bool isActive, int numberOfRounds)
     {
-        Validate(name, startDate, endDate);
+        Validate(name, startDate, endDate, numberOfRounds);
 
         var season = new Season
         {
             Name = name,
             StartDate = startDate,
             EndDate = endDate,
-            IsActive = isActive
+            IsActive = isActive,
+            NumberOfRounds = numberOfRounds
         };
 
         return season;
     }
 
-    public void UpdateDetails(string name, DateTime startDate, DateTime endDate, bool isActive)
+    public void UpdateDetails(string name, DateTime startDate, DateTime endDate, bool isActive, int numberOfRounds)
     {
-        Validate(name, startDate, endDate);
+        Validate(name, startDate, endDate, numberOfRounds);
 
         Name = name;
         StartDate = startDate;
         EndDate = endDate;
-        IsActive = isActive;
+        IsActive = isActive; 
+        NumberOfRounds = numberOfRounds;
     }
 
-    private static void Validate(string name, DateTime startDate, DateTime endDate)
+    private static void Validate(string name, DateTime startDate, DateTime endDate, int numberOfRounds)
     {
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
         Guard.Against.Default(startDate, nameof(startDate));
         Guard.Against.Default(endDate, nameof(endDate));
         Guard.Against.InvalidSeasonDuration(startDate, endDate);
+        Guard.Against.OutOfRange(numberOfRounds, nameof(numberOfRounds), 1, 52);
     }
 }

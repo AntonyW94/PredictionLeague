@@ -7,4 +7,5 @@ public record UpdateSeasonCommand(
     string Name,
     DateTime StartDate, 
     DateTime EndDate, 
-    bool IsActive) : IRequest;
+    bool IsActive,
+    int NumberOfRounds) : IRequest;
