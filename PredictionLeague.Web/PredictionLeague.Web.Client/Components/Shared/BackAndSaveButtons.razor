@@ -8,7 +8,10 @@
 
     @if (SaveVisible)
     {
-        <button type="submit" class="btn green-button d-flex align-items-center" disabled="@IsBusy">
+        var isDisabled = IsBusy || IsSaveDisabled;
+        var buttonClass = $"btn green-button d-flex align-items-center {(isDisabled ? "disabled-button" : "")}";
+
+        <button type="submit" class="@buttonClass" disabled="@isDisabled">
             @if (IsBusy)
             {
                 <span class="spinner-border spinner-border-sm me-2"></span>
@@ -24,24 +27,12 @@
 </div>
 
 @code {
-    [Parameter]
-    public string? BackText { get; set; } = "Back";
-
-    [Parameter]
-    public EventCallback OnBackClick { get; set; }
-
-    [Parameter]
-    public bool BackVisible { get; set; } = true;
-
-    [Parameter]
-    public bool SaveVisible { get; set; } = true;
-
-    [Parameter]
-    public string? SubmitText { get; set; } = "Save";
-
-    [Parameter]
-    public bool IsBusy { get; set; }
-
-    [Parameter]
-    public string? BusyText { get; set; } = "Saving...";
+    [Parameter] public string? BackText { get; set; } = "Back";
+    [Parameter] public EventCallback OnBackClick { get; set; }
+    [Parameter] public bool BackVisible { get; set; } = true;
+    [Parameter] public bool SaveVisible { get; set; } = true;
+    [Parameter] public bool IsSaveDisabled { get; set; }
+    [Parameter] public string? SubmitText { get; set; } = "Save";
+    [Parameter] public bool IsBusy { get; set; }
+    [Parameter] public string? BusyText { get; set; } = "Saving...";
 }

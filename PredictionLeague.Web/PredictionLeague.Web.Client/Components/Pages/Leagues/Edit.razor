@@ -23,7 +23,8 @@
                                SuccessRedirectUrl="/leagues"
                                BackUrl="/leagues"
                                SuccessAlertMessage="League updated successfully!"
-                               BusyText="Saving...">
+                               BusyText="Saving..."
+                               IsSaveDisabled="_isPastDeadline">
                 <ChildContent>
                     <div class="mb-3">
                         <label class="form-label text-white">Season</label>
@@ -34,14 +35,18 @@
 
                     <div class="mb-3">
                         <label for="name" class="form-label text-white">League Name</label>
-                        <InputText id="name" class="form-control" @bind-Value="_model.Name" />
+                        <InputText id="name" class="form-control" @bind-Value="_model.Name" disabled="@_isPastDeadline" />
                         <StyledValidationMessage For="@(() => _model.Name)" />
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="price" class="form-label text-white">Entry Fee (£)</label>
-                            <InputNumber id="price" class="form-control" @bind-Value="_model.Price" />
+                            <InputNumber id="price" class="form-control" @bind-Value="_model.Price" disabled="@_isPriceLocked" />
+                            @if (_isPriceLocked)
+                            {
+                                <small class="form-text text-white-50">Cannot be changed after members have joined.</small>
+                            }
                             <StyledValidationMessage For="@(() => _model.Price)" />
                         </div>
                         <div class="col-md-6 mb-3">
@@ -57,9 +62,16 @@
 
                     <div class="mb-3">
                         <label for="entryDeadline" class="form-label text-white">Entry Deadline</label>
-                        <InputDate id="entryDeadline" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.EntryDeadline" />
+                        <InputDate id="entryDeadline" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.EntryDeadline" disabled="@_isPastDeadline" />
                         <StyledValidationMessage For="@(() => _model.EntryDeadline)" />
                     </div>
+
+                    @if (_isPastDeadline)
+                    {
+                        <div class="message-box-solid warning">   
+                            This league cannot be edited because the entry deadline has passed.
+                        </div>
+                    }
                 </ChildContent>
             </BaseFormComponent>
         }
@@ -71,6 +83,8 @@
     private UpdateLeagueRequest? _model;
     private string? _entryCodeForDisplay;
     private string? _seasonName;
+    private bool _isPastDeadline;
+    private bool _isPriceLocked;
 
     protected override async Task OnInitializedAsync()
     {
@@ -84,7 +98,9 @@
                 EntryDeadline = league.EntryDeadline
             };
             _entryCodeForDisplay = league.EntryCode;
-            _seasonName = league.SeasonName;
+            _seasonName = league.SeasonName; 
+            _isPastDeadline = league.EntryDeadline < DateTime.UtcNow;
+            _isPriceLocked = league.MemberCount > 1;
         }
     }
 

@@ -89,6 +89,17 @@
             content: "\F333";
         }
 
+    .message-box-solid.warning {
+        background-color: #EBFF01;
+        color: var(--pl-purple-dark);
+        font-weight: bold;
+    }
+
+        .message-box-solid.warning::before {
+            content: "\F33B";
+            color: var(--pl-purple-dark);
+        }
+
     .message-box-solid.success {
         background-color: var(--pl-green);
     }

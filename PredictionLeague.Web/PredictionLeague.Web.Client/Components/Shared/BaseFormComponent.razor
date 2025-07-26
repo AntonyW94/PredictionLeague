@@ -13,6 +13,7 @@
                         IsBusy="IsBusy"
                         BackText="@BackText"
                         SubmitText="@SubmitText"
+                        IsSaveDisabled="IsSaveDisabled"
                         BusyText="@BusyText" />
 </EditForm>
 
@@ -20,6 +21,7 @@
     [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
     [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = null!;
     [Parameter, EditorRequired] public Func<Task<HttpResponseMessage>> SubmitAction { get; set; } = null!;
+    [Parameter] public bool IsSaveDisabled { get; set; } 
     [Parameter] public string SuccessRedirectUrl { get; set; } = "/";
     [Parameter] public string BackUrl { get; set; } = "/";
     [Parameter] public string SuccessAlertMessage { get; set; } = "Saved successfully!";
