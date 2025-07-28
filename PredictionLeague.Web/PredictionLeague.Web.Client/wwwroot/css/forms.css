@@ -63,6 +63,37 @@
         border-color: var(--pl-green);
     }
 
+.prize-summary {
+    border-top: 2px solid var(--pl-purple-dark);
+    padding-top: 1rem;
+    margin-top: 1rem;
+}
+
+.prize-label-fixed-width {
+    min-width: 180px;
+    justify-content: flex-end;
+}
+
+.form-sub-header {
+    color: var(--light-text);
+    font-weight: 500;
+}
+
+.input-group-text.prize-label {
+    background-color: var(--pl-purple-dark);
+    border-color: var(--pl-purple-dark);
+    color: white;
+    font-weight: 500;
+}
+
+.prize-summary .league-card-row {
+    border-bottom: 1px solid var(--pl-purple);
+}
+
+    .prize-summary .league-card-row:last-child {
+        border-bottom: none;
+    }
+
 /* Validation */
 .message-box-solid {
     color: white;

@@ -25,11 +25,11 @@ public class FetchAllLeaguesQueryHandler : IRequestHandler<FetchAllLeaguesQuery,
                 ISNULL(l.[EntryCode], 'Public') AS EntryCode,
                 l.[EntryDeadline]
             FROM 
-                [dbo].[Leagues] l
+                [Leagues] l
             JOIN 
-                [dbo].[Seasons] s ON l.[SeasonId] = s.[Id]
+                [Seasons] s ON l.[SeasonId] = s.[Id]
             LEFT JOIN 
-                [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+                [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
             GROUP BY
                 l.[Id],
                 l.[Name],

@@ -20,7 +20,7 @@ public class GetTeamByIdQueryHandler : IRequestHandler<GetTeamByIdQuery, TeamDto
                 [Id],
                 [Name],
                 [LogoUrl]
-            FROM [dbo].[Teams]
+            FROM [Teams]
             WHERE [Id] = @Id";
 
         return await _dbConnection.QuerySingleOrDefaultAsync<TeamDto>(sql, cancellationToken, new { request.Id });

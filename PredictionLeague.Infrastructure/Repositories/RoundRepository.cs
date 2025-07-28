@@ -14,15 +14,15 @@ public class RoundRepository : IRoundRepository
     #region SQL Constants
 
     private const string AddMatchSql = @"
-        INSERT INTO [dbo].[Matches] ([RoundId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status])
+        INSERT INTO [Matches] ([RoundId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status])
         VALUES (@RoundId, @HomeTeamId, @AwayTeamId, @MatchDateTime, @Status);";
 
     private const string GetRoundsWithMatchesSql = @"
         SELECT 
             r.*, 
             m.*
-        FROM [dbo].[Rounds] r
-        LEFT JOIN [dbo].[Matches] m ON r.[Id] = m.[RoundId]";
+        FROM [Rounds] r
+        LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]";
 
     #endregion
 
@@ -36,7 +36,7 @@ public class RoundRepository : IRoundRepository
     public async Task<Round> CreateAsync(Round round, CancellationToken cancellationToken)
     {
         const string sql = @"
-            INSERT INTO [dbo].[Rounds] ([SeasonId], [RoundNumber], [StartDate], [Deadline])
+            INSERT INTO [Rounds] ([SeasonId], [RoundNumber], [StartDate], [Deadline])
             VALUES (@SeasonId, @RoundNumber, @StartDate, @Deadline);
             SELECT CAST(SCOPE_IDENTITY() as int);";
 
@@ -94,9 +94,9 @@ public class RoundRepository : IRoundRepository
 
     public async Task UpdateAsync(Round round, CancellationToken cancellationToken)
     {
-        const string deleteMatchesSql = "DELETE FROM [dbo].[Matches] WHERE [RoundId] = @RoundId;";
+        const string deleteMatchesSql = "DELETE FROM [Matches] WHERE [RoundId] = @RoundId;";
         const string updateRoundSql = @"
-            UPDATE [dbo].[Rounds]
+            UPDATE [Rounds]
             SET [RoundNumber] = @RoundNumber,
                 [StartDate] = @StartDate,
                 [Deadline] = @Deadline

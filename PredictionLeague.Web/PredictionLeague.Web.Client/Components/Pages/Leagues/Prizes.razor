@@ -1,0 +1,212 @@
+﻿@page "/leagues/{LeagueId:int}/prizes"
+
+@attribute [Authorize]
+
+@inject HttpClient Http
+
+@using PredictionLeague.Contracts.Leagues
+@using PredictionLeague.Domain.Common.Enumerations
+@using PredictionLeague.Web.Client.Utilities
+@using PredictionLeague.Web.Client.ViewModels.Leagues
+@using System.Globalization
+
+<PageTitle>Manage Prizes - @_pageData?.LeagueName</PageTitle>
+
+<div class="page-container">
+    <div class="form-container extra-wide">
+        @if (_isLoading)
+        {
+            <p class="text-center text-white"><em>Loading prize information...</em></p>
+        }
+        else if (_pageData != null)
+        {
+            <h3 class="text-center fw-bold text-white mb-2">
+                @(_pageData.PrizeSettings.Any() ? "Confirmed Winnings" : "Prize Structure")
+            </h3>
+            <h5 class="text-center form-sub-header mb-4">@_pageData.LeagueName</h5>
+
+            <ApiError Message="@_errorMessage" />
+
+            @* State 1: Before Entry Deadline *@
+            @if (DateTime.UtcNow < _pageData.EntryDeadline)
+            {
+                <div class="message-box-solid warning">
+                    Prize setup is locked until the entry deadline has passed.
+                </div>
+                <div class="text-center text-white mt-4">
+                    <p>Entry Deadline: @_pageData.EntryDeadline.ToString("dd MMM yyyy HH:mm")</p>
+                    <p>Current Entries: @_pageData.MemberCount</p>
+                    <p>Estimated Prize Pot: @((_pageData.Price * _pageData.MemberCount).ToString("C", new CultureInfo("en-GB")))</p>
+                </div>
+            }
+            @* State 3: After Prizes are Confirmed (Read-only view) *@
+            else if (_pageData.PrizeSettings.Any())
+            {
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="dashboard-card h-100">
+                            <h5 class="text-white text-center fw-bold mb-3">Overall Prizes</h5>
+                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Overall).OrderBy(p => p.Rank))
+                            {
+                                <div class="league-card-row">
+                                    <dt>@prize.Rank<span>@FormattingUtilities.GetOrdinal(prize.Rank)</span> Place</dt>
+                                    <dd>@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</dd>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="dashboard-card h-100">
+                            <h5 class="text-white text-center fw-bold mb-3">Round Prizes</h5>
+                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Round))
+                            {
+                                <div class="league-card-row">
+                                    <dt>Round Winner</dt>
+                                    <dd>@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</dd>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="dashboard-card h-100">
+                            <h5 class="text-white text-center fw-bold mb-3">Monthly Prizes</h5>
+                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Monthly))
+                            {
+                                <div class="league-card-row">
+                                    <dt>Monthly Winner</dt>
+                                    <dd>@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</dd>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="dashboard-card h-100">
+                            <h5 class="text-white text-center fw-bold mb-3">Special Prizes</h5>
+                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.MostExactScores))
+                            {
+                                <div class="league-card-row">
+                                    <dt>Most Correct Scores</dt>
+                                    <dd>@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</dd>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            @* State 2: After Deadline, Ready for Prize Definition *@
+            else if (_model != null)
+            {
+                <div class="dashboard-card">
+                    <div class="text-center text-white mb-4">
+                        <h5 class="text-white">Total Prize Pot to Allocate: @_model.PrizePot.ToString("C", new CultureInfo("en-GB"))</h5>
+                    </div>
+
+                    <BaseFormComponent TModel="DefinePrizesViewModel"
+                                       Model="_model"
+                                       SubmitAction="HandleDefinePrizesAsync"
+                                       SuccessRedirectUrl="@($"/leagues/{LeagueId}/prizes")"
+                                       BackUrl="/leagues"
+                                       SuccessAlertMessage="Prize structure locked successfully!"
+                                       BusyText="Saving...">
+                        <ChildContent>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h5 class="text-white mb-0">Overall Prizes</h5>
+                                        <button type="button" class="btn btn-sm dark-pink-button" @onclick="_model.AddOverallPrize">
+                                            <span class="bi bi-plus-circle-fill me-1"></span>Add
+                                        </button>
+                                    </div>
+                                    @foreach (var prize in _model.PrizeSettings.Where(p => p.PrizeType == PrizeType.Overall).OrderBy(p => p.Rank))
+                                    {
+                                        <div class="input-group mb-2">
+                                            <span class="input-group-text prize-label prize-label-fixed-width">@prize.PrizeDescription</span>
+                                            <InputNumber class="form-control" @bind-Value="prize.PrizeAmount" />
+                                            <button type="button" class="btn pink-button" @onclick="() => _model.RemoveOverallPrize(prize)" disabled="@(prize.Rank == 1)">
+                                                <span class="bi bi-trash-fill"></span>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="col-md-4">
+                                    <h5 class="text-white">Recurring Prizes</h5>
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text prize-label prize-label-fixed-width"><span class="bi bi-calendar-month me-2"></span>Monthly Winner</span>
+                                        <InputNumber class="form-control" @bind-Value="_model.MonthlyWinnerAmount" />
+                                        <span class="input-group-text prize-label"><span class="badge rounded-pill bg-pl-dark-pink">x@_model.NumberOfMonths</span></span>
+                                    </div>
+                                    <div class="input-group mb-2">
+                                        <span class="input-group-text prize-label prize-label-fixed-width"><span class="bi bi-calendar3-event me-2"></span>Round Winner</span>
+                                        <InputNumber class="form-control" @bind-Value="_model.RoundWinnerAmount" />
+                                        <span class="input-group-text prize-label"><span class="badge rounded-pill bg-pl-dark-pink">x@_model.NumberOfRounds</span></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <h5 class="text-white">Special Prizes</h5>
+                                    @foreach (var prize in _model.PrizeSettings.Where(p => p.PrizeType == PrizeType.MostExactScores))
+                                    {
+                                        <div class="input-group mb-2">
+                                            <span class="input-group-text prize-label prize-label-fixed-width"><span class="bi bi-bullseye me-2"></span>@prize.PrizeDescription</span>
+                                            <InputNumber class="form-control" @bind-Value="prize.PrizeAmount" />
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <div class="prize-summary">
+                                <div class="league-card-row">
+                                    <dt class="fs-5 text-white">Remaining to Allocate:</dt>
+                                    <dd class="fs-5 fw-bold @(_model.RemainingToAllocate == 0 ? "text-success" : "text-danger")">
+                                        @_model.RemainingToAllocate.ToString("C", new CultureInfo("en-GB"))
+                                    </dd>
+                                </div>
+                            </div>
+                        </ChildContent>
+                    </BaseFormComponent>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int LeagueId { get; set; }
+
+    private LeaguePrizesPageDto? _pageData;
+    private DefinePrizesViewModel? _model;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _errorMessage = null;
+        try
+        {
+            _pageData = await Http.GetFromJsonAsync<LeaguePrizesPageDto>($"api/leagues/{LeagueId}/prizes");
+
+            if (_pageData != null && DateTime.UtcNow > _pageData.EntryDeadline && !_pageData.PrizeSettings.Any())
+            {
+                var prizePot = _pageData.Price * _pageData.MemberCount;
+                _model = new DefinePrizesViewModel(prizePot, _pageData.NumberOfRounds, _pageData.SeasonStartDate, _pageData.SeasonEndDate);
+            }
+        }
+        catch
+        {
+            _errorMessage = "Could not load prize information for this league.";
+        }
+        _isLoading = false;
+    }
+
+    private Task<HttpResponseMessage> HandleDefinePrizesAsync()
+    {
+        var request = new DefinePrizeStructureRequest
+        {
+            PrizeSettings = _model!.ToFinalPrizeSettings()
+        };
+        return Http.PostAsJsonAsync($"api/leagues/{LeagueId}/prizes", request);
+    }
+}

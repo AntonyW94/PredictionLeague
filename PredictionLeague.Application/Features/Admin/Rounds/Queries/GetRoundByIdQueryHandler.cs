@@ -35,10 +35,10 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
                 m.[ActualHomeTeamScore],
                 m.[ActualAwayTeamScore],
                 m.[Status]
-            FROM [dbo].[Rounds] r
-            LEFT JOIN [dbo].[Matches] m ON r.[Id] = m.[RoundId]
-            LEFT JOIN [dbo].[Teams] ht ON m.[HomeTeamId] = ht.[Id]
-            LEFT JOIN [dbo].[Teams] at ON m.[AwayTeamId] = at.[Id]
+            FROM [Rounds] r
+            LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]
+            LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
+            LEFT JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
             WHERE r.[Id] = @Id;";
 
         var queryResult = await _dbConnection.QueryAsync<RoundQueryResult>(sql, cancellationToken, new { request.Id });

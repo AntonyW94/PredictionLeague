@@ -91,6 +91,20 @@ public class LeaguesController : ApiControllerBase
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 
+    [HttpGet("{leagueId:int}/prizes")]
+    [ProducesResponseType(typeof(LeaguePrizesPageDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<LeaguePrizesPageDto>> GetLeaguePrizesPageAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        var query = new GetLeaguePrizesPageQuery(leagueId);
+        var result = await _mediator.Send(query, cancellationToken);
+       
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
+    }
+
     #endregion
 
     #region Update
@@ -147,8 +161,19 @@ public class LeaguesController : ApiControllerBase
         return NoContent();
     }
 
-    #endregion
+    [HttpPost("{leagueId:int}/prizes")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DefinePrizeStructureAsync(int leagueId, [FromBody] DefinePrizeStructureRequest request, CancellationToken cancellationToken)
+    {
+        var command = new DefinePrizeStructureCommand(leagueId, CurrentUserId, request.PrizeSettings);
+        await _mediator.Send(command, cancellationToken);
+       
+        return NoContent();
+    }
 
+    #endregion
 
     #region Delete
 

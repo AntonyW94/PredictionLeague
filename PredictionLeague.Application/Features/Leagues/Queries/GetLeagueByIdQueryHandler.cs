@@ -25,11 +25,11 @@ public class GetLeagueByIdQueryHandler : IRequestHandler<GetLeagueByIdQuery, Lea
                 ISNULL(l.[EntryCode], 'Public') AS EntryCode,
                 ISNULL(l.[EntryDeadline], '1900-01-01') AS 'EntryDeadline'
             FROM 
-                [dbo].[Leagues] l
+                [Leagues] l
             JOIN 
-                [dbo].[Seasons] s ON l.[SeasonId] = s.[Id]
+                [Seasons] s ON l.[SeasonId] = s.[Id]
             LEFT JOIN 
-                [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+                [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
             WHERE 
                 l.[Id] = @Id
             GROUP BY

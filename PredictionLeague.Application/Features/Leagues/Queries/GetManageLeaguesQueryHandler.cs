@@ -31,11 +31,11 @@ public class GetManageLeaguesQueryHandler : IRequestHandler<GetManageLeaguesQuer
                     ELSE 'OtherPrivate'
                 END AS LeagueCategory
             FROM 
-                [dbo].[Leagues] l
+                [Leagues] l
             JOIN 
-                [dbo].[Seasons] s ON l.[SeasonId] = s.[Id]
+                [Seasons] s ON l.[SeasonId] = s.[Id]
             LEFT JOIN 
-                [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+                [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
             GROUP BY
                 l.[Id], l.[Name], s.[Name], l.[Price], l.[EntryCode], l.[EntryDeadline], s.[StartDate], l.[AdministratorUserId]
             ORDER BY

@@ -24,7 +24,7 @@ public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSe
                 r.[Deadline],
                 (SELECT COUNT(*) FROM [Matches] m WHERE m.[RoundId] = r.[Id]) as MatchCount
             FROM
-                [dbo].[Rounds] r
+                [Rounds] r
             WHERE
                 r.[SeasonId] = @SeasonId
             ORDER BY

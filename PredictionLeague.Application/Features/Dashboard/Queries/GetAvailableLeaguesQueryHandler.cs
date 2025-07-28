@@ -23,15 +23,15 @@ public class GetAvailableLeaguesQueryHandler : IRequestHandler<GetAvailableLeagu
                 l.[Price],
                 l.[EntryDeadline]
             FROM 
-                [dbo].[Leagues] l
+                [Leagues] l
             JOIN 
-                [dbo].[Seasons] s ON l.[SeasonId] = s.[Id]
+                [Seasons] s ON l.[SeasonId] = s.[Id]
             WHERE 
                 l.[EntryCode] IS NULL                                   
                 AND l.[EntryDeadline] > GETUTCDATE()                    
                 AND NOT EXISTS (                                        
                     SELECT 1 
-                    FROM [dbo].[LeagueMembers] lm 
+                    FROM [LeagueMembers] lm 
                     WHERE lm.[LeagueId] = l.[Id] AND lm.[UserId] = @UserId
                 )
             ORDER BY 

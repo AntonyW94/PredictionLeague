@@ -24,12 +24,12 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, IEnumer
                 u.[Email],
                 u.[PhoneNumber],
                 u.[PasswordHash],
-                CAST(CASE WHEN EXISTS (SELECT 1 FROM [dbo].[AspNetUserRoles] ur WHERE ur.UserId = u.Id AND ur.RoleId = (SELECT Id FROM AspNetRoles WHERE Name = @AdminRoleName)) THEN 1 ELSE 0 END AS bit) AS IsAdmin,
+                CAST(CASE WHEN EXISTS (SELECT 1 FROM [AspNetUserRoles] ur WHERE ur.UserId = u.Id AND ur.RoleId = (SELECT Id FROM AspNetRoles WHERE Name = @AdminRoleName)) THEN 1 ELSE 0 END AS bit) AS IsAdmin,
                 STRING_AGG(ul.[LoginProvider], ',') AS SocialProviders
             FROM 
-                [dbo].[AspNetUsers] u
+                [AspNetUsers] u
             LEFT JOIN 
-                [dbo].[AspNetUserLogins] ul ON u.Id = ul.UserId
+                [AspNetUserLogins] ul ON u.Id = ul.UserId
             GROUP BY
                 u.[Id], u.[FirstName], u.[LastName], u.[Email], u.[PhoneNumber], u.[PasswordHash]
             ORDER BY

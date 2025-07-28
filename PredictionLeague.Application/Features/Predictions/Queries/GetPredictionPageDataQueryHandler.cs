@@ -31,12 +31,12 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 up.[PredictedHomeScore],
                 up.[PredictedAwayScore]
-            FROM [dbo].[Rounds] r
-            JOIN [dbo].[Seasons] s ON r.[SeasonId] = s.[Id]
-            LEFT JOIN [dbo].[Matches] m ON r.[Id] = m.[RoundId]
-            LEFT JOIN [dbo].[Teams] ht ON m.[HomeTeamId] = ht.[Id]
-            LEFT JOIN [dbo].[Teams] at ON m.[AwayTeamId] = at.[Id]
-            LEFT JOIN [dbo].[UserPredictions] up ON m.[Id] = up.[MatchId] AND up.[UserId] = @UserId
+            FROM [Rounds] r
+            JOIN [Seasons] s ON r.[SeasonId] = s.[Id]
+            LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]
+            LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
+            LEFT JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
+            LEFT JOIN [UserPredictions] up ON m.[Id] = up.[MatchId] AND up.[UserId] = @UserId
             WHERE r.[Id] = @RoundId
             ORDER BY m.[MatchDateTime];";
 

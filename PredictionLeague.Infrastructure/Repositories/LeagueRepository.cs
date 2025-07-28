@@ -16,8 +16,8 @@ public class LeagueRepository : ILeagueRepository
         SELECT 
             l.*, 
             lm.*
-        FROM [dbo].[Leagues] l
-        LEFT JOIN [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]";
+        FROM [Leagues] l
+        LEFT JOIN [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]";
 
     public LeagueRepository(IDbConnectionFactory connectionFactory)
     {
@@ -29,7 +29,7 @@ public class LeagueRepository : ILeagueRepository
     public async Task<League> CreateAsync(League league, CancellationToken cancellationToken)
     {
         const string sql = @"
-            INSERT INTO [dbo].[Leagues] 
+            INSERT INTO [Leagues] 
             (
                 [Name], 
                 [SeasonId], 
@@ -70,7 +70,7 @@ public class LeagueRepository : ILeagueRepository
     private Task AddMemberAsync(LeagueMember member, CancellationToken cancellationToken)
     {
         const string sql = @"
-            INSERT INTO [dbo].[LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAt], [ApprovedAt])
+            INSERT INTO [LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAt], [ApprovedAt])
             VALUES (@LeagueId, @UserId, @Status, @JoinedAt, @ApprovedAt);";
 
         var command = new CommandDefinition(
@@ -115,11 +115,11 @@ public class LeagueRepository : ILeagueRepository
             lm.*, 
             up.*
         FROM 
-            [dbo].[Leagues] l
+            [Leagues] l
         INNER JOIN 
-            [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+            [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
         LEFT JOIN 
-            [dbo].[UserPredictions] up ON lm.[UserId] = up.[UserId] AND up.[MatchId] IN (SELECT Id FROM Matches WHERE RoundId = @RoundId)
+            [UserPredictions] up ON lm.[UserId] = up.[UserId] AND up.[MatchId] IN (SELECT Id FROM Matches WHERE RoundId = @RoundId)
         WHERE 
             l.[SeasonId] = @SeasonId;";
 
@@ -169,9 +169,9 @@ public class LeagueRepository : ILeagueRepository
             l.*, 
             lm.*
         FROM 
-            [dbo].[Leagues] l
+            [Leagues] l
         LEFT JOIN 
-            [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+            [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
         WHERE
             l.[AdministratorUserId] = @AdministratorId;";
 
@@ -184,7 +184,7 @@ public class LeagueRepository : ILeagueRepository
             SELECT 
                 COUNT(1) 
             FROM 
-                [dbo].[Leagues] 
+                [Leagues] 
             WHERE 
                 [EntryCode] = @EntryCode;";
 
@@ -203,7 +203,7 @@ public class LeagueRepository : ILeagueRepository
     public async Task UpdateAsync(League league, CancellationToken cancellationToken)
     {
         const string updateLeagueSql = @"
-            UPDATE [dbo].[Leagues]
+            UPDATE [Leagues]
             SET [Name] = @Name,
                 [Price] = @Price,
                 [EntryCode] = @EntryCode,
@@ -217,8 +217,36 @@ public class LeagueRepository : ILeagueRepository
         );
 
         await Connection.ExecuteAsync(leagueCommand);
+      
+        const string deletePrizesSql = "DELETE FROM [LeaguePrizeSettings] WHERE [LeagueId] = @LeagueId;";
+        
+        var deletePrizesCommand = new CommandDefinition(
+            deletePrizesSql,
+            new { LeagueId = league.Id },
+            cancellationToken: cancellationToken);
+      
+        await Connection.ExecuteAsync(deletePrizesCommand);
 
-        const string deleteMembersSql = "DELETE FROM [dbo].[LeagueMembers] WHERE [LeagueId] = @LeagueId;";
+        if (league.PrizeSettings.Any())
+        {
+            const string insertPrizeSql = @"
+            INSERT INTO [LeaguePrizeSettings] 
+            (
+                [LeagueId], [PrizeType], [Rank], [PrizeAmount], [PrizeDescription], [Month], [RoundNumber]
+            ) 
+            VALUES 
+            (
+                @LeagueId, @PrizeType, @Rank, @PrizeAmount, @PrizeDescription, @Month, @RoundNumber
+            );";
+
+            var insertPrizesCommand = new CommandDefinition(
+                insertPrizeSql,
+                league.PrizeSettings,
+                cancellationToken: cancellationToken);
+            await Connection.ExecuteAsync(insertPrizesCommand);
+        }
+        
+        const string deleteMembersSql = "DELETE FROM [LeagueMembers] WHERE [LeagueId] = @LeagueId;";
 
         var deleteCommand = new CommandDefinition(
             deleteMembersSql,
@@ -231,7 +259,7 @@ public class LeagueRepository : ILeagueRepository
         if (league.Members.Any())
         {
             const string insertMemberSql = @"
-                INSERT INTO [dbo].[LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAt], [ApprovedAt])
+                INSERT INTO [LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAt], [ApprovedAt])
                 VALUES (@LeagueId, @UserId, @Status, @JoinedAt, @ApprovedAt);";
 
             var insertCommand = new CommandDefinition(insertMemberSql, league.Members.Select(m => new
@@ -250,7 +278,7 @@ public class LeagueRepository : ILeagueRepository
     public async Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status, CancellationToken cancellationToken)
     {
         const string sql = @"
-            UPDATE [dbo].[LeagueMembers]
+            UPDATE [LeagueMembers]
             SET [Status] = @Status,
                 [ApprovedAt] = CASE WHEN @Status = 'Approved' THEN GETUTCDATE() ELSE [ApprovedAt] END
             WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId;";
@@ -267,7 +295,7 @@ public class LeagueRepository : ILeagueRepository
     public async Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate, CancellationToken cancellationToken)
     {
         const string sql = @"
-            UPDATE [dbo].[UserPredictions]
+            UPDATE [UserPredictions]
             SET [PointsAwarded] = @PointsAwarded,
                 [UpdatedAt] = GETUTCDATE()
             WHERE [Id] = @Id;";
@@ -340,10 +368,10 @@ public class LeagueRepository : ILeagueRepository
     public async Task DeleteAsync(int leagueId, CancellationToken cancellationToken)
     {
         const string sql = @"
-        DELETE FROM [dbo].[LeagueMembers] WHERE [LeagueId] = @LeagueId;
-        DELETE FROM [dbo].[LeaguePrizeSetting] WHERE [LeagueId] = @LeagueId;
-        DELETE FROM [dbo].[Winnings] WHERE [LeagueId] = @LeagueId;
-        DELETE FROM [dbo].[Leagues] WHERE [Id] = @LeagueId;";
+        DELETE FROM [LeagueMembers] WHERE [LeagueId] = @LeagueId;
+        DELETE FROM [LeaguePrizeSettings] WHERE [LeagueId] = @LeagueId;
+        DELETE FROM [Winnings] WHERE [LeagueId] = @LeagueId;
+        DELETE FROM [Leagues] WHERE [Id] = @LeagueId;";
 
         var command = new CommandDefinition(
             commandText: sql,

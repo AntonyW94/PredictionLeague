@@ -21,7 +21,7 @@ public class GetUserQueryHandler : IRequestHandler<GetUserQuery, UserDetails?>
                 [LastName],
                 [Email],
                 [PhoneNumber]
-            FROM [dbo].[AspNetUsers]
+            FROM [AspNetUsers]
             WHERE [Id] = @UserId;";
 
         return await _dbConnection.QuerySingleOrDefaultAsync<UserDetails>(sql, cancellationToken, new { request.UserId });

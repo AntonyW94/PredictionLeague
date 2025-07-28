@@ -20,7 +20,7 @@ public class FetchAllTeamsQueryHandler : IRequestHandler<FetchAllTeamsQuery, IEn
                 [Id],
                 [Name],
                 [LogoUrl]
-            FROM [dbo].[Teams]
+            FROM [Teams]
             ORDER BY [Name] ASC";
 
         return await _dbConnection.QueryAsync<TeamDto>(sql, cancellationToken);

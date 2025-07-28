@@ -22,11 +22,11 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
                 s.[Name] AS SeasonName,
                 lm.[Status]
             FROM 
-                [dbo].[Leagues] l
+                [Leagues] l
             JOIN 
-                [dbo].[Seasons] s ON l.[SeasonId] = s.[Id]
+                [Seasons] s ON l.[SeasonId] = s.[Id]
             JOIN 
-                [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+                [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
             WHERE 
                 lm.[UserId] = @UserId
             ORDER BY 

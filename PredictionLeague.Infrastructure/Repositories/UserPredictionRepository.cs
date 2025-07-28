@@ -21,7 +21,7 @@ public class UserPredictionRepository : IUserPredictionRepository
     public Task UpsertBatchAsync(IEnumerable<UserPrediction> predictions, CancellationToken cancellationToken)
     {
         const string sql = @"
-        MERGE INTO [dbo].[UserPredictions] AS target
+        MERGE INTO [UserPredictions] AS target
         USING (SELECT @UserId AS UserId, @MatchId AS MatchId) AS source
         ON (target.[UserId] = source.[UserId] AND target.[MatchId] = source.[MatchId])
         WHEN MATCHED THEN

@@ -21,20 +21,20 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                 s.[Name] AS SeasonName,
                 r.[RoundNumber],
                 r.[Deadline]
-            FROM [dbo].[Rounds] r
-            JOIN [dbo].[Seasons] s ON r.[SeasonId] = s.[Id]
+            FROM [Rounds] r
+            JOIN [Seasons] s ON r.[SeasonId] = s.[Id]
             WHERE
                 r.[Deadline] > GETUTCDATE()
                 AND r.[SeasonId] IN (
                     SELECT l.SeasonId
-                    FROM [dbo].[Leagues] l
-                    JOIN [dbo].[LeagueMembers] lm ON l.Id = lm.LeagueId
+                    FROM [Leagues] l
+                    JOIN [LeagueMembers] lm ON l.Id = lm.LeagueId
                     WHERE lm.UserId = @UserId
                 )
                 AND NOT EXISTS (
                     SELECT 1
-                    FROM [dbo].[UserPredictions] up
-                    JOIN [dbo].[Matches] m ON up.MatchId = m.Id
+                    FROM [UserPredictions] up
+                    JOIN [Matches] m ON up.MatchId = m.Id
                     WHERE m.RoundId = r.Id AND up.UserId = @UserId
                 )
             ORDER BY

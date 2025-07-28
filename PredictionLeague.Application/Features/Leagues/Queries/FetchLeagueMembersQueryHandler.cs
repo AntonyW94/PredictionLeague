@@ -27,11 +27,11 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
                 CAST(CASE WHEN lm.[Status] = @Pending AND l.[AdministratorUserId] = @CurrentUserId THEN 1 ELSE 0 END AS bit) AS CanBeApproved
             
             FROM 
-                [dbo].[Leagues] l
+                [Leagues] l
             JOIN 
-                [dbo].[LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+                [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
             JOIN 
-                [dbo].[AspNetUsers] u ON lm.[UserId] = u.[Id]
+                [AspNetUsers] u ON lm.[UserId] = u.[Id]
             WHERE 
                 l.[Id] = @LeagueId
             ORDER BY 
@@ -60,7 +60,7 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
             };
         }
 
-        const string leagueNameSql = "SELECT [Name] FROM [dbo].[Leagues] WHERE [Id] = @LeagueId;";
+        const string leagueNameSql = "SELECT [Name] FROM [Leagues] WHERE [Id] = @LeagueId;";
         var leagueName = await _dbConnection.QuerySingleOrDefaultAsync<string>(leagueNameSql, cancellationToken, new { request.LeagueId });
 
         return leagueName == null ? null : new LeagueMembersPageDto { LeagueName = leagueName };
