@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common.Guards.Season;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
@@ -16,12 +17,13 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
     public async Task Handle(UpdateRoundCommand request, CancellationToken cancellationToken)
     {
         var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
-        Guard.Against.Null(round, $"Round (ID: {request.RoundId}) was not found.");
+        Guard.Against.EntityNotFound(request.RoundId, round, "Round");
 
         round.UpdateDetails(
             request.RoundNumber,
             request.StartDate,
-            request.Deadline
+            request.Deadline,
+            request.Status
         );
 
         round.ClearMatches();

@@ -3,17 +3,19 @@
 @attribute [Authorize(Roles = RoleNames.Administrator)]
 
 @inject HttpClient Http
-@inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Admin.Matches
 @using PredictionLeague.Contracts.Admin.Rounds
 @using PredictionLeague.Contracts.Admin.Teams
+@using PredictionLeague.Domain.Common.Enumerations
 
 <PageTitle>Edit Round</PageTitle>
 
 <div class="page-container">
     <div class="form-container wide">
         <h3 class="text-center fw-bold text-white mb-4">Edit Round</h3>
+        
+        <ApiError Message="@_errorMessage"></ApiError>
 
         @if (_model == null)
         {
@@ -21,91 +23,62 @@
         }
         else
         {
-            <EditForm Model="_model" OnValidSubmit="HandleUpdateRoundAsync">
-                <FluentValidationValidator />
-                <ApiError Message="@_errorMessage" />
-                <ApiSuccess Message="@_successMessage" />
-
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="roundNumber" class="form-label text-white">Round Number</label>
-                        <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="startDate" class="form-label text-white">Round Start Date</label>
-                        <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" @onchange="OnStartDateChanged" />
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label for="deadline" class="form-label text-white">Prediction Deadline</label>
-                        <InputDate Type="InputDateType.DateTimeLocal" id="deadline" class="form-control" @bind-Value="_model.Deadline" />
-                    </div>
-                </div>
-
-                <hr class="text-white" />
-
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="text-white mb-0">Matches</h4>
-                    <button type="button" class="btn btn-sm d-flex align-items-center dark-pink-button" @onclick="AddMatch">
-                        <span class="bi bi-plus-circle-fill"></span>
-                        <span class="d-none d-md-inline ms-2">Add Match</span>
-                    </button>
-                </div>
-
-                <!-- Match Editor Section -->
-                @for (var i = 0; i < _model.Matches.Count; i++)
-                {
-                    var matchIndex = i;
-                    <div class="match-editor-row">
-                        <!-- Desktop View -->
-                        <div class="row gx-2 align-items-center d-none d-md-flex">
-                            <div class="col-md-3"><InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTime" /></div>
-
-                            <div class="col">
-                                <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].HomeTeamId">
-                                    <option value="0">Home</option>
-                                    @foreach (var t in _teams)
-                                    {
-                                        <option value="@t.Id">@t.Name</option>
-                                    }
-                                </InputSelect>
-                            </div>
-
-                            <div class="col-auto"><div class="logo-wrapper @(_model.Matches[matchIndex].HomeTeamId > 0 ? "visible" : "")"><img src="@GetTeamLogoUrl(_model.Matches[matchIndex].HomeTeamId)" class="match-logo" alt="Home Team Logo" /></div></div>
-
-                            <div class="col-auto text-white fw-bold">vs</div>
-
-                            <div class="col-auto"><div class="logo-wrapper @(_model.Matches[matchIndex].AwayTeamId > 0 ? "visible" : "")"><img src="@GetTeamLogoUrl(_model.Matches[matchIndex].AwayTeamId)" class="match-logo" alt="Away Team Logo" /></div></div>
-
-                            <div class="col">
-                                <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].AwayTeamId">
-                                    <option value="0">Away</option>
-                                    @foreach (var t in _teams)
-                                    {
-                                        <option value="@t.Id">@t.Name</option>
-                                    }
-                                </InputSelect>
-                            </div>
-
-                            <div class="col-auto"><button type="button" class="btn btn-sm pink-button" @onclick="() => RemoveMatch(matchIndex)"><span class="bi bi-trash"></span></button></div>
+            <BaseFormComponent TModel="UpdateRoundRequest"
+                               Model="_model"
+                               SubmitAction="HandleUpdateRoundAsync"
+                               SuccessRedirectUrl="@($"/admin/seasons/{_seasonId}/rounds")"
+                               BackUrl="@($"/admin/seasons/{_seasonId}/rounds")"
+                               SuccessAlertMessage="Round updated successfully!"
+                               BusyText="Saving...">
+                <ChildContent>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="roundNumber" class="form-label text-white">Round Number</label>
+                            <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
+                            <StyledValidationMessage For="@(() => _model.RoundNumber)" />
                         </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="startDate" class="form-label text-white">Round Start Date</label>
+                            <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" @onchange="OnStartDateChanged" />
+                            <StyledValidationMessage For="@(() => _model.StartDate)" />
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="deadline" class="form-label text-white">Prediction Deadline</label>
+                            <InputDate Type="InputDateType.DateTimeLocal" id="deadline" class="form-control" @bind-Value="_model.Deadline" />
+                            <StyledValidationMessage For="@(() => _model.Deadline)" />
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="status" class="form-label text-white">Status</label>
+                            <InputSelect id="status" class="form-select" @bind-Value="_model.Status">
+                                @foreach (var status in Enum.GetValues(typeof(RoundStatus)))
+                                {
+                                    <option value="@status">@status</option>
+                                }
+                            </InputSelect>
+                            <StyledValidationMessage For="@(() => _model.Status)" />
+                        </div>
+                    </div>
 
-                        <!-- Mobile Card View -->
-                        <div class="d-md-none match-card">
-                            <div class="d-flex justify-content-between align-items-center match-card-header">
-                                <span class="fw-bold text-white">Match @(matchIndex + 1)</span>
-                                <button type="button" class="btn btn-sm pink-button" @onclick="() => RemoveMatch(matchIndex)"><span class="bi bi-trash"></span></button>
-                            </div>
+                    <hr class="text-white" />
 
-                            <div class="p-3">
-                                <div class="mb-2">
-                                    <label class="form-label text-white-50">Date</label>
-                                    <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTime" />
-                                </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="text-white mb-0">Matches</h4>
+                        <button type="button" class="btn btn-sm d-flex align-items-center dark-pink-button" @onclick="AddMatch">
+                            <span class="bi bi-plus-circle-fill"></span>
+                            <span class="d-none d-md-inline ms-2">Add Match</span>
+                        </button>
+                    </div>
 
-                                <div class="mb-2">
-                                    <label class="form-label text-white-50">Home Team</label>
+                    <!-- Match Editor Section -->
+                    @for (var i = 0; i < _model.Matches.Count; i++)
+                    {
+                        var matchIndex = i;
+                        <div class="match-editor-row">
+                            <!-- Desktop View -->
+                            <div class="row gx-2 align-items-center d-none d-md-flex">
+                                <div class="col-md-3"><InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTime" /></div>
+
+                                <div class="col">
                                     <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].HomeTeamId">
                                         <option value="0">Home</option>
                                         @foreach (var t in _teams)
@@ -115,8 +88,13 @@
                                     </InputSelect>
                                 </div>
 
-                                <div class="mb-2">
-                                    <label class="form-label text-white-50">Away Team</label>
+                                <div class="col-auto"><div class="logo-wrapper @(_model.Matches[matchIndex].HomeTeamId > 0 ? "visible" : "")"><img src="@GetTeamLogoUrl(_model.Matches[matchIndex].HomeTeamId)" class="match-logo" alt="Home Team Logo" /></div></div>
+
+                                <div class="col-auto text-white fw-bold">vs</div>
+
+                                <div class="col-auto"><div class="logo-wrapper @(_model.Matches[matchIndex].AwayTeamId > 0 ? "visible" : "")"><img src="@GetTeamLogoUrl(_model.Matches[matchIndex].AwayTeamId)" class="match-logo" alt="Away Team Logo" /></div></div>
+
+                                <div class="col">
                                     <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].AwayTeamId">
                                         <option value="0">Away</option>
                                         @foreach (var t in _teams)
@@ -125,13 +103,50 @@
                                         }
                                     </InputSelect>
                                 </div>
+
+                                <div class="col-auto"><button type="button" class="btn btn-sm pink-button" @onclick="() => RemoveMatch(matchIndex)"><span class="bi bi-trash"></span></button></div>
+                            </div>
+
+                            <!-- Mobile Card View -->
+                            <div class="d-md-none match-card">
+                                <div class="d-flex justify-content-between align-items-center match-card-header">
+                                    <span class="fw-bold text-white">Match @(matchIndex + 1)</span>
+                                    <button type="button" class="btn btn-sm pink-button" @onclick="() => RemoveMatch(matchIndex)"><span class="bi bi-trash"></span></button>
+                                </div>
+
+                                <div class="p-3">
+                                    <div class="mb-2">
+                                        <label class="form-label text-white-50">Date</label>
+                                        <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTime" />
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label class="form-label text-white-50">Home Team</label>
+                                        <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].HomeTeamId">
+                                            <option value="0">Home</option>
+                                            @foreach (var t in _teams)
+                                            {
+                                                <option value="@t.Id">@t.Name</option>
+                                            }
+                                        </InputSelect>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <label class="form-label text-white-50">Away Team</label>
+                                        <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].AwayTeamId">
+                                            <option value="0">Away</option>
+                                            @foreach (var t in _teams)
+                                            {
+                                                <option value="@t.Id">@t.Name</option>
+                                            }
+                                        </InputSelect>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                }
-
-                <BackAndSaveButtons BackText="Back to Rounds" OnBackClick="Back" BusyText="Saving..." IsBusy="_isBusy"></BackAndSaveButtons>
-            </EditForm>
+                    }
+                </ChildContent>
+            </BaseFormComponent>
         }
     </div>
 </div>
@@ -141,12 +156,11 @@
     private UpdateRoundRequest? _model;
     private List<TeamDto> _teams = new();
     private int _seasonId;
-    private bool _isBusy;
     private string? _errorMessage;
-    private string? _successMessage;
 
     protected override async Task OnInitializedAsync()
     {
+        _errorMessage = null;
         try
         {
             var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/rounds/{RoundId}");
@@ -158,6 +172,7 @@
                     RoundNumber = roundDetails.Round.RoundNumber,
                     StartDate = roundDetails.Round.StartDate,
                     Deadline = roundDetails.Round.Deadline,
+                    Status = roundDetails.Round.Status,
                     Matches = roundDetails.Matches.Select(m => new UpdateMatchRequest
                     {
                         HomeTeamId = m.HomeTeamId,
@@ -186,6 +201,8 @@
         {
             match.MatchDateTime = newDate.Date;
         }
+
+        StateHasChanged();
     }
 
     private void AddMatch() => _model?.Matches.Add(new UpdateMatchRequest { MatchDateTime = _model.StartDate });
@@ -193,35 +210,19 @@
     private void RemoveMatch(int index)
     {
         if (_model != null && index >= 0 && index < _model.Matches.Count)
-        {
             _model.Matches.RemoveAt(index);
-        }
     }
 
     private string GetTeamLogoUrl(int teamId)
     {
-        if (teamId < 1) return "https://placehold.co/25x25/transparent/transparent?text=";
+        if (teamId < 1) 
+            return "https://placehold.co/25x25/transparent/transparent?text=";
+
         return _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl ?? "";
     }
 
-    private async Task HandleUpdateRoundAsync()
+    private Task<HttpResponseMessage> HandleUpdateRoundAsync()
     {
-        _isBusy = true;
-        _errorMessage = null;
-        _successMessage = null;
-
-        var response = await Http.PutAsJsonAsync($"api/rounds/{RoundId}/update", _model);
-        if (response.IsSuccessStatusCode)
-        {
-            _successMessage = "Round updated successfully!";
-        }
-        else
-        {
-            _errorMessage = "Error updating round.";
-        }
-
-        _isBusy = false;
+        return Http.PutAsJsonAsync($"api/rounds/{RoundId}/update", _model);
     }
-
-    private void Back() => NavigationManager.NavigateTo($"/admin/seasons/{_seasonId}/rounds");
 }

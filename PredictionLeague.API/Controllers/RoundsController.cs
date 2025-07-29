@@ -82,6 +82,7 @@ public class RoundsController : ApiControllerBase
             request.RoundNumber,
             request.StartDate,
             request.Deadline,
+            request.Status,
             request.Matches);
 
         await _mediator.Send(command, cancellationToken);

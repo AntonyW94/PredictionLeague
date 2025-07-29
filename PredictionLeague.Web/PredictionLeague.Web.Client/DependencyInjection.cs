@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using PredictionLeague.Web.Client.Authentication;
+using PredictionLeague.Web.Client.Services.Browser;
 using PredictionLeague.Web.Client.Services.Dashboard;
 using PredictionLeague.Web.Client.Services.Leagues;
 using PredictionLeague.Web.Client.ViewModels.Admin.Rounds;
@@ -18,6 +19,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<IDashboardStateService, DashboardStateService>();
+        services.AddScoped<IBrowserService, BrowserService>();
 
         services.AddScoped<EnterResultsViewModel>();
     }

@@ -1,49 +1,41 @@
-﻿@using PredictionLeague.Contracts.Dashboard
-@inject HttpClient Http
+﻿@inject HttpClient Http
+@inject IBrowserService BrowserService
 
-<div class="dashboard-card h-100">
+@using PredictionLeague.Contracts.Dashboard
+@using PredictionLeague.Web.Client.Services.Browser
+
+<div class="dashboard-card h-100 @(_rounds?.Count == 1 ? "center-content" : "")">
     <h3 class="text-white text-center fw-bold mb-4">Upcoming Rounds</h3>
+    <ApiError Message="@_errorMessage" />
+
     @if (_isLoading)
     {
         <p class="text-center text-white"><em>Loading rounds...</em></p>
     }
     else if (_rounds != null && _rounds.Any())
     {
-        <div class="carousel-container flex-grow-1">
-            @if (_rounds.Count > 1)
+        <div class="carousel-container">
+            @if ((_isDesktop && _rounds.Count > 2) || (!_isDesktop && _rounds.Count > 1))
             {
-                <button class="carousel-btn" @onclick="ShowPreviousRound" disabled="@(_currentRoundIndex == 0)">
+                <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentRoundIndex == 0)">
                     <span class="bi bi-chevron-left"></span>
                 </button>
             }
 
-            @{
-                var round = _rounds[_currentRoundIndex];
-                <div class="round-card">
-                    <div class="round-card-header">
-                        <h5 class="mb-0 fw-bold text-white">@round.SeasonName</h5>
-                        <span>Round @round.RoundNumber</span>
-                    </div>
-                    <div class="round-card-body">
-                        <span class="status-pill bg-pl-pink mb-3">
-                            Deadline: @round.Deadline.ToString("ddd dd MMM, HH:mm")
-                        </span>
-                        <NavLink href="@($"/predictions/{round.Id}")" class="btn green-button w-100">
-                            Predict Now
-                        </NavLink>
-
-                        <AuthorizeView Roles="@RoleNames.Administrator">
-                            <NavLink href="@($"/admin/rounds/{round.Id}/results")" class="btn light-cyan-button w-100 mt-3">
-                                Enter Results
-                            </NavLink>
-                        </AuthorizeView>
-                    </div>
+            <div class="rounds-track-wrapper">
+                <div class="rounds-track" style="@_trackStyle">
+                    @foreach (var round in _rounds)
+                    {
+                        <div class="round-card-wrapper">
+                            <RoundCard Round="round" />
+                        </div>
+                    }
                 </div>
-            }
+            </div>
 
-            @if (_rounds.Count > 1)
+            @if ((_isDesktop && _rounds.Count > 2) || (!_isDesktop && _rounds.Count > 1))
             {
-                <button class="carousel-btn" @onclick="ShowNextRound" disabled="@(_currentRoundIndex >= _rounds.Count - 1)">
+                <button class="carousel-btn" @onclick="ShowNext" disabled="@IsAtEnd()">
                     <span class="bi bi-chevron-right"></span>
                 </button>
             }
@@ -51,25 +43,32 @@
     }
     else
     {
-        <p class="text-white fw-bold text-center">There are currently no upcoming rounds available.</p>
+        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
+            <p class="text-white fw-bold text-center">There are currently no upcoming rounds available for you to predict.</p>
+        </div>
     }
 </div>
 
 @code {
     private List<UpcomingRoundDto>? _rounds;
     private bool _isLoading = true;
+    private string? _errorMessage;
     private int _currentRoundIndex;
+    private bool _isDesktop;
+    private string _trackStyle = "";
 
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
+        _errorMessage = null;
         try
         {
+            _isDesktop = await BrowserService.IsDesktop();
             _rounds = await Http.GetFromJsonAsync<List<UpcomingRoundDto>>("api/dashboard/upcoming-rounds");
         }
         catch (Exception)
         {
-            // Handle error, maybe show an error message
+            _errorMessage = "Could not load upcoming rounds.";
         }
         finally
         {
@@ -77,19 +76,36 @@
         }
     }
 
-    private void ShowPreviousRound()
+    private void ShowPrevious()
     {
         if (_currentRoundIndex > 0)
         {
             _currentRoundIndex--;
+            UpdateTrackStyle();
         }
     }
 
-    private void ShowNextRound()
+    private void ShowNext()
     {
-        if (_rounds != null && _currentRoundIndex < _rounds.Count - 1)
+        if (_rounds != null && !IsAtEnd())
         {
             _currentRoundIndex++;
+            UpdateTrackStyle();
         }
+    }
+
+    private void UpdateTrackStyle()
+    {
+        var percentageToMove = _isDesktop ? 50 : 100;
+        _trackStyle = $"transform: translateX(-{_currentRoundIndex * percentageToMove}%); transition: transform 0.3s ease-in-out;";
+    }
+
+    private bool IsAtEnd()
+    {
+        if (_rounds == null) 
+            return true;
+
+        var roundsPerPage = _isDesktop ? 2 : 1;
+        return _currentRoundIndex >= _rounds.Count - roundsPerPage;
     }
 }

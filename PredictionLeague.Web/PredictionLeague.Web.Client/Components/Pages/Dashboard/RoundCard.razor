@@ -1,0 +1,44 @@
+﻿@using PredictionLeague.Contracts.Dashboard
+
+<div class="round-card">
+    <div class="round-card-header">
+        <h5 class="mb-0 fw-bold text-white">@Round.SeasonName</h5>
+        <span>Round @Round.RoundNumber</span>
+    </div>
+    <div class="round-card-body">
+        <div class="mb-4 text-center">
+            @if ((Round.Deadline - DateTime.UtcNow).TotalHours < 24)
+            {
+                <CountdownTimer Deadline="Round.Deadline" />
+            }
+            else
+            {
+                <span class="status-pill bg-pl-pink">
+                    Deadline: @Round.Deadline.ToString("ddd dd MMM, HH:mm")
+                </span>
+            }
+        </div>
+        <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100 mt-auto">
+            @if (Round.HasUserPredicted)
+            {
+                <span class="bi bi-pencil-fill me-2"></span>
+                <span>Edit Predictions</span>
+            }
+            else
+            {
+                <span>Predict Now</span>
+            }
+        </NavLink>
+
+        <AuthorizeView Roles="@RoleNames.Administrator">
+            <NavLink href="@($"/admin/rounds/{Round.Id}/results")" class="btn light-cyan-button w-100 mt-3">
+                Enter Results
+            </NavLink>
+        </AuthorizeView>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public UpcomingRoundDto Round { get; set; } = null!;
+}

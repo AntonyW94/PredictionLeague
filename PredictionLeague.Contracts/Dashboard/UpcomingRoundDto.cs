@@ -4,4 +4,5 @@ public record UpcomingRoundDto(
     int Id,
     string SeasonName, 
     int RoundNumber, 
-    DateTime Deadline);
+    DateTime Deadline,
+    bool HasUserPredicted);

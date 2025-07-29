@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Domain.Models;
 
@@ -9,19 +10,21 @@ public class Round
     public int RoundNumber { get; private set; }
     public DateTime StartDate { get; set; }
     public DateTime Deadline { get; private set; }
+    public RoundStatus Status { get; private set; }
 
     private readonly List<Match> _matches = new();
     public IReadOnlyCollection<Match> Matches => _matches.AsReadOnly();
 
     private Round() { }
   
-    public Round(int id, int seasonId, int roundNumber, DateTime startDate, DateTime deadline, IEnumerable<Match?>? matches)
+    public Round(int id, int seasonId, int roundNumber, DateTime startDate, DateTime deadline, RoundStatus status, IEnumerable<Match?>? matches)
     {
         Id = id;
         SeasonId = seasonId;
         RoundNumber = roundNumber;
         StartDate = startDate;
         Deadline = deadline;
+        Status = status;
     
         if (matches != null)
             _matches.AddRange(matches.Where(m => m != null).Select(m => (Match)m!));
@@ -36,17 +39,19 @@ public class Round
             SeasonId = seasonId,
             RoundNumber = roundNumber,
             StartDate = startDate,
-            Deadline = deadline
+            Deadline = deadline,
+            Status = RoundStatus.Draft
         };
     }
 
-    public void UpdateDetails(int roundNumber, DateTime startDate, DateTime deadline)
+    public void UpdateDetails(int roundNumber, DateTime startDate, DateTime deadline, RoundStatus status)
     {
         Validate(SeasonId, roundNumber, startDate, deadline);
 
         RoundNumber = roundNumber;
         StartDate = startDate;
         Deadline = deadline;
+        Status = status;
     }
     
     public void AddMatch(int homeTeamId, int awayTeamId, DateTime matchTime)

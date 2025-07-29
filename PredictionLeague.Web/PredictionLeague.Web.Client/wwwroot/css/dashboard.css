@@ -1,4 +1,6 @@
-﻿
+﻿/* ==========================================================================
+   Dashboard Layout & Base Card
+   ========================================================================== */
 .dashboard-container {
     width: 90%;
     max-width: 1400px;
@@ -14,6 +16,13 @@
     flex-direction: column;
 }
 
+    .dashboard-card.center-content {
+        justify-content: center;
+    }
+
+/* ==========================================================================
+   Upcoming Rounds Tile
+   ========================================================================== */
 .carousel-container {
     display: flex;
     align-items: center;
@@ -25,7 +34,7 @@
 .carousel-btn {
     background: none;
     border: none;
-    color: var(--pl-green); 
+    color: var(--pl-green);
     font-size: 2.5rem;
     line-height: 1;
     cursor: pointer;
@@ -41,6 +50,22 @@
         cursor: not-allowed;
     }
 
+.rounds-track-wrapper {
+    overflow: hidden;
+    width: 100%;
+}
+
+.rounds-track {
+    display: flex;
+    transition: transform 0.3s ease-in-out;
+}
+
+.round-card-wrapper {
+    flex-shrink: 0;
+    width: 100%;
+    padding: 0 0.5rem;
+}
+
 .round-card {
     background-color: var(--pl-purple);
     border-radius: var(--bs-border-radius);
@@ -49,7 +74,6 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 320px; 
     flex-shrink: 0;
 }
 
@@ -74,11 +98,9 @@
     color: var(--light-text);
 }
 
-.leagues-list-container {
-    max-width: 600px;
-    width: 100%;
-}
-
+/* ==========================================================================
+   Leagues Tiles (My Leagues & Available Leagues)
+   ========================================================================== */
 .joinable-league-item {
     background-color: var(--pl-purple);
     border-color: var(--pl-purple-dark);
@@ -102,13 +124,18 @@
     color: var(--light-text);
 }
 
-/* Responsive adjustments for mobile */
+
+/* ==========================================================================
+   Responsive Media Queries
+   ========================================================================== */
 @media (max-width: 992px) {
     .dashboard-container {
         width: 95%;
     }
+}
 
-    .rounds-grid {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+@media (min-width: 992px) {
+    .round-card-wrapper {
+        width: 50%;
     }
 }

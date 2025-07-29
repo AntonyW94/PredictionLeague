@@ -99,7 +99,8 @@ public class RoundRepository : IRoundRepository
             UPDATE [Rounds]
             SET [RoundNumber] = @RoundNumber,
                 [StartDate] = @StartDate,
-                [Deadline] = @Deadline
+                [Deadline] = @Deadline,
+                [Status] = @Status           
             WHERE [Id] = @Id;";
 
         var deleteMatchesCommand = new CommandDefinition(
@@ -112,7 +113,14 @@ public class RoundRepository : IRoundRepository
 
         var updateRoundCommand = new CommandDefinition(
             commandText: updateRoundSql,
-            parameters: round,
+            parameters: new
+            {
+                round.Id,
+                round.RoundNumber,
+                round.StartDate,
+                round.Deadline,
+                Status = round.Status.ToString()
+            },
             cancellationToken: cancellationToken
         );
 
@@ -175,6 +183,7 @@ public class RoundRepository : IRoundRepository
                     groupedRound.RoundNumber,
                     groupedRound.StartDate,
                     groupedRound.Deadline,
+                    groupedRound.Status,
                     matches
                 );
             });

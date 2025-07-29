@@ -24,6 +24,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
                 r.[RoundNumber],
                 r.[StartDate],
                 r.[Deadline],
+                r.[Status],
                 m.[Id] AS MatchId,
                 m.[MatchDateTime],
                 m.[HomeTeamId],
@@ -34,7 +35,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 m.[ActualHomeTeamScore],
                 m.[ActualAwayTeamScore],
-                m.[Status]
+                m.[Status] AS 'MatchStatus'
             FROM [Rounds] r
             LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]
             LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
@@ -45,10 +46,8 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
 
         var results = queryResult.ToList();
         if (!results.Any())
-        {
             return null;
-        }
-
+        
         var firstRow = results.First();
         var roundDto = new RoundDto(
             firstRow.RoundId,
@@ -56,6 +55,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
             firstRow.RoundNumber,
             firstRow.StartDate,
             firstRow.Deadline,
+            Enum.Parse<RoundStatus>(firstRow.Status),
             results.Count(r => r.MatchId.HasValue)
         );
 
@@ -75,7 +75,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
                     r.AwayTeamLogoUrl,
                     r.ActualHomeTeamScore,
                     r.ActualAwayTeamScore,
-                    Enum.Parse<MatchStatus>(r.Status!)
+                    Enum.Parse<MatchStatus>(r.MatchStatus!)
                 )).ToList()
         };
 
@@ -89,6 +89,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
         int RoundNumber,
         DateTime StartDate,
         DateTime Deadline,
+        string Status,
         int? MatchId,
         DateTime? MatchDateTime,
         int? HomeTeamId,
@@ -99,6 +100,6 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
         string? AwayTeamLogoUrl,
         int? ActualHomeTeamScore,
         int? ActualAwayTeamScore,
-        string? Status
+        string? MatchStatus
     );
 }

@@ -3,6 +3,7 @@
 @attribute [Authorize]
 
 @inject HttpClient Http
+@inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Dashboard
 @using PredictionLeague.Contracts.Predictions
@@ -128,8 +129,14 @@
                 )).ToList();
             }
         }
-        catch (Exception) { _errorMessage = "Could not load prediction data."; }
-        finally { _isLoading = false; }
+        catch (Exception)
+        {
+            _errorMessage = "Could not load prediction data.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
     private static void UpdateScore(MatchPredictionDto match, bool isHomeTeam, int delta)
@@ -139,18 +146,15 @@
             var currentScore = match.PredictedHomeScore ?? 0;
             var newScore = currentScore + delta;
             if (newScore >= 0 && newScore <= 9)
-            {
                 match.PredictedHomeScore = newScore;
-            }
+            
         }
         else
         {
             var currentScore = match.PredictedAwayScore ?? 0;
             var newScore = currentScore + delta;
             if (newScore >= 0 && newScore <= 9)
-            {
                 match.PredictedAwayScore = newScore;
-            }
         }
     }
 
@@ -172,10 +176,20 @@
 
         var response = await Http.PostAsJsonAsync("api/predictions/submit", _model);
         if (response.IsSuccessStatusCode)
-            _successMessage = "Your predictions have been saved successfully!";
+        {
+            _successMessage = "Your predictions have been saved successfully!"; 
+          
+            StateHasChanged();
+
+            await Task.Delay(1500); 
+
+            NavigationManager.NavigateTo("/dashboard", forceLoad: true);
+        }
         else
+        {   
             _errorMessage = "There was an error saving your predictions.";
-     
+        }
+
         _isBusy = false;
     }
 }

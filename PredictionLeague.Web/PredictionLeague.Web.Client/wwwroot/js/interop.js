@@ -1,4 +1,9 @@
-﻿window.blazorInterop = {
+﻿const countdownTimers = {};
+
+window.blazorInterop = {
+    getWindowWidth: function () {
+        return window.innerWidth;
+    },
     showConfirm: function (title, text, confirmButtonText, cancelButtonText) {
         return new Promise((resolve) => {
             Swal.fire({
@@ -116,5 +121,20 @@
                 }
             });
         });
+    },
+    startCountdown: function (dotNetHelper, methodName, timerId) {
+        if (countdownTimers[timerId]) {
+            clearInterval(countdownTimers[timerId]);
+        }
+
+        countdownTimers[timerId] = setInterval(() => {
+            dotNetHelper.invokeMethodAsync(methodName);
+        }, 1000);
+    },
+    stopCountdown: function (timerId) {
+        if (countdownTimers[timerId]) {
+            clearInterval(countdownTimers[timerId]);
+            delete countdownTimers[timerId];
+        }
     }
 };
