@@ -1,0 +1,73 @@
+﻿@page "/leagues/{LeagueId:int}/dashboard"
+
+@attribute [Authorize]
+
+@inject LeagueDashboardStateService State
+
+@implements IAsyncDisposable
+
+@using PredictionLeague.Web.Client.Services.Leagues
+
+<PageTitle>League Dashboard</PageTitle>
+
+<div class="page-container">
+    <div class="dashboard-container">
+        <ApiError Message="@State.DashboardLoadError" />
+
+        @if (State.IsLoadingDashboard)
+        {
+            <p class="text-center text-white"><em>Loading dashboard...</em></p>
+        }
+        else
+        {
+            <h3 class="text-center fw-bold text-white mb-4">League Dashboard - @State.LeagueName</h3>
+
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <RoundResultsTile LeagueId="LeagueId" />
+                </div>
+
+                <div class="col-md-4 mb-4">
+                    <div class="dashboard-card">
+                        <h5 class="text-white">Overall Leaderboard (Coming Soon)</h5>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                    <div class="dashboard-card">
+                        <h5 class="text-white">Monthly Leaderboard (Coming Soon)</h5>
+                    </div>
+                </div>
+
+                <div class="col-md-4 mb-4">
+                    <div class="dashboard-card">
+                        <h5 class="text-white">Correct Scores (Coming Soon)</h5>
+                    </div>
+                </div>
+
+                <div class="col-12 mb-4">
+                    <div class="dashboard-card">
+                        <h5 class="text-white">Winnings (Coming Soon)</h5>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int LeagueId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        State.OnStateChange += StateHasChanged;
+        await State.LoadDashboardData(LeagueId);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        State.OnStateChange -= StateHasChanged;
+        return ValueTask.CompletedTask;
+    }
+}

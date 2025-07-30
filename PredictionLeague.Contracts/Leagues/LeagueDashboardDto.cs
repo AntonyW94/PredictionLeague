@@ -1,10 +1,9 @@
-﻿using PredictionLeague.Contracts.Leaderboards;
+﻿using PredictionLeague.Contracts.Admin.Rounds;
 
 namespace PredictionLeague.Contracts.Leagues;
 
 public class LeagueDashboardDto
 {
     public string LeagueName { get; init; } = string.Empty;
-    public string SeasonName { get; init; } = string.Empty;
-    public List<LeaderboardEntryDto> Entries { get; init; } = new();
+    public List<RoundDto> ViewableRounds { get; set; } = new();
 }

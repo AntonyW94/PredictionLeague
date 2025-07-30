@@ -15,12 +15,11 @@ public static class DependencyInjection
         services.AddTransient<CookieHandler>();
       
         services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
-       
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<IDashboardStateService, DashboardStateService>();
-        services.AddScoped<IBrowserService, BrowserService>();
-
+        services.AddScoped<IBrowserService, BrowserService>(); 
+        services.AddScoped<LeagueDashboardStateService>();
         services.AddScoped<EnterResultsViewModel>();
     }
 }

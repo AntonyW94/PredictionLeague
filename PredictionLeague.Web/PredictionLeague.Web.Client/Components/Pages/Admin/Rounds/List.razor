@@ -85,7 +85,7 @@
         _errorMessage = null;
         try
         {
-            _rounds = await Http.GetFromJsonAsync<List<RoundDto>>($"api/rounds/by-season/{SeasonId}");
+            _rounds = await Http.GetFromJsonAsync<List<RoundDto>>($"api/admin/rounds/by-season/{SeasonId}");
         }
         catch (Exception)
         {

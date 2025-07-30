@@ -202,7 +202,7 @@
         _errorMessage = null;
         _successMessage = null;
 
-        var response = await Http.PostAsJsonAsync("api/rounds/create", _model);
+        var response = await Http.PostAsJsonAsync("api/admin/rounds/create", _model);
         if (response.IsSuccessStatusCode)
         {
             _successMessage = "Round created successfully!";

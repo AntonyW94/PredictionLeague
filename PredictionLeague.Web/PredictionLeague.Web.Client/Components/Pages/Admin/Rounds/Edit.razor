@@ -163,7 +163,7 @@
         _errorMessage = null;
         try
         {
-            var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/rounds/{RoundId}");
+            var roundDetails = await Http.GetFromJsonAsync<RoundDetailsDto>($"api/admin/rounds/{RoundId}");
             if (roundDetails != null)
             {
                 _seasonId = roundDetails.Round.SeasonId;
@@ -223,6 +223,6 @@
 
     private Task<HttpResponseMessage> HandleUpdateRoundAsync()
     {
-        return Http.PutAsJsonAsync($"api/rounds/{RoundId}/update", _model);
+        return Http.PutAsJsonAsync($"api/admin/rounds/{RoundId}/update", _model);
     }
 }

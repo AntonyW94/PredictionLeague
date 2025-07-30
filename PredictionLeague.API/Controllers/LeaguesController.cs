@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Leagues.Commands;
 using PredictionLeague.Application.Features.Leagues.Queries;
 using PredictionLeague.Contracts;
+using PredictionLeague.Contracts.Admin.Rounds;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Enumerations;
@@ -99,6 +100,43 @@ public class LeaguesController : ApiControllerBase
         var query = new GetLeaguePrizesPageQuery(leagueId);
         var result = await _mediator.Send(query, cancellationToken);
        
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
+    }
+
+    [HttpGet("{leagueId:int}/rounds/{roundId:int}/results")]
+    [ProducesResponseType(typeof(IEnumerable<PredictionResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IEnumerable<PredictionResultDto>>> GetLeagueDashboardRoundResultsAsync(int leagueId, int roundId, CancellationToken cancellationToken)
+    {
+        var query = new GetLeagueDashboardRoundResultsQuery(leagueId, roundId, CurrentUserId);
+        var result = await _mediator.Send(query, cancellationToken);
+      
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
+    }
+
+    [HttpGet("{leagueId:int}/rounds-for-dashboard")]
+    [ProducesResponseType(typeof(IEnumerable<RoundDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<RoundDto>>> GetLeagueRoundsForDashboardAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        var query = new GetLeagueRoundsForDashboardQuery(leagueId);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
+
+    [HttpGet("{leagueId:int}/dashboard-data")]
+    [ProducesResponseType(typeof(LeagueDashboardDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<LeagueDashboardDto>> GetLeagueDashboardAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        var isAdmin = User.IsInRole(RoleNames.Administrator);
+        var query = new GetLeagueDashboardQuery(leagueId, CurrentUserId, isAdmin);
+        var result = await _mediator.Send(query, cancellationToken);
+      
         if (result == null)
             return NotFound();
 

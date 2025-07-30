@@ -1,0 +1,103 @@
+﻿.results-grid-container {
+    overflow-x: auto;
+}
+
+.results-grid {
+    border-collapse: collapse;
+    width: 100%;
+    color: white;
+    font-size: 0.9em;
+}
+
+    .results-grid th,
+    .results-grid td {
+        padding: 0.75rem;
+        text-align: center;
+        border-bottom: 1px solid var(--pl-purple);
+        white-space: nowrap;
+    }
+
+    .results-grid th {
+        background-color: var(--pl-purple-dark);
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+    }
+
+    .results-grid .match-info {
+        text-align: left;
+        min-width: 250px;
+        position: sticky;
+        left: 0;
+        background-color: var(--pl-purple-dark);
+    }
+
+    .results-grid td.match-info {
+        background-color: var(--pl-purple);
+    }
+
+    .results-grid .score-cell {
+        font-weight: bold;
+        font-family: monospace;
+        font-size: 1.1em;
+        background: var(--pl-purple);
+    }
+
+    .results-grid .blurred-score {
+        filter: blur(4px);
+        cursor: not-allowed;
+        user-select: none;
+    }
+
+    .results-grid .not-predicted-icon {
+        font-size: 1.5em;
+        color: var(--light-text);
+    }
+
+    .results-grid .match-info .match-logo-small {
+        height: 20px;
+        width: 20px;
+    }
+
+    .results-grid .score-cell.correct-score {
+        background-color: var(--pl-green);
+        color: var(--pl-purple-dark);
+    }
+
+    .results-grid .score-cell.correct-result {
+        background-color: #FFC107; /* Amber */
+        color: var(--pl-purple-dark);
+    }
+
+    .results-grid .score-cell.incorrect-result {
+        background-color: var(--pl-pink);
+    }
+
+    .results-grid tfoot th {
+        background-color: var(--pl-purple-dark);
+        font-size: 1.2em;
+        position: sticky;
+        bottom: 0;
+    }
+
+    .results-grid .actual-score.in-progress {
+        color: var(--pl-green);
+        animation: pulse 1.5s infinite;
+    }
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.05);
+        opacity: 0.7;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

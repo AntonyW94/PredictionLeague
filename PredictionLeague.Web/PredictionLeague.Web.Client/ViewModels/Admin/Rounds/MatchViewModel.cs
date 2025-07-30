@@ -23,8 +23,8 @@ public class MatchViewModel
         HomeTeamLogoUrl = match.HomeTeamLogoUrl;
         AwayTeamName = match.AwayTeamName;
         AwayTeamLogoUrl = match.AwayTeamLogoUrl;
-        HomeScore = match.ActualHomeScore ?? 0;
-        AwayScore = match.ActualAwayScore ?? 0;
+        HomeScore = match.ActualHomeTeamScore ?? 0;
+        AwayScore = match.ActualAwayTeamScore ?? 0;
         Status = match.Status;
     }
 

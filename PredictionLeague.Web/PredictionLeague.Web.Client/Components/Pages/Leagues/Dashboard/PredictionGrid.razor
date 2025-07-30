@@ -1,0 +1,98 @@
+﻿@using PredictionLeague.Contracts.Leagues
+@using PredictionLeague.Contracts.Admin.Rounds
+@using PredictionLeague.Domain.Common.Enumerations
+
+@if (Results != null && Matches != null)
+{
+    <div class="results-grid-container">
+        <table class="results-grid">
+            <thead>
+                <tr>
+                    <th class="match-info">Match</th>
+                    <th class="actual-score-header">Actual Score</th> @foreach (var player in Results)
+                    {
+                        <th class="@(IsWinner(player) ? "winner-column" : "")">@player.PlayerName</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var match in Matches)
+                {
+                    <tr>
+                        <td class="match-info">
+                            <div class="d-flex align-items-center">
+                                <img src="@match.HomeTeamLogoUrl" class="match-logo-small" alt="@match.HomeTeamName Logo"/>
+                                <span class="mx-2">@match.HomeTeamName v @match.AwayTeamName</span>
+                                <img src="@match.AwayTeamLogoUrl" class="match-logo-small" alt="@match.AwayTeamName Logo"/>
+                            </div>
+                        </td>
+
+                        <td class="score-cell actual-score @(match.Status == MatchStatus.InProgress ? "in-progress" : "")">
+                            @if (match.Status == MatchStatus.Completed || match.Status == MatchStatus.InProgress)
+                            {
+                                <span>@match.ActualHomeTeamScore - @match.ActualAwayTeamScore</span>
+                            }
+                        </td>
+
+                        @foreach (var player in Results)
+                        {
+                            var prediction = player.Predictions.FirstOrDefault(p => p.MatchId == match.Id);
+                            <td class="score-cell @GetPointsClass(prediction?.PointsAwarded)">
+                                @if (prediction?.HomeScore != null || prediction?.AwayScore != null)
+                                {
+                                    @if (prediction.IsHidden)
+                                    {
+                                        <span class="blurred-score" title="Predictions are hidden until the deadline.">0 - 0</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@prediction.HomeScore - @prediction.AwayScore</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="bi bi-clock-fill not-predicted-icon" title="No prediction submitted."></span>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th class="match-info">Total Score</th>
+                    <th></th> @foreach (var player in Results)
+                    {
+                        <th class="@(IsWinner(player) ? "winner-column" : "")">@player.TotalPoints</th>
+                    }
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public List<PredictionResultDto>? Results { get; set; }
+    [Parameter, EditorRequired] public List<MatchInRoundDto>? Matches { get; set; }
+
+    private bool IsWinner(PredictionResultDto player)
+    {
+        if (Results == null || !Results.Any() || Results.All(p => p.TotalPoints == 0))
+        {
+            return false;
+        }
+        var maxPoints = Results.Max(p => p.TotalPoints);
+        return player.TotalPoints == maxPoints;
+    }
+
+    private string GetPointsClass(int? points)
+    {
+        return points switch
+        {
+            5 => "correct-score",
+            3 => "correct-result",
+            0 => "incorrect-result",
+            _ => ""
+        };
+    }
+}

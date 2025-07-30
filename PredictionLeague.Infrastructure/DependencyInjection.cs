@@ -9,6 +9,7 @@ using PredictionLeague.Infrastructure.Data;
 using PredictionLeague.Infrastructure.Identity;
 using PredictionLeague.Infrastructure.Repositories;
 using PredictionLeague.Infrastructure.Services;
+using System.Net;
 
 namespace PredictionLeague.Infrastructure;
 
@@ -24,7 +25,20 @@ public static class DependencyInjection
             .AddRoleStore<DapperRoleStore>()
             .AddSignInManager<SignInManager<ApplicationUser>>()
             .AddDefaultTokenProviders();
-
+      
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.Events.OnRedirectToLogin = context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api"))
+                    context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                else
+                    context.Response.Redirect(context.RedirectUri);
+                
+                return Task.CompletedTask;
+            };
+        });
+        
         services.AddScoped<ILeagueRepository, LeagueRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();

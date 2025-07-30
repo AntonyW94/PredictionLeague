@@ -30,7 +30,7 @@ public class EnterResultsViewModel
         ErrorMessage = null;
         try
         {
-            var roundDetails = await _http.GetFromJsonAsync<RoundDetailsDto>($"api/rounds/{roundId}");
+            var roundDetails = await _http.GetFromJsonAsync<RoundDetailsDto>($"api/admin/rounds/{roundId}");
             if (roundDetails != null)
             {
                 _seasonId = roundDetails.Round.SeasonId;
@@ -61,7 +61,7 @@ public class EnterResultsViewModel
             m.Status
         )).ToList();
 
-        var response = await _http.PutAsJsonAsync($"api/rounds/{roundId}/results", resultsToUpdate);
+        var response = await _http.PutAsJsonAsync($"api/admin/rounds/{roundId}/results", resultsToUpdate);
         if (response.IsSuccessStatusCode)
         {
             SuccessMessage = "Results saved and points calculated successfully!";

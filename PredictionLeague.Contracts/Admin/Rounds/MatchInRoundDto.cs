@@ -11,7 +11,7 @@ public record MatchInRoundDto(
     int AwayTeamId,
     string AwayTeamName,
     string? AwayTeamLogoUrl,
-    int? ActualHomeScore,
-    int? ActualAwayScore,
+    int? ActualHomeTeamScore,
+    int? ActualAwayTeamScore,
     MatchStatus Status
 );
