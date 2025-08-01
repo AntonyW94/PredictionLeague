@@ -26,4 +26,10 @@
         <ProjectReference Include="..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Update="appsettings.json" CopyToPublishDirectory="Never" />
+        <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+        <Content Update="appsettings.Production.json" CopyToPublishDirectory="Never" />
+    </ItemGroup>
+
 </Project>

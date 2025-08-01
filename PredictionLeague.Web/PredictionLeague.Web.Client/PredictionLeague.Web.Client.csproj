@@ -25,4 +25,10 @@
       <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Update="wwwroot\appsettings.Production.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>
