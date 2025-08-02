@@ -37,7 +37,7 @@ public class ErrorHandlingMiddleware
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning("Invalid Operation Error: {Message}", ex.Message);
-            await HandleKnownExceptionAsync(context, HttpStatusCode.BadRequest, new { message = ex.Message });
+             await HandleKnownExceptionAsync(context, HttpStatusCode.BadRequest, new { message = ex.Message });
         }
         catch (FluentValidation.ValidationException ex)
         {

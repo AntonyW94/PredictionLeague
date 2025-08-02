@@ -10,30 +10,31 @@ namespace PredictionLeague.Web.Client.Authentication;
 public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 {
     private readonly HttpClient _httpClient;
+    private Task<AuthenticationState>? _cachedAuthenticationStateTask;
     private ClaimsPrincipal _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
 
     public ApiAuthenticationStateProvider(HttpClient httpClient)
     {
         _httpClient = httpClient;
     }
-
-    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
+    
+    public override Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
+        return _cachedAuthenticationStateTask ??= CreateAuthenticationStateAsync();
+    }
 
+    public async Task<AuthenticationState> CreateAuthenticationStateAsync()
+    {
         var authenticationResponse = await RefreshAccessToken();
         if (authenticationResponse != null && authenticationResponse.IsSuccess && !string.IsNullOrEmpty(authenticationResponse.AccessToken))
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authenticationResponse.AccessToken);
-            _currentUser = CreateClaimsPrincipalFromToken(authenticationResponse.AccessToken);
+            var claimsPrincipal = CreateClaimsPrincipalFromToken(authenticationResponse.AccessToken);
+            return new AuthenticationState(claimsPrincipal);
         }
-        else
-        {
-            _httpClient.DefaultRequestHeaders.Authorization = null;
-            _currentUser = new ClaimsPrincipal(new ClaimsIdentity());
-        }
-        
-        return new AuthenticationState(_currentUser);
+
+        _httpClient.DefaultRequestHeaders.Authorization = null;
+        return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
     }
 
     public void MarkUserAsAuthenticated(SuccessfulAuthenticationResponse authResponse)
@@ -41,6 +42,7 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         var claimsPrincipal = CreateClaimsPrincipalFromToken(authResponse.AccessToken);
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.AccessToken);
 
+        _cachedAuthenticationStateTask = null;
         NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(claimsPrincipal)));
     }
     
@@ -49,26 +51,21 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         _httpClient.DefaultRequestHeaders.Authorization = null;
         var anonymousUser = new ClaimsPrincipal(new ClaimsIdentity());
 
+        _cachedAuthenticationStateTask = null;
         NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(anonymousUser)));
     }
-    
-    public async Task NotifyUserAuthentication()
+
+    public void NotifyUserAuthentication()
     {
-        var authenticationResponse = await RefreshAccessToken();
-        if (authenticationResponse != null && authenticationResponse.IsSuccess && !string.IsNullOrEmpty(authenticationResponse.AccessToken))
-        {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authenticationResponse.AccessToken);
-            _currentUser = CreateClaimsPrincipalFromToken(authenticationResponse.AccessToken);
-        }
-        
-        NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(_currentUser)));
+        _cachedAuthenticationStateTask = null;
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
     private async Task<SuccessfulAuthenticationResponse?> RefreshAccessToken()
     {
         try
         {
-            var response = await _httpClient.PostAsync("api/authentication/refresh-token", null);
+            var response = await _httpClient.PostAsync("api/auth/refresh-token", null);
             if (response.IsSuccessStatusCode)
                 return await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
 
@@ -90,10 +87,7 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(token);
-        var identity = new ClaimsIdentity(jwtToken.Claims,
-            "jwt",
-            "FullName",
-            "role"); 
+        var identity = new ClaimsIdentity(jwtToken.Claims, "jwt", "FullName", "role"); 
         
         return new ClaimsPrincipal(identity);
     }

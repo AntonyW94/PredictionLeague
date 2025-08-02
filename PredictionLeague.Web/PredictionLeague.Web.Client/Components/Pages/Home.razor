@@ -2,6 +2,8 @@
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ILogger<Home> Logger
+
 
 <PageTitle>Home - Premier League Predictions</PageTitle>
 
@@ -52,6 +54,8 @@
 @code {
     protected override async Task OnInitializedAsync()
     {
+        Logger.LogInformation("Home page has been loaded.");
+
         var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
        
         var user = authenticationState.User;

@@ -30,7 +30,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
 
         var storedToken = await _refreshTokenRepository.GetByTokenAsync(request.RefreshToken, cancellationToken);
         if (storedToken is not { IsActive: true })
-            return new FailedAuthenticationResponse("Invalid or expired refresh token.");
+            return new FailedAuthenticationResponse($"Invalid or expired refresh token. ({request.RefreshToken})");
 
         var user = await _userManager.FindByIdAsync(storedToken.UserId);
         if (user == null)

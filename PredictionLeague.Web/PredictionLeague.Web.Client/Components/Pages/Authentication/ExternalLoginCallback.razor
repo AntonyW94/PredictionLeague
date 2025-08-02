@@ -2,6 +2,7 @@
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<ExternalLoginCallback> Logger
 
 @attribute [AllowAnonymous]
 
@@ -17,11 +18,34 @@
     </div>
 </div>
 
+<script>
+    // This script will run as soon as the page loads
+    console.warn("--- DEBUGGING EXTERNAL LOGIN ---");
+    console.log("Page loaded at:", new Date().toISOString());
+    console.log("Current URL:", window.location.href);
+
+    // Check the browser's cookie jar
+    const allCookies = document.cookie;
+
+    if (allCookies && allCookies.includes("refreshToken")) {
+        console.log("%cSUCCESS: 'refreshToken' cookie found!", "color: green; font-weight: bold;");
+        console.log("All cookies:", allCookies);
+    } else {
+        console.error("%cFAILURE: 'refreshToken' cookie NOT found.", "color: red; font-weight: bold;");
+        console.log("All cookies found:", allCookies || " (none)");
+    }
+
+    console.warn("--- END DEBUGGING ---");
+    debugger;
+</script>
+
 @code {
     private bool _hasProcessed;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        Logger.LogInformation("External Login Callback On After Render Running");
+
         if (firstRender && !_hasProcessed)
         {
             _hasProcessed = true;
@@ -30,11 +54,15 @@
 
             if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var errorValue))
             {
+                Logger.LogWarning("External Login Callback On After Render redirecting with error");
+
                 NavigationManager.NavigateTo($"/authentication/login?error={Uri.EscapeDataString(errorValue.ToString())}");
             }
             else
-            {
-                await ((ApiAuthenticationStateProvider)AuthStateProvider).NotifyUserAuthentication();
+            { 
+                Logger.LogInformation("External Login Callback On After Render notifying user authentication");
+                ((ApiAuthenticationStateProvider)AuthStateProvider).NotifyUserAuthentication();
+                Logger.LogInformation("External Login Callback On After Render user authentication notified");
                 NavigationManager.NavigateTo("/dashboard", forceLoad: true);
             }
         }

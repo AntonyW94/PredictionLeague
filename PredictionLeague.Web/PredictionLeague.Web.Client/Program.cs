@@ -5,6 +5,7 @@ using PredictionLeague.Web.Client.Components;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 builder.RootComponents.Add<App>("#app");
 builder.Services.AddClientServices();
 
@@ -18,5 +19,6 @@ builder.Services.AddScoped(sp =>
         BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
     };
 });
+
 
 await builder.Build().RunAsync();

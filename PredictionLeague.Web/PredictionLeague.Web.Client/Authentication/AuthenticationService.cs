@@ -18,7 +18,7 @@ public class AuthenticationService : IAuthenticationService
     
     public async Task<AuthenticationResponse> RegisterAsync(RegisterRequest registerRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/authentication/register", registerRequest);
+        var response = await _httpClient.PostAsJsonAsync("api/auth/register", registerRequest);
         if (response.IsSuccessStatusCode)
         {
             var successResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
@@ -35,7 +35,7 @@ public class AuthenticationService : IAuthenticationService
     
     public async Task<AuthenticationResponse> LoginAsync(LoginRequest loginRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/authentication/login", loginRequest);
+        var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginRequest);
         if (response.IsSuccessStatusCode)
         {
             var successResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
@@ -52,7 +52,7 @@ public class AuthenticationService : IAuthenticationService
     
     public async Task LogoutAsync()
     {
-        await _httpClient.PostAsync("api/authentication/logout", null);
+        await _httpClient.PostAsync("api/auth/logout", null);
 
         ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOut();
     }

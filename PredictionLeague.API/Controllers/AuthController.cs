@@ -15,15 +15,17 @@ namespace PredictionLeague.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthenticationController : ApiControllerBase
+public class AuthController : ApiControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthenticationController(IMediator mediator, IConfiguration configuration)
+    public AuthController(IMediator mediator, IConfiguration configuration, ILogger<AuthController> logger)
     {
         _mediator = mediator;
         _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -35,9 +37,9 @@ public class AuthenticationController : ApiControllerBase
         var command = new RegisterCommand(request.FirstName, request.LastName, request.Email, request.Password);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result is not SuccessfulAuthenticationResponse success) 
+        if (result is not SuccessfulAuthenticationResponse success)
             return result.IsSuccess ? Ok(result) : BadRequest(result);
-        
+
         SetTokenCookie(success.RefreshTokenForCookie);
         return Ok(success);
 
@@ -52,9 +54,9 @@ public class AuthenticationController : ApiControllerBase
         var command = new LoginCommand(request.Email, request.Password);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result is not SuccessfulAuthenticationResponse success) 
+        if (result is not SuccessfulAuthenticationResponse success)
             return Unauthorized(result);
-        
+
         SetTokenCookie(success.RefreshTokenForCookie);
         return Ok(result);
 
@@ -66,16 +68,32 @@ public class AuthenticationController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RefreshTokenAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Called refresh-token");
+
         var refreshToken = Request.Cookies["refreshToken"];
         if (refreshToken == null)
-            return BadRequest(new { message = "Refresh token is missing." });
+        {
+            _logger.LogInformation("Refresh token is missing");
+            return Ok(new { message = "Refresh token is missing." });
+        }
 
         var command = new RefreshTokenCommand(refreshToken);
         var result = await _mediator.Send(command, cancellationToken);
 
-        if (result is not SuccessfulAuthenticationResponse success) 
+        if (result is not SuccessfulAuthenticationResponse success)
+        {
+            if (result is FailedAuthenticationResponse failedResponse)
+            {
+                _logger.LogError("Refresh Token Command failed with message: {Message}", failedResponse.Message);
+            }
+            else
+            {
+                _logger.LogError("Refresh Token Command failed with unknown error");
+            }
+
             return BadRequest(result);
-        
+        }
+
         SetTokenCookie(success.RefreshTokenForCookie);
         return Ok(success);
 
@@ -98,6 +116,8 @@ public class AuthenticationController : ApiControllerBase
     [AllowAnonymous]
     public IActionResult GoogleLogin([FromQuery] string returnUrl, [FromQuery] string source)
     {
+        _logger.LogInformation("Called google-login");
+
         var callbackUrl = Url.Action("GoogleCallback");
         var properties = new AuthenticationProperties
         {
@@ -116,6 +136,8 @@ public class AuthenticationController : ApiControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GoogleCallbackAsync(CancellationToken cancellationToken)
     {
+        _logger.LogInformation("Called signin-google");
+
         var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
         var returnUrl = authenticateResult.Properties?.Items["returnUrl"] ?? "/";
         var source = authenticateResult.Properties?.Items["source"] ?? "/login";
@@ -125,19 +147,26 @@ public class AuthenticationController : ApiControllerBase
         switch (result)
         {
             case SuccessfulAuthenticationResponse success:
+                _logger.LogInformation("Google Login result was SUCCESS");
+                _logger.LogWarning("Google Login result was SUCCESS");
                 SetTokenCookie(success.RefreshTokenForCookie);
-                return RedirectWithScript(returnUrl);
-           
+                
+                return Redirect(returnUrl);
+
             case ExternalLoginFailedAuthenticationResponse failure:
+                _logger.LogWarning("Google Login result was FAILURE");
                 return RedirectWithError(failure.Source, failure.Message);
-          
+
             default:
+                _logger.LogError("Google Login result was ERROR");
                 return RedirectWithError(source, "An unknown authentication error occurred.");
         }
     }
 
     private void SetTokenCookie(string token)
     {
+        _logger.LogInformation("Setting 'refreshToken' cookie.");
+
         var expiryDays = double.Parse(_configuration["JwtSettings:RefreshTokenExpiryDays"]!);
 
         var cookieOptions = new CookieOptions
@@ -145,11 +174,23 @@ public class AuthenticationController : ApiControllerBase
             HttpOnly = true,
             Expires = DateTime.UtcNow.AddDays(expiryDays),
             Secure = true,
-            SameSite = SameSiteMode.Strict
+            SameSite = SameSiteMode.None,
+            Path = "/"
         };
-        Response.Cookies.Append("refreshToken", token, cookieOptions);
+
+        try
+        {
+            Response.Cookies.Append("refreshToken", token, cookieOptions);
+            _logger.LogInformation("Set 'refreshToken' cookie.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to set 'refreshToken' cookie.");
+            throw new InvalidOperationException("Failed to set 'refreshToken' cookie.", ex);
+        }
+
     }
-    
+
     private IActionResult RedirectWithError(string returnUrl, string error)
     {
         var redirectUrl = $"{returnUrl}?error={Uri.EscapeDataString(error)}";
