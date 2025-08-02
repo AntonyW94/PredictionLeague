@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.JSInterop;
 using PredictionLeague.Web.Client;
 using PredictionLeague.Web.Client.Authentication;
 using PredictionLeague.Web.Client.Components;
+using PredictionLeague.Web.Client.Services.Browser;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
@@ -20,5 +22,12 @@ builder.Services.AddScoped(sp =>
     };
 });
 
+var host = builder.Build();
 
-await builder.Build().RunAsync();
+var jsRuntime = host.Services.GetRequiredService<IJSRuntime>();
+var datadogProvider = new DatadogBrowserLoggerProvider(jsRuntime);
+var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
+
+loggerFactory.AddProvider(datadogProvider);
+
+await host.RunAsync();

@@ -34,5 +34,25 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script src="js/interop.js"></script>
-</body>
-</html>
+
+    <script>
+        (function (h, o, u, n, d) {
+            h = h[d] = h[d] || { q: [], onReady: function (c) { h.q.push(c) } }
+            d = o.createElement(u); d.async = 1; d.src = n;
+            n = o.getElementsByTagName(u)[0]; n.parentNode.insertBefore(d, n);
+        })(window, document, 'script', 'https://www.datadoghq-browser-agent.com/eu1/v6/datadog-rum.js', 'DD_RUM');
+        window.DD_RUM.onReady(function () {
+            window.DD_RUM.init({
+                clientToken: 'pub2a393681d7ce94e5d042a35e5644a3c8',
+                applicationId: '50c9b40a-6278-4cf6-9014-3d54410d2eba',
+                site: 'datadoghq.eu',
+                service: 'the-predictions-ui',
+                env: 'development',
+                sessionSampleRate: 100,
+                sessionReplaySampleRate: 20,
+                defaultPrivacyLevel: 'mask-user-input'
+            });
+        });
+    </script>
+    </body>
+    </html>
