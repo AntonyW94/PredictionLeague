@@ -144,7 +144,7 @@
 
         var apiBaseUrl = Configuration["ApiBaseUrl"];
         var returnUrl = NavigationManager.BaseUri + "authentication/external-login-callback";
-        var googleLoginUrl = $"{apiBaseUrl}/auth/google-login?returnUrl={Uri.EscapeDataString(returnUrl)}&source=register";
+        var googleLoginUrl = $"{apiBaseUrl}/external-auth/google-login?returnUrl={Uri.EscapeDataString(returnUrl)}&source=register";
 
         NavigationManager.NavigateTo(googleLoginUrl, forceLoad: true);
     }

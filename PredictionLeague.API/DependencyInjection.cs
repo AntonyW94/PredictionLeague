@@ -24,20 +24,8 @@ public static class DependencyInjection
 
         services.AddAppAuthentication(configuration);
         services.AddApplicationServices(configuration);
-
-        services.AddCors(options =>
-        {
-            options.AddPolicy("AllowSpecificOrigin",
-                builder =>
-                {
-                    builder.WithOrigins(configuration["AllowedOrigins"]!)
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .AllowCredentials();
-                });
-        });
     }
-    
+
     private static void AddAppAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()!;
@@ -66,19 +54,13 @@ public static class DependencyInjection
             {
                 options.ClientId = googleSettings.ClientId;
                 options.ClientSecret = googleSettings.ClientSecret;
-                options.CallbackPath = "/api/auth/signin-google";
+                options.CallbackPath = "/signin-google";
                 options.SignInScheme = IdentityConstants.ExternalScheme;
-                options.Events.OnRedirectToAuthorizationEndpoint = context =>
-                {
-                    // Log the redirect URI right before it's sent
-                    Console.WriteLine($"--> Redirecting to Google with Redirect URI: {context.RedirectUri}");
-                    return Task.CompletedTask;
-                };
             });
 
         services.AddAuthorization();
     }
-    
+
     private static void AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();

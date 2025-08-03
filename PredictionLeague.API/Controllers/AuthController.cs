@@ -1,11 +1,8 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Authentication.Commands.Login;
-using PredictionLeague.Application.Features.Authentication.Commands.LoginWithGoogle;
 using PredictionLeague.Application.Features.Authentication.Commands.Logout;
 using PredictionLeague.Application.Features.Authentication.Commands.RefreshToken;
 using PredictionLeague.Application.Features.Authentication.Commands.Register;
@@ -15,17 +12,18 @@ namespace PredictionLeague.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 public class AuthController : ApiControllerBase
 {
+    private readonly ILogger<AuthController> _logger;
     private readonly IMediator _mediator;
     private readonly IConfiguration _configuration;
-    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IMediator mediator, IConfiguration configuration, ILogger<AuthController> logger)
+    public AuthController(ILogger<AuthController> logger, IConfiguration configuration, IMediator mediator)
     {
-        _mediator = mediator;
-        _configuration = configuration;
         _logger = logger;
+        _configuration = configuration;
+        _mediator = mediator;
     }
 
     [HttpPost("register")]
@@ -112,57 +110,6 @@ public class AuthController : ApiControllerBase
         return NoContent();
     }
 
-    [HttpGet("google-login")]
-    [AllowAnonymous]
-    public IActionResult GoogleLogin([FromQuery] string returnUrl, [FromQuery] string source)
-    {
-        _logger.LogInformation("Called google-login");
-
-        var callbackUrl = Url.Action("GoogleCallback");
-        var properties = new AuthenticationProperties
-        {
-            RedirectUri = callbackUrl,
-            Items =
-            {
-                { "returnUrl", returnUrl },
-                { "source", source }
-            }
-        };
-
-        return Challenge(properties, GoogleDefaults.AuthenticationScheme);
-    }
-
-    [HttpGet("signin-google", Name = "GoogleCallback")]
-    [AllowAnonymous]
-    public async Task<IActionResult> GoogleCallbackAsync(CancellationToken cancellationToken)
-    {
-        _logger.LogInformation("Called signin-google");
-
-        var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
-        var returnUrl = authenticateResult.Properties?.Items["returnUrl"] ?? "/";
-        var source = authenticateResult.Properties?.Items["source"] ?? "/login";
-        var command = new LoginWithGoogleCommand(authenticateResult, source);
-        var result = await _mediator.Send(command, cancellationToken);
-
-        switch (result)
-        {
-            case SuccessfulAuthenticationResponse success:
-                _logger.LogInformation("Google Login result was SUCCESS");
-                _logger.LogWarning("Google Login result was SUCCESS");
-                SetTokenCookie(success.RefreshTokenForCookie);
-                
-                return Redirect(returnUrl);
-
-            case ExternalLoginFailedAuthenticationResponse failure:
-                _logger.LogWarning("Google Login result was FAILURE");
-                return RedirectWithError(failure.Source, failure.Message);
-
-            default:
-                _logger.LogError("Google Login result was ERROR");
-                return RedirectWithError(source, "An unknown authentication error occurred.");
-        }
-    }
-
     private void SetTokenCookie(string token)
     {
         _logger.LogInformation("Setting 'refreshToken' cookie.");
@@ -174,7 +121,7 @@ public class AuthController : ApiControllerBase
             HttpOnly = true,
             Expires = DateTime.UtcNow.AddDays(expiryDays),
             Secure = true,
-            SameSite = SameSiteMode.None,
+            SameSite = SameSiteMode.Lax,
             Path = "/"
         };
 
@@ -188,31 +135,5 @@ public class AuthController : ApiControllerBase
             _logger.LogError(ex, "Failed to set 'refreshToken' cookie.");
             throw new InvalidOperationException("Failed to set 'refreshToken' cookie.", ex);
         }
-
-    }
-
-    private IActionResult RedirectWithError(string returnUrl, string error)
-    {
-        var redirectUrl = $"{returnUrl}?error={Uri.EscapeDataString(error)}";
-        return Redirect(redirectUrl);
-    }
-
-    private IActionResult RedirectWithScript(string returnUrl)
-    {
-        var script = $@"
-        <html>
-            <body>
-                <script>
-                    if (window.opener) {{
-                        window.opener.location = '{returnUrl}';
-                        window.close();
-                    }} else {{
-                        window.location = '{returnUrl}';
-                    }}
-                </script>
-            </body>
-        </html>";
-
-        return Content(script, "text/html");
     }
 }
