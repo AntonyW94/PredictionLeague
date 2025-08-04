@@ -2,6 +2,7 @@
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<ExternalLoginCallback> Logger
 
 @attribute [AllowAnonymous]
 
@@ -14,29 +15,34 @@
         </div>
     </div>
 </div>
-
 @code {
     [SupplyParameterFromQuery]
     public string? Token { get; set; }
 
+    [SupplyParameterFromQuery]
+    public string? Source { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
+        var sourcePage = string.IsNullOrEmpty(Source) ? "login" : Source;
+        var failureUrl = $"/authentication/{sourcePage}?error=External login failed. Please try again.";
+
         if (!string.IsNullOrEmpty(Token))
         {
             var result = await ((ApiAuthenticationStateProvider)AuthStateProvider).LoginWithRefreshToken(Token);
             if (result)
             {
-                NavigationManager.NavigateTo("/dashboard");
+                NavigationManager.NavigateTo("/dashboard", forceLoad: true);
             }
             else
             {
-                NavigationManager.NavigateTo("/authentication/login-failed");
+                NavigationManager.NavigateTo(failureUrl);
             }
         }
         else
         {
-            Console.WriteLine("FAILURE: 'token' query parameter NOT found");
-            NavigationManager.NavigateTo("/authentication/token-missing");
+            Logger.LogWarning("FAILURE: 'token' query parameter NOT found in external login callback.");
+            NavigationManager.NavigateTo(failureUrl);
         }
     }
 }

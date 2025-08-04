@@ -14,13 +14,11 @@ namespace PredictionLeague.API.Controllers;
 public class ExternalAuthController : Controller
 {
     private readonly ILogger<ExternalAuthController> _logger;
-    private readonly IConfiguration _configuration;
     private readonly IMediator _mediator;
 
-    public ExternalAuthController(ILogger<ExternalAuthController> logger, IConfiguration configuration, IMediator mediator)
+    public ExternalAuthController(ILogger<ExternalAuthController> logger, IMediator mediator)
     {
         _logger = logger;
-        _configuration = configuration;
         _mediator = mediator;
     }
 
@@ -62,7 +60,7 @@ public class ExternalAuthController : Controller
                 _logger.LogInformation("Google Login result was SUCCESS");
 
                 var encodedToken = WebUtility.UrlEncode(success.RefreshTokenForCookie);
-                return Redirect($"{returnUrl}?token={encodedToken}");
+                return Redirect($"{returnUrl}?token={encodedToken}&source={source}");
 
             case ExternalLoginFailedAuthenticationResponse failure:
                 _logger.LogWarning("Google Login result was FAILURE");
