@@ -18,9 +18,17 @@
         }
         else if (_pageData != null)
         {
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <!-- Desktop Header -->
+            <div class="d-none d-md-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold text-white mb-0">@_pageData.SeasonName - Round @_pageData.RoundNumber</h3>
                 <span class="badge bg-danger">Deadline: @_pageData.Deadline.ToString("ddd dd MMM, HH:mm")</span>
+            </div>
+
+            <!-- Mobile Header -->
+            <div class="d-md-none text-center mb-4">
+                <h3 class="fw-bold text-white mb-1">@_pageData.SeasonName</h3>
+                <p class="text-white-50 mb-2">Round @_pageData.RoundNumber</p>
+                <span class="badge bg-danger w-100">Deadline: @_pageData.Deadline.ToString("ddd dd MMM, HH:mm")</span>
             </div>
 
             <EditForm Model="_model" OnValidSubmit="HandleSubmitPredictionsAsync">
@@ -147,7 +155,7 @@
             var newScore = currentScore + delta;
             if (newScore >= 0 && newScore <= 9)
                 match.PredictedHomeScore = newScore;
-            
+
         }
         else
         {
@@ -177,16 +185,16 @@
         var response = await Http.PostAsJsonAsync("api/predictions/submit", _model);
         if (response.IsSuccessStatusCode)
         {
-            _successMessage = "Your predictions have been saved successfully!"; 
-          
+            _successMessage = "Your predictions have been saved successfully!";
+
             StateHasChanged();
 
-            await Task.Delay(1500); 
+            await Task.Delay(1500);
 
             NavigationManager.NavigateTo("/dashboard", forceLoad: true);
         }
         else
-        {   
+        {
             _errorMessage = "There was an error saving your predictions.";
         }
 

@@ -49,7 +49,7 @@
     background-repeat: no-repeat;
     background-position: right 0.5rem center;
     background-size: 16px 12px;
-    padding: 0.25rem 2rem 0.25rem 0.75rem;/
+    padding: 0.25rem 2rem 0.25rem 0.75rem;
     border-radius: 50rem;
     font-size: 0.8em;
 }
@@ -122,7 +122,7 @@
     background: none;
     border: none;
     color: white;
-    font-size: 2rem; /* Larger for easier clicking */
+    font-size: 2rem;
     line-height: 1;
     cursor: pointer;
     padding: 0.25rem 0.5rem;
@@ -133,11 +133,52 @@
     }
 
     .stepper-btn:disabled {
-        color: #6c757d; /* Muted color when disabled */
+        color: #6c757d;
         cursor: not-allowed;
     }
 
 .score-input-group .vs-separator {
     font-weight: bold;
     font-size: 1.5rem;
+}
+
+@media (max-width: 576px) {
+    .form-container.extra-wide {
+        padding: 1rem;
+    }
+
+    .prediction-card-header {
+        font-size: 0.8rem;
+    }
+
+    .prediction-card-body {
+        padding: 0.5rem;
+    }
+
+    .team-display {
+        width: 80px;
+    }
+
+        .team-display .match-logo {
+            height: 40px;
+        }
+
+    .score-input-group {
+        gap: 0.25rem; 
+        padding: 0.25rem;
+    }
+
+    .score-value {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+
+    .stepper-btn {
+        font-size: 1.5rem; 
+    }
+
+    .form-container .d-flex.justify-content-end .btn {
+        width: 100%;
+    }
 }
