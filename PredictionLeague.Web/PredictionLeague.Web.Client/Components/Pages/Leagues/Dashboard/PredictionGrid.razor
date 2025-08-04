@@ -22,7 +22,8 @@
                         <td class="match-info">
                             <div class="d-flex align-items-center">
                                 <img src="@match.HomeTeamLogoUrl" class="match-logo-small" alt="@match.HomeTeamName Logo"/>
-                                <span class="mx-2">@match.HomeTeamName v @match.AwayTeamName</span>
+                                <span class="mx-2 d-sm-none">@match.HomeTeamAbbreviation v @match.AwayTeamAbbreviation</span>
+                                <span class="mx-2 d-none d-sm-block">@match.HomeTeamName v @match.AwayTeamName</span>
                                 <img src="@match.AwayTeamLogoUrl" class="match-logo-small" alt="@match.AwayTeamName Logo"/>
                             </div>
                         </td>
@@ -31,6 +32,10 @@
                             @if (match.Status == MatchStatus.Completed || match.Status == MatchStatus.InProgress)
                             {
                                 <span>@match.ActualHomeTeamScore - @match.ActualAwayTeamScore</span>
+                            }
+                            else
+                            {
+                                <span class="bi bi-clock-fill not-predicted-icon" title="Match not started yet."></span>
                             }
                         </td>
 

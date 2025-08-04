@@ -5,12 +5,12 @@
 @using PredictionLeague.Web.Client.Services.Leagues
 
 <div class="dashboard-card">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="text-white fw-bold mb-0">Round Results</h5>
-        
+    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-center mb-3 text-center text-md-start">
+        <h5 class="text-white fw-bold mb-3 mb-md-0">Round Results</h5>
+
         @if (State.ViewableRounds.Any())
         {
-            <div class="w-25">
+            <div class="w-100" style="max-width:200px;">
                 <InputSelect TValue="int?" class="form-select form-select-sm" @bind-Value="State.SelectedRoundId" @bind-Value:after="OnRoundSelected">
                     @foreach (var round in State.ViewableRounds)
                     {

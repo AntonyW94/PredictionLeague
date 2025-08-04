@@ -22,19 +22,31 @@
         font-weight: bold;
         position: sticky;
         top: 0;
+        z-index: 1;
     }
 
     .results-grid .match-info {
         text-align: left;
-        min-width: 250px;
+        min-width: 60px;
         position: sticky;
         left: 0;
         background-color: var(--pl-purple-dark);
     }
+   
+    .results-grid thead .match-info,
+    .results-grid tfoot .match-info {
+        z-index: 3;
+    }
 
     .results-grid td.match-info {
         background-color: var(--pl-purple);
+        z-index: 2;
     }
+
+    .results-grid tbody tr:nth-child(even) td {
+        background-color: var(--pl-light-purple);
+    }
+
 
     .results-grid .score-cell {
         font-weight: bold;
