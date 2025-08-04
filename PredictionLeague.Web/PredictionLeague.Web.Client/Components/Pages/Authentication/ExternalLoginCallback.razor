@@ -18,32 +18,10 @@
     </div>
 </div>
 
-<script>
-    // This script will run as soon as the page loads
-    console.warn("--- DEBUGGING EXTERNAL LOGIN ---");
-    console.log("Page loaded at:", new Date().toISOString());
-    console.log("Current URL:", window.location.href);
-
-    // Check the browser's cookie jar
-    const allCookies = document.cookie;
-    debugger;
-
-    if (allCookies && allCookies.includes("refreshToken")) {
-        console.log("%cSUCCESS: 'refreshToken' cookie found!", "color: green; font-weight: bold;");
-        console.log("All cookies:", allCookies);
-    } else {
-        console.error("%cFAILURE: 'refreshToken' cookie NOT found.", "color: red; font-weight: bold;");
-        console.log("All cookies found:", allCookies || " (none)");
-    }
-
-    console.warn("--- END DEBUGGING ---");
-    debugger;
-</script>
-
 @code {
     private bool _hasProcessed;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override Task OnAfterRenderAsync(bool firstRender)
     {
         Logger.LogInformation("External Login Callback On After Render Running");
 
@@ -67,5 +45,7 @@
                 NavigationManager.NavigateTo("/dashboard", forceLoad: true);
             }
         }
+
+        return Task.CompletedTask;
     }
 }

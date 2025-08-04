@@ -59,7 +59,6 @@ namespace PredictionLeague.API.Controllers
             {
                 case SuccessfulAuthenticationResponse success:
                     _logger.LogInformation("Google Login result was SUCCESS");
-                    _logger.LogWarning("Google Login result was SUCCESS");
                     SetTokenCookie(success.RefreshTokenForCookie);
 
                     return Redirect(returnUrl);
@@ -86,7 +85,8 @@ namespace PredictionLeague.API.Controllers
                 Expires = DateTime.UtcNow.AddDays(expiryDays),
                 Secure = true,
                 SameSite = SameSiteMode.None,
-                Path = "/"
+                Path = "/",
+                Domain = ".thepredictions.co.uk"
             };
 
             try

@@ -122,7 +122,8 @@ public class AuthController : ApiControllerBase
             Expires = DateTime.UtcNow.AddDays(expiryDays),
             Secure = true,
             SameSite = SameSiteMode.None,
-            Path = "/"
+            Path = "/",
+            Domain = ".thepredictions.co.uk"
         };
 
         try
