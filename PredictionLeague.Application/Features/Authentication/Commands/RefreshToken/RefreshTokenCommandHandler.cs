@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
@@ -12,31 +13,52 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IAuthenticationTokenService _tokenService;
+    private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
     public RefreshTokenCommandHandler(
         UserManager<ApplicationUser> userManager,
         IRefreshTokenRepository refreshTokenRepository,
-        IAuthenticationTokenService tokenService)
+        IAuthenticationTokenService tokenService,
+        ILogger<RefreshTokenCommandHandler> logger)
     {
         _userManager = userManager;
         _refreshTokenRepository = refreshTokenRepository;
         _tokenService = tokenService;
+        _logger = logger;
     }
 
     public async Task<AuthenticationResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(request.RefreshToken))
-            return new FailedAuthenticationResponse("Refresh token not found.");
+        _logger.LogInformation("RefreshTokenCommandHandler started.");
 
-        var storedToken = await _refreshTokenRepository.GetByTokenAsync(request.RefreshToken, cancellationToken);
+        if (string.IsNullOrEmpty(request.RefreshToken))
+        {
+            _logger.LogWarning("Handler received a null or empty refresh token.");
+            return new FailedAuthenticationResponse("Refresh token not found.");
+        }
+
+        var correctedToken = request.RefreshToken.Replace(' ', '+');
+        _logger.LogInformation("Corrected token by replacing spaces with '+': {CorrectedToken}", correctedToken);
+
+        var storedToken = await _refreshTokenRepository.GetByTokenAsync(correctedToken, cancellationToken);
         if (storedToken is not { IsActive: true })
-            return new FailedAuthenticationResponse($"Invalid or expired refresh token. ({request.RefreshToken})");
+        {
+            _logger.LogWarning("GetByTokenAsync returned null or the token is not active. Token provided: {CorrectedToken}", correctedToken);
+            return new FailedAuthenticationResponse($"Invalid or expired refresh token. ({correctedToken})");
+        }
+        _logger.LogInformation("Successfully found active token in the database for user ID: {UserId}", storedToken.UserId);
 
         var user = await _userManager.FindByIdAsync(storedToken.UserId);
         if (user == null)
+        {
+            _logger.LogError("User not found for UserId: {UserId} associated with the refresh token.", storedToken.UserId);
             return new FailedAuthenticationResponse("User not found.");
+        }
+        _logger.LogInformation("Successfully found user: {Email}", user.Email);
 
         var (accessToken, newRefreshToken, expiresAt) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
+        _logger.LogInformation("Successfully generated new tokens for user: {Email}", user.Email);
+
         return new SuccessfulAuthenticationResponse(accessToken, expiresAt, newRefreshToken);
     }
 }

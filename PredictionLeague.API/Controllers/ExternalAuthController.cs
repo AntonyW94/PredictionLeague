@@ -6,105 +6,76 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Authentication.Commands.LoginWithGoogle;
 using PredictionLeague.Contracts.Authentication;
+using System.Net;
 
-namespace PredictionLeague.API.Controllers
+namespace PredictionLeague.API.Controllers;
+
+[Route("external-auth")]
+public class ExternalAuthController : Controller
 {
-    [Route("external-auth")]
-    public class ExternalAuthController : Controller
+    private readonly ILogger<ExternalAuthController> _logger;
+    private readonly IConfiguration _configuration;
+    private readonly IMediator _mediator;
+
+    public ExternalAuthController(ILogger<ExternalAuthController> logger, IConfiguration configuration, IMediator mediator)
     {
-        private readonly ILogger<ExternalAuthController> _logger;
-        private readonly IConfiguration _configuration;
-        private readonly IMediator _mediator;
+        _logger = logger;
+        _configuration = configuration;
+        _mediator = mediator;
+    }
 
-        public ExternalAuthController(ILogger<ExternalAuthController> logger, IConfiguration configuration, IMediator mediator)
+    [HttpGet("google-login")]
+    [AllowAnonymous]
+    public IActionResult GoogleLogin([FromQuery] string returnUrl, [FromQuery] string source)
+    {
+        _logger.LogInformation("Called google-login");
+
+        var callbackUrl = Url.Action("GoogleCallback");
+        var properties = new AuthenticationProperties
         {
-            _logger = logger;
-            _configuration = configuration;
-            _mediator = mediator;
-        }
-
-        [HttpGet("google-login")]
-        [AllowAnonymous]
-        public IActionResult GoogleLogin([FromQuery] string returnUrl, [FromQuery] string source)
-        {
-            _logger.LogInformation("Called google-login");
-
-            var callbackUrl = Url.Action("GoogleCallback");
-            var properties = new AuthenticationProperties
+            RedirectUri = callbackUrl,
+            Items =
             {
-                RedirectUri = callbackUrl,
-                Items =
-                {
-                    { "returnUrl", returnUrl },
-                    { "source", source }
-                }
-            };
-
-            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
-        }
-
-        [HttpGet("signin-google")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
-        {
-            _logger.LogInformation("Called signin-google");
-
-            var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
-            var returnUrl = authenticateResult.Properties?.Items["returnUrl"] ?? "/";
-            var source = authenticateResult.Properties?.Items["source"] ?? "/login";
-            var command = new LoginWithGoogleCommand(authenticateResult, source);
-            var result = await _mediator.Send(command, cancellationToken);
-
-            switch (result)
-            {
-                case SuccessfulAuthenticationResponse success:
-                    _logger.LogInformation("Google Login result was SUCCESS");
-                    SetTokenCookie(success.RefreshTokenForCookie);
-
-                    return Redirect(returnUrl);
-
-                case ExternalLoginFailedAuthenticationResponse failure:
-                    _logger.LogWarning("Google Login result was FAILURE");
-                    return RedirectWithError(failure.Source, failure.Message);
-
-                default:
-                    _logger.LogError("Google Login result was ERROR");
-                    return RedirectWithError(source, "An unknown authentication error occurred.");
+                { "returnUrl", returnUrl },
+                { "source", source }
             }
-        }
+        };
 
-        private void SetTokenCookie(string token)
+        return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+    }
+
+    [HttpGet("signin-google")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Called signin-google");
+
+        var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+        var returnUrl = authenticateResult.Properties?.Items["returnUrl"] ?? "/";
+        var source = authenticateResult.Properties?.Items["source"] ?? "/login";
+        var command = new LoginWithGoogleCommand(authenticateResult, source);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        switch (result)
         {
-            _logger.LogInformation("Setting 'refreshToken' cookie.");
+            case SuccessfulAuthenticationResponse success:
+                _logger.LogInformation("Google Login result was SUCCESS");
 
-            var expiryDays = double.Parse(_configuration["JwtSettings:RefreshTokenExpiryDays"]!);
+                var encodedToken = WebUtility.UrlEncode(success.RefreshTokenForCookie);
+                return Redirect($"{returnUrl}?token={encodedToken}");
 
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Expires = DateTime.UtcNow.AddDays(expiryDays),
-                Secure = true,
-                SameSite = SameSiteMode.None,
-                Path = "/",
-                Domain = ".thepredictions.co.uk"
-            };
+            case ExternalLoginFailedAuthenticationResponse failure:
+                _logger.LogWarning("Google Login result was FAILURE");
+                return RedirectWithError(failure.Source, failure.Message);
 
-            try
-            {
-                Response.Cookies.Append("refreshToken", token, cookieOptions);
-                _logger.LogInformation("Set 'refreshToken' cookie.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to set 'refreshToken' cookie.");
-                throw new InvalidOperationException("Failed to set 'refreshToken' cookie.", ex);
-            }
-
+            default:
+                _logger.LogError("Google Login result was ERROR");
+                return RedirectWithError(source, "An unknown authentication error occurred.");
         }
+    }
 
-        private IActionResult RedirectWithError(string returnUrl, string error)
-        {
-            return Redirect($"{returnUrl}?error={Uri.EscapeDataString(error)}");
-        }
+    private IActionResult RedirectWithError(string returnUrl, string error)
+    {
+        return Redirect($"{returnUrl}?error={Uri.EscapeDataString(error)}");
     }
 }

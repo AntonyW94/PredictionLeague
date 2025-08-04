@@ -2,11 +2,8 @@
 
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthStateProvider
-@inject ILogger<ExternalLoginCallback> Logger
 
 @attribute [AllowAnonymous]
-
-@using Microsoft.AspNetCore.WebUtilities
 
 <div class="page-container">
     <div class="text-center text-white">
@@ -19,33 +16,27 @@
 </div>
 
 @code {
-    private bool _hasProcessed;
+    [SupplyParameterFromQuery]
+    public string? Token { get; set; }
 
-    protected override Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        Logger.LogInformation("External Login Callback On After Render Running");
-
-        if (firstRender && !_hasProcessed)
+        if (!string.IsNullOrEmpty(Token))
         {
-            _hasProcessed = true;
-
-            var uri = new Uri(NavigationManager.Uri);
-
-            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var errorValue))
+            var result = await ((ApiAuthenticationStateProvider)AuthStateProvider).LoginWithRefreshToken(Token);
+            if (result)
             {
-                Logger.LogWarning("External Login Callback On After Render redirecting with error");
-
-                NavigationManager.NavigateTo($"/authentication/login?error={Uri.EscapeDataString(errorValue.ToString())}");
+                NavigationManager.NavigateTo("/dashboard");
             }
             else
-            { 
-                Logger.LogInformation("External Login Callback On After Render notifying user authentication");
-                ((ApiAuthenticationStateProvider)AuthStateProvider).NotifyUserAuthentication();
-                Logger.LogInformation("External Login Callback On After Render user authentication notified");
-                NavigationManager.NavigateTo("/dashboard", forceLoad: true);
+            {
+                NavigationManager.NavigateTo("/authentication/login-failed");
             }
         }
-
-        return Task.CompletedTask;
+        else
+        {
+            Console.WriteLine("FAILURE: 'token' query parameter NOT found");
+            NavigationManager.NavigateTo("/authentication/token-missing");
+        }
     }
 }

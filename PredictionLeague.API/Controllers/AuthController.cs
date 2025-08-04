@@ -59,42 +59,60 @@ public class AuthController : ApiControllerBase
         return Ok(result);
 
     }
+   
+    public class RefreshTokenRequest
+    {
+        public string? Token { get; set; }
+    }
 
     [HttpPost("refresh-token")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RefreshTokenAsync(CancellationToken cancellationToken)
+    public async Task<IActionResult> RefreshTokenAsync([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Called refresh-token");
+        _logger.LogInformation("--- Refresh-Token Endpoint Called ---");
 
-        var refreshToken = Request.Cookies["refreshToken"];
-        if (refreshToken == null)
+        // This endpoint now handles both flows:
+        // 1. External Login: Token comes in the request body.
+        // 2. Standard Refresh: Token comes from the HttpOnly cookie.
+
+        var refreshToken = request?.Token;
+        string tokenSource;
+
+        if (!string.IsNullOrEmpty(refreshToken))
         {
-            _logger.LogInformation("Refresh token is missing");
-            return Ok(new { message = "Refresh token is missing." });
+            tokenSource = "RequestBody";
+            _logger.LogInformation("Refresh token found in request body.");
         }
+        else
+        {
+            refreshToken = Request.Cookies["refreshToken"];
+            tokenSource = "Cookie";
+            _logger.LogInformation("Refresh token not found in body, checking cookie.");
+        }
+
+        if (string.IsNullOrEmpty(refreshToken))
+        {
+            _logger.LogWarning("Refresh token is missing from both request body and cookie. Cannot authenticate.");
+            return BadRequest(new { message = "Refresh token is missing." });
+        }
+
+        _logger.LogInformation("Processing refresh token from {TokenSource}. Token (first 10 chars): {TokenStart}", tokenSource, refreshToken.Length > 10 ? refreshToken.Substring(0, 10) : refreshToken);
 
         var command = new RefreshTokenCommand(refreshToken);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result is not SuccessfulAuthenticationResponse success)
         {
-            if (result is FailedAuthenticationResponse failedResponse)
-            {
-                _logger.LogError("Refresh Token Command failed with message: {Message}", failedResponse.Message);
-            }
-            else
-            {
-                _logger.LogError("Refresh Token Command failed with unknown error");
-            }
-
+            _logger.LogError("Refresh Token Command failed. Result: {@Result}", result);
             return BadRequest(result);
         }
 
+        _logger.LogInformation("Refresh Token Command was successful. Setting new refresh token cookie for user.");
+       
         SetTokenCookie(success.RefreshTokenForCookie);
         return Ok(success);
-
     }
 
     [HttpPost("logout")]
