@@ -5,4 +5,5 @@ namespace PredictionLeague.Application.Features.Admin.Teams.Commands;
 
 public record CreateTeamCommand (
     string Name,
-    string LogoUrl) : IRequest<TeamDto>;
+    string LogoUrl,
+    string Abbreviation) : IRequest<TeamDto>;

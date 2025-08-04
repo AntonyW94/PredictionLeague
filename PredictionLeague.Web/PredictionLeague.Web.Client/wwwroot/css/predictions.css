@@ -149,6 +149,7 @@
 
     .prediction-card-header {
         font-size: 0.8rem;
+        flex-direction: column;
     }
 
     .prediction-card-body {

@@ -20,6 +20,13 @@ public abstract class BaseTeamRequestValidator<T> : AbstractValidator<T> where T
         RuleFor(x => x.LogoUrl)
             .Must(BeAValidUrl).WithMessage("A valid logo URL is required.")
             .When(x => !string.IsNullOrEmpty(x.LogoUrl));
+
+        RuleFor(x => x.Abbreviation)
+            .NotEmpty().WithMessage("Please provide a 3-letter abbreviation.");
+     
+        RuleFor(x => x.Abbreviation)
+            .Length(3).WithMessage("The abbreviation must be exactly 3 characters.")
+            .When(x => !string.IsNullOrEmpty(x.Abbreviation));
     }
 
     private bool BeAValidUrl(string url)

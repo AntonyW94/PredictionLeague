@@ -3,5 +3,6 @@
 public record TeamDto(
     int Id,
     string Name,
-    string LogoUrl
+    string LogoUrl,
+    string Abbreviation
 );

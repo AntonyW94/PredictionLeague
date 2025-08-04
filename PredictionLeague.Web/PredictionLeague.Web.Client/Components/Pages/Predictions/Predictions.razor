@@ -21,14 +21,14 @@
             <!-- Desktop Header -->
             <div class="d-none d-md-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold text-white mb-0">@_pageData.SeasonName - Round @_pageData.RoundNumber</h3>
-                <span class="badge bg-danger">Deadline: @_pageData.Deadline.ToString("ddd dd MMM, HH:mm")</span>
+                <span class="status-pill bg-pl-pink">Deadline: @_pageData.Deadline.ToString("ddd dd MMM, HH:mm")</span>
             </div>
 
             <!-- Mobile Header -->
             <div class="d-md-none text-center mb-4">
                 <h3 class="fw-bold text-white mb-1">@_pageData.SeasonName</h3>
                 <p class="text-white-50 mb-2">Round @_pageData.RoundNumber</p>
-                <span class="badge bg-danger w-100">Deadline: @_pageData.Deadline.ToString("ddd dd MMM, HH:mm")</span>
+                <span class="status-pill bg-pl-pink">Deadline: @_pageData.Deadline.ToString("ddd dd MMM, HH:mm")</span>
             </div>
 
             <EditForm Model="_model" OnValidSubmit="HandleSubmitPredictionsAsync">
@@ -47,6 +47,7 @@
                                 <div class="team-display">
                                     <img src="@match.HomeTeamLogoUrl" class="match-logo" alt="Home Team Logo" />
                                     <span class="team-name d-none d-sm-block">@match.HomeTeamName</span>
+                                    <span class="team-name d-sm-none">@match.HomeTeamAbbreviation</span>
                                 </div>
                                 <div class="score-input-group">
                                     <div class="score-input-stepper">
@@ -72,6 +73,7 @@
                                 <div class="team-display">
                                     <img src="@match.AwayTeamLogoUrl" class="match-logo" alt="Away Team Logo" />
                                     <span class="team-name d-none d-sm-block">@match.AwayTeamName</span>
+                                    <span class="team-name d-sm-none">@match.AwayTeamAbbreviation</span>
                                 </div>
                             </div>
                         </div>

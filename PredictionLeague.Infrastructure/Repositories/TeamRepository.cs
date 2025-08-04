@@ -24,13 +24,15 @@ public class TeamRepository : ITeamRepository
                 INSERT INTO [Teams] 
                 (
                     [Name], 
-                    [LogoUrl]
+                    [LogoUrl],
+                    [Abbreviation]
                 )
                 OUTPUT INSERTED.*
                 VALUES 
                 (
                     @Name, 
-                    @LogoUrl
+                    @LogoUrl,
+                    @Abbreviation
                 );";
        
         var command = new CommandDefinition(
@@ -52,7 +54,8 @@ public class TeamRepository : ITeamRepository
                 SELECT 
                     [Id], 
                     [Name], 
-                    [LogoUrl] 
+                    [LogoUrl],
+                    [Abbreviation]
                 FROM [Teams] 
                 WHERE [Id] = @Id;";
       
@@ -75,7 +78,8 @@ public class TeamRepository : ITeamRepository
                 UPDATE [Teams] 
                 SET 
                     [Name] = @Name, 
-                    [LogoUrl] = @LogoUrl 
+                    [LogoUrl] = @LogoUrl,
+                    [Abbreviation] = @Abbreviation
                 WHERE [Id] = @Id;";
 
         var command = new CommandDefinition(

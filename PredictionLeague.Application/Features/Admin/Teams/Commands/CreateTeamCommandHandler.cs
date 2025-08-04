@@ -16,9 +16,9 @@ public class CreateTeamCommandHandler : IRequestHandler<CreateTeamCommand, TeamD
 
     public async Task<TeamDto> Handle(CreateTeamCommand request, CancellationToken cancellationToken)
     {
-        var team = Team.Create(request.Name, request.LogoUrl);
+        var team = Team.Create(request.Name, request.LogoUrl, request.Abbreviation);
 
         var createdTeam = await _teamRepository.CreateAsync(team, cancellationToken);
-        return new TeamDto(createdTeam.Id, createdTeam.Name, createdTeam.LogoUrl);
+        return new TeamDto(createdTeam.Id, createdTeam.Name, createdTeam.LogoUrl, request.Abbreviation);
     }
 }

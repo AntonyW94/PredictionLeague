@@ -26,8 +26,10 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
                 m.[Id] AS MatchId,
                 m.[MatchDateTime],
                 ht.[Name] AS HomeTeamName,
+                ht.[Abbreviation] AS HomeTeamAbbreviation,
                 ht.[LogoUrl] AS HomeTeamLogoUrl,
                 at.[Name] AS AwayTeamName,
+                at.[Abbreviation] AS AwayTeamAbbreviation, 
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 up.[PredictedHomeScore],
                 up.[PredictedAwayScore]
@@ -69,9 +71,11 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
                 {
                     MatchId = r.MatchId!.Value,
                     MatchDateTime = r.MatchDateTime!.Value,
-                    HomeTeamName = r.HomeTeamName!,
+                    HomeTeamName = r.HomeTeamName,
+                    HomeTeamAbbreviation = r.HomeTeamAbbreviation,
                     HomeTeamLogoUrl = r.HomeTeamLogoUrl,
-                    AwayTeamName = r.AwayTeamName!,
+                    AwayTeamName = r.AwayTeamName,
+                    AwayTeamAbbreviation = r.AwayTeamAbbreviation,
                     AwayTeamLogoUrl = r.AwayTeamLogoUrl,
                     PredictedHomeScore = r.PredictedHomeScore,
                     PredictedAwayScore = r.PredictedAwayScore
@@ -87,10 +91,12 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
         DateTime Deadline,
         int? MatchId,
         DateTime? MatchDateTime,
-        string? HomeTeamName,
-        string? HomeTeamLogoUrl,
-        string? AwayTeamName,
-        string? AwayTeamLogoUrl,
+        string HomeTeamName,
+        string HomeTeamAbbreviation,
+        string HomeTeamLogoUrl,
+        string AwayTeamName,
+        string AwayTeamAbbreviation,
+        string AwayTeamLogoUrl,
         int? PredictedHomeScore,
         int? PredictedAwayScore
     );

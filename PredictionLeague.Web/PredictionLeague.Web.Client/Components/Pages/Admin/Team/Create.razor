@@ -26,6 +26,12 @@
                 </div>
 
                 <div class="mb-3">
+                    <label for="abbreviation" class="form-label text-white">Abbreviation (3 letters)</label>
+                    <InputText id="abbreviation" class="form-control" @bind-Value="_model.Abbreviation" />
+                    <StyledValidationMessage For="@(() => _model.Abbreviation)" />
+                </div>
+
+                <div class="mb-3">
                     <label for="logoUrl" class="form-label text-white">Logo URL</label>
                     <InputText id="logoUrl" class="form-control" @bind-Value="_model.LogoUrl" />
                     <StyledValidationMessage For="@(() => _model.LogoUrl)" />

@@ -19,7 +19,8 @@ public class FetchAllTeamsQueryHandler : IRequestHandler<FetchAllTeamsQuery, IEn
             SELECT
                 [Id],
                 [Name],
-                [LogoUrl]
+                [LogoUrl],
+                [Abbreviation]
             FROM [Teams]
             ORDER BY [Name] ASC";
 
