@@ -1,7 +1,7 @@
 ﻿@inject IAuthenticationService AuthenticationService
 @inject NavigationManager NavigationManager
 
-<nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+<nav class="navbar navbar-expand-lg navbar-dark navbar-custom @Class">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center" href="">
             <img src="/images/logo.png" alt="Prediction League Logo" class="navbar-logo" />
@@ -97,6 +97,9 @@
 </nav>
 
 @code {
+    [Parameter]
+    public string? Class { get; set; }
+
     private bool _isAdminMenuOpen;
     private bool _isUserMenuOpen;
     

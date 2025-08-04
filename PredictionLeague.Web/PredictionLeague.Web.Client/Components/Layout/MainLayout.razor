@@ -1,9 +1,11 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@implements IDisposable
 
 <div class="page">
     <CascadingAuthenticationState>
         <main>
-            <NavLayout />
+            <NavLayout class="@_navLayoutClass" />
 
             <article class="content">
                 @Body
@@ -17,3 +19,29 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    private string _navLayoutClass = "";
+
+    protected override void OnInitialized()
+    {
+        SetLayoutClasses();
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        SetLayoutClasses();
+        StateHasChanged();
+    }
+
+    private void SetLayoutClasses()
+    {
+        _navLayoutClass = string.IsNullOrEmpty(NavigationManager.ToBaseRelativePath(NavigationManager.Uri)) ? "navbar-overlay" : "";
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

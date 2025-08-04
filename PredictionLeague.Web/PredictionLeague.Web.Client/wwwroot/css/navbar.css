@@ -1,4 +1,14 @@
-﻿.navbar-custom {
+﻿.navbar-overlay {
+    background-color: transparent !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.navbar-custom {
     background-color: var(--pl-purple);
 }
 
