@@ -44,7 +44,7 @@
     }
 
     .results-grid tbody tr:nth-child(even) td {
-        background-color: var(--pl-light-purple);
+        background-color: #432468;
     }
 
 
