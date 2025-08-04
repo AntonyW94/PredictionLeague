@@ -85,7 +85,7 @@ namespace PredictionLeague.API.Controllers
                 HttpOnly = true,
                 Expires = DateTime.UtcNow.AddDays(expiryDays),
                 Secure = true,
-                SameSite = SameSiteMode.Lax,
+                SameSite = SameSiteMode.None,
                 Path = "/"
             };
 

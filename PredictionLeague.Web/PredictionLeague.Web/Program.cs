@@ -47,7 +47,7 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 
-//app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
