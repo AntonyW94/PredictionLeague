@@ -2,8 +2,7 @@
    Dashboard Layout & Base Card
    ========================================================================== */
 .dashboard-container {
-    width: 90%;
-    max-width: 1400px;
+    width: 95%;
     margin: auto;
 }
 
