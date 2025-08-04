@@ -124,11 +124,59 @@
     color: var(--light-text);
 }
 
+.leagues-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.league-item {
+    background-color: var(--pl-purple-dark);
+    border-radius: var(--bs-border-radius);
+    overflow: hidden;
+    padding: 0.75rem;
+}
+
+.leagues-container .league-card-header {
+    padding: 1rem 1.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+    .league-card-header h6,
+    .league-card-header small {
+        display: block;
+        width: 100%;
+    }
+
+    .league-card-header h6 {
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    .league-card-header small {
+        font-size: 0.85rem;
+    }
+
+.leagues-container .league-card-body {
+    padding: 0 1.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.leagues-container .league-card-footer {
+    padding: 1rem 1.5rem;
+}
+
 
 /* ==========================================================================
    Responsive Media Queries
    ========================================================================== */
-@media (max-width: 992px) {
+@media (max-width: 991.98px) {
     .dashboard-container {
         width: 95%;
     }
@@ -137,5 +185,26 @@
 @media (min-width: 992px) {
     .round-card-wrapper {
         width: 50%;
+    }
+
+    .league-item {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        align-items: center;
+        padding: 0.5rem 1.5rem;
+    }
+
+    .league-card-header {
+        text-align: left;
+        padding: 0.5rem 0;
+    }
+
+    .league-card-body {
+        padding: 0.5rem;
+        text-align: center;
+    }
+
+    .league-card-footer {
+        padding: 0.5rem 0;
     }
 }

@@ -21,22 +21,24 @@
     }
     else
     {
-        <div class="my-leagues-container">
+        <div class="leagues-container">
             @foreach (var league in DashboardState.MyLeagues)
             {
                 var canViewDashboard = league.Status == LeagueMemberStatus.Approved;
                     
-                <div class="my-league-item">
-                    <div class="my-league-card-header">
+                <div class="league-item">
+                    <div class="league-card-header">
                         <h6 class="mb-0 fw-bold text-white">@league.Name</h6>
                         <small class="text-white-50">@league.SeasonName</small>
                     </div>
-                    <div class="my-league-card-body">
+
+                    <div class="league-card-body">
                         <span class="status-pill @GetStatusClass(league.Status)">
                             @league.Status.ToString()
                         </span>
                     </div>
-                    <div class="my-league-card-footer">
+
+                    <div class="league-card-footer">
                         <button class="btn btn-sm @(canViewDashboard ? "dark-pink-button" : "disabled-button") w-100"
                                 disabled="@(!canViewDashboard)"
                                 title="@(canViewDashboard ? "View League Dashboard" : "Unavailable until approved by the league admin")"
@@ -49,58 +51,6 @@
         </div>
     }
 </div>
-
-<style>
-    .my-leagues-container {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .my-league-item {
-        background-color: var(--pl-purple-dark);
-        border-radius: var(--bs-border-radius);
-        overflow: hidden;
-    }
-
-    .my-league-card-header {
-        text-align: center;
-        padding: 0.75rem;
-    }
-
-    .my-league-card-body {
-        padding: 1rem;
-        text-align: center;
-    }
-
-    .my-league-card-footer {
-        padding: 0 1rem 1rem 1rem;
-    }
-
-    /* Desktop styles */
-    @@media (min-width: 992px) {
-        .my-league-item {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            align-items: center;
-            padding: 0.5rem 1.5rem;
-        }
-
-        .my-league-card-header {
-            text-align: left;
-            padding: 0.5rem 0;
-        }
-
-        .my-league-card-body {
-            padding: 0.5rem;
-            text-align: center;
-        }
-
-        .my-league-card-footer {
-            padding: 0.5rem 0;
-        }
-    }
-</style>
 
 @code {
     protected override async Task OnInitializedAsync()

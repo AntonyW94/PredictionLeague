@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using PredictionLeague.Contracts.Authentication;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace PredictionLeague.Web.Client.Authentication;
 
@@ -28,9 +29,30 @@ public class AuthenticationService : IAuthenticationService
             ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(successResponse);
             return successResponse;
         }
+       
+        var errorContent = await response.Content.ReadAsStringAsync();
 
-        var failureResponse = await response.Content.ReadFromJsonAsync<FailedAuthenticationResponse>();
-        return failureResponse ?? new FailedAuthenticationResponse("Failed to process server response.");
+        try
+        {
+            var identityErrorResponse = JsonSerializer.Deserialize<IdentityErrorResponse>(errorContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (identityErrorResponse?.Errors.Any() == true)
+                return new FailedAuthenticationResponse(string.Join("\n", identityErrorResponse.Errors));
+        }
+        catch (JsonException)
+        {
+        }
+
+        try
+        {
+            var failureResponse = JsonSerializer.Deserialize<FailedAuthenticationResponse>(errorContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (failureResponse != null && !string.IsNullOrEmpty(failureResponse.Message))
+                return failureResponse;
+        }
+        catch (JsonException)
+        {
+        }
+
+        return new FailedAuthenticationResponse("An unexpected error occurred during registration.");
     }
     
     public async Task<AuthenticationResponse> LoginAsync(LoginRequest loginRequest)
@@ -55,5 +77,10 @@ public class AuthenticationService : IAuthenticationService
         await _httpClient.PostAsync("api/auth/logout", null);
 
         ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOut();
+    }
+
+    private class IdentityErrorResponse
+    {
+        public List<string> Errors { get; init; } = new();
     }
 }

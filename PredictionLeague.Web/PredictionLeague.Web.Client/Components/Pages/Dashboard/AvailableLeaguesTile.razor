@@ -18,30 +18,34 @@
     }
     else if (DashboardState.AvailableLeagues.Any())
     {
-        <div class="list-group flex-grow-1">
+        <div class="leagues-container">
             @foreach (var league in DashboardState.AvailableLeagues)
             {
-                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center joinable-league-item">
-                    <div>
+                <div class="league-item">
+                    <div class="league-card-header">
                         <h6 class="mb-0 fw-bold text-white">@league.Name</h6>
                         <small class="text-white-50">@league.SeasonName</small>
                     </div>
-                    
-                    <div>
-                        <span class="league-price">@(league.Price > 0 ? league.Price.ToString("C", new CultureInfo("en-GB")) + " Entry" : "Free Entry")</span>
+
+                    <div class="league-card-body">
+                        <div>
+                            <span class="league-price">@(league.Price > 0 ? league.Price.ToString("C", new CultureInfo("en-GB")) + " Entry" : "Free Entry")</span>
+                        </div>
+
+                        <div>
+                            <span class="status-pill bg-pl-pink">
+                                Deadline: @league.EntryDeadline.ToString("dd MMM yyyy")
+                            </span>
+                        </div>
                     </div>
 
-                    <div>
-                        <span class="status-pill bg-pl-pink">
-                            Deadline: @league.EntryDeadline.ToString("dd MMM yyyy")
-                        </span>
+                    <div class="league-card-footer">
+                        <button class="btn btn-sm dark-pink-button"
+                                @onclick="() => HandleJoinLeagueAsync(league.Id)"
+                                disabled="@_isBusy">
+                            Join
+                        </button>
                     </div>
-
-                    <button class="btn btn-sm dark-pink-button"
-                            @onclick="() => HandleJoinLeagueAsync(league.Id)"
-                            disabled="@_isBusy">
-                        Join
-                    </button>
                 </div>
             }
         </div>
@@ -76,7 +80,7 @@
         await Task.Delay(50);
         await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "joinPrivateLeagueModal");
     }
-    
+
     private async Task HideJoinPrivateLeagueModal()
     {
         await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "joinPrivateLeagueModal");
@@ -88,7 +92,7 @@
         _isBusy = true;
 
         await DashboardState.JoinPublicLeagueAsync(leagueId);
-      
+
         _isBusy = false;
     }
 
