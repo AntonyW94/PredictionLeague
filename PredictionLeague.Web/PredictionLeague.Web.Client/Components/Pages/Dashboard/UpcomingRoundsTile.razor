@@ -3,6 +3,7 @@
 
 @using PredictionLeague.Contracts.Dashboard
 @using PredictionLeague.Web.Client.Services.Browser
+@implements IAsyncDisposable
 
 <div class="dashboard-card h-100 @(_rounds?.Count == 1 ? "center-content" : "")">
     <h3 class="text-white text-center fw-bold mb-4">Upcoming Rounds</h3>
@@ -14,30 +15,47 @@
     }
     else if (_rounds != null && _rounds.Any())
     {
-        <div class="carousel-container">
-            @if ((_isDesktop && _rounds.Count > 2) || (!_isDesktop && _rounds.Count > 1))
-            {
-                <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentRoundIndex == 0)">
-                    <span class="bi bi-chevron-left"></span>
-                </button>
-            }
+        <div class="carousel-wrapper">
+            <div class="carousel-container">
+                @if (_isDesktop && _rounds.Count > 2)
+                {
+                    <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentRoundIndex == 0)">
+                        <span class="bi bi-chevron-left"></span>
+                    </button>
+                }
 
-            <div class="rounds-track-wrapper">
-                <div class="rounds-track" style="@_trackStyle">
-                    @foreach (var round in _rounds)
-                    {
-                        <div class="round-card-wrapper">
-                            <RoundCard Round="round" />
-                        </div>
-                    }
+                <div class="rounds-track-wrapper"
+                     id="@_carouselId"
+                     @ontouchstart="HandleTouchStart"
+                     @ontouchmove="HandleTouchMove"
+                     @ontouchend="HandleTouchEnd">
+                    <div class="rounds-track" style="@_trackStyle">
+                        @foreach (var round in _rounds)
+                        {
+                            <div class="round-card-wrapper">
+                                <RoundCard Round="round" />
+                            </div>
+                        }
+                    </div>
                 </div>
+
+                @if (_isDesktop && _rounds.Count > 2)
+                {
+                    <button class="carousel-btn" @onclick="ShowNext" disabled="@IsAtEnd()">
+                        <span class="bi bi-chevron-right"></span>
+                    </button>
+                }
             </div>
 
-            @if ((_isDesktop && _rounds.Count > 2) || (!_isDesktop && _rounds.Count > 1))
+            @if (NumberOfDots > 1)
             {
-                <button class="carousel-btn" @onclick="ShowNext" disabled="@IsAtEnd()">
-                    <span class="bi bi-chevron-right"></span>
-                </button>
+                <div class="carousel-dots">
+                    @for (var i = 0; i < NumberOfDots; i++)
+                    {
+                        var dotIndex = i;
+                        <span class="carousel-dot @(i == _currentRoundIndex ? "active" : "")" @onclick="() => GoToSlide(dotIndex)"></span>
+                    }
+                </div>
             }
         </div>
     }
@@ -49,6 +67,34 @@
     }
 </div>
 
+<style>
+    .carousel-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .carousel-dots {
+        text-align: center;
+        padding-top: 1rem;
+    }
+
+    .carousel-dot {
+        cursor: pointer;
+        height: 12px;
+        width: 12px;
+        margin: 0 5px;
+        background-color: var(--pl-purple);
+        border-radius: 50%;
+        display: inline-block;
+        transition: background-color 0.3s ease;
+    }
+
+        .carousel-dot.active, .carousel-dot:hover {
+            background-color: var(--pl-green);
+        }
+</style>
+
 @code {
     private List<UpcomingRoundDto>? _rounds;
     private bool _isLoading = true;
@@ -56,6 +102,24 @@
     private int _currentRoundIndex;
     private bool _isDesktop;
     private string _trackStyle = "";
+    private readonly string _carouselId = $"carousel-{Guid.NewGuid()}";
+    private double _touchStartX;
+
+    private int NumberOfDots
+    {
+        get
+        {
+            if (_rounds == null) 
+                return 0;
+
+            var roundsPerPage = _isDesktop ? 2 : 1;
+       
+            if (_rounds.Count <= roundsPerPage) 
+                return 0;
+
+            return _rounds.Count - roundsPerPage + 1;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,6 +137,46 @@
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private void HandleTouchStart(TouchEventArgs e)
+    {
+        _touchStartX = e.Touches[0].ClientX;
+    }
+
+    private void HandleTouchMove(TouchEventArgs e)
+    {
+        // Prevent default browser touch actions like scrolling
+    }
+
+    private void HandleTouchEnd(TouchEventArgs e)
+    {
+        var touchEndX = e.ChangedTouches[0].ClientX;
+        var diffX = _touchStartX - touchEndX;
+
+        // Check for a significant swipe
+        if (Math.Abs(diffX) > 50)
+        {
+            if (diffX > 0)
+            {
+                // Swiped left
+                ShowNext();
+            }
+            else
+            {
+                // Swiped right
+                ShowPrevious();
+            }
+        }
+    }
+
+    private void GoToSlide(int index)
+    {
+        if (index >= 0 && index < NumberOfDots)
+        {
+            _currentRoundIndex = index;
+            UpdateTrackStyle();
         }
     }
 
@@ -102,10 +206,15 @@
 
     private bool IsAtEnd()
     {
-        if (_rounds == null) 
+        if (_rounds == null)
             return true;
 
         var roundsPerPage = _isDesktop ? 2 : 1;
         return _currentRoundIndex >= _rounds.Count - roundsPerPage;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
     }
 }
