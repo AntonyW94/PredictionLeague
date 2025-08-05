@@ -71,7 +71,7 @@ public static class DependencyInjection
             cfg.AddOpenBehavior(typeof(ValidationBehaviour<,>));
             cfg.AddOpenBehavior(typeof(TransactionBehaviour<,>));
 
-            var mediatRKey = configuration["MediatR:LicenseKey"];
+            var mediatRKey = configuration["MediatR:LicenceKey"];
             if (!string.IsNullOrEmpty(mediatRKey))
                 cfg.LicenseKey = mediatRKey;
         });

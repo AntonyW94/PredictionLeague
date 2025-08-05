@@ -12,6 +12,7 @@
     <ProjectReference Include="..\..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
     <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
     <ProjectReference Include="..\PredictionLeague.Web.Client\PredictionLeague.Web.Client.csproj" />
+    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.17" />
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
@@ -19,7 +20,7 @@
     <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.5.6" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.6.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.7.1" />
   </ItemGroup>
 
 </Project>

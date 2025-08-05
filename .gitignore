@@ -362,3 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /tree.txt
+
+**/PredictionLeague.Web/appsettings.Production.Secrets.json
