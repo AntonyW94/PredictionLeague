@@ -43,11 +43,20 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
             LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = lm.[UserId]
             WHERE 
                 lm.[LeagueId] = @LeagueId 
+                AND lm.[Status] = @Approved
                 AND m.[RoundId] = @RoundId
             ORDER BY 
                 u.[FirstName], u.[LastName], m.[MatchDateTime];";
 
-        var queryResult = await _dbConnection.QueryAsync<PredictionQueryResult>(sql, cancellationToken, new { request.LeagueId, request.RoundId, request.CurrentUserId });
+        var parameters = new
+        {
+            request.LeagueId, 
+            request.RoundId, 
+            request.CurrentUserId,
+            LeagueMemberStatus.Approved
+        };
+
+        var queryResult = await _dbConnection.QueryAsync<PredictionQueryResult>(sql, cancellationToken, parameters);
 
         var groupedResults = queryResult
             .GroupBy(r => new { r.UserId, r.PlayerName })
