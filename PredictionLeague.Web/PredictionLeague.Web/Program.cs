@@ -5,6 +5,7 @@ using PredictionLeague.API;
 using PredictionLeague.API.Middleware;
 using PredictionLeague.Hosting.Shared.Extensions;
 using PredictionLeague.Infrastructure;
+using PredictionLeague.Infrastructure.Data;
 using Serilog;
 
 const string corsName = "ThePredictionsCors";
@@ -50,7 +51,7 @@ builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(P
 builder.Services.AddControllers();
 builder.Services.AddInfrastructureServices();
 builder.Services.AddApiServices(builder.Configuration);
-//builder.Services.AddHostedService<DatabaseInitialiser>();
+builder.Services.AddHostedService<DatabaseInitialiser>();
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services));

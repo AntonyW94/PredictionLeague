@@ -53,7 +53,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
             request.LeagueId, 
             request.RoundId, 
             request.CurrentUserId,
-            LeagueMemberStatus.Approved
+            Approved = nameof(LeagueMemberStatus.Approved)
         };
 
         var queryResult = await _dbConnection.QueryAsync<PredictionQueryResult>(sql, cancellationToken, parameters);
