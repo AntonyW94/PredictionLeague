@@ -57,6 +57,10 @@ public class ErrorHandlingMiddleware
         catch (IOException ex) when (ex.Message.Contains("The client reset the request stream"))
         {
             _logger.LogInformation("Client reset the request stream. Request path: {Path}", context.Request.Path);
+        } 
+        catch (Exception ex) when (ex.Message.Contains("A task was canceled"))
+        {
+            _logger.LogInformation("Task cancelled. Request path: {Path}", context.Request.Path);
         }
         catch (Exception ex)
         {

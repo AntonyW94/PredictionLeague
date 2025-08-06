@@ -26,12 +26,14 @@
             }
             else
             {
+                <span class="bi bi-pencil me-2"></span>
                 <span>Predict Now</span>
             }
         </NavLink>
 
         <AuthorizeView Roles="@RoleNames.Administrator">
             <NavLink href="@($"/admin/rounds/{Round.Id}/results")" class="btn light-cyan-button w-100 mt-3">
+                <span class="bi bi-graph-up me-2"></span>
                 Enter Results
             </NavLink>
         </AuthorizeView>
