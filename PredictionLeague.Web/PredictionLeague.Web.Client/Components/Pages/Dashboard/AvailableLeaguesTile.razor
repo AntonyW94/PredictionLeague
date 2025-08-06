@@ -22,29 +22,39 @@
             {
                 <div class="league-card">
                     <div class="league-card-header">
-                        <h6 class="mb-0 fw-bold text-white">@league.Name</h6>
+                        <h5 class="fw-bold text-white">@league.Name</h5>
                         <small class="text-white-50">@league.SeasonName</small>
                     </div>
 
                     <div class="league-card-body">
-                        <div class="member-count-info">
-                            <i class="bi bi-people-fill"></i>
-                            <span>@league.MemberCount Members</span>
-                        </div>
-                        
-                        <div>
-                            <span class="league-price">@(league.Price > 0 ? league.Price.ToString("C", new CultureInfo("en-GB")) + " Entry" : "Free Entry")</span>
+                        <div class="mb-1">
+                            <div class="status-pill-group status-pill-group--red">
+                                <span class="status-icon">
+                                    <i class="bi bi-alarm"></i>
+                                </span>
+                                <span>Deadline: @league.EntryDeadline.ToString("dd MMM yyyy HH:mm")</span>
+                            </div>
                         </div>
 
-                        <div>
-                            <span class="status-pill bg-pl-pink">
-                                Deadline: @league.EntryDeadline.ToString("dd MMM yyyy")
-                            </span>
+                        <div class="card-info-row">
+                            <div class="status-pill-group status-pill-group--blue">
+                                <span class="status-icon">
+                                    <i class="bi bi-people-fill"></i>
+                                </span>
+                                <span>@league.MemberCount</span>
+                            </div>
+
+                            <div class="status-pill-group status-pill-group--green">
+                                <span class="status-icon">
+                                    <i class="bi bi-cash-stack"></i>
+                                </span>
+                                <span>@(league.Price > 0 ? league.Price.ToString("C", new CultureInfo("en-GB")) : "Free Entry")</span>
+                            </div>
                         </div>
                     </div>
 
                     <div class="league-card-footer">
-                        <button class="btn btn-sm dark-pink-button"
+                        <button class="btn btn-sm dark-pink-button w-100"
                                 @onclick="() => HandleJoinLeagueAsync(league.Id)"
                                 disabled="@_isBusy">
                             Join

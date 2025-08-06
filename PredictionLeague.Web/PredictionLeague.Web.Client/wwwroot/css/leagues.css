@@ -1,4 +1,4 @@
-﻿.league-grid {
+﻿/*.league-grid {
     display: flex;
     flex-wrap: wrap;
     justify-content: center; 
@@ -69,4 +69,4 @@
 
     .league-card-footer .btn {
         flex-grow: 1;
-    }
+    }*/

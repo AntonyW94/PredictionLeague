@@ -34,28 +34,31 @@
                     <div class="league-card-body">
                         @if (league.Status == LeagueMemberStatus.Approved)
                         {
-                            <div class="status-pill-group status-pill-group--approved status-pill-group--icon-only">
-                                <span class="status-icon" title="Approved"><i class="bi bi-check-lg"></i></span>
-                            </div>
-                    
-                            @if (league.Rank.HasValue && league.MemberCount.HasValue)
-                            {
-                                <div class="position-info">
-                                    <span>@league.Rank</span>
-                                    <span> / @league.MemberCount</span>
+                            <div class="card-info-row">
+                                <div class="status-pill-group status-pill-group--green status-pill-group--icon-only">
+                                    <span class="status-icon" title="Approved"><i class="bi bi-check-lg"></i></span>
                                 </div>
-                            }
+                    
+                                @if (league.Rank.HasValue && league.MemberCount.HasValue)
+                                {
+                                    <div class="position-info">
+                                        <span>@league.Rank</span>
+                                        <span> / @league.MemberCount</span>
+                                    </div>
+                                }
+                            </div>
+                           
                         }
                         else if (league.Status == LeagueMemberStatus.Pending)
                         {
-                            <div class="status-pill-group status-pill-group--pending">
+                            <div class="status-pill-group status-pill-group--purple">
                                 <span class="status-icon" title="Pending Approval"><i class="bi bi-clock-fill"></i></span>
                                 <span>Pending Approval</span>
                             </div>
                         }
                         else if (league.Status == LeagueMemberStatus.Rejected)
                         {
-                            <div class="status-pill-group status-pill-group--rejected">
+                            <div class="status-pill-group status-pill-group--red">
                                 <span class="status-icon" title="Rejected"><i class="bi bi-x-lg"></i></span>
                                 <span>Rejected by Admin</span>
                             </div>

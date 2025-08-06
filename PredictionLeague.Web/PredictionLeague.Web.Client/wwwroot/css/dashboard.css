@@ -131,7 +131,7 @@
     width: 100%;
 }
 
-.leagues-grid .league-card-header {
+.league-card-header {
     padding: 1.5rem 1.5rem 0.5rem;
     background-color: var(--pl-purple-dark);
     display: flex;
@@ -148,14 +148,23 @@
         font-size: 0.85rem;
     }
 
-.leagues-grid .league-card-body {
-    padding: 1.5rem;
+.league-card-body {
+    padding: 1.5rem 1rem;
     display: flex;
-    flex-direction: row; /* Lay out items side-by-side */
+    flex-direction: column; /* This is the key change */
     align-items: center;
-    justify-content: center; /* Center the content */
-    gap: 1rem; /* Space between status and rank */
+    justify-content: center;
+    gap: 0.75rem; /* This creates vertical space between rows */
     flex-grow: 1;
+}
+
+/* This new container will hold items you want side-by-side */
+.card-info-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    gap: 1rem; /* Adds space between items on the same row */
 }
 
 .status-pill-group {
@@ -169,17 +178,24 @@
     color: white;
 }
 
-.status-pill-group--approved {
+.status-pill-group--green {
     background-color: var(--pl-green);
-    color: var(--pl-purple-dark);
+    color: white;
 }
 
-.status-pill-group--pending {
+.status-pill-group--purple {
     background-color: var(--pl-dark-pink);
+    color: white;
 }
 
-.status-pill-group--rejected {
+.status-pill-group--red {
     background-color: var(--pl-pink);
+    color: white;
+}
+
+.status-pill-group--blue {
+    background-color: var(--pl-light-cyan);
+    color: white;
 }
 
 .status-icon {
@@ -192,17 +208,17 @@
     font-size: 14px;
 }
 
-.status-pill-group--approved .status-icon {
+.status-pill-group--green .status-icon {
     background-color: white;
     color: var(--pl-green);
 }
 
-.status-pill-group--pending .status-icon {
+.status-pill-group--purple .status-icon {
     background-color: white;
     color: var(--pl-dark-pink);
 }
 
-.status-pill-group--rejected .status-icon {
+.status-pill-group--red .status-icon {
     background-color: white;
     color: var(--pl-pink);
 }
@@ -214,6 +230,7 @@
         background-color: transparent;
         color: white;
     }
+
 .league-price {
     font-weight: bold;
     color: var(--pl-light-cyan);
@@ -236,7 +253,7 @@
         font-weight: bold;
     }
 
-.leagues-grid .league-card-footer {
+.league-card-footer {
     padding: 0.5rem 1.5rem 1.5rem;
 }
 
