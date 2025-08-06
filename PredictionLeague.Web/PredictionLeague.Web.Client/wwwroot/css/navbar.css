@@ -17,6 +17,10 @@
     margin-right: 10px;
 }
 
+.navbar-overlay .navbar-brand{
+    display: none!important;
+}
+
 /* --- DESKTOP STYLES --- */
 
 /* Base styles for desktop nav links */
