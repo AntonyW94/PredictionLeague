@@ -19,6 +19,12 @@
         justify-content: center;
     }
 
+@media (max-width: 991.98px) {
+    .dashboard-container {
+        width: 95%;
+    }
+}
+
 /* ==========================================================================
    Upcoming Rounds Tile
    ========================================================================== */
@@ -97,113 +103,147 @@
     color: var(--light-text);
 }
 
-/* ==========================================================================
-   Leagues Tiles (My Leagues & Available Leagues)
-   ========================================================================== */
-.joinable-league-item {
-    background-color: var(--pl-purple);
-    border-color: var(--pl-purple-dark);
-    color: white;
-    margin-bottom: 0.5rem;
-    border-radius: var(--bs-border-radius);
-}
 
-    .joinable-league-item:hover {
-        background-color: var(--pl-purple-dark);
+@media (min-width: 992px) {
+    .round-card-wrapper {
+        width: 50%;
     }
-
-.league-price {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: var(--pl-green);
 }
 
-.league-details {
-    font-size: 0.85em;
-    color: var(--light-text);
-}
+/* ============================================= */
+/* ==         Reusable League Card Styles     == */
+/* ============================================= */
 
-.leagues-container {
+.leagues-grid {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 1rem;
+    justify-content: center;
 }
 
-.league-item {
-    background-color: var(--pl-purple-dark);
+.league-card {
+    background-color: var(--pl-purple);
     border-radius: var(--bs-border-radius);
     overflow: hidden;
-    padding: 0.75rem;
-}
-
-.leagues-container .league-card-header {
-    padding: 1rem 1.5rem;
-    text-align: center;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    text-align: center;
+    width: 100%;
 }
 
-    .league-card-header h6,
-    .league-card-header small {
-        display: block;
-        width: 100%;
-    }
+.leagues-grid .league-card-header {
+    padding: 1.5rem 1.5rem 0.5rem;
+    background-color: var(--pl-purple-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
-    .league-card-header h6 {
-        font-size: 1.1rem;
-        font-weight: bold;
+    .league-card-header h5 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
     }
 
     .league-card-header small {
         font-size: 0.85rem;
     }
 
-.leagues-container .league-card-body {
-    padding: 0 1.5rem;
-    text-align: center;
+.leagues-grid .league-card-body {
+    padding: 1.5rem;
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* Lay out items side-by-side */
+    align-items: center;
+    justify-content: center; /* Center the content */
+    gap: 1rem; /* Space between status and rank */
+    flex-grow: 1;
+}
+
+.status-pill-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem; /* Space between icon and text */
+    border-radius: 50rem; /* Fully rounded corners */
+    padding: 4px 12px 4px 4px; /* Padding: top/bottom, right, left */
+    font-size: 0.8em;
+    font-weight: bold;
+    color: white;
+}
+
+.status-pill-group--approved {
+    background-color: var(--pl-green);
+    color: var(--pl-purple-dark);
+}
+
+.status-pill-group--pending {
+    background-color: var(--pl-dark-pink);
+}
+
+.status-pill-group--rejected {
+    background-color: var(--pl-pink);
+}
+
+.status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 14px;
+}
+
+.status-pill-group--approved .status-icon {
+    background-color: white;
+    color: var(--pl-green);
+}
+
+.status-pill-group--pending .status-icon {
+    background-color: white;
+    color: var(--pl-dark-pink);
+}
+
+.status-pill-group--rejected .status-icon {
+    background-color: white;
+    color: var(--pl-pink);
+}
+
+.status-pill-group--icon-only {
+    padding: 4px; 
+}
+    .status-pill-group--icon-only .status-icon {
+        background-color: transparent;
+        color: white;
+    }
+.league-price {
+    font-weight: bold;
+    color: var(--pl-light-cyan);
+    font-size: 1.1em;
+}
+
+.member-count-info {
+    color: var(--text-white-50);
+    display: flex;
+    align-items: center;
     gap: 0.5rem;
 }
 
-.leagues-container .league-card-footer {
-    padding: 1rem 1.5rem;
+.position-info {
+    color: white;
 }
 
-
-/* ==========================================================================
-   Responsive Media Queries
-   ========================================================================== */
-@media (max-width: 991.98px) {
-    .dashboard-container {
-        width: 95%;
+    .position-info span:first-child {
+        font-size: 1.2em;
+        font-weight: bold;
     }
+
+.leagues-grid .league-card-footer {
+    padding: 0.5rem 1.5rem 1.5rem;
 }
 
-@media (min-width: 992px) {
-    .round-card-wrapper {
-        width: 50%;
-    }
-
-    .league-item {
-        display: grid;
-        grid-template-columns: 2fr 1fr 1fr;
-        align-items: center;
-        padding: 0.5rem 1.5rem;
-    }
-
-    .league-card-header {
-        text-align: left;
-        padding: 0.5rem 0;
-    }
-
-    .league-card-body {
-        padding: 0.5rem;
-        text-align: center;
-    }
-
-    .league-card-footer {
-        padding: 0.5rem 0;
+/* Desktop layout for 2 columns */
+@media (min-width: 768px) {
+    .league-card {
+        flex-basis: calc(50% - 0.5rem); /* Two cards per row with gap */
+        max-width: calc(50% - 0.5rem);
     }
 }

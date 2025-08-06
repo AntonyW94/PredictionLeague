@@ -1,6 +1,5 @@
 ﻿using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Web.Client.Services.Leagues;
-using System.Net.Http.Json;
 
 namespace PredictionLeague.Web.Client.Services.Dashboard;
 
@@ -8,18 +7,20 @@ public class DashboardStateService : IDashboardStateService
 {
     public List<MyLeagueDto> MyLeagues { get; private set; } = new();
     public List<AvailableLeagueDto> AvailableLeagues { get; private set; } = new();
+
     public bool IsLoading { get; private set; }
+
     public string? ErrorMessage { get; private set; }
     public string? AvailableLeaguesErrorMessage { get; private set; }
+    public string? MyLeaguesErrorMessage { get; private set; }
+
 
     public event Action? OnStateChange;
 
-    private readonly HttpClient _http;
     private readonly ILeagueService _leagueService;
 
-    public DashboardStateService(HttpClient http, ILeagueService leagueService)
+    public DashboardStateService(ILeagueService leagueService)
     {
-        _http = http;
         _leagueService = leagueService;
     }
 
@@ -31,13 +32,13 @@ public class DashboardStateService : IDashboardStateService
 
         try
         {
-            var myLeaguesTask = _http.GetFromJsonAsync<List<MyLeagueDto>>("api/dashboard/my-leagues");
-            var availableLeaguesTask = _http.GetFromJsonAsync<List<AvailableLeagueDto>>("api/dashboard/available-leagues");
+            var myLeaguesTask = _leagueService.GetMyLeaguesAsync();
+            var availableLeaguesTask = _leagueService.GetAvailableLeaguesAsync();
 
             await Task.WhenAll(myLeaguesTask, availableLeaguesTask);
 
-            MyLeagues = await myLeaguesTask ?? new List<MyLeagueDto>();
-            AvailableLeagues = await availableLeaguesTask ?? new List<AvailableLeagueDto>();
+            MyLeagues = await myLeaguesTask;
+            AvailableLeagues = await availableLeaguesTask;
         }
         catch (Exception)
         {
@@ -53,9 +54,9 @@ public class DashboardStateService : IDashboardStateService
     public async Task JoinPublicLeagueAsync(int leagueId)
     {
         AvailableLeaguesErrorMessage = null;
-      
-        var (success, errorMessage) = await _leagueService.JoinPublicLeagueAsync(leagueId);
+        NotifyStateChanged();
 
+        var (success, errorMessage) = await _leagueService.JoinPublicLeagueAsync(leagueId);
         if (success)
         {
             await InitializeAsync();
@@ -63,6 +64,23 @@ public class DashboardStateService : IDashboardStateService
         else
         {
             AvailableLeaguesErrorMessage = errorMessage;
+            NotifyStateChanged();
+        }
+    }
+
+    public async Task RemoveRejectedLeagueAsync(int leagueId)
+    {
+        MyLeaguesErrorMessage = null;
+        NotifyStateChanged();
+
+        var (success, errorMessage) = await _leagueService.RemoveMyLeagueMembershipAsync(leagueId);
+        if (success)
+        {
+            await InitializeAsync();
+        }
+        else
+        {
+            MyLeaguesErrorMessage = errorMessage;
             NotifyStateChanged();
         }
     }

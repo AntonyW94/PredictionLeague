@@ -1,5 +1,6 @@
 ﻿@inject NavigationManager NavigationManager
 @inject IDashboardStateService DashboardState
+@inject IJSRuntime JsRuntime
 
 @using PredictionLeague.Domain.Common.Enumerations
 @using PredictionLeague.Web.Client.Services.Dashboard
@@ -9,7 +10,7 @@
 <div class="dashboard-card h-100">
     <h3 class="text-white text-center fw-bold mb-4">My Leagues</h3>
 
-    <ApiError Message="@DashboardState.ErrorMessage" />
+    <ApiError Message="@DashboardState.MyLeaguesErrorMessage" />
 
     @if (DashboardState.IsLoading)
     {
@@ -21,30 +22,63 @@
     }
     else
     {
-        <div class="leagues-container">
+        <div class="leagues-grid">
             @foreach (var league in DashboardState.MyLeagues)
             {
-                var canViewDashboard = league.Status == LeagueMemberStatus.Approved;
-                    
-                <div class="league-item">
+                <div class="league-card">
                     <div class="league-card-header">
-                        <h6 class="mb-0 fw-bold text-white">@league.Name</h6>
+                        <h5 class="fw-bold text-white">@league.Name</h5>
                         <small class="text-white-50">@league.SeasonName</small>
                     </div>
 
                     <div class="league-card-body">
-                        <span class="status-pill @GetStatusClass(league.Status)">
-                            @league.Status.ToString()
-                        </span>
+                        @if (league.Status == LeagueMemberStatus.Approved)
+                        {
+                            <div class="status-pill-group status-pill-group--approved status-pill-group--icon-only">
+                                <span class="status-icon" title="Approved"><i class="bi bi-check-lg"></i></span>
+                            </div>
+                    
+                            @if (league.Rank.HasValue && league.MemberCount.HasValue)
+                            {
+                                <div class="position-info">
+                                    <span>@league.Rank</span>
+                                    <span> / @league.MemberCount</span>
+                                </div>
+                            }
+                        }
+                        else if (league.Status == LeagueMemberStatus.Pending)
+                        {
+                            <div class="status-pill-group status-pill-group--pending">
+                                <span class="status-icon" title="Pending Approval"><i class="bi bi-clock-fill"></i></span>
+                                <span>Pending Approval</span>
+                            </div>
+                        }
+                        else if (league.Status == LeagueMemberStatus.Rejected)
+                        {
+                            <div class="status-pill-group status-pill-group--rejected">
+                                <span class="status-icon" title="Rejected"><i class="bi bi-x-lg"></i></span>
+                                <span>Rejected by Admin</span>
+                            </div>
+                        }
                     </div>
 
                     <div class="league-card-footer">
-                        <button class="btn btn-sm @(canViewDashboard ? "dark-pink-button" : "disabled-button") w-100"
-                                disabled="@(!canViewDashboard)"
-                                title="@(canViewDashboard ? "View League Dashboard" : "Unavailable until approved by the league admin")"
-                                @onclick="() => ViewLeagueDashboard(league.Id)">
-                            View
-                        </button>
+                        @if (league.Status == LeagueMemberStatus.Rejected)
+                        {
+                            <button class="btn btn-sm pink-button w-100"  @onclick="() => HandleRemoveLeagueAsync(league.Id, league.Name)" disabled="@DashboardState.IsLoading">
+                                Remove
+                            </button>
+                        }
+                        else
+                        {
+                            var canViewDashboard = league.Status == LeagueMemberStatus.Approved;
+                            <button class="btn btn-sm @(canViewDashboard ? "dark-pink-button" : "disabled-button") w-100"
+                                    disabled="@(!canViewDashboard)"
+                                    title="@(canViewDashboard ? "View League Dashboard" : "Unavailable until approved by the league admin")"
+                                    @onclick="() => ViewLeagueDashboard(league.Id)">
+                                View
+                            </button>
+                        }
                     </div>
                 </div>
             }
@@ -53,10 +87,13 @@
 </div>
 
 @code {
+
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
-        await DashboardState.InitializeAsync();
+     
+        if (!DashboardState.MyLeagues.Any())
+            await DashboardState.InitializeAsync();
     }
 
     private void ViewLeagueDashboard(int leagueId)
@@ -64,17 +101,14 @@
         NavigationManager.NavigateTo($"/leagues/{leagueId}/dashboard");
     }
 
-    private static string GetStatusClass(LeagueMemberStatus status)
+    private async Task HandleRemoveLeagueAsync(int leagueId, string leagueName)
     {
-        return status switch
-        {
-            LeagueMemberStatus.Approved => "bg-pl-green",
-            LeagueMemberStatus.Pending => "bg-pl-dark-pink",
-            LeagueMemberStatus.Rejected => "bg-pl-pink",
-            _ => "bg-pl-light-cyan"
-        };
-    }
+        var confirmed = await JsRuntime.InvokeAsync<bool>("blazorInterop.showConfirm",
+            new object[] { $"Remove '{leagueName}'?", "This will remove the rejected league from your dashboard.", "Yes, Remove It", "Cancel" });
 
+        if (confirmed)
+            await DashboardState.RemoveRejectedLeagueAsync(leagueId);
+    }
 
     public ValueTask DisposeAsync()
     {

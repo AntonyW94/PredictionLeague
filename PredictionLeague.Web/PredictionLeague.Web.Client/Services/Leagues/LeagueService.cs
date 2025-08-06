@@ -18,7 +18,7 @@ public class LeagueService : ILeagueService
         var response = await _httpClient.PostAsync($"api/leagues/{leagueId}/join", null);
         if (response.IsSuccessStatusCode)
             return (true, null);
-        
+
         try
         {
             var errorContent = await response.Content.ReadFromJsonAsync<JsonNode>();
@@ -34,7 +34,7 @@ public class LeagueService : ILeagueService
     public async Task<(bool Success, string? ErrorMessage)> JoinPrivateLeagueAsync(string entryCode)
     {
         var request = new JoinLeagueRequest { EntryCode = entryCode };
-       
+
         var response = await _httpClient.PostAsJsonAsync("api/leagues/join", request);
         if (response.IsSuccessStatusCode)
             return (true, null);
@@ -48,6 +48,32 @@ public class LeagueService : ILeagueService
         catch
         {
             return (false, "An unexpected error occurred.");
+        }
+    }
+
+    public async Task<List<MyLeagueDto>> GetMyLeaguesAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<List<MyLeagueDto>>("api/dashboard/my-leagues") ?? new();
+    }
+
+    public async Task<List<AvailableLeagueDto>> GetAvailableLeaguesAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<List<AvailableLeagueDto>>("api/dashboard/available-leagues") ?? new();
+    }
+
+    public async Task<(bool Success, string? ErrorMessage)> RemoveMyLeagueMembershipAsync(int leagueId)
+    {
+        try
+        {
+            var response = await _httpClient.DeleteAsync($"api/leagues/{leagueId}/members/me");
+            if (response.IsSuccessStatusCode)
+                return (true, null);
+
+            return (false, "Could not remove the league. Please try again.");
+        }
+        catch (Exception)
+        {
+            return (false, "An error occurred while removing the league.");
         }
     }
 }

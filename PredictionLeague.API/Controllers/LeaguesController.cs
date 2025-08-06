@@ -223,6 +223,18 @@ public class LeaguesController : ApiControllerBase
 
         var command = new DeleteLeagueCommand(leagueId, CurrentUserId, isAdmin);
         await _mediator.Send(command, cancellationToken);
+     
+        return NoContent();
+    }
+
+    [HttpDelete("{leagueId:int}/members/me")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveMyLeagueMembershipAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        var command = new RemoveRejectedLeagueCommand(leagueId, CurrentUserId);
+        await _mediator.Send(command, cancellationToken);
+      
         return NoContent();
     }
 

@@ -171,6 +171,13 @@ public class League
 
         member.Reject();
     }
+    
+    public void RemoveMember(string userId)
+    {
+        var memberToRemove = _members.FirstOrDefault(m => m.UserId == userId);
+        if (memberToRemove != null)
+            _members.Remove(memberToRemove);
+    }
 
     public void ScoreMatch(Match completedMatch)
     {

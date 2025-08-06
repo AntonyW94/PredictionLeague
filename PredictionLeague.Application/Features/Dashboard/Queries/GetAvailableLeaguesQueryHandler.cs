@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Application.Features.Dashboard.Queries;
 
@@ -21,7 +22,8 @@ public class GetAvailableLeaguesQueryHandler : IRequestHandler<GetAvailableLeagu
                 l.[Name],
                 s.[Name] AS SeasonName,
                 l.[Price],
-                l.[EntryDeadline]
+                l.[EntryDeadline],
+                (SELECT COUNT(*) FROM [LeagueMembers] WHERE LeagueId = l.Id AND Status = @ApprovedStatus) AS MemberCount
             FROM 
                 [Leagues] l
             JOIN 
@@ -37,6 +39,6 @@ public class GetAvailableLeaguesQueryHandler : IRequestHandler<GetAvailableLeagu
             ORDER BY 
                 s.[StartDate] DESC, l.[Name];";
 
-        return await _dbConnection.QueryAsync<AvailableLeagueDto>(sql, cancellationToken, new { request.UserId });
+        return await _dbConnection.QueryAsync<AvailableLeagueDto>(sql, cancellationToken, new { request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
     }
 }

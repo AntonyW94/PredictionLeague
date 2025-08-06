@@ -1,0 +1,22 @@
+﻿.status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    color: white;
+    font-size: 14px;
+}
+
+.status-icon-approved {
+    background-color: var(--pl-green);
+}
+
+.status-icon-rejected {
+    background-color: var(--pl-pink);
+}
+
+.status-icon-pending {
+    background-color: var(--pl-dark-pink);
+}

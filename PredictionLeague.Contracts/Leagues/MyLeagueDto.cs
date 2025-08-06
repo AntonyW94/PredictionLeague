@@ -6,5 +6,7 @@ public record MyLeagueDto(
     int Id,
     string Name,
     string SeasonName,
-    LeagueMemberStatus Status
+    LeagueMemberStatus Status,
+    long? Rank,
+    int? MemberCount
 );
