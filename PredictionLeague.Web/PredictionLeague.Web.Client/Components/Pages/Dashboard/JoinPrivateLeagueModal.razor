@@ -61,7 +61,7 @@
 
         if (success)
         {
-            await DashboardState.InitializeAsync();
+            await DashboardState.LoadMyLeaguesAsync();
             await Close();
         }
         else

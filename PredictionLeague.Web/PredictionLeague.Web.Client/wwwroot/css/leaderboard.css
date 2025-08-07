@@ -29,6 +29,14 @@
         z-index: 1;
     }
 
+    .leaderboard-table td {
+        background: var(--pl-purple);
+    }
+
+    .leaderboard-table.light td {
+        background: var(--pl-purple-light);
+    }
+
     .leaderboard-table tbody tr:nth-child(even) td {
         background-color: #432468;
     }
@@ -42,3 +50,7 @@
         width: 25%;
         text-align: right;
     }
+
+.carousel-item-wrapper .leaderboard-card {
+    width: 100%;
+}

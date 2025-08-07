@@ -11,7 +11,7 @@
 
     <ApiError Message="@DashboardState.AvailableLeaguesErrorMessage" />
 
-    @if (DashboardState.IsLoading)
+    @if (DashboardState.IsAvailableLeaguesLoading)
     {
         <p class="text-center text-white"><em>Loading leagues...</em></p>
     }
@@ -83,9 +83,10 @@
     private bool _isBusy;
     private bool _showPrivateLeagueModal;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
+        await DashboardState.LoadAvailableLeaguesAsync();
     }
 
     private async Task ShowJoinPrivateLeagueModal()

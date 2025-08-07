@@ -12,7 +12,7 @@
 
     <ApiError Message="@DashboardState.MyLeaguesErrorMessage" />
 
-    @if (DashboardState.IsLoading)
+    @if (DashboardState.IsMyLeaguesLoading)
     {
         <p class="text-center text-white"><em>Loading my leagues...</em></p>
     }
@@ -73,7 +73,7 @@
                     <div class="league-card-footer">
                         @if (league.Status == LeagueMemberStatus.Rejected)
                         {
-                            <button class="btn btn-sm pink-button w-100"  @onclick="() => HandleRemoveLeagueAsync(league.Id, league.Name)" disabled="@DashboardState.IsLoading">
+                            <button class="btn btn-sm pink-button w-100"  @onclick="() => HandleRemoveLeagueAsync(league.Id, league.Name)" disabled="@DashboardState.IsMyLeaguesLoading">
                                 Remove
                             </button>
                         }
@@ -95,13 +95,12 @@
 </div>
 
 @code {
-
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
      
         if (!DashboardState.MyLeagues.Any())
-            await DashboardState.InitializeAsync();
+            await DashboardState.LoadMyLeaguesAsync();
     }
 
     private void ViewLeagueDashboard(int leagueId)

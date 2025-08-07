@@ -1,23 +1,23 @@
-﻿@inject HttpClient Http
-@inject IBrowserService BrowserService
-
-@using PredictionLeague.Contracts.Dashboard
-@using PredictionLeague.Web.Client.Services.Browser
-@implements IAsyncDisposable
-
-<div class="dashboard-card h-100 @(_rounds?.Count == 1 ? "center-content" : "")">
+﻿<div class="dashboard-card h-100">
     <h3 class="text-white text-center fw-bold mb-4">Upcoming Rounds</h3>
-    <ApiError Message="@_errorMessage" />
 
-    @if (_isLoading)
+    <ApiError Message="@DashboardState.UpcomingRoundsErrorMessage" />
+
+    @if (DashboardState.IsUpcomingRoundsLoading)
     {
         <p class="text-center text-white"><em>Loading rounds...</em></p>
     }
-    else if (_rounds != null && _rounds.Any())
+    else if (!DashboardState.UpcomingRounds.Any())
     {
-        <div class="carousel-wrapper">
+        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
+            <p class="text-white fw-bold text-center">There are currently no upcoming rounds available for you to predict.</p>
+        </div>
+    }
+    else
+    {
+        <div class="carousel-wrapper carousel--desktop-multi-item">
             <div class="carousel-container">
-                @if (_isDesktop && _rounds.Count > 2)
+                @if (_isDesktop && DashboardState.UpcomingRounds.Count > 2)
                 {
                     <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentRoundIndex == 0)">
                         <span class="bi bi-chevron-left"></span>
@@ -25,21 +25,20 @@
                 }
 
                 <div class="rounds-track-wrapper"
-                     id="@_carouselId"
                      @ontouchstart="HandleTouchStart"
                      @ontouchmove="HandleTouchMove"
                      @ontouchend="HandleTouchEnd">
                     <div class="rounds-track" style="@_trackStyle">
-                        @foreach (var round in _rounds)
+                        @foreach (var round in DashboardState.UpcomingRounds)
                         {
-                            <div class="round-card-wrapper">
+                            <div class="carousel-item-wrapper">
                                 <RoundCard Round="round" />
                             </div>
                         }
                     </div>
                 </div>
 
-                @if (_isDesktop && _rounds.Count > 2)
+                @if (_isDesktop && DashboardState.UpcomingRounds.Count > 2)
                 {
                     <button class="carousel-btn" @onclick="ShowNext" disabled="@IsAtEnd()">
                         <span class="bi bi-chevron-right"></span>
@@ -59,162 +58,4 @@
             }
         </div>
     }
-    else
-    {
-        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
-            <p class="text-white fw-bold text-center">There are currently no upcoming rounds available for you to predict.</p>
-        </div>
-    }
 </div>
-
-<style>
-    .carousel-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .carousel-dots {
-        text-align: center;
-        padding-top: 1rem;
-    }
-
-    .carousel-dot {
-        cursor: pointer;
-        height: 12px;
-        width: 12px;
-        margin: 0 5px;
-        background-color: var(--pl-purple);
-        border-radius: 50%;
-        display: inline-block;
-        transition: background-color 0.3s ease;
-    }
-
-        .carousel-dot.active, .carousel-dot:hover {
-            background-color: var(--pl-green);
-        }
-</style>
-
-@code {
-    private List<UpcomingRoundDto>? _rounds;
-    private bool _isLoading = true;
-    private string? _errorMessage;
-    private int _currentRoundIndex;
-    private bool _isDesktop;
-    private string _trackStyle = "";
-    private readonly string _carouselId = $"carousel-{Guid.NewGuid()}";
-    private double _touchStartX;
-
-    private int NumberOfDots
-    {
-        get
-        {
-            if (_rounds == null) 
-                return 0;
-
-            var roundsPerPage = _isDesktop ? 2 : 1;
-       
-            if (_rounds.Count <= roundsPerPage) 
-                return 0;
-
-            return _rounds.Count - roundsPerPage + 1;
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        _isLoading = true;
-        _errorMessage = null;
-        try
-        {
-            _isDesktop = await BrowserService.IsDesktop();
-            _rounds = await Http.GetFromJsonAsync<List<UpcomingRoundDto>>("api/dashboard/upcoming-rounds");
-        }
-        catch (Exception)
-        {
-            _errorMessage = "Could not load upcoming rounds.";
-        }
-        finally
-        {
-            _isLoading = false;
-        }
-    }
-
-    private void HandleTouchStart(TouchEventArgs e)
-    {
-        _touchStartX = e.Touches[0].ClientX;
-    }
-
-    private void HandleTouchMove(TouchEventArgs e)
-    {
-        // Prevent default browser touch actions like scrolling
-    }
-
-    private void HandleTouchEnd(TouchEventArgs e)
-    {
-        var touchEndX = e.ChangedTouches[0].ClientX;
-        var diffX = _touchStartX - touchEndX;
-
-        // Check for a significant swipe
-        if (Math.Abs(diffX) > 50)
-        {
-            if (diffX > 0)
-            {
-                // Swiped left
-                ShowNext();
-            }
-            else
-            {
-                // Swiped right
-                ShowPrevious();
-            }
-        }
-    }
-
-    private void GoToSlide(int index)
-    {
-        if (index >= 0 && index < NumberOfDots)
-        {
-            _currentRoundIndex = index;
-            UpdateTrackStyle();
-        }
-    }
-
-    private void ShowPrevious()
-    {
-        if (_currentRoundIndex > 0)
-        {
-            _currentRoundIndex--;
-            UpdateTrackStyle();
-        }
-    }
-
-    private void ShowNext()
-    {
-        if (_rounds != null && !IsAtEnd())
-        {
-            _currentRoundIndex++;
-            UpdateTrackStyle();
-        }
-    }
-
-    private void UpdateTrackStyle()
-    {
-        var percentageToMove = _isDesktop ? 50 : 100;
-        _trackStyle = $"transform: translateX(-{_currentRoundIndex * percentageToMove}%); transition: transform 0.3s ease-in-out;";
-    }
-
-    private bool IsAtEnd()
-    {
-        if (_rounds == null)
-            return true;
-
-        var roundsPerPage = _isDesktop ? 2 : 1;
-        return _currentRoundIndex >= _rounds.Count - roundsPerPage;
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        return ValueTask.CompletedTask;
-    }
-}

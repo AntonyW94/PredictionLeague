@@ -1,7 +1,138 @@
-﻿<div class="dashboard-card h-100">
+﻿@inject IDashboardStateService DashboardState
+
+@implements IDisposable
+
+@using PredictionLeague.Web.Client.Services.Dashboard
+
+<div class="dashboard-card h-100">
     <h3 class="text-white text-center fw-bold mb-4">Leaderboards</h3>
-    <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
-        <span class="bi bi-trophy-fill" style="font-size: 4rem; color: var(--pl-green);"></span>
-        <p class="mt-3 text-white fw-bold text-center">Leaderboard feature coming soon!</p>
-    </div>
+
+    <ApiError Message="@DashboardState.LeaderboardsErrorMessage" />
+
+    @if (DashboardState.IsLeaderboardsLoading)
+    {
+        <p class="text-center text-white"><em>Loading...</em></p>
+    }
+    else if (!DashboardState.Leaderboards.Any())
+    {
+        <p class="text-center text-white">No active leaderboards.</p>
+    }
+    else
+    {
+        <div class="carousel-wrapper">
+            <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
+                <div class="carousel-track" style="@_trackStyle">
+                    @foreach (var leaderboard in DashboardState.Leaderboards)
+                    {
+                        <div class="carousel-item-wrapper">
+                            <div class="leaderboard-card">
+                                <div class="league-card-header">
+                                    <h5 class="card-title text-white fw-bold">@leaderboard.LeagueName</h5>
+                                    <small class="text-white-50">@leaderboard.SeasonName</small>
+                                </div>
+                                <div class="league-card-body">
+                                    <div class="table-responsive">
+                                        <table class="leaderboard-table light text-white">
+                                            <thead>
+                                            <tr>
+                                                <th class="rank-col">#</th>
+                                                <th>Player</th>
+                                                <th class="points-col">Points</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            @foreach (var entry in leaderboard.Entries)
+                                            {
+                                                <tr>
+                                                    <td class="rank-col fw-bold">@entry.Rank</td>
+                                                    <td>@entry.PlayerName</td>
+                                                    <td class="points-col fw-bold">@entry.TotalPoints</td>
+                                                </tr>
+                                            }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+
+            @if (DashboardState.Leaderboards.Count > 1)
+            {
+                <div class="carousel-dots">
+                    @for (var i = 0; i < DashboardState.Leaderboards.Count; i++)
+                    {
+                        var index = i;
+                        <span class="carousel-dot @(index == _currentIndex ? "active" : "")" @onclick="() => GoToSlide(index)"></span>
+                    }
+                </div>
+            }
+        </div>
+    }
 </div>
+
+@code {
+    private int _currentIndex;
+    private double _touchStartX;
+    private string _trackStyle = "transform: translateX(0%);";
+
+    protected override async Task OnInitializedAsync()
+    {
+        DashboardState.OnStateChange += StateHasChanged;
+        await DashboardState.LoadLeaderboardsAsync();
+    }
+  
+    private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;
+    private void HandleTouchMove(TouchEventArgs e) { }
+
+    private void HandleTouchEnd(TouchEventArgs e)
+    {
+        var touchEndX = e.ChangedTouches[0].ClientX;
+        var diffX = _touchStartX - touchEndX;
+
+        if (Math.Abs(diffX) > 50)
+        {
+            if (diffX > 0) 
+                ShowNext();
+            else 
+                ShowPrevious();
+        }
+    }
+
+    private void GoToSlide(int index)
+    {
+        _currentIndex = index;
+        UpdateTrackStyle();
+    }
+
+    private void ShowPrevious()
+    {
+        if (_currentIndex > 0)
+        {
+            _currentIndex--;
+            UpdateTrackStyle();
+        }
+    }
+
+    private void ShowNext()
+    {
+        if (_currentIndex < DashboardState.Leaderboards.Count - 1)
+        {
+            _currentIndex++;
+            UpdateTrackStyle();
+        }
+    }
+
+    private void UpdateTrackStyle()
+    {
+        _trackStyle = $"transform: translateX(-{_currentIndex * 100}%);";
+    }
+
+    public void Dispose()
+    {
+        DashboardState.OnStateChange -= StateHasChanged;
+    }
+}

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Dashboard.Queries;
 using PredictionLeague.Contracts.Dashboard;
+using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.API.Controllers;
@@ -40,6 +41,14 @@ public class DashboardController : ApiControllerBase
     public async Task<ActionResult<IEnumerable<AvailableLeagueDto>>> GetAvailableLeaguesAsync(CancellationToken cancellationToken)
     {
         var query = new GetAvailableLeaguesQuery(CurrentUserId);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
+
+    [HttpGet("leaderboards")]
+    [ProducesResponseType(typeof(IEnumerable<LeagueLeaderboardDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetLeaderboards(CancellationToken cancellationToken)
+    {
+        var query = new GetLeaderboardsQuery(CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 }

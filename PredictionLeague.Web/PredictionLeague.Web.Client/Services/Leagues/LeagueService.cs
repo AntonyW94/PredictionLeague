@@ -1,8 +1,8 @@
-﻿using PredictionLeague.Contracts.Leaderboards;
+﻿using PredictionLeague.Contracts.Dashboard;
+using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
-using static System.Net.WebRequestMethods;
 
 namespace PredictionLeague.Web.Client.Services.Leagues;
 
@@ -13,6 +13,31 @@ public class LeagueService : ILeagueService
     public LeagueService(HttpClient httpClient)
     {
         _httpClient = httpClient;
+    }
+
+    public async Task<List<MyLeagueDto>> GetMyLeaguesAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<List<MyLeagueDto>>("api/dashboard/my-leagues") ?? new();
+    }
+
+    public async Task<List<AvailableLeagueDto>> GetAvailableLeaguesAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<List<AvailableLeagueDto>>("api/dashboard/available-leagues") ?? new();
+    }
+
+    public async Task<List<LeagueLeaderboardDto>> GetLeaderboardsAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<List<LeagueLeaderboardDto>>("api/dashboard/leaderboards") ?? new();
+    }
+
+    public async Task<List<UpcomingRoundDto>> GetUpcomingRoundsAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<List<UpcomingRoundDto>>("api/dashboard/upcoming-rounds") ?? new();
+    }
+
+    public async Task<List<LeaderboardEntryDto>> GetOverallLeaderboard(int leagueId)
+    {
+        return await _httpClient.GetFromJsonAsync<List<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/overall") ?? new List<LeaderboardEntryDto>();
     }
 
     public async Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId)
@@ -53,16 +78,6 @@ public class LeagueService : ILeagueService
         }
     }
 
-    public async Task<List<MyLeagueDto>> GetMyLeaguesAsync()
-    {
-        return await _httpClient.GetFromJsonAsync<List<MyLeagueDto>>("api/dashboard/my-leagues") ?? new();
-    }
-
-    public async Task<List<AvailableLeagueDto>> GetAvailableLeaguesAsync()
-    {
-        return await _httpClient.GetFromJsonAsync<List<AvailableLeagueDto>>("api/dashboard/available-leagues") ?? new();
-    }
-
     public async Task<(bool Success, string? ErrorMessage)> RemoveMyLeagueMembershipAsync(int leagueId)
     {
         try
@@ -77,10 +92,5 @@ public class LeagueService : ILeagueService
         {
             return (false, "An error occurred while removing the league.");
         }
-    }
-
-    public async Task<IEnumerable<LeaderboardEntryDto>> GetOverallLeaderboard(int leagueId)
-    {
-        return await _httpClient.GetFromJsonAsync<IEnumerable<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/overall") ?? new List<LeaderboardEntryDto>();
     }
 }
