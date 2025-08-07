@@ -1,10 +1,14 @@
 ﻿@implements IAsyncDisposable
 @inject IJSRuntime JsRuntime
 
-<span class="status-pill @GetPillClass()">
-    <span class="bi bi-clock-fill me-2"></span>
-    @_timeRemaining
-</span>
+<div class="status-pill-group status-pill-group--red">
+    <span class="status-icon" title="Deadline">
+        <i class="bi bi-alarm"></i>
+    </span>
+    <span>
+        @_timeRemaining
+    </span>
+</div>
 
 @code {
     [Parameter, EditorRequired]
@@ -17,7 +21,9 @@
     protected override async Task OnInitializedAsync()
     {
         _dotNetHelper = DotNetObjectReference.Create(this);
+       
         UpdateDisplay();
+       
         await JsRuntime.InvokeVoidAsync("blazorInterop.startCountdown", _dotNetHelper, "UpdateTimer", _timerId);
     }
 
@@ -32,11 +38,6 @@
     {
         var remaining = Deadline - DateTime.UtcNow;
         _timeRemaining = remaining.TotalSeconds <= 0 ? "Deadline Passed" : $"{(int)remaining.TotalHours:D2}:{remaining.Minutes:D2}:{remaining.Seconds:D2}";
-    }
-
-    private static string GetPillClass()
-    {
-        return "bg-pl-pink";
     }
 
     public async ValueTask DisposeAsync()

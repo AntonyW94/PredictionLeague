@@ -13,9 +13,14 @@
             }
             else
             {
-                <span class="status-pill bg-pl-pink">
-                    Deadline: @Round.Deadline.ToString("ddd dd MMM, HH:mm")
-                </span>
+                <div class="status-pill-group status-pill-group--red">
+                    <span class="status-icon" title="Deadline">
+                        <i class="bi bi-alarm"></i>
+                    </span>
+                    <span>
+                        Deadline: @Round.Deadline.ToString("ddd dd MMM, HH:mm")
+                    </span>
+                </div>
             }
         </div>
         <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100 mt-auto">
