@@ -1,6 +1,8 @@
-﻿using PredictionLeague.Contracts.Leagues;
+﻿using PredictionLeague.Contracts.Leaderboards;
+using PredictionLeague.Contracts.Leagues;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
+using static System.Net.WebRequestMethods;
 
 namespace PredictionLeague.Web.Client.Services.Leagues;
 
@@ -75,5 +77,10 @@ public class LeagueService : ILeagueService
         {
             return (false, "An error occurred while removing the league.");
         }
+    }
+
+    public async Task<IEnumerable<LeaderboardEntryDto>> GetOverallLeaderboard(int leagueId)
+    {
+        return await _httpClient.GetFromJsonAsync<IEnumerable<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/overall") ?? new List<LeaderboardEntryDto>();
     }
 }

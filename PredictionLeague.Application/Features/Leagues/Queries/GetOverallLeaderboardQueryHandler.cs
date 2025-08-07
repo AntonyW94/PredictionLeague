@@ -18,25 +18,30 @@ public class GetOverallLeaderboardQueryHandler : IRequestHandler<GetOverallLeade
     {
         const string sql = @"
             SELECT
-                ROW_NUMBER() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS Rank,
-                u.[FirstName] + ' ' + u.[LastName] AS Username,
-                SUM(ISNULL(up.[PointsAwarded], 0)) AS Points
-            FROM [LeagueMembers] lm
-            JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            LEFT JOIN [UserPredictions] up ON u.[Id] = up.[UserId]
-            LEFT JOIN [Matches] m ON up.[MatchId] = m.[Id]
-            LEFT JOIN [Rounds] r ON m.[RoundId] = r.[Id]
-            LEFT JOIN [Seasons] s ON r.[SeasonId] = s.[Id]
-            WHERE lm.[LeagueId] = @LeagueId
-              AND lm.[Status] = @Status
-              AND s.[Id] = (SELECT SeasonId FROM Leagues WHERE Id = @LeagueId)
+                RANK() OVER (ORDER BY SUM(ISNULL([up].[PointsAwarded], 0)) DESC) AS [Rank],
+                [au].[FirstName] + ' ' + [au].[LastName] AS [PlayerName],
+                SUM(ISNULL([up].[PointsAwarded], 0)) AS [TotalPoints]
+            FROM 
+                [LeagueMembers] AS [lm]
+            JOIN 
+                [AspNetUsers] AS [au] ON [lm].[UserId] = [au].[Id]
+            JOIN 
+                [Leagues] AS [l] ON [lm].[LeagueId] = [l].[Id]
+            JOIN 
+                [Seasons] AS [s] ON [l].[SeasonId] = [s].[Id]
+            JOIN 
+                [Rounds] AS [r] ON [s].[Id] = [r].[SeasonId]
+            JOIN 
+                [Matches] AS [m] ON [r].[Id] = [m].[RoundId]
+            LEFT JOIN 
+                [UserPredictions] AS [up] ON [m].[Id] = [up].[MatchId] AND [lm].[UserId] = [up].[UserId]
+            WHERE
+                [lm].[LeagueId] = @LeagueId
+                AND [lm].[Status] = @ApprovedStatus
             GROUP BY
-                lm.[UserId],
-                u.[FirstName],
-                u.[LastName]
+                [au].[FirstName], [au].[LastName]
             ORDER BY
-                Points DESC,
-                Username ASC;";
+                [Rank], [PlayerName];";
 
         return await _dbConnection.QueryAsync<LeaderboardEntryDto>(
             sql,
@@ -44,7 +49,7 @@ public class GetOverallLeaderboardQueryHandler : IRequestHandler<GetOverallLeade
             new
             {
                 request.LeagueId,
-                Status = nameof(LeagueMemberStatus.Approved)
+                ApprovedStatus = nameof(LeagueMemberStatus.Approved)
             }
         );
     }

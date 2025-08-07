@@ -1,4 +1,5 @@
-﻿using PredictionLeague.Contracts.Leagues;
+﻿using PredictionLeague.Contracts.Leaderboards;
+using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.Web.Client.Services.Leagues;
 
@@ -9,4 +10,6 @@ public interface ILeagueService
     Task<List<MyLeagueDto>> GetMyLeaguesAsync();
     Task<List<AvailableLeagueDto>> GetAvailableLeaguesAsync();
     Task<(bool Success, string? ErrorMessage)> RemoveMyLeagueMembershipAsync(int leagueId);
+
+    Task<IEnumerable<LeaderboardEntryDto>> GetOverallLeaderboard(int leagueId);
 }

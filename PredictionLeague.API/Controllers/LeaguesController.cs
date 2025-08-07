@@ -143,6 +143,8 @@ public class LeaguesController : ApiControllerBase
         return Ok(result);
     }
 
+  
+
     #endregion
 
     #region Update
@@ -241,16 +243,17 @@ public class LeaguesController : ApiControllerBase
     #endregion
 
     #region Dashboard
-
+  
     [HttpGet("{leagueId:int}/leaderboard/overall")]
     [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboardAsync(int leagueId, CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboard(int leagueId, CancellationToken cancellationToken)
     {
         var query = new GetOverallLeaderboardQuery(leagueId);
-        return Ok(await _mediator.Send(query, cancellationToken));
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
     }
-
-
+    
     [HttpGet("{leagueId:int}/leaderboard/monthly/{month:int}")]
     [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetMonthlyLeaderboardAsync(int leagueId, int month, CancellationToken cancellationToken)

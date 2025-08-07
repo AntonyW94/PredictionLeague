@@ -1,7 +1,7 @@
 ﻿namespace PredictionLeague.Contracts.Leaderboards;
 
 public record LeaderboardEntryDto(
-    int Rank,
+    long Rank,
     string PlayerName,
-    int TotalPoints
+    int? TotalPoints
 );

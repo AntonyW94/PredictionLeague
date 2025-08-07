@@ -19,7 +19,7 @@
             <p class="text-center text-white"><em>Loading dashboard...</em></p>
         }
         else
-        { 
+        {
             <h3 class="text-center fw-bold text-white mb-4">@State.LeagueName</h3>
 
             <div class="row">
@@ -28,9 +28,7 @@
                 </div>
 
                 <div class="col-md-4 mb-4">
-                    <div class="dashboard-card">
-                        <h5 class="text-white">Overall Leaderboard (Coming Soon)</h5>
-                    </div>
+                    <OverallLeaderboardTile LeagueId="LeagueId" />
                 </div>
 
                 <div class="col-md-4 mb-4">

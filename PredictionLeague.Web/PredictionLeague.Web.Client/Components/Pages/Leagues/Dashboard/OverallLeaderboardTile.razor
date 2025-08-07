@@ -1,0 +1,120 @@
+﻿@using PredictionLeague.Contracts.Leaderboards
+@using PredictionLeague.Web.Client.Services.Leagues
+@inject ILeagueService LeagueService
+
+<div class="dashboard-card h-100">
+    <h5 class="text-white fw-bold mb-3 mb-md-0">Overall Leaderboard</h5>
+
+    <div class="card-body">
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (_leaderboardEntries != null && _leaderboardEntries.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-borderless text-white">
+                    <thead>
+                        <tr>
+                            <th class="rank-col">#</th>
+                            <th>Player</th>
+                            <th class="points-col">Points</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in _leaderboardEntries)
+                        {
+                            <tr>
+                                <td class="rank-col fw-bold">@entry.Rank</td>
+                                <td>@entry.PlayerName</td>
+                                <td class="points-col fw-bold">@entry.TotalPoints</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-center text-white-50">No predictions have been scored yet.</p>
+        }
+    </div>
+</div>
+
+<style>
+    .dashboard-card .card-header {
+        background-color: var(--pl-purple-dark);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--pl-purple-light);
+    }
+
+    .dashboard-card .card-body {
+        padding: 0;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+        .table thead th {
+            color: var(--text-white-50);
+            font-weight: 400;
+            text-transform: uppercase;
+            font-size: 0.8em;
+            padding: 1rem 1.5rem;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid var(--pl-purple);
+        }
+
+            .table tbody tr:last-child {
+                border-bottom: none;
+            }
+
+        .table td {
+            padding: 1rem 1.5rem;
+            vertical-align: middle;
+        }
+
+    .rank-col {
+        width: 15%;
+        text-align: center;
+        font-size: 1.1em;
+    }
+
+    .points-col {
+        width: 25%;
+        text-align: right;
+        font-size: 1.1em;
+    }
+</style>
+
+@code {
+    [Parameter, EditorRequired]
+    public int LeagueId { get; set; }
+
+    private IEnumerable<LeaderboardEntryDto>? _leaderboardEntries;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _leaderboardEntries = await LeagueService.GetOverallLeaderboard(LeagueId);
+        }
+        catch (Exception ex)
+        {
+            // In a real app, you would log this to a proper logging service
+            Console.WriteLine($"Error fetching overall leaderboard: {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}
