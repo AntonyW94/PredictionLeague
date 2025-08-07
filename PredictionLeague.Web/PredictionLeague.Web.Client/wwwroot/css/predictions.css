@@ -15,7 +15,7 @@
 }
 
 .prediction-card {
-    background-color: var(--pl-light-purple);
+    background-color: var(--pl-purple-light);
     border-radius: var(--bs-border-radius);
     overflow: hidden;
     color: white;
@@ -55,7 +55,7 @@
 }
 
     .status-select-pill.scheduled {
-        background-color: var(--pl-pink);
+        background-color: var(--pl-red);
         color: white;
     }
 

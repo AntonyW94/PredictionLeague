@@ -1,4 +1,4 @@
-﻿.status-icon {
+﻿.badge-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -9,14 +9,14 @@
     font-size: 14px;
 }
 
-.status-icon-approved {
+.badge-icon-approved {
     background-color: var(--pl-green);
 }
 
-.status-icon-rejected {
-    background-color: var(--pl-pink);
+.badge-icon-rejected {
+    background-color: var(--pl-red);
 }
 
-.status-icon-pending {
-    background-color: var(--pl-dark-pink);
+.badge-icon-pending {
+    background-color: var(--pl-purple-bright);
 }

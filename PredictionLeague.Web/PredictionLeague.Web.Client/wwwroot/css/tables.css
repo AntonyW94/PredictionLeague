@@ -1,6 +1,6 @@
 ﻿.striped-table {
     --bs-table-bg: var(--pl-purple);
-    --bs-table-striped-bg: var(--pl-light-purple);
+    --bs-table-striped-bg: var(--pl-purple-light);
     --bs-table-striped-color: white;
     --bs-table-color: white;
     --bs-table-border-color: var(--pl-purple-dark);
@@ -26,7 +26,7 @@
             border: 1px solid var(--pl-purple-dark);
             border-radius: var(--bs-border-radius);
             overflow: hidden;
-            background-color: var(--pl-light-purple);
+            background-color: var(--pl-purple-light);
         }
 
         .responsive-table td {

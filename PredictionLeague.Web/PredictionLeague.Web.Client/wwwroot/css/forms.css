@@ -1,5 +1,5 @@
 ﻿.form-container {
-    background-color: var(--pl-light-purple);
+    background-color: var(--pl-purple-light);
     padding: 2.5rem;
     border-radius: var(--bs-border-radius);
     width: 100%;
@@ -54,8 +54,8 @@
     }
 
 .form-check-input {
-    background-color: var(--pl-pink); 
-    border-color: var(--pl-pink);
+    background-color: var(--pl-red); 
+    border-color: var(--pl-red);
 }
 
     .form-check-input:checked {
@@ -75,7 +75,7 @@
 }
 
 .form-sub-header {
-    color: var(--light-text);
+    color: var(--pl-grey-light);
     font-weight: 500;
 }
 
@@ -123,7 +123,7 @@
     }
 
     .message-box-solid.error {
-        background-color: var(--pl-pink);
+        background-color: var(--pl-red);
     }
 
         .message-box-solid.error::before {

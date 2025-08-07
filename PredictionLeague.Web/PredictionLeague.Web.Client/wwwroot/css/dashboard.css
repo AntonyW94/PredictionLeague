@@ -7,7 +7,7 @@
 }
 
 .dashboard-card {
-    background-color: var(--pl-light-purple);
+    background-color: var(--pl-purple-light);
     padding: 2rem;
     border-radius: var(--bs-border-radius);
     color: white;
@@ -100,7 +100,7 @@
     text-align: center;
     margin-bottom: 1.5rem;
     font-size: 0.9rem;
-    color: var(--light-text);
+    color: var(--pl-grey-light);
 }
 
 
@@ -166,70 +166,6 @@
     width: 100%;
     gap: 1rem; /* Adds space between items on the same row */
 }
-
-.status-pill-group {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem; /* Space between icon and text */
-    border-radius: 50rem; /* Fully rounded corners */
-    padding: 4px 12px 4px 4px; /* Padding: top/bottom, right, left */
-    font-size: 0.8em;
-    font-weight: bold;
-    color: white;
-}
-
-.status-pill-group--green {
-    background-color: var(--pl-green);
-    color: white;
-}
-
-.status-pill-group--purple {
-    background-color: var(--pl-dark-pink);
-    color: white;
-}
-
-.status-pill-group--red {
-    background-color: var(--pl-pink);
-    color: white;
-}
-
-.status-pill-group--blue {
-    background-color: var(--pl-light-cyan);
-    color: white;
-}
-
-.status-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    font-size: 14px;
-}
-
-.status-pill-group--green .status-icon {
-    background-color: white;
-    color: var(--pl-green);
-}
-
-.status-pill-group--purple .status-icon {
-    background-color: white;
-    color: var(--pl-dark-pink);
-}
-
-.status-pill-group--red .status-icon {
-    background-color: white;
-    color: var(--pl-pink);
-}
-
-.status-pill-group--icon-only {
-    padding: 4px; 
-}
-    .status-pill-group--icon-only .status-icon {
-        background-color: transparent;
-        color: white;
-    }
 
 .league-price {
     font-weight: bold;

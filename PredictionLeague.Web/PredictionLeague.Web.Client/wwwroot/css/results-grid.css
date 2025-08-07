@@ -63,7 +63,7 @@
 
     .results-grid .not-predicted-icon {
         font-size: 1.5em;
-        color: var(--light-text);
+        color: var(--pl-grey-light);
     }
 
     .results-grid .match-info .match-logo-small {
@@ -82,7 +82,7 @@
     }
 
     .results-grid .score-cell.incorrect-result {
-        background-color: var(--pl-pink);
+        background-color: var(--pl-red);
     }
 
     .results-grid tfoot th {

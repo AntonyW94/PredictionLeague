@@ -8,7 +8,6 @@
 @import url('forms.css');
 @import url('icons.css');
 @import url('layout.css');
-@import url('leagues.css');
 @import url('loading.css');
 @import url('navbar.css');
 @import url('predictions.css');
@@ -16,23 +15,7 @@
 @import url('tables.css');
 
 :root {
-    --pl-purple: #3D195B;
-    --pl-purple-dark: #31144a;
-    --pl-light-purple: #4A2E6C;
-    --pl-pink: #E90052;
-    --pl-dark-pink: #963cff;
-    --pl-cyan: #04F5FF;
-    --pl-green: #00FF85;
-    --pl-light-green: #84fab0;
-    --pl-light-cyan: #03c2b4;
-    --content-bg: #f4f7f6;
-    --light-text: #EAEAEA;
-    --pl-alert-success-bg: #d1e7dd;
-    --pl-alert-success-border: #badbcc;
-    --pl-alert-success-text: #0f5132;
-    --pl-alert-error-bg: #f8d7da;
-    --pl-alert-error-border: #f5c2c7;
-    --pl-alert-error-text: #842029;
+    /* Border Radiuses */
     --bs-border-radius: 3px;
     --bs-border-radius-sm: 3px;
     --bs-border-radius-lg: 3px;
@@ -42,7 +25,7 @@
 
 html, body {
     font-family: 'Poppins', sans-serif;
-    background-color: var(--content-bg);
+    background-color: var(--pl-grey-light);
 }
 
 h1, h2, h3, h4, h5, h6 {

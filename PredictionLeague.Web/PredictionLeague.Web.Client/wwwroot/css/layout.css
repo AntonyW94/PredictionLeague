@@ -8,7 +8,7 @@
 }
 
 .admin-table-container {
-    background-color: var(--pl-light-purple);
+    background-color: var(--pl-purple-light);
     padding: 2.5rem;
     border-radius: var(--bs-border-radius);
     width: 80%;

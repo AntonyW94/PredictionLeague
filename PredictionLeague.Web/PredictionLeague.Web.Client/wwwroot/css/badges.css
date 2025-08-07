@@ -1,7 +1,103 @@
-﻿.status-pill {
+﻿.badge {
     padding: 0.25rem 0.75rem;
     border-radius: 50rem;
     font-size: 0.8em;
     font-weight: bold;
     text-align: center;
 }
+
+
+.badge-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem; /* Space between icon and text */
+    border-radius: 50rem; /* Fully rounded corners */
+    padding: 4px 12px 4px 4px; /* Padding: top/bottom, right, left */
+    font-size: 0.8em;
+    font-weight: bold;
+    color: white;
+}
+
+.badge-group--green {
+    background-color: var(--pl-green);
+    color: white;
+}
+
+.badge-group--purple {
+    background-color: var(--pl-purple-bright);
+    color: white;
+}
+
+.badge-group--red {
+    background-color: var(--pl-red);
+    color: white;
+}
+
+.badge-group--blue {
+    background-color: var(--pl-light-cyan);
+    color: white;
+}
+
+.badge-group--gold {
+    background-color: var(--pl-gold);
+    color: white;
+}
+
+.badge-group--silver {
+    background-color: var(--pl-silver);
+    color: white;
+}
+
+.badge-group--bronze {
+    background-color: var(--pl-bronze);
+    color: white;
+}
+
+.badge-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 14px;
+    background-color: white;
+}
+
+.badge-group--green .badge-icon {
+    color: var(--pl-green);
+}
+
+.badge-group--purple .badge-icon {
+    color: var(--pl-purple-bright);
+}
+
+.badge-group--red .badge-icon {
+    color: var(--pl-red);
+}
+
+.badge-group--blue .badge-icon {
+    color: var(--pl-light-cyan);
+}
+
+.badge-group--gold .badge-icon {
+    color: var(--pl-gold);
+}
+
+.badge-group--silver .badge-icon {
+    color: var(--pl-silver);
+}
+
+.badge-group--bronze .badge-icon {
+    color: var(--pl-bronze);
+}
+
+.badge-group--icon-only {
+    padding: 4px;
+}
+
+    .badge-group--icon-only .badge-icon {
+        background-color: transparent;
+        color: white;
+    }
+

@@ -5,7 +5,7 @@
 }
 
 .team-card {
-    background-color: var(--pl-light-purple);
+    background-color: var(--pl-purple-light);
     border-radius: var(--bs-border-radius);
     overflow: hidden;
     text-align: center;

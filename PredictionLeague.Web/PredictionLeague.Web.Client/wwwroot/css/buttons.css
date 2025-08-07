@@ -15,27 +15,27 @@
 .pink-button,
 .pink-button:disabled,
 .pink-button:active {
-    background-color: var(--pl-pink);
+    background-color: var(--pl-red);
     color: white;
     font-weight: bold;
 }
 
     .pink-button:not(.badge):hover {
         background-color: white;
-        color: var(--pl-pink);
+        color: var(--pl-red);
     }
 
 .dark-pink-button,
 .dark-pink-button:disabled,
 .dark-pink-button:active {
-    background-color: var(--pl-dark-pink);
+    background-color: var(--pl-purple-bright);
     color: white;
     font-weight: bold;
 }
 
     .dark-pink-button:not(.badge):hover {
         background-color: white;
-        color: var(--pl-dark-pink);
+        color: var(--pl-purple-bright);
     }
 
 .light-cyan-button,
@@ -67,7 +67,7 @@
     top: 50%;
     left: 0;
     transform: translateY(-50%);
-    color: var(--pl-pink);
+    color: var(--pl-red);
     transition: color 0.2s ease-in-out;
 }
 

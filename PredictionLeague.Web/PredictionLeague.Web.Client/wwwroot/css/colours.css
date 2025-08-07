@@ -1,19 +1,23 @@
-﻿.bg-pl-green {
-    background-color: var(--pl-green);
-    color: white;
-}
-
-.bg-pl-pink {
-    background-color: var(--pl-pink);
-    color: white;
-}
-
-.bg-pl-dark-pink {
-    background-color: var(--pl-dark-pink);
-    color: white;
-}
-
-.bg-pl-light-cyan {
-    background-color: var(--pl-light-cyan);
-    color: white;
+﻿:root {
+    /* Purples */
+    --pl-purple: #3D195B;
+    --pl-purple-dark: #31144a;
+    --pl-purple-light: #4A2E6C;
+    --pl-purple-bright: #963cff;
+    /* Reds */
+    --pl-red: #E90052;
+    /* Blues */
+    --pl-blue: #04F5FF;
+    --pl-light-cyan: #03c2b4;
+    /* Greens */
+    --pl-green: #00FF85;
+    --pl-green-light: #84fab0;
+    /* Greys */
+    --pl-grey-light: #EAEAEA;
+    /* Gold */
+    --pl-gold: #C9B037;
+    /* Silver */
+    --pl-silver: #B4B4B4;
+    /* Bronze */
+    --pl-bronze: #6A3805;
 }
