@@ -54,3 +54,20 @@
 .carousel-item-wrapper .leaderboard-card {
     width: 100%;
 }
+
+.leaderboard-card .league-card-body {
+    padding: 1.5em;
+    flex-grow: 1;
+    overflow-y: auto; /* <-- This is the crucial fix */
+}
+
+.carousel-item-content .leaderboard-card {
+    width: 100%;
+    min-width: 0;
+}
+
+/* Add this rule to ensure the table doesn't overflow its container */
+.leaderboard-table {
+    table-layout: fixed;
+    width: 100%;
+}

@@ -25,32 +25,34 @@
                     @foreach (var leaderboard in DashboardState.Leaderboards)
                     {
                         <div class="carousel-item-wrapper">
-                            <div class="leaderboard-card">
-                                <div class="league-card-header">
-                                    <h5 class="card-title text-white fw-bold">@leaderboard.LeagueName</h5>
-                                    <small class="text-white-50">@leaderboard.SeasonName</small>
-                                </div>
-                                <div class="league-card-body">
-                                    <div class="table-responsive">
-                                        <table class="leaderboard-table light text-white">
-                                            <thead>
-                                            <tr>
-                                                <th class="rank-col">#</th>
-                                                <th>Player</th>
-                                                <th class="points-col">Points</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            @foreach (var entry in leaderboard.Entries)
-                                            {
-                                                <tr>
-                                                    <td class="rank-col fw-bold">@entry.Rank</td>
-                                                    <td>@entry.PlayerName</td>
-                                                    <td class="points-col fw-bold">@entry.TotalPoints</td>
-                                                </tr>
-                                            }
-                                            </tbody>
-                                        </table>
+                            <div class="carousel-item-content">
+                                <div class="leaderboard-card">
+                                    <div class="league-card-header w-100">
+                                        <h5 class="card-title text-white fw-bold centre">@leaderboard.LeagueName</h5>
+                                        <small class="text-white-50 centre">@leaderboard.SeasonName</small>
+                                    </div>
+                                    <div class="league-card-body justify-start w-100">
+                                        <div class="table-responsive w-100">
+                                            <table class="leaderboard-table light text-white">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="rank-col">#</th>
+                                                        <th>Player</th>
+                                                        <th class="points-col">Points</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var entry in leaderboard.Entries)
+                                                    {
+                                                        <tr>
+                                                            <td class="rank-col fw-bold">@entry.Rank</td>
+                                                            <td>@entry.PlayerName</td>
+                                                            <td class="points-col fw-bold">@entry.TotalPoints</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -84,7 +86,7 @@
         DashboardState.OnStateChange += StateHasChanged;
         await DashboardState.LoadLeaderboardsAsync();
     }
-  
+
     private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;
     private void HandleTouchMove(TouchEventArgs e) { }
 
@@ -95,9 +97,9 @@
 
         if (Math.Abs(diffX) > 50)
         {
-            if (diffX > 0) 
+            if (diffX > 0)
                 ShowNext();
-            else 
+            else
                 ShowPrevious();
         }
     }

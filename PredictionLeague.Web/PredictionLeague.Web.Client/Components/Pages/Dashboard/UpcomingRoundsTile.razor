@@ -32,7 +32,9 @@
                         @foreach (var round in DashboardState.UpcomingRounds)
                         {
                             <div class="carousel-item-wrapper">
-                                <RoundCard Round="round" />
+                                <div class="carousel-item-content">
+                                    <RoundCard Round="round" />
+                                </div>
                             </div>
                         }
                     </div>

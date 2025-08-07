@@ -1,28 +1,35 @@
 .carousel-wrapper {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    flex-grow: 1;
-    justify-content: center;
+    height: 100%;
+    overflow: hidden;
 }
 
 .carousel-container {
-    display: flex;
-    align-items: center;
     width: 100%;
-    overflow: hidden; 
+    flex-grow: 1; 
+    overflow: hidden;
+    max-height: 500px; 
 }
 
 .carousel-track {
     display: flex;
     height: 100%;
     transition: transform 0.3s ease-in-out;
+
 }
 
 .carousel-item-wrapper {
     flex: 0 0 100%;
     width: 100%;
     padding: 0 5px;
+    min-width: 0; 
+}
+
+.carousel-item-content {
+    padding: 0 0.5rem;
+    height: 100%;
+    display: flex;
 }
 
 .carousel-btn {
@@ -39,7 +46,8 @@
 
 .carousel-dots {
     text-align: center;
-    padding-top: 1rem;
+    padding: 1rem 0 0.5rem 0; /* Adjust padding */
+    flex-shrink: 0;
 }
 
 .carousel-dot {
@@ -60,5 +68,9 @@
 @media (min-width: 992px) {
     .carousel--desktop-multi-item .carousel-item-wrapper {
         flex: 0 0 50%;
+    }
+
+    .carousel-container {
+        aspect-ratio: auto;
     }
 }

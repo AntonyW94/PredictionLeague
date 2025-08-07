@@ -60,7 +60,7 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                     SELECT [LeagueId] FROM [LeagueMembers] WHERE [UserId] = @UserId AND [Status] = @ApprovedStatus
                 )
             ORDER BY 
-                alr.[LeagueName], alr.[Rank];";
+                alr.[LeagueName], alr.[Rank], alr.[PlayerName];";
         var flatResults = await _connection.QueryAsync<FlatLeaderboardEntry>(
             sql,
             cancellationToken,

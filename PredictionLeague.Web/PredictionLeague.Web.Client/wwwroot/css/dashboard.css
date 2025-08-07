@@ -158,6 +158,10 @@
     flex-grow: 1;
 }
 
+.league-card-body.justify-start{
+    justify-content: start;
+}
+
 /* This new container will hold items you want side-by-side */
 .card-info-row {
     display: flex;
