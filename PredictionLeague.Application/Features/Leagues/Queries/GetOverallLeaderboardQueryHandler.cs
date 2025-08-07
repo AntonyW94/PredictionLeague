@@ -18,28 +18,28 @@ public class GetOverallLeaderboardQueryHandler : IRequestHandler<GetOverallLeade
     {
         const string sql = @"
             SELECT
-                RANK() OVER (ORDER BY SUM(ISNULL([up].[PointsAwarded], 0)) DESC) AS [Rank],
-                [au].[FirstName] + ' ' + [au].[LastName] AS [PlayerName],
-                SUM(ISNULL([up].[PointsAwarded], 0)) AS [TotalPoints]
+                RANK() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS [Rank],
+                au.[FirstName] + ' ' + au.[LastName] AS [PlayerName],
+                SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints]
             FROM 
-                [LeagueMembers] AS [lm]
+                [LeagueMembers] AS lm
             JOIN 
-                [AspNetUsers] AS [au] ON [lm].[UserId] = [au].[Id]
+                [AspNetUsers] AS au ON lm.[UserId] = au.[Id]
             JOIN 
-                [Leagues] AS [l] ON [lm].[LeagueId] = [l].[Id]
+                [Leagues] AS l ON lm.[LeagueId] = l.[Id]
             JOIN 
-                [Seasons] AS [s] ON [l].[SeasonId] = [s].[Id]
+                [Seasons] AS s ON l.[SeasonId] = s.[Id]
             JOIN 
-                [Rounds] AS [r] ON [s].[Id] = [r].[SeasonId]
+                [Rounds] AS r ON s.[Id] = r.[SeasonId]
             JOIN 
-                [Matches] AS [m] ON [r].[Id] = [m].[RoundId]
+                [Matches] AS m ON r.[Id] = m.[RoundId]
             LEFT JOIN 
-                [UserPredictions] AS [up] ON [m].[Id] = [up].[MatchId] AND [lm].[UserId] = [up].[UserId]
+                [UserPredictions] AS up ON m.[Id] = up.[MatchId] AND lm.[UserId] = up.[UserId]
             WHERE
-                [lm].[LeagueId] = @LeagueId
-                AND [lm].[Status] = @ApprovedStatus
+                lm.[LeagueId] = @LeagueId
+                AND lm.[Status] = @ApprovedStatus
             GROUP BY
-                [au].[FirstName], [au].[LastName]
+                au.[UserName], au.[FirstName], au.[LastName]
             ORDER BY
                 [Rank], [PlayerName];";
 

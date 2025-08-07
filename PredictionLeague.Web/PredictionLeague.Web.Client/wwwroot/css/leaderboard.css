@@ -1,0 +1,44 @@
+﻿.leaderboard-card {
+    background-color: var(--pl-purple);
+    border-radius: var(--bs-border-radius);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.leaderboard-table {
+    border-collapse: collapse;
+    width: 100%;
+    color: white;
+    font-size: 0.9em;
+}
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+        padding: 0.75rem;
+        text-align: center;
+        border-bottom: 1px solid var(--pl-purple);
+        white-space: nowrap;
+    }
+
+    .leaderboard-table th {
+        background-color: var(--pl-purple-dark);
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .leaderboard-table tbody tr:nth-child(even) td {
+        background-color: #432468;
+    }
+
+    .leaderboard-table .rank-col {
+        width: 15%;
+        text-align: left;
+    }
+
+    .leaderboard-table .points-col {
+        width: 25%;
+        text-align: right;
+    }
