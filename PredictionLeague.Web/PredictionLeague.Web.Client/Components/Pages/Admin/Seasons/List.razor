@@ -14,8 +14,8 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-white mb-0">Manage Seasons</h3>
             <button class="btn d-flex align-items-center green-button" @onclick='() => NavigationManager.NavigateTo("/admin/seasons/create")'>
-                <span class="bi bi-plus-circle-fill me-2"></span>
-                <span class="d-none d-md-inline">Create Season</span>
+                <span class="bi bi-plus-circle-fill"></span>
+                <span class="d-none d-md-inline ms-2">Create Season</span>
             </button>
         </div>
 
@@ -27,44 +27,56 @@
         }
         else
         {
-            <div class="league-grid">
+            <div class="card-grid">
                 @foreach (var season in _seasons)
                 {
-                    <div class="league-card">
-                        <div class="league-card-header">
-                            <span>@season.Name</span>
-                            <div class="form-check form-switch">
-                                <input type="checkbox" class="form-check-input"
-                                       checked="@season.IsActive"
-                                       @onchange="() => ToggleIsActive(season)"
-                                       title="Toggle Active Status" />
+                    <div class="action-card light">
+                        <div class="card-header">
+                            <h5 class="fw-bold text-white mb-0">@season.Name</h5>
+                        </div>
+
+                        <div class="action-card-body">
+                            <div class="action-card-row">
+                                <dt>Active</dt>
+                                <dd>
+                                    <div class="form-check form-switch ms-0">
+                                        <input type="checkbox" class="form-check-input"
+                                               checked="@season.IsActive"
+                                               @onchange="() => ToggleIsActive(season)"
+                                               title="Toggle Active Status"/>
+                                    </div>
+                                </dd>
+                            </div>
+
+                            <div class="action-card-row">
+                                <dt>Rounds</dt>
+                                <dd>@season.RoundCount / @season.NumberOfRounds</dd>
+                            </div>
+
+                            <div class="action-card-row">
+                                <dt>Starts</dt>
+                                <dd>@season.StartDate.ToString("dd MMM yyyy")</dd>
+                            </div>
+
+                            <div class="action-card-row">
+                                <dt>Ends</dt>
+                                <dd>@season.EndDate.ToString("dd MMM yyyy")</dd>
                             </div>
                         </div>
-                        <div class="league-card-body">
-                            <dl class="mb-0">
-                                <div class="league-card-row">
-                                    <dt>Rounds</dt>
-                                    <dd>@season.RoundCount / @season.NumberOfRounds</dd>
-                                </div>
-                                <div class="league-card-row">
-                                    <dt>Duration</dt>
-                                    <dd>@season.StartDate.ToString("dd MMM yyyy") - @season.EndDate.ToString("dd MMM yyyy")</dd>
-                                </div>
-                            </dl>
-                        </div>
-                        <div class="league-card-footer d-flex flex-column" style="gap: 0.5rem;">
-                            <div class="d-flex w-100" style="gap: 1rem;">
-                                @if (season.RoundCount < season.NumberOfRounds)
-                                {
-                                    <button class="btn light-cyan-button flex-grow-1" @onclick="() => AddRound(season.Id)">
-                                        <span class="bi bi-plus-circle-fill me-2"></span>Add Round
-                                    </button>
-                                }
-                                <button class="btn dark-pink-button flex-grow-1" @onclick="() => ManageRounds(season.Id)">
-                                    <span class="bi bi-calendar3-range me-2"></span>Manage Rounds
+
+                        <div class="action-card-footer">
+                            @if (season.RoundCount < season.NumberOfRounds)
+                            {
+                                <button class="btn blue-light-button flex-grow-1" @onclick="() => AddRound(season.Id)">
+                                    <span class="bi bi-plus-circle-fill me-2"></span>Add Round
                                 </button>
-                            </div>
-                            <button class="btn green-button w-100" @onclick="() => EditSeason(season.Id)">
+                            }
+
+                            <button class="btn purple-accent-button flex-grow-1" @onclick="() => ManageRounds(season.Id)">
+                                <span class="bi bi-calendar3-range me-2"></span>Manage Rounds
+                            </button>
+
+                            <button class="btn green-button" @onclick="() => EditSeason(season.Id)">
                                 <span class="bi bi-pencil-fill me-2"></span>Edit Season
                             </button>
                         </div>

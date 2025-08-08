@@ -1,5 +1,5 @@
 ﻿.form-container {
-    background-color: var(--pl-purple-light);
+    background-color: var(--pl-purple-600);
     padding: 2.5rem;
     border-radius: var(--bs-border-radius);
     width: 100%;
@@ -35,7 +35,7 @@
 
 .swal2-select {
     background-color: white !important;
-    color: var(--pl-purple) !important; 
+    color: var(--pl-purple-800) !important; 
     border-radius: var(--bs-border-radius);
     padding: 0.5rem;
 }
@@ -64,7 +64,7 @@
     }
 
 .prize-summary {
-    border-top: 2px solid var(--pl-purple-dark);
+    border-top: 2px solid var(--pl-purple-900);
     padding-top: 1rem;
     margin-top: 1rem;
 }
@@ -75,26 +75,25 @@
 }
 
 .form-sub-header {
-    color: var(--pl-grey-light);
+    color: var(--pl-grey-100);
     font-weight: 500;
 }
 
 .input-group-text.prize-label {
-    background-color: var(--pl-purple-dark);
-    border-color: var(--pl-purple-dark);
+    background-color: var(--pl-purple-900);
+    border-color: var(--pl-purple-900);
     color: white;
     font-weight: 500;
 }
 
 .prize-summary .league-card-row {
-    border-bottom: 1px solid var(--pl-purple);
+    border-bottom: 1px solid var(--pl-purple-800);
 }
 
     .prize-summary .league-card-row:last-child {
         border-bottom: none;
     }
 
-/* Validation */
 .message-box-solid {
     color: white;
     border-radius: var(--bs-border-radius);
@@ -131,14 +130,14 @@
         }
 
     .message-box-solid.warning {
-        background-color: #EBFF01;
-        color: var(--pl-purple-dark);
+        background-color: var(--pl-yellow);
+        color: var(--pl-purple-900);
         font-weight: bold;
     }
 
         .message-box-solid.warning::before {
             content: "\F33B";
-            color: var(--pl-purple-dark);
+            color: var(--pl-purple-900);
         }
 
     .message-box-solid.success {

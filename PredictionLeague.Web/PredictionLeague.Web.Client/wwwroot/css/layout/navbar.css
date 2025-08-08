@@ -9,7 +9,7 @@
 }
 
 .navbar-custom {
-    background-color: var(--pl-purple);
+    background-color: var(--pl-purple-800);
 }
 
 .navbar-logo {
@@ -21,9 +21,6 @@
     display: none!important;
 }
 
-/* --- DESKTOP STYLES --- */
-
-/* Base styles for desktop nav links */
 .navbar-nav .nav-item .nav-link,
 .navbar-nav .nav-item .navbar-text {
     color: white !important;
@@ -42,7 +39,6 @@
     font-size: 1.25rem;
 }
 
-/* Hover effect styles for desktop */
 .navbar-nav > .nav-item {
     transition: background-color 0.2s ease-in-out;
     border-radius: var(--bs-border-radius);
@@ -55,42 +51,39 @@
         .navbar-nav > .nav-item:hover .nav-link,
         .navbar-nav > .nav-item:hover .navbar-text,
         .navbar-nav > .nav-item:hover .bi-person-fill {
-            color: var(--pl-purple) !important;
+            color: var(--pl-purple-800) !important;
         }
 
-/* Dropdown menu styles */
 .dropdown-menu {
     background-color: white;
     border: none;
 }
 
 .dropdown-item {
-    color: var(--pl-purple);
+    color: var(--pl-purple-800);
     font-weight: 500;
 }
 
     .dropdown-item:hover, .dropdown-item:focus {
-        color: var(--pl-purple-light);
+        color: var(--pl-purple-600);
         background-color: white;
         font-weight: bold;
     }
 
     .dropdown-item.active {
-        color: var(--pl-purple-light);
+        color: var(--pl-purple-600);
         background-color: white;
     }
 
     .dropdown-item .bi {
         font-weight: bold !important;
-        color: var(--pl-purple);
+        color: var(--pl-purple-800);
     }
 
 .dropdown-divider {
     border-top: 1px solid rgba(61, 25, 91, 0.25);
 }
 
-
-/* --- MOBILE STYLES --- */
 @media (max-width: 991.98px) {
     .navbar-nav .nav-link {
         padding: 0.5rem 1rem;

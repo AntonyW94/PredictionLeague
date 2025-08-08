@@ -4,7 +4,7 @@
 
 @using PredictionLeague.Web.Client.Services.Dashboard
 
-<div class="dashboard-card h-100">
+<div class="card h-100">
     <h3 class="text-white text-center fw-bold mb-4">Leaderboards</h3>
 
     <ApiError Message="@DashboardState.LeaderboardsErrorMessage" />
@@ -27,7 +27,7 @@
                         <div class="carousel-item-wrapper">
                             <div class="carousel-item-content">
                                 <div class="leaderboard-card">
-                                    <div class="league-card-header w-100">
+                                    <div class="card-header w-100">
                                         <h5 class="card-title text-white fw-bold centre">@leaderboard.LeagueName</h5>
                                         <small class="text-white-50 centre">@leaderboard.SeasonName</small>
                                     </div>
@@ -46,7 +46,7 @@
                                                     {
                                                         <tr>
                                                             <td class="rank-col fw-bold">@entry.Rank</td>
-                                                            <td>@entry.PlayerName</td>
+                                                            <td class="player-name-col">@entry.PlayerName</td>
                                                             <td class="points-col fw-bold">@entry.TotalPoints</td>
                                                         </tr>
                                                     }

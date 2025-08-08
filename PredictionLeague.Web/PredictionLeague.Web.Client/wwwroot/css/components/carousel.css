@@ -12,11 +12,23 @@
     max-height: 500px; 
 }
 
+.carousel-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-grow: 1;
+}
+
+.carousel-track-wrapper {
+    overflow: hidden;
+    width: 100%;
+}
+
 .carousel-track {
     display: flex;
     height: 100%;
     transition: transform 0.3s ease-in-out;
-
 }
 
 .carousel-item-wrapper {
@@ -30,6 +42,7 @@
     padding: 0 0.5rem;
     height: 100%;
     display: flex;
+    justify-content: center;
 }
 
 .carousel-btn {
@@ -46,7 +59,7 @@
 
 .carousel-dots {
     text-align: center;
-    padding: 1rem 0 0.5rem 0; /* Adjust padding */
+    padding: 1rem 0 0.5rem 0;
     flex-shrink: 0;
 }
 
@@ -55,7 +68,7 @@
     height: 12px;
     width: 12px;
     margin: 0 5px;
-    background-color: var(--pl-purple);
+    background-color: var(--pl-purple-800);
     border-radius: 50%;
     display: inline-block;
     transition: background-color 0.3s ease;
@@ -74,3 +87,11 @@
         aspect-ratio: auto;
     }
 }
+
+@media (max-width: 400px) {
+    .carousel-item-wrapper,
+    .carousel-item-content {
+        padding: 0;
+    }
+}
+

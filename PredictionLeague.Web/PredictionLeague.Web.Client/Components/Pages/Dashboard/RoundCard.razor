@@ -1,29 +1,30 @@
 ﻿@using PredictionLeague.Contracts.Dashboard
 
-<div class="round-card">
-    <div class="round-card-header">
-        <h5 class="mb-0 fw-bold text-white">@Round.SeasonName</h5>
-        <span>Round @Round.RoundNumber</span>
+<div class="action-card light">
+    <div class="card-header">
+        <h5 class="fw-bold text-white">@Round.SeasonName</h5>
+        <small class="text-white-50">Round @Round.RoundNumber</small>
     </div>
-    <div class="round-card-body">
-        <div class="mb-4 text-center">
-            @if ((Round.Deadline - DateTime.UtcNow).TotalHours < 24)
-            {
-                <CountdownTimer Deadline="Round.Deadline" />
-            }
-            else
-            {
-                <div class="badge-group badge-group--red">
-                    <span class="badge-icon" title="Deadline">
-                        <i class="bi bi-alarm"></i>
-                    </span>
-                    <span>
-                        Deadline: @Round.Deadline.ToString("ddd dd MMM, HH:mm")
-                    </span>
-                </div>
-            }
-        </div>
-        <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100 mt-auto">
+
+    <div class="action-card-body">
+        <dl class="mb-0">
+            <div class="action-card-row action-card-row--centered">
+                @if ((Round.Deadline - DateTime.UtcNow).TotalHours < 24)
+                {
+                    <CountdownTimer Deadline="Round.Deadline" />
+                }
+                else
+                {
+                    <div class="badge-group badge-group--red">
+                        <span class="badge-icon" title="Deadline"><i class="bi bi-alarm"></i></span>
+                        <span>Deadline: @Round.Deadline.ToString("ddd dd MMM, HH:mm")</span>
+                    </div>
+                }
+            </div>
+        </dl>
+    </div>
+    <div class="action-card-footer">
+        <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
             @if (Round.HasUserPredicted)
             {
                 <span class="bi bi-pencil-fill me-2"></span>
@@ -37,7 +38,7 @@
         </NavLink>
 
         <AuthorizeView Roles="@RoleNames.Administrator">
-            <NavLink href="@($"/admin/rounds/{Round.Id}/results")" class="btn light-cyan-button w-100 mt-3">
+            <NavLink href="@($"/admin/rounds/{Round.Id}/results")" class="btn blue-light-button">
                 <span class="bi bi-graph-up me-2"></span>
                 Enter Results
             </NavLink>

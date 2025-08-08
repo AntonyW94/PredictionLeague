@@ -1,5 +1,5 @@
 ﻿.leaderboard-card {
-    background-color: var(--pl-purple);
+    background-color: var(--pl-purple-800);
     border-radius: var(--bs-border-radius);
     display: flex;
     flex-direction: column;
@@ -17,12 +17,12 @@
     .leaderboard-table td {
         padding: 0.75rem;
         text-align: center;
-        border-bottom: 1px solid var(--pl-purple);
+        border-bottom: 1px solid var(--pl-purple-800);
         white-space: nowrap;
     }
 
     .leaderboard-table th {
-        background-color: var(--pl-purple-dark);
+        background-color: var(--pl-purple-900);
         font-weight: bold;
         position: sticky;
         top: 0;
@@ -30,19 +30,25 @@
     }
 
     .leaderboard-table td {
-        background: var(--pl-purple);
+        background: var(--pl-purple-800);
     }
 
     .leaderboard-table.light td {
-        background: var(--pl-purple-light);
+        background: var(--pl-purple-600);
     }
 
     .leaderboard-table tbody tr:nth-child(even) td {
-        background-color: #432468;
+        background-color: var(--pl-purple-700);
     }
 
     .leaderboard-table .rank-col {
         width: 15%;
+        text-align: left;
+    }
+
+    .leaderboard-table .player-name-col {
+        white-space: normal;
+        word-wrap: break-word;
         text-align: left;
     }
 

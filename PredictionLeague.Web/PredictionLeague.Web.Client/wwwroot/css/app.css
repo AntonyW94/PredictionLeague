@@ -1,20 +1,28 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap');
 
-@import url('badges.css');
-@import url('buttons.css');
-@import url('cards.css');
-@import url('carousel.css');
+/* Base styles */
 @import url('colours.css');
-@import url('dashboard.css');
-@import url('forms.css');
-@import url('icons.css');
-@import url('layout.css');
-@import url('leaderboard.css');
-@import url('loading.css');
-@import url('navbar.css');
-@import url('predictions.css');
-@import url('results-grid.css');
-@import url('tables.css');
+
+/* Layout styles */
+@import url('layout/layout.css');
+@import url('layout/loading.css');
+@import url('layout/navbar.css');
+
+/* Component styles */
+@import url('components/badges.css');
+@import url('components/buttons.css');
+@import url('components/cards.css');
+@import url('components/carousel.css');
+@import url('components/forms.css');
+
+/* Page-specific styles */
+@import url('pages/dashboard.css');
+@import url('pages/leaderboard.css');
+@import url('pages/predictions.css');
+@import url('pages/results-grid.css');
+@import url('pages/user-list.css');
+
 
 :root {
     /* Border Radiuses */
@@ -27,11 +35,11 @@
 
 html, body {
     font-family: 'Poppins', sans-serif;
-    background-color: var(--pl-grey-light);
+    background-color: var(--pl-grey-100);
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: var(--pl-purple);
+    color: var(--pl-purple-800);
     font-weight: 700;
 }
 

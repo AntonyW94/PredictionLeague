@@ -13,12 +13,12 @@
     .results-grid td {
         padding: 0.75rem;
         text-align: center;
-        border-bottom: 1px solid var(--pl-purple);
+        border-bottom: 1px solid var(--pl-purple-800);
         white-space: nowrap;
     }
 
     .results-grid th {
-        background-color: var(--pl-purple-dark);
+        background-color: var(--pl-purple-900);
         font-weight: bold;
         position: sticky;
         top: 0;
@@ -30,7 +30,7 @@
         min-width: 60px;
         position: sticky;
         left: 0;
-        background-color: var(--pl-purple-dark);
+        background-color: var(--pl-purple-900);
     }
    
     .results-grid thead .match-info,
@@ -39,12 +39,12 @@
     }
 
     .results-grid td.match-info {
-        background-color: var(--pl-purple);
+        background-color: var(--pl-purple-800);
         z-index: 2;
     }
 
     .results-grid tbody tr:nth-child(even) td {
-        background-color: #432468;
+        background-color: var(--pl-purple-700);
     }
 
 
@@ -52,7 +52,7 @@
         font-weight: bold;
         font-family: monospace;
         font-size: 1.1em;
-        background: var(--pl-purple);
+        background: var(--pl-purple-800);
     }
 
     .results-grid .blurred-score {
@@ -63,7 +63,7 @@
 
     .results-grid .not-predicted-icon {
         font-size: 1.5em;
-        color: var(--pl-grey-light);
+        color: var(--pl-grey-100);
     }
 
     .results-grid .match-info .match-logo-small {
@@ -73,12 +73,12 @@
 
     .results-grid .score-cell.correct-score {
         background-color: var(--pl-green);
-        color: var(--pl-purple-dark);
+        color: var(--pl-purple-900);
     }
 
     .results-grid .score-cell.correct-result {
-        background-color: #FFC107; /* Amber */
-        color: var(--pl-purple-dark);
+        background-color: var(--pl-yellow);
+        color: var(--pl-purple-900);
     }
 
     .results-grid .score-cell.incorrect-result {
@@ -86,7 +86,7 @@
     }
 
     .results-grid tfoot th {
-        background-color: var(--pl-purple-dark);
+        background-color: var(--pl-purple-900);
         font-size: 1.2em;
         position: sticky;
         bottom: 0;

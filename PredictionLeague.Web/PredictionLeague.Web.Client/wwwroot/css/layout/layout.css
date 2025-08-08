@@ -1,14 +1,14 @@
 ﻿.page-container {
-    background-color: var(--pl-purple);
+    background-color: var(--pl-purple-800);
     min-height: calc(100vh - 56px);
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 2rem;
+    padding: 1.5rem;
 }
 
 .admin-table-container {
-    background-color: var(--pl-purple-light);
+    background-color: var(--pl-purple-600);
     padding: 2.5rem;
     border-radius: var(--bs-border-radius);
     width: 80%;
@@ -23,7 +23,7 @@
 }
 
 .hero-section {
-    background-color: var(--pl-purple);
+    background-color: var(--pl-purple-800);
 }
 
 .hero-image {
@@ -33,14 +33,18 @@
 }
 
 @media (max-width: 768px) {
-    .page-container, .my-details-container {
-        padding: 1em; 
-        align-items: start;
+    .page-container {
+        padding: 1em;
+        align-items: flex-start; /* This is the fix */
     }
 
     .admin-table-container, .form-container {
-        padding: 1.5rem; 
+        padding: 1.5rem;
         margin: 0;
-        width:100%;
+        width: 100%;
+    }
+
+    dd{
+        font-size: 0.8em;
     }
 }

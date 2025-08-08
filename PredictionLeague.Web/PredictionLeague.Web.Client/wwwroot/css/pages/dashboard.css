@@ -1,0 +1,13 @@
+﻿.dashboard-container {
+    width: 95%;
+    margin: auto;
+}
+
+.position-info {
+    color: white;
+}
+
+    .position-info span:first-child {
+        font-size: 1.2em;
+        font-weight: bold;
+    }

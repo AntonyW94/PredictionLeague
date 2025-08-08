@@ -1,4 +1,10 @@
-﻿<div class="dashboard-card h-100">
+﻿@inject IDashboardStateService DashboardState
+@inject IBrowserService BrowserService
+
+@using PredictionLeague.Web.Client.Services.Browser
+@using PredictionLeague.Web.Client.Services.Dashboard
+
+<div class="card h-100">
     <h3 class="text-white text-center fw-bold mb-4">Upcoming Rounds</h3>
 
     <ApiError Message="@DashboardState.UpcomingRoundsErrorMessage" />
@@ -16,19 +22,16 @@
     else
     {
         <div class="carousel-wrapper carousel--desktop-multi-item">
-            <div class="carousel-container">
+            <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
                 @if (_isDesktop && DashboardState.UpcomingRounds.Count > 2)
                 {
-                    <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentRoundIndex == 0)">
+                    <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentIndex == 0)">
                         <span class="bi bi-chevron-left"></span>
                     </button>
                 }
 
-                <div class="rounds-track-wrapper"
-                     @ontouchstart="HandleTouchStart"
-                     @ontouchmove="HandleTouchMove"
-                     @ontouchend="HandleTouchEnd">
-                    <div class="rounds-track" style="@_trackStyle">
+                <div class="carousel-track-wrapper">
+                    <div class="carousel-track" style="@_trackStyle">
                         @foreach (var round in DashboardState.UpcomingRounds)
                         {
                             <div class="carousel-item-wrapper">
@@ -54,10 +57,111 @@
                     @for (var i = 0; i < NumberOfDots; i++)
                     {
                         var dotIndex = i;
-                        <span class="carousel-dot @(i == _currentRoundIndex ? "active" : "")" @onclick="() => GoToSlide(dotIndex)"></span>
+                        <span class="carousel-dot @(i == _currentIndex ? "active" : "")" @onclick="() => GoToSlide(dotIndex)"></span>
                     }
                 </div>
             }
         </div>
     }
 </div>
+
+@code {
+    private int _currentIndex;
+    private double _touchStartX;
+    private string _trackStyle = "transform: translateX(0%);";
+    private bool _isDesktop;
+   
+    protected override async Task OnInitializedAsync()
+    {
+        DashboardState.OnStateChange += StateHasChanged;
+        _isDesktop = await BrowserService.IsDesktop();
+
+        if (!DashboardState.UpcomingRounds.Any())
+            await DashboardState.LoadUpcomingRoundsAsync();
+    }
+
+    private int NumberOfDots
+    {
+        get
+        {
+            if (!DashboardState.UpcomingRounds.Any())
+                return 0;
+            
+            var roundsPerPage = _isDesktop ? 2 : 1;
+            
+            if (DashboardState.UpcomingRounds.Count <= roundsPerPage) 
+                return 0;
+            
+            return DashboardState.UpcomingRounds.Count - roundsPerPage + 1;
+        }
+    }
+
+    private void HandleTouchStart(TouchEventArgs e)
+    {
+        _touchStartX = e.Touches[0].ClientX;
+    }
+
+    private void HandleTouchMove(TouchEventArgs e)
+    {
+
+    }
+
+    private void HandleTouchEnd(TouchEventArgs e)
+    {
+        var touchEndX = e.ChangedTouches[0].ClientX;
+        var diffX = _touchStartX - touchEndX;
+
+        if (Math.Abs(diffX) > 50)
+        {
+            if (diffX > 0)
+                ShowNext();
+            else
+                ShowPrevious();
+        }
+    }
+
+    private void GoToSlide(int index)
+    {
+        if (index >= 0 && index < NumberOfDots)
+        {
+            _currentIndex = index;
+            UpdateTrackStyle();
+        }
+    }
+
+    private void ShowPrevious()
+    {
+        if (_currentIndex > 0)
+        {
+            _currentIndex--;
+            UpdateTrackStyle();
+        }
+    }
+
+    private void ShowNext()
+    {
+        if (!IsAtEnd())
+        {
+            _currentIndex++;
+            UpdateTrackStyle();
+        }
+    }
+
+    private void UpdateTrackStyle()
+    {
+        var percentageToMove = _isDesktop ? 50 : 100;
+        _trackStyle = $"transform: translateX(-{_currentIndex * percentageToMove}%);";
+    }
+
+    private bool IsAtEnd()
+    {
+        var roundsPerPage = _isDesktop ? 2 : 1;
+        return _currentIndex >= DashboardState.UpcomingRounds.Count - roundsPerPage;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        DashboardState.OnStateChange -= StateHasChanged;
+        return ValueTask.CompletedTask;
+    }
+}

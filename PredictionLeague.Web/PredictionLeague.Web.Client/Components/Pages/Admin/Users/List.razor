@@ -27,61 +27,73 @@
         }
         else
         {
-            <div class="league-grid">
+            <div class="card-grid">
                 @foreach (var user in _users)
                 {
-                    <div class="league-card">
-                        <div class="league-card-header">
-                            <span>@user.FullName</span>
-                            <div class="d-flex align-items-center">
-                                @if (!string.IsNullOrWhiteSpace(user.PasswordHash))
-                                {
-                                    <span class="bi bi-envelope-fill me-2" title="Email & Password"></span>
-                                }
-                                @foreach (var provider in user.SocialProviders)
-                                {
-                                    <span class="bi @GetProviderIcon(provider) me-2" title="@provider"></span>
-                                }
+                    <div class="action-card light">
+
+                        <div class="card-header">
+                            <h5 class="fw-bold text-white">@user.FullName</h5>
+                            <small class="text-white-50">
+                                <div class="d-flex align-items-center">
+                                    @{
+                                        var iconCount = 0;
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(user.PasswordHash))
+                                    {
+                                        <span class="bi bi-envelope-fill" title="Email & Password"></span>
+                                        {
+                                            iconCount += 1;
+                                        }
+                                    }
+                                    @foreach (var provider in user.SocialProviders)
+                                    {
+                                        <span class="bi @GetProviderIcon(provider) @(iconCount > 0 ? "ms-2" : string.Empty)" title="@provider"></span>
+                                        {
+                                            iconCount += 1;
+                                        }
+                                    }
+                                </div>
+                            </small>
+                        </div>
+
+                        <div class="action-card-body">
+                            <div class="action-card-row">
+                                <dt><span class="bi bi-envelope-at-fill" title="Email"></span></dt>
+                                <dd class="text-end email-address">@user.Email</dd>
+                            </div>
+
+                            <div class="action-card-row">
+                                <dt><span class="bi bi-telephone-fill" title="Phone Number"></span></dt>
+                                <dd>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "Not Provided" : user.PhoneNumber)</dd>
+                            </div>
+
+                            <div class="action-card-row">
+                                <dt><span class="bi bi-person-badge-fill" title="Role"></span></dt>
+                                <dd>
+                                    @if (user.IsAdmin)
+                                    {
+                                        <span class="badge rounded-pill bg-pl-red">Admin</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge rounded-pill bg-pl-blue-light">Player</span>
+                                    }
+                                </dd>
                             </div>
                         </div>
 
-                        <div class="league-card-body">
-                            <dl class="mb-0">
-                                <div class="league-card-row">
-                                    <dt><span class="bi bi-envelope-at-fill" title="Email"></span></dt>
-                                    <dd>@user.Email</dd>
-                                </div>
-
-                                <div class="league-card-row">
-                                    <dt><span class="bi bi-telephone-fill" title="Phone Number"></span></dt>
-                                    <dd>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "Not Provided" : user.PhoneNumber)</dd>
-                                </div>
-
-                                <div class="league-card-row">
-                                    <dt><span class="bi bi-person-badge-fill" title="Role"></span></dt>
-                                    <dd>
-                                        @if (user.IsAdmin)
-                                        {
-                                            <span class="badge rounded-pill bg-pl-pink">Admin</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge rounded-pill bg-pl-light-cyan">Player</span>
-                                        }
-                                    </dd>
-                                </div>
-                            </dl>
-                        </div>
-                        
                         @{
                             var isLoggedInUser = _currentUserId == user.Id;
                         }
 
-                        <div class="league-card-footer">
-                            <button class="btn @(isLoggedInUser ? "disabled-button" : "green-button") flex-grow-1" @onclick="() => ChangeRole(user)" disabled="@(isLoggedInUser)">
+                        <div class="action-card-footer">
+                            <button class="btn @(isLoggedInUser ? "grey-button" : "green-button") flex-grow-1" @onclick="() => ChangeRole(user)" disabled="@(isLoggedInUser)">
                                 <span class="bi bi-person-badge-fill me-2"></span>Change Role
                             </button>
-                            <button class="btn @(isLoggedInUser ? "disabled-button" : "pink-button") flex-grow-1" @onclick="() => PrepareToDeleteUser(user)" disabled="@(_currentUserId == user.Id)">
+
+                            <button class="btn @(isLoggedInUser ? "grey-button" : "red-button") flex-grow-1" @onclick="() => PrepareToDeleteUser(user)" disabled="@(_currentUserId == user.Id)">
                                 <span class="bi bi-trash-fill me-2"></span>Delete
                             </button>
                         </div>
@@ -98,7 +110,7 @@
     private string? _currentUserId;
 
     protected override async Task OnInitializedAsync()
-    {  
+    {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -121,7 +133,7 @@
     private async Task ChangeRole(UserDto user)
     {
         _errorMessage = null;
-      
+
         var currentRole = user.IsAdmin ? nameof(ApplicationUserRole.Administrator) : nameof(ApplicationUserRole.Player);
         var newRole = await JsRuntime.InvokeAsync<string?>("blazorInterop.showRoleChangeConfirm", new object[] { user.FullName, currentRole });
 
@@ -168,7 +180,7 @@
             {
                 const string confirmButtonText = "<i class='bi bi-check-circle'></i> <strong>Confirm Deletion</strong>";
                 const string cancelButtonText = "<i class='bi bi-x-circle'></i> <strong>Cancel</strong>";
-             
+
                 var confirmed = await JsRuntime.InvokeAsync<bool>("blazorInterop.showConfirm", new object[] { $"Delete '{user.FullName}'?", "This action cannot be undone.", confirmButtonText, cancelButtonText });
                 if (confirmed)
                 {

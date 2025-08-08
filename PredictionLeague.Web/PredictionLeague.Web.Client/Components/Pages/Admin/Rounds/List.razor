@@ -35,7 +35,7 @@
                 @foreach (var round in _rounds)
                 {
                     <div class="league-card">
-                        <div class="league-card-header">
+                        <div class="card-header">
                             <span>Round @round.RoundNumber</span>
                         </div>
                         <div class="league-card-body">
@@ -58,7 +58,7 @@
                             <button class="btn green-button flex-grow-1" @onclick="() => EditRound(round.Id)">
                                 <span class="bi bi-pencil-fill me-2"></span>Edit
                             </button>
-                            <button class="btn light-cyan-button flex-grow-1" @onclick="() => EnterResults(round.Id)">
+                            <button class="btn blue-light-button flex-grow-1" @onclick="() => EnterResults(round.Id)">
                                 <span class="bi bi-clipboard2-check-fill me-2"></span>Enter Results
                             </button>
                         </div>
@@ -68,7 +68,7 @@
         }
 
         <div class="mt-4">
-            <button class="btn pink-button d-flex align-items-center" @onclick="Back">
+            <button class="btn red-button d-flex align-items-center" @onclick="Back">
                 <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Season
             </button>
         </div>

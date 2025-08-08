@@ -44,7 +44,7 @@
             {
                 <div class="row">
                     <div class="col-md-6 mb-4">
-                        <div class="dashboard-card h-100">
+                        <div class="card h-100">
                             <h5 class="text-white text-center fw-bold mb-3">Overall Prizes</h5>
                             @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Overall).OrderBy(p => p.Rank))
                             {
@@ -57,7 +57,7 @@
                     </div>
 
                     <div class="col-md-6 mb-4">
-                        <div class="dashboard-card h-100">
+                        <div class="card h-100">
                             <h5 class="text-white text-center fw-bold mb-3">Round Prizes</h5>
                             @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Round))
                             {
@@ -70,7 +70,7 @@
                     </div>
 
                     <div class="col-md-6 mb-4">
-                        <div class="dashboard-card h-100">
+                        <div class="card h-100">
                             <h5 class="text-white text-center fw-bold mb-3">Monthly Prizes</h5>
                             @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Monthly))
                             {
@@ -83,7 +83,7 @@
                     </div>
 
                     <div class="col-md-6 mb-4">
-                        <div class="dashboard-card h-100">
+                        <div class="card h-100">
                             <h5 class="text-white text-center fw-bold mb-3">Special Prizes</h5>
                             @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.MostExactScores))
                             {
@@ -99,7 +99,7 @@
             @* State 2: After Deadline, Ready for Prize Definition *@
             else if (_model != null)
             {
-                <div class="dashboard-card">
+                <div class="card">
                     <div class="text-center text-white mb-4">
                         <h5 class="text-white">Total Prize Pot to Allocate: @_model.PrizePot.ToString("C", new CultureInfo("en-GB"))</h5>
                     </div>
@@ -116,7 +116,7 @@
                                 <div class="col-md-4">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <h5 class="text-white mb-0">Overall Prizes</h5>
-                                        <button type="button" class="btn btn-sm dark-pink-button" @onclick="_model.AddOverallPrize">
+                                        <button type="button" class="btn btn-sm purple-accent-button" @onclick="_model.AddOverallPrize">
                                             <span class="bi bi-plus-circle-fill me-1"></span>Add
                                         </button>
                                     </div>
@@ -125,7 +125,7 @@
                                         <div class="input-group mb-2">
                                             <span class="input-group-text prize-label prize-label-fixed-width">@prize.PrizeDescription</span>
                                             <InputNumber class="form-control" @bind-Value="prize.PrizeAmount" />
-                                            <button type="button" class="btn pink-button" @onclick="() => _model.RemoveOverallPrize(prize)" disabled="@(prize.Rank == 1)">
+                                            <button type="button" class="btn red-button" @onclick="() => _model.RemoveOverallPrize(prize)" disabled="@(prize.Rank == 1)">
                                                 <span class="bi bi-trash-fill"></span>
                                             </button>
                                         </div>
