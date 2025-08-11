@@ -1,0 +1,58 @@
+﻿
+.prize-summary {
+    padding-top: 1rem;
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.input-group .prize-label-fixed-width {
+    flex-grow: 1;
+    justify-content: flex-start;
+    text-align: left;
+}
+
+
+.input-group .form-control.prize-amount-fixed-width {
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 70px;
+}
+
+.input-group .prize-multiplier-fixed-width,
+.input-group .btn.red-button {
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 55px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.prize-row {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--pl-purple-700);
+}
+
+    .prize-row:last-child {
+        border-bottom: none;
+    }
+
+.prize-icon {
+    flex: 0 0 40px;
+    font-size: 1.5rem;
+    color: var(--pl-blue-light);
+}
+
+.prize-description {
+    flex-grow: 1;
+    font-weight: 500;
+}
+
+.prize-amount {
+    font-weight: bold;
+    font-size: 1.1rem;
+}

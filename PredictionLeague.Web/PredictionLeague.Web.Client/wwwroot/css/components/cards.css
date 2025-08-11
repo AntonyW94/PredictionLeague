@@ -238,6 +238,10 @@
         background-color: var(--pl-purple-800);
     }
 
+    .action-card.purple-600 {
+        background-color: var(--pl-purple-600);
+    }
+
 .card-header {
     background-color: var(--pl-purple-900);
     padding: 1rem 1.5rem;
@@ -252,6 +256,10 @@
 .action-card-body {
     padding: 1rem 1.5rem;
     flex-grow: 1;
+}
+
+.action-card-body.no-padding{
+    padding: 0;
 }
 
 .card-info-row {

@@ -27,22 +27,78 @@
 
             <ApiError Message="@_errorMessage" />
 
-            @* State 1: Before Entry Deadline *@
             @if (DateTime.UtcNow < _pageData.EntryDeadline)
             {
                 <div class="message-box-solid warning">
                     Prize setup is locked until the entry deadline has passed.
                 </div>
-                <div class="text-center text-white mt-4">
-                    <p>Entry Deadline: @_pageData.EntryDeadline.ToString("dd MMM yyyy HH:mm")</p>
-                    <p>Current Entries: @_pageData.MemberCount</p>
-                    <p>Estimated Prize Pot: @((_pageData.Price * _pageData.MemberCount).ToString("C", new CultureInfo("en-GB")))</p>
+
+                <div class="action-card light">
+                    <div class="action-card-body no-margin">
+                        <div class="action-card-row">
+                            <div class="badge-group badge-group--red">
+                                <span class="badge-icon"><i class="bi bi-alarm"></i></span>
+                                <span>@_pageData.EntryDeadline.ToString("dd MMM yyyy HH:mm")</span>
+                            </div>
+                      
+                            <div class="badge-group badge-group--green">
+                                <span class="badge-icon"><i class="bi bi-currency-pound"></i></span>
+                                <span>@((_pageData.Price * _pageData.MemberCount).ToString("C", new CultureInfo("en-GB")))</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             }
             @* State 3: After Prizes are Confirmed (Read-only view) *@
             else if (_pageData.PrizeSettings.Any())
             {
-                <div class="row">
+                <div class="card light">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <h5 class="text-white text-center fw-bold mb-3">Overall Prizes</h5>
+                                @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Overall).OrderBy(p => p.Rank))
+                                {
+                                    <div class="prize-row">
+                                        <div class="prize-icon"><span class="bi bi-trophy-fill"></span></div>
+                                        <span class="prize-description">@prize.Rank<span>@FormattingUtilities.GetOrdinal(prize.Rank)</span><span class="d-none d-md-inline"> Place</span></span>
+                                        <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <h5 class="text-white text-center fw-bold mb-3">Other Prizes</h5>
+                                @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Round))
+                                {
+                                    <div class="prize-row">
+                                        <div class="prize-icon"><span class="bi bi-calendar3-event"></span></div>
+                                        <span class="prize-description">Round<span class="d-none d-md-inline"> Winner</span></span>
+                                        <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                    </div>
+                                }
+                                @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Monthly))
+                                {
+                                    <div class="prize-row">
+                                        <div class="prize-icon"><span class="bi bi-calendar-month"></span></div>
+                                        <span class="prize-description">Monthly<span class="d-none d-md-inline"> Winner</span></span>
+                                        <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                    </div>
+                                }
+                                @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.MostExactScores))
+                                {
+                                    <div class="prize-row">
+                                        <div class="prize-icon"><span class="bi bi-bullseye"></span></div>
+                                        <span class="prize-description">Exact Scores</span>
+                                        <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* <div class="row">
                     <div class="col-md-6 mb-4">
                         <div class="card h-100">
                             <h5 class="text-white text-center fw-bold mb-3">Overall Prizes</h5>
@@ -94,79 +150,87 @@
                             }
                         </div>
                     </div>
-                </div>
+                </div> *@
             }
-            @* State 2: After Deadline, Ready for Prize Definition *@
             else if (_model != null)
             {
-                <div class="card">
-                    <div class="text-center text-white mb-4">
-                        <h5 class="text-white">Total Prize Pot to Allocate: @_model.PrizePot.ToString("C", new CultureInfo("en-GB"))</h5>
-                    </div>
+                <div class="action-card purple-600">
+                    <div class="action-card-body no-padding">
+                        <div class="text-center text-white mb-4">
+                            <h5 class="text-white">Total Prize Pot to Allocate: @_model.PrizePot.ToString("C", new CultureInfo("en-GB"))</h5>
+                        </div>
 
-                    <BaseFormComponent TModel="DefinePrizesViewModel"
-                                       Model="_model"
-                                       SubmitAction="HandleDefinePrizesAsync"
-                                       SuccessRedirectUrl="@($"/leagues/{LeagueId}/prizes")"
-                                       BackUrl="/leagues"
-                                       SuccessAlertMessage="Prize structure locked successfully!"
-                                       BusyText="Saving...">
-                        <ChildContent>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h5 class="text-white mb-0">Overall Prizes</h5>
-                                        <button type="button" class="btn btn-sm purple-accent-button" @onclick="_model.AddOverallPrize">
-                                            <span class="bi bi-plus-circle-fill me-1"></span>Add
-                                        </button>
-                                    </div>
-                                    @foreach (var prize in _model.PrizeSettings.Where(p => p.PrizeType == PrizeType.Overall).OrderBy(p => p.Rank))
-                                    {
-                                        <div class="input-group mb-2">
-                                            <span class="input-group-text prize-label prize-label-fixed-width">@prize.PrizeDescription</span>
-                                            <InputNumber class="form-control" @bind-Value="prize.PrizeAmount" />
-                                            <button type="button" class="btn red-button" @onclick="() => _model.RemoveOverallPrize(prize)" disabled="@(prize.Rank == 1)">
-                                                <span class="bi bi-trash-fill"></span>
+                        <BaseFormComponent TModel="DefinePrizesViewModel"
+                                           Model="_model"
+                                           SubmitAction="HandleDefinePrizesAsync"
+                                           SuccessRedirectUrl="@($"/leagues/{LeagueId}/prizes")"
+                                           BackUrl="/leagues"
+                                           SuccessAlertMessage="Prize structure locked successfully!"
+                                           BusyText="Saving...">
+                            <ChildContent>
+                                <div class="row">
+                                    <div class="col-md-4 mb-4">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h5 class="text-white mb-0">Overall Prizes</h5>
+                                            <button type="button" class="btn btn-sm purple-accent-button" @onclick="_model.AddOverallPrize">
+                                                <span class="bi bi-plus-circle-fill me-1"></span>Add
                                             </button>
                                         </div>
-                                    }
-                                </div>
-
-                                <div class="col-md-4">
-                                    <h5 class="text-white">Recurring Prizes</h5>
-                                    <div class="input-group mb-2">
-                                        <span class="input-group-text prize-label prize-label-fixed-width"><span class="bi bi-calendar-month me-2"></span>Monthly Winner</span>
-                                        <InputNumber class="form-control" @bind-Value="_model.MonthlyWinnerAmount" />
-                                        <span class="input-group-text prize-label"><span class="badge rounded-pill bg-pl-dark-pink">x@_model.NumberOfMonths</span></span>
+                                        @foreach (var prize in _model.PrizeSettings.Where(p => p.PrizeType == PrizeType.Overall).OrderBy(p => p.Rank))
+                                        {
+                                            <div class="input-group mb-2">
+                                                <span class="input-group-text prize-label"><span class="bi bi-trophy-fill"></span></span>
+                                                <span class="input-group-text prize-label prize-label-fixed-width">@prize.PrizeDescription</span>
+                                                <InputNumber class="form-control prize-amount-fixed-width" @bind-Value="prize.PrizeAmount" />
+                                                <button type="button" class="btn red-button" @onclick="() => _model.RemoveOverallPrize(prize)" disabled="@(prize.Rank == 1)">
+                                                    <span class="bi bi-trash-fill"></span>
+                                                </button>
+                                            </div>
+                                        }
                                     </div>
-                                    <div class="input-group mb-2">
-                                        <span class="input-group-text prize-label prize-label-fixed-width"><span class="bi bi-calendar3-event me-2"></span>Round Winner</span>
-                                        <InputNumber class="form-control" @bind-Value="_model.RoundWinnerAmount" />
-                                        <span class="input-group-text prize-label"><span class="badge rounded-pill bg-pl-dark-pink">x@_model.NumberOfRounds</span></span>
-                                    </div>
-                                </div>
 
-                                <div class="col-md-4">
-                                    <h5 class="text-white">Special Prizes</h5>
-                                    @foreach (var prize in _model.PrizeSettings.Where(p => p.PrizeType == PrizeType.MostExactScores))
-                                    {
+                                    <div class="col-md-4 mb-4">
+                                        <h5 class="text-white">Recurring Prizes</h5>
                                         <div class="input-group mb-2">
-                                            <span class="input-group-text prize-label prize-label-fixed-width"><span class="bi bi-bullseye me-2"></span>@prize.PrizeDescription</span>
-                                            <InputNumber class="form-control" @bind-Value="prize.PrizeAmount" />
+                                            <span class="input-group-text prize-label"><span class="bi bi-calendar-month"></span></span>
+                                            <span class="input-group-text prize-label prize-label-fixed-width">Monthly<span class="d-none d-md-inline"> Winner</span></span>
+                                            <InputNumber class="form-control prize-amount-fixed-width" @bind-Value="_model.MonthlyWinnerAmount" />
+                                            <span class="input-group-text prize-label prize-multiplier-fixed-width">x @_model.NumberOfMonths</span>
                                         </div>
-                                    }
+                                        <div class="input-group mb-2">
+                                            <span class="input-group-text prize-label"><span class="bi bi-calendar3-event"></span></span>
+                                            <span class="input-group-text prize-label prize-label-fixed-width">Round<span class="d-none d-md-inline"> Winner</span></span>
+                                            <InputNumber class="form-control prize-amount-fixed-width" @bind-Value="_model.RoundWinnerAmount" />
+                                            <span class="input-group-text prize-label prize-multiplier-fixed-width">x @_model.NumberOfRounds</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <h5 class="text-white">Special Prizes</h5>
+                                        @foreach (var prize in _model.PrizeSettings.Where(p => p.PrizeType == PrizeType.MostExactScores))
+                                        {
+                                            <div class="input-group mb-2">
+                                                <span class="input-group-text prize-label"><span class="bi bi-bullseye"></span></span>
+                                                <span class="input-group-text prize-label prize-label-fixed-width">Exact Scores</span>
+                                                <InputNumber class="form-control prize-amount-fixed-width" @bind-Value="prize.PrizeAmount" />
+                                                <span class="input-group-text prize-label prize-multiplier-fixed-width">x 1</span>
+                                            </div>
+                                        }
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="prize-summary">
-                                <div class="league-card-row">
-                                    <dt class="fs-5 text-white">Remaining to Allocate:</dt>
-                                    <dd class="fs-5 fw-bold @(_model.RemainingToAllocate == 0 ? "text-success" : "text-danger")">
-                                        @_model.RemainingToAllocate.ToString("C", new CultureInfo("en-GB"))
-                                    </dd>
+                                <div class="prize-summary">
+                                    <div class="badge-group @(_model.RemainingToAllocate == 0 ? "badge-group--green" : "badge-group--red")">
+                                        <span class="badge-icon">
+                                            <i class="bi bi-currency-pound"></i>
+                                        </span>
+                                        <span class="fs-5">
+                                            Remaining: <strong>@_model.RemainingToAllocate.ToString("C", new CultureInfo("en-GB"))</strong>
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
-                        </ChildContent>
-                    </BaseFormComponent>
+                            </ChildContent>
+                        </BaseFormComponent>
+                    </div>
                 </div>
             }
         }

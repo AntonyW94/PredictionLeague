@@ -63,17 +63,6 @@
         border-color: var(--pl-green);
     }
 
-.prize-summary {
-    border-top: 2px solid var(--pl-purple-900);
-    padding-top: 1rem;
-    margin-top: 1rem;
-}
-
-.prize-label-fixed-width {
-    min-width: 180px;
-    justify-content: flex-end;
-}
-
 .form-sub-header {
     color: var(--pl-grey-100);
     font-weight: 500;
@@ -147,3 +136,9 @@
         .message-box-solid.success::before {
             content: "\F26B";
         }
+
+@media(max-width: 768px){
+    .message-box-solid{
+        text-align: center;
+    }
+}
