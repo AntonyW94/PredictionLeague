@@ -54,10 +54,10 @@ public class DefinePrizesViewModel
         var finalSettings = new List<DefinePrizeSettingDto>(PrizeSettings);
 
         if (MonthlyWinnerAmount > 0)
-            finalSettings.Add(new DefinePrizeSettingDto { PrizeType = PrizeType.Monthly, Rank = 1, PrizeAmount = MonthlyWinnerAmount });
+            finalSettings.Add(new DefinePrizeSettingDto { PrizeType = PrizeType.Monthly, Rank = 1, PrizeAmount = MonthlyWinnerAmount, Multiplier = NumberOfMonths});
         
         if (RoundWinnerAmount > 0)
-            finalSettings.Add(new DefinePrizeSettingDto { PrizeType = PrizeType.Round, Rank = 1, PrizeAmount = RoundWinnerAmount });
+            finalSettings.Add(new DefinePrizeSettingDto { PrizeType = PrizeType.Round, Rank = 1, PrizeAmount = RoundWinnerAmount, Multiplier = NumberOfRounds});
 
         return finalSettings;
     }

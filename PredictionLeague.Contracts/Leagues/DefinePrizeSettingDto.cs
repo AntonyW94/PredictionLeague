@@ -10,4 +10,5 @@ public class DefinePrizeSettingDto
     public string? PrizeDescription { get; set; }
     public int? Month { get; set; }
     public int? RoundNumber { get; set; }
+    public int Multiplier { get; set; } = 1;
 }

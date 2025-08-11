@@ -1,6 +1,8 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Contracts;
 using PredictionLeague.Domain.Common.Guards.Season;
 using PredictionLeague.Domain.Models;
 
@@ -10,11 +12,13 @@ public class DefinePrizeStructureCommandHandler : IRequestHandler<DefinePrizeStr
 {
     private readonly ILeagueRepository _leagueRepository;
     private readonly ISeasonRepository _seasonRepository;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public DefinePrizeStructureCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository)
+    public DefinePrizeStructureCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, UserManager<ApplicationUser> userManager)
     {
         _leagueRepository = leagueRepository;
         _seasonRepository = seasonRepository;
+        _userManager = userManager;
     }
 
     public async Task Handle(DefinePrizeStructureCommand request, CancellationToken cancellationToken)
@@ -24,15 +28,18 @@ public class DefinePrizeStructureCommandHandler : IRequestHandler<DefinePrizeStr
 
         var season = await _seasonRepository.GetByIdAsync(league.SeasonId, cancellationToken);
         Guard.Against.EntityNotFound(league.SeasonId, season, "Season");
+       
+        var definingUser = await _userManager.FindByIdAsync(request.DefiningUserId);
+        var isSiteAdmin = definingUser != null && await _userManager.IsInRoleAsync(definingUser, RoleNames.Administrator);
 
-        if (league.AdministratorUserId != request.DefiningUserId)
+        if (league.AdministratorUserId != request.DefiningUserId && !isSiteAdmin)
             throw new UnauthorizedAccessException("Only the league administrator can define the prize structure.");
 
         if (league.EntryDeadline > DateTime.UtcNow)
             throw new InvalidOperationException("The prize structure cannot be defined until after the entry deadline has passed.");
 
         var totalPrizePot = league.Price * league.Members.Count;
-        var totalAllocatedPrizes = request.PrizeSettings.Sum(p => p.PrizeAmount);
+        var totalAllocatedPrizes = request.PrizeSettings.Sum(p => p.PrizeAmount * p.Multiplier);
 
         if (totalAllocatedPrizes != totalPrizePot)
             throw new InvalidOperationException("The total allocated prize money must equal the total prize pot.");
