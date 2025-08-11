@@ -32,10 +32,10 @@
     border-radius: var(--bs-border-radius);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 400px) {
     .page-container {
         padding: 1em;
-        align-items: flex-start; /* This is the fix */
+        align-items: flex-start;
     }
 
     .admin-table-container, .form-container {
