@@ -11,6 +11,7 @@ public interface ILeagueService
     Task<List<LeagueLeaderboardDto>> GetLeaderboardsAsync();
     Task<List<UpcomingRoundDto>> GetUpcomingRoundsAsync();
     Task<List<LeaderboardEntryDto>> GetOverallLeaderboard(int leagueId);
+    Task<ExactScoresLeaderboardDto> GetExactScoresLeaderboard(int leagueId);
 
     Task<(bool Success, string? ErrorMessage)> RemoveMyLeagueMembershipAsync(int leagueId);
     Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId);

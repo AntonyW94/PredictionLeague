@@ -99,7 +99,7 @@ public class LeaguesController : ApiControllerBase
     {
         var query = new GetLeaguePrizesPageQuery(leagueId);
         var result = await _mediator.Send(query, cancellationToken);
-       
+
         if (result == null)
             return NotFound();
 
@@ -113,7 +113,7 @@ public class LeaguesController : ApiControllerBase
     {
         var query = new GetLeagueDashboardRoundResultsQuery(leagueId, roundId, CurrentUserId);
         var result = await _mediator.Send(query, cancellationToken);
-      
+
         if (result == null)
             return NotFound();
 
@@ -136,14 +136,12 @@ public class LeaguesController : ApiControllerBase
         var isAdmin = User.IsInRole(RoleNames.Administrator);
         var query = new GetLeagueDashboardQuery(leagueId, CurrentUserId, isAdmin);
         var result = await _mediator.Send(query, cancellationToken);
-      
+
         if (result == null)
             return NotFound();
 
         return Ok(result);
     }
-
-  
 
     #endregion
 
@@ -156,11 +154,11 @@ public class LeaguesController : ApiControllerBase
     public async Task<IActionResult> UpdateLeagueAsync(int leagueId, [FromBody] UpdateLeagueRequest request, CancellationToken cancellationToken)
     {
         var command = new UpdateLeagueCommand(
-            leagueId, 
+            leagueId,
             request.Name,
-            request.Price, 
+            request.Price,
             request.EntryDeadline);
-        
+
         await _mediator.Send(command, cancellationToken);
 
         return NoContent();
@@ -197,7 +195,7 @@ public class LeaguesController : ApiControllerBase
     {
         var command = new UpdateLeagueMemberStatusCommand(leagueId, memberId, CurrentUserId, newStatus);
         await _mediator.Send(command, cancellationToken);
-       
+
         return NoContent();
     }
 
@@ -209,7 +207,7 @@ public class LeaguesController : ApiControllerBase
     {
         var command = new DefinePrizeStructureCommand(leagueId, CurrentUserId, request.PrizeSettings);
         await _mediator.Send(command, cancellationToken);
-       
+
         return NoContent();
     }
 
@@ -225,7 +223,7 @@ public class LeaguesController : ApiControllerBase
 
         var command = new DeleteLeagueCommand(leagueId, CurrentUserId, isAdmin);
         await _mediator.Send(command, cancellationToken);
-     
+
         return NoContent();
     }
 
@@ -236,14 +234,14 @@ public class LeaguesController : ApiControllerBase
     {
         var command = new RemoveRejectedLeagueCommand(leagueId, CurrentUserId);
         await _mediator.Send(command, cancellationToken);
-      
+
         return NoContent();
     }
 
     #endregion
 
     #region Dashboard
-  
+
     [HttpGet("{leagueId:int}/leaderboard/overall")]
     [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboard(int leagueId, CancellationToken cancellationToken)
@@ -253,7 +251,7 @@ public class LeaguesController : ApiControllerBase
 
         return Ok(result);
     }
-    
+
     [HttpGet("{leagueId:int}/leaderboard/monthly/{month:int}")]
     [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetMonthlyLeaderboardAsync(int leagueId, int month, CancellationToken cancellationToken)
@@ -268,6 +266,14 @@ public class LeaguesController : ApiControllerBase
     {
         var query = new GetRoundLeaderboardQuery(leagueId, roundId);
         return Ok(await _mediator.Send(query, cancellationToken));
+    }
+
+    [HttpGet("{leagueId:int}/leaderboard/exact-scores")]
+    [ProducesResponseType(typeof(ExactScoresLeaderboardDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ExactScoresLeaderboardDto>> GetExactScoresLeaderboard(int leagueId)
+    {
+        var query = new GetExactScoresLeaderboardQuery(leagueId);
+        return Ok(await _mediator.Send(query));
     }
 
     #endregion

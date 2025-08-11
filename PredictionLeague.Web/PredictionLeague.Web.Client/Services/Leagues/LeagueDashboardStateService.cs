@@ -13,14 +13,15 @@ public class LeagueDashboardStateService
     public List<RoundDto> ViewableRounds { get; private set; } = new();
     public List<PredictionResultDto> CurrentRoundResults { get; private set; } = new();
     public List<MatchInRoundDto> CurrentRoundMatches { get; private set; } = new();
-    
+
     public int? SelectedRoundId { get; set; }
-    
+
     public bool IsLoadingDashboard { get; private set; }
     public bool IsLoadingRoundResults { get; private set; }
+
     public string? DashboardLoadError { get; private set; }
     public string? RoundResultsError { get; private set; }
-    
+
     private readonly HttpClient _httpClient;
 
     public LeagueDashboardStateService(HttpClient httpClient)
@@ -32,7 +33,7 @@ public class LeagueDashboardStateService
     {
         IsLoadingDashboard = true;
         DashboardLoadError = null;
-       
+
         NotifyStateChanged();
 
         try
@@ -54,7 +55,7 @@ public class LeagueDashboardStateService
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             DashboardLoadError = "Could not load dashboard data.";
         }
@@ -70,13 +71,13 @@ public class LeagueDashboardStateService
         IsLoadingRoundResults = true;
         SelectedRoundId = roundId;
         RoundResultsError = null;
-       
+
         NotifyStateChanged();
 
         try
         {
             var resultsTask = _httpClient.GetFromJsonAsync<List<PredictionResultDto>>($"api/leagues/{leagueId}/rounds/{roundId}/results");
-            var matchesTask =  _httpClient.GetFromJsonAsync<List<MatchInRoundDto>>($"api/rounds/{roundId}/matches-data");
+            var matchesTask = _httpClient.GetFromJsonAsync<List<MatchInRoundDto>>($"api/rounds/{roundId}/matches-data");
 
             await Task.WhenAll(resultsTask, matchesTask);
 

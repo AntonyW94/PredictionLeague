@@ -4,40 +4,32 @@
 @using PredictionLeague.Web.Client.Services.Leagues
 
 <div class="card">
-    <h5 class="card-title text-white fw-bold mb-3">Overall Leaderboard</h5>
+    <h5 class="card-title text-white fw-bold mb-3">Exact Scores</h5>
     <div class="card-body">
+        <ApiError Message="@_errorMessage" />
+
         @if (_isLoading)
         {
-            <div class="d-flex justify-content-center align-items-center h-100">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
+            <p class="text-center text-white"><em>Loading...</em></p>
         }
-        else if (!string.IsNullOrEmpty(_errorMessage))
-        {
-            <div class="p-3">
-                <ApiError Message="@_errorMessage" />
-            </div>
-        }
-        else if (_leaderboardEntries != null && _leaderboardEntries.Any())
+        else if (_leaderboard?.Entries is { Count: > 0 } entries)
         {
             <div class="table-responsive">
                 <table class="leaderboard-table text-white">
                     <thead>
                         <tr>
                             <th class="rank-col">#</th>
-                            <th class="player-name-col">Name</th>
-                            <th class="points-col">Points</th>
+                            <th class="player-name-col">Player</th>
+                            <th class="points-col">Scores</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var entry in _leaderboardEntries)
+                        @foreach (var entry in entries)
                         {
                             <tr>
                                 <td class="rank-col fw-bold">@entry.Rank</td>
                                 <td class="player-name-col">@entry.PlayerName</td>
-                                <td class="points-col fw-bold">@entry.TotalPoints</td>
+                                <td class="points-col fw-bold">@entry.ExactScoresCount</td>
                             </tr>
                         }
                     </tbody>
@@ -46,7 +38,7 @@
         }
         else
         {
-            <p class="text-center text-white-50 mt-4">No predictions have been scored yet.</p>
+            <p class="text-center text-white">No exact scores recorded yet.</p>
         }
     </div>
 </div>
@@ -55,7 +47,8 @@
     [Parameter, EditorRequired]
     public int LeagueId { get; set; }
 
-    private IEnumerable<LeaderboardEntryDto>? _leaderboardEntries;
+
+    private ExactScoresLeaderboardDto? _leaderboard;
     private bool _isLoading = true;
     private string? _errorMessage;
 
@@ -63,11 +56,11 @@
     {
         try
         {
-            _leaderboardEntries = await LeagueService.GetOverallLeaderboard(LeagueId);
+            _leaderboard = await LeagueService.GetExactScoresLeaderboard(LeagueId);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            _errorMessage = "Could not load the leaderboard. Please try again later.";
+            _errorMessage = ex.Message;// "Could not load the leaderboard. Please try again later.";
         }
         finally
         {

@@ -40,6 +40,11 @@ public class LeagueService : ILeagueService
         return await _httpClient.GetFromJsonAsync<List<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/overall") ?? new List<LeaderboardEntryDto>();
     }
 
+    public async Task<ExactScoresLeaderboardDto> GetExactScoresLeaderboard(int leagueId)
+    {
+        return await _httpClient.GetFromJsonAsync<ExactScoresLeaderboardDto>($"api/leagues/{leagueId}/leaderboard/exact-scores") ?? new ExactScoresLeaderboardDto();
+    }
+
     public async Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId)
     {
         var response = await _httpClient.PostAsync($"api/leagues/{leagueId}/join", null);
