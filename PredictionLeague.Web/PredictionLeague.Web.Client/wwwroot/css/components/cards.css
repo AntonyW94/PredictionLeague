@@ -343,6 +343,7 @@
 @media (max-width: 768px){
     .action-card {
         max-width: 350px;
+        width: 100%;
     }
 
     .member-card {
