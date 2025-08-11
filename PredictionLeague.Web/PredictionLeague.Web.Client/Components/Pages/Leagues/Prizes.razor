@@ -3,6 +3,7 @@
 @attribute [Authorize]
 
 @inject HttpClient Http
+@inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Leagues
 @using PredictionLeague.Domain.Common.Enumerations
@@ -40,7 +41,7 @@
                                 <span class="badge-icon"><i class="bi bi-alarm"></i></span>
                                 <span>@_pageData.EntryDeadline.ToString("dd MMM yyyy HH:mm")</span>
                             </div>
-                      
+
                             <div class="badge-group badge-group--green">
                                 <span class="badge-icon"><i class="bi bi-currency-pound"></i></span>
                                 <span>@((_pageData.Price * _pageData.MemberCount).ToString("C", new CultureInfo("en-GB")))</span>
@@ -52,105 +53,61 @@
             @* State 3: After Prizes are Confirmed (Read-only view) *@
             else if (_pageData.PrizeSettings.Any())
             {
-                <div class="card light">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <h5 class="text-white text-center fw-bold mb-3">Overall Prizes</h5>
-                                @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Overall).OrderBy(p => p.Rank))
-                                {
-                                    <div class="prize-row">
-                                        <div class="prize-icon"><span class="bi bi-trophy-fill"></span></div>
-                                        <span class="prize-description">@prize.Rank<span>@FormattingUtilities.GetOrdinal(prize.Rank)</span><span class="d-none d-md-inline"> Place</span></span>
-                                        <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
-                                    </div>
-                                }
-                            </div>
+                <div class="card-grid">
+                    <div class="action-card light w-100">
+                        <div class="card-header">
+                            <h5 class="text-white text-center fw-bold mb-0">Overall Prizes</h5>
+                        </div>
+                        <div class="action-card-body">
+                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Overall).OrderBy(p => p.Rank))
+                            {
+                                <div class="prize-row">
+                                    <div class="prize-icon"><span class="bi bi-trophy-fill"></span></div>
+                                    <span class="prize-description">@prize.Rank<span>@FormattingUtilities.GetOrdinal(prize.Rank)</span><span class="d-none d-md-inline"> Place</span></span>
+                                    <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
 
-                            <div class="col-md-6 mb-4">
-                                <h5 class="text-white text-center fw-bold mb-3">Other Prizes</h5>
-                                @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Round))
-                                {
-                                    <div class="prize-row">
-                                        <div class="prize-icon"><span class="bi bi-calendar3-event"></span></div>
-                                        <span class="prize-description">Round<span class="d-none d-md-inline"> Winner</span></span>
-                                        <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
-                                    </div>
-                                }
-                                @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Monthly))
-                                {
-                                    <div class="prize-row">
-                                        <div class="prize-icon"><span class="bi bi-calendar-month"></span></div>
-                                        <span class="prize-description">Monthly<span class="d-none d-md-inline"> Winner</span></span>
-                                        <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
-                                    </div>
-                                }
-                                @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.MostExactScores))
-                                {
-                                    <div class="prize-row">
-                                        <div class="prize-icon"><span class="bi bi-bullseye"></span></div>
-                                        <span class="prize-description">Exact Scores</span>
-                                        <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
-                                    </div>
-                                }
-                            </div>
+                    <div class="action-card light w-100">
+                        <div class="card-header">
+                            <h5 class="text-white text-center fw-bold mb-0">Other Prizes</h5>
+                        </div>
+                        <div class="action-card-body">
+                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Round))
+                            {
+                                <div class="prize-row">
+                                    <div class="prize-icon"><span class="bi bi-calendar3-event"></span></div>
+                                    <span class="prize-description">Round<span class="d-none d-md-inline"> Winner</span></span>
+                                    <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                </div>
+                            }
+                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Monthly))
+                            {
+                                <div class="prize-row">
+                                    <div class="prize-icon"><span class="bi bi-calendar-month"></span></div>
+                                    <span class="prize-description">Monthly<span class="d-none d-md-inline"> Winner</span></span>
+                                    <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                </div>
+                            }
+                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.MostExactScores))
+                            {
+                                <div class="prize-row">
+                                    <div class="prize-icon"><span class="bi bi-bullseye"></span></div>
+                                    <span class="prize-description">Exact Scores</span>
+                                    <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                </div>
+                            }
                         </div>
                     </div>
                 </div>
 
-                @* <div class="row">
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100">
-                            <h5 class="text-white text-center fw-bold mb-3">Overall Prizes</h5>
-                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Overall).OrderBy(p => p.Rank))
-                            {
-                                <div class="league-card-row">
-                                    <dt>@prize.Rank<span>@FormattingUtilities.GetOrdinal(prize.Rank)</span> Place</dt>
-                                    <dd>@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</dd>
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100">
-                            <h5 class="text-white text-center fw-bold mb-3">Round Prizes</h5>
-                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Round))
-                            {
-                                <div class="league-card-row">
-                                    <dt>Round Winner</dt>
-                                    <dd>@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</dd>
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100">
-                            <h5 class="text-white text-center fw-bold mb-3">Monthly Prizes</h5>
-                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Monthly))
-                            {
-                                <div class="league-card-row">
-                                    <dt>Monthly Winner</dt>
-                                    <dd>@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</dd>
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100">
-                            <h5 class="text-white text-center fw-bold mb-3">Special Prizes</h5>
-                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.MostExactScores))
-                            {
-                                <div class="league-card-row">
-                                    <dt>Most Correct Scores</dt>
-                                    <dd>@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</dd>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div> *@
+                <div class="d-flex justify-content-start mt-4">
+                    <button type="button" class="btn red-button d-flex align-items-center" @onclick="Back">
+                        <span class="bi bi-arrow-left-circle-fill me-2"></span>Back
+                    </button>
+                </div>
             }
             else if (_model != null)
             {
@@ -273,4 +230,6 @@
         };
         return Http.PostAsJsonAsync($"api/leagues/{LeagueId}/prizes", request);
     }
+
+    protected void Back() => NavigationManager.NavigateTo("/leagues");
 }
