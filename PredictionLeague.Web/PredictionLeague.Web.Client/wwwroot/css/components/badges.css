@@ -6,9 +6,12 @@
     text-align: center;
 }
 
-
 .bg-pl-red {
     background-color: var(--pl-red);
+}
+
+.bg-pl-green {
+    background-color: var(--pl-green);
 }
 
 .bg-pl-blue-light {
@@ -108,7 +111,7 @@
 
 @media (max-width: 400px) {
     .badge-group {
-        font-size: 0.65em;
+        font-size: 0.6em;
         padding: 2px 10px 2px 2px;
     }
 

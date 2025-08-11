@@ -232,9 +232,9 @@
     color: white;
     display: flex;
     flex-direction: column;
-    flex-basis: 300px;
+    flex-basis: 350px;
     flex-grow: 1;
-    max-width: 300px;
+    max-width: 350px;
 }
 
     .action-card.light {
