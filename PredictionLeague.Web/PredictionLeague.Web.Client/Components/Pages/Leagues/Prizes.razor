@@ -49,8 +49,14 @@
                         </div>
                     </div>
                 </div>
+
+
+                <div class="d-flex justify-content-start mt-4">
+                    <button type="button" class="btn red-button d-flex align-items-center" @onclick="Back">
+                        <span class="bi bi-arrow-left-circle-fill me-2"></span>Back
+                    </button>
+                </div>
             }
-            @* State 3: After Prizes are Confirmed (Read-only view) *@
             else if (_pageData.PrizeSettings.Any())
             {
                 <div class="card-grid">

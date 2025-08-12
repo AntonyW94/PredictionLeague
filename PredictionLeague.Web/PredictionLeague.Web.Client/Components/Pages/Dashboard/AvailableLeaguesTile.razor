@@ -17,46 +17,48 @@
     }
     else if (DashboardState.AvailableLeagues.Any())
     {
-        <div class="card-grid">
+        <div class="card-grid row">
             @foreach (var league in DashboardState.AvailableLeagues)
             {
-                <div class="action-card light">
-                    <div class="card-header">
-                        <h5 class="fw-bold text-white">@league.Name</h5>
-                        <small class="text-white-50">@league.SeasonName</small>
-                    </div>
+                <div class="col-lg-5">
+                    <div class="action-card light">
+                        <div class="card-header">
+                            <h5 class="fw-bold text-white">@league.Name</h5>
+                            <small class="text-white-50">@league.SeasonName</small>
+                        </div>
 
-                    <div class="action-card-body">
-                        <div class="action-card-row action-card-row--centered">
-                            <div class="badge-group badge-group--red">
-                                <span class="badge-icon"><i class="bi bi-alarm"></i></span>
-                                <span>@league.EntryDeadline.ToString("dd MMM yyyy HH:mm")</span>
+                        <div class="action-card-body">
+                            <div class="action-card-row action-card-row--centered">
+                                <div class="badge-group badge-group--red">
+                                    <span class="badge-icon"><i class="bi bi-alarm"></i></span>
+                                    <span>@league.EntryDeadline.ToString("dd MMM yyyy HH:mm")</span>
+                                </div>
+                            </div>
+
+                            <div class="action-card-row">
+                                <div class="badge-group badge-group--blue">
+                                    <span class="badge-icon">
+                                        <i class="bi bi-people-fill"></i>
+                                    </span>
+                                    <span>@league.MemberCount</span>
+                                </div>
+
+                                <div class="badge-group badge-group--green">
+                                    <span class="badge-icon">
+                                        <i class="bi bi-cash-stack"></i>
+                                    </span>
+                                    <span>@(league.Price > 0 ? league.Price.ToString("C", new CultureInfo("en-GB")) : "Free Entry")</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="action-card-row">
-                            <div class="badge-group badge-group--blue">
-                                <span class="badge-icon">
-                                    <i class="bi bi-people-fill"></i>
-                                </span>
-                                <span>@league.MemberCount</span>
-                            </div>
-
-                            <div class="badge-group badge-group--green">
-                                <span class="badge-icon">
-                                    <i class="bi bi-cash-stack"></i>
-                                </span>
-                                <span>@(league.Price > 0 ? league.Price.ToString("C", new CultureInfo("en-GB")) : "Free Entry")</span>
-                            </div>
+                        <div class="action-card-footer">
+                            <button class="btn btn-sm purple-accent-button w-100"
+                                    @onclick="() => HandleJoinLeagueAsync(league.Id)"
+                                    disabled="@_isBusy">
+                                Join
+                            </button>
                         </div>
-                    </div>
-
-                    <div class="action-card-footer">
-                        <button class="btn btn-sm purple-accent-button w-100"
-                                @onclick="() => HandleJoinLeagueAsync(league.Id)"
-                                disabled="@_isBusy">
-                            Join
-                        </button>
                     </div>
                 </div>
             }

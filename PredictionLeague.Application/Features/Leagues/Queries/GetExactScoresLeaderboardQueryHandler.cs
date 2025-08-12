@@ -45,24 +45,9 @@ public class GetExactScoresLeaderboardQueryHandler : IRequestHandler<GetExactSco
                                         PlayerName";
 
         var leaderboardEntries = await _connection.QueryAsync<ExactScoresLeaderboardEntryDto>(entriesSql, cancellationToken, new { request.LeagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
-
-        const string leagueInfoSql = @"
-                                        SELECT
-                                            l.[Name] AS LeagueName,
-                                            s.[Name] AS SeasonName
-                                        FROM 
-                                            [Leagues] l
-                                        JOIN
-                                            [Seasons] s ON l.[SeasonId] = s.[Id]
-                                        WHERE 
-                                            l.[Id] = @LeagueId";
-
-        var leagueInfo = await _connection.QuerySingleOrDefaultAsync<(string LeagueName, string SeasonName)>(leagueInfoSql, cancellationToken, new { request.LeagueId });
-
+      
         var leaderboard = new ExactScoresLeaderboardDto
         {
-            LeagueName = leagueInfo.LeagueName,
-            SeasonName = leagueInfo.SeasonName,
             Entries = leaderboardEntries.ToList()
         };
 

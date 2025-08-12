@@ -1,27 +1,36 @@
 ﻿@page "/dashboard"
-
 @attribute [Authorize]
 
 <PageTitle>Dashboard</PageTitle>
 
-<div class="page-container">
-    <div class="dashboard-container">
-        <div class="row align-items-stretch">
-            <div class="col-lg-8 mb-4">
-                <UpcomingRoundsTile />
-            </div>
+<AuthorizeView>
+    <Authorizing>
+        <div class="app-loading-container">
+            <div class="spinner"></div>
+            <p>Authorising...</p>
+        </div>
+    </Authorizing>
+    <Authorized>
+        <div class="page-container">
+            <div class="dashboard-container">
+                <div class="row align-items-stretch">
+                    <div class="col-lg-8 mb-4">
+                        <UpcomingRoundsTile />
+                    </div>
 
-            <div class="col-lg-4 mb-4">
-                <LeaderboardsTile />
-            </div>
-            
-            <div class="col-lg-6 mb-4">
-                <MyLeaguesTile /> 
-            </div>
+                    <div class="col-lg-4 mb-4">
+                        <LeaderboardsTile />
+                    </div>
 
-            <div class="col-lg-6 mb-4">
-                <AvailableLeaguesTile />
+                    <div class="col-lg-6 mb-4">
+                        <MyLeaguesTile />
+                    </div>
+
+                    <div class="col-lg-6 mb-4">
+                        <AvailableLeaguesTile />
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
+    </Authorized>
+</AuthorizeView>
