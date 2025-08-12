@@ -75,6 +75,6 @@ public class Round
         Guard.Against.NegativeOrZero(roundNumber, nameof(roundNumber));
         Guard.Against.Default(startDate, nameof(startDate));
         Guard.Against.Default(deadline, nameof(deadline));
-        Guard.Against.Expression(d => d <= startDate, deadline, "Start date must be before the prediction deadline.");
+        Guard.Against.Expression(d => d >= startDate, deadline, "Start date must be after the prediction deadline.");
     }
 }

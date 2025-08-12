@@ -35,14 +35,24 @@ public class LeagueService : ILeagueService
         return await _httpClient.GetFromJsonAsync<List<UpcomingRoundDto>>("api/dashboard/upcoming-rounds") ?? new();
     }
 
-    public async Task<List<LeaderboardEntryDto>> GetOverallLeaderboard(int leagueId)
+    public async Task<List<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId)
     {
         return await _httpClient.GetFromJsonAsync<List<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/overall") ?? new List<LeaderboardEntryDto>();
     }
 
-    public async Task<ExactScoresLeaderboardDto> GetExactScoresLeaderboard(int leagueId)
+    public async Task<ExactScoresLeaderboardDto> GetExactScoresLeaderboardAsync(int leagueId)
     {
         return await _httpClient.GetFromJsonAsync<ExactScoresLeaderboardDto>($"api/leagues/{leagueId}/leaderboard/exact-scores") ?? new ExactScoresLeaderboardDto();
+    }
+
+    public async Task<List<MonthDto>> GetMonthsForLeagueAsync(int leagueId)
+    {
+        return await _httpClient.GetFromJsonAsync<List<MonthDto>>($"api/leagues/{leagueId}/months") ?? new();
+    }
+
+    public async Task<List<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month)
+    {
+        return await _httpClient.GetFromJsonAsync<List<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/monthly/{month}") ?? new();
     }
 
     public async Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId)

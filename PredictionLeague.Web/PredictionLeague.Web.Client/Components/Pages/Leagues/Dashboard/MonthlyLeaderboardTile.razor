@@ -1,0 +1,182 @@
+﻿@inject ILeagueService LeagueService
+
+@using PredictionLeague.Contracts.Leaderboards
+@using PredictionLeague.Contracts.Leagues
+@using PredictionLeague.Web.Client.Services.Leagues
+
+<div class="card">
+    <h5 class="card-title text-white fw-bold mb-3">Monthly Leaderboard</h5>
+    <div class="card-body">
+        <ApiError Message="@_errorMessage" />
+
+        @if (_isLoadingMonths)
+        {
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (_months.Any())
+        {
+            <div class="carousel-wrapper">
+                <div class="carousel-container">
+                    <div class="carousel-track" style="@_trackStyle">
+                        @foreach (var month in _months)
+                        {
+                            <div class="carousel-item-wrapper">
+                                <div class="carousel-item-content">
+                                    <div class="leaderboard-card">
+                                        <div class="card-header w-100">
+                                            <h5 class="card-title text-white fw-bold centre">@month.Name</h5>
+                                        </div>
+                                        <div class="league-card-body justify-start w-100">
+                                            @if (_leaderboards.TryGetValue(month.Month, out var leaderboard))
+                                            {
+                                                @if (leaderboard.IsLoading)
+                                                {
+                                                    <div class="d-flex justify-content-center align-items-center h-100">
+                                                        <div class="spinner-border text-light" role="status">
+                                                            <span class="visually-hidden">Loading...</span>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else if (leaderboard.Entries.Any())
+                                                {
+                                                    <div class="table-responsive w-100">
+                                                        <table class="leaderboard-table light text-white">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th class="rank-col">#</th>
+                                                                    <th class="player-name-col">Player</th>
+                                                                    <th class="points-col">Points</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach (var entry in leaderboard.Entries)
+                                                                {
+                                                                    <tr>
+                                                                        <td class="rank-col fw-bold">@entry.Rank</td>
+                                                                        <td class="player-name-col fw-bold">@entry.PlayerName</td>
+                                                                        <td class="points-col fw-bold">@entry.TotalPoints</td>
+                                                                    </tr>
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <p class="text-white-50 text-center">No scores for this month yet.</p>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @if (_months.Count > 1)
+                {
+                    <div class="carousel-dots">
+                        @for (var i = 0; i < _months.Count; i++)
+                        {
+                            var index = i;
+                            <span class="carousel-dot @(index == _currentIndex ? "active" : "")" @onclick="() => GoToSlide(index)"></span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-center text-white-50">No monthly leaderboards available yet.</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public int LeagueId { get; set; }
+
+    private List<MonthDto> _months = new();
+  
+    private readonly Dictionary<int, LeaderboardData> _leaderboards = new();
+  
+    private bool _isLoadingMonths = true;
+  
+    private string? _errorMessage;
+    private string _trackStyle = "transform: translateX(0%);";
+
+    private int _currentIndex;
+ 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _months = (await LeagueService.GetMonthsForLeagueAsync(LeagueId)).ToList();
+          
+            var currentMonth = DateTime.Now.Month;
+            var currentMonthDto = _months.FirstOrDefault(m => m.Month == currentMonth) ?? _months.FirstOrDefault();
+            if (currentMonthDto != null)
+            {
+                _currentIndex = _months.IndexOf(currentMonthDto);
+                UpdateTrackStyle();
+                await LoadLeaderboardForMonth(currentMonthDto.Month);
+            }
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Could not load monthly data.";
+        }
+        finally
+        {
+            _isLoadingMonths = false;
+        }
+    }
+
+    private async Task LoadLeaderboardForMonth(int month)
+    {
+        if (_leaderboards.ContainsKey(month)) 
+            return;
+
+        _leaderboards[month] = new LeaderboardData { IsLoading = true };
+        StateHasChanged();
+
+        try
+        {
+            var entries = await LeagueService.GetMonthlyLeaderboardAsync(LeagueId, month);
+            _leaderboards[month].Entries = entries;
+        }
+        catch
+        {
+            // Handle error if needed, maybe add an error property to LeaderboardData
+        }
+        finally
+        {
+            _leaderboards[month].IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GoToSlide(int index)
+    {
+        _currentIndex = index;
+        UpdateTrackStyle();
+        var monthToLoad = _months[_currentIndex].Month;
+        await LoadLeaderboardForMonth(monthToLoad);
+    }
+
+    private void UpdateTrackStyle()
+    {
+        _trackStyle = $"transform: translateX(-{_currentIndex * 100}%);";
+    }
+
+    private class LeaderboardData
+    {
+        public bool IsLoading { get; set; }
+        public List<LeaderboardEntryDto> Entries { get; set; } = new();
+    }
+}

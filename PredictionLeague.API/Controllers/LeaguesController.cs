@@ -242,6 +242,14 @@ public class LeaguesController : ApiControllerBase
 
     #region Dashboard
 
+    [HttpGet("{leagueId:int}/months")]
+    [ProducesResponseType(typeof(IEnumerable<MonthDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<MonthDto>>> GetMonthsForLeagueAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        var query = new GetMonthsForLeagueQuery(leagueId);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
+
     [HttpGet("{leagueId:int}/leaderboard/overall")]
     [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboard(int leagueId, CancellationToken cancellationToken)

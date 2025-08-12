@@ -17,27 +17,31 @@ public class GetMonthlyLeaderboardQueryHandler : IRequestHandler<GetMonthlyLeade
     public async Task<IEnumerable<LeaderboardEntryDto>> Handle(GetMonthlyLeaderboardQuery request, CancellationToken cancellationToken)
     {
         const string sql = @"
+            WITH MonthlyRounds AS (
+                SELECT Id
+                FROM Rounds
+                WHERE MONTH(StartDate) = @Month
+                    AND SeasonId = (SELECT SeasonId FROM Leagues WHERE Id = @LeagueId)
+            )
+
             SELECT
-                ROW_NUMBER() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS Rank,
-                u.[FirstName] + ' ' + u.[LastName] AS Username,
-                SUM(ISNULL(up.[PointsAwarded], 0)) AS Points
-            FROM [LeagueMembers] lm
-            JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            LEFT JOIN [UserPredictions] up ON u.[Id] = up.[UserId]
-            LEFT JOIN [Matches] m ON up.[MatchId] = m.[Id]
-            LEFT JOIN [Rounds] r ON m.[RoundId] = r.[Id]
-            LEFT JOIN [Seasons] s ON r.[SeasonId] = s.[Id]
-            WHERE lm.[LeagueId] = @LeagueId
-              AND lm.[Status] = @Status
-              AND (@Month = 0 OR MONTH(m.[MatchDateTime]) = @Month)
-              AND s.[Id] = (SELECT SeasonId FROM Leagues WHERE Id = @LeagueId)
+                RANK() OVER (ORDER BY SUM(ISNULL(up.PointsAwarded, 0)) DESC) AS Rank,
+                u.FirstName + ' ' + u.LastName AS PlayerName,
+                SUM(ISNULL(up.PointsAwarded, 0)) AS TotalPoints
+            FROM LeagueMembers lm
+            JOIN AspNetUsers u ON lm.UserId = u.Id
+            LEFT JOIN UserPredictions up ON u.Id = up.UserId
+            LEFT JOIN Matches m ON up.MatchId = m.Id
+            WHERE lm.LeagueId = @LeagueId
+                AND lm.Status = @Status
+                AND m.RoundId IN (SELECT Id FROM MonthlyRounds)
             GROUP BY
-                lm.[UserId],
-                u.[FirstName],
-                u.[LastName]
+                lm.UserId,
+                u.FirstName,
+                u.LastName
             ORDER BY
-                Points DESC,
-                Username ASC;";
+                TotalPoints DESC,
+                PlayerName ASC;";
 
         return await _dbConnection.QueryAsync<LeaderboardEntryDto>(
             sql,

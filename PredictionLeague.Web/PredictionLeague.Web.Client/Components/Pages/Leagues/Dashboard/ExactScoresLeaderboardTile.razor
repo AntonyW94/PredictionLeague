@@ -32,7 +32,7 @@
                         {
                             <tr>
                                 <td class="rank-col fw-bold">@entry.Rank</td>
-                                <td class="player-name-col">@entry.PlayerName</td>
+                                <td class="player-name-col fw-bold">@entry.PlayerName</td>
                                 <td class="points-col fw-bold">@entry.ExactScoresCount</td>
                             </tr>
                         }
@@ -60,7 +60,7 @@
     {
         try
         {
-            _leaderboard = await LeagueService.GetExactScoresLeaderboard(LeagueId);
+            _leaderboard = await LeagueService.GetExactScoresLeaderboardAsync(LeagueId);
         }
         catch (Exception ex)
         {
