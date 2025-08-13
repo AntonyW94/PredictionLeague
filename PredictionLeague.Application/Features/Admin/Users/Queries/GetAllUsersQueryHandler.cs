@@ -20,7 +20,7 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, IEnumer
         const string sql = @"
             SELECT
                 u.[Id],
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS FullName,
+                u.[FirstName] + ' ' + u.[LastName] AS FullName,
                 u.[Email],
                 u.[PhoneNumber],
                 u.[PasswordHash],
