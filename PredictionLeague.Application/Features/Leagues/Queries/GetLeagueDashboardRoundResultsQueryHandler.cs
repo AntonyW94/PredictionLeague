@@ -24,29 +24,51 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
             return null;
 
         const string sql = @"
+        WITH PlayerRoundScores AS (
             SELECT
                 lm.[UserId],
-                u.[FirstName] + ' ' + u.[LastName] AS PlayerName,
-                m.[Id] AS MatchId,
-                up.[PointsAwarded],
-                up.[PredictedHomeScore],
-                up.[PredictedAwayScore],
-                CAST(CASE 
-                    WHEN r.[Deadline] > GETUTCDATE() AND up.[UserId] != @CurrentUserId THEN 1 
-                    ELSE 0 
-                END AS bit) AS IsHidden
-            FROM 
-                [LeagueMembers] lm
+                u.[FirstName] + ' ' + u.[LastName] AS [PlayerName],
+                SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints]
+            FROM [LeagueMembers] lm
             JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]
             JOIN [Rounds] r ON r.[Id] = @RoundId
-            CROSS JOIN [Matches] m
+            JOIN [Matches] m ON m.[RoundId] = r.[Id]
             LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = lm.[UserId]
-            WHERE 
-                lm.[LeagueId] = @LeagueId 
-                AND lm.[Status] = @Approved
-                AND m.[RoundId] = @RoundId
-            ORDER BY 
-                u.[FirstName], u.[LastName], m.[MatchDateTime];";
+            WHERE lm.[LeagueId] = @LeagueId AND lm.[Status] = @Approved AND m.[RoundId] = @RoundId
+            GROUP BY lm.[UserId], u.[FirstName], u.[LastName]
+        ),
+       
+        PlayerRanks AS (
+            SELECT
+                [UserId],
+                RANK() OVER (ORDER BY [TotalPoints] DESC) AS [Rank]
+            FROM PlayerRoundScores
+        )
+
+        SELECT
+            lm.[UserId],
+            u.[FirstName] + ' ' + u.[LastName] AS [PlayerName],
+            m.[Id] AS [MatchId],
+            up.[PointsAwarded],
+            up.[PredictedHomeScore],
+            up.[PredictedAwayScore],
+            CAST(CASE 
+                WHEN r.[Deadline] > GETUTCDATE() AND up.[UserId] != @CurrentUserId THEN 1 
+                ELSE 0 
+            END AS bit) AS [IsHidden],
+            pr.[Rank]
+        FROM [LeagueMembers] lm
+        JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]
+        JOIN [Rounds] r ON r.[Id] = @RoundId
+        CROSS JOIN [Matches] m
+        JOIN PlayerRanks pr ON pr.[UserId] = lm.[UserId]
+        LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = lm.[UserId]
+        WHERE 
+            lm.[LeagueId] = @LeagueId 
+            AND lm.[Status] = @Approved
+            AND m.[RoundId] = @RoundId
+        ORDER BY 
+            PlayerName, m.[MatchDateTime];";
 
         var parameters = new
         {
@@ -59,12 +81,13 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
         var queryResult = await _dbConnection.QueryAsync<PredictionQueryResult>(sql, cancellationToken, parameters);
 
         var groupedResults = queryResult
-            .GroupBy(r => new { r.UserId, r.PlayerName })
+            .GroupBy(r => new { r.UserId, r.PlayerName, r.Rank })
             .Select(g => new PredictionResultDto
             {
                 UserId = g.Key.UserId,
                 PlayerName = g.Key.PlayerName,
                 TotalPoints = g.Sum(p => p.PointsAwarded ?? 0),
+                Rank = g.Key.Rank,
                 Predictions = g.Select(p => new PredictionScoreDto(
                     p.MatchId,
                     p.PredictedHomeScore,
@@ -85,6 +108,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
         int? PointsAwarded,
         int? PredictedHomeScore,
         int? PredictedAwayScore, 
-        bool IsHidden
+        bool IsHidden,
+        long Rank
     );
 }

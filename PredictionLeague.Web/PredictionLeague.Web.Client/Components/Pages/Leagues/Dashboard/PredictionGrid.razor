@@ -9,7 +9,7 @@
             <thead>
                 <tr>
                     <th class="match-info">Match</th>
-                    <th class="actual-score-header">Actual Score</th> @foreach (var player in Results)
+                    <th class="actual-score-header">Actual Score</th> @foreach (var player in Results.OrderBy(p => p.PlayerName))
                     {
                         <th class="@(IsWinner(player) ? "winner-column" : "")">@player.PlayerName</th>
                     }
@@ -39,7 +39,7 @@
                             }
                         </td>
 
-                        @foreach (var player in Results)
+                        @foreach (var player in Results.OrderBy(p => p.PlayerName))
                         {
                             var prediction = player.Predictions.FirstOrDefault(p => p.MatchId == match.Id);
                             <td class="score-cell @GetPointsClass(prediction?.PointsAwarded)">
@@ -66,7 +66,7 @@
             <tfoot>
                 <tr>
                     <th class="match-info">Total Score</th>
-                    <th></th> @foreach (var player in Results)
+                    <th></th> @foreach (var player in Results.OrderBy(p => p.PlayerName))
                     {
                         <th class="@(IsWinner(player) ? "winner-column" : "")">@player.TotalPoints</th>
                     }

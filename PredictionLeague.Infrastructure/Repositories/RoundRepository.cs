@@ -14,8 +14,8 @@ public class RoundRepository : IRoundRepository
     #region SQL Constants
 
     private const string AddMatchSql = @"
-        INSERT INTO [Matches] ([RoundId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status])
-        VALUES (@RoundId, @HomeTeamId, @AwayTeamId, @MatchDateTime, @Status);";
+        INSERT INTO [Matches] ([RoundId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status], [ActualHomeTeamScore], [ActualAwayTeamScore])
+        VALUES (@RoundId, @HomeTeamId, @AwayTeamId, @MatchDateTime, @Status, @ActualHomeTeamScore, @ActualAwayTeamScore);";
 
     private const string GetRoundsWithMatchesSql = @"
         SELECT 
@@ -134,7 +134,9 @@ public class RoundRepository : IRoundRepository
                 m.HomeTeamId,
                 m.AwayTeamId,
                 m.MatchDateTime,
-                Status = m.Status.ToString()
+                Status = m.Status.ToString(),
+                m.ActualHomeTeamScore,
+                m.ActualAwayTeamScore
             }).ToList();
 
             var insertMatchesCommand = new CommandDefinition(

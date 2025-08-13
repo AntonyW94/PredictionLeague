@@ -1,0 +1,50 @@
+﻿@using PredictionLeague.Contracts.Leagues
+@using PredictionLeague.Contracts.Admin.Rounds
+
+<div class="mobile-match-card">
+    <div class="mobile-match-header">
+        <div class="d-flex align-items-center">
+            <img src="@Match.HomeTeamLogoUrl" class="match-logo-small" alt="@Match.HomeTeamName Logo"/>
+            <span class="mx-2 fs-5 fw-bold">@Match.HomeTeamAbbreviation vs @Match.AwayTeamAbbreviation</span>
+            <img src="@Match.AwayTeamLogoUrl" class="match-logo-small" alt="@Match.AwayTeamName Logo" />
+        </div>
+       
+        <MatchStatusBadge 
+            Status="Match.Status" 
+            HomeScore="Match.ActualHomeTeamScore" 
+            AwayScore="Match.ActualAwayTeamScore" />
+    </div>
+
+    <div class="table-responsive flex-grow-1">
+        <table class="mobile-match-table">
+            <tbody>
+                @foreach (var player in Results)
+                {
+                    var prediction = player.Predictions.FirstOrDefault(p => p.MatchId == Match.Id);
+                    <tr>
+                        <td class="player-name-col">@player.PlayerName</td>
+                        <td class="text-center">
+                            @if (prediction?.HomeScore != null)
+                            {
+                                @(prediction.IsHidden ? "Hidden" : $"{prediction.HomeScore} - {prediction.AwayScore}")
+                            }
+                            else
+                            {
+                                <span class="text-white-50">N/A</span>
+                            }
+                        </td>
+                        <td class="mobile-prediction-points">@(prediction?.PointsAwarded ?? 0)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public MatchInRoundDto Match { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public List<PredictionResultDto> Results { get; set; } = null!;
+}

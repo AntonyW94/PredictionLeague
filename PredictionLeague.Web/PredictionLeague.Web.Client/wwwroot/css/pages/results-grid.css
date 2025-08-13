@@ -1,4 +1,5 @@
-﻿.results-grid-container {
+﻿/* --- Desktop Grid Styles --- */
+.results-grid-container {
     overflow-x: auto;
 }
 
@@ -32,7 +33,7 @@
         left: 0;
         background-color: var(--pl-purple-900);
     }
-   
+
     .results-grid thead .match-info,
     .results-grid tfoot .match-info {
         z-index: 3;
@@ -46,7 +47,6 @@
     .results-grid tbody tr:nth-child(even) td {
         background-color: var(--pl-purple-700);
     }
-
 
     .results-grid .score-cell {
         font-weight: bold;
@@ -96,6 +96,88 @@
         color: var(--pl-green);
         animation: pulse 1.5s infinite;
     }
+
+/* --- Mobile Carousel and Card Styles --- */
+.mobile-results-carousel .carousel-container {
+    max-height: none;
+}
+
+.mobile-match-card {
+    background-color: var(--pl-purple-800);
+    border-radius: var(--bs-border-radius);
+    color: white;
+    overflow: hidden;
+    max-height: 450px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-match-header {
+    background-color: var(--pl-purple-900);
+    padding: 0.75rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+    .mobile-match-header .match-logo-small {
+        height: 30px;
+        width: 30px;
+    }
+
+.mobile-match-card .table-responsive {
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex-grow: 1;
+}
+
+.mobile-match-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+    .mobile-match-table td, .mobile-match-table th {
+        padding: 0.5rem 1rem;
+        text-align: left;
+    }
+
+        .mobile-match-table td.player-name-col {
+            width: 50%;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .mobile-match-table td.text-center {
+            width: 25%;
+        }
+
+        .mobile-match-table td.mobile-prediction-points {
+            width: 15%;
+        }
+
+    .mobile-match-table tbody tr:nth-child(even) td {
+        background-color: var(--pl-purple-700);
+    }
+
+    .mobile-match-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+.mobile-prediction-points {
+    font-weight: bold;
+    text-align: right;
+}
+
+.overall-round-winner {
+    background-color: var(--pl-gold) !important;
+    color: var(--pl-purple-900) !important;
+}
 
 @keyframes pulse {
     0% {

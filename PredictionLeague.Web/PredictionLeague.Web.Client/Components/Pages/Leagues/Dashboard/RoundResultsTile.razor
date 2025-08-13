@@ -2,6 +2,7 @@
 
 @implements IAsyncDisposable
 
+@using PredictionLeague.Contracts.Leagues
 @using PredictionLeague.Web.Client.Services.Leagues
 
 <div class="card">
@@ -29,7 +30,64 @@
     }
     else if (State.CurrentRoundResults.Any())
     {
-        <PredictionGrid Results="State.CurrentRoundResults" Matches="State.CurrentRoundMatches" />
+        <div class="d-none d-lg-block">
+            <PredictionGrid Results="State.CurrentRoundResults" Matches="State.CurrentRoundMatches" />
+        </div>
+
+        <div class="d-lg-none">
+            <div class="mobile-results-view">
+                <div class="carousel-wrapper mobile-results-carousel">
+                    <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
+                        <div class="carousel-track" style="@_trackStyle">
+                            @foreach (var match in State.CurrentRoundMatches)
+                            {
+                                <div class="carousel-item-wrapper">
+                                    <div class="carousel-item-content">
+                                        <MobileMatchResultCard Match="match" Results="State.CurrentRoundResults" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="carousel-dots">
+                        @for (var i = 0; i < State.CurrentRoundMatches.Count; i++)
+                        {
+                            var index = i;
+                            <span class="carousel-dot @(index == _currentIndex ? "active" : "")" @onclick="() => GoToSlide(index)"></span>
+                        }
+                    </div>
+                </div>
+
+                <div class="leaderboard-card mt-4">
+                    <div class="card-header w-100">
+                        <h6 class="card-title text-white fw-bold mb-0 text-center">Round @(State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId)?.RoundNumber) Scores</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="leaderboard-table light text-white">
+                                <thead>
+                                    <tr>
+                                        <th class="rank-col fw-bold">#</th>
+                                        <th class="player-name-col fw-bold">Name</th>
+                                        <th class="points-col fw-bold">Pts</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var player in State.CurrentRoundResults.OrderByDescending(p => p.TotalPoints))
+                                    {
+                                        <tr class="@(IsWinner(player) ? "overall-round-winner" : "")">
+                                            <td class="rank-col fw-bold">@player.Rank</td>
+                                            <td class="player-name-col fw-bold">@player.PlayerName</td>
+                                            <td class="points-col fw-bold">@player.TotalPoints</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
     else
     {
@@ -40,17 +98,71 @@
 @code {
     [Parameter, EditorRequired]
     public int LeagueId { get; set; }
-  
+
+    private int _currentIndex;
+    private string _trackStyle = "transform: translateX(0%);";
+    private double _touchStartX;
 
     protected override void OnInitialized()
     {
         State.OnStateChange += StateHasChanged;
     }
-    
+
     private async Task OnRoundSelected()
     {
         if (State.SelectedRoundId > 0)
+        {
+            _currentIndex = 0;
+            UpdateTrackStyle();
             await State.LoadRoundResults(LeagueId, State.SelectedRoundId.Value);
+        }
+    }
+
+    private bool IsWinner(PredictionResultDto player)
+    {
+        if (!State.CurrentRoundResults.Any() || State.CurrentRoundResults.All(p => p.TotalPoints == 0))
+            return false;
+
+        return player.Rank == 1;
+    }
+
+    private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;
+    private void HandleTouchMove(TouchEventArgs e) { }
+    private void HandleTouchEnd(TouchEventArgs e)
+    {
+        var touchEndX = e.ChangedTouches[0].ClientX;
+        var diffX = _touchStartX - touchEndX;
+
+        if (Math.Abs(diffX) > 50)
+        {
+            if (diffX > 0)
+            {
+                if (_currentIndex < State.CurrentRoundMatches.Count - 1)
+                {
+                    _currentIndex++;
+                    UpdateTrackStyle();
+                }
+            }
+            else
+            {
+                if (_currentIndex > 0)
+                {
+                    _currentIndex--;
+                    UpdateTrackStyle();
+                }
+            }
+        }
+    }
+
+    private void GoToSlide(int index)
+    {
+        _currentIndex = index;
+        UpdateTrackStyle();
+    }
+
+    private void UpdateTrackStyle()
+    {
+        _trackStyle = $"transform: translateX(-{_currentIndex * 100}%);";
     }
 
     public ValueTask DisposeAsync()

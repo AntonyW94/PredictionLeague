@@ -28,6 +28,7 @@
 .carousel-track {
     display: flex;
     height: 100%;
+    max-width:100%;
     transition: transform 0.3s ease-in-out;
 }
 
@@ -43,6 +44,7 @@
     height: 100%;
     display: flex;
     justify-content: center;
+    width: 100%;
 }
 
 .carousel-btn {

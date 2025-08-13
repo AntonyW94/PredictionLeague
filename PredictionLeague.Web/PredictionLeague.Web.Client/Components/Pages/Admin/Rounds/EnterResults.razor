@@ -29,13 +29,13 @@
                     {
                         <div class="prediction-card">
                             <div class="prediction-card-header">
-                                <span>@match.MatchDateTime.ToString("dddd dd MMMM, HH:mm")</span>
+                                <h6 class="card-title text-white fw-bold centre mb-2">@match.MatchDateTime.ToString("dddd dd MMMM, HH:mm")</h6>
 
                                 @{
                                     var statusClass = $"form-select-sm status-select-pill {GetStatusSelectClass(match.Status)}";
                                 }
                                 <InputSelect class="@statusClass" @bind-Value="match.Status">
-                                    @foreach (var status in Enum.GetValues(typeof(MatchStatus)))
+                                    @foreach (MatchStatus status in Enum.GetValues(typeof(MatchStatus)))
                                     {
                                         <option value="@status">@status</option>
                                     }

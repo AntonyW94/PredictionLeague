@@ -70,6 +70,7 @@ public class LeagueDashboardStateService
     {
         IsLoadingRoundResults = true;
         SelectedRoundId = roundId;
+        //SelectedRoundNumber = //Set round number here
         RoundResultsError = null;
 
         NotifyStateChanged();
