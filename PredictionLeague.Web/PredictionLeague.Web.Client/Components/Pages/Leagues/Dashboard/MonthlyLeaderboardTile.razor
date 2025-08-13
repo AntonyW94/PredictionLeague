@@ -6,7 +6,7 @@
 
 <div class="card">
     <h5 class="card-title text-white fw-bold mb-3">Monthly Leaderboard</h5>
-    <div class="card-body">
+    <div class="card-body no-padding">
         <ApiError Message="@_errorMessage" />
 
         @if (_isLoadingMonths)
@@ -28,7 +28,7 @@
                                 <div class="carousel-item-content">
                                     <div class="leaderboard-card">
                                         <div class="card-header w-100">
-                                            <h5 class="card-title text-white fw-bold centre">@month.Name</h5>
+                                            <h5 class="card-title text-white fw-bold centre mb-0">@month.Name</h5>
                                         </div>
                                         <div class="league-card-body justify-start w-100">
                                             @if (_leaderboards.TryGetValue(month.Month, out var leaderboard))
@@ -49,7 +49,7 @@
                                                                 <tr>
                                                                     <th class="rank-col">#</th>
                                                                     <th class="player-name-col">Player</th>
-                                                                    <th class="points-col">Points</th>
+                                                                    <th class="points-col">Pts</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>

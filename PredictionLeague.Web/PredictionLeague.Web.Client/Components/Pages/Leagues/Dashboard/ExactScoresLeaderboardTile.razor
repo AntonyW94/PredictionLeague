@@ -5,7 +5,7 @@
 
 <div class="card">
     <h5 class="card-title text-white fw-bold mb-3">Exact Scores</h5>
-    <div class="card-body">
+    <div class="card-body no-padding">
         <ApiError Message="@_errorMessage" />
 
         @if (_isLoading)
@@ -24,7 +24,7 @@
                         <tr>
                             <th class="rank-col">#</th>
                             <th class="player-name-col">Player</th>
-                            <th class="points-col">Scores</th>
+                            <th class="points-col">Amt</th>
                         </tr>
                     </thead>
                     <tbody>
