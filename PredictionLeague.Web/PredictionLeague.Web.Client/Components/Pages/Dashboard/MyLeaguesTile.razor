@@ -22,77 +22,75 @@
     }
     else
     {
-        <div class="card-grid row">
+        <div class="card-grid">
             @foreach (var league in DashboardState.MyLeagues)
             {
-                <div class="col-lg-5">
-                    <div class="action-card light">
-                        <div class="card-header">
-                            <h5 class="fw-bold text-white">@league.Name</h5>
-                            <small class="text-white-50">@league.SeasonName</small>
-                        </div>
+                <div class="action-card light">
+                    <div class="card-header">
+                        <h5 class="fw-bold text-white">@league.Name</h5>
+                        <small class="text-white-50">@league.SeasonName</small>
+                    </div>
 
-                        <div class="action-card-body">
-                            @if (league.Status == LeagueMemberStatus.Approved)
-                            {
-                                <div class="action-card-row">
-                                    <div class="badge-group badge-group--green">
-                                        <span class="badge-icon" title="Approved"><i class="bi bi-check-lg"></i></span>
-                                        <span>Approved</span>
-                                    </div>
+                    <div class="action-card-body">
+                        @if (league.Status == LeagueMemberStatus.Approved)
+                        {
+                            <div class="action-card-row">
+                                <div class="badge-group badge-group--green">
+                                    <span class="badge-icon" title="Approved"><i class="bi bi-check-lg"></i></span>
+                                    <span>Approved</span>
+                                </div>
 
-                                    @if (league.Rank.HasValue && league.MemberCount.HasValue)
-                                    {
-                                        var statusPillClass = league.Rank == 1 ? "badge-group--gold" : league.Rank <= 3 ? "badge-group--silver" : league.Rank <= 5 ? "badge-group--bronze" : "badge-group--blue";
+                                @if (league.Rank.HasValue && league.MemberCount.HasValue)
+                                {
+                                    var statusPillClass = league.Rank == 1 ? "badge-group--gold" : league.Rank <= 3 ? "badge-group--silver" : league.Rank <= 5 ? "badge-group--bronze" : "badge-group--blue";
 
-                                        <div class="badge-group @statusPillClass ms-4">
-                                            <span class="badge-icon" title="Rank"><i class="bi bi-trophy-fill"></i></span>
-                                            <div class="position-info">
-                                                <span>@league.Rank</span>
-                                                <span> / @league.MemberCount</span>
-                                            </div>
+                                    <div class="badge-group @statusPillClass ms-4">
+                                        <span class="badge-icon" title="Rank"><i class="bi bi-trophy-fill"></i></span>
+                                        <div class="position-info">
+                                            <span>@league.Rank</span>
+                                            <span> / @league.MemberCount</span>
                                         </div>
-                                    }
-                                </div>
-                            }
-                            else if (league.Status == LeagueMemberStatus.Pending)
-                            {
-                                <div class="action-card-row action-card-row--centered">
-                                    <div class="badge-group badge-group--purple">
-                                        <span class="badge-icon" title="Pending Approval"><i class="bi bi-clock-fill"></i></span>
-                                        <span>Pending Approval</span>
                                     </div>
+                                }
+                            </div>
+                        }
+                        else if (league.Status == LeagueMemberStatus.Pending)
+                        {
+                            <div class="action-card-row action-card-row--centered">
+                                <div class="badge-group badge-group--purple">
+                                    <span class="badge-icon" title="Pending Approval"><i class="bi bi-clock-fill"></i></span>
+                                    <span>Pending Approval</span>
                                 </div>
-                            }
-                            else if (league.Status == LeagueMemberStatus.Rejected)
-                            {
-                                <div class="action-card-row action-card-row--centered">
-                                    <div class="badge-group badge-group--red">
-                                        <span class="badge-icon" title="Rejected"><i class="bi bi-x-lg"></i></span>
-                                        <span>Rejected by Admin</span>
-                                    </div>
+                            </div>
+                        }
+                        else if (league.Status == LeagueMemberStatus.Rejected)
+                        {
+                            <div class="action-card-row action-card-row--centered">
+                                <div class="badge-group badge-group--red">
+                                    <span class="badge-icon" title="Rejected"><i class="bi bi-x-lg"></i></span>
+                                    <span>Rejected by Admin</span>
                                 </div>
-                            }
-                        </div>
+                            </div>
+                        }
+                    </div>
 
-                        <div class="action-card-footer">
-                            @if (league.Status == LeagueMemberStatus.Rejected)
-                            {
-                                <button class="btn btn-sm red-button w-100" @onclick="() => HandleRemoveLeagueAsync(league.Id, league.Name)" disabled="@DashboardState.IsMyLeaguesLoading">
-                                    Remove
-                                </button>
-                            }
-                            else
-                            {
-                                var canViewDashboard = league.Status == LeagueMemberStatus.Approved;
-                                <button class="btn btn-sm @(canViewDashboard ? "purple-accent-button" : "grey-button") w-100"
-                                        disabled="@(!canViewDashboard)"
-                                        title="@(canViewDashboard ? "View League Dashboard" : "Unavailable until approved by the league admin")"
-                                        @onclick="() => ViewLeagueDashboard(league.Id)">
-                                    View
-                                </button>
-                            }
-                        </div>
+                    <div class="action-card-footer">
+                        @if (league.Status == LeagueMemberStatus.Rejected)
+                        {
+                            <button class="btn btn-sm red-button w-100" @onclick="() => HandleRemoveLeagueAsync(league.Id, league.Name)" disabled="@DashboardState.IsMyLeaguesLoading">
+                                Remove
+                            </button>
+                        }
+                        else
+                        {
+                            var canViewDashboard = league.Status == LeagueMemberStatus.Approved;
+                            <button class="btn btn-sm @(canViewDashboard ? "purple-accent-button" : "grey-button") w-100"
+                                    disabled="@(!canViewDashboard)"
+                                    title="@(canViewDashboard ? "View League Dashboard" : "Unavailable until approved by the league admin")"
+                                    @onclick="() => ViewLeagueDashboard(league.Id)">
+                                View
+                            </button>
+                        }
                     </div>
                 </div>
             }

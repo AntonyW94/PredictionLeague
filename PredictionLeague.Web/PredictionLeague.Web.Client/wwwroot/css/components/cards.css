@@ -1,8 +1,20 @@
 ﻿.card-grid {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
     gap: 1rem;
-    justify-content: center;
+    grid-template-columns: 1fr;
+}
+
+/* On medium screens (tablets) and up, switch to 2 columns */
+@media (min-width: 768px) {
+    .card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+        .card-grid .action-card:last-child:nth-child(odd) {
+            grid-column: 1 / -1; /* Make the grid CELL span the full width */
+            width: calc(50% - 0.5rem); /* Set the card's WIDTH to be exactly one column's width */
+            justify-self: center;
+        }
 }
 
 .card {
@@ -260,6 +272,9 @@
 .action-card-body {
     padding: 1rem 1.5rem;
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .action-card-body.no-padding{
@@ -342,6 +357,10 @@
         font-size: 0.9rem;
         padding: 0.5rem 0.75rem;
     }
+}
+
+.flex-fill-grid {
+    flex-grow: 1;
 }
 
 @media (max-width: 768px){
