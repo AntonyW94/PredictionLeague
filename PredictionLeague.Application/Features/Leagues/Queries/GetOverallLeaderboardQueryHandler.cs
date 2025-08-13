@@ -19,7 +19,7 @@ public class GetOverallLeaderboardQueryHandler : IRequestHandler<GetOverallLeade
         const string sql = @"
             SELECT
                 RANK() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS [Rank],
-                au.[FirstName] + ' ' + au.[LastName] AS [PlayerName],
+                au.[FirstName] + ' ' + LEFT(au.[LastName], 1) AS [PlayerName],
                 SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints]
             FROM 
                 [LeagueMembers] AS lm

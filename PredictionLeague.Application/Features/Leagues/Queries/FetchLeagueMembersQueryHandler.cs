@@ -21,7 +21,7 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
             SELECT
                 l.[Name] AS LeagueName,
                 lm.[UserId],
-                u.[FirstName] + ' ' + u.[LastName] AS FullName,
+                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS FullName,
                 lm.[JoinedAt],
                 lm.[Status],
                 CAST(CASE WHEN lm.[Status] = @Pending AND l.[AdministratorUserId] = @CurrentUserId THEN 1 ELSE 0 END AS bit) AS CanBeApproved

@@ -22,15 +22,22 @@
                 {
                     var prediction = player.Predictions.FirstOrDefault(p => p.MatchId == Match.Id);
                     <tr>
-                        <td class="player-name-col">@player.PlayerName</td>
-                        <td class="text-center">
+                        <td class="player-name-col fw-bold">@player.PlayerName</td>
+                        <td class="text-center fw-bold">
                             @if (prediction?.HomeScore != null)
                             {
-                                @(prediction.IsHidden ? "Hidden" : $"{prediction.HomeScore} - {prediction.AwayScore}")
+                                if (prediction.IsHidden)
+                                {
+                                    <span class="blurred-score" title="Predictions are hidden until the deadline.">0 - 0</span>
+                                }
+                                else
+                                {
+                                    <span>@prediction.HomeScore - @prediction.AwayScore</span>
+                                }
                             }
                             else
                             {
-                                <span class="text-white-50">N/A</span>
+                                <span class="bi bi-clock-fill not-predicted-icon" title="Match not started yet."></span>
                             }
                         </td>
                         <td class="mobile-prediction-points">@(prediction?.PointsAwarded ?? 0)</td>

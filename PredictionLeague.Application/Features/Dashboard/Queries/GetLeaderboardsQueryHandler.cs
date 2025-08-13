@@ -24,7 +24,7 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                     l.[Name] AS [LeagueName],
                     s.[Name] AS [SeasonName],
                     u.[Id] AS [UserId],
-                    u.[FirstName] + ' ' + u.[LastName] AS [PlayerName],
+                    u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
                     SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints],
                     RANK() OVER (PARTITION BY l.[Id] ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS [Rank]
                 FROM 

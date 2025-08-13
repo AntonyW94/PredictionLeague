@@ -55,12 +55,6 @@
         background: var(--pl-purple-800);
     }
 
-    .results-grid .blurred-score {
-        filter: blur(4px);
-        cursor: not-allowed;
-        user-select: none;
-    }
-
     .results-grid .not-predicted-icon {
         font-size: 1.5em;
         color: var(--pl-grey-100);
@@ -96,6 +90,12 @@
         color: var(--pl-green);
         animation: pulse 1.5s infinite;
     }
+
+.blurred-score {
+    filter: blur(4px);
+    cursor: not-allowed;
+    user-select: none;
+}
 
 /* --- Mobile Carousel and Card Styles --- */
 .mobile-results-carousel .carousel-container {
@@ -148,7 +148,7 @@
     }
 
         .mobile-match-table td.player-name-col {
-            width: 50%;
+            width: 60%;
             white-space: normal;
             word-break: break-word;
         }

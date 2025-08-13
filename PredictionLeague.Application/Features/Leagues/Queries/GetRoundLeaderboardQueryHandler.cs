@@ -19,7 +19,7 @@ public class GetRoundLeaderboardQueryHandler : IRequestHandler<GetRoundLeaderboa
         const string sql = @"
             SELECT
                 ROW_NUMBER() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS Rank,
-                u.[FirstName] + ' ' + u.[LastName] AS Username,
+                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS Username,
                 SUM(ISNULL(up.[PointsAwarded], 0)) AS Points
             FROM [LeagueMembers] lm
             JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]

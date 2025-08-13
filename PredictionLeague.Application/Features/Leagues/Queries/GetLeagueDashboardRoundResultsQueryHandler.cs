@@ -27,7 +27,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
         WITH PlayerRoundScores AS (
             SELECT
                 lm.[UserId],
-                u.[FirstName] + ' ' + u.[LastName] AS [PlayerName],
+                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
                 SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints]
             FROM [LeagueMembers] lm
             JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]
@@ -47,7 +47,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
 
         SELECT
             lm.[UserId],
-            u.[FirstName] + ' ' + u.[LastName] AS [PlayerName],
+            u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
             m.[Id] AS [MatchId],
             up.[PointsAwarded],
             up.[PredictedHomeScore],

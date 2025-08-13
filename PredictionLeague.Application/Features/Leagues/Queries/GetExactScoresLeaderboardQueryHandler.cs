@@ -18,7 +18,7 @@ public class GetExactScoresLeaderboardQueryHandler : IRequestHandler<GetExactSco
     {
         const string entriesSql = @"
                                     SELECT
-                                        u.[FirstName] + ' ' + u.[LastName] AS PlayerName,
+                                        u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
                                         COUNT(CASE WHEN up.[PointsAwarded] = 5 THEN 1 END) AS ExactScoresCount
                                     FROM
                                         [LeagueMembers] lm
