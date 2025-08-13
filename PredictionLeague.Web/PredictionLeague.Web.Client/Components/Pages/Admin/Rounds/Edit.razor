@@ -19,7 +19,11 @@
 
         @if (_model == null)
         {
-            <p class="text-center text-white"><em>Loading...</em></p>
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
         }
         else
         {
@@ -31,22 +35,30 @@
                                SuccessAlertMessage="Round updated successfully!"
                                BusyText="Saving...">
                 <ChildContent>
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <label for="roundNumber" class="form-label text-white">Round Number</label>
-                            <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
-                            <StyledValidationMessage For="@(() => _model.RoundNumber)" />
-                        </div>
+                       <div class="row">
+                           <div class="col-md-3 mb-3">
+                               <label for="roundNumber" class="form-label text-white">Round Number</label>
+                               <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
+                               <StyledValidationMessage For="@(() => _model.RoundNumber)" />
+                           </div>
+
                         <div class="col-md-3 mb-3">
                             <label for="startDate" class="form-label text-white">Round Start Date</label>
-                            <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" @onchange="OnStartDateChanged" />
+                            <div class="input-group">
+                                <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
+                                <button type="button" class="btn btn-secondary" @onclick="ApplyStartDateToMatches" title="Apply this date to all matches">
+                                    <i class="bi bi-arrow-down-square-fill"></i>
+                                </button>
+                            </div>
                             <StyledValidationMessage For="@(() => _model.StartDate)" />
                         </div>
+
                         <div class="col-md-3 mb-3">
                             <label for="deadline" class="form-label text-white">Prediction Deadline</label>
                             <InputDate Type="InputDateType.DateTimeLocal" id="deadline" class="form-control" @bind-Value="_model.Deadline" />
                             <StyledValidationMessage For="@(() => _model.Deadline)" />
                         </div>
+
                         <div class="col-md-3 mb-3">
                             <label for="status" class="form-label text-white">Status</label>
                             <InputSelect id="status" class="form-select" @bind-Value="_model.Status">
@@ -63,7 +75,7 @@
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="text-white mb-0">Matches</h4>
-                        <button type="button" class="btn btn-sm d-flex align-items-center dark-red-button" @onclick="AddMatch">
+                        <button type="button" class="btn btn-sm d-flex align-items-center green-button" @onclick="AddMatch">
                             <span class="bi bi-plus-circle-fill"></span>
                             <span class="d-none d-md-inline ms-2">Add Match</span>
                         </button>
@@ -152,7 +164,9 @@
 </div>
 
 @code {
-    [Parameter] public int RoundId { get; set; }
+    [Parameter] 
+    public int RoundId { get; set; }
+
     private UpdateRoundRequest? _model;
     private List<TeamDto> _teams = new();
     private int _seasonId;
@@ -190,19 +204,17 @@
         }
     }
 
-    private void OnStartDateChanged(ChangeEventArgs e)
+    private void ApplyStartDateToMatches()
     {
-        if (!DateTime.TryParse(e.Value?.ToString(), out var newDate) || _model == null)
+        if (_model == null) 
             return;
 
-        _model.StartDate = newDate.Date;
-
+        var newDate = _model.StartDate;
         foreach (var match in _model.Matches)
         {
-            match.MatchDateTime = newDate.Date;
+            var originalTime = match.MatchDateTime.TimeOfDay;
+            match.MatchDateTime = newDate.Date + originalTime;
         }
-
-        StateHasChanged();
     }
 
     private void AddMatch() => _model?.Matches.Add(new UpdateMatchRequest { MatchDateTime = _model.StartDate });

@@ -14,8 +14,8 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold text-white mb-0">Manage Rounds</h3>
             <button class="btn d-flex align-items-center green-button" @onclick="AddRound">
-                <span class="bi bi-plus-circle-fill me-2"></span>
-                <span class="d-none d-md-inline">Add Round</span>
+                <span class="bi bi-plus-circle-fill"></span>
+                <span class="d-none d-md-inline ms-2">Add Round</span>
             </button>
         </div>
 
@@ -23,7 +23,11 @@
 
         @if (_rounds == null && string.IsNullOrEmpty(_errorMessage))
         {
-            <p class="text-center text-white"><em>Loading rounds...</em></p>
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
         }
         else if (_rounds?.Any() == false)
         {
@@ -31,33 +35,37 @@
         }
         else if (_rounds != null)
         {
-            <div class="league-grid">
+            <div class="card-grid">
                 @foreach (var round in _rounds)
                 {
-                    <div class="league-card">
+                    <div class="action-card light">
                         <div class="card-header">
-                            <span>Round @round.RoundNumber</span>
+                            <h5 class="fw-bold text-white mb-0">Round @round.RoundNumber</h5>
                         </div>
-                        <div class="league-card-body">
+                        <div class="action-card-body">
                             <dl class="mb-0">
-                                <div class="league-card-row">
+                                <div class="action-card-row">
                                     <dt>Start Date</dt>
                                     <dd>@round.StartDate.ToString("dd MMM yyyy")</dd>
                                 </div>
-                                <div class="league-card-row">
+
+                                <div class="action-card-row">
                                     <dt>Deadline</dt>
                                     <dd>@round.Deadline.ToString("dd MMM, HH:mm")</dd>
                                 </div>
-                                <div class="league-card-row">
+
+                                <div class="action-card-row">
                                     <dt>Matches</dt>
                                     <dd>@round.MatchCount</dd>
                                 </div>
                             </dl>
                         </div>
-                        <div class="league-card-footer">
+
+                        <div class="action-card-footer">
                             <button class="btn green-button flex-grow-1" @onclick="() => EditRound(round.Id)">
                                 <span class="bi bi-pencil-fill me-2"></span>Edit
                             </button>
+
                             <button class="btn blue-light-button flex-grow-1" @onclick="() => EnterResults(round.Id)">
                                 <span class="bi bi-clipboard2-check-fill me-2"></span>Enter Results
                             </button>
