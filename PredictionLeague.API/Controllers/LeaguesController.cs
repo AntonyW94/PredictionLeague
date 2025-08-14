@@ -143,6 +143,64 @@ public class LeaguesController : ApiControllerBase
         return Ok(result);
     }
 
+    #region Dashboard
+
+    [HttpGet("{leagueId:int}/months")]
+    [ProducesResponseType(typeof(IEnumerable<MonthDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<MonthDto>>> GetMonthsForLeagueAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        var query = new GetMonthsForLeagueQuery(leagueId);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
+
+    [HttpGet("{leagueId:int}/leaderboard/overall")]
+    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboard(int leagueId, CancellationToken cancellationToken)
+    {
+        var query = new GetOverallLeaderboardQuery(leagueId);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpGet("{leagueId:int}/leaderboard/monthly/{month:int}")]
+    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetMonthlyLeaderboardAsync(int leagueId, int month, CancellationToken cancellationToken)
+    {
+        var query = new GetMonthlyLeaderboardQuery(leagueId, month);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
+
+    [HttpGet("{leagueId:int}/leaderboard/round/{roundId:int}")]
+    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetRoundLeaderboardAsync(int leagueId, int roundId, CancellationToken cancellationToken)
+    {
+        var query = new GetRoundLeaderboardQuery(leagueId, roundId);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
+
+    [HttpGet("{leagueId:int}/leaderboard/exact-scores")]
+    [ProducesResponseType(typeof(ExactScoresLeaderboardDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ExactScoresLeaderboardDto>> GetExactScoresLeaderboard(int leagueId)
+    {
+        var query = new GetExactScoresLeaderboardQuery(leagueId);
+        return Ok(await _mediator.Send(query));
+    }
+
+    #endregion
+   
+    #region Winnings
+
+    [HttpGet("{leagueId:int}/winnings")]
+    [ProducesResponseType(typeof(WinningsDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<WinningsDto>> GetWinningsAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        var query = new GetWinningsQuery(leagueId);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
+
+    #endregion
+
     #endregion
 
     #region Update
@@ -240,49 +298,4 @@ public class LeaguesController : ApiControllerBase
 
     #endregion
 
-    #region Dashboard
-
-    [HttpGet("{leagueId:int}/months")]
-    [ProducesResponseType(typeof(IEnumerable<MonthDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<MonthDto>>> GetMonthsForLeagueAsync(int leagueId, CancellationToken cancellationToken)
-    {
-        var query = new GetMonthsForLeagueQuery(leagueId);
-        return Ok(await _mediator.Send(query, cancellationToken));
-    }
-
-    [HttpGet("{leagueId:int}/leaderboard/overall")]
-    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboard(int leagueId, CancellationToken cancellationToken)
-    {
-        var query = new GetOverallLeaderboardQuery(leagueId);
-        var result = await _mediator.Send(query, cancellationToken);
-
-        return Ok(result);
-    }
-
-    [HttpGet("{leagueId:int}/leaderboard/monthly/{month:int}")]
-    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetMonthlyLeaderboardAsync(int leagueId, int month, CancellationToken cancellationToken)
-    {
-        var query = new GetMonthlyLeaderboardQuery(leagueId, month);
-        return Ok(await _mediator.Send(query, cancellationToken));
-    }
-
-    [HttpGet("{leagueId:int}/leaderboard/round/{roundId:int}")]
-    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetRoundLeaderboardAsync(int leagueId, int roundId, CancellationToken cancellationToken)
-    {
-        var query = new GetRoundLeaderboardQuery(leagueId, roundId);
-        return Ok(await _mediator.Send(query, cancellationToken));
-    }
-
-    [HttpGet("{leagueId:int}/leaderboard/exact-scores")]
-    [ProducesResponseType(typeof(ExactScoresLeaderboardDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ExactScoresLeaderboardDto>> GetExactScoresLeaderboard(int leagueId)
-    {
-        var query = new GetExactScoresLeaderboardQuery(leagueId);
-        return Ok(await _mediator.Send(query));
-    }
-
-    #endregion
 }

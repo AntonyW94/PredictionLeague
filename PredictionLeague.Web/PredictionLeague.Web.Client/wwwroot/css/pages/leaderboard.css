@@ -41,27 +41,27 @@
         background-color: var(--pl-purple-700);
     }
 
-    .leaderboard-table .rank-col {
-        width: 15%;
-        text-align: left;
-    }
+.leaderboard-table .rank-col {
+    width: 15%;
+    text-align: left;
+}
 
-    .leaderboard-table .player-name-col {
-        white-space: normal;
-        word-wrap: break-word;
-        text-align: left;
-    }
+.leaderboard-table .player-name-col {
+    white-space: normal;
+    word-wrap: break-word;
+    text-align: left;
+}
 
-    .leaderboard-table .points-col {
-        width: 25%;
-        text-align: right;
-    }
+.leaderboard-table .points-col {
+    width: 25%;
+    text-align: right;
+}
 
 .leaderboard-card .league-card-body,
 .leaderboard-card .card-body {
     padding: 1.5em;
     flex-grow: 1;
-    overflow-y: auto; 
+    overflow-y: auto;
 }
 
 .carousel-item-content .leaderboard-card {

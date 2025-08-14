@@ -1,0 +1,76 @@
+﻿@inject ILeagueService LeagueService
+@using PredictionLeague.Contracts.Leagues
+@using PredictionLeague.Web.Client.Services.Leagues
+@if (_isLoading)
+{
+    <div class="card">
+        <div class="card-body text-center">
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (_winningsData != null)
+{
+    @if (_winningsData.WinningsCalculated)
+    {
+        <div class="row">
+            <div class="col-12 mb-4">
+                <WinningsLeaderboardTile Leaderboard="@_winningsData?.Leaderboard" IsLoading="@_isLoading" />
+            </div>
+
+            <div class="col-lg-4 mb-4 d-flex">
+                <RoundPrizesTile Prizes="@_winningsData?.RoundPrizes" IsLoading="@_isLoading" />
+            </div>
+
+            <div class="col-lg-4 mb-4 d-flex">
+                <MonthlyPrizesTile Prizes="@_winningsData?.MonthlyPrizes" IsLoading="@_isLoading" />
+            </div>
+
+            <div class="col-lg-4 mb-4 d-flex">
+                <EndOfSeasonPrizesTile Prizes="@_winningsData?.EndOfSeasonPrizes" IsLoading="@_isLoading" />
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="col-12">
+            <PrizePotTile WinningsData="@_winningsData" />
+        </div>
+    }
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center">
+            <p class="text-danger">Could not load winnings data.</p>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public int LeagueId { get; set; }
+
+    private WinningsDto? _winningsData;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _winningsData = await LeagueService.GetWinningsAsync(LeagueId);
+        }
+        catch (Exception)
+        {
+            // Handle error if needed
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

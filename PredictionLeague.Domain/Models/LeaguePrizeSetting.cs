@@ -11,12 +11,10 @@ public class LeaguePrizeSetting
     public int Rank { get; private set; }
     public decimal PrizeAmount { get; private set; }
     public string? PrizeDescription { get; private set; }
-    public int? Month { get; private set; }
-    public int? RoundNumber { get; private set; } 
 
     private LeaguePrizeSetting() { }
 
-    public static LeaguePrizeSetting Create(int leagueId, PrizeType prizeType, int rank, decimal prizeAmount, string? prizeDescription, int? month = null, int? roundNumber = null)
+    public static LeaguePrizeSetting Create(int leagueId, PrizeType prizeType, int rank, decimal prizeAmount, string? prizeDescription)
     {
         Guard.Against.NegativeOrZero(leagueId, nameof(leagueId));
         Guard.Against.NegativeOrZero(rank, nameof(rank));
@@ -29,8 +27,6 @@ public class LeaguePrizeSetting
             Rank = rank,
             PrizeAmount = prizeAmount,
             PrizeDescription = prizeDescription,
-            Month = month,
-            RoundNumber = roundNumber
         };
     }
 }

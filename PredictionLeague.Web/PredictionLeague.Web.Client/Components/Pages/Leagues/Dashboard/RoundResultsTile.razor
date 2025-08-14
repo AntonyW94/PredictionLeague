@@ -60,7 +60,7 @@
 
                 <div class="leaderboard-card mt-4">
                     <div class="card-header w-100">
-                        <h6 class="card-title text-white fw-bold mb-0 text-center">Round @(State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId)?.RoundNumber) Scores</h6>
+                        <h6 class="card-title text-white fw-bold mb-0 text-center">Round @(State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId)?.RoundNumber) Points</h6>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -68,7 +68,7 @@
                                 <thead>
                                     <tr>
                                         <th class="rank-col fw-bold">#</th>
-                                        <th class="player-name-col fw-bold">Name</th>
+                                        <th class="player-name-col fw-bold">Player</th>
                                         <th class="points-col fw-bold">Pts</th>
                                     </tr>
                                 </thead>

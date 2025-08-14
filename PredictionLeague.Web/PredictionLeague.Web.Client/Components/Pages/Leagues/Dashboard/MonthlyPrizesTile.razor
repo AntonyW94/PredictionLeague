@@ -1,0 +1,49 @@
+﻿@using PredictionLeague.Contracts.Leagues
+
+<div class="card mh-600">
+    <h5 class="card-title text-white fw-bold mb-3">Monthly Prizes</h5>
+    <div class="card-body no-padding justify-start">
+        @if (IsLoading)
+        {
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (Prizes?.Any() == true)
+        {
+            <div class="table-responsive">
+                <table class="leaderboard-table text-white">
+                    <thead>
+                        <tr>
+                            <th class="w-35 text-start">Month</th>
+                            <th class="w-40 text-start">Player</th>
+                            <th class="w-25 text-end">Amt</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var prize in Prizes)
+                        {
+                            <tr>
+                                <td class="w-35 text-start fw-bold">@prize.Name</td>
+                                <td class="w-40 text-start break-word fw-bold">@(prize.Winner ?? "TBC")</td>
+                                <td class="w-25 text-end fw-bold">@prize.Amount.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-white-50">No Monthly prizes set.</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<PrizeDto>? Prizes { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+}

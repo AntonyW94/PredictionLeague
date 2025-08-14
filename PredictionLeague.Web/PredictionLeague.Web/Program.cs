@@ -87,7 +87,7 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 
-app.UseMiddleware<ErrorHandlingMiddleware>();
+//app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors(corsName);
 app.UseBlazorFrameworkFiles();

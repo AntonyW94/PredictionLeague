@@ -55,6 +55,11 @@ public class LeagueService : ILeagueService
         return await _httpClient.GetFromJsonAsync<List<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/monthly/{month}") ?? new();
     }
 
+    public async Task<WinningsDto> GetWinningsAsync(int leagueId)
+    {
+        return await _httpClient.GetFromJsonAsync<WinningsDto>($"api/leagues/{leagueId}/winnings") ?? new();
+    }
+
     public async Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId)
     {
         var response = await _httpClient.PostAsync($"api/leagues/{leagueId}/join", null);

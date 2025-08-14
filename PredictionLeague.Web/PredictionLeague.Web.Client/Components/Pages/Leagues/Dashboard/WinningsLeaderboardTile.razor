@@ -1,0 +1,52 @@
+﻿@using PredictionLeague.Contracts.Leagues
+
+<div class="card h-100 mh-600">
+    <h5 class="card-title text-white fw-bold mb-3">Winnings Leaderboard</h5>
+    <div class="card-body no-padding">
+        @if (IsLoading)
+        {
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (Leaderboard?.Entries.Any() == true)
+        {
+            <div class="table-responsive">
+                <table class="leaderboard-table text-white">
+                    <thead>
+                    <tr>
+                        <th class="text-start">Player</th>
+                        <th class="text-start d-none d-sm-table-cell">Round</th>
+                        <th class="text-start d-none d-sm-table-cell">Month</th>
+                        <th class="text-start d-none d-sm-table-cell">EoS</th>
+                        <th class="text-end">Total</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var entry in Leaderboard.Entries)
+                    {
+                        <tr>
+                            <td class="break-word text-start fw-bold">@entry.PlayerName</td>
+                            <td class="text-start fw-bold d-none d-sm-table-cell">@entry.RoundWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
+                            <td class="text-start fw-bold d-none d-sm-table-cell">@entry.MonthlyWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
+                            <td class="text-start fw-bold d-none d-sm-table-cell">@entry.EndOfSeasonWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
+                            <td class="text-end fw-bold">@entry.TotalWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="text-white-50">No winnings recorded yet.</p>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public WinningsLeaderboardDto? Leaderboard { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+}

@@ -1,0 +1,33 @@
+﻿@using PredictionLeague.Contracts.Leagues
+
+<div class="card h-100">
+    <h5 class="card-title text-white fw-bold mb-3">Winnings</h5>
+    <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+
+        <div class="message-box-solid warning" role="alert">
+            Winnings will be calculated after the league entry deadline has passed and the prize structure has been confirmed.
+        </div>
+
+        <div class="mt-4">
+            <p class="text-white-50 mb-1">Current Entries</p>
+            <h4 class="text-white fw-bold">@WinningsData.EntryCount</h4>
+        </div>
+
+        <div class="mt-3">
+            <p class="text-white-50 mb-1">Entry Cost</p>
+            <h4 class="text-white fw-bold">@WinningsData.EntryCost.ToString("C", new System.Globalization.CultureInfo("en-GB"))</h4>
+        </div>
+
+        <hr class="text-white w-75 my-4" />
+
+        <div>
+            <p class="text-white-50 mb-1">Estimated Prize Pot</p>
+            <h3 class="text-white fw-bold text-success">@WinningsData.TotalPrizePot.ToString("C", new System.Globalization.CultureInfo("en-GB"))</h3>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public WinningsDto WinningsData { get; set; } = null!;
+}
