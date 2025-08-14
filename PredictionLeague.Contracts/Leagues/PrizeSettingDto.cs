@@ -6,7 +6,5 @@ public record PrizeSettingDto(
     PrizeType PrizeType,
     int Rank,
     decimal PrizeAmount,
-    string? PrizeDescription,
-    int? Month,
-    int? RoundNumber
+    string? PrizeDescription
 );

@@ -232,11 +232,11 @@ public class LeagueRepository : ILeagueRepository
             const string insertPrizeSql = @"
             INSERT INTO [LeaguePrizeSettings] 
             (
-                [LeagueId], [PrizeType], [Rank], [PrizeAmount], [PrizeDescription], [Month], [RoundNumber]
+                [LeagueId], [PrizeType], [Rank], [PrizeAmount], [PrizeDescription]
             ) 
             VALUES 
             (
-                @LeagueId, @PrizeType, @Rank, @PrizeAmount, @PrizeDescription, @Month, @RoundNumber
+                @LeagueId, @PrizeType, @Rank, @PrizeAmount, @PrizeDescription
             );";
 
             var insertPrizesCommand = new CommandDefinition(

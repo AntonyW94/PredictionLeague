@@ -176,7 +176,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         const string leagueDataSql = @"
             SELECT 
                 l.[EntryDeadline],
-                l.[Price],
+                l.[Price] AS [EntryCost],
                 s.[StartDate] AS SeasonStartDate,
                 s.[EndDate] AS SeasonEndDate,
                 s.[NumberOfRounds] AS TotalRoundsInSeason,
