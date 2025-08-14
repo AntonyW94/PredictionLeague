@@ -32,6 +32,7 @@
         position: sticky;
         left: 0;
         background-color: var(--pl-purple-900);
+        font-weight: bold;
     }
 
     .results-grid thead .match-info,
