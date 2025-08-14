@@ -4,15 +4,15 @@
 <div class="mobile-match-card">
     <div class="mobile-match-header">
         <div class="d-flex align-items-center">
-            <img src="@Match.HomeTeamLogoUrl" class="match-logo-small" alt="@Match.HomeTeamName Logo"/>
+            <img src="@Match.HomeTeamLogoUrl" class="match-logo-small" alt="@Match.HomeTeamName Logo" />
             <span class="mx-2 fs-5 fw-bold">@Match.HomeTeamAbbreviation vs @Match.AwayTeamAbbreviation</span>
             <img src="@Match.AwayTeamLogoUrl" class="match-logo-small" alt="@Match.AwayTeamName Logo" />
         </div>
-       
-        <MatchStatusBadge 
-            Status="Match.Status" 
-            HomeScore="Match.ActualHomeTeamScore" 
-            AwayScore="Match.ActualAwayTeamScore" />
+
+        <MatchStatusBadge Status="Match.Status"
+                          MatchDateTime="Match.MatchDateTime"
+                          HomeScore="Match.ActualHomeTeamScore"
+                          AwayScore="Match.ActualAwayTeamScore" />
     </div>
 
     <div class="table-responsive flex-grow-1">

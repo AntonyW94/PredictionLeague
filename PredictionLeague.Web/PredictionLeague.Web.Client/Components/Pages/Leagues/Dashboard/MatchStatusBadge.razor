@@ -12,6 +12,9 @@
     public MatchStatus Status { get; set; }
 
     [Parameter]
+    public DateTime MatchDateTime { get; set; }
+
+    [Parameter]
     public int? HomeScore { get; set; }
 
     [Parameter]
@@ -37,7 +40,7 @@
 
     private string StatusText => Status switch
     {
-        MatchStatus.Scheduled => "Scheduled",
+        MatchStatus.Scheduled => $"Scheduled on {MatchDateTime:dd/MM/yyyy} at {MatchDateTime:HH:mm}",
         MatchStatus.InProgress => $"{HomeScore} - {AwayScore}",
         MatchStatus.Completed => $"{HomeScore} - {AwayScore}",
         _ => "Unknown"

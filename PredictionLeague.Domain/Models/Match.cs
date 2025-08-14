@@ -55,4 +55,14 @@ public class Match
         ActualAwayTeamScore = awayScore;
         Status = status;
     }
+
+    public void UpdateDetails(int homeTeamId, int awayTeamId, DateTime matchDateTime)
+    {
+        Guard.Against.Default(matchDateTime, nameof(matchDateTime));
+        Guard.Against.Expression(h => h == awayTeamId, homeTeamId, "A team cannot play against itself.");
+
+        HomeTeamId = homeTeamId;
+        AwayTeamId = awayTeamId;
+        MatchDateTime = matchDateTime;
+    }
 }

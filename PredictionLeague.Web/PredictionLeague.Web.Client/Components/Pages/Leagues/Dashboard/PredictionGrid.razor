@@ -27,31 +27,33 @@
                                 <img src="@match.AwayTeamLogoUrl" class="match-logo-small" alt="@match.AwayTeamName Logo"/>
                             </div>
                         </td>
-
-                        <td class="score-cell actual-score @(match.Status == MatchStatus.InProgress ? "in-progress" : "")">
-                            @if (match.Status == MatchStatus.Completed || match.Status == MatchStatus.InProgress)
-                            {
-                                <span>@match.ActualHomeTeamScore - @match.ActualAwayTeamScore</span>
-                            }
-                            else
-                            {
-                                <span class="bi bi-clock-fill not-predicted-icon" title="Match not started yet."></span>
-                            }
+                        
+                        <td class="score-cell actual-score">
+                            <MatchStatusBadge
+                                Status="match.Status"
+                                HomeScore="match.ActualHomeTeamScore"
+                                AwayScore="match.ActualAwayTeamScore"
+                                MatchDateTime="match.MatchDateTime">
+                            </MatchStatusBadge>
                         </td>
 
                         @foreach (var player in Results.OrderBy(p => p.PlayerName))
                         {
                             var prediction = player.Predictions.FirstOrDefault(p => p.MatchId == match.Id);
-                            <td class="score-cell @GetPointsClass(prediction?.PointsAwarded)">
+                            <td class="score-cell">
                                 @if (prediction?.HomeScore != null || prediction?.AwayScore != null)
                                 {
                                     @if (prediction.IsHidden)
                                     {
                                         <span class="blurred-score" title="Predictions are hidden until the deadline.">0 - 0</span>
                                     }
-                                    else
+                                    else if (match.Status == MatchStatus.Scheduled)
                                     {
                                         <span>@prediction.HomeScore - @prediction.AwayScore</span>
+                                    }
+                                    else
+                                    {
+                                        <PredictionStatusBadge Status="match.Status" HomeScore="prediction.HomeScore" AwayScore="prediction.AwayScore" PointsAwarded="prediction.PointsAwarded"></PredictionStatusBadge>
                                     }
                                 }
                                 else

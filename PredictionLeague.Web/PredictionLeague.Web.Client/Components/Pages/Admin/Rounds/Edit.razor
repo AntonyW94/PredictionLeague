@@ -12,7 +12,7 @@
 <PageTitle>Edit Round</PageTitle>
 
 <div class="page-container">
-    <div class="form-container wide">
+    <div class="form-container extra-wide">
         <h3 class="text-center fw-bold text-white mb-4">Edit Round</h3>
         
         <ApiError Message="@_errorMessage"></ApiError>
@@ -36,16 +36,16 @@
                                BusyText="Saving...">
                 <ChildContent>
                        <div class="row">
-                           <div class="col-md-3 mb-3">
-                               <label for="roundNumber" class="form-label text-white">Round Number</label>
+                           <div class="col-md-2 mb-3">
+                               <label for="roundNumber" class="form-label text-white">Round No</label>
                                <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
                                <StyledValidationMessage For="@(() => _model.RoundNumber)" />
                            </div>
 
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="startDate" class="form-label text-white">Round Start Date</label>
                             <div class="input-group">
-                                <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
+                                <InputDate id="startDate" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.StartDate" />
                                 <button type="button" class="btn btn-secondary" @onclick="ApplyStartDateToMatches" title="Apply this date to all matches">
                                     <i class="bi bi-arrow-down-square-fill"></i>
                                 </button>
@@ -55,16 +55,16 @@
 
                         <div class="col-md-3 mb-3">
                             <label for="deadline" class="form-label text-white">Prediction Deadline</label>
-                            <InputDate Type="InputDateType.DateTimeLocal" id="deadline" class="form-control" @bind-Value="_model.Deadline" />
+                            <InputDate id="deadline" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Deadline" />
                             <StyledValidationMessage For="@(() => _model.Deadline)" />
                         </div>
 
                         <div class="col-md-3 mb-3">
                             <label for="status" class="form-label text-white">Status</label>
                             <InputSelect id="status" class="form-select" @bind-Value="_model.Status">
-                                @foreach (var status in Enum.GetValues(typeof(RoundStatus)))
+                                @foreach (RoundStatus status in Enum.GetValues(typeof(RoundStatus)))
                                 {
-                                    <option value="@status">@status</option>
+                                    <option value="@status">@status.GetDescription()</option>
                                 }
                             </InputSelect>
                             <StyledValidationMessage For="@(() => _model.Status)" />
@@ -189,6 +189,7 @@
                     Status = roundDetails.Round.Status,
                     Matches = roundDetails.Matches.Select(m => new UpdateMatchRequest
                     {
+                        Id = m.Id,
                         HomeTeamId = m.HomeTeamId,
                         AwayTeamId = m.AwayTeamId,
                         MatchDateTime = m.MatchDateTime

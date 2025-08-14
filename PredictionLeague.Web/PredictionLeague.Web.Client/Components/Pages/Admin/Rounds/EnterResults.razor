@@ -37,7 +37,7 @@
                                 <InputSelect class="@statusClass" @bind-Value="match.Status">
                                     @foreach (MatchStatus status in Enum.GetValues(typeof(MatchStatus)))
                                     {
-                                        <option value="@status">@status</option>
+                                        <option value="@status">@status.GetDescription()</option>
                                     }
                                 </InputSelect>
                             </div>

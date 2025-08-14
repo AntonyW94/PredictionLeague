@@ -3,6 +3,7 @@ using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Common.Guards.Season;
+using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
@@ -22,21 +23,28 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
         Guard.Against.EntityNotFound(request.RoundId, round, "Round");
 
+        var matchesToUpdate = new List<Match>();
+        
         foreach (var matchResult in request.Matches)
         {
             var matchToUpdate = round.Matches.FirstOrDefault(m => m.Id == matchResult.MatchId);
-            matchToUpdate?.UpdateScore(matchResult.HomeScore, matchResult.AwayScore, matchResult.Status);
+            if (matchToUpdate != null)
+            {
+                matchToUpdate.UpdateScore(matchResult.HomeScore, matchResult.AwayScore, matchResult.Status);
+                matchesToUpdate.Add(matchToUpdate);
+            }
         }
-
-        await _roundRepository.UpdateAsync(round, cancellationToken);
-
-        var matchesWithScores = round.Matches
+        
+        if (matchesToUpdate.Any())
+            await _roundRepository.UpdateMatchScoresAsync(matchesToUpdate, cancellationToken);
+        
+        var matchesWithScores = matchesToUpdate
             .Where(m => m.Status != MatchStatus.Scheduled && m.ActualHomeTeamScore.HasValue && m.ActualAwayTeamScore.HasValue)
             .ToList();
 
         if (!matchesWithScores.Any())
             return;
-        
+
         var leaguesToScore = (await _leagueRepository.GetLeaguesForScoringAsync(round.SeasonId, round.Id, cancellationToken)).ToList();
 
         foreach (var league in leaguesToScore)
@@ -52,5 +60,6 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
             .SelectMany(m => m.Predictions);
 
         await _leagueRepository.UpdatePredictionPointsAsync(allUpdatedPredictions, cancellationToken);
+
     }
 }

@@ -25,18 +25,47 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
             request.Deadline,
             request.Status
         );
+        
+        var existingMatches = round.Matches.ToDictionary(m => m.Id);
+        var incomingMatchIds = request.Matches.Select(m => m.Id).ToHashSet();
 
-        round.ClearMatches();
-
-        foreach (var matchToAdd in request.Matches)
+        // 2. Process incoming matches (Update existing or Add new)
+        foreach (var matchDto in request.Matches)
         {
-            round.AddMatch(
-                matchToAdd.HomeTeamId,
-                matchToAdd.AwayTeamId,
-                matchToAdd.MatchDateTime
-            );
+            if (matchDto.Id > 0 && existingMatches.TryGetValue(matchDto.Id, out var existingMatch))
+            {
+                // This is an UPDATE
+                existingMatch.UpdateDetails(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTime);
+            }
+            else if (matchDto.Id == 0)
+            {
+                // This is a new match to ADD
+                round.AddMatch(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTime);
+            }
         }
 
+        // 3. Identify and DELETE matches that were removed by the user
+        var matchesToDelete = existingMatches.Values
+            .Where(m => !incomingMatchIds.Contains(m.Id))
+            .ToList();
+
+        if (matchesToDelete.Any())
+        {
+            var matchIdsToDelete = matchesToDelete.Select(m => m.Id).ToList();
+            var matchesWithPredictions = await _roundRepository.GetMatchIdsWithPredictionsAsync(matchIdsToDelete);
+
+            if (matchesWithPredictions.Any())
+            {
+                throw new InvalidOperationException("Cannot delete a match that already has user predictions.");
+            }
+
+            foreach (var matchToRemove in matchesToDelete)
+            {
+                round.RemoveMatch(matchToRemove.Id);
+            }
+        }
+
+        // 4. Save all changes to the database
         await _roundRepository.UpdateAsync(round, cancellationToken);
     }
 }

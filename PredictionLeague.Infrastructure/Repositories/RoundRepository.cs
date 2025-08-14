@@ -88,65 +88,142 @@ public class RoundRepository : IRoundRepository
         return await QueryAndMapRound(sql, cancellationToken, new { RoundId = roundId });
     }
 
+    public async Task<IEnumerable<int>> GetMatchIdsWithPredictionsAsync(IEnumerable<int> matchIds)
+    {
+        const string sql = @"
+            SELECT DISTINCT
+                [MatchId]
+            FROM
+                [UserPredictions]
+            WHERE
+                [MatchId] IN @MatchIds;
+        ";
+
+        var matchIdsList = matchIds.ToList();
+        if (!matchIdsList.Any())
+            return Enumerable.Empty<int>();
+        
+        return await Connection.QueryAsync<int>(sql, new { MatchIds = matchIdsList });
+    }
+
     #endregion
 
     #region Update
 
     public async Task UpdateAsync(Round round, CancellationToken cancellationToken)
     {
-        const string deleteMatchesSql = "DELETE FROM [Matches] WHERE [RoundId] = @RoundId;";
-        const string updateRoundSql = @"
-            UPDATE [Rounds]
-            SET [RoundNumber] = @RoundNumber,
+        using var connection = _connectionFactory.CreateConnection();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+
+        try
+        {
+            const string updateRoundSql = @"
+            UPDATE 
+                [Rounds]
+            SET 
+                [RoundNumber] = @RoundNumber,
                 [StartDate] = @StartDate,
                 [Deadline] = @Deadline,
-                [Status] = @Status           
-            WHERE [Id] = @Id;";
+                [Status] = @Status
+            WHERE 
+                [Id] = @Id;";
 
-        var deleteMatchesCommand = new CommandDefinition(
-            commandText: deleteMatchesSql,
-            parameters: new { RoundId = round.Id },
-            cancellationToken: cancellationToken
-        );
-
-        await Connection.ExecuteAsync(deleteMatchesCommand);
-
-        var updateRoundCommand = new CommandDefinition(
-            commandText: updateRoundSql,
-            parameters: new
+            var updateRoundCommand = new CommandDefinition(updateRoundSql, new
             {
                 round.Id,
                 round.RoundNumber,
                 round.StartDate,
                 round.Deadline,
                 Status = round.Status.ToString()
-            },
+            }, transaction, cancellationToken: cancellationToken);
+            await connection.ExecuteAsync(updateRoundCommand);
+
+            var existingMatchIdsCommand = new CommandDefinition("SELECT [Id] FROM [Matches] WHERE [RoundId] = @RoundId", new { RoundId = round.Id }, transaction, cancellationToken: cancellationToken);
+            var existingMatchIds = (await connection.QueryAsync<int>(existingMatchIdsCommand)).ToList();
+            var incomingMatches = round.Matches.ToList();
+
+            var matchesToInsert = incomingMatches.Where(m => m.Id == 0).ToList();
+            var matchesToUpdate = incomingMatches.Where(m => m.Id != 0).ToList();
+            var matchIdsToDelete = existingMatchIds.Except(incomingMatches.Select(m => m.Id)).ToList();
+
+            if (matchesToInsert.Any())
+            {
+                const string insertSql = @"
+                INSERT INTO [Matches] 
+                    ([RoundId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status])
+                VALUES 
+                    (@RoundId, @HomeTeamId, @AwayTeamId, @MatchDateTime, @Status);";
+
+                var insertMatchesCommand = new CommandDefinition(insertSql, matchesToInsert.Select(m => new {
+                    round.Id,
+                    m.HomeTeamId,
+                    m.AwayTeamId,
+                    m.MatchDateTime,
+                    Status = m.Status.ToString()
+                }), transaction, cancellationToken: cancellationToken);
+                await connection.ExecuteAsync(insertMatchesCommand);
+            }
+
+            if (matchesToUpdate.Any())
+            {
+                const string updateSql = @"
+                UPDATE 
+                    [Matches]
+                SET
+                    [HomeTeamId] = @HomeTeamId,
+                    [AwayTeamId] = @AwayTeamId,
+                    [MatchDateTime] = @MatchDateTime
+                WHERE
+                    [Id] = @Id;";
+
+                var updateMatchesCommand = new CommandDefinition(updateSql, matchesToUpdate, transaction, cancellationToken: cancellationToken);
+                await connection.ExecuteAsync(updateMatchesCommand);
+            }
+
+            if (matchIdsToDelete.Any())
+            {
+                const string deleteSql = "DELETE FROM [Matches] WHERE [Id] IN @MatchIdsToDelete;";
+                var deleteMatchesCommand = new CommandDefinition(deleteSql, new { MatchIdsToDelete = matchIdsToDelete }, transaction, cancellationToken: cancellationToken);
+                await connection.ExecuteAsync(deleteMatchesCommand);
+            }
+
+            transaction.Commit();
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
+    }
+
+    public async Task UpdateMatchScoresAsync(List<Match> matches, CancellationToken cancellationToken)
+    {
+        if (!matches.Any())
+            return;
+        
+        const string sql = @"
+        UPDATE
+            [Matches]
+        SET
+            [ActualHomeTeamScore] = @ActualHomeTeamScore,
+            [ActualAwayTeamScore] = @ActualAwayTeamScore,
+            [Status] = @Status
+        WHERE
+            [Id] = @Id;";
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: matches.Select(m => new {
+                m.Id,
+                m.ActualHomeTeamScore,
+                m.ActualAwayTeamScore,
+                Status = m.Status.ToString()
+            }),
             cancellationToken: cancellationToken
         );
 
-        await Connection.ExecuteAsync(updateRoundCommand);
-
-        if (round.Matches.Any())
-        {
-            var matchesToInsert = round.Matches.Select(m => new
-            {
-                RoundId = round.Id,
-                m.HomeTeamId,
-                m.AwayTeamId,
-                m.MatchDateTime,
-                Status = m.Status.ToString(),
-                m.ActualHomeTeamScore,
-                m.ActualAwayTeamScore
-            }).ToList();
-
-            var insertMatchesCommand = new CommandDefinition(
-                commandText: AddMatchSql,
-                parameters: matchesToInsert,
-                cancellationToken: cancellationToken
-            );
-
-            await Connection.ExecuteAsync(insertMatchesCommand);
-        }
+        await Connection.ExecuteAsync(command);
     }
 
     #endregion

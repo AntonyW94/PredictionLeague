@@ -1,0 +1,40 @@
+﻿@using PredictionLeague.Domain.Common.Enumerations
+
+<div class="@BadgeClass">
+    <span class="badge-icon">
+        <i class="@IconClass"></i>
+    </span>
+    <span>@HomeScore - @AwayScore</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public MatchStatus Status { get; set; }
+
+    [Parameter]
+    public int? PointsAwarded { get; set; }
+
+    [Parameter]
+    public int? HomeScore { get; set; }
+
+    [Parameter]
+    public int? AwayScore { get; set; }
+
+    private string BadgeClass => $"badge-group {GetColorClass()} {(Status == MatchStatus.InProgress ? "pulsing" : "")}";
+
+    private string GetColorClass() => PointsAwarded switch
+    {
+        0 => "badge-group--red",
+        3 => "badge-group--yellow",
+        5 => "badge-group--green",
+        _ => ""
+    };
+
+    private string IconClass => PointsAwarded switch
+    {
+        0 => "bi bi-x-circle",
+        3 => "bi bi-dash-circle",
+        5 => "bi bi-check-circle",
+        _ => "bi bi-clock"
+    };
+}

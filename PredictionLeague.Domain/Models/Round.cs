@@ -53,7 +53,7 @@ public class Round
         Deadline = deadline;
         Status = status;
     }
-    
+
     public void AddMatch(int homeTeamId, int awayTeamId, DateTime matchTime)
     {
         var matchExists = _matches.Any(m => m.HomeTeamId == homeTeamId && m.AwayTeamId == awayTeamId);
@@ -64,9 +64,11 @@ public class Round
         _matches.Add(Match.Create(Id, homeTeamId, awayTeamId, matchTime));
     }
 
-    public void ClearMatches()
+    public void RemoveMatch(int matchId)
     {
-        _matches.Clear();
+        var matchToRemove = _matches.FirstOrDefault(m => m.Id == matchId);
+        if (matchToRemove != null)
+            _matches.Remove(matchToRemove);
     }
 
     private static void Validate(int seasonId, int roundNumber, DateTime startDate, DateTime deadline)

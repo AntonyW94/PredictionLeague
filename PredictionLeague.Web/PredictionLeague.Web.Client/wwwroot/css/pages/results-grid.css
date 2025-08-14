@@ -175,9 +175,11 @@
     text-align: right;
 }
 
-.overall-round-winner {
+.overall-round-winner,
+.overall-round-winner td {
     background-color: var(--pl-gold) !important;
     color: var(--pl-purple-900) !important;
+    border: none;
 }
 
 @keyframes pulse {
