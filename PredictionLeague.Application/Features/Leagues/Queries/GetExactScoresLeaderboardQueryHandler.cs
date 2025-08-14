@@ -38,6 +38,7 @@ public class GetExactScoresLeaderboardQueryHandler : IRequestHandler<GetExactSco
                                         lm.[LeagueId] = @LeagueId 
                                         AND lm.[Status] = @ApprovedStatus
                                     GROUP BY 
+                                        lm.[UserId],
                                         u.[FirstName],
                                         u.[LastName]
                                   ORDER BY
