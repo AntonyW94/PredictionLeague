@@ -26,17 +26,14 @@
                         <td class="w-40 text-end fw-bold">
                             @if (prediction?.HomeScore != null)
                             {
-                                if (prediction.IsHidden)
-                                {
-                                    <span class="blurred-score" title="Predictions are hidden until the deadline.">0 - 0</span>
-                                }
-                                else
-                                {
-                                    <PredictionStatusBadge Status="Match.Status" HomeScore="prediction.HomeScore" AwayScore="prediction.AwayScore" PointsAwarded="prediction.PointsAwarded"></PredictionStatusBadge>
-                                }
+                                <PredictionStatusBadge IsHidden="prediction.IsHidden"
+                                                       Status="Match.Status"
+                                                       HomeScore="prediction.HomeScore"
+                                                       AwayScore="prediction.AwayScore"
+                                                       PointsAwarded="prediction.PointsAwarded"/>
                             }
                             else
-                            { 
+                            {
                                 @if (!player.HasPredicted && Deadline < DateTime.Now)
                                 {
                                     <span class="not-predicted-icon text-pl-red bi bi-x-circle-fill" title="No predictions submitted"></span>
@@ -56,6 +53,6 @@
 
 @code {
     [Parameter, EditorRequired] public MatchInRoundDto Match { get; set; } = null!;
-    [Parameter, EditorRequired] public List<PredictionResultDto> Results { get; set; } = null!; 
+    [Parameter, EditorRequired] public List<PredictionResultDto> Results { get; set; } = null!;
     [Parameter, EditorRequired] public DateTime Deadline { get; set; }
 }

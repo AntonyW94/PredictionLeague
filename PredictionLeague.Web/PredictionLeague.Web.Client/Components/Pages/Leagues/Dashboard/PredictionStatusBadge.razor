@@ -4,7 +4,15 @@
     <span class="badge-icon">
         <i class="@IconClass"></i>
     </span>
-    <span>@HomeScore - @AwayScore</span>
+    @if (IsHidden)
+    {
+        <span class="blurred-score" title="Predictions are hidden until the deadline.">0 - 0</span>
+    }
+    else
+    {
+        <span>@HomeScore - @AwayScore</span>
+    }
+
 </div>
 
 @code {
@@ -19,6 +27,9 @@
 
     [Parameter]
     public int? AwayScore { get; set; }
+
+    [Parameter]
+    public bool IsHidden { get; set; }
 
     private string BadgeClass => $"badge-group {GetColorClass()} {(Status == MatchStatus.InProgress ? "pulsing" : "")}";
 
