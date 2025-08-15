@@ -53,7 +53,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
             up.[PredictedHomeScore],
             up.[PredictedAwayScore],
             CAST(CASE 
-                WHEN r.[Deadline] > GETUTCDATE() AND up.[UserId] != @CurrentUserId THEN 1 
+                WHEN r.[Deadline] > GETDATE() AND up.[UserId] != @CurrentUserId THEN 1 
                 ELSE 0 
             END AS bit) AS [IsHidden],
             pr.[Rank]

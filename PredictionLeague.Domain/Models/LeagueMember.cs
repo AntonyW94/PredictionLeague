@@ -48,7 +48,7 @@ public class LeagueMember
             ApprovedAt = null
         };
     }
-   
+
     public void Approve()
     {
         if (Status != LeagueMemberStatus.Pending)
@@ -57,7 +57,7 @@ public class LeagueMember
         Status = LeagueMemberStatus.Approved;
         ApprovedAt = DateTime.Now;
     }
-    
+
     public void Reject()
     {
         if (Status != LeagueMemberStatus.Pending)
@@ -65,13 +65,15 @@ public class LeagueMember
 
         Status = LeagueMemberStatus.Rejected;
     }
-    
+
     public void ScorePredictionForMatch(Match completedMatch)
     {
         Guard.Against.Null(completedMatch, nameof(completedMatch));
 
-        var prediction = _predictions.FirstOrDefault(p => p.MatchId == completedMatch.Id);
-        if (prediction != null && completedMatch.ActualHomeTeamScore.HasValue && completedMatch.ActualAwayTeamScore.HasValue)
-            prediction.CalculatePoints(completedMatch.ActualHomeTeamScore.Value, completedMatch.ActualAwayTeamScore.Value);
+        foreach (var prediction in _predictions.Where(p => p.MatchId == completedMatch.Id))
+        {
+            if (completedMatch.ActualHomeTeamScore.HasValue && completedMatch.ActualAwayTeamScore.HasValue)
+                prediction.CalculatePoints(completedMatch.ActualHomeTeamScore.Value, completedMatch.ActualAwayTeamScore.Value);
+        }
     }
 }

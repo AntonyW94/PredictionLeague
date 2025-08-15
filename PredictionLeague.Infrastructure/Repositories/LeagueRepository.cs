@@ -289,7 +289,7 @@ public class LeagueRepository : ILeagueRepository
         const string sql = @"
             UPDATE [LeagueMembers]
             SET [Status] = @Status,
-                [ApprovedAt] = CASE WHEN @Status = 'Approved' THEN GETUTCDATE() ELSE [ApprovedAt] END
+                [ApprovedAt] = CASE WHEN @Status = 'Approved' THEN GETDATE() ELSE [ApprovedAt] END
             WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId;";
 
         var command = new CommandDefinition(
@@ -306,7 +306,7 @@ public class LeagueRepository : ILeagueRepository
         const string sql = @"
             UPDATE [UserPredictions]
             SET [PointsAwarded] = @PointsAwarded,
-                [UpdatedAt] = GETUTCDATE()
+                [UpdatedAt] = GETDATE()
             WHERE [Id] = @Id;";
 
         var filteredPredictions = predictionsToUpdate

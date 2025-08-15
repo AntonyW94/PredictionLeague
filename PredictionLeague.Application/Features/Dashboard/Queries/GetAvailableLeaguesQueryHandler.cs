@@ -30,7 +30,7 @@ public class GetAvailableLeaguesQueryHandler : IRequestHandler<GetAvailableLeagu
                 [Seasons] s ON l.[SeasonId] = s.[Id]
             WHERE 
                 l.[EntryCode] IS NULL                                   
-                AND l.[EntryDeadline] > GETUTCDATE()                    
+                AND l.[EntryDeadline] > GETDATE()                    
                 AND NOT EXISTS (                                        
                     SELECT 1 
                     FROM [LeagueMembers] lm 

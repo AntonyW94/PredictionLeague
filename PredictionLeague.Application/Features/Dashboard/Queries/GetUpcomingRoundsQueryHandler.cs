@@ -36,7 +36,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
             JOIN 
                 [Seasons] s ON r.[SeasonId] = s.[Id]
             WHERE
-                r.[Deadline] > GETUTCDATE()
+                r.[Deadline] > GETDATE()
                 AND r.[Status] = @PublishedStatus
                 AND r.[SeasonId] IN (
                     SELECT l.SeasonId
