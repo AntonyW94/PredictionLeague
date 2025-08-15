@@ -153,20 +153,6 @@
         text-align: left;
     }
 
-        .mobile-match-table td.player-name-col {
-            width: 60%;
-            white-space: normal;
-            word-break: break-word;
-        }
-
-        .mobile-match-table td.text-center {
-            width: 25%;
-        }
-
-        .mobile-match-table td.mobile-prediction-points {
-            width: 15%;
-        }
-
     .mobile-match-table tbody tr:nth-child(even) td {
         background-color: var(--pl-purple-700);
     }
