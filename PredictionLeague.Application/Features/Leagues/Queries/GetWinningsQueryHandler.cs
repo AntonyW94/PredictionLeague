@@ -174,6 +174,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
                 };
             })
             .OrderByDescending(e => e.TotalWinnings)
+            .ThenBy(e => e.PlayerName)
             .ToList();
     }
 
