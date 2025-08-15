@@ -157,7 +157,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
             .Select(member =>
             {
                 // Find all winnings for the current member
-                var memberWinnings = data.Winnings.Where(w => w.WinnerName == member.PlayerName).ToList();
+                var memberWinnings = data.Winnings.Where(w => w.UserId == member.UserId).ToList();
                 return new WinningsLeaderboardEntryDto
                 {
                     PlayerName = member.PlayerName,
@@ -210,9 +210,11 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
                 w.[Amount],
                 w.[LeaguePrizeSettingId],
                 lps.[PrizeType],
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) + '.' AS WinnerName,
+                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS WinnerName,
                 w.[RoundNumber],
-                w.[Month]
+                w.[Month],
+                w.[UserId]
+                
             FROM 
                 [Winnings] w
             JOIN 
@@ -226,7 +228,8 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
 
         const string membersSql = @"
             SELECT
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName
+                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
+                u.[Id] AS UserId
             FROM 
                 [LeagueMembers] lm
             JOIN 
@@ -267,8 +270,8 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
     private record PrizeSettingQueryResult(int Id, PrizeType PrizeType, string Name, decimal Amount);
    
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record WinningsQueryResult(decimal Amount, int LeaguePrizeSettingId, PrizeType PrizeType, string WinnerName, int? RoundNumber, int? Month);
+    private record WinningsQueryResult(decimal Amount, int LeaguePrizeSettingId, PrizeType PrizeType, string WinnerName, int? RoundNumber, int? Month, string UserId);
    
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record LeagueMemberQueryResult(string PlayerName);
+    private record LeagueMemberQueryResult(string PlayerName, string UserId);
 }

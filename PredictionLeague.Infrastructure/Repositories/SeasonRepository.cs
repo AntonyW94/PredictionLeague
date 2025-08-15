@@ -68,6 +68,19 @@ public class SeasonRepository : ISeasonRepository
         return await Connection.QuerySingleOrDefaultAsync<Season>(command);
     }
 
+    public async Task<int> GetRoundCountAsync(int seasonId, CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT [NumberOfRounds] FROM [Seasons] WHERE [Id] = @seasonId;";
+       
+        var command = new CommandDefinition(
+            sql,
+            new { seasonId },
+            cancellationToken: cancellationToken
+        );
+        
+        return await Connection.ExecuteScalarAsync<int>(command);
+    }
+
     #endregion
 
     #region Update

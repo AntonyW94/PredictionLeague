@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
+        services.AddScoped<IWinningsRepository, WinningsRepository>();
 
         services.AddScoped<PredictionDomainService>();
         

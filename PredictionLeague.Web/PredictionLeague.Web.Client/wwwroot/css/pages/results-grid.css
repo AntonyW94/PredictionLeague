@@ -98,6 +98,11 @@
     user-select: none;
 }
 
+.results-grid thead th.winner-column, 
+.results-grid tfoot th.winner-column {
+    background-color: var(--pl-gold) !important;
+}
+
 /* --- Mobile Carousel and Card Styles --- */
 .mobile-results-carousel .carousel-container {
     max-height: none;

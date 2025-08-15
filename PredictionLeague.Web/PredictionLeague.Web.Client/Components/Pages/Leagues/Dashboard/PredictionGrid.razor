@@ -40,7 +40,7 @@
                         @foreach (var player in Results.OrderBy(p => p.PlayerName))
                         {
                             var prediction = player.Predictions.FirstOrDefault(p => p.MatchId == match.Id);
-                            <td class="score-cell">
+                            <td class="score-cell @(IsWinner(player) ? "winner-column" : "")">
                                 @if (prediction?.HomeScore != null || prediction?.AwayScore != null)
                                 {
                                     @if (prediction.IsHidden)

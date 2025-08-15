@@ -201,5 +201,113 @@ public class League
         AdministratorUserId = newAdministratorUserId;
     }
 
+    public List<LeagueMember> GetTopScorersForRound(int roundId, IEnumerable<Match> roundMatches)
+    {
+        if (!_members.Any())
+            return new List<LeagueMember>();
+        
+        var roundScores = _members
+            .Select(member => new
+            {
+                Member = member,
+                Score = member.Predictions
+                    .Join(roundMatches.Where(m => m.RoundId == roundId),
+                        p => p.MatchId,
+                        m => m.Id,
+                        (p, m) => p.PointsAwarded ?? 0)
+                    .Sum()
+            }).ToList();
+
+        if (!roundScores.Any())
+            return new List<LeagueMember>();
+        
+        var maxScore = roundScores.Max(s => s.Score);
+        if (maxScore == 0)
+            return new List<LeagueMember>();
+        
+        return roundScores
+            .Where(s => s.Score == maxScore)
+            .Select(s => s.Member)
+            .ToList();
+    }
+
+    public List<LeagueMember> GetTopScorersForMonth(int month, List<Match> allMatchesInMonth)
+    {
+        if (!_members.Any() || !allMatchesInMonth.Any())
+            return new List<LeagueMember>();
+        
+        var monthlyScores = _members
+            .Select(member => new
+            {
+                Member = member,
+                Score = member.Predictions
+                    .Join(allMatchesInMonth.Where(m => m.MatchDateTime.Month == month),
+                        p => p.MatchId,
+                        m => m.Id,
+                        (p, m) => p.PointsAwarded ?? 0)
+                    .Sum()
+            }).ToList();
+
+        if (!monthlyScores.Any())
+            return new List<LeagueMember>();
+        
+        var maxScore = monthlyScores.Max(s => s.Score);
+        if (maxScore == 0)
+            return new List<LeagueMember>(); 
+        
+        return monthlyScores
+            .Where(s => s.Score == maxScore)
+            .Select(s => s.Member)
+            .ToList();
+    }
+
+    public List<OverallRanking> GetOverallRankings()
+    {
+        if (!_members.Any())
+            return new List<OverallRanking>();
+
+        var scoresByGroup = _members
+            .GroupBy(m => m.Predictions.Sum(p => p.PointsAwarded ?? 0))
+            .OrderByDescending(g => g.Key)
+            .ToList();
+
+        var rankings = new List<OverallRanking>();
+        var currentRank = 1;
+
+        foreach (var scoreGroup in scoresByGroup)
+        {
+            var membersInGroup = scoreGroup.ToList();
+            rankings.Add(new OverallRanking(currentRank, scoreGroup.Key, membersInGroup));
+            currentRank += membersInGroup.Count;
+        }
+
+        return rankings;
+    }
+
+    public List<LeagueMember> GetMostExactScoresWinners()
+    {
+        if (!_members.Any())
+            return new List<LeagueMember>();
+        
+        var exactScoreCounts = _members
+            .Select(member => new
+            {
+                Member = member,
+                ExactCount = member.Predictions.Count(p => p.PointsAwarded == 5)
+            }).ToList();
+
+        if (!exactScoreCounts.Any())
+            return new List<LeagueMember>();
+
+        var maxCount = exactScoreCounts.Max(s => s.ExactCount);
+        if (maxCount == 0)
+            return new List<LeagueMember>();
+        
+        return exactScoreCounts
+            .Where(s => s.ExactCount == maxCount)
+            .Select(s => s.Member)
+            .ToList();
+    }
+
     #endregion
 }

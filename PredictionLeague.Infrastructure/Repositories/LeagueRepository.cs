@@ -113,13 +113,16 @@ public class LeagueRepository : ILeagueRepository
         SELECT
             l.*, 
             lm.*, 
-            up.*
+            up.*,
+            lps.*
         FROM 
             [Leagues] l
         INNER JOIN 
             [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
         LEFT JOIN 
             [UserPredictions] up ON lm.[UserId] = up.[UserId] AND up.[MatchId] IN (SELECT Id FROM Matches WHERE RoundId = @RoundId)
+        LEFT JOIN
+            [LeaguePrizeSettings] lps ON l.[Id] = lps.[LeagueId]
         WHERE 
             l.[SeasonId] = @SeasonId;";
 
@@ -129,10 +132,10 @@ public class LeagueRepository : ILeagueRepository
             cancellationToken: cancellationToken
         );
 
-        var queryResult = await Connection.QueryAsync<League, LeagueMember, UserPrediction, (League, LeagueMember, UserPrediction?)>(
+        var queryResult = await Connection.QueryAsync<League, LeagueMember, UserPrediction, LeaguePrizeSetting, (League, LeagueMember, UserPrediction?, LeaguePrizeSetting?)>(
             command,
-            (league, member, prediction) => (league, member, prediction),
-            splitOn: "LeagueId,Id"
+            (league, member, prediction, prizeSetting) => (league, member, prediction, prizeSetting),
+            splitOn: "Id,LeagueId,Id,Id"
         );
 
         var groupedLeagues = queryResult.GroupBy(x => x.Item1.Id).Select(leagueGroup =>
@@ -145,6 +148,12 @@ public class LeagueRepository : ILeagueRepository
                 return new LeagueMember(firstMember.LeagueId, firstMember.UserId, firstMember.Status, firstMember.JoinedAt, firstMember.ApprovedAt, predictions);
             }).ToList();
 
+            var prizeSettings = leagueGroup
+                .Where(x => x.Item4 != null)
+                .GroupBy(x => x.Item4!.Id)
+                .Select(g => g.First().Item4)
+                .ToList();
+
             return new League(
                 firstLeague.Id,
                 firstLeague.Name,
@@ -155,7 +164,7 @@ public class LeagueRepository : ILeagueRepository
                 firstLeague.CreatedAt,
                 firstLeague.EntryDeadline,
                 members,
-                null
+                prizeSettings
             );
         });
 

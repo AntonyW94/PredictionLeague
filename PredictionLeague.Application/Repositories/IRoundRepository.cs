@@ -14,6 +14,8 @@ public interface IRoundRepository
 
     Task<Round?> GetByIdAsync(int id, CancellationToken cancellationToken);
     Task<IEnumerable<int>> GetMatchIdsWithPredictionsAsync(IEnumerable<int> matchIds);
+    Task<bool> IsLastRoundOfMonthAsync(int roundId, int seasonId, CancellationToken cancellationToken);
+    Task<IEnumerable<Match>> GetAllMatchesForMonthAsync(int month, int seasonId, CancellationToken cancellationToken);
 
     #endregion
 
