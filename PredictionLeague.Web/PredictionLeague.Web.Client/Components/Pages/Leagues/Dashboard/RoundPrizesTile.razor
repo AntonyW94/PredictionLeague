@@ -1,4 +1,6 @@
-﻿@using PredictionLeague.Contracts.Leagues
+﻿@inherits BaseLeaderboardComponent
+
+@using PredictionLeague.Contracts.Leagues
 
 <div class="card mh-600">
     <h5 class="card-title text-white fw-bold mb-3">Round Prizes</h5>
@@ -25,7 +27,7 @@
                     <tbody>
                         @foreach (var prize in Prizes)
                         {
-                            <tr>
+                            <tr class="@(GetUserHighlightClass(prize.UserId))">
                                 <td class="w-15 text-start fw-bold">@prize.Name</td>
                                 <td class="w-60 text-start break-word fw-bold">@(prize.Winner ?? "TBC")</td>
                                 <td class="w-25 text-end fw-bold">@prize.Amount.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>

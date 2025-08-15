@@ -41,21 +41,21 @@
         background-color: var(--pl-purple-700);
     }
 
-.leaderboard-table .rank-col {
-    width: 15%;
-    text-align: left;
-}
+    .leaderboard-table .rank-col {
+        width: 15%;
+        text-align: left;
+    }
 
-.leaderboard-table .player-name-col {
-    white-space: normal;
-    word-wrap: break-word;
-    text-align: left;
-}
+    .leaderboard-table .player-name-col {
+        white-space: normal;
+        word-wrap: break-word;
+        text-align: left;
+    }
 
-.leaderboard-table .points-col {
-    width: 25%;
-    text-align: right;
-}
+    .leaderboard-table .points-col {
+        width: 25%;
+        text-align: right;
+    }
 
 .leaderboard-card .league-card-body,
 .leaderboard-card .card-body {
@@ -71,5 +71,17 @@
 
 .leaderboard-table {
     table-layout: fixed;
-    width: 100%;
 }
+
+    .leaderboard-table tbody tr.current-user-highlight td {
+        background-color: var(--pl-green) !important;
+        color: white !important;
+    }
+
+    .leaderboard-table tbody tr.overall-round-winner,
+    .leaderboard-table tbody tr.overall-round-winner td,
+    .leaderboard-table tbody tr.overall-round-winner.current-user-highlight td {
+        background-color: var(--pl-gold) !important;
+        color: var(--pl-white) !important;
+        border: none;
+    }

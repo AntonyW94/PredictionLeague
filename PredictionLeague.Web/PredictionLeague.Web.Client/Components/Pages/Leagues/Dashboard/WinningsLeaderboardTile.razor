@@ -1,4 +1,6 @@
-﻿@using PredictionLeague.Contracts.Leagues
+﻿@inherits BaseLeaderboardComponent
+
+@using PredictionLeague.Contracts.Leagues
 
 <div class="card h-100 mh-600">
     <h5 class="card-title text-white fw-bold mb-3">Winnings Leaderboard</h5>
@@ -27,7 +29,7 @@
                     <tbody>
                     @foreach (var entry in Leaderboard.Entries)
                     {
-                        <tr>
+                        <tr class="@(GetUserHighlightClass(entry.UserId))">
                             <td class="break-word text-start fw-bold">@entry.PlayerName</td>
                             <td class="text-start fw-bold d-none d-sm-table-cell">@entry.RoundWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
                             <td class="text-start fw-bold d-none d-sm-table-cell">@entry.MonthlyWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>

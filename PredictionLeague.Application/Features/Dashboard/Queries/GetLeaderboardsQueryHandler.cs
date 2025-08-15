@@ -52,7 +52,8 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                 alr.[SeasonName],
                 alr.[Rank],
                 alr.[PlayerName],
-                alr.[TotalPoints]
+                alr.[TotalPoints],
+                alr.[UserId]
             FROM 
                 AllLeagueRanks alr
             WHERE 
@@ -78,7 +79,8 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                 {
                     Rank = entry.Rank,
                     PlayerName = entry.PlayerName,
-                    TotalPoints = entry.TotalPoints
+                    TotalPoints = entry.TotalPoints,
+                    UserId = entry.UserId
                 }).ToList()
             });
 
@@ -96,5 +98,6 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
         public long Rank { get; init; }
         public string PlayerName { get; init; } = null!;
         public int TotalPoints { get; init; }
+        public string UserId { get; init; } = null!;
     }
 }

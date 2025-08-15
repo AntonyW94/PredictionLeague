@@ -27,7 +27,8 @@ public class GetMonthlyLeaderboardQueryHandler : IRequestHandler<GetMonthlyLeade
             SELECT
                 RANK() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS Rank,
                 u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                SUM(ISNULL(up.[PointsAwarded], 0)) AS TotalPoints
+                SUM(ISNULL(up.[PointsAwarded], 0)) AS TotalPoints,
+                u.[Id] AS [UserId]
             FROM 
                 [LeagueMembers] lm
             JOIN 
@@ -49,7 +50,8 @@ public class GetMonthlyLeaderboardQueryHandler : IRequestHandler<GetMonthlyLeade
             GROUP BY
                 lm.[UserId],
                 u.[FirstName],
-                u.[LastName]
+                u.[LastName],
+                u.[Id]
             ORDER BY
                 TotalPoints DESC,
                 PlayerName ASC;";

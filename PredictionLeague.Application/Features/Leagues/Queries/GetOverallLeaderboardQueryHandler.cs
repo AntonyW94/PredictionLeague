@@ -20,7 +20,8 @@ public class GetOverallLeaderboardQueryHandler : IRequestHandler<GetOverallLeade
             SELECT
                 RANK() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS [Rank],
                 au.[FirstName] + ' ' + LEFT(au.[LastName], 1) AS [PlayerName],
-                SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints]
+                SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints],
+                au.[Id] AS [UserId]
             FROM 
                 [LeagueMembers] AS lm
             JOIN 
@@ -39,7 +40,7 @@ public class GetOverallLeaderboardQueryHandler : IRequestHandler<GetOverallLeade
                 lm.[LeagueId] = @LeagueId
                 AND lm.[Status] = @ApprovedStatus
             GROUP BY
-                au.[UserName], au.[FirstName], au.[LastName]
+                au.[UserName], au.[FirstName], au.[LastName], au.[Id]
             ORDER BY
                 [Rank], [PlayerName];";
 

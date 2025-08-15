@@ -2,9 +2,10 @@
 
 public class WinningsLeaderboardEntryDto
 {
-    public string PlayerName { get; set; } = string.Empty;
-    public decimal RoundWinnings { get; set; }
-    public decimal MonthlyWinnings { get; set; }
-    public decimal EndOfSeasonWinnings { get; set; }
-    public decimal TotalWinnings { get; set; }
+    public string PlayerName { get; init; } = string.Empty;
+    public decimal RoundWinnings { get; init; }
+    public decimal MonthlyWinnings { get; init; }
+    public decimal EndOfSeasonWinnings { get; init; }
+    public decimal TotalWinnings { get; init; }
+    public string UserId { get; init; }
 }

@@ -19,7 +19,8 @@ public class GetExactScoresLeaderboardQueryHandler : IRequestHandler<GetExactSco
         const string entriesSql = @"
                                     SELECT
                                         u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                                        COUNT(CASE WHEN up.[PointsAwarded] = 5 THEN 1 END) AS ExactScoresCount
+                                        COUNT(CASE WHEN up.[PointsAwarded] = 5 THEN 1 END) AS ExactScoresCount,
+                                        u.[Id] AS [UserId]
                                     FROM
                                         [LeagueMembers] lm
                                     JOIN 
@@ -40,7 +41,8 @@ public class GetExactScoresLeaderboardQueryHandler : IRequestHandler<GetExactSco
                                     GROUP BY 
                                         lm.[UserId],
                                         u.[FirstName],
-                                        u.[LastName]
+                                        u.[LastName],
+                                        u.[Id]
                                   ORDER BY
                                         ExactScoresCount DESC, 
                                         PlayerName";

@@ -171,14 +171,6 @@ public class LeaguesController : ApiControllerBase
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 
-    [HttpGet("{leagueId:int}/leaderboard/round/{roundId:int}")]
-    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetRoundLeaderboardAsync(int leagueId, int roundId, CancellationToken cancellationToken)
-    {
-        var query = new GetRoundLeaderboardQuery(leagueId, roundId);
-        return Ok(await _mediator.Send(query, cancellationToken));
-    }
-
     [HttpGet("{leagueId:int}/leaderboard/exact-scores")]
     [ProducesResponseType(typeof(ExactScoresLeaderboardDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ExactScoresLeaderboardDto>> GetExactScoresLeaderboard(int leagueId)

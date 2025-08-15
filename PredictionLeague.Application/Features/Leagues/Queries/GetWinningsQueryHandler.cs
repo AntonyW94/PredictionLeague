@@ -58,7 +58,8 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
             {
                 Name = winner.RoundNumber.ToString()!,
                 Amount = winner.Amount,
-                Winner = winner.WinnerName
+                Winner = winner.WinnerName,
+                UserId = winner.UserId
             });
       
         dto.RoundPrizes.AddRange(wonRoundPrizes);
@@ -72,7 +73,8 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
             {
                 Name = roundNum.ToString(),
                 Amount = roundPrizeSetting.Amount,
-                Winner = null
+                Winner = null,
+                UserId = null
             });
         }
         dto.RoundPrizes = dto.RoundPrizes.OrderBy(p => int.Parse(p.Name)).ToList();
@@ -92,7 +94,8 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
             {
                 Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(winner.Month!.Value),
                 Amount = winner.Amount,
-                Winner = winner.WinnerName
+                Winner = winner.WinnerName,
+                UserId = winner.UserId
             });
 
         dto.MonthlyPrizes.AddRange(wonMonthlyPrizes);
@@ -106,7 +109,8 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
             {
                 Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthNum),
                 Amount = monthlyPrizeSetting.Amount,
-                Winner = null
+                Winner = null,
+                UserId = null
             });
         }
 
@@ -135,7 +139,8 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
                     {
                         Name = setting.Name,
                         Amount = winner.Amount,
-                        Winner = winner.WinnerName
+                        Winner = winner.WinnerName,
+                        UserId = winner.UserId
                     });
                 }
             }
@@ -145,7 +150,8 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
                 {
                     Name = setting.Name,
                     Amount = setting.Amount,
-                    Winner = null
+                    Winner = null,
+                    UserId = null
                 });
             }
         }
@@ -156,7 +162,6 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         dto.Leaderboard.Entries = data.LeagueMembers
             .Select(member =>
             {
-                // Find all winnings for the current member
                 var memberWinnings = data.Winnings.Where(w => w.UserId == member.UserId).ToList();
                 return new WinningsLeaderboardEntryDto
                 {
@@ -164,7 +169,8 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
                     RoundWinnings = memberWinnings.Where(p => p.PrizeType == PrizeType.Round).Sum(p => p.Amount),
                     MonthlyWinnings = memberWinnings.Where(p => p.PrizeType == PrizeType.Monthly).Sum(p => p.Amount),
                     EndOfSeasonWinnings = memberWinnings.Where(p => p.PrizeType != PrizeType.Round && p.PrizeType != PrizeType.Monthly).Sum(p => p.Amount),
-                    TotalWinnings = memberWinnings.Sum(p => p.Amount)
+                    TotalWinnings = memberWinnings.Sum(p => p.Amount),
+                    UserId = member.UserId
                 };
             })
             .OrderByDescending(e => e.TotalWinnings)

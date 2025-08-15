@@ -1,5 +1,7 @@
 ﻿@inject ILeagueService LeagueService
 
+@inherits BaseLeaderboardComponent
+
 @using PredictionLeague.Contracts.Leaderboards
 @using PredictionLeague.Web.Client.Services.Leagues
 
@@ -34,7 +36,7 @@
                     <tbody>
                         @foreach (var entry in _leaderboardEntries)
                         {
-                            <tr>
+                            <tr class="@(GetUserHighlightClass(entry.UserId)) @entry.UserId">
                                 <td class="rank-col fw-bold">@entry.Rank</td>
                                 <td class="player-name-col fw-bold">@entry.PlayerName</td>
                                 <td class="points-col fw-bold">@entry.TotalPoints</td>
@@ -63,6 +65,7 @@
     {
         try
         {
+            await base.OnInitializedAsync();
             _leaderboardEntries = await LeagueService.GetOverallLeaderboardAsync(LeagueId);
         }
         catch (Exception)

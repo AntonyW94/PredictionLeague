@@ -2,6 +2,8 @@
 
 @implements IAsyncDisposable
 
+@inherits BaseLeaderboardComponent
+
 @using PredictionLeague.Contracts.Leagues
 @using PredictionLeague.Web.Client.Services.Leagues
 
@@ -82,7 +84,7 @@
                                     <tbody>
                                         @foreach (var player in State.CurrentRoundResults.OrderByDescending(p => p.TotalPoints))
                                         {
-                                            <tr class="@(IsWinner(player) ? "overall-round-winner" : "")">
+                                            <tr class="@(IsWinner(player) ? "overall-round-winner" : "") @(GetUserHighlightClass(player.UserId))">
                                                 <td class="rank-col fw-bold">@player.Rank</td>
                                                 <td class="player-name-col fw-bold">@player.PlayerName</td>
                                                 <td class="points-col fw-bold">@player.TotalPoints</td>
