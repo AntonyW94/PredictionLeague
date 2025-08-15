@@ -125,6 +125,7 @@
     line-height: 1;
     cursor: pointer;
     padding: 0.25rem 0.5rem;
+    touch-action: manipulation;
 }
 
     .stepper-btn:hover {
