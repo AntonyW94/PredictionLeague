@@ -11,7 +11,7 @@
 <PageTitle>Create Round</PageTitle>
 
 <div class="page-container">
-    <div class="form-container wide">
+    <div class="form-container extra-wide">
         <h3 class="text-center fw-bold text-white mb-4">Create Round</h3>
 
         <ApiError Message="@_errorMessage" />
@@ -170,7 +170,8 @@
             {
                 SeasonId = SeasonId,
                 StartDate = now.Date,
-                Deadline = now
+                Deadline = now,
+                Matches = new List<CreateMatchRequest>()
             };
 
             for (var i = 0; i < 10; i++)
@@ -194,9 +195,10 @@
         var newDate = _model.StartDate;
         foreach (var match in _model.Matches)
         {
-            var originalTime = match.MatchDateTime.TimeOfDay;
-            match.MatchDateTime = newDate.Date + originalTime;
+            match.MatchDateTime = newDate;
         }
+
+        _model.Deadline = _model.StartDate.AddHours(-1);
     }
 
     private void AddMatch() => _model?.Matches.Add(new CreateMatchRequest { MatchDateTime = _model.StartDate });

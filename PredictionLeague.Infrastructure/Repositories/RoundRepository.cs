@@ -14,9 +14,23 @@ public class RoundRepository : IRoundRepository
     #region SQL Constants
 
     private const string AddMatchSql = @"
-        INSERT INTO [Matches] ([RoundId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status], [ActualHomeTeamScore], [ActualAwayTeamScore])
-        VALUES (@RoundId, @HomeTeamId, @AwayTeamId, @MatchDateTime, @Status, @ActualHomeTeamScore, @ActualAwayTeamScore);";
-
+        INSERT INTO [Matches] 
+        (
+            [RoundId], 
+            [HomeTeamId], 
+            [AwayTeamId], 
+            [MatchDateTime], 
+            [Status]
+        )
+        VALUES 
+        (
+            @RoundId, 
+            @HomeTeamId, 
+            @AwayTeamId, 
+            @MatchDateTime, 
+            @Status
+        );";
+    
     private const string GetRoundsWithMatchesSql = @"
         SELECT 
             r.*, 
@@ -149,14 +163,8 @@ public class RoundRepository : IRoundRepository
 
             if (matchesToInsert.Any())
             {
-                const string insertSql = @"
-                INSERT INTO [Matches] 
-                    ([RoundId], [HomeTeamId], [AwayTeamId], [MatchDateTime], [Status])
-                VALUES 
-                    (@RoundId, @HomeTeamId, @AwayTeamId, @MatchDateTime, @Status);";
-
-                var insertMatchesCommand = new CommandDefinition(insertSql, matchesToInsert.Select(m => new {
-                    round.Id,
+                var insertMatchesCommand = new CommandDefinition(AddMatchSql, matchesToInsert.Select(m => new {
+                    RoundId = round.Id,
                     m.HomeTeamId,
                     m.AwayTeamId,
                     m.MatchDateTime,

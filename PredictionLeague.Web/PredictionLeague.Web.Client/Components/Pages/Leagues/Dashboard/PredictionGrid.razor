@@ -85,21 +85,9 @@
     private bool IsWinner(PredictionResultDto player)
     {
         if (Results == null || !Results.Any() || Results.All(p => p.TotalPoints == 0))
-        {
             return false;
-        }
+
         var maxPoints = Results.Max(p => p.TotalPoints);
         return player.TotalPoints == maxPoints;
-    }
-
-    private string GetPointsClass(int? points)
-    {
-        return points switch
-        {
-            5 => "correct-score",
-            3 => "correct-result",
-            0 => "incorrect-result",
-            _ => ""
-        };
     }
 }

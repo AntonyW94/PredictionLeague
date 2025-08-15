@@ -84,7 +84,7 @@
                             {
                                 <div class="prize-row">
                                     <div class="prize-icon"><span class="bi bi-calendar3-event"></span></div>
-                                    <span class="prize-description">Round<span class="d-none d-md-inline"> Winner</span></span>
+                                    <span class="prize-description">Round<span class="d-none d-md-inline">&nbsp;Winner</span></span>
                                     <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
                                 </div>
                             }
@@ -92,7 +92,7 @@
                             {
                                 <div class="prize-row">
                                     <div class="prize-icon"><span class="bi bi-calendar-month"></span></div>
-                                    <span class="prize-description">Monthly<span class="d-none d-md-inline"> Winner</span></span>
+                                    <span class="prize-description">Monthly<span class="d-none d-md-inline">&nbsp;Winner</span></span>
                                     <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
                                 </div>
                             }
@@ -155,13 +155,13 @@
                                         <h5 class="text-white">Recurring Prizes</h5>
                                         <div class="input-group mb-2">
                                             <span class="input-group-text prize-label"><span class="bi bi-calendar-month"></span></span>
-                                            <span class="input-group-text prize-label prize-label-fixed-width">Monthly<span class="d-none d-md-inline"> Winner</span></span>
+                                            <span class="input-group-text prize-label prize-label-fixed-width">Monthly<span class="d-none d-md-inline">&nbsp;Winner</span></span>
                                             <InputNumber class="form-control prize-amount-fixed-width" @bind-Value="_model.MonthlyWinnerAmount" />
                                             <span class="input-group-text prize-label prize-multiplier-fixed-width">x @_model.NumberOfMonths</span>
                                         </div>
                                         <div class="input-group mb-2">
                                             <span class="input-group-text prize-label"><span class="bi bi-calendar3-event"></span></span>
-                                            <span class="input-group-text prize-label prize-label-fixed-width">Round<span class="d-none d-md-inline"> Winner</span></span>
+                                            <span class="input-group-text prize-label prize-label-fixed-width">Round<span class="d-none d-md-inline">&nbsp;Winner</span></span>
                                             <InputNumber class="form-control prize-amount-fixed-width" @bind-Value="_model.RoundWinnerAmount" />
                                             <span class="input-group-text prize-label prize-multiplier-fixed-width">x @_model.NumberOfRounds</span>
                                         </div>
