@@ -36,7 +36,7 @@
 
     private void UpdateDisplay()
     {
-        var remaining = Deadline - DateTime.UtcNow;
+        var remaining = Deadline - DateTime.Now;
         _timeRemaining = remaining.TotalSeconds <= 0 ? "Deadline Passed" : $"{(int)remaining.TotalHours:D2}:{remaining.Minutes:D2}:{remaining.Seconds:D2}";
     }
 

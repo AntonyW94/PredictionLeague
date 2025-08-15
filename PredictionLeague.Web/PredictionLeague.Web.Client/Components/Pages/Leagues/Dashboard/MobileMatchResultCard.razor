@@ -36,8 +36,15 @@
                                 }
                             }
                             else
-                            {
-                                <span class="bi bi-clock-fill not-predicted-icon" title="Match not started yet."></span>
+                            { 
+                                @if (!player.HasPredicted && Deadline < DateTime.Now)
+                                {
+                                    <span class="not-predicted-icon text-pl-red bi bi-x-circle-fill" title="No predictions submitted"></span>
+                                }
+                                else
+                                {
+                                    <span class="bi bi-clock-fill not-predicted-icon" title="No prediction submitted."></span>
+                                }
                             }
                         </td>
                         <td class="mobile-prediction-points">@(prediction?.PointsAwarded ?? 0)</td>
@@ -49,9 +56,7 @@
 </div>
 
 @code {
-    [Parameter, EditorRequired]
-    public MatchInRoundDto Match { get; set; } = null!;
-
-    [Parameter, EditorRequired]
-    public List<PredictionResultDto> Results { get; set; } = null!;
+    [Parameter, EditorRequired] public MatchInRoundDto Match { get; set; } = null!;
+    [Parameter, EditorRequired] public List<PredictionResultDto> Results { get; set; } = null!; 
+    [Parameter, EditorRequired] public DateTime Deadline { get; set; }
 }

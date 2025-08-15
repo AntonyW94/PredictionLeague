@@ -88,6 +88,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
                 PlayerName = g.Key.PlayerName,
                 TotalPoints = g.Sum(p => p.PointsAwarded ?? 0),
                 Rank = g.Key.Rank,
+                HasPredicted = g.Any(p => p.PredictedHomeScore.HasValue),
                 Predictions = g.Select(p => new PredictionScoreDto(
                     p.MatchId,
                     p.PredictedHomeScore,

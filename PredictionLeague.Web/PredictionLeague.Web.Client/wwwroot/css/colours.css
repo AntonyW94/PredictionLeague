@@ -35,3 +35,7 @@
     --pl-silver: #B4B4B4;
     --pl-bronze: #6A3805;
 }
+
+.text-pl-red{
+    color: var(--pl-red)!important;
+}

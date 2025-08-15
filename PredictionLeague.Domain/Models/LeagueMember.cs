@@ -44,7 +44,7 @@ public class LeagueMember
             LeagueId = leagueId,
             UserId = userId,
             Status = LeagueMemberStatus.Pending,
-            JoinedAt = DateTime.UtcNow,
+            JoinedAt = DateTime.Now,
             ApprovedAt = null
         };
     }
@@ -55,7 +55,7 @@ public class LeagueMember
             throw new InvalidOperationException("Only pending members can be approved.");
 
         Status = LeagueMemberStatus.Approved;
-        ApprovedAt = DateTime.UtcNow;
+        ApprovedAt = DateTime.Now;
     }
     
     public void Reject()

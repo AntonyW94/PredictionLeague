@@ -23,7 +23,7 @@
             <div class="d-none d-lg-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold text-white mb-0">@_pageData.SeasonName - Round @_pageData.RoundNumber</h3>
 
-                @if ((_pageData.Deadline - DateTime.UtcNow).TotalHours < 24)
+                @if ((_pageData.Deadline - DateTime.Now).TotalHours < 24)
                 {
                     <CountdownTimer Deadline="_pageData.Deadline" />
                 }
@@ -41,7 +41,7 @@
                 <h3 class="fw-bold text-white mb-1">@_pageData.SeasonName</h3>
                 <p class="text-white-50 mb-2">Round @_pageData.RoundNumber</p>
                 
-                @if ((_pageData.Deadline - DateTime.UtcNow).TotalHours < 24)
+                @if ((_pageData.Deadline - DateTime.Now).TotalHours < 24)
                 {
                     <CountdownTimer Deadline="_pageData.Deadline" />
                 }

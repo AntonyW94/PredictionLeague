@@ -64,7 +64,7 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
             RoundNumber = firstRow.RoundNumber,
             SeasonName = firstRow.SeasonName,
             Deadline = firstRow.Deadline,
-            IsPastDeadline = firstRow.Deadline < DateTime.UtcNow,
+            IsPastDeadline = firstRow.Deadline < DateTime.Now,
             Matches = results
                 .Where(r => r.MatchId.HasValue)
                 .Select(r => new MatchPredictionDto

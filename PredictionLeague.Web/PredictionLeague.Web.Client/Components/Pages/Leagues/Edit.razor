@@ -99,7 +99,7 @@
             };
             _entryCodeForDisplay = league.EntryCode;
             _seasonName = league.SeasonName; 
-            _isPastDeadline = league.EntryDeadline < DateTime.UtcNow;
+            _isPastDeadline = league.EntryDeadline < DateTime.Now;
             _isPriceLocked = league.MemberCount > 1;
         }
     }

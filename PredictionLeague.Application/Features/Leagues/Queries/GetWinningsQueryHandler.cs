@@ -22,7 +22,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         if (leagueData == null)
             return new WinningsDto();
 
-        if (leagueData.EntryDeadline > DateTime.UtcNow || !leagueData.PrizeSettings.Any())
+        if (leagueData.EntryDeadline > DateTime.Now || !leagueData.PrizeSettings.Any())
         {
             return new WinningsDto
             {

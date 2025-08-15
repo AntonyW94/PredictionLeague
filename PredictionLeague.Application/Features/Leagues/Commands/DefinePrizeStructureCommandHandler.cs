@@ -35,7 +35,7 @@ public class DefinePrizeStructureCommandHandler : IRequestHandler<DefinePrizeStr
         if (league.AdministratorUserId != request.DefiningUserId && !isSiteAdmin)
             throw new UnauthorizedAccessException("Only the league administrator can define the prize structure.");
 
-        if (league.EntryDeadline > DateTime.UtcNow)
+        if (league.EntryDeadline > DateTime.Now)
             throw new InvalidOperationException("The prize structure cannot be defined until after the entry deadline has passed.");
 
         var totalPrizePot = league.Price * league.Members.Count;

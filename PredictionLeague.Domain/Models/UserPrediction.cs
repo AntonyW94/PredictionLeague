@@ -22,7 +22,7 @@ public class UserPrediction
         Guard.Against.Negative(homeScore, nameof(homeScore));
         Guard.Against.Negative(awayScore, nameof(awayScore));
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         return new UserPrediction
         {
@@ -45,6 +45,6 @@ public class UserPrediction
         else
             PointsAwarded = 0;
 
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = DateTime.Now;
     }
 }

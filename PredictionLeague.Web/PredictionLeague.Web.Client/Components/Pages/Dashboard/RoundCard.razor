@@ -9,7 +9,7 @@
     <div class="action-card-body">
         <dl class="mb-0">
             <div class="action-card-row action-card-row--centered">
-                @if ((Round.Deadline - DateTime.UtcNow).TotalHours < 24)
+                @if ((Round.Deadline - DateTime.Now).TotalHours < 24)
                 {
                     <CountdownTimer Deadline="Round.Deadline" />
                 }

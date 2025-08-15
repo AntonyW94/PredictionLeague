@@ -28,7 +28,7 @@ public class Winnings
             LeagueId = leagueId,
             Amount = amount,
             Reference = reference,
-            AwardedDate = DateTime.UtcNow
+            AwardedDate = DateTime.Now
         };
     }
 }

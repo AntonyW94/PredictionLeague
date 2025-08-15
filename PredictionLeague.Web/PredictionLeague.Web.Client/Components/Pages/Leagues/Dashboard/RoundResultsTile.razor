@@ -30,64 +30,72 @@
     }
     else if (State.CurrentRoundResults.Any())
     {
-        <div class="d-none d-lg-block">
-            <PredictionGrid Results="State.CurrentRoundResults" Matches="State.CurrentRoundMatches" />
-        </div>
+        var selectedRound = State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId);
+        if (selectedRound != null)
+        {
+            <div class="d-none d-lg-block">
+                <PredictionGrid Results="State.CurrentRoundResults"
+                                Matches="State.CurrentRoundMatches"
+                                Deadline="selectedRound.Deadline" />
+            </div>
 
-        <div class="d-lg-none">
-            <div class="mobile-results-view">
-                <div class="carousel-wrapper mobile-results-carousel">
-                    <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
-                        <div class="carousel-track" style="@_trackStyle">
-                            @foreach (var match in State.CurrentRoundMatches)
-                            {
-                                <div class="carousel-item-wrapper">
-                                    <div class="carousel-item-content">
-                                        <MobileMatchResultCard Match="match" Results="State.CurrentRoundResults" />
+            <div class="d-lg-none">
+                <div class="mobile-results-view">
+                    <div class="carousel-wrapper mobile-results-carousel">
+                        <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
+                            <div class="carousel-track" style="@_trackStyle">
+                                @foreach (var match in State.CurrentRoundMatches)
+                                {
+                                    <div class="carousel-item-wrapper">
+                                        <div class="carousel-item-content">
+                                            <MobileMatchResultCard Match="match"
+                                                                   Results="State.CurrentRoundResults"
+                                                                   Deadline="selectedRound.Deadline" />
+                                        </div>
                                     </div>
-                                </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="carousel-dots">
+                            @for (var i = 0; i < State.CurrentRoundMatches.Count; i++)
+                            {
+                                var index = i;
+                                <span class="carousel-dot @(index == _currentIndex ? "active" : "")" @onclick="() => GoToSlide(index)"></span>
                             }
                         </div>
                     </div>
-                    <div class="carousel-dots">
-                        @for (var i = 0; i < State.CurrentRoundMatches.Count; i++)
-                        {
-                            var index = i;
-                            <span class="carousel-dot @(index == _currentIndex ? "active" : "")" @onclick="() => GoToSlide(index)"></span>
-                        }
-                    </div>
-                </div>
 
-                <div class="leaderboard-card mt-4 mh-600">
-                    <div class="card-header w-100">
-                        <h6 class="card-title text-white fw-bold mb-0 text-center">Round @(State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId)?.RoundNumber) Points</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="leaderboard-table light text-white">
-                                <thead>
-                                    <tr>
-                                        <th class="rank-col fw-bold">#</th>
-                                        <th class="player-name-col fw-bold">Player</th>
-                                        <th class="points-col fw-bold">Pts</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var player in State.CurrentRoundResults.OrderByDescending(p => p.TotalPoints))
-                                    {
-                                        <tr class="@(IsWinner(player) ? "overall-round-winner" : "")">
-                                            <td class="rank-col fw-bold">@player.Rank</td>
-                                            <td class="player-name-col fw-bold">@player.PlayerName</td>
-                                            <td class="points-col fw-bold">@player.TotalPoints</td>
+                    <div class="leaderboard-card mt-4 mh-600">
+                        <div class="card-header w-100">
+                            <h6 class="card-title text-white fw-bold mb-0 text-center">Round @(State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId)?.RoundNumber) Points</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="leaderboard-table light text-white">
+                                    <thead>
+                                        <tr>
+                                            <th class="rank-col fw-bold">#</th>
+                                            <th class="player-name-col fw-bold">Player</th>
+                                            <th class="points-col fw-bold">Pts</th>
                                         </tr>
-                                    }
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var player in State.CurrentRoundResults.OrderByDescending(p => p.TotalPoints))
+                                        {
+                                            <tr class="@(IsWinner(player) ? "overall-round-winner" : "")">
+                                                <td class="rank-col fw-bold">@player.Rank</td>
+                                                <td class="player-name-col fw-bold">@player.PlayerName</td>
+                                                <td class="points-col fw-bold">@player.TotalPoints</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        }
     }
     else
     {
