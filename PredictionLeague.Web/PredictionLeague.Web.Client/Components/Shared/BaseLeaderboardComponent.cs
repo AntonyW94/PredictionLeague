@@ -20,6 +20,6 @@ public class BaseLeaderboardComponent : ComponentBase
 
     protected string GetUserHighlightClass(string? userId)
     {
-        return !string.IsNullOrEmpty(_currentUserId) && userId == _currentUserId ? "current-user-highlight" : $"{_currentUserId}";
+        return !string.IsNullOrEmpty(_currentUserId) && userId == _currentUserId ? "current-user-highlight" : string.Empty;
     }
 }

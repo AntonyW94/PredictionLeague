@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Dashboard.Queries;
+using PredictionLeague.Contracts;
 using PredictionLeague.Contracts.Dashboard;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
@@ -24,7 +25,9 @@ public class DashboardController : ApiControllerBase
     [ProducesResponseType(typeof(IEnumerable<UpcomingRoundDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<UpcomingRoundDto>>> GetUpcomingRoundsAsync(CancellationToken cancellationToken)
     {
-        var query = new GetUpcomingRoundsQuery(CurrentUserId);
+        var isAdmin = User.IsInRole(RoleNames.Administrator);
+
+        var query = new GetUpcomingRoundsQuery(CurrentUserId, isAdmin);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 

@@ -20,27 +20,19 @@
     [Parameter]
     public int? AwayScore { get; set; }
 
-    private string BadgeClass => $"badge-group {GetColorClass()} {(Status == MatchStatus.InProgress ? "pulsing" : "")}";
-
-    private string GetColorClass() => Status switch
-    {
-        MatchStatus.Scheduled => "badge-group--red",
-        MatchStatus.InProgress => "badge-group--yellow",
-        MatchStatus.Completed => "badge-group--green",
-        _ => ""
-    };
+    private string BadgeClass => $"badge-group badge-group--blue{(Status == MatchStatus.InProgress ? " pulsing" : "")}";
 
     private string IconClass => Status switch
     {
-        MatchStatus.Scheduled => "bi bi-clock",
-        MatchStatus.InProgress => "bi bi-stopwatch",
-        MatchStatus.Completed => "bi bi-check-circle",
+        MatchStatus.Scheduled => "bi bi-clock-fill",
+        MatchStatus.InProgress => "bi bi-stopwatch-fill",
+        MatchStatus.Completed => "bi bi-check-circle-fill",
         _ => ""
     };
 
     private string StatusText => Status switch
     {
-        MatchStatus.Scheduled => $"Scheduled on {MatchDateTime:dd/MM/yyyy} at {MatchDateTime:HH:mm}",
+        MatchStatus.Scheduled => $"{MatchDateTime:dd/MM/yyyy} at {MatchDateTime:HH:mm}",
         MatchStatus.InProgress => $"{HomeScore} - {AwayScore}",
         MatchStatus.Completed => $"{HomeScore} - {AwayScore}",
         _ => "Unknown"

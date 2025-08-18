@@ -54,6 +54,11 @@ public class Round
         Status = status;
     }
 
+    public void UpdateStatus(RoundStatus status)
+    {
+        Status = status;
+    }
+
     public void AddMatch(int homeTeamId, int awayTeamId, DateTime matchTime)
     {
         var matchExists = _matches.Any(m => m.HomeTeamId == homeTeamId && m.AwayTeamId == awayTeamId);

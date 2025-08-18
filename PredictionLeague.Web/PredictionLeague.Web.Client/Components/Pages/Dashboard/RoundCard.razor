@@ -1,5 +1,6 @@
 ﻿@using PredictionLeague.Contracts.Dashboard
 
+
 <div class="action-card light">
     <div class="card-header">
         <h5 class="fw-bold text-white">@Round.SeasonName</h5>
@@ -24,18 +25,21 @@
         </dl>
     </div>
     <div class="action-card-footer">
-        <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
-            @if (Round.HasUserPredicted)
-            {
-                <span class="bi bi-pencil-fill me-2"></span>
-                <span>Edit Predictions</span>
-            }
-            else
-            {
-                <span class="bi bi-pencil me-2"></span>
-                <span>Predict Now</span>
-            }
-        </NavLink>
+        @if (Round.Deadline > DateTime.Now)
+        {
+            <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
+                @if (Round.HasUserPredicted)
+                {
+                    <span class="bi bi-pencil-fill me-2"></span>
+                    <span>Edit Predictions</span>
+                }
+                else
+                {
+                    <span class="bi bi-pencil me-2"></span>
+                    <span>Predict Now</span>
+                }
+            </NavLink>
+        }
 
         <AuthorizeView Roles="@RoleNames.Administrator">
             <NavLink href="@($"/admin/rounds/{Round.Id}/results")" class="btn blue-light-button">

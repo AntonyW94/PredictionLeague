@@ -2,4 +2,6 @@
 using PredictionLeague.Contracts.Dashboard;
 
 namespace PredictionLeague.Application.Features.Dashboard.Queries;
-public record GetUpcomingRoundsQuery(string UserId) : IRequest<IEnumerable<UpcomingRoundDto>>;
+public record GetUpcomingRoundsQuery(
+    string UserId,
+    bool IsAdmin) : IRequest<IEnumerable<UpcomingRoundDto>>;

@@ -82,7 +82,7 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                     TotalPoints = entry.TotalPoints,
                     UserId = entry.UserId
                 }).ToList()
-            });
+            }).OrderByDescending(l => l.Entries.Count());
 
         return result;
     }
@@ -99,5 +99,6 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
         public string PlayerName { get; init; } = null!;
         public int TotalPoints { get; init; }
         public string UserId { get; init; } = null!;
+        public int MemberCount { get; init; }
     }
 }

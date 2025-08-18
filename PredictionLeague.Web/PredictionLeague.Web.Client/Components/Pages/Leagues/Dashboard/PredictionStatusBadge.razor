@@ -31,7 +31,7 @@
     [Parameter]
     public bool IsHidden { get; set; }
 
-    private string BadgeClass => $"badge-group {GetColorClass()} {(Status == MatchStatus.InProgress ? "pulsing" : "")}";
+    private string BadgeClass => $"prediction-badge badge-group {GetColorClass()} {(Status == MatchStatus.InProgress ? "pulsing" : "")}";
 
     private string GetColorClass() => PointsAwarded switch
     {
@@ -44,8 +44,8 @@
     private string IconClass => PointsAwarded switch
     {
         0 => "bi bi-x-circle",
-        3 => "bi bi-dash-circle",
-        5 => "bi bi-check-circle",
+        3 => "bi bi-check-circle",
+        5 => "bi bi-check-circle-fill",
         _ => "bi bi-clock"
     };
 }

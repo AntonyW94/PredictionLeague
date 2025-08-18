@@ -122,7 +122,8 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
     {
         try
         {
-            var response = await _httpClient.PostAsync("api/auth/refresh-token", null);
+            var emptyContent = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync("api/auth/refresh-token", emptyContent);
             if (response.IsSuccessStatusCode)
             {
                 var successResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();

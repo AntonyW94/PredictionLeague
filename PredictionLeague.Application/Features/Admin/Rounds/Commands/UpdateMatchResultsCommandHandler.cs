@@ -66,7 +66,12 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         await _leagueRepository.UpdatePredictionPointsAsync(allUpdatedPredictions, cancellationToken);
 
         if (round.Matches.All(m => m.Status == MatchStatus.Completed))
+        {
+            round.UpdateStatus(RoundStatus.Completed);
+            await _roundRepository.UpdateAsync(round, cancellationToken);
+            
             await ProcessPrizesAsync(round, leaguesToScore, cancellationToken);
+        }
     }
 
     private async Task ProcessPrizesAsync(Round round, List<League> leagues, CancellationToken cancellationToken)

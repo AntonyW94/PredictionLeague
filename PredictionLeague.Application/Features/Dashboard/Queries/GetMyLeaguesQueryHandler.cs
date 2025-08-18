@@ -58,7 +58,7 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
             WHERE 
                 lm.[UserId] = @UserId
             ORDER BY 
-                s.[StartDate] DESC, l.[Name];";
+                s.[StartDate] DESC, [MemberCount] DESC, l.[Name];";
 
         return await _dbConnection.QueryAsync<MyLeagueDto>(sql, cancellationToken, new { request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
     }

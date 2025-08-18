@@ -16,7 +16,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
 
     public async Task<IEnumerable<UpcomingRoundDto>> Handle(GetUpcomingRoundsQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
+        var sql = $@"
             SELECT
                 r.[Id],
                 s.[Name] AS SeasonName,
@@ -36,13 +36,13 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
             JOIN 
                 [Seasons] s ON r.[SeasonId] = s.[Id]
             WHERE
-                r.[Deadline] > GETDATE()
-                AND r.[Status] = @PublishedStatus
+                r.[Status] = @PublishedStatus
+                {(!request.IsAdmin ? "AND r.[Deadline] > GETDATE()" : string.Empty)}
                 AND r.[SeasonId] IN (
                     SELECT l.SeasonId
                     FROM [Leagues] l
                     JOIN [LeagueMembers] lm ON l.Id = lm.LeagueId
-                    WHERE lm.UserId = @UserId AND lm.Status = 'Approved'
+                    WHERE lm.UserId = @UserId AND lm.Status = @ApprovedStatus
                 )
             ORDER BY
                 r.[Deadline] ASC;";
@@ -50,7 +50,8 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
         var parameters = new
         {
             request.UserId,
-            PublishedStatus = nameof(RoundStatus.Published)
+            PublishedStatus = nameof(RoundStatus.Published),
+            ApprovedStatus = nameof(LeagueMemberStatus.Approved),
         };
 
         return await _dbConnection.QueryAsync<UpcomingRoundDto>(sql, cancellationToken, parameters);

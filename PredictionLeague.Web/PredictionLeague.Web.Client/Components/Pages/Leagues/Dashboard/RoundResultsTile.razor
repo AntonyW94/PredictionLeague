@@ -5,6 +5,7 @@
 @inherits BaseLeaderboardComponent
 
 @using PredictionLeague.Contracts.Leagues
+@using PredictionLeague.Domain.Common.Enumerations
 @using PredictionLeague.Web.Client.Services.Leagues
 
 <div class="card">
@@ -113,19 +114,58 @@
     private string _trackStyle = "transform: translateX(0%);";
     private double _touchStartX;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         State.OnStateChange += StateHasChanged;
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && State.CurrentRoundMatches.Any())
+        {
+            SetDefaultCarouselSlide();
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task OnRoundSelected()
     {
         if (State.SelectedRoundId > 0)
         {
+            await State.LoadRoundResults(LeagueId, State.SelectedRoundId.Value);
+            SetDefaultCarouselSlide();
+        }
+    }
+
+    private void SetDefaultCarouselSlide()
+    {
+        var matches = State.CurrentRoundMatches;
+        if (!matches.Any())
+        {
             _currentIndex = 0;
             UpdateTrackStyle();
-            await State.LoadRoundResults(LeagueId, State.SelectedRoundId.Value);
+            return;
         }
+
+        var inProgressIndex = matches.FindIndex(m => m.Status == MatchStatus.InProgress);
+        if (inProgressIndex != -1)
+        {
+            _currentIndex = inProgressIndex;
+            UpdateTrackStyle();
+            return;
+        }
+
+        var scheduledIndex = matches.FindIndex(m => m.Status == MatchStatus.Scheduled);
+        if (scheduledIndex != -1)
+        {
+            _currentIndex = scheduledIndex;
+            UpdateTrackStyle();
+            return;
+        }
+
+        _currentIndex = 0;
+        UpdateTrackStyle();
     }
 
     private bool IsWinner(PredictionResultDto player)
