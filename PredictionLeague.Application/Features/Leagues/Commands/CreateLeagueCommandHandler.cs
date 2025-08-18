@@ -33,7 +33,7 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
          );
        
         await league.GenerateEntryCode(
-            async (code) => !await _leagueRepository.DoesEntryCodeExistAsync(code, cancellationToken)
+            async code => !await _leagueRepository.DoesEntryCodeExistAsync(code, cancellationToken)
         );
         
         var createdLeague = await _leagueRepository.CreateAsync(league, cancellationToken);

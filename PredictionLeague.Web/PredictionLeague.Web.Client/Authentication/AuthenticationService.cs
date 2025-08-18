@@ -26,7 +26,7 @@ public class AuthenticationService : IAuthenticationService
             if (successResponse == null) 
                 return new FailedAuthenticationResponse("Failed to process server response.");
           
-            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticatedAsync(successResponse);
+            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticatedAsync(successResponse.AccessToken);
             return successResponse;
         }
        
@@ -64,7 +64,7 @@ public class AuthenticationService : IAuthenticationService
             if (successResponse == null) 
                 return new FailedAuthenticationResponse("Failed to process server response.");
          
-            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticatedAsync(successResponse);
+            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticatedAsync(successResponse.AccessToken);
             return successResponse;
         }
 

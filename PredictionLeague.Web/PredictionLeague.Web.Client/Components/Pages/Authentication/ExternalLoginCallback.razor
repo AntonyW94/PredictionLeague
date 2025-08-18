@@ -9,27 +9,24 @@
 <div class="page-container">
     <div class="text-center text-white">
         <h3>Finalizing login...</h3>
-        <p>This should only take a moment.</p>
-        <div class="spinner-border mt-3" role="status">
-            <span class="visually-hidden">Loading...</span>
+        <div class="app-loading-container">
+            <div class="spinner"></div>
+            <p>This should only take a moment.</p>
         </div>
     </div>
 </div>
 @code {
-    [SupplyParameterFromQuery]
-    public string? Token { get; set; }
-
-    [SupplyParameterFromQuery]
-    public string? Source { get; set; }
+    [SupplyParameterFromQuery] public string? RefreshToken { get; set; }
+    [SupplyParameterFromQuery] public string? Source { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         var sourcePage = string.IsNullOrEmpty(Source) ? "login" : Source;
         var failureUrl = $"/authentication/{sourcePage}?error=External login failed. Please try again.";
 
-        if (!string.IsNullOrEmpty(Token))
+        if (!string.IsNullOrEmpty(RefreshToken))
         {
-            var result = await ((ApiAuthenticationStateProvider)AuthStateProvider).LoginWithRefreshToken(Token);
+            var result = await ((ApiAuthenticationStateProvider)AuthStateProvider).LoginWithRefreshToken(RefreshToken);
             if (result)
             {
                 NavigationManager.NavigateTo("/dashboard", forceLoad: true);
@@ -45,4 +42,5 @@
             NavigationManager.NavigateTo(failureUrl);
         }
     }
+
 }

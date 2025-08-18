@@ -24,7 +24,7 @@ public class UpdateUserDetailsCommandHandler : IRequestHandler<UpdateUserDetails
         user.UpdateDetails(request.FirstName, request.LastName, request.PhoneNumber);
 
         var result = await _userManager.UpdateAsync(user);
-        if (result.Succeeded == false)
+        if (!result.Succeeded)
             throw new IdentityUpdateException(result.Errors);
     }
 }

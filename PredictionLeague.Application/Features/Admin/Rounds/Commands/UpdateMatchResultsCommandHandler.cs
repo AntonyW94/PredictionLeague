@@ -32,11 +32,11 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         foreach (var matchResult in request.Matches)
         {
             var matchToUpdate = round.Matches.FirstOrDefault(m => m.Id == matchResult.MatchId);
-            if (matchToUpdate != null)
-            {
-                matchToUpdate.UpdateScore(matchResult.HomeScore, matchResult.AwayScore, matchResult.Status);
-                matchesToUpdate.Add(matchToUpdate);
-            }
+            if (matchToUpdate == null)
+                continue;
+            
+            matchToUpdate.UpdateScore(matchResult.HomeScore, matchResult.AwayScore, matchResult.Status);
+            matchesToUpdate.Add(matchToUpdate);
         }
 
         if (matchesToUpdate.Any())

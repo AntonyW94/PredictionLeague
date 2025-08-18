@@ -1,9 +1,12 @@
-﻿namespace PredictionLeague.Contracts.Leaderboards;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace PredictionLeague.Contracts.Leaderboards;
+
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class ExactScoresLeaderboardEntryDto
 {
     public long Rank { get; set; }
-    public string PlayerName { get; init; } = null!;
+    public required string PlayerName { get; init; }
     public int ExactScoresCount { get; init; }
-    public string UserId { get; init; }
+    public required string UserId { get; init; }
 }

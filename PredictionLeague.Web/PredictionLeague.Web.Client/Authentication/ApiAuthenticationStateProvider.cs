@@ -1,10 +1,12 @@
 ﻿using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using PredictionLeague.Contracts.Authentication;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text;
 
 namespace PredictionLeague.Web.Client.Authentication;
 
@@ -13,55 +15,72 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
     private readonly HttpClient _httpClient;
     private readonly ILocalStorageService _localStorage;
     private readonly ILogger<ApiAuthenticationStateProvider> _logger;
-    private Task<AuthenticationState>? _cachedAuthenticationStateTask;
+    private readonly NavigationManager _navigationManager;
+    private AuthenticationState? _cachedAuthenticationState;
+    private bool _refreshAttempted;
 
-    public ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorageService localStorage, ILogger<ApiAuthenticationStateProvider> logger)
+    public ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorageService localStorage, ILogger<ApiAuthenticationStateProvider> logger, NavigationManager navigationManager)
     {
         _httpClient = httpClient;
         _localStorage = localStorage;
         _logger = logger;
+        _navigationManager = navigationManager;
     }
 
-    public override Task<AuthenticationState> GetAuthenticationStateAsync()
+    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        return _cachedAuthenticationStateTask ??= CreateAuthenticationStateAsync();
+        return _cachedAuthenticationState ??= await CreateAuthenticationStateAsync();
     }
 
     private async Task<AuthenticationState> CreateAuthenticationStateAsync()
     {
-        var accessToken = await _localStorage.GetItemAsync<string>("accessToken");
-
-        // If we have a token, check if it's still valid
-        if (!string.IsNullOrEmpty(accessToken))
+        const string loginCallbackPath = "/authentication/external-login-callback";
+      
+        if (_navigationManager.Uri.Contains(loginCallbackPath))
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtToken = tokenHandler.ReadJwtToken(accessToken);
-            if (jwtToken.ValidTo > DateTime.UtcNow)
-            {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", accessToken);
-                return new AuthenticationState(CreateClaimsPrincipalFromToken(accessToken));
-            }
+            _logger.LogInformation("On login callback page. Skipping automatic refresh.");
+            return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
         }
-
-        // If we don't have a valid token (either it's missing or expired), we must try to refresh it using the HttpOnly cookie.
-        // This handles both subsequent page loads and the initial load after an external login.
-        var wasRefreshed = await RefreshAccessToken();
-        if (wasRefreshed)
+        
+        try
         {
-            accessToken = await _localStorage.GetItemAsync<string>("accessToken");
+            var accessToken = await _localStorage.GetItemAsync<string>("accessToken");
+
             if (!string.IsNullOrEmpty(accessToken))
             {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", accessToken);
-                return new AuthenticationState(CreateClaimsPrincipalFromToken(accessToken));
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var jwtToken = tokenHandler.ReadJwtToken(accessToken);
+
+                if (jwtToken.ValidTo > DateTime.UtcNow)
+                {
+                    _logger.LogInformation("Access token found and is valid.");
+                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", accessToken);
+                    return new AuthenticationState(CreateClaimsPrincipalFromToken(accessToken));
+                }
+                _logger.LogInformation("Access token is expired. Attempting to refresh.");
+            }
+           
+            if (_refreshAttempted)
+                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+            
+            var newAccessToken = await RefreshAccessTokenAsync();
+            if (!string.IsNullOrEmpty(newAccessToken))
+            {
+                _logger.LogInformation("Token successfully refreshed.");
+                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", newAccessToken);
+                return new AuthenticationState(CreateClaimsPrincipalFromToken(newAccessToken));
             }
         }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception during authentication state creation. Logging user out.");
+        }
 
-        // If we can't get a valid token, ensure the user is fully logged out.
         await _localStorage.RemoveItemAsync("accessToken");
-        _httpClient.DefaultRequestHeaders.Authorization = null;
+        _logger.LogInformation("Could not validate or refresh token. User is not authenticated.");
+        await MarkUserAsLoggedOutAsync();
         return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
     }
-
     public async Task<bool> LoginWithRefreshToken(string refreshToken)
     {
         _logger.LogInformation("Attempting to log in with refresh token from URL.");
@@ -100,48 +119,50 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         return true;
     }
 
-    public async Task MarkUserAsAuthenticatedAsync(SuccessfulAuthenticationResponse authResponse)
+    public async Task MarkUserAsAuthenticatedAsync(string accessToken)
     {
-        await _localStorage.SetItemAsync("accessToken", authResponse.AccessToken);
+        await _localStorage.SetItemAsync("accessToken", accessToken);
+        _refreshAttempted = false;
         NotifyUserAuthentication();
     }
 
     public async Task MarkUserAsLoggedOutAsync()
     {
         await _localStorage.RemoveItemAsync("accessToken");
+        _httpClient.DefaultRequestHeaders.Authorization = null;
         NotifyUserAuthentication();
     }
 
     private void NotifyUserAuthentication()
     {
-        _cachedAuthenticationStateTask = null;
+        _cachedAuthenticationState = null;
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
-    private async Task<bool> RefreshAccessToken()
+    private async Task<string?> RefreshAccessTokenAsync()
     {
+        _refreshAttempted = true;
+      
         try
         {
-            var emptyContent = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+            var emptyContent = new StringContent("", Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync("api/auth/refresh-token", emptyContent);
+
             if (response.IsSuccessStatusCode)
             {
-                var successResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
-                if (successResponse != null)
+                var authResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
+                if (authResponse?.AccessToken is not null)
                 {
-                    await _localStorage.SetItemAsync("accessToken", successResponse.AccessToken);
-                    return true;
+                    await _localStorage.SetItemAsync("accessToken", authResponse.AccessToken);
+                    return authResponse.AccessToken;
                 }
             }
-
-            return false;
+            return null;
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex)
         {
-            if (ex.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.BadRequest)
-                return false;
-
-            throw;
+            _logger.LogError(ex, "An exception occurred while refreshing the access token.");
+            return null;
         }
     }
 

@@ -57,14 +57,10 @@ public class ExternalAuthController : AuthControllerBase
         switch (result)
         {
             case SuccessfulAuthenticationResponse success:
-                _logger.LogInformation("Google Login result was SUCCESS");
-                SetTokenCookie(success.RefreshTokenForCookie);
-
                 var encodedToken = WebUtility.UrlEncode(success.RefreshTokenForCookie);
-                return Redirect($"{returnUrl}?token={encodedToken}&source={source}");
+                return Redirect($"{returnUrl}?refreshToken={encodedToken}&source={source}");
 
             case ExternalLoginFailedAuthenticationResponse failure:
-                _logger.LogWarning("Google Login result was FAILURE");
                 return RedirectWithError(failure.Source, failure.Message);
 
             default:

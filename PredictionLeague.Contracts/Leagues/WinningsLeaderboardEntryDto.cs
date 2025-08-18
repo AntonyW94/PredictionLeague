@@ -7,5 +7,5 @@ public class WinningsLeaderboardEntryDto
     public decimal MonthlyWinnings { get; init; }
     public decimal EndOfSeasonWinnings { get; init; }
     public decimal TotalWinnings { get; init; }
-    public string UserId { get; init; }
+    public required string UserId { get; init; }
 }

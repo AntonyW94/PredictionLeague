@@ -3,7 +3,7 @@
 public class LeaderboardEntryDto
 {
     public long Rank { get; init; }
-    public string PlayerName { get; init; }
+    public required string PlayerName { get; init; }
     public int? TotalPoints { get; init; }
-    public string UserId { get; set; }
+    public required string UserId { get; init; }
 }

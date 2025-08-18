@@ -2,5 +2,5 @@
 
 public class JoinLeagueRequest
 {
-    public string EntryCode { get; set; }
+    public required string EntryCode { get; set; }
 }

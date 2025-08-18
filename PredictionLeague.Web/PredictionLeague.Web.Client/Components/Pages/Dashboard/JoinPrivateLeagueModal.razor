@@ -46,7 +46,11 @@
 </div>
 
 @code {
-    private readonly JoinLeagueRequest _model = new();
+    private readonly JoinLeagueRequest _model = new()
+    {
+        EntryCode = string.Empty
+    };
+
     private bool _isBusy;
     private string? _errorMessage;
 
