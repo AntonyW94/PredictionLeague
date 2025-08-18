@@ -19,6 +19,7 @@ public interface IRefreshTokenRepository
     #region Update
 
     Task RevokeAllForUserAsync(string userId, CancellationToken cancellationToken);
-   
+    Task UpdateAsync(RefreshToken token, CancellationToken cancellationToken); 
+
     #endregion
 }

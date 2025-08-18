@@ -13,16 +13,14 @@ namespace PredictionLeague.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-public class AuthController : ApiControllerBase
+public class AuthController : AuthControllerBase
 {
     private readonly ILogger<AuthController> _logger;
     private readonly IMediator _mediator;
-    private readonly IConfiguration _configuration;
 
-    public AuthController(ILogger<AuthController> logger, IConfiguration configuration, IMediator mediator)
+    public AuthController(ILogger<AuthController> logger, IConfiguration configuration, IMediator mediator) : base(configuration)
     {
         _logger = logger;
-        _configuration = configuration;
         _mediator = mediator;
     }
 
@@ -59,12 +57,7 @@ public class AuthController : ApiControllerBase
         return Ok(result);
 
     }
-   
-    public class RefreshTokenRequest
-    {
-        public string? Token { get; set; }
-    }
-
+    
     [HttpPost("refresh-token")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
@@ -73,11 +66,7 @@ public class AuthController : ApiControllerBase
     {
         _logger.LogInformation("--- Refresh-Token Endpoint Called ---");
 
-        // This endpoint now handles both flows:
-        // 1. External Login: Token comes in the request body.
-        // 2. Standard Refresh: Token comes from the HttpOnly cookie.
-
-        var refreshToken = request?.Token;
+        var refreshToken = request.Token;
         string tokenSource;
 
         if (!string.IsNullOrEmpty(refreshToken))
@@ -126,33 +115,5 @@ public class AuthController : ApiControllerBase
         Response.Cookies.Delete("refreshToken");
 
         return NoContent();
-    }
-
-    private void SetTokenCookie(string token)
-    {
-        _logger.LogInformation("Setting 'refreshToken' cookie.");
-
-        var expiryDays = double.Parse(_configuration["JwtSettings:RefreshTokenExpiryDays"]!);
-
-        var cookieOptions = new CookieOptions
-        {
-            HttpOnly = true,
-            Expires = DateTime.UtcNow.AddDays(expiryDays),
-            Secure = true,
-            SameSite = SameSiteMode.None,
-            Path = "/",
-            Domain = ".thepredictions.co.uk"
-        };
-
-        try
-        {
-            Response.Cookies.Append("refreshToken", token, cookieOptions);
-            _logger.LogInformation("Set 'refreshToken' cookie.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to set 'refreshToken' cookie.");
-            throw new InvalidOperationException("Failed to set 'refreshToken' cookie.", ex);
-        }
     }
 }

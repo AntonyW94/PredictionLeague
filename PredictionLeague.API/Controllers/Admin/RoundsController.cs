@@ -90,8 +90,6 @@ public class RoundsController : ApiControllerBase
         return NoContent();
     }
 
-
-
     [HttpPut("{roundId:int}/results")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

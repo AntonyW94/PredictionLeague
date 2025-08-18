@@ -122,6 +122,11 @@
     animation: pulse 1.5s infinite;
 }
 
+.current-user-highlight .badge-group--green {
+    background-color: white;
+    color: var(--pl-green);
+}
+
 @keyframes pulse {
     0% {
         box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);

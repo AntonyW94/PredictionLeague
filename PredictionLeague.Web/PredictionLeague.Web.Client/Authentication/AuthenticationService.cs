@@ -26,7 +26,7 @@ public class AuthenticationService : IAuthenticationService
             if (successResponse == null) 
                 return new FailedAuthenticationResponse("Failed to process server response.");
           
-            ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(successResponse);
+            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticatedAsync(successResponse);
             return successResponse;
         }
        
@@ -64,7 +64,7 @@ public class AuthenticationService : IAuthenticationService
             if (successResponse == null) 
                 return new FailedAuthenticationResponse("Failed to process server response.");
          
-            ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticated(successResponse);
+            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticatedAsync(successResponse);
             return successResponse;
         }
 
@@ -75,8 +75,7 @@ public class AuthenticationService : IAuthenticationService
     public async Task LogoutAsync()
     {
         await _httpClient.PostAsync("api/auth/logout", null);
-
-        ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOut();
+        await ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOutAsync();
     }
 
     private class IdentityErrorResponse

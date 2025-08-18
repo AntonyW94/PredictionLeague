@@ -17,11 +17,11 @@ public class RefreshTokenRepository : IRefreshTokenRepository
     }
 
     #region Create
-   
+
     public async Task CreateAsync(RefreshToken token, CancellationToken cancellationToken)
     {
         const string sql = "INSERT INTO RefreshTokens (UserId, Token, Expires, Created) VALUES (@UserId, @Token, @Expires, @Created)";
-       
+
         var command = new CommandDefinition(sql, token, cancellationToken: cancellationToken);
         await Connection.ExecuteAsync(command);
     }
@@ -48,6 +48,19 @@ public class RefreshTokenRepository : IRefreshTokenRepository
 
         var command = new CommandDefinition(sql, new { UserId = userId }, cancellationToken: cancellationToken);
         return Connection.ExecuteAsync(command);
+    }
+
+    public async Task UpdateAsync(RefreshToken token, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            UPDATE [RefreshTokens]
+            SET
+                [Revoked] = @Revoked
+            WHERE
+                [Id] = @Id;";
+        
+        var command = new CommandDefinition(sql, token, cancellationToken: cancellationToken);
+        await Connection.ExecuteAsync(command);
     }
 
     #endregion

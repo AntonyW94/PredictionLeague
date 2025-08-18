@@ -11,12 +11,12 @@ using System.Net;
 namespace PredictionLeague.API.Controllers;
 
 [Route("external-auth")]
-public class ExternalAuthController : Controller
+public class ExternalAuthController : AuthControllerBase
 {
     private readonly ILogger<ExternalAuthController> _logger;
     private readonly IMediator _mediator;
 
-    public ExternalAuthController(ILogger<ExternalAuthController> logger, IMediator mediator)
+    public ExternalAuthController(ILogger<ExternalAuthController> logger, IMediator mediator, IConfiguration configuration) : base(configuration)
     {
         _logger = logger;
         _mediator = mediator;
@@ -58,6 +58,7 @@ public class ExternalAuthController : Controller
         {
             case SuccessfulAuthenticationResponse success:
                 _logger.LogInformation("Google Login result was SUCCESS");
+                SetTokenCookie(success.RefreshTokenForCookie);
 
                 var encodedToken = WebUtility.UrlEncode(success.RefreshTokenForCookie);
                 return Redirect($"{returnUrl}?token={encodedToken}&source={source}");

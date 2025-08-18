@@ -72,7 +72,7 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
             return false;
         }
 
-        var tokenModel = new { Token = refreshToken.Replace(' ', '+') };
+        var tokenModel = new RefreshTokenRequest { Token = refreshToken.Replace(' ', '+') };
         _logger.LogInformation("Sending refresh token to API: {Token}", tokenModel.Token);
 
         var response = await _httpClient.PostAsJsonAsync("api/auth/refresh-token", tokenModel);
@@ -100,13 +100,13 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         return true;
     }
 
-    public async Task MarkUserAsAuthenticated(SuccessfulAuthenticationResponse authResponse)
+    public async Task MarkUserAsAuthenticatedAsync(SuccessfulAuthenticationResponse authResponse)
     {
         await _localStorage.SetItemAsync("accessToken", authResponse.AccessToken);
         NotifyUserAuthentication();
     }
 
-    public async Task MarkUserAsLoggedOut()
+    public async Task MarkUserAsLoggedOutAsync()
     {
         await _localStorage.RemoveItemAsync("accessToken");
         NotifyUserAuthentication();

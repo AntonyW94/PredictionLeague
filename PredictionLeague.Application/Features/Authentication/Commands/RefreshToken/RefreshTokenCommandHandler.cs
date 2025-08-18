@@ -55,6 +55,9 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
             return new FailedAuthenticationResponse("User not found.");
         }
         _logger.LogInformation("Successfully found user: {Email}", user.Email);
+      
+        storedToken.Revoke();
+        await _refreshTokenRepository.UpdateAsync(storedToken, cancellationToken);
 
         var (accessToken, newRefreshToken, expiresAt) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
         _logger.LogInformation("Successfully generated new tokens for user: {Email}", user.Email);
