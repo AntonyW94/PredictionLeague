@@ -99,6 +99,5 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
         public string PlayerName { get; init; } = null!;
         public int TotalPoints { get; init; }
         public string UserId { get; init; } = null!;
-        public int MemberCount { get; init; }
     }
 }

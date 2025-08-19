@@ -1,28 +1,22 @@
-﻿namespace PredictionLeague.Web.Client.Utilities
+﻿namespace PredictionLeague.Web.Client.Utilities;
+
+public static class FormattingUtilities
 {
-    public static class FormattingUtilities
+    public static string GetOrdinal(int num)
     {
-        public static string GetOrdinal(int num)
+        if (num <= 0)
+            return "";
+        
+        return (num % 100) switch
         {
-            if (num <= 0) return "";
-            switch (num % 100)
+            11 or 12 or 13 => "th",
+            _ => (num % 10) switch
             {
-                case 11:
-                case 12:
-                case 13:
-                    return "th";
+                1 => "st",
+                2 => "nd",
+                3 => "rd",
+                _ => "th"
             }
-            switch (num % 10)
-            {
-                case 1:
-                    return "st";
-                case 2:
-                    return "nd";
-                case 3:
-                    return "rd";
-                default:
-                    return "th";
-            }
-        }
+        };
     }
 }

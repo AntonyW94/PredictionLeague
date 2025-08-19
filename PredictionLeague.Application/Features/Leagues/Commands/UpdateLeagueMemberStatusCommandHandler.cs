@@ -29,6 +29,9 @@ public class UpdateLeagueMemberStatusCommandHandler : IRequestHandler<UpdateLeag
             case LeagueMemberStatus.Rejected:
                 league.RejectMember(request.MemberId, request.UpdatingUserId);
                 break;
+
+            case LeagueMemberStatus.Pending:
+                break;
             
             default:
                 throw new InvalidOperationException("This status change is not permitted.");

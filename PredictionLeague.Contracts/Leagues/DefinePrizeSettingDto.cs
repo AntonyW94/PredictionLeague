@@ -4,9 +4,9 @@ namespace PredictionLeague.Contracts.Leagues;
 
 public class DefinePrizeSettingDto
 {
-    public PrizeType PrizeType { get; set; }
-    public int Rank { get; set; }
+    public PrizeType PrizeType { get; init; }
+    public int Rank { get; init; }
     public decimal PrizeAmount { get; set; }
-    public string? PrizeDescription { get; set; }
-    public int Multiplier { get; set; } = 1;
+    public string? PrizeDescription { get; init; }
+    public int Multiplier { get; init; } = 1;
 }

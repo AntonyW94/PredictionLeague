@@ -91,20 +91,20 @@
     }
 
     private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;
-    private void HandleTouchMove(TouchEventArgs e) { }
+    private static void HandleTouchMove(TouchEventArgs e) { }
 
     private void HandleTouchEnd(TouchEventArgs e)
     {
         var touchEndX = e.ChangedTouches[0].ClientX;
         var diffX = _touchStartX - touchEndX;
 
-        if (Math.Abs(diffX) > 50)
-        {
-            if (diffX > 0)
-                ShowNext();
-            else
-                ShowPrevious();
-        }
+        if (!(Math.Abs(diffX) > 50))
+            return;
+
+        if (diffX > 0)
+            ShowNext();
+        else
+            ShowPrevious();
     }
 
     private void GoToSlide(int index)
@@ -115,20 +115,20 @@
 
     private void ShowPrevious()
     {
-        if (_currentIndex > 0)
-        {
-            _currentIndex--;
-            UpdateTrackStyle();
-        }
+        if (_currentIndex <= 0)
+            return;
+
+        _currentIndex--;
+        UpdateTrackStyle();
     }
 
     private void ShowNext()
     {
-        if (_currentIndex < DashboardState.Leaderboards.Count - 1)
-        {
-            _currentIndex++;
-            UpdateTrackStyle();
-        }
+        if (_currentIndex >= DashboardState.Leaderboards.Count - 1) 
+            return;
+
+        _currentIndex++;
+        UpdateTrackStyle();
     }
 
     private void UpdateTrackStyle()

@@ -2,5 +2,5 @@
 
 public class DeleteUserRequest
 {
-    public string? NewAdministratorId { get; set; }
+    public string? NewAdministratorId { get; init; }
 }

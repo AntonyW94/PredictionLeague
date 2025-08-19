@@ -6,5 +6,4 @@ public record LeagueMemberDto(
     string UserId,
     string FullName, 
     DateTime JoinedAt,
-    LeagueMemberStatus Status, 
-    bool CanBeApproved);
+    LeagueMemberStatus Status);

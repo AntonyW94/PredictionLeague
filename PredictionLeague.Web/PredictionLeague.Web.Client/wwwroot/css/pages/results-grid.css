@@ -93,7 +93,7 @@
     }
 
 .blurred-score {
-    filter: blur(4px);
+    filter: blur(2px);
     cursor: not-allowed;
     user-select: none;
 }
@@ -161,10 +161,10 @@
         border-bottom: none;
     }
 
-.prediction-badge{
-    width: 65px;
-    max-width: 65px;
-    min-width: 65px;
+.card-body .prediction-badge {
+    width: 68px;
+    max-width: 68px;
+    min-width: 68px;
 }
 
 @keyframes pulse {

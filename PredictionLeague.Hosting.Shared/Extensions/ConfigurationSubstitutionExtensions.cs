@@ -7,7 +7,7 @@ public static class ConfigurationSubstitutionExtensions
 {
     private static readonly Regex PlaceholderRegex = new Regex(@"\$\{(?<key>[\w\:\-]+)\}", RegexOptions.Compiled);
 
-    public static IConfiguration EnableSubstitutions(this IConfiguration configuration)
+    public static void EnableSubstitutions(this IConfiguration configuration)
     {
         const int maxIterations = 10;
         var iterations = 0;
@@ -23,21 +23,19 @@ public static class ConfigurationSubstitutionExtensions
                     continue;
 
                 var match = PlaceholderRegex.Match(kvp.Value);
-                if (match.Success)
-                {
-                    var keyToSubstitute = match.Groups["key"].Value;
+                if (!match.Success) 
+                    continue;
+                
+                var keyToSubstitute = match.Groups["key"].Value;
 
-                    var substitute = configuration[keyToSubstitute];
-                    if (substitute != null && substitute != kvp.Value)
-                    {
-                        configuration[kvp.Key] = kvp.Value.Replace(match.Value, substitute);
-                        changed = true;
-                    }
-                }
+                var substitute = configuration[keyToSubstitute];
+                if (substitute == null || substitute == kvp.Value)
+                    continue;
+                
+                configuration[kvp.Key] = kvp.Value.Replace(match.Value, substitute);
+                changed = true;
             }
             iterations++;
         } while (changed && iterations < maxIterations);
-
-        return configuration;
     }
 }

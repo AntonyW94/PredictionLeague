@@ -2,5 +2,5 @@
 
 public class UpdateMatchRequest : BaseMatchRequest
 {
-    public int Id { get; set; }
+    public int Id { get; init; }
 }

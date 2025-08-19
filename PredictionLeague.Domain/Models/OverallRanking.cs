@@ -1,3 +1,3 @@
 ﻿namespace PredictionLeague.Domain.Models;
 
-public record OverallRanking(int Rank, int Score, List<LeagueMember> Members);
+public record OverallRanking(int Rank, List<LeagueMember> Members);

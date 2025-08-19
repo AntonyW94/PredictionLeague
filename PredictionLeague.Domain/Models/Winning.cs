@@ -1,10 +1,11 @@
 ﻿using Ardalis.GuardClauses;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Domain.Models;
 
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class Winning
 {
-    public int Id { get; private set; }
     public string UserId { get; private set; } = string.Empty;
     public int LeaguePrizeSettingId { get; private set; }
     public decimal Amount { get; private set; } 

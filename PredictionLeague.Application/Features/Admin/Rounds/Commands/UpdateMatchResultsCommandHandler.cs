@@ -141,7 +141,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
                     var rankings = league.GetOverallRankings();
                     var prizeIndex = 0;
 
-                    foreach (var ranking in rankings)
+                    foreach (var ranking in rankings.OrderBy(r => r.Rank))
                     {
                         if (prizeIndex >= overallPrizes.Count)
                             break;
@@ -188,10 +188,10 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         }
     }
 
-    private List<decimal> DistributePrizeMoney(decimal totalAmount, int winnerCount)
+    private static List<decimal> DistributePrizeMoney(decimal totalAmount, int winnerCount)
     {
         if (winnerCount == 0)
-            return new List<decimal>();
+            return [];
 
         var totalPennies = (int)(totalAmount * 100);
         var basePennies = totalPennies / winnerCount;

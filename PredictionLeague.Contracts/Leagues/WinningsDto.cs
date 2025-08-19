@@ -2,13 +2,13 @@
 
 public class WinningsDto
 {
-    public bool WinningsCalculated { get; set; }
-    public int EntryCount { get; set; }
-    public decimal EntryCost { get; set; }
-    public decimal TotalPrizePot { get; set; }
+    public bool WinningsCalculated { get; init; }
+    public int EntryCount { get; init; }
+    public decimal EntryCost { get; init; }
+    public decimal TotalPrizePot { get; init; }
 
-    public WinningsLeaderboardDto Leaderboard { get; set; } = new();
+    public WinningsLeaderboardDto Leaderboard { get; init; } = new();
     public List<PrizeDto> RoundPrizes { get; set; } = new();
     public List<PrizeDto> MonthlyPrizes { get; set; } = new();
-    public List<PrizeDto> EndOfSeasonPrizes { get; set; } = new();
+    public List<PrizeDto> EndOfSeasonPrizes { get; init; } = new();
 }

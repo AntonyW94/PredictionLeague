@@ -15,7 +15,7 @@ public static class GuardClauseExtensions
             throw new ArgumentException("A season cannot span more than 10 months.");
     }
 
-    public static void EntityNotFound<T>(this IGuardClause guardClause, object key, [NotNull] T? input, string name = "Entity")
+    public static void EntityNotFound<T>(this IGuardClause _, object key, [NotNull] T? input, string name = "Entity")
     {
         if (input is null)
             throw new EntityNotFoundException(name, key.ToString() ?? string.Empty);

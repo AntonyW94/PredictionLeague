@@ -28,8 +28,7 @@ public class GetLeaguePrizesPageQueryHandler : IRequestHandler<GetLeaguePrizesPa
                 s.[EndDate] AS SeasonEndDate,
                 ps.[PrizeType],
                 ps.[Rank],
-                ps.[PrizeAmount],
-                ps.[PrizeDescription]
+                ps.[PrizeAmount]
             FROM 
                 [Leagues] l
             JOIN 
@@ -60,8 +59,7 @@ public class GetLeaguePrizesPageQueryHandler : IRequestHandler<GetLeaguePrizesPa
                 .Select(r => new PrizeSettingDto(
                     Enum.Parse<PrizeType>(r.PrizeType!),
                     r.Rank!.Value,
-                    r.PrizeAmount!.Value,
-                    r.PrizeDescription
+                    r.PrizeAmount!.Value
                 )).ToList()
         };
 
@@ -77,9 +75,8 @@ public class GetLeaguePrizesPageQueryHandler : IRequestHandler<GetLeaguePrizesPa
         int NumberOfRounds,
         DateTime SeasonStartDate,
         DateTime SeasonEndDate,
-        string? PrizeType, // Changed from enum to string?
+        string? PrizeType,
         int? Rank,
-        decimal? PrizeAmount,
-        string? PrizeDescription
+        decimal? PrizeAmount
     );
 }

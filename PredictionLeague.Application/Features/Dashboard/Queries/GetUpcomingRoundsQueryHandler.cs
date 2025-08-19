@@ -51,7 +51,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
         {
             request.UserId,
             PublishedStatus = nameof(RoundStatus.Published),
-            ApprovedStatus = nameof(LeagueMemberStatus.Approved),
+            ApprovedStatus = nameof(LeagueMemberStatus.Approved)
         };
 
         return await _dbConnection.QueryAsync<UpcomingRoundDto>(sql, cancellationToken, parameters);

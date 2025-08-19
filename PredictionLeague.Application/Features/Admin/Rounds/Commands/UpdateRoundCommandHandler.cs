@@ -32,19 +32,18 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
         // 2. Process incoming matches (Update existing or Add new)
         foreach (var matchDto in request.Matches)
         {
-            if (matchDto.Id > 0 && existingMatches.TryGetValue(matchDto.Id, out var existingMatch))
+            switch (matchDto.Id)
             {
-                // This is an UPDATE
-                existingMatch.UpdateDetails(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTime);
-            }
-            else if (matchDto.Id == 0)
-            {
-                // This is a new match to ADD
-                round.AddMatch(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTime);
+                case > 0 when existingMatches.TryGetValue(matchDto.Id, out var existingMatch):
+                    existingMatch.UpdateDetails(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTime);
+                    break;
+              
+                case 0:
+                    round.AddMatch(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTime);
+                    break;
             }
         }
 
-        // 3. Identify and DELETE matches that were removed by the user
         var matchesToDelete = existingMatches.Values
             .Where(m => !incomingMatchIds.Contains(m.Id))
             .ToList();

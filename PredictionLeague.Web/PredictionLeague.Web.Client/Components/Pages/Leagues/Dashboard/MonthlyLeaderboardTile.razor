@@ -117,7 +117,7 @@
         {   
             await base.OnInitializedAsync();
             _months = (await LeagueService.GetMonthsForLeagueAsync(LeagueId)).ToList();
-          
+
             var currentMonth = DateTime.Now.Month;
             var currentMonthDto = _months.FirstOrDefault(m => m.Month == currentMonth) ?? _months.FirstOrDefault();
             if (currentMonthDto != null)
@@ -139,31 +139,31 @@
 
 
     private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;
-    private void HandleTouchMove(TouchEventArgs e) { }
+    private static void HandleTouchMove(TouchEventArgs e) { }
     private void HandleTouchEnd(TouchEventArgs e)
     {
         var touchEndX = e.ChangedTouches[0].ClientX;
         var diffX = _touchStartX - touchEndX;
 
-        if (Math.Abs(diffX) > 50)
+        if (!(Math.Abs(diffX) > 50)) 
+            return;
+
+        if (diffX > 0)
         {
-            if (diffX > 0)
-            {
-                if (_currentIndex < _leaderboards.Count - 1)
-                {
-                    _currentIndex++;
-                    UpdateTrackStyle();
-                }
-            }
-            else
-            {
-                if (_currentIndex > 0)
-                {
-                    _currentIndex--;
-                    UpdateTrackStyle();
-                }
-            }
+            if (_currentIndex >= _leaderboards.Count - 1) 
+                return;
+
+            _currentIndex++;
         }
+        else
+        {
+            if (_currentIndex <= 0)
+                return;
+
+            _currentIndex--;
+        }
+
+        UpdateTrackStyle();
     }
 
     private async Task LoadLeaderboardForMonth(int month)
@@ -181,7 +181,7 @@
         }
         catch
         {
-            // Handle error if needed, maybe add an error property to LeaderboardData
+            _errorMessage = "Monthly Leaderboard failed to load.";
         }
         finally
         {

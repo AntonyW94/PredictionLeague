@@ -5,7 +5,7 @@ namespace PredictionLeague.Domain.Models;
 
 public class LeaguePrizeSetting
 {
-    public int Id { get; private set; }
+    public int Id { get; init; }
     public int LeagueId { get; private set; }
     public PrizeType PrizeType { get; private set; }
     public int Rank { get; private set; }
@@ -26,7 +26,7 @@ public class LeaguePrizeSetting
             PrizeType = prizeType,
             Rank = rank,
             PrizeAmount = prizeAmount,
-            PrizeDescription = prizeDescription,
+            PrizeDescription = prizeDescription
         };
     }
 }

@@ -23,9 +23,7 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
                 lm.[UserId],
                 u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS FullName,
                 lm.[JoinedAt],
-                lm.[Status],
-                CAST(CASE WHEN lm.[Status] = @Pending AND l.[AdministratorUserId] = @CurrentUserId THEN 1 ELSE 0 END AS bit) AS CanBeApproved
-            
+                lm.[Status]
             FROM 
                 [Leagues] l
             JOIN 
@@ -54,8 +52,7 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
                     m.UserId,
                     m.FullName,
                     m.JoinedAt,
-                    m.Status,
-                    m.CanBeApproved
+                    m.Status
                 )).ToList()
             };
         }
@@ -72,7 +69,6 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
         string UserId,
         string FullName,
         DateTime JoinedAt,
-        LeagueMemberStatus Status,
-        bool CanBeApproved
+        LeagueMemberStatus Status
     );
 }

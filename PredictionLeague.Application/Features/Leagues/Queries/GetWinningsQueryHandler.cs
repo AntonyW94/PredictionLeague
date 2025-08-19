@@ -46,7 +46,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         return winningsDto;
     }
 
-    private void ProcessRoundPrizes(WinningsDto dto, LeagueData data)
+    private static void ProcessRoundPrizes(WinningsDto dto, LeagueData data)
     {
         var roundPrizeSetting = data.PrizeSettings.FirstOrDefault(p => p.PrizeType == PrizeType.Round);
         if (roundPrizeSetting == null) 
@@ -80,7 +80,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         dto.RoundPrizes = dto.RoundPrizes.OrderBy(p => int.Parse(p.Name)).ToList();
     }
 
-    private void ProcessMonthlyPrizes(WinningsDto dto, LeagueData data)
+    private static void ProcessMonthlyPrizes(WinningsDto dto, LeagueData data)
     {
         var monthlyPrizeSetting = data.PrizeSettings.FirstOrDefault(p => p.PrizeType == PrizeType.Monthly);
         if (monthlyPrizeSetting == null)
@@ -121,7 +121,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         }).ToList();
     }
     
-    private void ProcessEndOfSeasonPrizes(WinningsDto dto, LeagueData data)
+    private static void ProcessEndOfSeasonPrizes(WinningsDto dto, LeagueData data)
     {
         var specialPrizeSettings = data.PrizeSettings.Where(p => p.PrizeType != PrizeType.Round && p.PrizeType != PrizeType.Monthly);
      
@@ -157,7 +157,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         }
     }
 
-    private void ProcessLeaderboard(WinningsDto dto, LeagueData data)
+    private static void ProcessLeaderboard(WinningsDto dto, LeagueData data)
     {
         dto.Leaderboard.Entries = data.LeagueMembers
             .Select(member =>
@@ -250,7 +250,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         return leagueData;
     }
 
-    private IEnumerable<int> GetSeasonMonths(DateTime startDate, DateTime endDate)
+    private static IEnumerable<int> GetSeasonMonths(DateTime startDate, DateTime endDate)
     {
         for (var dt = startDate; dt <= endDate; dt = dt.AddMonths(1))
         {

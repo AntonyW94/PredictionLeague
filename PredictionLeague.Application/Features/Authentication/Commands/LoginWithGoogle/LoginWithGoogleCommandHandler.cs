@@ -74,18 +74,12 @@ public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleComm
         await _userManager.AddToRoleAsync(newUser, nameof(ApplicationUserRole.Player));
 
         var addLoginResult = await _userManager.AddLoginAsync(newUser, new UserLoginInfo(provider, providerKey, provider));
-        if (!addLoginResult.Succeeded)
-            throw new IdentityUpdateException(addLoginResult.Errors);
-
-        return newUser;
+        return !addLoginResult.Succeeded ? throw new IdentityUpdateException(addLoginResult.Errors) : newUser;
     }
 
     private async Task<ApplicationUser> LinkExternalLoginToExistingUser(ApplicationUser user, string provider, string providerKey)
     {
         var addLoginResult = await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerKey, provider));
-        if (!addLoginResult.Succeeded)
-            throw new IdentityUpdateException(addLoginResult.Errors);
-
-        return user;
+        return !addLoginResult.Succeeded ? throw new IdentityUpdateException(addLoginResult.Errors) : user;
     }
 }

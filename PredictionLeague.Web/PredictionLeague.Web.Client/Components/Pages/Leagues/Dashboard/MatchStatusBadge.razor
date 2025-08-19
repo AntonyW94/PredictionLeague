@@ -33,8 +33,7 @@
     private string StatusText => Status switch
     {
         MatchStatus.Scheduled => $"{MatchDateTime:dd/MM/yyyy} at {MatchDateTime:HH:mm}",
-        MatchStatus.InProgress => $"{HomeScore} - {AwayScore}",
-        MatchStatus.Completed => $"{HomeScore} - {AwayScore}",
+        MatchStatus.InProgress or MatchStatus.Completed => $"{HomeScore} - {AwayScore}",
         _ => "Unknown"
     };
 }

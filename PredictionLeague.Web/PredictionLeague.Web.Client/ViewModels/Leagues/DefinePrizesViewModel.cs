@@ -6,18 +6,15 @@ namespace PredictionLeague.Web.Client.ViewModels.Leagues;
 
 public class DefinePrizesViewModel
 {
+    public List<DefinePrizeSettingDto> PrizeSettings { get; } = new();
     public decimal PrizePot { get; }
     public int NumberOfRounds { get; }
     public int NumberOfMonths { get; }
-
-    public List<DefinePrizeSettingDto> PrizeSettings { get; set; } = new();
-
     public decimal MonthlyWinnerAmount { get; set; }
     public decimal RoundWinnerAmount { get; set; }
-
-    public decimal TotalAllocated => PrizeSettings.Sum(p => p.PrizeAmount) + MonthlyWinnerAmount * NumberOfMonths + RoundWinnerAmount * NumberOfRounds;
-
     public decimal RemainingToAllocate => PrizePot - TotalAllocated;
+
+    private decimal TotalAllocated => PrizeSettings.Sum(p => p.PrizeAmount) + MonthlyWinnerAmount * NumberOfMonths + RoundWinnerAmount * NumberOfRounds;
 
     public DefinePrizesViewModel(decimal prizePot, int numberOfRounds, DateTime seasonStartDate, DateTime seasonEndDate)
     {
@@ -54,10 +51,10 @@ public class DefinePrizesViewModel
         var finalSettings = new List<DefinePrizeSettingDto>(PrizeSettings);
 
         if (MonthlyWinnerAmount > 0)
-            finalSettings.Add(new DefinePrizeSettingDto { PrizeType = PrizeType.Monthly, Rank = 1, PrizeAmount = MonthlyWinnerAmount, Multiplier = NumberOfMonths});
-        
+            finalSettings.Add(new DefinePrizeSettingDto { PrizeType = PrizeType.Monthly, Rank = 1, PrizeAmount = MonthlyWinnerAmount, Multiplier = NumberOfMonths });
+
         if (RoundWinnerAmount > 0)
-            finalSettings.Add(new DefinePrizeSettingDto { PrizeType = PrizeType.Round, Rank = 1, PrizeAmount = RoundWinnerAmount, Multiplier = NumberOfRounds});
+            finalSettings.Add(new DefinePrizeSettingDto { PrizeType = PrizeType.Round, Rank = 1, PrizeAmount = RoundWinnerAmount, Multiplier = NumberOfRounds });
 
         return finalSettings;
     }

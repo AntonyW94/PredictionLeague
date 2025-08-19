@@ -116,10 +116,11 @@
     private async Task ToggleIsActive(SeasonDto seasonToUpdate)
     {
         _errorMessage = null;
-        bool newStatus = !seasonToUpdate.IsActive;
-
+      
+        var newStatus = !seasonToUpdate.IsActive;
         var index = _seasons!.IndexOf(seasonToUpdate);
         var updatedSeason = seasonToUpdate with { IsActive = newStatus };
+       
         _seasons[index] = updatedSeason;
 
         try
@@ -128,13 +129,13 @@
             if (!response.IsSuccessStatusCode)
             {
                 _errorMessage = "Failed to update season status.";
-                _seasons[index] = seasonToUpdate; // Revert on failure
+                _seasons[index] = seasonToUpdate;
             }
         }
         catch
         {
             _errorMessage = "An unexpected error occurred.";
-            _seasons[index] = seasonToUpdate; // Revert on failure
+            _seasons[index] = seasonToUpdate;
         }
         StateHasChanged();
     }

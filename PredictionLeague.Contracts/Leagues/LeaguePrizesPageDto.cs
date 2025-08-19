@@ -2,12 +2,12 @@
 
 public class LeaguePrizesPageDto
 {
-    public string LeagueName { get; set; } = string.Empty;
-    public DateTime EntryDeadline { get; set; }
-    public decimal Price { get; set; }
-    public int MemberCount { get; set; }
-    public List<PrizeSettingDto> PrizeSettings { get; set; } = new();
-    public int NumberOfRounds { get; set; }
-    public DateTime SeasonStartDate { get; set; }
-    public DateTime SeasonEndDate { get; set; }
+    public string LeagueName { get; init; } = string.Empty;
+    public DateTime EntryDeadline { get; init; }
+    public decimal Price { get; init; }
+    public int MemberCount { get; init; }
+    public List<PrizeSettingDto> PrizeSettings { get; init; } = new();
+    public int NumberOfRounds { get; init; }
+    public DateTime SeasonStartDate { get; init; }
+    public DateTime SeasonEndDate { get; init; }
 }

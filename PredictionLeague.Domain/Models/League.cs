@@ -277,7 +277,7 @@ public class League
         foreach (var scoreGroup in scoresByGroup)
         {
             var membersInGroup = scoreGroup.ToList();
-            rankings.Add(new OverallRanking(currentRank, scoreGroup.Key, membersInGroup));
+            rankings.Add(new OverallRanking(currentRank, membersInGroup));
             currentRank += membersInGroup.Count;
         }
 
