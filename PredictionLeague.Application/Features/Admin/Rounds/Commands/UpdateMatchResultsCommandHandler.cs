@@ -76,10 +76,10 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
 
     private async Task ProcessPrizesAsync(Round round, List<League> leagues, CancellationToken cancellationToken)
     {
-        var allNewWinnings = new List<Winning>();
-
         foreach (var league in leagues)
         {
+            var allNewWinnings = new List<Winning>();
+
             var roundPrize = league.PrizeSettings.FirstOrDefault(p => p.PrizeType == PrizeType.Round);
             if (roundPrize != null)
             {
