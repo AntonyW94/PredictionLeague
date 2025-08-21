@@ -5,4 +5,5 @@ public record UpcomingRoundDto(
     string SeasonName, 
     int RoundNumber, 
     DateTime Deadline,
-    bool HasUserPredicted);
+    bool HasUserPredicted,
+    bool AllPredictionsIn);

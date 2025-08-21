@@ -15,11 +15,15 @@ public interface IDashboardStateService
     bool IsAvailableLeaguesLoading { get; }
     bool IsLeaderboardsLoading { get; }
     bool IsUpcomingRoundsLoading { get; }
+    bool IsChasing { get; }
+    
+    int? ChasingRoundId { get; }
 
     string? MyLeaguesErrorMessage { get; }
     string? AvailableLeaguesErrorMessage { get; }
     string? LeaderboardsErrorMessage { get; }
     string? UpcomingRoundsErrorMessage { get; }
+    string? UpcomingRoundsSuccessMessage { get; }
 
     event Action OnStateChange;
  
@@ -30,4 +34,5 @@ public interface IDashboardStateService
 
     Task JoinPublicLeagueAsync(int leagueId);
     Task RemoveRejectedLeagueAsync(int leagueId);
+    Task SendChaseEmailsAsync(int roundId);
 }

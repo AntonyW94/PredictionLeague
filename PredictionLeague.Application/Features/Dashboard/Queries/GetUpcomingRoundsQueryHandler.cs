@@ -17,35 +17,61 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
     public async Task<IEnumerable<UpcomingRoundDto>> Handle(GetUpcomingRoundsQuery request, CancellationToken cancellationToken)
     {
         var sql = $@"
-            SELECT
-                r.[Id],
-                s.[Name] AS SeasonName,
-                r.[RoundNumber],
-                r.[Deadline],
-                CAST(CASE 
-                    WHEN EXISTS (
-                        SELECT 1 
-                        FROM [UserPredictions] up
-                        JOIN [Matches] m ON up.MatchId = m.Id
-                        WHERE m.RoundId = r.Id AND up.UserId = @UserId
-                    ) THEN 1 
-                    ELSE 0 
-                END AS bit) AS HasUserPredicted
-            FROM 
-                [Rounds] r
-            JOIN 
-                [Seasons] s ON r.[SeasonId] = s.[Id]
-            WHERE
-                r.[Status] = @PublishedStatus
-                {(!request.IsAdmin ? "AND r.[Deadline] > GETDATE()" : string.Empty)}
-                AND r.[SeasonId] IN (
-                    SELECT l.SeasonId
-                    FROM [Leagues] l
-                    JOIN [LeagueMembers] lm ON l.Id = lm.LeagueId
-                    WHERE lm.UserId = @UserId AND lm.Status = @ApprovedStatus
-                )
-            ORDER BY
-                r.[Deadline] ASC;";
+                     WITH RoundPredictionCounts AS (
+                        SELECT
+                            r.Id AS RoundId,
+                            COUNT(DISTINCT up.UserId) AS PredictionsCount
+                        FROM Rounds r
+                        LEFT JOIN Matches m ON m.RoundId = r.Id
+                        LEFT JOIN UserPredictions up ON up.MatchId = m.Id
+                        GROUP BY r.Id
+                    ),
+                    ActiveMemberCount AS (
+                        SELECT
+                            l.SeasonId,
+                            COUNT(DISTINCT lm.UserId) AS MemberCount
+                        FROM LeagueMembers lm
+                        JOIN Leagues l ON lm.LeagueId = l.Id
+                        WHERE lm.Status = @ApprovedStatus
+                        GROUP BY l.SeasonId
+                    )
+                    SELECT
+                        r.[Id],
+                        s.[Name] AS SeasonName,
+                        r.[RoundNumber],
+                        r.[Deadline],
+                        CAST(CASE 
+                            WHEN EXISTS (
+                                SELECT 1 
+                                FROM [UserPredictions] up
+                                JOIN [Matches] m ON up.MatchId = m.Id
+                                WHERE m.RoundId = r.Id AND up.UserId = @UserId
+                            ) THEN 1 
+                            ELSE 0 
+                        END AS bit) AS HasUserPredicted,
+                        CAST(CASE
+                            WHEN rpc.PredictionsCount >= amc.MemberCount AND amc.MemberCount > 0 THEN 1
+                            ELSE 0
+                        END AS BIT) AS AllPredictionsIn
+                    FROM 
+                        [Rounds] r
+                    JOIN 
+                        [Seasons] s ON r.[SeasonId] = s.[Id]
+                    LEFT JOIN 
+                        RoundPredictionCounts rpc ON r.Id = rpc.RoundId
+                    LEFT JOIN 
+                        ActiveMemberCount amc ON r.SeasonId = amc.SeasonId
+                    WHERE
+                        r.[Status] = @PublishedStatus
+                        {(!request.IsAdmin ? "AND r.[Deadline] > GETUTCDATE()" : string.Empty)}
+                        AND r.[SeasonId] IN (
+                            SELECT l.SeasonId
+                            FROM [Leagues] l
+                            JOIN [LeagueMembers] lm ON l.Id = lm.LeagueId
+                            WHERE lm.UserId = @UserId AND lm.Status = @ApprovedStatus
+                        )
+                    ORDER BY
+                        r.[Deadline] ASC";
 
         var parameters = new
         {

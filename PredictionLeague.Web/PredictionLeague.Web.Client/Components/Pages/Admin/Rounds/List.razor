@@ -72,15 +72,20 @@
                             <button class="btn green-button flex-grow-1" @onclick="() => EditRound(round.Id)">
                                 <span class="bi bi-pencil-fill me-2"></span>Edit
                             </button>
-                            
-                            @if (round.Id == _firstPublishedRoundId && !_isChasing)
+
+                            @if (round.AllPredictionsIn)
+                            {
+                                <button class="btn grey-button" disabled>
+                                    <span class="bi bi-envelope-fill me-2"></span>Send Chase Emails
+                                </button>
+                            }
+                            else if (round.Id == _firstPublishedRoundId && !_isChasing)
                             {
                                 <button class="btn purple-accent-button" @onclick="() => SendChaseEmails(round.Id)">
                                     <span class="bi bi-envelope-fill me-2"></span>Send Chase Emails
                                 </button>
                             }
-
-                            @if (round.Id == _firstPublishedRoundId && _isChasing)
+                            else if (round.Id == _firstPublishedRoundId && _isChasing)
                             {
                                 <button class="btn purple-accent-button" disabled>
                                     <span class="spinner-border spinner-border-s me-2" role="status" aria-hidden="true"></span>Sending...
@@ -109,7 +114,7 @@
     private List<RoundDto>? _rounds;
     private string? _errorMessage;
     private string? _successMessage;
-    private int? _firstPublishedRoundId; 
+    private int? _firstPublishedRoundId;
     private bool _isChasing;
 
     protected override async Task OnInitializedAsync()
@@ -120,10 +125,10 @@
         try
         {
             _rounds = await Http.GetFromJsonAsync<List<RoundDto>>($"api/admin/rounds/by-season/{SeasonId}");
-          
+
             if (_rounds != null)
                 _firstPublishedRoundId = _rounds.OrderBy(r => r.Deadline).FirstOrDefault(r => r.Status == RoundStatus.Published)?.Id;
-            
+
         }
         catch (Exception)
         {
@@ -134,7 +139,7 @@
     private async Task SendChaseEmails(int roundId)
     {
         _isChasing = true;
-        
+
         StateHasChanged();
 
         var response = await Http.PostAsync($"api/admin/rounds/{roundId}/send-prediction-reminder-emails", null);
@@ -144,8 +149,8 @@
         else
             _errorMessage = "Failed to send chase emails.";
 
-        _isChasing = false; 
-      
+        _isChasing = false;
+
         StateHasChanged();
     }
 

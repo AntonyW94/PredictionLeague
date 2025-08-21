@@ -2,6 +2,7 @@
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Web.Client.Services.Leagues;
+using PredictionLeague.Web.Client.Services.Round;
 
 namespace PredictionLeague.Web.Client.Services.Dashboard;
 
@@ -11,34 +12,43 @@ public class DashboardStateService : IDashboardStateService
     public List<AvailableLeagueDto> AvailableLeagues { get; private set; } = new();
     public List<LeagueLeaderboardDto> Leaderboards { get; private set; } = new();
     public List<UpcomingRoundDto> UpcomingRounds { get; private set; } = new();
-   
+
     public bool IsMyLeaguesLoading { get; private set; }
     public bool IsAvailableLeaguesLoading { get; private set; }
     public bool IsLeaderboardsLoading { get; private set; }
     public bool IsUpcomingRoundsLoading { get; private set; }
+    public bool IsChasing => _isChasing;
+
+    public int? ChasingRoundId => _chasingRoundId;
 
     public string? AvailableLeaguesErrorMessage { get; private set; }
     public string? MyLeaguesErrorMessage { get; private set; }
     public string? LeaderboardsErrorMessage { get; private set; }
     public string? UpcomingRoundsErrorMessage { get; private set; }
+    public string? UpcomingRoundsSuccessMessage { get; private set; }
 
 
     public event Action? OnStateChange;
 
     private readonly ILeagueService _leagueService;
+    private readonly IRoundService _roundService;
+    private bool _isChasing;
+    private int? _chasingRoundId;
 
-    public DashboardStateService(ILeagueService leagueService)
+
+    public DashboardStateService(ILeagueService leagueService, IRoundService roundService)
     {
         _leagueService = leagueService;
+        _roundService = roundService;
     }
 
     public async Task LoadMyLeaguesAsync()
     {
         IsMyLeaguesLoading = true;
         MyLeaguesErrorMessage = null;
-        
+
         NotifyStateChanged();
-        
+
         try
         {
             MyLeagues = await _leagueService.GetMyLeaguesAsync();
@@ -58,9 +68,9 @@ public class DashboardStateService : IDashboardStateService
     {
         IsAvailableLeaguesLoading = true;
         AvailableLeaguesErrorMessage = null;
-        
+
         NotifyStateChanged();
-        
+
         try
         {
             AvailableLeagues = await _leagueService.GetAvailableLeaguesAsync();
@@ -80,9 +90,9 @@ public class DashboardStateService : IDashboardStateService
     {
         IsLeaderboardsLoading = true;
         LeaderboardsErrorMessage = null;
-        
+
         NotifyStateChanged();
-        
+
         try
         {
             Leaderboards = await _leagueService.GetLeaderboardsAsync();
@@ -102,9 +112,10 @@ public class DashboardStateService : IDashboardStateService
     {
         IsUpcomingRoundsLoading = true;
         UpcomingRoundsErrorMessage = null;
-        
+        UpcomingRoundsSuccessMessage = null;
+
         NotifyStateChanged();
-        
+
         try
         {
             UpcomingRounds = await _leagueService.GetUpcomingRoundsAsync();
@@ -123,7 +134,7 @@ public class DashboardStateService : IDashboardStateService
     public async Task JoinPublicLeagueAsync(int leagueId)
     {
         AvailableLeaguesErrorMessage = null;
-       
+
         NotifyStateChanged();
 
         var (success, errorMessage) = await _leagueService.JoinPublicLeagueAsync(leagueId);
@@ -141,7 +152,7 @@ public class DashboardStateService : IDashboardStateService
     public async Task RemoveRejectedLeagueAsync(int leagueId)
     {
         MyLeaguesErrorMessage = null;
-        
+
         NotifyStateChanged();
 
         var (success, errorMessage) = await _leagueService.RemoveMyLeagueMembershipAsync(leagueId);
@@ -154,6 +165,31 @@ public class DashboardStateService : IDashboardStateService
             MyLeaguesErrorMessage = errorMessage;
             NotifyStateChanged();
         }
+    }
+
+    public async Task SendChaseEmailsAsync(int roundId)
+    {
+        _isChasing = true;
+        _chasingRoundId = roundId;
+
+        UpcomingRoundsErrorMessage = null;
+
+        NotifyStateChanged();
+
+        var success = await _roundService.SendChaseEmailsAsync(roundId);
+        if (success)
+        {
+            UpcomingRoundsSuccessMessage = "Chase emails sent successfully";
+        }
+        else
+        {
+            UpcomingRoundsErrorMessage = "Could not send chase emails";
+        }
+
+        _isChasing = false;
+        _chasingRoundId = null;
+
+        NotifyStateChanged();
     }
 
     private void NotifyStateChanged() => OnStateChange?.Invoke();

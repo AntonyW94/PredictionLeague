@@ -9,4 +9,5 @@ public record RoundDto(
     DateTime StartDate,
     DateTime Deadline,
     RoundStatus Status,
-    int MatchCount);
+    int MatchCount,
+    bool AllPredictionsIn);

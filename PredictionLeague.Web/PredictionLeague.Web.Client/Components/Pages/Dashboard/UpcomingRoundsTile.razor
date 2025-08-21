@@ -8,6 +8,7 @@
     <h3 class="text-white text-center fw-bold mb-4">Upcoming Rounds</h3>
 
     <ApiError Message="@DashboardState.UpcomingRoundsErrorMessage" />
+    <ApiSuccess Message="@DashboardState.UpcomingRoundsSuccessMessage" />
 
     @if (DashboardState.IsUpcomingRoundsLoading)
     {
@@ -36,7 +37,10 @@
                         {
                             <div class="carousel-item-wrapper">
                                 <div class="carousel-item-content">
-                                    <RoundCard Round="round" />
+                                    <RoundCard Round="round"
+                                               IsChasing="DashboardState.ChasingRoundId == round.Id"
+                                               OnChaseEmailsClicked="async (id) => await DashboardState.SendChaseEmailsAsync(id)"/>
+
                                 </div>
                             </div>
                         }
@@ -70,7 +74,7 @@
     private double _touchStartX;
     private string _trackStyle = "transform: translateX(0%);";
     private bool _isDesktop;
-   
+
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
@@ -86,12 +90,12 @@
         {
             if (!DashboardState.UpcomingRounds.Any())
                 return 0;
-            
+
             var roundsPerPage = _isDesktop ? 2 : 1;
-            
+
             if (DashboardState.UpcomingRounds.Count <= roundsPerPage) 
                 return 0;
-            
+
             return DashboardState.UpcomingRounds.Count - roundsPerPage + 1;
         }
     }

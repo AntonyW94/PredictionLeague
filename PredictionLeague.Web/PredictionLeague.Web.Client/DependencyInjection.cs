@@ -4,6 +4,7 @@ using PredictionLeague.Web.Client.Authentication;
 using PredictionLeague.Web.Client.Services.Browser;
 using PredictionLeague.Web.Client.Services.Dashboard;
 using PredictionLeague.Web.Client.Services.Leagues;
+using PredictionLeague.Web.Client.Services.Round;
 using PredictionLeague.Web.Client.ViewModels.Admin.Rounds;
 
 namespace PredictionLeague.Web.Client;
@@ -19,6 +20,7 @@ public static class DependencyInjection
         services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ILeagueService, LeagueService>();
+        services.AddScoped<IRoundService, RoundService>();
         services.AddScoped<IDashboardStateService, DashboardStateService>();
         services.AddScoped<IBrowserService, BrowserService>(); 
         services.AddScoped<LeagueDashboardStateService>();

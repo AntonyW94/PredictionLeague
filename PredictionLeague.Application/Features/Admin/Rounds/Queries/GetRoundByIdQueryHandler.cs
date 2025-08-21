@@ -18,6 +18,25 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
     public async Task<RoundDetailsDto?> Handle(GetRoundByIdQuery request, CancellationToken cancellationToken)
     {
         const string sql = @"
+            WITH RoundPredictionCounts AS (
+                SELECT
+                    r.Id AS RoundId,
+                    COUNT(DISTINCT up.UserId) AS PredictionsCount
+                FROM Rounds r
+                LEFT JOIN Matches m ON m.RoundId = r.Id
+                LEFT JOIN UserPredictions up ON up.MatchId = m.Id
+                WHERE r.Id = @Id
+                GROUP BY r.Id
+            ),
+            ActiveMemberCount AS (
+                SELECT
+                    l.SeasonId,
+                    COUNT(DISTINCT lm.UserId) AS MemberCount
+                FROM LeagueMembers lm
+                JOIN Leagues l ON lm.LeagueId = l.Id
+                WHERE l.SeasonId = (SELECT SeasonId FROM Rounds WHERE Id = @Id) AND lm.Status = 'Approved'
+                GROUP BY l.SeasonId
+            )
             SELECT
                 r.[Id] AS RoundId,
                 r.[SeasonId],
@@ -37,11 +56,19 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 m.[ActualHomeTeamScore],
                 m.[ActualAwayTeamScore],
-                m.[Status] AS 'MatchStatus'
+                m.[Status] AS 'MatchStatus',
+                CAST (   
+                        CASE
+                            WHEN rpc.[PredictionsCount] >= amc.[MemberCount] AND amc.[MemberCount] > 0 THEN 1
+                            ELSE 0
+                        END AS BIT
+                    ) AS AllPredictionsIn
             FROM [Rounds] r
             LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]
             LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
             LEFT JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
+            LEFT JOIN [RoundPredictionCounts] rpc ON r.[Id] = rpc.[RoundId]
+            LEFT JOIN [ActiveMemberCount] amc ON r.[SeasonId] = amc.[SeasonId]
             WHERE r.[Id] = @Id;";
 
         var queryResult = await _dbConnection.QueryAsync<RoundQueryResult>(sql, cancellationToken, new { request.Id });
@@ -58,7 +85,8 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
             firstRow.StartDate,
             firstRow.Deadline,
             Enum.Parse<RoundStatus>(firstRow.Status),
-            results.Count(r => r.MatchId.HasValue)
+            results.Count(r => r.MatchId.HasValue),
+            firstRow.AllPredictionsIn
         );
 
         var roundDetails = new RoundDetailsDto
@@ -106,6 +134,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
         string? AwayTeamLogoUrl,
         int? ActualHomeTeamScore,
         int? ActualAwayTeamScore,
-        string? MatchStatus
+        string? MatchStatus,
+        bool AllPredictionsIn
     );
 }
