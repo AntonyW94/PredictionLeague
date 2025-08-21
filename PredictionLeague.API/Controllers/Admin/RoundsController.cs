@@ -63,7 +63,7 @@ public class RoundsController : ApiControllerBase
 
         if (roundDetails == null)
             return NotFound();
-        
+
         return Ok(roundDetails);
     }
 
@@ -97,6 +97,16 @@ public class RoundsController : ApiControllerBase
     public async Task<IActionResult> SubmitResultsAsync(int roundId, [FromBody] List<MatchResultDto> matches, CancellationToken cancellationToken)
     {
         var command = new UpdateMatchResultsCommand(roundId, matches);
+        await _mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPost("{roundId:int}/send-prediction-reminder-emails")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ChaseEmails(int roundId, CancellationToken cancellationToken)
+    {
+        var command = new SendPredictionsMissingEmailsCommand(roundId);
         await _mediator.Send(command, cancellationToken);
 
         return NoContent();
