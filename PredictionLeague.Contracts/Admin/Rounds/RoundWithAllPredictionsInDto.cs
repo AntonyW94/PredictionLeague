@@ -2,11 +2,12 @@
 
 namespace PredictionLeague.Contracts.Admin.Rounds;
 
-public record RoundDto(
+public record RoundWithAllPredictionsInDto(
     int Id,
     int SeasonId,
     int RoundNumber,
     DateTime StartDate,
     DateTime Deadline,
     RoundStatus Status,
-    int MatchCount);
+    int MatchCount,
+    bool AllPredictionsIn);

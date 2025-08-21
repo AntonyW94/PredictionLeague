@@ -78,7 +78,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
             return null;
         
         var firstRow = results.First();
-        var roundDto = new RoundDto(
+        var roundDto = new RoundWithAllPredictionsInDto(
             firstRow.RoundId,
             firstRow.SeasonId,
             firstRow.RoundNumber,

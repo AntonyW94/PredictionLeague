@@ -111,7 +111,7 @@
 
 @code {
     [Parameter] public int SeasonId { get; set; }
-    private List<RoundDto>? _rounds;
+    private List<RoundWithAllPredictionsInDto>? _rounds;
     private string? _errorMessage;
     private string? _successMessage;
     private int? _firstPublishedRoundId;
@@ -124,7 +124,7 @@
 
         try
         {
-            _rounds = await Http.GetFromJsonAsync<List<RoundDto>>($"api/admin/rounds/by-season/{SeasonId}");
+            _rounds = await Http.GetFromJsonAsync<List<RoundWithAllPredictionsInDto>>($"api/admin/rounds/by-season/{SeasonId}");
 
             if (_rounds != null)
                 _firstPublishedRoundId = _rounds.OrderBy(r => r.Deadline).FirstOrDefault(r => r.Status == RoundStatus.Published)?.Id;

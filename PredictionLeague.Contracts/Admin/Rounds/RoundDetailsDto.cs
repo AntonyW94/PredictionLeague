@@ -2,6 +2,6 @@
 
 public class RoundDetailsDto
 {
-    public RoundDto Round { get; init; } = null!;
+    public RoundWithAllPredictionsInDto Round { get; init; } = null!;
     public List<MatchInRoundDto> Matches { get; init; } = new();
 }

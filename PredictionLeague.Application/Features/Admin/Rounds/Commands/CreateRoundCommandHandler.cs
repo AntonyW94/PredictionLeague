@@ -37,8 +37,7 @@ public class CreateRoundCommandHandler : IRequestHandler<CreateRoundCommand, Rou
             createdRound.StartDate,
             createdRound.Deadline,
             createdRound.Status,
-            createdRound.Matches.Count,
-            false
+            createdRound.Matches.Count
         );
     }
 }

@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Queries;
 
-public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSeasonQuery, IEnumerable<RoundDto>>
+public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSeasonQuery, IEnumerable<RoundWithAllPredictionsInDto>>
 {
     private readonly IApplicationReadDbConnection _dbConnection;
 
@@ -15,7 +15,7 @@ public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSe
         _dbConnection = dbConnection;
     }
 
-    public async Task<IEnumerable<RoundDto>> Handle(FetchRoundsForSeasonQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<RoundWithAllPredictionsInDto>> Handle(FetchRoundsForSeasonQuery request, CancellationToken cancellationToken)
     {
         const string sql = @"
             WITH RoundPredictionCounts AS (
@@ -62,7 +62,7 @@ public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSe
 
         var queryResult = await _dbConnection.QueryAsync<RoundQueryResult>(sql, cancellationToken, new { request.SeasonId });
 
-        return queryResult.Select(r => new RoundDto(
+        return queryResult.Select(r => new RoundWithAllPredictionsInDto(
             r.Id,
             r.SeasonId,
             r.RoundNumber,
