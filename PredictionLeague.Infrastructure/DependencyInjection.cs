@@ -50,5 +50,6 @@ public static class DependencyInjection
         services.AddScoped<PredictionDomainService>();
         
         services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>(); 
+        services.AddScoped<IEmailService, BrevoEmailService>(); 
     }
 }

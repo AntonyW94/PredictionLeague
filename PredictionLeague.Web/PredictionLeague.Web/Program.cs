@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using PredictionLeague.API;
 using PredictionLeague.API.Middleware;
+using PredictionLeague.Application.Configuration;
 using PredictionLeague.Hosting.Shared.Extensions;
 using PredictionLeague.Infrastructure;
 using PredictionLeague.Infrastructure.Data;
@@ -52,6 +53,8 @@ builder.Services.AddControllers();
 builder.Services.AddInfrastructureServices();
 builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddHostedService<DatabaseInitialiser>();
+builder.Services.Configure<BrevoSettings>(builder.Configuration.GetSection("Brevo"));
+
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services));
