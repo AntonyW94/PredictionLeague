@@ -1,4 +1,4 @@
-﻿@page "/admin/seasons/{SeasonId:int}/rounds"
+@page "/admin/seasons/{SeasonId:int}/rounds"
 
 @attribute [Authorize(Roles = RoleNames.Administrator)]
 
@@ -73,7 +73,7 @@
                                 <span class="bi bi-pencil-fill me-2"></span>Edit
                             </button>
 
-                            @if (round.AllPredictionsIn)
+                            @if (round.Id == _firstPublishedRoundId && round.AllPredictionsIn)
                             {
                                 <button class="btn grey-button" disabled>
                                     <span class="bi bi-envelope-fill me-2"></span>Send Chase Emails
