@@ -201,63 +201,33 @@ public class League
         AdministratorUserId = newAdministratorUserId;
     }
 
-    public List<LeagueMember> GetTopScorersForRound(int roundId, IEnumerable<Match> roundMatches)
+    public List<LeagueMember> GetTopScorersForMatches(List<Match> matches)
     {
-        if (!_members.Any())
-            return new List<LeagueMember>();
-        
-        var roundScores = _members
-            .Select(member => new
-            {
-                Member = member,
-                Score = member.Predictions
-                    .Join(roundMatches.Where(m => m.RoundId == roundId),
-                        p => p.MatchId,
-                        m => m.Id,
-                        (p, m) => p.PointsAwarded ?? 0)
-                    .Sum()
-            }).ToList();
+        if (!_members.Any() || !matches.Any())
+            return [];
 
-        if (!roundScores.Any())
-            return new List<LeagueMember>();
+        var matchIds = matches.Select(m => m.Id).ToHashSet();
+
+        var scores = new Dictionary<LeagueMember, int>();
+
+        foreach (var member in _members)
+        {
+            var predictions = member.Predictions.Where(p => matchIds.Contains(p.MatchId)).DistinctBy(p => p.Id);
+            var score = predictions.Sum(p => p.PointsAwarded ?? 0);
+          
+            scores.Add(member, score);
+        }
+
+        if (!scores.Any())
+            return [];
         
-        var maxScore = roundScores.Max(s => s.Score);
+        var maxScore = scores.Max(s => s.Value);
         if (maxScore == 0)
-            return new List<LeagueMember>();
+            return [];
         
-        return roundScores
-            .Where(s => s.Score == maxScore)
-            .Select(s => s.Member)
-            .ToList();
-    }
-
-    public List<LeagueMember> GetTopScorersForMonth(int month, List<Match> allMatchesInMonth)
-    {
-        if (!_members.Any() || !allMatchesInMonth.Any())
-            return new List<LeagueMember>();
-        
-        var monthlyScores = _members
-            .Select(member => new
-            {
-                Member = member,
-                Score = member.Predictions
-                    .Join(allMatchesInMonth.Where(m => m.MatchDateTime.Month == month),
-                        p => p.MatchId,
-                        m => m.Id,
-                        (p, m) => p.PointsAwarded ?? 0)
-                    .Sum()
-            }).ToList();
-
-        if (!monthlyScores.Any())
-            return new List<LeagueMember>();
-        
-        var maxScore = monthlyScores.Max(s => s.Score);
-        if (maxScore == 0)
-            return new List<LeagueMember>(); 
-        
-        return monthlyScores
-            .Where(s => s.Score == maxScore)
-            .Select(s => s.Member)
+        return scores
+            .Where(s => s.Value == maxScore)
+            .Select(s => s.Key)
             .ToList();
     }
 

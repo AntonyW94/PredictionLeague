@@ -110,21 +110,23 @@ public class LeagueRepository : ILeagueRepository
     public async Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken)
     {
         const string sql = @"
-        SELECT
-            l.*, 
-            lm.*, 
-            up.*,
-            lps.*
-        FROM 
-            [Leagues] l
-        INNER JOIN 
-            [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
-        LEFT JOIN 
-            [UserPredictions] up ON lm.[UserId] = up.[UserId] AND up.[MatchId] IN (SELECT Id FROM Matches WHERE RoundId = @RoundId)
-        LEFT JOIN
-            [LeaguePrizeSettings] lps ON l.[Id] = lps.[LeagueId]
-        WHERE 
-            l.[SeasonId] = @SeasonId;";
+        
+        SELECT l.* FROM [Leagues] l
+        WHERE l.[SeasonId] = @SeasonId;
+
+        SELECT lm.* FROM [LeagueMembers] lm
+        INNER JOIN [Leagues] l ON l.Id = lm.LeagueId
+        WHERE l.[SeasonId] = @SeasonId;
+
+        SELECT up.* FROM [UserPredictions] up
+        INNER JOIN [LeagueMembers] lm ON up.UserId = lm.UserId
+        INNER JOIN [Leagues] l ON l.Id = lm.LeagueId
+        WHERE l.[SeasonId] = @SeasonId AND up.MatchId IN (SELECT Id FROM Matches WHERE RoundId IN (SELECT Id FROM Rounds WHERE SeasonId = @SeasonId));
+
+        SELECT lps.*
+        FROM [LeaguePrizeSettings] lps
+        INNER JOIN [Leagues] l ON l.Id = lps.LeagueId
+        WHERE l.[SeasonId] = @SeasonId;";
 
         var command = new CommandDefinition(
             commandText: sql,
@@ -132,45 +134,40 @@ public class LeagueRepository : ILeagueRepository
             cancellationToken: cancellationToken
         );
 
-        var queryResult = await Connection.QueryAsync<League, LeagueMember, UserPrediction, LeaguePrizeSetting, (League, LeagueMember, UserPrediction?, LeaguePrizeSetting?)>(
-            command,
-            (league, member, prediction, prizeSetting) => (league, member, prediction, prizeSetting),
-            splitOn: "Id,LeagueId,Id,Id"
-        );
+        await using var multi = await Connection.QueryMultipleAsync(command);
 
-        var groupedLeagues = queryResult.GroupBy(x => x.Item1.Id).Select(leagueGroup =>
+        var leagues = multi.Read<League>().AsList();
+        var membersLookup = multi.Read<LeagueMember>().ToLookup(m => m.LeagueId);
+        var predictionsLookup = multi.Read<UserPrediction>().ToLookup(p => p.UserId);
+        var prizeSettingsLookup = multi.Read<LeaguePrizeSetting>().ToLookup(ps => ps.LeagueId);
+
+        var result = leagues.Select(league =>
         {
-            var firstLeague = leagueGroup.First().Item1;
-            var members = leagueGroup.GroupBy(x => new { x.Item2.LeagueId, x.Item2.UserId }).Select(memberGroup =>
+            var members = membersLookup[league.Id].Select(member =>
             {
-                var firstMember = memberGroup.First().Item2;
-                var predictions = memberGroup.Select(x => x.Item3).Where(p => p != null).ToList();
-                return new LeagueMember(firstMember.LeagueId, firstMember.UserId, firstMember.Status, firstMember.JoinedAt, firstMember.ApprovedAt, predictions);
+                var predictions = predictionsLookup[member.UserId].ToList();
+                return new LeagueMember(member.LeagueId, member.UserId, member.Status, member.JoinedAt, member.ApprovedAt, predictions);
             }).ToList();
 
-            var prizeSettings = leagueGroup
-                .Where(x => x.Item4 != null)
-                .GroupBy(x => x.Item4!.Id)
-                .Select(g => g.First().Item4)
-                .ToList();
+            var prizeSettings = prizeSettingsLookup[league.Id].ToList();
 
             return new League(
-                firstLeague.Id,
-                firstLeague.Name,
-                firstLeague.Price,
-                firstLeague.SeasonId,
-                firstLeague.AdministratorUserId,
-                firstLeague.EntryCode,
-                firstLeague.CreatedAt,
-                firstLeague.EntryDeadline,
+                league.Id,
+                league.Name,
+                league.Price,
+                league.SeasonId,
+                league.AdministratorUserId,
+                league.EntryCode,
+                league.CreatedAt,
+                league.EntryDeadline,
                 members,
                 prizeSettings
             );
         });
 
-        return groupedLeagues;
+        return result;
     }
-    
+
     public async Task<IEnumerable<League>> GetLeaguesByAdministratorIdAsync(string administratorId, CancellationToken cancellationToken)
     {
         const string sql = @"

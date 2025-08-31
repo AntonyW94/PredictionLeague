@@ -59,9 +59,13 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
             }
         }
 
+        var matchIdsToUpdate = matchesToUpdate.Select(ma => ma.Id).ToHashSet();
+
         var allUpdatedPredictions = leaguesToScore
             .SelectMany(l => l.Members)
-            .SelectMany(m => m.Predictions);
+            .SelectMany(m => m.Predictions)
+            .Where(p => matchIdsToUpdate.Contains(p.MatchId))
+            .DistinctBy(u => u.Id);
 
         await _leagueRepository.UpdatePredictionPointsAsync(allUpdatedPredictions, cancellationToken);
 
@@ -85,7 +89,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
             {
                 await _winningsRepository.DeleteWinningsForRoundAsync(league.Id, round.RoundNumber, cancellationToken);
 
-                var roundWinners = league.GetTopScorersForRound(round.Id, round.Matches);
+                var roundWinners = league.GetTopScorersForMatches(round.Matches.ToList());
                 if (roundWinners.Any())
                 {
                     var individualPrizes = DistributePrizeMoney(roundPrize.PrizeAmount, roundWinners.Count);
@@ -94,6 +98,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
                         var winner = roundWinners[i];
                         var prizeAmount = individualPrizes[i];
                         var newWinning = Winning.Create(winner.UserId, roundPrize.Id, prizeAmount, round.RoundNumber, null);
+                        
                         allNewWinnings.Add(newWinning);
                     }
                 }
@@ -111,7 +116,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
 
                     var allMatchesInMonth = (await _roundRepository.GetAllMatchesForMonthAsync(month, round.SeasonId, cancellationToken)).ToList();
 
-                    var monthlyWinners = league.GetTopScorersForMonth(month, allMatchesInMonth);
+                    var monthlyWinners = league.GetTopScorersForMatches(allMatchesInMonth);
                     if (monthlyWinners.Any())
                     {
                         var individualPrizes = DistributePrizeMoney(monthlyPrize.PrizeAmount, monthlyWinners.Count);
@@ -120,6 +125,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
                             var winner = monthlyWinners[i];
                             var prizeAmount = individualPrizes[i];
                             var newWinning = Winning.Create(winner.UserId, monthlyPrize.Id, prizeAmount, null, month);
+                            
                             allNewWinnings.Add(newWinning);
                         }
                     }
