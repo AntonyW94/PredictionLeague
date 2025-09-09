@@ -1,22 +1,20 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
-using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Authentication.Commands.RefreshToken;
 
 public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, AuthenticationResponse>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUserManager _userManager;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IAuthenticationTokenService _tokenService;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
     public RefreshTokenCommandHandler(
-        UserManager<ApplicationUser> userManager,
+        IUserManager userManager,
         IRefreshTokenRepository refreshTokenRepository,
         IAuthenticationTokenService tokenService,
         ILogger<RefreshTokenCommandHandler> logger)
@@ -55,7 +53,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
             return new FailedAuthenticationResponse("User not found.");
         }
         _logger.LogInformation("Successfully found user: {Email}", user.Email);
-      
+
         storedToken.Revoke();
         await _refreshTokenRepository.UpdateAsync(storedToken, cancellationToken);
 

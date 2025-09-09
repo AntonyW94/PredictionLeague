@@ -1,19 +1,18 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Common.Guards.Season;
-using PredictionLeague.Domain.Models;
 using System.Security.Authentication;
 
 namespace PredictionLeague.Application.Features.Admin.Users.Commands;
 
 public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUserManager _userManager;
     private readonly ILeagueRepository _leagueRepository;
 
-    public DeleteUserCommandHandler(UserManager<ApplicationUser> userManager, ILeagueRepository leagueRepository)
+    public DeleteUserCommandHandler(IUserManager userManager, ILeagueRepository leagueRepository)
     {
         _userManager = userManager;
         _leagueRepository = leagueRepository;
@@ -50,6 +49,6 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand>
 
         var result = await _userManager.DeleteAsync(userToDelete);
         if (!result.Succeeded)
-            throw new Exception($"Failed to delete user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            throw new Exception($"Failed to delete user: {string.Join(", ", result.Errors)}");
     }
 }

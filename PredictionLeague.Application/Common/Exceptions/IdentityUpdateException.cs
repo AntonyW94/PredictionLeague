@@ -1,12 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
-
-namespace PredictionLeague.Application.Common.Exceptions;
+﻿namespace PredictionLeague.Application.Common.Exceptions;
 
 public class IdentityUpdateException : Exception
 {
-    public IEnumerable<IdentityError> Errors { get; }
+    public IEnumerable<string> Errors { get; }
 
-    public IdentityUpdateException(IEnumerable<IdentityError> errors) : base("One or more Identity errors occurred.")
+    public IdentityUpdateException(IEnumerable<string> errors) : base("One or more Identity errors occurred.")
     {
         Errors = errors;
     }

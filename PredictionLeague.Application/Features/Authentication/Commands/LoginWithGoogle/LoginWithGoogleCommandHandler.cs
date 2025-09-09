@@ -1,6 +1,5 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using PredictionLeague.Application.Common.Exceptions;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
@@ -12,10 +11,10 @@ namespace PredictionLeague.Application.Features.Authentication.Commands.LoginWit
 
 public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleCommand, AuthenticationResponse>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUserManager _userManager;
     private readonly IAuthenticationTokenService _tokenService;
 
-    public LoginWithGoogleCommandHandler(UserManager<ApplicationUser> userManager, IAuthenticationTokenService tokenService)
+    public LoginWithGoogleCommandHandler(IUserManager userManager, IAuthenticationTokenService tokenService)
     {
         _userManager = userManager;
         _tokenService = tokenService;
@@ -73,13 +72,13 @@ public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleComm
 
         await _userManager.AddToRoleAsync(newUser, nameof(ApplicationUserRole.Player));
 
-        var addLoginResult = await _userManager.AddLoginAsync(newUser, new UserLoginInfo(provider, providerKey, provider));
+        var addLoginResult = await _userManager.AddLoginAsync(newUser,provider, providerKey);
         return !addLoginResult.Succeeded ? throw new IdentityUpdateException(addLoginResult.Errors) : newUser;
     }
 
     private async Task<ApplicationUser> LinkExternalLoginToExistingUser(ApplicationUser user, string provider, string providerKey)
     {
-        var addLoginResult = await _userManager.AddLoginAsync(user, new UserLoginInfo(provider, providerKey, provider));
+        var addLoginResult = await _userManager.AddLoginAsync(user, provider, providerKey);
         return !addLoginResult.Succeeded ? throw new IdentityUpdateException(addLoginResult.Errors) : user;
     }
 }

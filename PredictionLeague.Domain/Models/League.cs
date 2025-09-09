@@ -1,5 +1,5 @@
 ﻿using Ardalis.GuardClauses;
-using System.Text;
+using PredictionLeague.Domain.Services;
 
 namespace PredictionLeague.Domain.Models;
 
@@ -104,25 +104,17 @@ public class League
 
     #region Business Logic Methods
 
-    public async Task GenerateEntryCode(Func<string, Task<bool>> isCodeUnique)
+    public async Task GenerateEntryCode(IEntryCodeUniquenessChecker uniquenessChecker, CancellationToken cancellationToken)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         var random = new Random();
-        var codeBuilder = new StringBuilder(6);
-        string newCode;
+        var isUnique = false;
 
-        do
+        while (!isUnique)
         {
-            codeBuilder.Clear();
-            for (var i = 0; i < 6; i++)
-            {
-                codeBuilder.Append(chars[random.Next(chars.Length)]);
-            }
-            newCode = codeBuilder.ToString();
+            EntryCode = new string(Enumerable.Repeat(chars, 6).Select(s => s[random.Next(s.Length)]).ToArray());
+            isUnique = await uniquenessChecker.IsCodeUnique(EntryCode, cancellationToken);
         }
-        while (!await isCodeUnique(newCode));
-
-        EntryCode = newCode;
     }
 
     public void UpdateDetails(string newName, decimal newPrice, DateTime newEntryDeadline, Season season)

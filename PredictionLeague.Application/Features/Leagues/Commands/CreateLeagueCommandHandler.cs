@@ -4,6 +4,7 @@ using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Guards.Season;
 using PredictionLeague.Domain.Models;
+using PredictionLeague.Domain.Services;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 
@@ -11,11 +12,13 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
 {
     private readonly ILeagueRepository _leagueRepository;
     private readonly ISeasonRepository _seasonRepository;
+    private readonly IEntryCodeUniquenessChecker _uniquenessChecker;
 
-    public CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository)
+    public CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IEntryCodeUniquenessChecker uniquenessChecker)
     {
         _leagueRepository = leagueRepository;
         _seasonRepository = seasonRepository;
+        _uniquenessChecker = uniquenessChecker;
     }
 
     public async Task<LeagueDto> Handle(CreateLeagueCommand request, CancellationToken cancellationToken)
@@ -31,10 +34,8 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
              request.EntryDeadline,
              season
          );
-       
-        await league.GenerateEntryCode(
-            async code => !await _leagueRepository.DoesEntryCodeExistAsync(code, cancellationToken)
-        );
+
+        await league.GenerateEntryCode(_uniquenessChecker, cancellationToken);
         
         var createdLeague = await _leagueRepository.CreateAsync(league, cancellationToken);
 

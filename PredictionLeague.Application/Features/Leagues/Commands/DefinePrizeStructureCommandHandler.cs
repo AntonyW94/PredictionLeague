@@ -1,7 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts;
 using PredictionLeague.Domain.Common.Guards.Season;
 using PredictionLeague.Domain.Models;
@@ -12,9 +12,9 @@ public class DefinePrizeStructureCommandHandler : IRequestHandler<DefinePrizeStr
 {
     private readonly ILeagueRepository _leagueRepository;
     private readonly ISeasonRepository _seasonRepository;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUserManager _userManager;
 
-    public DefinePrizeStructureCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, UserManager<ApplicationUser> userManager)
+    public DefinePrizeStructureCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IUserManager userManager)
     {
         _leagueRepository = leagueRepository;
         _seasonRepository = seasonRepository;

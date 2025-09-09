@@ -47,7 +47,7 @@ public class ErrorHandlingMiddleware
         catch (IdentityUpdateException ex)
         {
             _logger.LogWarning("Identity Update Error: {Message}", ex.Errors);
-            await HandleKnownExceptionAsync(context, HttpStatusCode.BadRequest, new { errors = ex.Errors.Select(e => e.Description) });
+            await HandleKnownExceptionAsync(context, HttpStatusCode.BadRequest, new { errors = ex.Errors });
         }
         catch (UnauthorizedAccessException ex)
         {

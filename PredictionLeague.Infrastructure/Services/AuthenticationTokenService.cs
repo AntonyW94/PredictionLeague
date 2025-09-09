@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
@@ -13,11 +12,11 @@ namespace PredictionLeague.Infrastructure.Services;
 
 public class AuthenticationTokenService : IAuthenticationTokenService
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUserManager _userManager;
     private readonly IConfiguration _configuration;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-    public AuthenticationTokenService(UserManager<ApplicationUser> userManager, IConfiguration configuration, IRefreshTokenRepository refreshTokenRepository)
+    public AuthenticationTokenService(IUserManager userManager, IConfiguration configuration, IRefreshTokenRepository refreshTokenRepository)
     {
         _userManager = userManager;
         _configuration = configuration;
@@ -30,12 +29,12 @@ public class AuthenticationTokenService : IAuthenticationTokenService
 
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email!),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim("FirstName", user.FirstName),
-            new Claim("LastName", user.LastName),
-            new Claim("FullName", $"{user.FirstName} {user.LastName}")
+            new(ClaimTypes.NameIdentifier, user.Id),
+            new(JwtRegisteredClaimNames.Email, user.Email!),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("FirstName", user.FirstName),
+            new("LastName", user.LastName),
+            new("FullName", $"{user.FirstName} {user.LastName}")
         }.Union(userRoles.Select(role => new Claim("role", role)));
 
         var jwtSettings = _configuration.GetSection("JwtSettings");

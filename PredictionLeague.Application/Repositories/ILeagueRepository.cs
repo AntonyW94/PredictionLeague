@@ -17,7 +17,6 @@ public interface ILeagueRepository
     Task<League?> GetByEntryCodeAsync(string entryCode, CancellationToken cancellationToken);
     Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken);
     Task<IEnumerable<League>> GetLeaguesByAdministratorIdAsync(string administratorId, CancellationToken cancellationToken);
-    Task<bool> DoesEntryCodeExistAsync(string entryCode, CancellationToken cancellationToken);
 
     #endregion
 

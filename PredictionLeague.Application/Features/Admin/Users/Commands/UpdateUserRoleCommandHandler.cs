@@ -1,16 +1,15 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
-using Microsoft.AspNetCore.Identity;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Common.Guards.Season;
-using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Admin.Users.Commands;
 
 public class UpdateUserRoleCommandHandler : IRequestHandler<UpdateUserRoleCommand>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUserManager _userManager;
 
-    public UpdateUserRoleCommandHandler(UserManager<ApplicationUser> userManager)
+    public UpdateUserRoleCommandHandler(IUserManager userManager)
     {
         _userManager = userManager;
     }
@@ -24,7 +23,7 @@ public class UpdateUserRoleCommandHandler : IRequestHandler<UpdateUserRoleComman
         await _userManager.RemoveFromRolesAsync(user, currentRoles);
 
         var result = await _userManager.AddToRoleAsync(user, request.NewRole);
-        if (!result.Succeeded) 
-            throw new Exception($"Failed to update role: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+        if (!result.Succeeded)
+            throw new Exception($"Failed to update role: {string.Join(", ", result.Errors)}");
     }
 }

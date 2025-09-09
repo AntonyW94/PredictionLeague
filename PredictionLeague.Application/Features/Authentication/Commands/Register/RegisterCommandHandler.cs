@@ -1,5 +1,4 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Identity;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
 using PredictionLeague.Domain.Common.Enumerations;
@@ -9,10 +8,10 @@ namespace PredictionLeague.Application.Features.Authentication.Commands.Register
 
 public class RegisterCommandHandler : IRequestHandler<RegisterCommand, AuthenticationResponse>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUserManager _userManager;
     private readonly IAuthenticationTokenService _tokenService;
 
-    public RegisterCommandHandler(UserManager<ApplicationUser> userManager, IAuthenticationTokenService tokenService)
+    public RegisterCommandHandler(IUserManager userManager, IAuthenticationTokenService tokenService)
     {
         _userManager = userManager;
         _tokenService = tokenService;
