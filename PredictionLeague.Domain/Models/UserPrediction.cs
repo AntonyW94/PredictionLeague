@@ -9,8 +9,8 @@ public class UserPrediction
     public int Id { get; init; }
     public int MatchId { get; private set; }
     public string UserId { get; private set; } = string.Empty;
-    private int PredictedHomeScore { get; init; }
-    private int PredictedAwayScore { get; init; }
+    public int PredictedHomeScore { get; init; }
+    public int PredictedAwayScore { get; init; }
     public int? PointsAwarded { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
