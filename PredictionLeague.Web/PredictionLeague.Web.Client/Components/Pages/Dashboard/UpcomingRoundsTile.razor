@@ -39,7 +39,7 @@
                                 <div class="carousel-item-content">
                                     <RoundCard Round="round"
                                                IsChasing="DashboardState.ChasingRoundId == round.Id"
-                                               OnChaseEmailsClicked="async (id) => await DashboardState.SendChaseEmailsAsync(id)"/>
+                                               OnChaseEmailsClicked="async id => await DashboardState.SendChaseEmailsAsync(id)"/>
 
                                 </div>
                             </div>

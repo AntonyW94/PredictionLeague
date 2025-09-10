@@ -1,8 +1,10 @@
 ﻿using Ardalis.GuardClauses;
 using PredictionLeague.Domain.Common.Enumerations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Domain.Models;
 
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class LeaguePrizeSetting
 {
     public int Id { get; init; }
@@ -10,11 +12,10 @@ public class LeaguePrizeSetting
     public PrizeType PrizeType { get; private set; }
     public int Rank { get; private set; }
     public decimal PrizeAmount { get; private set; }
-    public string? PrizeDescription { get; private set; }
 
     private LeaguePrizeSetting() { }
 
-    public static LeaguePrizeSetting Create(int leagueId, PrizeType prizeType, int rank, decimal prizeAmount, string? prizeDescription)
+    public static LeaguePrizeSetting Create(int leagueId, PrizeType prizeType, int rank, decimal prizeAmount)
     {
         Guard.Against.NegativeOrZero(leagueId, nameof(leagueId));
         Guard.Against.NegativeOrZero(rank, nameof(rank));
@@ -25,8 +26,7 @@ public class LeaguePrizeSetting
             LeagueId = leagueId,
             PrizeType = prizeType,
             Rank = rank,
-            PrizeAmount = prizeAmount,
-            PrizeDescription = prizeDescription
+            PrizeAmount = prizeAmount
         };
     }
 }

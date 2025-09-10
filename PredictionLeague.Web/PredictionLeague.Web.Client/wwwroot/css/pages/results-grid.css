@@ -51,7 +51,6 @@
 
     .results-grid .score-cell {
         font-weight: bold;
-        font-family: monospace;
         font-size: 1.1em;
         background: var(--pl-purple-800);
     }

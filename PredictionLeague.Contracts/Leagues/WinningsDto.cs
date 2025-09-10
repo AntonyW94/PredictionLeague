@@ -8,7 +8,7 @@ public class WinningsDto
     public decimal TotalPrizePot { get; init; }
 
     public WinningsLeaderboardDto Leaderboard { get; init; } = new();
-    public List<PrizeDto> RoundPrizes { get; set; } = new();
-    public List<PrizeDto> MonthlyPrizes { get; set; } = new();
-    public List<PrizeDto> EndOfSeasonPrizes { get; init; } = new();
+    public List<PrizeDto> RoundPrizes { get; set; } = [];
+    public List<PrizeDto> MonthlyPrizes { get; set; } = [];
+    public List<PrizeDto> EndOfSeasonPrizes { get; init; } = [];
 }

@@ -121,12 +121,7 @@ public class LeagueRepository : ILeagueRepository
         SELECT up.* FROM [UserPredictions] up
         INNER JOIN [LeagueMembers] lm ON up.UserId = lm.UserId
         INNER JOIN [Leagues] l ON l.Id = lm.LeagueId
-        WHERE l.[SeasonId] = @SeasonId AND up.MatchId IN (SELECT Id FROM Matches WHERE RoundId IN (SELECT Id FROM Rounds WHERE SeasonId = @SeasonId));
-
-        SELECT lps.*
-        FROM [LeaguePrizeSettings] lps
-        INNER JOIN [Leagues] l ON l.Id = lps.LeagueId
-        WHERE l.[SeasonId] = @SeasonId;";
+        WHERE l.[SeasonId] = @SeasonId AND up.MatchId IN (SELECT Id FROM Matches WHERE RoundId IN (SELECT Id FROM Rounds WHERE SeasonId = @SeasonId));";
 
         var command = new CommandDefinition(
             commandText: sql,
@@ -139,8 +134,7 @@ public class LeagueRepository : ILeagueRepository
         var leagues = multi.Read<League>().AsList();
         var membersLookup = multi.Read<LeagueMember>().ToLookup(m => m.LeagueId);
         var predictionsLookup = multi.Read<UserPrediction>().ToLookup(p => p.UserId);
-        var prizeSettingsLookup = multi.Read<LeaguePrizeSetting>().ToLookup(ps => ps.LeagueId);
-
+        
         var result = leagues.Select(league =>
         {
             var members = membersLookup[league.Id].Select(member =>
@@ -148,8 +142,6 @@ public class LeagueRepository : ILeagueRepository
                 var predictions = predictionsLookup[member.UserId].ToList();
                 return new LeagueMember(member.LeagueId, member.UserId, member.Status, member.JoinedAt, member.ApprovedAt, predictions);
             }).ToList();
-
-            var prizeSettings = prizeSettingsLookup[league.Id].ToList();
 
             return new League(
                 league.Id,
@@ -161,11 +153,72 @@ public class LeagueRepository : ILeagueRepository
                 league.CreatedAt,
                 league.EntryDeadline,
                 members,
-                prizeSettings
+                null
             );
         });
 
         return result;
+    }
+
+    public async Task<League?> GetByIdWithAllDataAsync(int id, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT l.* FROM [Leagues] l
+            WHERE l.[Id] = @Id;
+
+            SELECT lm.* FROM [LeagueMembers] lm
+            WHERE lm.[LeagueId] = @Id;
+
+            SELECT up.* FROM [UserPredictions] up
+            INNER JOIN [LeagueMembers] lm ON up.LeagueMemberId = lm.Id
+            WHERE lm.[LeagueId] = @Id;
+
+            SELECT lps.*
+            FROM [LeaguePrizeSettings] lps
+            WHERE lps.[LeagueId] = @Id;";
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { Id = id },
+            cancellationToken: cancellationToken
+        );
+
+        await using var multi = await Connection.QueryMultipleAsync(command);
+
+        var league = (await multi.ReadAsync<League>()).FirstOrDefault();
+        if (league == null)
+            return null;
+      
+        var membersData = (await multi.ReadAsync<LeagueMember>()).ToList();
+        var predictionsLookup = (await multi.ReadAsync<UserPrediction>()).ToLookup(p => p.UserId);
+        var prizeSettings = (await multi.ReadAsync<LeaguePrizeSetting>()).ToList();
+
+        var hydratedMembers = membersData.Select(member =>
+        {
+            var memberPredictions = predictionsLookup[member.UserId].ToList();
+
+            return new LeagueMember(
+                member.LeagueId,
+                member.UserId,
+                member.Status,
+                member.JoinedAt,
+                member.ApprovedAt,
+                memberPredictions
+            );
+        }).ToList();
+       
+        return new League(
+            league.Id,
+            league.Name,
+            league.Price,
+            league.SeasonId,
+            league.AdministratorUserId,
+            league.EntryCode,
+            league.CreatedAt,
+            league.EntryDeadline,
+            hydratedMembers,
+            prizeSettings
+        );
     }
 
     public async Task<IEnumerable<League>> GetLeaguesByAdministratorIdAsync(string administratorId, CancellationToken cancellationToken)

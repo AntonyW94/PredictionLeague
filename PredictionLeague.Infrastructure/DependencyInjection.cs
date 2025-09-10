@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using PredictionLeague.Application.Data;
+using PredictionLeague.Application.Features.Admin.Rounds.Strategies;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Models;
@@ -46,6 +47,11 @@ public static class DependencyInjection
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
         services.AddScoped<IWinningsRepository, WinningsRepository>();
+
+        services.AddScoped<IPrizeStrategy, RoundPrizeStrategy>();
+        services.AddScoped<IPrizeStrategy, MonthlyPrizeStrategy>();
+        services.AddScoped<IPrizeStrategy, OverallPrizeStrategy>();
+        services.AddScoped<IPrizeStrategy, MostExactScoresPrizeStrategy>();
 
         services.AddScoped<PredictionDomainService>();
         

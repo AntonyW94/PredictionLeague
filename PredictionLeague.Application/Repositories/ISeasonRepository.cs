@@ -13,8 +13,7 @@ public interface ISeasonRepository
     #region Read
 
     Task<Season?> GetByIdAsync(int id, CancellationToken cancellationToken);
-    Task<int> GetRoundCountAsync(int seasonId, CancellationToken cancellationToken);
-  
+
     #endregion
 
     #region Update

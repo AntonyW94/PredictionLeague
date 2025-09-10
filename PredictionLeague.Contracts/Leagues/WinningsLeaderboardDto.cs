@@ -2,5 +2,5 @@
 
 public class WinningsLeaderboardDto
 {
-    public List<WinningsLeaderboardEntryDto> Entries { get; set; } = new();
+    public List<WinningsLeaderboardEntryDto> Entries { get; set; } = [];
 }

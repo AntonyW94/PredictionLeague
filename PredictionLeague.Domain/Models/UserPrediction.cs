@@ -1,14 +1,16 @@
 ﻿using Ardalis.GuardClauses;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Domain.Models;
 
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class UserPrediction
 {
     public int Id { get; init; }
     public int MatchId { get; private set; }
     public string UserId { get; private set; } = string.Empty;
-    public int PredictedHomeScore { get; private init; }
-    public int PredictedAwayScore { get; private init; }
+    private int PredictedHomeScore { get; init; }
+    private int PredictedAwayScore { get; init; }
     public int? PointsAwarded { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }

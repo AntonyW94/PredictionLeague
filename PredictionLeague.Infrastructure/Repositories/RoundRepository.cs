@@ -150,6 +150,28 @@ public class RoundRepository : IRoundRepository
         return await Connection.ExecuteScalarAsync<bool>(command);
     }
 
+    public async Task<bool> IsLastRoundOfSeasonAsync(int roundId, int seasonId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT 
+                CASE WHEN r.[RoundNumber] = s.[NumberOfRounds] THEN 1 ELSE 0 END
+            FROM 
+                [dbo].[Rounds] r
+            INNER JOIN 
+                [dbo].[Seasons] s ON r.SeasonId = s.Id
+            WHERE 
+                r.Id = @RoundId 
+                AND r.SeasonId = @SeasonId;";
+
+        var command = new CommandDefinition(
+            sql,
+            new { RoundId = roundId, SeasonId = seasonId },
+            cancellationToken: cancellationToken
+        );
+
+        return await Connection.ExecuteScalarAsync<bool>(command);
+    }
+
     public async Task<IEnumerable<Match>> GetAllMatchesForMonthAsync(int month, int seasonId, CancellationToken cancellationToken)
     {
         const string sql = @"

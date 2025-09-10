@@ -80,20 +80,55 @@ public class WinningsRepository : IWinningsRepository
         await Connection.ExecuteAsync(command);
     }
 
-    public async Task DeleteWinningsForEndOfSeasonAsync(int leagueId, CancellationToken cancellationToken)
+    public async Task DeleteWinningsForOverallAsync(int leagueId, CancellationToken cancellationToken)
     {
         const string sql = @"
             DELETE 
                 w
             FROM 
                 [Winnings] w
-            JOIN 
+            INNER JOIN 
                 [LeaguePrizeSettings] lps ON w.[LeaguePrizeSettingId] = lps.[Id]
             WHERE 
-                lps.[LeagueId] = @LeagueId 
-                AND lps.[PrizeType] IN @PrizeTypes";
+                lps.[LeagueId] = @leagueId
+                AND lps.[PrizeType] = @PrizeType;";
 
-        var command = new CommandDefinition(sql, new { LeagueId = leagueId, PrizeTypes = new List<string> { nameof(PrizeType.Overall), nameof(PrizeType.MostExactScores) } }, cancellationToken: cancellationToken);
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                LeagueId = leagueId,
+                PrizeType = PrizeType.Overall
+            },
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(command);
+    }
+
+    public async Task DeleteWinningsForMostExactScoresAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            DELETE 
+                w
+            FROM 
+                [Winnings] w
+            INNER JOIN 
+                [LeaguePrizeSettings] lps ON w.[LeaguePrizeSettingId] = lps.[Id]
+            WHERE 
+                lps.[LeagueId] = @LeagueId
+                AND lps.[PrizeType] = @PrizeType;";
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                LeagueId = leagueId,
+                PrizeType = PrizeType.MostExactScores
+            },
+            cancellationToken: cancellationToken
+        );
+
         await Connection.ExecuteAsync(command);
     }
 }

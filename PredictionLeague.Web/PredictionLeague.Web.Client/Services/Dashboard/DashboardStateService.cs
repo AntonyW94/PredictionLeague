@@ -17,9 +17,8 @@ public class DashboardStateService : IDashboardStateService
     public bool IsAvailableLeaguesLoading { get; private set; }
     public bool IsLeaderboardsLoading { get; private set; }
     public bool IsUpcomingRoundsLoading { get; private set; }
-    public bool IsChasing => _isChasing;
 
-    public int? ChasingRoundId => _chasingRoundId;
+    public int? ChasingRoundId { get; private set; }
 
     public string? AvailableLeaguesErrorMessage { get; private set; }
     public string? MyLeaguesErrorMessage { get; private set; }
@@ -32,8 +31,6 @@ public class DashboardStateService : IDashboardStateService
 
     private readonly ILeagueService _leagueService;
     private readonly IRoundService _roundService;
-    private bool _isChasing;
-    private int? _chasingRoundId;
 
 
     public DashboardStateService(ILeagueService leagueService, IRoundService roundService)
@@ -169,8 +166,7 @@ public class DashboardStateService : IDashboardStateService
 
     public async Task SendChaseEmailsAsync(int roundId)
     {
-        _isChasing = true;
-        _chasingRoundId = roundId;
+        ChasingRoundId = roundId;
 
         UpcomingRoundsErrorMessage = null;
 
@@ -186,8 +182,7 @@ public class DashboardStateService : IDashboardStateService
             UpcomingRoundsErrorMessage = "Could not send chase emails";
         }
 
-        _isChasing = false;
-        _chasingRoundId = null;
+        ChasingRoundId = null;
 
         NotifyStateChanged();
     }

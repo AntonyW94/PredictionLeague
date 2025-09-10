@@ -19,16 +19,6 @@ public class BrevoEmailService : IEmailService
         _logger = logger;
     }
 
-    public async System.Threading.Tasks.Task SendHtmlEmailAsync(string to, string subject, string htmlContent)
-    {
-        var sendSmtpEmail = GetBaseEmail(to);
-
-        sendSmtpEmail.Subject = subject;
-        sendSmtpEmail.HtmlContent = htmlContent;
-
-        await SendEmailAsync(sendSmtpEmail);
-    }
-
     public async System.Threading.Tasks.Task SendTemplatedEmailAsync(string to, long templateId, object parameters)
     {
         var sendSmtpEmail = GetBaseEmail(to);

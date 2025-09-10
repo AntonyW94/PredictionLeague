@@ -15,6 +15,7 @@ public interface ILeagueRepository
 
     Task<League?> GetByIdAsync(int id, CancellationToken cancellationToken);
     Task<League?> GetByEntryCodeAsync(string entryCode, CancellationToken cancellationToken);
+    Task<League?> GetByIdWithAllDataAsync(int id, CancellationToken cancellationToken);
     Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken);
     Task<IEnumerable<League>> GetLeaguesByAdministratorIdAsync(string administratorId, CancellationToken cancellationToken);
 

@@ -1,9 +1,12 @@
-﻿namespace PredictionLeague.Application.Configuration;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace PredictionLeague.Application.Configuration;
+
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class BrevoSettings
 {
-    public string ApiKey { get; set; }
-    public string SendFromName { get; set; }
-    public string SendFromEmail { get; set; }
-    public TemplateSettings Templates { get; set; }
+    public string? ApiKey { get; init; }
+    public string? SendFromName { get; init; }
+    public string? SendFromEmail { get; init; }
+    public TemplateSettings? Templates { get; init; }
 }

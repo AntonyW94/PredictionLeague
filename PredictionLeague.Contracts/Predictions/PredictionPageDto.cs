@@ -9,5 +9,5 @@ public class PredictionPageDto
     public string SeasonName { get; init; } = string.Empty;
     public DateTime Deadline { get; init; }
     public bool IsPastDeadline { get; init; }
-    public List<MatchPredictionDto> Matches { get; init; } = new();
+    public List<MatchPredictionDto> Matches { get; init; } = [];
 }

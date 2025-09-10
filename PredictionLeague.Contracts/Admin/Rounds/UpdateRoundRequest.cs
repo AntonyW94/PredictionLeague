@@ -9,5 +9,5 @@ public class UpdateRoundRequest
     public DateTime StartDate { get; set; }
     public DateTime Deadline { get; set; }
     public RoundStatus Status { get; set; }
-    public List<UpdateMatchRequest> Matches { get; init; } = new();
+    public List<UpdateMatchRequest> Matches { get; init; } = [];
 }

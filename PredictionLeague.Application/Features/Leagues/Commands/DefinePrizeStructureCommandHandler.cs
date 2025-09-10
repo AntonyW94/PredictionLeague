@@ -48,8 +48,7 @@ public class DefinePrizeStructureCommandHandler : IRequestHandler<DefinePrizeStr
             request.LeagueId,
             p.PrizeType,
             p.Rank,
-            p.PrizeAmount,
-            p.PrizeDescription
+            p.PrizeAmount
         )).ToList();
 
         league.DefinePrizes(prizeSettings);

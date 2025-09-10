@@ -3,29 +3,33 @@ using Microsoft.Extensions.Options;
 using PredictionLeague.Application.Configuration;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Services;
+using PredictionLeague.Contracts.Admin.Users;
 using PredictionLeague.Domain.Common.Enumerations;
 
-namespace PredictionLeague.Application.Features.Admin.Rounds.Commands
+namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
+
+public class SendPredictionsMissingEmailsCommandHandler : IRequestHandler<SendPredictionsMissingEmailsCommand>
 {
-    public class SendPredictionsMissingEmailsCommandHandler : IRequestHandler<SendPredictionsMissingEmailsCommand>
+    private readonly IApplicationReadDbConnection _dbConnection;
+    private readonly IEmailService _emailService;
+    private readonly BrevoSettings _brevoSettings;
+
+    public SendPredictionsMissingEmailsCommandHandler(
+        IApplicationReadDbConnection dbConnection,
+        IEmailService emailService,
+        IOptions<BrevoSettings> brevoSettings)
     {
-        private readonly IApplicationReadDbConnection _dbConnection;
-        private readonly IEmailService _emailService;
-        private readonly BrevoSettings _brevoSettings;
+        _dbConnection = dbConnection;
+        _emailService = emailService;
+        _brevoSettings = brevoSettings.Value;
+    }
 
-        public SendPredictionsMissingEmailsCommandHandler(
-            IApplicationReadDbConnection dbConnection,
-            IEmailService emailService,
-            IOptions<BrevoSettings> brevoSettings)
-        {
-            _dbConnection = dbConnection;
-            _emailService = emailService;
-            _brevoSettings = brevoSettings.Value;
-        }
-
-        public async Task Handle(SendPredictionsMissingEmailsCommand request, CancellationToken cancellationToken)
-        {
-            const string sql = @"
+    public async Task Handle(SendPredictionsMissingEmailsCommand request, CancellationToken cancellationToken)
+    {
+        if (_brevoSettings.Templates == null)
+            return;
+        
+        const string sql = @"
             SELECT DISTINCT
                 u.[Email],
                 u.[FirstName],
@@ -48,21 +52,18 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Commands
                   WHERE m.[RoundId] = r.[Id] AND up.[UserId] = u.[Id]
               );";
 
-            var usersToChase = await _dbConnection.QueryAsync<ChaseUserDto>(sql, cancellationToken, new { request.RoundId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
-            var templateId = _brevoSettings.Templates.PredictionsMissing;
+        var usersToChase = await _dbConnection.QueryAsync<ChaseUserDto>(sql, cancellationToken, new { request.RoundId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+        var templateId = _brevoSettings.Templates.PredictionsMissing;
 
-            foreach (var user in usersToChase)
+        foreach (var user in usersToChase)
+        {
+            var parameters = new
             {
-                var parameters = new
-                {
-                    FIRST_NAME = user.FirstName,
-                    ROUND_NAME = user.RoundName,
-                    DEADLINE = user.Deadline.ToString("dddd, dd MMMM yyyy 'at' HH:mm")
-                };
-                await _emailService.SendTemplatedEmailAsync(user.Email, templateId, parameters);
-            }
+                FIRST_NAME = user.FirstName,
+                ROUND_NAME = user.RoundName,
+                DEADLINE = user.Deadline.ToString("dddd, dd MMMM yyyy 'at' HH:mm")
+            };
+            await _emailService.SendTemplatedEmailAsync(user.Email, templateId, parameters);
         }
     }
-
-    public record ChaseUserDto(string Email, string FirstName, string RoundName, DateTime Deadline);
 }

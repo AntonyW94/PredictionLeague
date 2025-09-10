@@ -4,5 +4,5 @@ namespace PredictionLeague.Contracts.Leagues;
 
 public class CreateLeaguePageData
 {
-    public List<SeasonLookupDto> Seasons { get; init; } = new();
+    public List<SeasonLookupDto> Seasons { get; init; } = [];
 }

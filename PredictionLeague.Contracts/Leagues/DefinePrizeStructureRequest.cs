@@ -2,5 +2,5 @@
 
 public class DefinePrizeStructureRequest
 {
-    public List<DefinePrizeSettingDto> PrizeSettings { get; init; } = new();
+    public List<DefinePrizeSettingDto> PrizeSettings { get; init; } = [];
 }

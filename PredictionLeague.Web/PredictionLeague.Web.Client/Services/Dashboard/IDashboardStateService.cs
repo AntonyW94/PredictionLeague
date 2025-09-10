@@ -15,7 +15,6 @@ public interface IDashboardStateService
     bool IsAvailableLeaguesLoading { get; }
     bool IsLeaderboardsLoading { get; }
     bool IsUpcomingRoundsLoading { get; }
-    bool IsChasing { get; }
     
     int? ChasingRoundId { get; }
 

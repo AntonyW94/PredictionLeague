@@ -44,7 +44,13 @@
 
                                     @if (league.Rank.HasValue && league.MemberCount.HasValue)
                                     {
-                                        var statusPillClass = league.Rank == 1 ? "badge-group--gold" : league.Rank == 2 ? "badge-group--silver" : league.Rank == 3 ? "badge-group--bronze" : "badge-group--blue";
+                                        var statusPillClass = league.Rank switch
+                                        {
+                                            1 => "badge-group--gold",
+                                            2 => "badge-group--silver",
+                                            3 => "badge-group--bronze",
+                                            _ => "badge-group--blue"
+                                        };
 
                                         <div class="badge-group @statusPillClass ms-4">
                                             <span class="badge-icon" title="Rank"><i class="bi bi-trophy-fill"></i></span>

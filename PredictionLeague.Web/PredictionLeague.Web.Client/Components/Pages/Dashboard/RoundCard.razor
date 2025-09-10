@@ -44,9 +44,18 @@
         <AuthorizeView Roles="@RoleNames.Administrator">
             @if (!Round.AllPredictionsIn && Round.Deadline > DateTime.Now)
             {
-                <button class="btn purple-accent-button" @onclick="() => OnChaseEmailsClicked.InvokeAsync(Round.Id)">
-                    <span class="bi bi-envelope-fill me-2"></span>Send Chase Emails
-                </button>
+                @if (IsChasing)
+                {
+                    <button class="btn purple-accent-button" disabled>
+                        <span class="spinner-border spinner-border-s me-2" role="status" aria-hidden="true"></span>Sending...
+                    </button>
+                }
+                else
+                {
+                    <button class="btn purple-accent-button" @onclick="() => OnChaseEmailsClicked.InvokeAsync(Round.Id)">
+                        <span class="bi bi-envelope-fill me-2"></span>Send Chase Emails
+                    </button>
+                }
             }
 
             <NavLink href="@($"/admin/rounds/{Round.Id}/results")" class="btn blue-light-button">

@@ -4,24 +4,27 @@ using PredictionLeague.Application.Configuration;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Services;
 
-namespace PredictionLeague.Application.Features.Leagues.Commands
+namespace PredictionLeague.Application.Features.Leagues.Commands;
+
+public class NotifyLeagueAdminOfJoinRequestCommandHandler : IRequestHandler<NotifyLeagueAdminOfJoinRequestCommand>
 {
-    public class NotifyLeagueAdminOfJoinRequestCommandHandler : IRequestHandler<NotifyLeagueAdminOfJoinRequestCommand>
+    private readonly IApplicationReadDbConnection _dbConnection;
+    private readonly IEmailService _emailService;
+    private readonly BrevoSettings _brevoSettings;
+
+    public NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConnection dbConnection, IEmailService emailService, IOptions<BrevoSettings> brevoSettings)
     {
-        private readonly IApplicationReadDbConnection _dbConnection;
-        private readonly IEmailService _emailService;
-        private readonly BrevoSettings _brevoSettings;
+        _dbConnection = dbConnection;
+        _emailService = emailService;
+        _brevoSettings = brevoSettings.Value;
+    }
 
-        public NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConnection dbConnection, IEmailService emailService, IOptions<BrevoSettings> brevoSettings)
-        {
-            _dbConnection = dbConnection;
-            _emailService = emailService;
-            _brevoSettings = brevoSettings.Value;
-        }
-
-        public async Task Handle(NotifyLeagueAdminOfJoinRequestCommand request, CancellationToken cancellationToken)
-        {
-            const string sql = @"
+    public async Task Handle(NotifyLeagueAdminOfJoinRequestCommand request, CancellationToken cancellationToken)
+    {
+        if (_brevoSettings.Templates == null)
+            return;
+        
+        const string sql = @"
                 SELECT 
                     u.[Email],
                     u.[FirstName], 
@@ -36,24 +39,23 @@ namespace PredictionLeague.Application.Features.Leagues.Commands
                 WHERE 
                     l.[Id] = @LeagueId;";
 
-            var admin = await _dbConnection.QuerySingleOrDefaultAsync<LeagueAdminDto>(sql, cancellationToken, new { request.LeagueId });
-            if (admin != null)
+        var admin = await _dbConnection.QuerySingleOrDefaultAsync<LeagueAdminDto>(sql, cancellationToken, new { request.LeagueId });
+        if (admin != null)
+        {
+            var templateId = _brevoSettings.Templates.JoinLeagueRequest;
+
+            var parameters = new
             {
-                var templateId = _brevoSettings.Templates.JoinLeagueRequest;
+                FIRST_NAME = request.NewMemberFirstName,
+                LAST_NAME = request.NewMemberLastName,
+                LEAGUE_NAME = admin.LeagueName,
+                SEASON_NAME = admin.SeasonName,
+                ADMIN_NAME = admin.FirstName
+            };
 
-                var parameters = new
-                {
-                    FIRST_NAME = request.NewMemberFirstName,
-                    LAST_NAME = request.NewMemberLastName,
-                    LEAGUE_NAME = admin.LeagueName,
-                    SEASON_NAME = admin.SeasonName,
-                    ADMIN_NAME = admin.FirstName
-                };
-
-                await _emailService.SendTemplatedEmailAsync(admin.Email, templateId, parameters);
-            }
+            await _emailService.SendTemplatedEmailAsync(admin.Email, templateId, parameters);
         }
     }
-
-    public record LeagueAdminDto(string Email, string FirstName, string LeagueName, string SeasonName);
 }
+
+public record LeagueAdminDto(string Email, string FirstName, string LeagueName, string SeasonName);

@@ -8,5 +8,5 @@ public class CreateRoundRequest
     public int RoundNumber { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime Deadline { get; set; }
-    public List<CreateMatchRequest> Matches { get; init; } = new();
+    public List<CreateMatchRequest> Matches { get; init; } = [];
 }

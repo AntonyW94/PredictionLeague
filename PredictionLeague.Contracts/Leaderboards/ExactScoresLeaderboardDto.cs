@@ -2,5 +2,5 @@
 
 public class ExactScoresLeaderboardDto
 {
-    public List<ExactScoresLeaderboardEntryDto> Entries { get; init; } = new();
+    public List<ExactScoresLeaderboardEntryDto> Entries { get; init; } = [];
 }

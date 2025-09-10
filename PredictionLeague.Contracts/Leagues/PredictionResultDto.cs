@@ -7,5 +7,5 @@ public class PredictionResultDto
     public bool HasPredicted { get; init; }
     public int TotalPoints { get; init; }
     public long Rank { get; init; }
-    public List<PredictionScoreDto> Predictions { get; init; } = new();
+    public List<PredictionScoreDto> Predictions { get; init; } = [];
 }
