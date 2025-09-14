@@ -30,7 +30,7 @@ public class MonthlyPrizeStrategy : IPrizeStrategy
         if (currentRound == null)
             return;
 
-        var league = await _leagueRepository.GetByIdAsync(command.LeagueId, cancellationToken);
+        var league = await _leagueRepository.GetByIdWithAllDataAsync(command.LeagueId, cancellationToken);
         if (league == null)
             return;
 

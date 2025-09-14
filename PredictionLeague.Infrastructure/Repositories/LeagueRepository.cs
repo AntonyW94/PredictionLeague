@@ -167,10 +167,11 @@ public class LeagueRepository : ILeagueRepository
             WHERE l.[Id] = @Id;
 
             SELECT lm.* FROM [LeagueMembers] lm
-            WHERE lm.[LeagueId] = @Id;
+            WHERE lm.[LeagueId] = @Id
+            AND lm.[Status] = @ApprovedStatus;
 
             SELECT up.* FROM [UserPredictions] up
-            INNER JOIN [LeagueMembers] lm ON up.LeagueMemberId = lm.Id
+            INNER JOIN [LeagueMembers] lm ON up.[UserId] = lm.[UserId]
             WHERE lm.[LeagueId] = @Id;
 
             SELECT lps.*
@@ -179,7 +180,7 @@ public class LeagueRepository : ILeagueRepository
 
         var command = new CommandDefinition(
             commandText: sql,
-            parameters: new { Id = id },
+            parameters: new { Id = id, ApprovedStatus = nameof(LeagueMemberStatus.Approved) },
             cancellationToken: cancellationToken
         );
 

@@ -34,7 +34,7 @@ public class OverallPrizeStrategy : IPrizeStrategy
         if (!isLastRoundOfSeason)
             return;
 
-        var league = await _leagueRepository.GetByIdAsync(command.LeagueId, cancellationToken);
+        var league = await _leagueRepository.GetByIdWithAllDataAsync(command.LeagueId, cancellationToken);
         if (league == null)
             return;
 

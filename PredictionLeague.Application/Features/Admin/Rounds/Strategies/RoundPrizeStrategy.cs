@@ -30,7 +30,7 @@ public class RoundPrizeStrategy : IPrizeStrategy
         if (round == null)
             return;
         
-        var league = await _leagueRepository.GetByIdAsync(command.LeagueId, cancellationToken);
+        var league = await _leagueRepository.GetByIdWithAllDataAsync(command.LeagueId, cancellationToken);
 
         var roundPrize = league?.PrizeSettings.FirstOrDefault(p => p.PrizeType == PrizeType.Round);
         if (roundPrize == null)
