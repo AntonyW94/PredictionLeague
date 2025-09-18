@@ -34,13 +34,14 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
                     COUNT(DISTINCT lm.UserId) AS MemberCount
                 FROM LeagueMembers lm
                 JOIN Leagues l ON lm.LeagueId = l.Id
-                WHERE l.SeasonId = (SELECT SeasonId FROM Rounds WHERE Id = @Id) AND lm.Status = 'Approved'
+                WHERE l.SeasonId = (SELECT SeasonId FROM Rounds WHERE Id = @Id) AND lm.Status = @ApprovedStatus
                 GROUP BY l.SeasonId
             )
             SELECT
                 r.[Id] AS RoundId,
                 r.[SeasonId],
                 r.[RoundNumber],
+                r.[ApiRoundName],
                 r.[StartDate],
                 r.[Deadline],
                 r.[Status],
@@ -48,10 +49,12 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
                 m.[MatchDateTime],
                 m.[HomeTeamId],
                 ht.[Name] AS HomeTeamName,
+                ht.[ShortName] AS HomeTeamShortName,
                 ht.[Abbreviation] AS HomeTeamAbbreviation,
                 ht.[LogoUrl] AS HomeTeamLogoUrl,
                 m.[AwayTeamId],
                 at.[Name] AS AwayTeamName,
+                at.[ShortName] AS AwayTeamShortName,
                 at.[Abbreviation] AS AwayTeamAbbreviation,
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 m.[ActualHomeTeamScore],
@@ -71,7 +74,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
             LEFT JOIN [ActiveMemberCount] amc ON r.[SeasonId] = amc.[SeasonId]
             WHERE r.[Id] = @Id;";
 
-        var queryResult = await _dbConnection.QueryAsync<RoundQueryResult>(sql, cancellationToken, new { request.Id });
+        var queryResult = await _dbConnection.QueryAsync<RoundQueryResult>(sql, cancellationToken, new { request.Id, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
 
         var results = queryResult.ToList();
         if (!results.Any())
@@ -82,6 +85,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
             firstRow.RoundId,
             firstRow.SeasonId,
             firstRow.RoundNumber,
+            firstRow.ApiRoundName,
             firstRow.StartDate,
             firstRow.Deadline,
             Enum.Parse<RoundStatus>(firstRow.Status),
@@ -99,10 +103,12 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
                     r.MatchDateTime!.Value,
                     r.HomeTeamId!.Value,
                     r.HomeTeamName,
+                    r.HomeTeamShortName,
                     r.HomeTeamAbbreviation,
                     r.HomeTeamLogoUrl,
                     r.AwayTeamId!.Value,
                     r.AwayTeamName,
+                    r.AwayTeamShortName,
                     r.AwayTeamAbbreviation,
                     r.AwayTeamLogoUrl,
                     r.ActualHomeTeamScore,
@@ -119,6 +125,7 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
         int RoundId,
         int SeasonId,
         int RoundNumber,
+        string ApiRoundName,
         DateTime StartDate,
         DateTime Deadline,
         string Status,
@@ -126,10 +133,12 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
         DateTime? MatchDateTime,
         int? HomeTeamId,
         string HomeTeamName,
+        string HomeTeamShortName,
         string HomeTeamAbbreviation,
         string? HomeTeamLogoUrl,
         int? AwayTeamId,
         string AwayTeamName,
+        string AwayTeamShortName,
         string AwayTeamAbbreviation,
         string? AwayTeamLogoUrl,
         int? ActualHomeTeamScore,

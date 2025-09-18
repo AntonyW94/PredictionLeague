@@ -23,13 +23,13 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
             request.RoundNumber,
             request.StartDate,
             request.Deadline,
-            request.Status
+            request.Status,
+            request.ApiRoundName
         );
         
         var existingMatches = round.Matches.ToDictionary(m => m.Id);
         var incomingMatchIds = request.Matches.Select(m => m.Id).ToHashSet();
 
-        // 2. Process incoming matches (Update existing or Add new)
         foreach (var matchDto in request.Matches)
         {
             switch (matchDto.Id)
@@ -39,32 +39,26 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
                     break;
               
                 case 0:
-                    round.AddMatch(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTime);
+                    round.AddMatch(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTime, matchDto.ExternalId);
                     break;
             }
         }
 
-        var matchesToDelete = existingMatches.Values
-            .Where(m => !incomingMatchIds.Contains(m.Id))
-            .ToList();
-
+        var matchesToDelete = existingMatches.Values.Where(m => !incomingMatchIds.Contains(m.Id)).ToList();
         if (matchesToDelete.Any())
         {
             var matchIdsToDelete = matchesToDelete.Select(m => m.Id).ToList();
+          
             var matchesWithPredictions = await _roundRepository.GetMatchIdsWithPredictionsAsync(matchIdsToDelete);
-
             if (matchesWithPredictions.Any())
-            {
                 throw new InvalidOperationException("Cannot delete a match that already has user predictions.");
-            }
-
+            
             foreach (var matchToRemove in matchesToDelete)
             {
                 round.RemoveMatch(matchToRemove.Id);
             }
         }
 
-        // 4. Save all changes to the database
         await _roundRepository.UpdateAsync(round, cancellationToken);
     }
 }

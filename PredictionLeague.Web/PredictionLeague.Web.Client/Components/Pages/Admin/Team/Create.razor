@@ -26,15 +26,27 @@
                 </div>
 
                 <div class="mb-3">
+                    <label for="short-name" class="form-label text-white">Short Name</label>
+                    <InputText id="short-name" class="form-control" @bind-Value="_model.ShortName" />
+                    <StyledValidationMessage For="@(() => _model.ShortName)" />
+                </div>
+
+                <div class="mb-3">
                     <label for="abbreviation" class="form-label text-white">Abbreviation (3 letters)</label>
                     <InputText id="abbreviation" class="form-control" @bind-Value="_model.Abbreviation" />
                     <StyledValidationMessage For="@(() => _model.Abbreviation)" />
                 </div>
 
                 <div class="mb-3">
-                    <label for="logoUrl" class="form-label text-white">Logo URL</label>
-                    <InputText id="logoUrl" class="form-control" @bind-Value="_model.LogoUrl" />
+                    <label for="logo-url" class="form-label text-white">Logo URL</label>
+                    <InputText id="logo-url" class="form-control" @bind-Value="_model.LogoUrl" />
                     <StyledValidationMessage For="@(() => _model.LogoUrl)" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="api-team-id" class="form-label text-white">API Team ID</label>
+                    <InputNumber id="api-team-id" class="form-control" @bind-Value="_model.ApiTeamId" />
+                    <StyledValidationMessage For="@(() => _model.ApiTeamId!)" />
                 </div>
             </ChildContent>
         </BaseFormComponent>
@@ -43,7 +55,7 @@
 
 @code {
     private readonly CreateTeamRequest _model = new();
-   
+
     private Task<HttpResponseMessage> HandleCreateTeamAsync()
     {
         return Http.PostAsJsonAsync("api/teams/create", _model);

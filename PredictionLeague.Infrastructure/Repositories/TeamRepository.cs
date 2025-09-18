@@ -24,15 +24,19 @@ public class TeamRepository : ITeamRepository
                 INSERT INTO [Teams] 
                 (
                     [Name], 
+                    [ShortName], 
                     [LogoUrl],
-                    [Abbreviation]
+                    [Abbreviation],
+                    [ApiTeamId]
                 )
                 OUTPUT INSERTED.*
                 VALUES 
                 (
                     @Name, 
+                    @ShortName, 
                     @LogoUrl,
-                    @Abbreviation
+                    @Abbreviation,
+                    @ApiTeamId
                 );";
        
         var command = new CommandDefinition(
@@ -54,10 +58,34 @@ public class TeamRepository : ITeamRepository
                 SELECT 
                     [Id], 
                     [Name], 
+                    [ShortName], 
                     [LogoUrl],
-                    [Abbreviation]
+                    [Abbreviation],
+                    [ApiTeamId]
                 FROM [Teams] 
                 WHERE [Id] = @Id;";
+      
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { Id = id },
+            cancellationToken: cancellationToken
+        );
+
+        return await Connection.QuerySingleOrDefaultAsync<Team>(command);
+    }
+
+    public async Task<Team?> GetByApiIdAsync(int id, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+                SELECT 
+                    [Id], 
+                    [Name], 
+                    [ShortName], 
+                    [LogoUrl],
+                    [Abbreviation],
+                    [ApiTeamId]
+                FROM [Teams] 
+                WHERE [ApiTeamId] = @Id;";
       
         var command = new CommandDefinition(
             commandText: sql,
@@ -78,8 +106,10 @@ public class TeamRepository : ITeamRepository
                 UPDATE [Teams] 
                 SET 
                     [Name] = @Name, 
+                    [ShortName] = @ShortName, 
                     [LogoUrl] = @LogoUrl,
-                    [Abbreviation] = @Abbreviation
+                    [Abbreviation] = @Abbreviation,
+                    [ApiTeamId] = @ApiTeamId
                 WHERE [Id] = @Id;";
 
         var command = new CommandDefinition(

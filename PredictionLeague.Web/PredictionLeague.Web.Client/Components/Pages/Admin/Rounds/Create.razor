@@ -36,10 +36,18 @@
                 <ChildContent>
                   
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-2 mb-3">
                             <label for="roundNumber" class="form-label text-white">Round Number</label>
                             <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
                             <StyledValidationMessage For="@(() => _model.RoundNumber)" />
+                        </div>
+
+                        <div class="col-md-2 mb-3">
+                            <label for="apiRoundName" class="form-label text-white">API Round Name</label>
+                            <div class="input-group">
+                                <InputText id="apiRoundName" class="form-control" @bind-Value="_model.ApiRoundName" />
+                            </div>
+                            <StyledValidationMessage For="@(() => _model.ApiRoundName)" />
                         </div>
 
                         <div class="col-md-4 mb-3">

@@ -59,5 +59,6 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, BrevoEmailService>();
         services.AddScoped<IEntryCodeUniquenessChecker, EntryCodeUniquenessChecker>();
         services.AddScoped<IUserManager, UserManagerService>();
+        services.AddHttpClient<IFootballDataService, FootballDataService>();
     }
 }

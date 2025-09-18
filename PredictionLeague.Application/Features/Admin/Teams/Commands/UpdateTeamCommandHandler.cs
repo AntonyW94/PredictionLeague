@@ -19,7 +19,7 @@ public class UpdateTeamCommandHandler : IRequestHandler<UpdateTeamCommand>
         var team = await _teamRepository.GetByIdAsync(request.Id, cancellationToken);
         Guard.Against.EntityNotFound(request.Id, team, "Team");
 
-        team.UpdateDetails(request.Name, request.LogoUrl, request.Abbreviation);
+        team.UpdateDetails(request.Name, request.ShortName, request.LogoUrl, request.Abbreviation, request.ApiTeamId);
 
         await _teamRepository.UpdateAsync(team, cancellationToken);
     }

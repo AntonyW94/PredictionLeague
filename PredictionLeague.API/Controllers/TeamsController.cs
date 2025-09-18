@@ -29,8 +29,10 @@ public class TeamsController : ApiControllerBase
     {
         var command = new CreateTeamCommand(
             request.Name,
+            request.ShortName,
             request.LogoUrl,
-            request.Abbreviation
+            request.Abbreviation,
+            request.ApiTeamId
         );
 
         var createdTeam = await _mediator.Send(command, cancellationToken);
@@ -77,8 +79,10 @@ public class TeamsController : ApiControllerBase
         var command = new UpdateTeamCommand(
             teamId,
             request.Name,
+            request.ShortName,
             request.LogoUrl,
-            request.Abbreviation
+            request.Abbreviation,
+            request.ApiTeamId
         );
         
         await _mediator.Send(command, cancellationToken);

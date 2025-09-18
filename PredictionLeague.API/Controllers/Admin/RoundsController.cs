@@ -31,6 +31,7 @@ public class RoundsController : ApiControllerBase
         var command = new CreateRoundCommand(
             request.SeasonId,
             request.RoundNumber,
+            request.ApiRoundName,
             request.StartDate,
             request.Deadline,
             request.Matches
@@ -80,6 +81,7 @@ public class RoundsController : ApiControllerBase
         var command = new UpdateRoundCommand(
             roundId,
             request.RoundNumber,
+            request.ApiRoundName,
             request.StartDate,
             request.Deadline,
             request.Status,

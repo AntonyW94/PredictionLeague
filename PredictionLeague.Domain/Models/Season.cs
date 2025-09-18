@@ -11,10 +11,11 @@ public class Season
     public DateTime EndDate { get; private set; }
     public bool IsActive { get; private set; }
     public int NumberOfRounds { get; private set; }
+    public int? ApiLeagueId { get; private set; }
 
     private Season() { }
 
-    public static Season Create(string name, DateTime startDate, DateTime endDate, bool isActive, int numberOfRounds)
+    public static Season Create(string name, DateTime startDate, DateTime endDate, bool isActive, int numberOfRounds, int? apiLeagueId)
     {
         Validate(name, startDate, endDate, numberOfRounds);
 
@@ -24,13 +25,14 @@ public class Season
             StartDate = startDate,
             EndDate = endDate,
             IsActive = isActive,
-            NumberOfRounds = numberOfRounds
+            NumberOfRounds = numberOfRounds,
+            ApiLeagueId = apiLeagueId
         };
 
         return season;
     }
 
-    public void UpdateDetails(string name, DateTime startDate, DateTime endDate, bool isActive, int numberOfRounds)
+    public void UpdateDetails(string name, DateTime startDate, DateTime endDate, bool isActive, int numberOfRounds, int? apiLeagueId)
     {
         Validate(name, startDate, endDate, numberOfRounds);
 
@@ -39,6 +41,7 @@ public class Season
         EndDate = endDate;
         IsActive = isActive; 
         NumberOfRounds = numberOfRounds;
+        ApiLeagueId = apiLeagueId;
     }
 
     public void SetIsActive(bool isActive)

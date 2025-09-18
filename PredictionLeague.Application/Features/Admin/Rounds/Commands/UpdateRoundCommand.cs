@@ -7,7 +7,8 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
 public record UpdateRoundCommand(
     int RoundId, 
-    int RoundNumber, 
+    int RoundNumber,
+    string ApiRoundName,
     DateTime StartDate, 
     DateTime Deadline, 
     RoundStatus Status,

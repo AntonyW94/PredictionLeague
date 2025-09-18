@@ -15,11 +15,12 @@ public class Match
     public MatchStatus Status { get; private set; }
     public int? ActualHomeTeamScore { get; private set; }
     public int? ActualAwayTeamScore { get; private set; }
+    public int? ExternalId { get; private set; }
 
     private Match() { }
 
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public Match(int id, int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTime, MatchStatus status, int? actualHomeTeamScore, int? actualAwayTeamScore)
+    public Match(int id, int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTime, MatchStatus status, int? actualHomeTeamScore, int? actualAwayTeamScore, int? externalId)
     {
         Id = id;
         RoundId = roundId;
@@ -29,9 +30,10 @@ public class Match
         Status = status;
         ActualHomeTeamScore = actualHomeTeamScore;
         ActualAwayTeamScore = actualAwayTeamScore;
+        ExternalId = externalId;
     }
     
-    public static Match Create(int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTime)
+    public static Match Create(int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTime, int? externalId)
     {
         Guard.Against.Default(matchDateTime, nameof(matchDateTime));
         Guard.Against.Expression(h => h == awayTeamId, homeTeamId, "A team cannot play against itself.");
@@ -42,7 +44,8 @@ public class Match
             HomeTeamId = homeTeamId,
             AwayTeamId = awayTeamId,
             MatchDateTime = matchDateTime,
-            Status = MatchStatus.Scheduled
+            Status = MatchStatus.Scheduled,
+            ExternalId = externalId
         };
     }
 
@@ -64,5 +67,10 @@ public class Match
         HomeTeamId = homeTeamId;
         AwayTeamId = awayTeamId;
         MatchDateTime = matchDateTime;
+    }
+
+    public void UpdateDate(DateTime newDate)
+    {
+        MatchDateTime = newDate;
     }
 }

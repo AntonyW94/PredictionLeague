@@ -19,8 +19,10 @@ public class GetTeamByIdQueryHandler : IRequestHandler<GetTeamByIdQuery, TeamDto
             SELECT
                 [Id],
                 [Name],
+                [ShortName],
                 [LogoUrl],
-                [Abbreviation]
+                [Abbreviation],
+                [ApiTeamId]
             FROM [Teams]
             WHERE [Id] = @Id";
 

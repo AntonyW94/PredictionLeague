@@ -6,6 +6,7 @@ public record RoundWithAllPredictionsInDto(
     int Id,
     int SeasonId,
     int RoundNumber,
+    string ApiRoundName,
     DateTime StartDate,
     DateTime Deadline,
     RoundStatus Status,

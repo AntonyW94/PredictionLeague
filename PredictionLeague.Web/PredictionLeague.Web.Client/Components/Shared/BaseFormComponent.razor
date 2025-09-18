@@ -59,7 +59,16 @@
                 try
                 {
                     var errorContent = await response.Content.ReadFromJsonAsync<System.Text.Json.Nodes.JsonNode>();
-                    ErrorMessage = errorContent?["errors"]?.ToString() ?? errorContent?["message"]?.ToString();
+                    var errorsNode = errorContent?["errors"];
+                    if (errorsNode is System.Text.Json.Nodes.JsonArray errorsArray && errorsArray.Count > 0)
+                    {
+                        ErrorMessage = errorsArray[0]?["ErrorMessage"]?.ToString();
+                    }
+                    else
+                    {
+                        ErrorMessage = errorContent?["message"]?.ToString();
+                    }
+                    //ErrorMessage = errorContent?["errors"]?.ToString() ?? errorContent?["message"]?.ToString();
                 }
                 catch
                 {

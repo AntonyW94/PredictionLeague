@@ -20,14 +20,14 @@
             <p class="text-center text-white"><em>Loading season...</em></p>
         }
         else
-        { 
+        {
             <BaseFormComponent TModel="UpdateSeasonRequest"
-                              Model="_model"
-                              SubmitAction="HandleUpdateSeasonAsync"
-                              SuccessRedirectUrl="/admin/seasons"
-                              BackUrl="/admin/seasons"
-                              SuccessAlertMessage="Season updated successfully!"
-                              BusyText="Saving...">
+                               Model="_model"
+                               SubmitAction="HandleUpdateSeasonAsync"
+                               SuccessRedirectUrl="/admin/seasons"
+                               BackUrl="/admin/seasons"
+                               SuccessAlertMessage="Season updated successfully!"
+                               BusyText="Saving...">
                 <ChildContent>
                     <div class="row">
                         <div class="col-md-8 mb-3">
@@ -42,14 +42,24 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="startDate" class="form-label text-white">Start Date</label>
-                        <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="startDate" class="form-label text-white">Start Date</label>
+                            <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
+                            <StyledValidationMessage For="@(() => _model.StartDate)" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="endDate" class="form-label text-white">End Date</label>
+                            <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
+                            <StyledValidationMessage For="@(() => _model.EndDate)" />
+                        </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="endDate" class="form-label text-white">End Date</label>
-                        <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
+                        <label for="apiLeagueId" class="form-label text-white">API League ID</label>
+                        <InputNumber id="apiLeagueId" class="form-control" @bind-Value="_model.ApiLeagueId" />
+                        <StyledValidationMessage For="@(() => _model.ApiLeagueId)" />
                     </div>
 
                     <div class="mb-3">

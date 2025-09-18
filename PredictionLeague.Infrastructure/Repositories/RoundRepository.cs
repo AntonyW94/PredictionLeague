@@ -50,8 +50,8 @@ public class RoundRepository : IRoundRepository
     public async Task<Round> CreateAsync(Round round, CancellationToken cancellationToken)
     {
         const string sql = @"
-            INSERT INTO [Rounds] ([SeasonId], [RoundNumber], [StartDate], [Deadline])
-            VALUES (@SeasonId, @RoundNumber, @StartDate, @Deadline);
+            INSERT INTO [Rounds] ([SeasonId], [RoundNumber], [StartDate], [Deadline], [ApiRoundName])
+            VALUES (@SeasonId, @RoundNumber, @StartDate, @Deadline, @ApiRoundName);
             SELECT CAST(SCOPE_IDENTITY() as int);";
 
         var command = new CommandDefinition(
@@ -61,7 +61,8 @@ public class RoundRepository : IRoundRepository
                 round.SeasonId,
                 round.RoundNumber,
                 round.StartDate,
-                round.Deadline
+                round.Deadline,
+                round.ApiRoundName
             },
             cancellationToken: cancellationToken
         );
@@ -213,6 +214,7 @@ public class RoundRepository : IRoundRepository
                 [StartDate] = @StartDate,
                 [Deadline] = @Deadline,
                 [Status] = @Status
+                [ApiRoundName] = @ApiRoundName
             WHERE 
                 [Id] = @Id;";
 
@@ -222,7 +224,8 @@ public class RoundRepository : IRoundRepository
             round.RoundNumber,
             round.StartDate,
             round.Deadline,
-            Status = round.Status.ToString()
+            Status = round.Status.ToString(),
+            round.ApiRoundName
         }, cancellationToken: cancellationToken);
         await Connection.ExecuteAsync(updateRoundCommand);
 
@@ -338,6 +341,7 @@ public class RoundRepository : IRoundRepository
                     groupedRound.StartDate,
                     groupedRound.Deadline,
                     groupedRound.Status,
+                    groupedRound.ApiRoundName,
                     matches
                 );
             });

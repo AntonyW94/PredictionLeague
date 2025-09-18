@@ -11,13 +11,14 @@ public class Round
     public DateTime StartDate { get; set; }
     public DateTime Deadline { get; private set; }
     public RoundStatus Status { get; private set; }
+    public string? ApiRoundName { get; private set; }
 
     private readonly List<Match> _matches = new();
     public IReadOnlyCollection<Match> Matches => _matches.AsReadOnly();
 
     private Round() { }
   
-    public Round(int id, int seasonId, int roundNumber, DateTime startDate, DateTime deadline, RoundStatus status, IEnumerable<Match?>? matches)
+    public Round(int id, int seasonId, int roundNumber, DateTime startDate, DateTime deadline, RoundStatus status, string? apiRoundName, IEnumerable<Match?>? matches)
     {
         Id = id;
         SeasonId = seasonId;
@@ -25,12 +26,13 @@ public class Round
         StartDate = startDate;
         Deadline = deadline;
         Status = status;
+        ApiRoundName = apiRoundName;
     
         if (matches != null)
             _matches.AddRange(matches.Where(m => m != null).Select(m => (Match)m!));
     }
   
-    public static Round Create(int seasonId, int roundNumber, DateTime startDate, DateTime deadline)
+    public static Round Create(int seasonId, int roundNumber, DateTime startDate, DateTime deadline, string? apiRoundName)
     {
         Validate(seasonId, roundNumber, startDate, deadline);
 
@@ -40,11 +42,12 @@ public class Round
             RoundNumber = roundNumber,
             StartDate = startDate,
             Deadline = deadline,
-            Status = RoundStatus.Draft
+            Status = RoundStatus.Draft,
+            ApiRoundName = apiRoundName
         };
     }
 
-    public void UpdateDetails(int roundNumber, DateTime startDate, DateTime deadline, RoundStatus status)
+    public void UpdateDetails(int roundNumber, DateTime startDate, DateTime deadline, RoundStatus status, string? apiRoundName)
     {
         Validate(SeasonId, roundNumber, startDate, deadline);
 
@@ -52,6 +55,7 @@ public class Round
         StartDate = startDate;
         Deadline = deadline;
         Status = status;
+        ApiRoundName = apiRoundName;
     }
 
     public void UpdateStatus(RoundStatus status)
@@ -59,14 +63,14 @@ public class Round
         Status = status;
     }
 
-    public void AddMatch(int homeTeamId, int awayTeamId, DateTime matchTime)
+    public void AddMatch(int homeTeamId, int awayTeamId, DateTime matchTime, int? externalId)
     {
         var matchExists = _matches.Any(m => m.HomeTeamId == homeTeamId && m.AwayTeamId == awayTeamId);
 
         Guard.Against.Expression(h => h == awayTeamId, homeTeamId, "A team cannot play against itself.");
         Guard.Against.Expression(m => m, matchExists, "This match already exists in the round.");
 
-        _matches.Add(Match.Create(Id, homeTeamId, awayTeamId, matchTime));
+        _matches.Add(Match.Create(Id, homeTeamId, awayTeamId, matchTime, externalId));
     }
 
     public void RemoveMatch(int matchId)

@@ -35,7 +35,8 @@ public class SeasonsController : ApiControllerBase
             request.EndDate,
             CurrentUserId,
             request.IsActive,
-            request.NumberOfRounds
+            request.NumberOfRounds,
+            request.ApiLeagueId
         );
 
         var newSeasonDto = await _mediator.Send(command, cancellationToken);
@@ -85,7 +86,8 @@ public class SeasonsController : ApiControllerBase
             request.StartDate,
             request.EndDate,
             request.IsActive,
-            request.NumberOfRounds);
+            request.NumberOfRounds,
+            request.ApiLeagueId);
 
         await _mediator.Send(command, cancellationToken);
 

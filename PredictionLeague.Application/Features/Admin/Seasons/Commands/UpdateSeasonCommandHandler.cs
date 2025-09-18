@@ -24,7 +24,8 @@ public class UpdateSeasonCommandHandler : IRequestHandler<UpdateSeasonCommand>
             request.StartDate,
             request.EndDate,
             request.IsActive,
-            request.NumberOfRounds
+            request.NumberOfRounds,
+            request.ApiLeagueId
         );
 
         await _seasonRepository.UpdateAsync(season, cancellationToken);

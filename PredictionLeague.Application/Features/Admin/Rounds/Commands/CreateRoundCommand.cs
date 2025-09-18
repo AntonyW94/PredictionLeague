@@ -8,6 +8,7 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 public record CreateRoundCommand(
     int SeasonId, 
     int RoundNumber,
+    string ApiRoundName,
     DateTime StartDate,
     DateTime Deadline, 
     List<CreateMatchRequest> Matches) : IRequest<RoundDto>, ITransactionalRequest;

@@ -14,7 +14,7 @@
 <div class="page-container">
     <div class="form-container extra-wide">
         <h3 class="text-center fw-bold text-white mb-4">Edit Round</h3>
-        
+
         <ApiError Message="@_errorMessage"></ApiError>
 
         @if (_model == null)
@@ -35,14 +35,22 @@
                                SuccessAlertMessage="Round updated successfully!"
                                BusyText="Saving...">
                 <ChildContent>
-                       <div class="row">
-                           <div class="col-md-2 mb-3">
-                               <label for="roundNumber" class="form-label text-white">Round No</label>
-                               <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
-                               <StyledValidationMessage For="@(() => _model.RoundNumber)" />
-                           </div>
+                    <div class="row">
+                        <div class="col-md-1 mb-3">
+                            <label for="roundNumber" class="form-label text-white">Round No</label>
+                            <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
+                            <StyledValidationMessage For="@(() => _model.RoundNumber)" />
+                        </div>
 
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-2 mb-3">
+                            <label for="apiRoundName" class="form-label text-white">API Round Name</label>
+                            <div class="input-group">
+                                <InputText id="apiRoundName" class="form-control" @bind-Value="_model.ApiRoundName" />
+                            </div>
+                            <StyledValidationMessage For="@(() => _model.ApiRoundName)" />
+                        </div>
+
+                        <div class="col-md-3 mb-3">
                             <label for="startDate" class="form-label text-white">Round Start Date</label>
                             <div class="input-group">
                                 <InputDate id="startDate" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.StartDate" />
@@ -164,7 +172,7 @@
 </div>
 
 @code {
-    [Parameter] 
+    [Parameter]
     public int RoundId { get; set; }
 
     private UpdateRoundRequest? _model;
@@ -184,6 +192,7 @@
                 _model = new UpdateRoundRequest
                 {
                     RoundNumber = roundDetails.Round.RoundNumber,
+                    ApiRoundName = roundDetails.Round.ApiRoundName,
                     StartDate = roundDetails.Round.StartDate,
                     Deadline = roundDetails.Round.Deadline,
                     Status = roundDetails.Round.Status,
@@ -207,7 +216,7 @@
 
     private void ApplyStartDateToMatches()
     {
-        if (_model == null) 
+        if (_model == null)
             return;
 
         var newDate = _model.StartDate;
@@ -228,7 +237,7 @@
 
     private string GetTeamLogoUrl(int teamId)
     {
-        if (teamId < 1) 
+        if (teamId < 1)
             return "https://placehold.co/25x25/transparent/transparent?text=";
 
         return _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl ?? "";
