@@ -321,12 +321,12 @@ public class LeagueRepository : ILeagueRepository
         const string sql = @"
             UPDATE [LeagueMembers]
             SET [Status] = @Status,
-                [ApprovedAt] = CASE WHEN @Status = 'Approved' THEN GETDATE() ELSE [ApprovedAt] END
+                [ApprovedAt] = CASE WHEN @Status = @ApprovedStatus THEN GETDATE() ELSE [ApprovedAt] END
             WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId;";
 
         var command = new CommandDefinition(
             commandText: sql,
-            parameters: new { Status = status.ToString(), LeagueId = leagueId, UserId = userId },
+            parameters: new { Status = status.ToString(), ApprovedStatus = nameof(LeagueMemberStatus.Approved), LeagueId = leagueId, UserId = userId },
             cancellationToken: cancellationToken
         );
 
@@ -341,16 +341,11 @@ public class LeagueRepository : ILeagueRepository
                 [UpdatedAt] = GETDATE()
             WHERE [Id] = @Id;";
 
-        var filteredPredictions = predictionsToUpdate
-            .Where(p => p.PointsAwarded.HasValue)
-            .Select(p => new { p.Id, p.PointsAwarded })
-            .ToList();
-
-        if (filteredPredictions.Any())
+        if (predictionsToUpdate.Any())
         {
             var command = new CommandDefinition(
                 commandText: sql,
-                parameters: filteredPredictions,
+                parameters: predictionsToUpdate,
                 cancellationToken: cancellationToken
             );
 

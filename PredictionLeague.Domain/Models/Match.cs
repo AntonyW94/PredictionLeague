@@ -51,8 +51,17 @@ public class Match
         Guard.Against.Negative(homeScore, nameof(homeScore));
         Guard.Against.Negative(awayScore, nameof(awayScore));
 
-        ActualHomeTeamScore = homeScore;
-        ActualAwayTeamScore = awayScore;
+        if (status == MatchStatus.Scheduled)
+        {
+            ActualHomeTeamScore = null;
+            ActualAwayTeamScore = null;
+        }
+        else
+        {
+            ActualHomeTeamScore = homeScore;
+            ActualAwayTeamScore = awayScore;
+        }
+         
         Status = status;
     }
 
