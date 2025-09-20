@@ -66,14 +66,13 @@ public class LeagueMember
         Status = LeagueMemberStatus.Rejected;
     }
 
-    public void ScorePredictionForMatch(Match completedMatch)
+    public void ScorePredictionForMatch(Match match)
     {
-        Guard.Against.Null(completedMatch, nameof(completedMatch));
+        Guard.Against.Null(match, nameof(match));
 
-        foreach (var prediction in _predictions.Where(p => p.MatchId == completedMatch.Id))
+        foreach (var prediction in _predictions.Where(p => p.MatchId == match.Id))
         {
-            if (completedMatch.ActualHomeTeamScore.HasValue && completedMatch.ActualAwayTeamScore.HasValue)
-                prediction.CalculatePoints(completedMatch.ActualHomeTeamScore.Value, completedMatch.ActualAwayTeamScore.Value);
+            prediction.CalculatePoints(match.Status, match.ActualHomeTeamScore, match.ActualAwayTeamScore);
         }
     }
 }

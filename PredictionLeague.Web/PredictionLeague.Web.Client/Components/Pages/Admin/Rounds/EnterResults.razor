@@ -25,7 +25,7 @@
                 <ApiSuccess Message="@ViewModel.SuccessMessage" />
 
                 <div class="prediction-grid">
-                    @foreach (var match in ViewModel.Matches)
+                    @foreach (var match in ViewModel.Matches.OrderBy(m => m.MatchDateTime))
                     {
                         <div class="prediction-card">
                             <div class="prediction-card-header">

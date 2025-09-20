@@ -39,19 +39,14 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
 
         if (matchesToUpdate.Any())
             await _roundRepository.UpdateMatchScoresAsync(matchesToUpdate, cancellationToken);
-
-        var matchesWithScores = matchesToUpdate
-            .Where(m => m.Status != MatchStatus.Scheduled && m.ActualHomeTeamScore.HasValue && m.ActualAwayTeamScore.HasValue)
-            .ToList();
-
-        if (!matchesWithScores.Any())
+        else
             return;
 
         var leaguesToScore = (await _leagueRepository.GetLeaguesForScoringAsync(round.SeasonId, round.Id, cancellationToken)).ToList();
 
         foreach (var league in leaguesToScore)
         {
-            foreach (var scoredMatch in matchesWithScores)
+            foreach (var scoredMatch in matchesToUpdate)
             {
                 league.ScoreMatch(scoredMatch);
             }

@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using PredictionLeague.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Domain.Models;
@@ -38,11 +39,18 @@ public class UserPrediction
         };
     }
 
-    public void CalculatePoints(int actualHomeScore, int actualAwayScore)
+    public void CalculatePoints(MatchStatus status, int? actualHomeScore, int? actualAwayScore)
     {
+        if (status == MatchStatus.Scheduled || actualHomeScore == null || actualAwayScore == null)
+        {
+            PointsAwarded = null;
+            UpdatedAt = DateTime.Now; 
+            return;
+        }
+
         if (PredictedHomeScore == actualHomeScore && PredictedAwayScore == actualAwayScore)
             PointsAwarded = 5;
-        else if (Math.Sign(PredictedHomeScore - PredictedAwayScore) == Math.Sign(actualHomeScore - actualAwayScore))
+        else if (Math.Sign(PredictedHomeScore - PredictedAwayScore) == Math.Sign(actualHomeScore.Value - actualAwayScore.Value))
             PointsAwarded = 3;
         else
             PointsAwarded = 0;
