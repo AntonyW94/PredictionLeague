@@ -9,4 +9,4 @@ public record UpdateSeasonCommand(
     DateTime EndDate, 
     bool IsActive,
     int NumberOfRounds,
-    int ApiLeagueId) : IRequest;
+    int? ApiLeagueId) : IRequest;

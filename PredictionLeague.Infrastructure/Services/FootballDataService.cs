@@ -41,8 +41,18 @@ public class FootballDataService : IFootballDataService
         return wrapper?.Response ?? Enumerable.Empty<FixtureResponse>();
     }
 
-    public Task<IEnumerable<string>> GetRoundsForSeasonAsync(int apiLeagueId, int seasonYear, CancellationToken cancellationToken)
+    public async Task<IEnumerable<string>> GetRoundsForSeasonAsync(int apiLeagueId, int seasonYear, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var endpoint = $"fixtures/rounds?league={apiLeagueId}&season={seasonYear}";
+        var wrapper = await _httpClient.GetFromJsonAsync<RoundsResponseWrapper>(endpoint, cancellationToken);
+        return wrapper?.Response ?? Enumerable.Empty<string>();
+    }
+
+    public async Task<ApiSeason> GetLeagueSeasonDetailsAsync(int apiLeagueId, int seasonYear, CancellationToken cancellationToken)
+    {
+        var endpoint = $"leagues?id={apiLeagueId}&season={seasonYear}";
+        var wrapper = await _httpClient.GetFromJsonAsync<LeagueDetailsResponseWrapper>(endpoint, cancellationToken);
+
+        return wrapper?.Response?.FirstOrDefault()?.Seasons?.FirstOrDefault() ?? new ApiSeason();
     }
 }

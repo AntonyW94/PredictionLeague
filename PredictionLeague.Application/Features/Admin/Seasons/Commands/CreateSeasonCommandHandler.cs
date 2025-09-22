@@ -26,7 +26,7 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
 
     public async Task<SeasonDto> Handle(CreateSeasonCommand request, CancellationToken cancellationToken)
     {
-        await ValidateTeamsFromApiAsync(request, cancellationToken);
+        await ValidateSeasonAgainstApiAsync(request, cancellationToken);
 
         var season = CreateSeasonEntity(request);
         var createdSeason = await _seasonRepository.CreateAsync(season, cancellationToken);
@@ -37,48 +37,53 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
         return MapToSeasonDto(createdSeason);
     }
 
-    private async Task ValidateTeamsFromApiAsync(CreateSeasonCommand request, CancellationToken cancellationToken)
+    private async Task ValidateSeasonAgainstApiAsync(CreateSeasonCommand request, CancellationToken cancellationToken)
     {
         if (!request.ApiLeagueId.HasValue)
             return;
-        
-        List<FootballApi.DTOs.TeamResponse> apiTeams;
-   
+
+        var seasonYear = request.StartDate.Year;
+        var validationFailures = new List<ValidationFailure>();
+
         try
         {
-            apiTeams = (await _footballDataService.GetTeamsForSeasonAsync(
-                request.ApiLeagueId.Value,
-                request.StartDate.Year,
-                cancellationToken)).ToList();
+            var apiSeason = await _footballDataService.GetLeagueSeasonDetailsAsync(request.ApiLeagueId.Value, seasonYear, cancellationToken);
+            if (apiSeason == null)
+                throw new ValidationException($"The API returned no season data for League ID {request.ApiLeagueId.Value} and Year {seasonYear}. Please verify the details.");
+            
+            if (request.StartDate.Date != apiSeason.Start.Date)
+                validationFailures.Add(new ValidationFailure(nameof(request.StartDate), $"The Start Date does not match the API. Expected: {apiSeason.Start:yyyy-MM-dd}, but you entered: {request.StartDate:yyyy-MM-dd}."));
+
+            if (request.EndDate.Date != apiSeason.End.Date)
+                validationFailures.Add(new ValidationFailure(nameof(request.EndDate), $"The End Date does not match the API. Expected: {apiSeason.End:yyyy-MM-dd}, but you entered: {request.EndDate:yyyy-MM-dd}."));
+            
+            var apiRoundNames = (await _footballDataService.GetRoundsForSeasonAsync(request.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
+            if (request.NumberOfRounds != apiRoundNames.Count)
+                validationFailures.Add(new ValidationFailure(nameof(request.NumberOfRounds), $"The Number of Rounds does not match the API. Expected: {apiRoundNames.Count}, but you entered: {request.NumberOfRounds}."));
+            
+            var apiTeams = (await _footballDataService.GetTeamsForSeasonAsync(request.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
+            var localTeams = await _mediator.Send(new FetchAllTeamsQuery(), cancellationToken);
+
+            var localTeamApiIds = localTeams
+                .Where(t => t.ApiTeamId.HasValue)
+                .Select(t => t.ApiTeamId.GetValueOrDefault())
+                .ToHashSet();
+
+            var missingTeams = apiTeams
+                .Where(apiTeam => !localTeamApiIds.Contains(apiTeam.Team.Id))
+                .Select(apiTeam => apiTeam.Team.Name)
+                .ToList();
+
+            if (missingTeams.Any())
+                validationFailures.Add(new ValidationFailure(nameof(request.ApiLeagueId), $"The following teams from the API do not exist in the database: {string.Join(", ", missingTeams)}. Please add them before creating the season."));
         }
         catch (HttpRequestException ex)
         {
-            throw new ValidationException($"Could not retrieve data from the football API. Please check your API key and network connection. Details: {ex.Message}");
+            throw new ValidationException($"Could not retrieve data from the football API. Please check your API key. Details: {ex.Message}");
         }
 
-        if (!apiTeams.Any())
-            throw new ValidationException($"The API returned no teams for the provided League ID ({request.ApiLeagueId.Value}) and Season Year ({request.StartDate.Year}). Please verify the details are correct.");
-
-        var localTeams = await _mediator.Send(new FetchAllTeamsQuery(), cancellationToken);
-
-        var localTeamApiIds = localTeams
-            .Where(t => t.ApiTeamId.HasValue)
-            .Select(t => t.ApiTeamId.GetValueOrDefault())
-            .ToHashSet();
-
-        var missingTeams = apiTeams
-            .Where(apiTeam => !localTeamApiIds.Contains(apiTeam.Team.Id))
-            .Select(apiTeam => apiTeam.Team.Name)
-            .ToList();
-
-        if (!missingTeams.Any())
-            return;
-
-        var missingTeamsString = string.Join(", ", missingTeams);
-        var errorMessage = $"Cannot create season. The following teams from the API do not exist in the database: {missingTeamsString}. Please add them and set their API ID before creating the season.";
-
-        var validationFailure = new ValidationFailure(propertyName: "ApiLeagueId", errorMessage: errorMessage);
-        throw new ValidationException(new[] { validationFailure });
+        if (validationFailures.Any())
+            throw new ValidationException(validationFailures);
     }
 
     private static Season CreateSeasonEntity(CreateSeasonCommand request)
