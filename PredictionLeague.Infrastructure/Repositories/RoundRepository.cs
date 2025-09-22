@@ -20,7 +20,8 @@ public class RoundRepository : IRoundRepository
             [HomeTeamId], 
             [AwayTeamId], 
             [MatchDateTime], 
-            [Status]
+            [Status],
+            [ExternalId]
         )
         VALUES 
         (
@@ -28,7 +29,8 @@ public class RoundRepository : IRoundRepository
             @HomeTeamId, 
             @AwayTeamId, 
             @MatchDateTime, 
-            @Status
+            @Status,
+            @ExternalId
         );";
 
     private const string GetRoundsWithMatchesSql = @"
@@ -103,7 +105,13 @@ public class RoundRepository : IRoundRepository
         return await QueryAndMapRound(sql, cancellationToken, new { RoundId = roundId });
     }
 
-    public async Task<IEnumerable<int>> GetMatchIdsWithPredictionsAsync(IEnumerable<int> matchIds)
+    public async Task<Round?> GetByApiRoundNameAsync(int seasonId, string apiRoundName, CancellationToken cancellationToken)
+    {
+        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[SeasonId] = @SeasonId AND r.[ApiRoundName] = @ApiRoundName;";
+        return await QueryAndMapRound(sql, cancellationToken, new { SeasonId = seasonId, ApiRoundName = apiRoundName });
+    }
+
+    public async Task<IEnumerable<int>> GetMatchIdsWithPredictionsAsync(IEnumerable<int> matchIds, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT DISTINCT
@@ -116,9 +124,15 @@ public class RoundRepository : IRoundRepository
 
         var matchIdsList = matchIds.ToList();
         if (!matchIdsList.Any())
-            return Enumerable.Empty<int>();
+            return [];
 
-        return await Connection.QueryAsync<int>(sql, new { MatchIds = matchIdsList });
+        var command = new CommandDefinition(
+            sql,
+            new { MatchIds = matchIdsList },
+            cancellationToken: cancellationToken
+        );
+        
+        return await Connection.QueryAsync<int>(command);
     }
 
     public async Task<bool> IsLastRoundOfMonthAsync(int roundId, int seasonId, CancellationToken cancellationToken)
@@ -213,7 +227,7 @@ public class RoundRepository : IRoundRepository
                 [RoundNumber] = @RoundNumber,
                 [StartDate] = @StartDate,
                 [Deadline] = @Deadline,
-                [Status] = @Status
+                [Status] = @Status,
                 [ApiRoundName] = @ApiRoundName
             WHERE 
                 [Id] = @Id;";
@@ -245,7 +259,8 @@ public class RoundRepository : IRoundRepository
                 m.HomeTeamId,
                 m.AwayTeamId,
                 m.MatchDateTime,
-                Status = m.Status.ToString()
+                Status = m.Status.ToString(),
+                m.ExternalId
             }), cancellationToken: cancellationToken);
             await Connection.ExecuteAsync(insertMatchesCommand);
         }
@@ -258,7 +273,8 @@ public class RoundRepository : IRoundRepository
                 SET
                     [HomeTeamId] = @HomeTeamId,
                     [AwayTeamId] = @AwayTeamId,
-                    [MatchDateTime] = @MatchDateTime
+                    [MatchDateTime] = @MatchDateTime,
+                    [ExternalId] = @ExternalId
                 WHERE
                     [Id] = @Id;";
 

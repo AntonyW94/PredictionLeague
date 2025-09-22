@@ -27,7 +27,7 @@ public class SeasonRepository : ISeasonRepository
                     [StartDate],
                     [EndDate],
                     [IsActive],
-                    [NumberOfRounds]
+                    [NumberOfRounds],
                     [ApiLeagueId]
                 )
                 VALUES
@@ -36,7 +36,7 @@ public class SeasonRepository : ISeasonRepository
                     @StartDate,
                     @EndDate,
                     @IsActive,
-                    @NumberOfRounds
+                    @NumberOfRounds,
                     @ApiLeagueId
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";

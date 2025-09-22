@@ -16,10 +16,12 @@ namespace PredictionLeague.API.Controllers;
 public class SeasonsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IConfiguration _configuration;
 
-    public SeasonsController(IMediator mediator)
+    public SeasonsController(IMediator mediator, IConfiguration configuration)
     {
         _mediator = mediator;
+        _configuration = configuration;
     }
 
     #region Create 
@@ -102,6 +104,23 @@ public class SeasonsController : ApiControllerBase
         var command = new UpdateSeasonStatusCommand(seasonId, isActive);
         await _mediator.Send(command, cancellationToken);
       
+        return NoContent();
+    }
+
+    [AllowAnonymous]
+    [HttpPost("{seasonId:int}/sync")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SyncSeasonAsync([FromRoute] int seasonId, [FromHeader(Name = "X-Api-Key")] string? apiKey, CancellationToken cancellationToken)
+    {
+        var expectedApiKey = _configuration["FootballApi:SchedulerApiKey"];
+        if (string.IsNullOrEmpty(expectedApiKey) || apiKey != expectedApiKey)
+            return Unauthorized(); 
+        
+        var command = new SyncSeasonWithApiCommand(seasonId);
+        await _mediator.Send(command, cancellationToken);
+
         return NoContent();
     }
 

@@ -16,7 +16,11 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
     private readonly IFootballDataService _footballDataService;
     private readonly IMediator _mediator;
 
-    public CreateSeasonCommandHandler(ISeasonRepository seasonRepository, ILeagueRepository leagueRepository, IFootballDataService footballDataService, IMediator mediator)
+    public CreateSeasonCommandHandler(
+        ISeasonRepository seasonRepository,
+        ILeagueRepository leagueRepository,
+        IFootballDataService footballDataService,
+        IMediator mediator)
     {
         _seasonRepository = seasonRepository;
         _leagueRepository = leagueRepository;
@@ -30,6 +34,9 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
 
         var season = CreateSeasonEntity(request);
         var createdSeason = await _seasonRepository.CreateAsync(season, cancellationToken);
+
+        if (createdSeason.ApiLeagueId.HasValue)
+            await _mediator.Send(new SyncSeasonWithApiCommand(createdSeason.Id), cancellationToken);
 
         var publicLeague = CreatePublicLeagueEntity(request, createdSeason);
         await _leagueRepository.CreateAsync(publicLeague, cancellationToken);

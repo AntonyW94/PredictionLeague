@@ -79,7 +79,7 @@ public class League
     private static void Validate(string name, DateTime entryDeadline, Season season)
     {
         Guard.Against.NullOrWhiteSpace(name, nameof(name));
-        Guard.Against.Expression(d => d <= DateTime.Now, entryDeadline, "Entry deadline must be in the future.");
+        //Guard.Against.Expression(d => d <= DateTime.Now, entryDeadline, "Entry deadline must be in the future.");
 
         if (entryDeadline.Date >= season.StartDate.Date)
             throw new ArgumentException("Entry deadline must be at least one day before the season start date.", nameof(entryDeadline));

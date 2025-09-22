@@ -49,7 +49,7 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
         {
             var matchIdsToDelete = matchesToDelete.Select(m => m.Id).ToList();
           
-            var matchesWithPredictions = await _roundRepository.GetMatchIdsWithPredictionsAsync(matchIdsToDelete);
+            var matchesWithPredictions = await _roundRepository.GetMatchIdsWithPredictionsAsync(matchIdsToDelete, cancellationToken);
             if (matchesWithPredictions.Any())
                 throw new InvalidOperationException("Cannot delete a match that already has user predictions.");
             
