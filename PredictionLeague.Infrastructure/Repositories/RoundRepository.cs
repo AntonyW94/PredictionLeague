@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 using System.Data;
 
@@ -109,6 +110,12 @@ public class RoundRepository : IRoundRepository
     {
         const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[SeasonId] = @SeasonId AND r.[ApiRoundName] = @ApiRoundName;";
         return await QueryAndMapRound(sql, cancellationToken, new { SeasonId = seasonId, ApiRoundName = apiRoundName });
+    }
+
+    public async Task<Round?> GetOldestInProgressRoundAsync(int seasonId, CancellationToken cancellationToken)
+    {
+        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = (SELECT TOP 1 [Id] FROM [Rounds] WHERE [SeasonId] = @SeasonId AND [Status] != @CompletedStatus AND [StartDate] < GETDATE() ORDER BY [StartDate] ASC)";
+        return await QueryAndMapRound(sql, cancellationToken, new { SeasonId = seasonId, CompletedStatus = nameof(RoundStatus.Completed) });
     }
 
     public async Task<IEnumerable<int>> GetMatchIdsWithPredictionsAsync(IEnumerable<int> matchIds, CancellationToken cancellationToken)

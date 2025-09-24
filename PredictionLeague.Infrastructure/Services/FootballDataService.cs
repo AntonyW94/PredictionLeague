@@ -32,12 +32,16 @@ public class FootballDataService : IFootballDataService
         var wrapper = await _httpClient.GetFromJsonAsync<FixtureResponseWrapper>(endpoint, cancellationToken);
         return wrapper?.Response ?? Enumerable.Empty<FixtureResponse>();
     }
-        
-    public async Task<IEnumerable<FixtureResponse>> GetFixturesByRoundAsync(int apiLeagueId, int seasonYear, string apiRoundName, CancellationToken cancellationToken)
-    {
-        var endpoint = $"fixtures?league={apiLeagueId}&season={seasonYear}&round={apiRoundName}";
-        var wrapper = await _httpClient.GetFromJsonAsync<FixtureResponseWrapper>(endpoint, cancellationToken);
 
+    public async Task<IEnumerable<FixtureResponse>> GetFixturesByIdsAsync(List<int>? fixtureIds, CancellationToken cancellationToken)
+    {
+        if (fixtureIds == null || !fixtureIds.Any())
+            return Enumerable.Empty<FixtureResponse>();
+        
+        var idsString = string.Join("-", fixtureIds);
+        var endpoint = $"fixtures?ids={idsString}";
+
+        var wrapper = await _httpClient.GetFromJsonAsync<FixtureResponseWrapper>(endpoint, cancellationToken);
         return wrapper?.Response ?? Enumerable.Empty<FixtureResponse>();
     }
 

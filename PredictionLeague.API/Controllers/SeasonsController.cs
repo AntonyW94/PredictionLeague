@@ -107,22 +107,5 @@ public class SeasonsController : ApiControllerBase
         return NoContent();
     }
 
-    [AllowAnonymous]
-    [HttpPost("/sync")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> SyncSeasonAsync([FromRoute] int seasonId, [FromHeader(Name = "X-Api-Key")] string? apiKey, CancellationToken cancellationToken)
-    {
-        var expectedApiKey = _configuration["FootballApi:SchedulerApiKey"];
-        if (string.IsNullOrEmpty(expectedApiKey) || apiKey != expectedApiKey)
-            return Unauthorized(); 
-        
-        var command = new SyncSeasonWithApiCommand(seasonId);
-        await _mediator.Send(command, cancellationToken);
-
-        return NoContent();
-    }
-
     #endregion
 }
