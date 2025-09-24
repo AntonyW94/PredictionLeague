@@ -13,6 +13,7 @@ public interface ISeasonRepository
     #region Read
 
     Task<Season?> GetByIdAsync(int id, CancellationToken cancellationToken);
+    Task<IEnumerable<Season>> GetActiveSeasonsAsync(CancellationToken cancellationToken);
 
     #endregion
 

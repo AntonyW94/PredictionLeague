@@ -108,7 +108,7 @@ public class SeasonsController : ApiControllerBase
     }
 
     [AllowAnonymous]
-    [HttpPost("{seasonId:int}/sync")]
+    [HttpPost("/sync")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

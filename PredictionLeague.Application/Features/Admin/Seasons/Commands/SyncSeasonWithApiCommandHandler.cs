@@ -4,7 +4,6 @@ using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Common.Guards.Season;
 using PredictionLeague.Domain.Models;
-using static System.Int32;
 
 namespace PredictionLeague.Application.Features.Admin.Seasons.Commands;
 
@@ -39,11 +38,12 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
         var apiRoundNames = (await _footballDataService.GetRoundsForSeasonAsync(season.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
 
         var rescheduledMatchesToCheck = new List<FootballApi.DTOs.FixtureResponse>();
+        var currentSeasonFixtures = (await _footballDataService.GetAllFixturesForSeasonAsync(season.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
 
         foreach (var apiRoundName in apiRoundNames)
         {
             var hasChanges = false;
-            var currentRoundFixtures = (await _footballDataService.GetFixturesByRoundAsync(season.ApiLeagueId.Value, seasonYear, apiRoundName, cancellationToken)).ToList();
+            var currentRoundFixtures = currentSeasonFixtures.Where(f => f.League?.RoundName == apiRoundName).ToList();
 
             var round = await _roundRepository.GetByApiRoundNameAsync(season.Id, apiRoundName, cancellationToken);
             if (round == null)
@@ -51,15 +51,18 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
                 if (!currentRoundFixtures.Any())
                     continue;
 
-                var earliestMatchDate = currentRoundFixtures.Min(f => f.Fixture.Date);
-                var deadline = earliestMatchDate.AddMinutes(-30);
+                var earliestMatchDate = currentRoundFixtures.Min(f => f.Fixture?.Date);
+                if (earliestMatchDate == null)
+                    continue;
 
-                if (TryParse(apiRoundName.Split(" - ").LastOrDefault(), out var roundNumber))
+                var deadline = earliestMatchDate.Value.AddMinutes(-30);
+
+                if (int.TryParse(apiRoundName.Split(" - ").LastOrDefault(), out var roundNumber))
                 {
                     var newRound = Round.Create(
                         season.Id,
                         roundNumber,
-                        earliestMatchDate,
+                        earliestMatchDate.Value,
                         deadline,
                         apiRoundName
                     );
@@ -79,6 +82,9 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
             foreach (var rescheduledMatch in rescheduledMatchesToCheck)
             {
+                if (rescheduledMatch.Fixture == null || rescheduledMatch.Teams == null)
+                    continue;
+
                 if (IsMatchInRoundTimespan(rescheduledMatch.Fixture.Date, round))
                 {
                     var homeTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Home.Id, cancellationToken);
@@ -86,8 +92,11 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
                     if (homeTeam != null && awayTeam != null)
                     {
-                        round.AddMatch(homeTeam.Id, awayTeam.Id, rescheduledMatch.Fixture.Date, rescheduledMatch.Fixture.Id);
-                        hasChanges = true;
+                        if (!round.Matches.Any(m => m.HomeTeamId == homeTeam.Id && m.AwayTeamId == awayTeam.Id))
+                        {
+                            round.AddMatch(homeTeam.Id, awayTeam.Id, rescheduledMatch.Fixture.Date, rescheduledMatch.Fixture.Id);
+                            hasChanges = true;
+                        }
                     }
 
                     matchesPlacedFromList.Add(rescheduledMatch);
@@ -100,6 +109,9 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
             foreach (var fixture in currentRoundFixtures)
             {
+                if (fixture.Fixture == null || fixture.Teams == null)
+                    continue;
+
                 if (existingMatches.TryGetValue(fixture.Fixture.Id, out var localMatch))
                 {
                     if (localMatch.MatchDateTime != fixture.Fixture.Date)

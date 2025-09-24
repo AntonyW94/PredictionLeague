@@ -70,6 +70,18 @@ public class SeasonRepository : ISeasonRepository
         return await Connection.QuerySingleOrDefaultAsync<Season>(command);
     }
 
+    public async Task<IEnumerable<Season>> GetActiveSeasonsAsync(CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT * FROM [Seasons] WHERE [IsActive] = 1;";
+       
+        var command = new CommandDefinition(
+            commandText: sql,
+            cancellationToken: cancellationToken
+        );
+
+        return await Connection.QueryAsync<Season>(command);
+    }
+
     #endregion
 
     #region Update
