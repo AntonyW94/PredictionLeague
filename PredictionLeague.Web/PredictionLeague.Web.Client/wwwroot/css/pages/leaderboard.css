@@ -64,31 +64,34 @@
     overflow-y: auto;
 }
 
-.leaderboard-table .league-card-body.inner-card {
-    padding-top: 1.5em;
-    padding-bottom: 1.5em;
-    padding-left: 3em;
-    padding-right: 3em;
-}
-
-.carousel-item-content .leaderboard-card {
-    width: 100%;
-    min-width: 0;
-}
-
-.leaderboard-table {
-    table-layout: fixed;
-}
-
-    .leaderboard-table tbody tr.current-user-highlight td {
-        background-color: var(--pl-green) !important;
-        color: white !important;
+    .carousel-item-content .leaderboard-card {
+        width: 100%;
+        min-width: 0;
     }
 
-    .leaderboard-table tbody tr.overall-round-winner,
-    .leaderboard-table tbody tr.overall-round-winner td,
-    .leaderboard-table tbody tr.overall-round-winner.current-user-highlight td {
-        background-color: var(--pl-gold) !important;
-        color: var(--pl-white) !important;
-        border: none;
+    .leaderboard-table {
+        table-layout: fixed;
     }
+
+        .leaderboard-table tbody tr.current-user-highlight td {
+            background-color: var(--pl-green) !important;
+            color: white !important;
+        }
+
+        .leaderboard-table tbody tr.overall-round-winner,
+        .leaderboard-table tbody tr.overall-round-winner td,
+        .leaderboard-table tbody tr.overall-round-winner.current-user-highlight td {
+            background-color: var(--pl-gold) !important;
+            color: var(--pl-white) !important;
+            border: none;
+        }
+
+
+@media (max-width: 991.98px) {
+    .leaderboard-table .league-card-body.inner-card {
+        padding-top: 1.5em;
+        padding-bottom: 1.5em;
+        padding-left: 3em;
+        padding-right: 3em;
+    }
+}
