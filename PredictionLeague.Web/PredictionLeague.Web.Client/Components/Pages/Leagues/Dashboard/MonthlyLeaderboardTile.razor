@@ -8,95 +8,93 @@
 
 <div class="card w-100 mh-600">
     <h5 class="card-title text-white fw-bold mb-3">Monthly Leaderboard</h5>
-    <div class="card-body no-padding justify-start">
-        <ApiError Message="@_errorMessage" />
+    <ApiError Message="@_errorMessage" />
 
-        @if (_isLoadingMonths)
-        {
-            <div class="d-flex justify-content-center align-items-center h-100">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
+    @if (_isLoadingMonths)
+    {
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
-        }
-        else if (_months.Any())
-        {
-            <div class="carousel-wrapper">
-                <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
-                    <div class="carousel-track" style="@_trackStyle">
-                        @foreach (var month in _months)
-                        {
-                            <div class="carousel-item-wrapper">
-                                <div class="carousel-item-content">
-                                    <div class="leaderboard-card">
-                                        <div class="card-header w-100">
-                                            <h5 class="card-title text-white fw-bold centre mb-0">@month.Name</h5>
-                                        </div>
-                                        <div class="league-card-body justify-start w-100 inner-card">
-                                            @if (_leaderboards.TryGetValue(month.Month, out var leaderboard))
+        </div>
+    }
+    else if (_months.Any())
+    {
+        <div class="carousel-wrapper">
+            <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
+                <div class="carousel-track" style="@_trackStyle">
+                    @foreach (var month in _months)
+                    {
+                        <div class="carousel-item-wrapper">
+                            <div class="carousel-item-content">
+                                <div class="leaderboard-card">
+                                    <div class="card-header w-100">
+                                        <h5 class="card-title text-white fw-bold centre mb-0">@month.Name</h5>
+                                    </div>
+                                    <div class="league-card-body justify-start w-100 inner-card">
+                                        @if (_leaderboards.TryGetValue(month.Month, out var leaderboard))
+                                        {
+                                            @if (leaderboard.IsLoading)
                                             {
-                                                @if (leaderboard.IsLoading)
-                                                {
-                                                    <div class="d-flex justify-content-center align-items-center h-100">
-                                                        <div class="spinner-border text-light" role="status">
-                                                            <span class="visually-hidden">Loading...</span>
-                                                        </div>
+                                                <div class="d-flex justify-content-center align-items-center h-100">
+                                                    <div class="spinner-border text-light" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
                                                     </div>
-                                                }
-                                                else if (leaderboard.Entries.Any())
-                                                {
-                                                    <div class="table-responsive w-100">
-                                                        <table class="leaderboard-table light text-white">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th class="rank-col">#</th>
-                                                                    <th class="player-name-col">Player</th>
-                                                                    <th class="points-col">Pts</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                @foreach (var entry in leaderboard.Entries)
-                                                                {
-                                                                    <tr class="@(GetUserHighlightClass(entry.UserId))">
-                                                                        <td class="rank-col fw-bold">@entry.Rank</td>
-                                                                        <td class="player-name-col fw-bold">@entry.PlayerName</td>
-                                                                        <td class="points-col fw-bold">@entry.TotalPoints</td>
-                                                                    </tr>
-                                                                }
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                }
-                                                else
-                                                {
-                                                    <p class="text-white-50 text-center">No scores for this month yet.</p>
-                                                }
+                                                </div>
                                             }
-                                        </div>
+                                            else if (leaderboard.Entries.Any())
+                                            {
+                                                <div class="table-responsive w-100">
+                                                    <table class="leaderboard-table light text-white">
+                                                        <thead>
+                                                            <tr>
+                                                                <th class="rank-col">#</th>
+                                                                <th class="player-name-col">Player</th>
+                                                                <th class="points-col">Pts</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach (var entry in leaderboard.Entries)
+                                                            {
+                                                                <tr class="@(GetUserHighlightClass(entry.UserId))">
+                                                                    <td class="rank-col fw-bold">@entry.Rank</td>
+                                                                    <td class="player-name-col fw-bold">@entry.PlayerName</td>
+                                                                    <td class="points-col fw-bold">@entry.TotalPoints</td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <p class="text-white-50 text-center">No scores for this month yet.</p>
+                                            }
+                                        }
                                     </div>
                                 </div>
                             </div>
-                        }
-                    </div>
+                        </div>
+                    }
                 </div>
-
-                @if (_months.Count > 1)
-                {
-                    <div class="carousel-dots">
-                        @for (var i = 0; i < _months.Count; i++)
-                        {
-                            var index = i;
-                            <span class="carousel-dot @(index == _currentIndex ? "active" : "")" @onclick="() => GoToSlide(index)"></span>
-                        }
-                    </div>
-                }
             </div>
-        }
-        else
-        {
-            <p class="text-center text-white-50">No monthly leaderboards available yet.</p>
-        }
-    </div>
+
+            @if (_months.Count > 1)
+            {
+                <div class="carousel-dots">
+                    @for (var i = 0; i < _months.Count; i++)
+                    {
+                        var index = i;
+                        <span class="carousel-dot @(index == _currentIndex ? "active" : "")" @onclick="() => GoToSlide(index)"></span>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="text-center text-white-50">No monthly leaderboards available yet.</p>
+    }
 </div>
 
 @code {
@@ -114,7 +112,7 @@
     protected override async Task OnInitializedAsync()
     {
         try
-        {   
+        {
             await base.OnInitializedAsync();
             _months = (await LeagueService.GetMonthsForLeagueAsync(LeagueId)).ToList();
 
@@ -145,12 +143,12 @@
         var touchEndX = e.ChangedTouches[0].ClientX;
         var diffX = _touchStartX - touchEndX;
 
-        if (!(Math.Abs(diffX) > 50)) 
+        if (!(Math.Abs(diffX) > 50))
             return;
 
         if (diffX > 0)
         {
-            if (_currentIndex >= _leaderboards.Count - 1) 
+            if (_currentIndex >= _leaderboards.Count - 1)
                 return;
 
             _currentIndex++;
@@ -168,7 +166,7 @@
 
     private async Task LoadLeaderboardForMonth(int month)
     {
-        if (_leaderboards.ContainsKey(month)) 
+        if (_leaderboards.ContainsKey(month))
             return;
 
         _leaderboards[month] = new LeaderboardData { IsLoading = true };
