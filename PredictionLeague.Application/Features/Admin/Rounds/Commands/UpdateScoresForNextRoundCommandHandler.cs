@@ -27,8 +27,15 @@ public class UpdateScoresForNextRoundCommandHandler : IRequestHandler<UpdateScor
         var activeRound = await _roundRepository.GetOldestInProgressRoundAsync(request.SeasonId, cancellationToken);
         if (activeRound == null || !activeRound.Matches.Any())
             return;
+
+        var matchesToCheck = activeRound.Matches
+            .Where(m => m.MatchDateTime < DateTime.Now && m.Status != MatchStatus.Completed)
+            .ToList();
+
+        if (!matchesToCheck.Any())
+            return;
         
-        var externalIds = activeRound.Matches
+        var externalIds = matchesToCheck
             .Where(m => m.ExternalId.HasValue)
             .Select(m => m.ExternalId.GetValueOrDefault())
             .ToList();

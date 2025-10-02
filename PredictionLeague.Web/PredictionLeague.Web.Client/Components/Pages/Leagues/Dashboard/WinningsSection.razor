@@ -15,31 +15,34 @@
 }
 else if (_winningsData != null)
 {
-    @if (_winningsData.WinningsCalculated)
+    @if (_winningsData.TotalPrizePot > 0)
     {
-        <div class="row">
-            <div class="col-12 mb-4">
-                <WinningsLeaderboardTile Leaderboard="@_winningsData?.Leaderboard" IsLoading="@_isLoading" />
-            </div>
+        if (_winningsData.WinningsCalculated)
+        {
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <WinningsLeaderboardTile Leaderboard="@_winningsData?.Leaderboard" IsLoading="@_isLoading" />
+                </div>
 
-            <div class="col-lg-4 mb-4 d-flex">
-                <RoundPrizesTile Prizes="@_winningsData?.RoundPrizes" IsLoading="@_isLoading" />
-            </div>
+                <div class="col-lg-4 mb-4 d-flex">
+                    <RoundPrizesTile Prizes="@_winningsData?.RoundPrizes" IsLoading="@_isLoading" />
+                </div>
 
-            <div class="col-lg-4 mb-4 d-flex">
-                <MonthlyPrizesTile Prizes="@_winningsData?.MonthlyPrizes" IsLoading="@_isLoading" />
-            </div>
+                <div class="col-lg-4 mb-4 d-flex">
+                    <MonthlyPrizesTile Prizes="@_winningsData?.MonthlyPrizes" IsLoading="@_isLoading" />
+                </div>
 
-            <div class="col-lg-4 mb-4 d-flex">
-                <EndOfSeasonPrizesTile Prizes="@_winningsData?.EndOfSeasonPrizes" IsLoading="@_isLoading" />
+                <div class="col-lg-4 mb-4 d-flex">
+                    <EndOfSeasonPrizesTile Prizes="@_winningsData?.EndOfSeasonPrizes" IsLoading="@_isLoading" />
+                </div>
             </div>
-        </div>
-    }
-    else
-    {
-        <div class="col-12">
-            <PrizePotTile WinningsData="@_winningsData" />
-        </div>
+        }
+        else
+        {
+            <div class="col-12">
+                <PrizePotTile WinningsData="@_winningsData" />
+            </div>
+        }
     }
 }
 else

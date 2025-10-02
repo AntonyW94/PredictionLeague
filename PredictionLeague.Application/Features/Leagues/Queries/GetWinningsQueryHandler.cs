@@ -33,14 +33,17 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
             };
         }
 
-        var winningsDto = new WinningsDto { WinningsCalculated = true };
+        var winningsDto = new WinningsDto
+        {
+            WinningsCalculated = true,
+            EntryCount = leagueData.EntryCount,
+            EntryCost = leagueData.EntryCost,
+            TotalPrizePot = leagueData.EntryCount * leagueData.EntryCost
+        };
 
-        // Step 2: Process the prize lists (Rounds, Monthly, End of Season)
         ProcessRoundPrizes(winningsDto, leagueData);
         ProcessMonthlyPrizes(winningsDto, leagueData);
         ProcessEndOfSeasonPrizes(winningsDto, leagueData);
-
-        // Step 3: Process the Winnings Leaderboard
         ProcessLeaderboard(winningsDto, leagueData);
 
         return winningsDto;
