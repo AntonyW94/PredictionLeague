@@ -44,5 +44,16 @@ namespace PredictionLeague.API.Controllers
 
             return NoContent();
         }
+
+        [AllowAnonymous]
+        [HttpPost("send-reminders")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> SendScheduledReminders(CancellationToken cancellationToken)
+        {
+            var command = new SendScheduledRemindersCommand();
+            await _mediator.Send(command, cancellationToken);
+            return NoContent();
+        }
     }
 }

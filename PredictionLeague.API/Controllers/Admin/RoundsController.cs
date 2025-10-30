@@ -104,15 +104,5 @@ public class RoundsController : ApiControllerBase
         return NoContent();
     }
 
-    [HttpPost("{roundId:int}/send-prediction-reminder-emails")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> ChaseEmails(int roundId, CancellationToken cancellationToken)
-    {
-        var command = new SendPredictionsMissingEmailsCommand(roundId);
-        await _mediator.Send(command, cancellationToken);
-
-        return NoContent();
-    }
-
     #endregion
 }

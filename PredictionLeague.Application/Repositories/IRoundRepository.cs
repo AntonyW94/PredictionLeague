@@ -19,13 +19,15 @@ public interface IRoundRepository
     Task<bool> IsLastRoundOfMonthAsync(int roundId, int seasonId, CancellationToken cancellationToken);
     Task<bool> IsLastRoundOfSeasonAsync(int roundId, int seasonId, CancellationToken cancellationToken);
     Task<IEnumerable<Match>> GetAllMatchesForMonthAsync(int month, int seasonId, CancellationToken cancellationToken);
-    
+    Task<Round?> GetNextRoundForReminderAsync(CancellationToken cancellationToken);
+
     #endregion
 
     #region Update
 
     Task UpdateAsync(Round round, CancellationToken cancellationToken);
     Task UpdateMatchScoresAsync(List<Match> matches, CancellationToken cancellationToken);
+    Task UpdateLastReminderSentAsync(Round round, CancellationToken cancellationToken);
 
     #endregion
 }

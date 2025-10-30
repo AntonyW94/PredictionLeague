@@ -73,25 +73,6 @@
                                 <span class="bi bi-pencil-fill me-2"></span>Edit
                             </button>
 
-                            @if (round.Id == _firstPublishedRoundId && round.AllPredictionsIn)
-                            {
-                                <button class="btn grey-button" disabled>
-                                    <span class="bi bi-envelope-fill me-2"></span>Send Chase Emails
-                                </button>
-                            }
-                            else if (round.Id == _firstPublishedRoundId && !_isChasing)
-                            {
-                                <button class="btn purple-accent-button" @onclick="() => SendChaseEmails(round.Id)">
-                                    <span class="bi bi-envelope-fill me-2"></span>Send Chase Emails
-                                </button>
-                            }
-                            else if (round.Id == _firstPublishedRoundId && _isChasing)
-                            {
-                                <button class="btn purple-accent-button" disabled>
-                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Sending...
-                                </button>
-                            }
-
                             <button class="btn blue-light-button flex-grow-1" @onclick="() => EnterResults(round.Id)">
                                 <span class="bi bi-clipboard2-check-fill me-2"></span>Enter Results
                             </button>
@@ -114,8 +95,6 @@
     private List<RoundWithAllPredictionsInDto>? _rounds;
     private string? _errorMessage;
     private string? _successMessage;
-    private int? _firstPublishedRoundId;
-    private bool _isChasing;
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,33 +104,11 @@
         try
         {
             _rounds = await Http.GetFromJsonAsync<List<RoundWithAllPredictionsInDto>>($"api/admin/rounds/by-season/{SeasonId}");
-
-            if (_rounds != null)
-                _firstPublishedRoundId = _rounds.OrderBy(r => r.Deadline).FirstOrDefault(r => r.Status == RoundStatus.Published)?.Id;
-
         }
         catch (Exception)
         {
             _errorMessage = "An error occurred while loading the rounds for this season.";
         }
-    }
-
-    private async Task SendChaseEmails(int roundId)
-    {
-        _isChasing = true;
-
-        StateHasChanged();
-
-        var response = await Http.PostAsync($"api/admin/rounds/{roundId}/send-prediction-reminder-emails", null);
-
-        if (response.IsSuccessStatusCode)
-            _successMessage = $"Chase emails sent successfully for Round {roundId}";
-        else
-            _errorMessage = "Failed to send chase emails.";
-
-        _isChasing = false;
-
-        StateHasChanged();
     }
 
     private void AddRound() => NavigationManager.NavigateTo($"/admin/seasons/{SeasonId}/rounds/create");

@@ -57,6 +57,7 @@ public static class DependencyInjection
         
         services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>(); 
         services.AddScoped<IEmailService, BrevoEmailService>();
+        services.AddScoped<IReminderService, ReminderService>();
         services.AddScoped<IEntryCodeUniquenessChecker, EntryCodeUniquenessChecker>();
         services.AddScoped<IUserManager, UserManagerService>();
         services.AddHttpClient<IFootballDataService, FootballDataService>();

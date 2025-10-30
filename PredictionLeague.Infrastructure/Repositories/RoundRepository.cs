@@ -53,8 +53,8 @@ public class RoundRepository : IRoundRepository
     public async Task<Round> CreateAsync(Round round, CancellationToken cancellationToken)
     {
         const string sql = @"
-            INSERT INTO [Rounds] ([SeasonId], [RoundNumber], [StartDate], [Deadline], [ApiRoundName])
-            VALUES (@SeasonId, @RoundNumber, @StartDate, @Deadline, @ApiRoundName);
+            INSERT INTO [Rounds] ([SeasonId], [RoundNumber], [StartDate], [Deadline], [ApiRoundName], [LastReminderSent])
+            VALUES (@SeasonId, @RoundNumber, @StartDate, @Deadline, @ApiRoundName, @LastReminderSent);
             SELECT CAST(SCOPE_IDENTITY() as int);";
 
         var command = new CommandDefinition(
@@ -65,7 +65,8 @@ public class RoundRepository : IRoundRepository
                 round.RoundNumber,
                 round.StartDate,
                 round.Deadline,
-                round.ApiRoundName
+                round.ApiRoundName,
+                round.LastReminderSent
             },
             cancellationToken: cancellationToken
         );
@@ -221,6 +222,27 @@ public class RoundRepository : IRoundRepository
         return await Connection.QueryAsync<Match>(command);
     }
 
+    public async Task<Round?> GetNextRoundForReminderAsync(CancellationToken cancellationToken)
+    {
+        const string sqlWithMatches = @"
+            WITH NextRound AS (
+                SELECT TOP 1 [Id]
+                FROM [Rounds]
+                WHERE [Status] = @PublishedStatus
+                AND [Deadline] > GETUTCDATE()
+                ORDER BY [Deadline] ASC
+            )
+
+            SELECT 
+                r.*, 
+                m.*
+            FROM [Rounds] r
+            LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]
+            WHERE r.[Id] IN (SELECT [Id] FROM NextRound);";
+
+        return await QueryAndMapRound(sqlWithMatches, cancellationToken, new { PublishedStatus = nameof(RoundStatus.Published) });
+    }
+
     #endregion
 
     #region Update
@@ -235,7 +257,8 @@ public class RoundRepository : IRoundRepository
                 [StartDate] = @StartDate,
                 [Deadline] = @Deadline,
                 [Status] = @Status,
-                [ApiRoundName] = @ApiRoundName
+                [ApiRoundName] = @ApiRoundName,
+                [LastReminderSent] = @LastReminderSent
             WHERE 
                 [Id] = @Id;";
 
@@ -246,7 +269,8 @@ public class RoundRepository : IRoundRepository
             round.StartDate,
             round.Deadline,
             Status = round.Status.ToString(),
-            round.ApiRoundName
+            round.ApiRoundName,
+            round.LastReminderSent
         }, cancellationToken: cancellationToken);
         await Connection.ExecuteAsync(updateRoundCommand);
 
@@ -295,6 +319,29 @@ public class RoundRepository : IRoundRepository
             var deleteMatchesCommand = new CommandDefinition(deleteSql, new { MatchIdsToDelete = matchIdsToDelete }, cancellationToken: cancellationToken);
             await Connection.ExecuteAsync(deleteMatchesCommand);
         }
+    }
+
+    public async Task UpdateLastReminderSentAsync(Round round, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            UPDATE 
+                [Rounds]
+            SET 
+                [LastReminderSent] = @LastReminderSent
+            WHERE 
+                [Id] = @Id;";
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new
+            {
+                round.Id,
+                round.LastReminderSent
+            },
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(command);
     }
 
     public async Task UpdateMatchScoresAsync(List<Match> matches, CancellationToken cancellationToken)
@@ -365,6 +412,7 @@ public class RoundRepository : IRoundRepository
                     groupedRound.Deadline,
                     groupedRound.Status,
                     groupedRound.ApiRoundName,
+                    groupedRound.LastReminderSent,
                     matches
                 );
             });

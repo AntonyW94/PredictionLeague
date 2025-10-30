@@ -12,13 +12,14 @@ public class Round
     public DateTime Deadline { get; private set; }
     public RoundStatus Status { get; private set; }
     public string? ApiRoundName { get; private set; }
+    public DateTime? LastReminderSent { get; private set; }
 
     private readonly List<Match> _matches = new();
     public IReadOnlyCollection<Match> Matches => _matches.AsReadOnly();
 
     private Round() { }
   
-    public Round(int id, int seasonId, int roundNumber, DateTime startDate, DateTime deadline, RoundStatus status, string? apiRoundName, IEnumerable<Match?>? matches)
+    public Round(int id, int seasonId, int roundNumber, DateTime startDate, DateTime deadline, RoundStatus status, string? apiRoundName, DateTime? lastReminderSent, IEnumerable<Match?>? matches)
     {
         Id = id;
         SeasonId = seasonId;
@@ -27,7 +28,8 @@ public class Round
         Deadline = deadline;
         Status = status;
         ApiRoundName = apiRoundName;
-    
+        LastReminderSent = lastReminderSent;
+
         if (matches != null)
             _matches.AddRange(matches.Where(m => m != null).Select(m => (Match)m!));
     }
@@ -43,7 +45,8 @@ public class Round
             StartDate = startDate,
             Deadline = deadline,
             Status = RoundStatus.Draft,
-            ApiRoundName = apiRoundName
+            ApiRoundName = apiRoundName,
+            LastReminderSent = null
         };
     }
 
@@ -56,6 +59,11 @@ public class Round
         Deadline = deadline;
         Status = status;
         ApiRoundName = apiRoundName;
+    }
+
+    public void UpdateLastReminderSent()
+    {
+        LastReminderSent = DateTime.Now;
     }
 
     public void UpdateStatus(RoundStatus status)

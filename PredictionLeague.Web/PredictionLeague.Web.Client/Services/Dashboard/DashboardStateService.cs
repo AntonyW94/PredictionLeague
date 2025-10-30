@@ -2,7 +2,6 @@
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Web.Client.Services.Leagues;
-using PredictionLeague.Web.Client.Services.Round;
 
 namespace PredictionLeague.Web.Client.Services.Dashboard;
 
@@ -18,8 +17,6 @@ public class DashboardStateService : IDashboardStateService
     public bool IsLeaderboardsLoading { get; private set; }
     public bool IsUpcomingRoundsLoading { get; private set; }
 
-    public int? ChasingRoundId { get; private set; }
-
     public string? AvailableLeaguesErrorMessage { get; private set; }
     public string? MyLeaguesErrorMessage { get; private set; }
     public string? LeaderboardsErrorMessage { get; private set; }
@@ -30,13 +27,11 @@ public class DashboardStateService : IDashboardStateService
     public event Action? OnStateChange;
 
     private readonly ILeagueService _leagueService;
-    private readonly IRoundService _roundService;
 
 
-    public DashboardStateService(ILeagueService leagueService, IRoundService roundService)
+    public DashboardStateService(ILeagueService leagueService)
     {
         _leagueService = leagueService;
-        _roundService = roundService;
     }
 
     public async Task LoadMyLeaguesAsync()
@@ -162,29 +157,6 @@ public class DashboardStateService : IDashboardStateService
             MyLeaguesErrorMessage = errorMessage;
             NotifyStateChanged();
         }
-    }
-
-    public async Task SendChaseEmailsAsync(int roundId)
-    {
-        ChasingRoundId = roundId;
-
-        UpcomingRoundsErrorMessage = null;
-
-        NotifyStateChanged();
-
-        var success = await _roundService.SendChaseEmailsAsync(roundId);
-        if (success)
-        {
-            UpcomingRoundsSuccessMessage = "Chase emails sent successfully";
-        }
-        else
-        {
-            UpcomingRoundsErrorMessage = "Could not send chase emails";
-        }
-
-        ChasingRoundId = null;
-
-        NotifyStateChanged();
     }
 
     private void NotifyStateChanged() => OnStateChange?.Invoke();
