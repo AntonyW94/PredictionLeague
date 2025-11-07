@@ -40,13 +40,6 @@
                 }
             </NavLink>
         }
-
-        <AuthorizeView Roles="@RoleNames.Administrator">
-            <NavLink href="@($"/admin/rounds/{Round.Id}/results")" class="btn blue-light-button">
-                <span class="bi bi-graph-up me-2"></span>
-                Enter Results
-            </NavLink>
-        </AuthorizeView>
     </div>
 </div>
 

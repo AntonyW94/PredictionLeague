@@ -85,6 +85,33 @@
     word-wrap: break-word;
 }
 
+.space-around {
+    justify-content: space-around;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+}
+
+.shadow {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+.rounded{
+    border-radius: var(--bs-border-radius);
+}
+
+.table-responsive {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.table-responsive:hover {
+    -ms-overflow-style: auto;
+    scrollbar-width: auto;
+}
+
 @media (max-width: 768px) {
     .page-container {
         padding: 1em;

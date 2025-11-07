@@ -64,15 +64,17 @@
 .back-button:disabled,
 .back-button:active {
     position: absolute;
-    top: 50%;
+    top: -15px;
     left: 0;
     transform: translateY(-50%);
-    color: var(--pl-red);
+    color: var(--pl-white);
     transition: color 0.2s ease-in-out;
+    text-decoration: none;
 }
 
     .back-button:not(.badge):hover {
         color: var(--pl-white);
+        text-decoration: underline;
     }
 
     .back-button span {
@@ -80,22 +82,35 @@
     }
 
 .password-toggle-btn {
-    background-color: var(--pl-white);
-    color: var(--pl-purple-800);
-    border: none;
+    background-color: var(--pl-purple-1000);
+    color: var(--pl-white);
+    border: 1px solid var(--pl-white);
+    border-left: 0;
     transition: color 0.2s ease-in-out;
 }
 
     .password-toggle-btn:hover,
-    .password-toggle-btn:active,
+    .password-toggle-btn:active {
+        color: var(--pl-green);
+        border: 1px solid var(--pl-white);
+        border-left: 0;
+        background-color: var(--pl-purple-1000);
+    }
+
     .password-toggle-btn:focus {
         color: var(--pl-green);
-        background-color: var(--pl-white);
+        border: 1px solid var(--pl-white);
+        border-left: 0;
+        background-color: var(--pl-purple-800);
     }
 
 .btn .bi {
     vertical-align: middle;
     line-height: 1;
+}
+
+.input-height{
+    height: 48px;
 }
 
 /* Social Buttons */

@@ -2,40 +2,38 @@
     /* Base Colors */
     --pl-white: #FFFFFF;
     --pl-black: #1f1f1f;
-
     /* Purples */
+    --pl-purple-1000: #2C0A3D;
     --pl-purple-900: #31144A;
     --pl-purple-800: #3D195B;
     --pl-purple-700: #432468;
     --pl-purple-600: #4A2E6C;
     --pl-purple-accent: #963cff;
-
     /* Reds */
     --pl-red: #E90052;
-
     /* Blues */
     --pl-blue: #04F5FF;
     --pl-blue-light: #03c2b4;
-
     /* Greens */
     --pl-green: #00FF85;
     --pl-green-light: #84fab0;
-
     /* Yellows */
     --pl-yellow: #EBFF01;
-
     /* Greys */
     --pl-grey-100: #EAEAEA;
     --pl-grey-200: #DADCE0;
     --pl-grey-300: #CECECE;
     --pl-grey-500: #6C757D;
-
     /* Medals */
     --pl-gold: #C9B037;
     --pl-silver: #B4B4B4;
     --pl-bronze: #6A3805;
 }
 
-.text-pl-red{
-    color: var(--pl-red)!important;
+.text-pl-red {
+    color: var(--pl-red) !important;
+}
+
+.text-pl-purple-1000 {
+    color: var(--pl-purple-1000) !important;
 }

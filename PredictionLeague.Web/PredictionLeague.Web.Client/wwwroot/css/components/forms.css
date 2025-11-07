@@ -1,5 +1,5 @@
 ﻿.form-container {
-    background-color: var(--pl-purple-600);
+    background-color: var(--pl-purple-1000);
     padding: 2.5rem;
     border-radius: var(--bs-border-radius);
     width: 100%;
@@ -136,6 +136,29 @@
         .message-box-solid.success::before {
             content: "\F26B";
         }
+
+.form-control {
+    height: 48px;
+    width: 100%;
+    border-radius: 28px;
+    padding: 0 18px;
+    background: var(--pl-purple-1000);
+    border: 1px solid var(--pl-white);
+    color: #fff;
+    font-size: 1rem;
+    transition: all 0.18s ease;
+}
+
+    .form-control::placeholder {
+        color: var(--pl-white);
+    }
+
+    /* Focused state */
+    .form-control:focus {
+        background: var(--pl-purple-800);
+        box-shadow: none;
+        outline: none;
+    }
 
 @media(max-width: 768px){
     .message-box-solid{

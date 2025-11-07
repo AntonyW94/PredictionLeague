@@ -27,11 +27,11 @@
 
 :root {
     /* Border Radiuses */
-    --bs-border-radius: 3px;
-    --bs-border-radius-sm: 3px;
-    --bs-border-radius-lg: 3px;
-    --bs-border-radius-xl: 3px;
-    --bs-border-radius-xxl: 3px;
+    --bs-border-radius: 20px;
+    --bs-border-radius-sm: 20px;
+    --bs-border-radius-lg: 20px;
+    --bs-border-radius-xl: 20px;
+    --bs-border-radius-xxl: 20px;
 }
 
 html, body {
