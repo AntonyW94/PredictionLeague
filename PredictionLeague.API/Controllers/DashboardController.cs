@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Dashboard.Queries;
-using PredictionLeague.Contracts;
 using PredictionLeague.Contracts.Dashboard;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
@@ -25,9 +24,7 @@ public class DashboardController : ApiControllerBase
     [ProducesResponseType(typeof(IEnumerable<UpcomingRoundDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<UpcomingRoundDto>>> GetUpcomingRoundsAsync(CancellationToken cancellationToken)
     {
-        var isAdmin = User.IsInRole(RoleNames.Administrator);
-
-        var query = new GetUpcomingRoundsQuery(CurrentUserId, isAdmin);
+        var query = new GetUpcomingRoundsQuery(CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 
@@ -46,7 +43,7 @@ public class DashboardController : ApiControllerBase
         var query = new GetAvailableLeaguesQuery(CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
-    
+
     [HttpGet("private-leagues-available")]
     [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     public async Task<IActionResult> CheckForAvailablePrivateLeagues(CancellationToken cancellationToken)

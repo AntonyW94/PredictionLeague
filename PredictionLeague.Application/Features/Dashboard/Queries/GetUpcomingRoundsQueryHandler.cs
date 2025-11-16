@@ -16,7 +16,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
 
     public async Task<IEnumerable<UpcomingRoundDto>> Handle(GetUpcomingRoundsQuery request, CancellationToken cancellationToken)
     {
-        var sql = $@"
+        const string sql = @"
                      WITH RoundPredictionCounts AS (
                         SELECT
                             r.Id AS RoundId,
@@ -63,7 +63,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                         ActiveMemberCount amc ON r.SeasonId = amc.SeasonId
                     WHERE
                         r.[Status] = @PublishedStatus
-                        {(!request.IsAdmin ? "AND r.[Deadline] > GETUTCDATE()" : string.Empty)}
+                        AND r.[Deadline] > GETUTCDATE()
                         AND r.[SeasonId] IN (
                             SELECT l.SeasonId
                             FROM [Leagues] l
