@@ -11,6 +11,7 @@ public interface IDashboardStateService
     List<LeagueLeaderboardDto> Leaderboards { get; }
     List<UpcomingRoundDto> UpcomingRounds { get; }
 
+    bool HasAvailablePrivateLeagues { get; }
     bool IsMyLeaguesLoading { get; }
     bool IsAvailableLeaguesLoading { get; }
     bool IsLeaderboardsLoading { get; }

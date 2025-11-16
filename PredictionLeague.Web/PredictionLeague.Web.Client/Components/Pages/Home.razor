@@ -6,52 +6,17 @@
 
 <PageTitle>Home - Premier League Predictions</PageTitle>
 
-<style>
-    .hero-section {
-        background: linear-gradient(rgba(49, 20, 74, 0.8), rgba(49, 20, 74, 0.8)), url('https://images.unsplash.com/photo-1579952363873-27f3bade9f55?q=80&w=1935&auto=format&fit=crop') no-repeat center center;
-        background-size: cover;
-        color: white;
-        padding: 6rem 0;
-        position: relative;
-    }
-
-    .diagonal-clip {
-        clip-path: polygon(0 0, 100% 0, 100% 90%, 0 100%);
-    }
-
-    .feature-icon {
-        font-size: 3rem;
-        color: var(--pl-green);
-    }
-
-    .tick-icon {
-        font-size: 1rem;
-        color: var(--pl-green);
-    }
-
-    .testimonial-card {
-        background-color: var(--pl-purple-600);
-        border: none;
-    }
-
-    .testimonial-card img {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-    }
-</style>
-
 <CascadingAuthenticationState>
     <AuthorizeView>
         <NotAuthorized>
             <div class="hero-section text-center diagonal-clip">
                 <div class="container py-5">
-                    <img src="/images/logo.png" alt="Prediction League Logo" class="mb-4" style="height: 100px;" />
+                    <img src="/images/logo.png" alt="Prediction League Logo" class="mb-4 hero-image" />
                     <h1 class="display-4 fw-bold text-white">The Ultimate Premier League Prediction Game</h1>
                     <p class="fs-4 col-md-8 mx-auto">Challenge your friends, prove your football knowledge, and top the leaderboard. Your journey to prediction glory starts here.</p>
                     <div class="d-flex justify-content-center align-items-center mt-4 gap-3">
-                        <NavLink class="btn btn-lg blue-light-button px-4" href="authentication/login">Login</NavLink>
-                        <NavLink class="btn btn-lg green-button px-4" href="authentication/register">Register</NavLink>
+                        <NavLink class="btn btn-lg blue-light-button px-4 text-pl-purple-1000" href="authentication/login">Login</NavLink>
+                        <NavLink class="btn btn-lg green-button px-4 text-pl-purple-1000" href="authentication/register">Register</NavLink>
                     </div>
                 </div>
             </div>
@@ -64,11 +29,13 @@
                         <h4 class="fw-bold">1. Predict Scores</h4>
                         <p class="text-muted">Submit your score predictions for all 10 Premier League matches each week before the deadline.</p>
                     </div>
+
                     <div class="col-md-4">
                         <div class="feature-icon mb-3"><i class="bi bi-trophy"></i></div>
                         <h4 class="fw-bold">2. Score Points</h4>
                         <p class="text-muted">Earn 5 points for a perfect score, 3 for the correct result, and climb the weekly, monthly, and overall leaderboards.</p>
                     </div>
+
                     <div class="col-md-4">
                         <div class="feature-icon mb-3"><i class="bi bi-people-fill"></i></div>
                         <h4 class="fw-bold">3. Compete & Win</h4>
@@ -77,7 +44,7 @@
                 </div>
             </div>
 
-            <div class="py-5" style="background-color: var(--pl-purple-600);">
+            <div class="py-5 purple-1000">
                 <div class="container px-4">
                     <h2 class="text-center text-white fw-bold mb-5">Why Join Prediction League?</h2>
                     <div class="row align-items-center g-5">
@@ -130,9 +97,9 @@
                 </div>
             </div>
 
-            <div class="py-5" style="background-color: var(--pl-purple-800);">
+            <div class="py-5 purple-1000">
                 <div class="container text-center text-white">
-                    <h2 class="fw-bold">Ready to Prove Your Punditry?</h2>
+                    <h2 class="fw-bold text-white">Ready to Prove Your Punditry?</h2>
                     <p class="fs-5 my-4 col-md-8 mx-auto">The new season is just around the corner. Create your account, join a league, and start making your predictions today!</p>
                     <NavLink class="btn btn-lg green-button px-5" href="authentication/register">Get Started for Free</NavLink>
                 </div>

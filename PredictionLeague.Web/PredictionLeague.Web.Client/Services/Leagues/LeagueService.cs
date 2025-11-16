@@ -60,6 +60,11 @@ public class LeagueService : ILeagueService
         return await _httpClient.GetFromJsonAsync<WinningsDto>($"api/leagues/{leagueId}/winnings") ?? new WinningsDto();
     }
 
+    public async Task<bool> CheckForAvailablePrivateLeaguesAsync()
+    {
+        return await _httpClient.GetFromJsonAsync<bool>("api/Dashboard/private-leagues-available");
+    }
+
     public async Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId)
     {
         var response = await _httpClient.PostAsync($"api/leagues/{leagueId}/join", null);

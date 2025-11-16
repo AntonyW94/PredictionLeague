@@ -12,6 +12,7 @@ public class DashboardStateService : IDashboardStateService
     public List<LeagueLeaderboardDto> Leaderboards { get; private set; } = new();
     public List<UpcomingRoundDto> UpcomingRounds { get; private set; } = new();
 
+    public bool HasAvailablePrivateLeagues { get; private set; }
     public bool IsMyLeaguesLoading { get; private set; }
     public bool IsAvailableLeaguesLoading { get; private set; }
     public bool IsLeaderboardsLoading { get; private set; }
@@ -65,11 +66,19 @@ public class DashboardStateService : IDashboardStateService
 
         try
         {
-            AvailableLeagues = await _leagueService.GetAvailableLeaguesAsync();
+            var publicLeaguesTask = _leagueService.GetAvailableLeaguesAsync();
+            var privateLeaguesTask = _leagueService.CheckForAvailablePrivateLeaguesAsync();
+
+            await Task.WhenAll(publicLeaguesTask, privateLeaguesTask);
+
+            AvailableLeagues = await publicLeaguesTask;
+            HasAvailablePrivateLeagues = await privateLeaguesTask;
         }
         catch
         {
             AvailableLeaguesErrorMessage = "Could not load available leagues.";
+            AvailableLeagues = new List<AvailableLeagueDto>();
+            HasAvailablePrivateLeagues = false;
         }
         finally
         {

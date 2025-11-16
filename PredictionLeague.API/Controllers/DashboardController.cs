@@ -46,6 +46,14 @@ public class DashboardController : ApiControllerBase
         var query = new GetAvailableLeaguesQuery(CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
+    
+    [HttpGet("private-leagues-available")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    public async Task<IActionResult> CheckForAvailablePrivateLeagues(CancellationToken cancellationToken)
+    {
+        var query = new CheckForAvailablePrivateLeaguesQuery(CurrentUserId);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
 
     [HttpGet("leaderboards")]
     [ProducesResponseType(typeof(IEnumerable<LeagueLeaderboardDto>), StatusCodes.Status200OK)]

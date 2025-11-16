@@ -8,17 +8,20 @@
     transition: background-color 0.3s ease-in-out;
 }
 
-.navbar-custom {
-    background-color: var(--pl-purple-800);
-}
 
 .navbar-logo {
     height: 30px;
     margin-right: 10px;
+    border-radius: var(--bs-border-radius);
 }
 
 .navbar-overlay .navbar-brand{
     display: none!important;
+}
+
+a.navbar-brand img, 
+a.navbar-brand span {
+    cursor: pointer;
 }
 
 .navbar-nav .nav-item .nav-link,

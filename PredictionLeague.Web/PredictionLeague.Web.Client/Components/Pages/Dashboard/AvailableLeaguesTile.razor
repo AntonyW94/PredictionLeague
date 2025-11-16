@@ -81,10 +81,9 @@
     private bool _isBusy;
     private bool _showPrivateLeagueModal;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         DashboardState.OnStateChange += StateHasChanged;
-        await DashboardState.LoadAvailableLeaguesAsync();
     }
 
     private async Task ShowJoinPrivateLeagueModal()

@@ -35,7 +35,7 @@
 
 .swal2-select {
     background-color: white !important;
-    color: var(--pl-purple-800) !important; 
+    color: var(--pl-purple-800) !important;
     border-radius: var(--bs-border-radius);
     padding: 0.5rem;
 }
@@ -54,12 +54,12 @@
     }
 
 .form-check-input {
-    background-color: var(--pl-red); 
+    background-color: var(--pl-red);
     border-color: var(--pl-red);
 }
 
     .form-check-input:checked {
-        background-color: var(--pl-green); 
+        background-color: var(--pl-green);
         border-color: var(--pl-green);
     }
 
@@ -144,7 +144,7 @@
     padding: 0 18px;
     background: var(--pl-purple-1000);
     border: 1px solid var(--pl-white);
-    color: #fff;
+    color: var(--pl-white);
     font-size: 1rem;
     transition: all 0.18s ease;
 }
@@ -153,15 +153,26 @@
         color: var(--pl-white);
     }
 
-    /* Focused state */
     .form-control:focus {
         background: var(--pl-purple-800);
+        color: var(--pl-white);
+        border-color: var(--pl-white);
         box-shadow: none;
         outline: none;
     }
 
-@media(max-width: 768px){
-    .message-box-solid{
+.input-group .form-control:focus {
+    z-index: auto;
+}
+
+.input-group:focus-within .password-toggle-btn {
+    background-color: var(--pl-purple-800);
+    color: var(--pl-white);
+    z-index: 2
+}
+
+@media(max-width: 768px) {
+    .message-box-solid {
         text-align: center;
     }
 }

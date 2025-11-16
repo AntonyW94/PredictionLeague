@@ -8,7 +8,8 @@
     --pl-purple-800: #3D195B;
     --pl-purple-700: #432468;
     --pl-purple-600: #4A2E6C;
-    --pl-purple-accent: #963cff;
+    --pl-purple-300: #75559D;
+    --pl-purple-accent: #963CFF;
     /* Reds */
     --pl-red: #E90052;
     /* Blues */
@@ -36,4 +37,8 @@
 
 .text-pl-purple-1000 {
     color: var(--pl-purple-1000) !important;
+}
+
+.purple-1000{
+    background-color: var(--pl-purple-1000);
 }

@@ -4,7 +4,7 @@
 
 <div class="page">
     <CascadingAuthenticationState>
-        <main>
+        <main class="@_backgroundClass">
             <NavLayout class="@_navLayoutClass" />
 
             <article class="content">
@@ -22,6 +22,7 @@
 
 @code {
     private string _navLayoutClass = "";
+    private string _backgroundClass = "";
 
     protected override void OnInitialized()
     {
@@ -37,7 +38,12 @@
 
     private void SetLayoutClasses()
     {
-        _navLayoutClass = string.IsNullOrEmpty(NavigationManager.ToBaseRelativePath(NavigationManager.Uri)) ? "navbar-overlay" : "";
+        var relativePath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var isHomePage = string.IsNullOrWhiteSpace(relativePath);
+        var isAuthenticationPage = relativePath.StartsWith("authentication/");
+
+        _navLayoutClass = isHomePage ? "navbar-overlay" : "";
+        _backgroundClass = isAuthenticationPage ? "purple-gradient" : isHomePage ? "light-grey" : "";
     }
 
     public void Dispose()

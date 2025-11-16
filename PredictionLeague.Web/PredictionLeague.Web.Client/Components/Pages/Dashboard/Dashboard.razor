@@ -1,6 +1,10 @@
-﻿@page "/dashboard"
+﻿@using PredictionLeague.Web.Client.Services.Dashboard 
+
+@page "/dashboard"
 
 @attribute [Authorize]
+@inject IDashboardStateService DashboardState
+@implements IAsyncDisposable
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -23,13 +27,21 @@
                         </div>
                         
                         <div class="row">
-                            <div class="col-lg-6 mb-4 mb-md-0">
+                            @{
+                                var showAvailableLeagues = DashboardState.IsAvailableLeaguesLoading || DashboardState.AvailableLeagues.Any() || DashboardState.HasAvailablePrivateLeagues;
+                                var myLeaguesClass = showAvailableLeagues ? "col-lg-6 mb-4 mb-md-0" : "col-lg-12 mb-4 mb-lg-0";
+                            }
+                            
+                            <div class="@myLeaguesClass">
                                 <MyLeaguesTile/>
                             </div>
 
-                            <div class="col-lg-6 mb-4 mb-md-0">
-                                <AvailableLeaguesTile/>
-                            </div>
+                            @if (showAvailableLeagues)
+                            {
+                                <div class="col-lg-6 mb-4 mb-md-0">
+                                    <AvailableLeaguesTile/>
+                                </div>
+                            }
                         </div>
                     </div>
 
@@ -41,3 +53,23 @@
         </div>
     </Authorized>
 </AuthorizeView>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        DashboardState.OnStateChange += StateHasChanged;
+        
+        await Task.WhenAll(
+            DashboardState.LoadMyLeaguesAsync(),
+            DashboardState.LoadAvailableLeaguesAsync(),
+            DashboardState.LoadLeaderboardsAsync(),
+            DashboardState.LoadUpcomingRoundsAsync()
+        );
+    }
+   
+    public ValueTask DisposeAsync()
+    {
+        DashboardState.OnStateChange -= StateHasChanged;
+        return ValueTask.CompletedTask;
+    }
+}

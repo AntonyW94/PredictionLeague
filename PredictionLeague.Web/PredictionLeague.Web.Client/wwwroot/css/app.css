@@ -18,6 +18,7 @@
 
 /* Page-specific styles */
 @import url('pages/dashboard.css');
+@import url('pages/home.css');
 @import url('pages/leaderboard.css');
 @import url('pages/predictions.css');
 @import url('pages/prizes.css');

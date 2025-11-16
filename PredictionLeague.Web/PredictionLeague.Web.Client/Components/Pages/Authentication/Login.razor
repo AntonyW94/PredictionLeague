@@ -2,7 +2,6 @@
 
 @inject IAuthenticationService AuthenticationService
 @inject IConfiguration Configuration
-@inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 
 @using Microsoft.AspNetCore.WebUtilities
@@ -93,8 +92,6 @@
 
     protected override void OnInitialized()
     {
-        Logger.LogInformation("Login page loaded");
-
         var uri = new Uri(NavigationManager.Uri);
         
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var errorValue))
@@ -112,6 +109,7 @@
         _errorMessage = null;
 
         var result = await AuthenticationService.LoginAsync(_model);
+     
         switch (result)
         {
             case SuccessfulAuthenticationResponse:
@@ -132,17 +130,12 @@
 
     private void HandleGoogleLogin()
     {
-        Logger.LogInformation("Initiating Google login");
-
         _errorMessage = null;
 
         var apiBaseUrl = Configuration["ApiBaseUrl"];
         var returnUrl = NavigationManager.BaseUri + "authentication/external-login-callback";
         var googleLoginUrl = $"{apiBaseUrl}/external-auth/google-login?returnUrl={Uri.EscapeDataString(returnUrl)}&source=login";
-       
-        Logger.LogInformation("Google Login Return URL: {ReturnUrl}", returnUrl);
-        Logger.LogInformation("Google Login URL: {Url}", googleLoginUrl);
-
+     
         NavigationManager.NavigateTo(googleLoginUrl, forceLoad: true);
     }
 }

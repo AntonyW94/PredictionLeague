@@ -1,10 +1,12 @@
 ﻿@inject IAuthenticationService AuthenticationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
 <nav class="navbar navbar-expand-lg navbar-dark navbar-custom @Class">
     <div class="container-fluid">
-        <a class="navbar-brand d-flex align-items-center" href="">
+        <a class="navbar-brand d-flex align-items-center" @onclick="GoToSmartHomepage">
             <img src="/images/logo.png" alt="The Predictions Logo" class="navbar-logo" />
+            <span class="ms-2 fw-bold">The Predictions</span>
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,6 +104,15 @@
     private bool _isAdminMenuOpen;
     private bool _isUserMenuOpen;
     
+    private async Task GoToSmartHomepage()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated ?? false)
+            NavigationManager.NavigateTo("/dashboard", forceLoad: true);
+        else
+            NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+
     private async Task LogoutUser()
     {
         await AuthenticationService.LogoutAsync();
