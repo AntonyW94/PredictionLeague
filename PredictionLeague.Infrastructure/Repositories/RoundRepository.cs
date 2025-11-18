@@ -243,6 +243,12 @@ public class RoundRepository : IRoundRepository
         return await QueryAndMapRound(sqlWithMatches, cancellationToken, new { PublishedStatus = nameof(RoundStatus.Published) });
     }
 
+    public async Task<Dictionary<int, Round>> GetDraftRoundsStartingBeforeAsync(DateTime dateLimit, CancellationToken cancellationToken)
+    {
+        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Status] = @DraftStatus AND r.[StartDate] <= @DateLimit";
+        return await QueryAndMapRounds(sql, cancellationToken, new { DraftStatus = nameof(RoundStatus.Draft), DateLimit = dateLimit });
+    }
+
     #endregion
 
     #region Update

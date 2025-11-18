@@ -53,6 +53,19 @@ namespace PredictionLeague.API.Controllers
         {
             var command = new SendScheduledRemindersCommand();
             await _mediator.Send(command, cancellationToken);
+            
+            return NoContent();
+        }
+
+        [AllowAnonymous]
+        [HttpPost("publish-upcoming-rounds")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> PublishUpcomingRoundsAsync(CancellationToken cancellationToken)
+        {
+            var command = new PublishUpcomingRoundsCommand();
+            await _mediator.Send(command, cancellationToken);
+
             return NoContent();
         }
     }
