@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36212.18
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11206.111 d18.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Infrastructure", "PredictionLeague.Infrastructure\PredictionLeague.Infrastructure.csproj", "{997E256A-0C05-4B54-87C1-CD9132841DCA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.API", "PredictionLeague.API\PredictionLeague.API.csproj", "{AD7516B5-9CC1-4781-9149-17053ABA35E7}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Mobile", "PredictionLeague.Mobile\PredictionLeague.Mobile.csproj", "{63B5281B-AC01-4C48-9D8C-3A3EE0755F74}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Web", "PredictionLeague.Web\PredictionLeague.Web\PredictionLeague.Web.csproj", "{F38F05AA-AFE0-4EBA-B284-417022D1FB17}"
 EndProject
@@ -37,10 +35,6 @@ Global
 		{AD7516B5-9CC1-4781-9149-17053ABA35E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD7516B5-9CC1-4781-9149-17053ABA35E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD7516B5-9CC1-4781-9149-17053ABA35E7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{63B5281B-AC01-4C48-9D8C-3A3EE0755F74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{63B5281B-AC01-4C48-9D8C-3A3EE0755F74}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{63B5281B-AC01-4C48-9D8C-3A3EE0755F74}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{63B5281B-AC01-4C48-9D8C-3A3EE0755F74}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F38F05AA-AFE0-4EBA-B284-417022D1FB17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F38F05AA-AFE0-4EBA-B284-417022D1FB17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F38F05AA-AFE0-4EBA-B284-417022D1FB17}.Release|Any CPU.ActiveCfg = Release|Any CPU
