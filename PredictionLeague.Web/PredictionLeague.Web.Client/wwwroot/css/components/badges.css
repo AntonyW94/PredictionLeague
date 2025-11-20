@@ -163,10 +163,14 @@
         .badge-group .badge-icon {
             font-size: 1em;
         }
+        .badge-group .badge-icon.large-font {
+            font-size: 1.5em;
+        }
 
     .badge-icon {
         font-size: 1.1em;
     }
+
 }
 
 
