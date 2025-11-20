@@ -151,30 +151,29 @@
 
     private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;
     private static void HandleTouchMove(TouchEventArgs e) { }
-    private void HandleTouchEnd(TouchEventArgs e)
+    private async Task HandleTouchEnd(TouchEventArgs e)
     {
         var touchEndX = e.ChangedTouches[0].ClientX;
         var diffX = _touchStartX - touchEndX;
 
-        if (!(Math.Abs(diffX) > 50))
+        if (Math.Abs(diffX) <= 50)
             return;
+
+        var newIndex = _currentIndex;
 
         if (diffX > 0)
         {
-            if (_currentIndex >= _leaderboards.Count - 1)
-                return;
-
-            _currentIndex++;
+            if (_currentIndex < _months.Count - 1)
+                newIndex = _currentIndex + 1;
         }
         else
         {
-            if (_currentIndex <= 0)
-                return;
-
-            _currentIndex--;
+            if (_currentIndex > 0)
+                newIndex = _currentIndex - 1;
         }
 
-        UpdateTrackStyle();
+        if (newIndex != _currentIndex)
+            await GoToSlide(newIndex);
     }
 
     private async Task LoadLeaderboardForMonth(int month)

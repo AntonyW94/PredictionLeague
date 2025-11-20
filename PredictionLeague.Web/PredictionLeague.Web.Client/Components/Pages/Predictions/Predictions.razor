@@ -60,7 +60,7 @@
                 <ApiSuccess Message="@_successMessage" />
 
                 <div class="prediction-grid">
-                    @foreach (var match in _pageData.Matches)
+                    @foreach (var match in _pageData.Matches.OrderBy(m => m.MatchDateTime).ThenBy(m => m.HomeTeamAbbreviation))
                     {
                         <div class="prediction-card">
                             <div class="prediction-card-header">
