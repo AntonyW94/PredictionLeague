@@ -32,6 +32,19 @@
                                         <h5 class="card-title text-white fw-bold centre mb-0">@month.Name</h5>
                                     </div>
                                     <div class="league-card-body justify-start w-100 inner-card">
+                                        @if (month.RoundsRemaining > 0)
+                                        {
+                                            <div class="d-flex justify-content-end mb-2">
+                                                <div class="@GetRoundsRemainingCss(month.RoundsRemaining)">
+                                                    <span class="badge-icon">
+                                                        <i class="bi bi-@month.RoundsRemaining-circle-fill"></i>
+                                                    </span>
+
+                                                    @((month.RoundsRemaining == 1) ? "round remaining" : "rounds remaining")
+                                                </div>
+                                            </div>
+                                        }
+
                                         @if (_leaderboards.TryGetValue(month.Month, out var leaderboard))
                                         {
                                             @if (leaderboard.IsLoading)
@@ -47,21 +60,21 @@
                                                 <div class="table-responsive rounded w-100">
                                                     <table class="leaderboard-table light text-white">
                                                         <thead>
-                                                            <tr>
-                                                                <th class="rank-col">#</th>
-                                                                <th class="player-name-col">Player</th>
-                                                                <th class="points-col">Pts</th>
-                                                            </tr>
+                                                        <tr>
+                                                            <th class="rank-col">#</th>
+                                                            <th class="player-name-col">Player</th>
+                                                            <th class="points-col">Pts</th>
+                                                        </tr>
                                                         </thead>
                                                         <tbody>
-                                                            @foreach (var entry in leaderboard.Entries)
-                                                            {
-                                                                <tr class="@(GetUserHighlightClass(entry.UserId))">
-                                                                    <td class="rank-col fw-bold">@entry.Rank</td>
-                                                                    <td class="player-name-col fw-bold">@entry.PlayerName</td>
-                                                                    <td class="points-col fw-bold">@entry.TotalPoints</td>
-                                                                </tr>
-                                                            }
+                                                        @foreach (var entry in leaderboard.Entries)
+                                                        {
+                                                            <tr class="@(GetUserHighlightClass(entry.UserId))">
+                                                                <td class="rank-col fw-bold">@entry.Rank</td>
+                                                                <td class="player-name-col fw-bold">@entry.PlayerName</td>
+                                                                <td class="points-col fw-bold">@entry.TotalPoints</td>
+                                                            </tr>
+                                                        }
                                                         </tbody>
                                                     </table>
                                                 </div>
@@ -199,6 +212,19 @@
     private void UpdateTrackStyle()
     {
         _trackStyle = $"transform: translateX(-{_currentIndex * 100}%);";
+    }
+
+    private string GetRoundsRemainingCss(int roundsRemaining)
+    {
+        if (roundsRemaining <= 0)
+            return "d-none";
+
+        return roundsRemaining switch
+        {
+            1 => "badge-group badge-group--red pulsing",
+            2 => "badge-group badge-group--orange", 
+            _ => "badge-group badge-group--green"
+        };
     }
 
     private class LeaderboardData

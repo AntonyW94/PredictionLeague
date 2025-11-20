@@ -41,6 +41,10 @@
     background-color: var(--pl-red);
 }
 
+.badge-group--orange {
+    background-color: var(--pl-orange);
+}
+
 .badge-group--yellow {
     background-color: var(--pl-yellow);
     color: var(--pl-purple-800);
@@ -92,6 +96,10 @@
 
 .badge-group--blue .badge-icon {
     color: var(--pl-blue-light);
+}
+
+.badge-group--orange .badge-icon {
+    color: var(--pl-orange);
 }
 
 .badge-group--yellow .badge-icon {
