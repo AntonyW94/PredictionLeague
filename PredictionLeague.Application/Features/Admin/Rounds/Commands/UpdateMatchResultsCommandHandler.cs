@@ -61,6 +61,9 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
             .DistinctBy(u => u.Id);
 
         await _leagueRepository.UpdatePredictionPointsAsync(allUpdatedPredictions, cancellationToken);
+        await _roundRepository.UpdateRoundResultsAsync(round.Id, cancellationToken);
+        await _leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
+        // await _boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
 
         if (round.Matches.All(m => m.Status == MatchStatus.Completed))
         {

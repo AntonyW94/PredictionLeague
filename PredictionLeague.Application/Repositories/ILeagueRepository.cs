@@ -26,9 +26,10 @@ public interface ILeagueRepository
     Task UpdateAsync(League league, CancellationToken cancellationToken);
     Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status, CancellationToken cancellationToken);
     Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate, CancellationToken cancellationToken);
+    Task UpdateLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken);
 
     #endregion
-    
+
     #region Delete
 
     Task DeleteAsync(int leagueId, CancellationToken cancellationToken);

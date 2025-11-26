@@ -139,7 +139,7 @@ public class RoundRepository : IRoundRepository
             new { MatchIds = matchIdsList },
             cancellationToken: cancellationToken
         );
-        
+
         return await Connection.QueryAsync<int>(command);
     }
 
@@ -218,7 +218,7 @@ public class RoundRepository : IRoundRepository
             new { month, seasonId },
             cancellationToken: cancellationToken
         );
-        
+
         return await Connection.QueryAsync<Match>(command);
     }
 
@@ -376,6 +376,44 @@ public class RoundRepository : IRoundRepository
             }),
             cancellationToken: cancellationToken
         );
+
+        await Connection.ExecuteAsync(command);
+    }
+
+    public async Task UpdateRoundResultsAsync(int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            MERGE [RoundResults] AS target
+            USING (
+                SELECT
+                    m.[RoundId],
+                    up.[UserId],
+                    SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints],
+                    SUM(CASE WHEN up.[PointsAwarded] = 5 THEN 1 ELSE 0 END) AS [ExactScoreCount],
+                    SUM(CASE WHEN up.[PointsAwarded] >= 3 THEN 1 ELSE 0 END) AS [CorrectResultCount]
+                FROM [UserPredictions] up
+                INNER JOIN [Matches] m ON m.[Id] = up.[MatchId]
+                WHERE m.[RoundId] = @RoundId
+                AND up.[PointsAwarded] IS NOT NULL
+                GROUP BY
+                    m.[RoundId],
+                    up.[UserId]
+            ) AS src
+            ON target.[RoundId] = src.[RoundId]
+            AND target.[UserId] = src.[UserId]
+            WHEN MATCHED THEN
+                UPDATE SET 
+                    target.[TotalPoints]        = src.[TotalPoints],
+                    target.[ExactScoreCount]    = src.[ExactScoreCount],
+                    target.[CorrectResultCount] = src.[CorrectResultCount]
+            WHEN NOT MATCHED BY TARGET THEN
+                INSERT ([RoundId], [UserId], [TotalPoints], [ExactScoreCount], [CorrectResultCount])
+                VALUES (src.[RoundId], src.[UserId], src.[TotalPoints], src.[ExactScoreCount], src.[CorrectResultCount]);";
+
+        var command = new CommandDefinition(
+            sql,
+            new { RoundId = roundId },
+            cancellationToken: cancellationToken);
 
         await Connection.ExecuteAsync(command);
     }

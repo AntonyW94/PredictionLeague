@@ -5,49 +5,36 @@ using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;
 
-public class GetExactScoresLeaderboardQueryHandler : IRequestHandler<GetExactScoresLeaderboardQuery, ExactScoresLeaderboardDto>
+public class GetExactScoresLeaderboardQueryHandler(IApplicationReadDbConnection connection) : IRequestHandler<GetExactScoresLeaderboardQuery, ExactScoresLeaderboardDto>
 {
-    private readonly IApplicationReadDbConnection _connection;
-
-    public GetExactScoresLeaderboardQueryHandler(IApplicationReadDbConnection connection)
-    {
-        _connection = connection;
-    }
-
     public async Task<ExactScoresLeaderboardDto> Handle(GetExactScoresLeaderboardQuery request, CancellationToken cancellationToken)
     {
         const string entriesSql = @"
-                                    SELECT
-                                        u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                                        COUNT(CASE WHEN up.[PointsAwarded] = 5 THEN 1 END) AS ExactScoresCount,
-                                        u.[Id] AS [UserId]
-                                    FROM
-                                        [LeagueMembers] lm
-                                    JOIN 
-                                        [AspNetUsers] u ON lm.[UserId] = u.[Id]
-                                    JOIN 
-                                        [Leagues] AS l ON lm.[LeagueId] = l.[Id]
-                                    JOIN 
-                                        [Seasons] AS s ON l.[SeasonId] = s.[Id]
-                                    JOIN 
-                                        [Rounds] AS r ON s.[Id] = r.[SeasonId]
-                                    JOIN 
-                                        [Matches] AS m ON r.[Id] = m.[RoundId]
-                                    LEFT JOIN 
-                                        [UserPredictions] AS up ON m.[Id] = up.[MatchId] AND lm.[UserId] = up.[UserId]
-                                    WHERE
-                                        lm.[LeagueId] = @LeagueId 
-                                        AND lm.[Status] = @ApprovedStatus
-                                    GROUP BY 
-                                        lm.[UserId],
-                                        u.[FirstName],
-                                        u.[LastName],
-                                        u.[Id]
-                                  ORDER BY
-                                        ExactScoresCount DESC, 
-                                        PlayerName";
+            SELECT
+                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
+                u.[Id] AS [UserId],
+                SUM(rr.ExactScoreCount) AS ExactScoresCount
+            FROM 
+                [RoundResults] rr
+            JOIN 
+                [Rounds] AS r ON r.[Id] = rr.[RoundId]
+            JOIN 
+                [Leagues] AS l ON l.[SeasonId] = r.[SeasonId]
+            JOIN
+                [LeagueMembers] lm ON lm.[LeagueId] = l.[Id] AND lm.[UserId] = rr.[UserId] AND lm.[Status] = @ApprovedStatus
+            JOIN 
+                [AspNetUsers] u ON u.[Id] = rr.[UserId]
+            WHERE
+                l.[Id] = @LeagueId 
+            GROUP BY 
+                u.[FirstName],
+                u.[LastName],
+                u.[Id]
+            ORDER BY
+                ExactScoresCount DESC, 
+                PlayerName";
 
-        var leaderboardEntries = await _connection.QueryAsync<ExactScoresLeaderboardEntryDto>(entriesSql, cancellationToken, new { request.LeagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+        var leaderboardEntries = await connection.QueryAsync<ExactScoresLeaderboardEntryDto>(entriesSql, cancellationToken, new { request.LeagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
       
         var leaderboard = new ExactScoresLeaderboardDto
         {

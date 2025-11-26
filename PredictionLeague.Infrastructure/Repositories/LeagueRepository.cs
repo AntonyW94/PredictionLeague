@@ -59,7 +59,7 @@ public class LeagueRepository : ILeagueRepository
 
         var newLeagueId = await Connection.ExecuteScalarAsync<int>(command);
         typeof(League).GetProperty(nameof(League.Id))?.SetValue(league, newLeagueId);
-       
+
         var adminMember = LeagueMember.Create(newLeagueId, league.AdministratorUserId);
         adminMember.Approve();
         await AddMemberAsync(adminMember, cancellationToken);
@@ -134,7 +134,7 @@ public class LeagueRepository : ILeagueRepository
         var leagues = multi.Read<League>().AsList();
         var membersLookup = multi.Read<LeagueMember>().ToLookup(m => m.LeagueId);
         var predictionsLookup = multi.Read<UserPrediction>().ToLookup(p => p.UserId);
-        
+
         var result = leagues.Select(league =>
         {
             var members = membersLookup[league.Id].Select(member =>
@@ -189,7 +189,7 @@ public class LeagueRepository : ILeagueRepository
         var league = (await multi.ReadAsync<League>()).FirstOrDefault();
         if (league == null)
             return null;
-      
+
         var membersData = (await multi.ReadAsync<LeagueMember>()).ToList();
         var predictionsLookup = (await multi.ReadAsync<UserPrediction>()).ToLookup(p => p.UserId);
         var prizeSettings = (await multi.ReadAsync<LeaguePrizeSetting>()).ToList();
@@ -207,7 +207,7 @@ public class LeagueRepository : ILeagueRepository
                 memberPredictions
             );
         }).ToList();
-       
+
         return new League(
             league.Id,
             league.Name,
@@ -237,7 +237,7 @@ public class LeagueRepository : ILeagueRepository
 
         return await QueryAndMapLeagues(sql, cancellationToken, new { AdministratorId = administratorId });
     }
-    
+
     #endregion
 
     #region Update
@@ -258,14 +258,14 @@ public class LeagueRepository : ILeagueRepository
         );
 
         await Connection.ExecuteAsync(leagueCommand);
-      
+
         const string deletePrizesSql = "DELETE FROM [LeaguePrizeSettings] WHERE [LeagueId] = @LeagueId;";
-        
+
         var deletePrizesCommand = new CommandDefinition(
             deletePrizesSql,
             new { LeagueId = league.Id },
             cancellationToken: cancellationToken);
-      
+
         await Connection.ExecuteAsync(deletePrizesCommand);
 
         if (league.PrizeSettings.Any())
@@ -286,7 +286,7 @@ public class LeagueRepository : ILeagueRepository
                 cancellationToken: cancellationToken);
             await Connection.ExecuteAsync(insertPrizesCommand);
         }
-        
+
         const string deleteMembersSql = "DELETE FROM [LeagueMembers] WHERE [LeagueId] = @LeagueId;";
 
         var deleteCommand = new CommandDefinition(
@@ -355,6 +355,48 @@ public class LeagueRepository : ILeagueRepository
         await Task.CompletedTask;
     }
 
+    public async Task UpdateLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            MERGE [LeagueRoundResults] AS target
+            USING (
+                SELECT
+                    lm.[LeagueId],
+                    rr.[RoundId],
+                    rr.[UserId],
+                    rr.[TotalPoints] AS [BasePoints]
+                FROM [RoundResults] rr
+                INNER JOIN [Rounds] r
+                    ON r.[Id] = rr.[RoundId]
+                INNER JOIN [Leagues] l
+                    ON l.[SeasonId] = r.[SeasonId]
+                INNER JOIN [LeagueMembers] lm
+                    ON lm.[LeagueId] = l.[Id]
+                   AND lm.[UserId]  = rr.[UserId]
+                   AND lm.[Status]  = @ApprovedStatus
+                WHERE rr.[RoundId] = @RoundId
+            ) AS src
+            ON target.[LeagueId] = src.[LeagueId]
+               AND target.[RoundId] = src.[RoundId]
+               AND target.[UserId]  = src.[UserId]
+            WHEN MATCHED THEN
+                UPDATE SET 
+                    target.[BasePoints]      = src.[BasePoints],
+                    target.[BoostedPoints]   = src.[BasePoints],
+                    target.[HasBoost]        = 0,
+                    target.[BoostMultiplier] = 1.0
+            WHEN NOT MATCHED BY TARGET THEN
+                INSERT ([LeagueId], [RoundId], [UserId], [BasePoints], [BoostedPoints], [HasBoost], [BoostMultiplier])
+                VALUES (src.[LeagueId], src.[RoundId], src.[UserId], src.[BasePoints], src.[BasePoints], 0, 1.0);";
+
+        var command = new CommandDefinition(
+            sql,
+            new { RoundId = roundId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) },
+            cancellationToken: cancellationToken);
+
+        await Connection.ExecuteAsync(command);
+    }
+
     #endregion
 
     #region Private Helper Methods
@@ -398,7 +440,7 @@ public class LeagueRepository : ILeagueRepository
     }
 
     #endregion
-    
+
     #region Delete
 
     public async Task DeleteAsync(int leagueId, CancellationToken cancellationToken)

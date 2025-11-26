@@ -28,6 +28,7 @@ public interface IRoundRepository
 
     Task UpdateAsync(Round round, CancellationToken cancellationToken);
     Task UpdateMatchScoresAsync(List<Match> matches, CancellationToken cancellationToken);
+    Task UpdateRoundResultsAsync(int roundId, CancellationToken cancellationToken);
     Task UpdateLastReminderSentAsync(Round round, CancellationToken cancellationToken);
 
     #endregion

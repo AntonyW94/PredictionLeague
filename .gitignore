@@ -364,3 +364,4 @@ FodyWeavers.xsd
 /tree.txt
 
 **/PredictionLeague.Web/appsettings.Production.Secrets.json
+/PredictionLeague.Web/PredictionLeague.Web/keys/*
