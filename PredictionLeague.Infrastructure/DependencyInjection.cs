@@ -4,11 +4,13 @@ using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Features.Admin.Rounds.Strategies;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
+using PredictionLeague.Application.Services.Boosts;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Domain.Services;
 using PredictionLeague.Infrastructure.Data;
 using PredictionLeague.Infrastructure.Identity;
 using PredictionLeague.Infrastructure.Repositories;
+using PredictionLeague.Infrastructure.Repositories.Boosts;
 using PredictionLeague.Infrastructure.Services;
 using System.Net;
 
@@ -47,7 +49,9 @@ public static class DependencyInjection
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
         services.AddScoped<IWinningsRepository, WinningsRepository>();
-
+        services.AddScoped<IBoostReadRepository, BoostReadRepository>();
+        services.AddScoped<IBoostWriteRepository, BoostWriteRepository>();
+        
         services.AddScoped<IPrizeStrategy, RoundPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, MonthlyPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, OverallPrizeStrategy>();
@@ -58,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>(); 
         services.AddScoped<IEmailService, BrevoEmailService>();
         services.AddScoped<IReminderService, ReminderService>();
+        services.AddScoped<IBoostService, BoostService>();
         services.AddScoped<IEntryCodeUniquenessChecker, EntryCodeUniquenessChecker>();
         services.AddScoped<IUserManager, UserManagerService>();
         services.AddHttpClient<IFootballDataService, FootballDataService>();
