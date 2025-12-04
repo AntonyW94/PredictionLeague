@@ -1,6 +1,7 @@
 ﻿using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using PredictionLeague.Web.Client.Authentication;
+using PredictionLeague.Web.Client.Services.Boosts;
 using PredictionLeague.Web.Client.Services.Browser;
 using PredictionLeague.Web.Client.Services.Dashboard;
 using PredictionLeague.Web.Client.Services.Leagues;
@@ -21,7 +22,8 @@ public static class DependencyInjection
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<IDashboardStateService, DashboardStateService>();
         services.AddScoped<IBrowserService, BrowserService>(); 
-        services.AddScoped<LeagueDashboardStateService>();
+        services.AddScoped<LeagueDashboardStateService>(); 
+        services.AddScoped<BoostClientService>();
         services.AddScoped<EnterResultsViewModel>();
     }
 }

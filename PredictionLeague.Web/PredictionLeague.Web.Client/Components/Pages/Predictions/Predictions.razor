@@ -4,10 +4,13 @@
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject BoostClientService BoostClient
 
+@using PredictionLeague.Contracts.Boosts
 @using PredictionLeague.Contracts.Dashboard
 @using PredictionLeague.Contracts.Predictions
 @using PredictionLeague.Web.Client.Components.Pages.Dashboard
+@using PredictionLeague.Web.Client.Services.Boosts
 
 <PageTitle>Predictions - Round @(_pageData?.RoundNumber)</PageTitle>
 
@@ -102,6 +105,37 @@
                         </div>
                     }
                 </div>
+                
+                @* --- Boost selection UI (only when save is allowed) --- *@
+                @if (!_pageData.IsPastDeadline)
+                {
+                    <div class="mb-3 mt-4">
+                        <h3 class="text-white mb-2">Boosts</h3>
+
+                        @if (_loadingBoostEligibility)
+                        {
+                            <div class="text-white-50">Loading boosts...</div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var league in _pageData.Leagues)
+                                {
+                                    var lid = league.LeagueId;
+                                    if (_boostOptions.TryGetValue(lid, out var opts))
+                                    {
+                                        <div class="mb-2">
+                                            <div class="text-white-75 mb-1">@league.Name</div>
+                                            <BoostSelector LeagueId="@lid" RoundId="@_pageData.RoundId" Options="@opts"
+                                                           SelectedCode="@GetSelectedCode(lid)"
+                                                           SelectedCodeChanged="@(async (c) => await SetSelectedCode(lid, c))" />
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                }
 
                 @if (!_pageData.IsPastDeadline)
                 {
@@ -140,6 +174,9 @@
     private bool _isBusy;
     private string? _errorMessage;
     private string? _successMessage;
+    private readonly Dictionary<int, string> _boostSelections = new(); // leagueId -> selected boost code (e.g. "DoubleUp" or "None")
+    private readonly Dictionary<int, List<BoostOptionDto>> _boostOptions = new(); // leagueId -> options list
+    private bool _loadingBoostEligibility = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -161,17 +198,61 @@
                     m.PredictedHomeScore ?? 0,
                     m.PredictedAwayScore ?? 0
                 )).ToList();
+
+                var leagueIds = _pageData.Leagues.Select(l => l.LeagueId).ToList();
+
+                foreach (var lid in leagueIds)
+                {
+                    var eligibilityDto = await BoostClient.GetEligibilityAsync(lid, _pageData.RoundId, "DoubleUp", CancellationToken.None);
+
+                    var options = new List<BoostOptionDto>
+                    {
+                        new BoostOptionDto
+                        {
+                            BoostCode = "None",
+                            Name = "None",
+                            Description = "No boost",
+                            ImageUrl = "/images/boosts/none-normal.png",
+                            SelectedImageUrl = "/images/boosts/none-selected.png",
+                            DisabledImageUrl = "/images/boosts/none-disabled.png",
+                            Eligibility = new BoostEligibilityDto 
+                            {
+                                BoostCode = "None",
+                                LeagueId = lid,
+                                RoundId = _pageData.RoundId,
+                                CanUse = true,
+                                Reason = null,
+                                RemainingSeasonUses = int.MaxValue,
+                                RemainingWindowUses = int.MaxValue,
+                                AlreadyUsedThisRound = false
+                            }
+                        },
+                        new BoostOptionDto
+                        {
+                            BoostCode = "DoubleUp",
+                            Name = "Double Up",
+                            Description = "Doubles your total round points for this league.",
+                            ImageUrl = "/images/boosts/double-up-normal.png",
+                            SelectedImageUrl = "/images/boosts/double-up-selected.png",
+                            DisabledImageUrl = "/images/boosts/double-up-disabled.png",
+                            Eligibility = eligibilityDto
+                        }
+                    };
+
+                    _boostOptions[lid] = options;
+                    _boostSelections[lid] = "None";
+                }
             }
-        }
-        catch (Exception)
-        {
-            _errorMessage = "Could not load prediction data.";
         }
         finally
         {
             _isLoading = false;
+            _loadingBoostEligibility = false;
         }
     }
+
+    private string GetSelectedCode(int leagueId) => _boostSelections.GetValueOrDefault(leagueId, "None");
+    private Task SetSelectedCode(int leagueId, string code) { _boostSelections[leagueId] = code; return Task.CompletedTask; }
 
     private static void UpdateScore(MatchPredictionDto match, bool isHomeTeam, int delta)
     {
@@ -181,7 +262,6 @@
             var newScore = currentScore + delta;
             if (newScore >= 0 && newScore <= 9)
                 match.PredictedHomeScore = newScore;
-
         }
         else
         {
@@ -208,22 +288,47 @@
             )).ToList();
         }
 
-        var response = await Http.PostAsJsonAsync("api/predictions/submit", _model);
-        if (response.IsSuccessStatusCode)
+        try
         {
-            _successMessage = "Your predictions have been saved successfully!";
+            var selectedLeagueBoosts = _boostSelections.Where(kv => kv.Value != "None").ToList();
 
-            StateHasChanged();
+            foreach (var selectedBoost in selectedLeagueBoosts)
+            {
+                var leagueId = selectedBoost.Key;
+                var boostCode = selectedBoost.Value;
+            
+                var result = await BoostClient.ApplyBoostAsync(leagueId, _pageData!.RoundId, boostCode, CancellationToken.None);
+                if (result == null || !result.Success)
+                {
+                    _errorMessage = result?.Error ?? $"Failed to apply {boostCode} for league {leagueId}.";
+                    _isBusy = false;
+                    return;
+                }
+            }
 
-            await Task.Delay(1500);
-
-            NavigationManager.NavigateTo("/dashboard", forceLoad: true);
+            var response = await Http.PostAsJsonAsync("api/predictions/submit", _model);
+            if (response.IsSuccessStatusCode)
+            {
+                _successMessage = "Your predictions have been saved successfully!";
+               
+                StateHasChanged();
+                
+                await Task.Delay(1500);
+              
+                NavigationManager.NavigateTo("/dashboard", forceLoad: true);
+            }
+            else
+            {
+                _errorMessage = "There was an error saving your predictions.";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            _errorMessage = "There was an error saving your predictions.";
+            _errorMessage = ex.Message;
         }
-
-        _isBusy = false;
+        finally
+        {
+            _isBusy = false;
+        }
     }
 }

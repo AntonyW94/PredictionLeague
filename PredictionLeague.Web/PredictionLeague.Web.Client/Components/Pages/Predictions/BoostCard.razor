@@ -1,0 +1,67 @@
+﻿@using PredictionLeague.Contracts.Boosts
+
+@inject IJSRuntime JsRuntime
+
+<div class="select-boost-card" role="button" tabindex="0"
+     aria-pressed="@IsSelected"
+     aria-disabled="@IsDisabled"
+     title="@Tooltip"
+     @onclick="HandleToggle"
+     @onkeydown="HandleKeyDown">
+
+    <div class="boost-hex">
+        <img src="@CurrentImageUrl" alt="@ImageAlt" class="boost-img" width="150px" />
+    </div>
+
+    <div class="boost-meta">
+        <div class="boost-title">@Title</div>
+        @if (IsSelected)
+        {
+            <div class="boost-desc">@DescriptionText</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public int LeagueId { get; set; }
+    [Parameter, EditorRequired] public int RoundId { get; set; }
+    [Parameter] public string BoostCode { get; set; } = "DoubleUp";
+    [Parameter] public BoostEligibilityDto? Eligibility { get; set; }
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public EventCallback<bool> IsSelectedChanged { get; set; }
+
+    [Parameter] public string ImageUrl { get; set; } = "/images/boosts/double-up-normal.png";
+    [Parameter] public string SelectedImageUrl { get; set; } = "/images/boosts/double-up-selected.png";
+    [Parameter] public string DisabledImageUrl { get; set; } = "/images/boosts/double-up-disabled.png";
+    [Parameter] public string ImageAlt { get; set; } = "Double Up boost";
+    [Parameter] public string DescriptionText { get; set; } = "Doubles your total points for this round for this league when applied.";
+
+    private string Title => "Double Up";
+    private string Tooltip => Eligibility == null ? "Loading..." : (Eligibility.CanUse ? "Will apply on Save — doubles round points" : (Eligibility.Reason ?? "Not available"));
+    private bool IsDisabled => Eligibility == null || !Eligibility.CanUse || Eligibility.AlreadyUsedThisRound;
+
+    private string CurrentImageUrl =>
+        IsDisabled ? DisabledImageUrl :
+        IsSelected ? SelectedImageUrl :
+        ImageUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("boosts.preloadImages", ImageUrl, SelectedImageUrl, DisabledImageUrl);
+    }
+
+    private async Task HandleToggle()
+    {
+        if (IsDisabled)
+            return;
+
+        IsSelected = !IsSelected;
+        await IsSelectedChanged.InvokeAsync(IsSelected);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" || e.Key == " ")
+            await HandleToggle();
+    }
+}

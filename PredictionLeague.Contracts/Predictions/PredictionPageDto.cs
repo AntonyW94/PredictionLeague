@@ -10,4 +10,5 @@ public class PredictionPageDto
     public DateTime Deadline { get; init; }
     public bool IsPastDeadline { get; init; }
     public List<MatchPredictionDto> Matches { get; init; } = [];
+    public List<PredictionLeagueDto> Leagues { get; init; } = [];
 }

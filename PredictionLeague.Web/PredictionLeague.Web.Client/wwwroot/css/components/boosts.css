@@ -1,0 +1,89 @@
+﻿/* SelectBoostCard styling (image-only hex + small description) */
+.select-boost-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.08s ease, box-shadow 0.12s ease;
+    border-radius: 8px;
+    background: transparent; /* keep existing card background */
+    border: 1px solid rgba(255,255,255,0.03); /* subtle boundary */
+}
+
+    .select-boost-card[aria-disabled="true"] {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+/* hex container: uses clip-path to enforce hexagon */
+.boost-hex {
+    width: 56px;
+    height: 64px; /* taller so hex looks proper */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    background: transparent; /* image will be visible */
+    clip-path: polygon( 25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50% );
+    -webkit-clip-path: polygon( 25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50% );
+}
+
+/* image sizing inside hex - allow transparency to show through */
+.boost-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* Meta text */
+.boost-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 180px; /* leave room for description */
+}
+
+.boost-title {
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.boost-desc {
+    margin-top: 6px;
+    color: rgba(255,255,255,0.85);
+    font-size: 0.85rem;
+}
+
+/* hover / focus affordance */
+.select-boost-card:focus,
+.select-boost-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+    outline: none;
+}
+
+/* selected emphasis - you may style differently */
+.select-boost-card.selected {
+    box-shadow: 0 14px 32px rgba(0,0,0,0.45);
+}
+
+/* responsive tweak */
+@media (max-width: 768px) {
+    .boost-hex {
+        width: 46px;
+        height: 52px;
+        padding: 5px;
+    }
+
+    .boost-meta {
+        min-width: 140px;
+    }
+
+    .boost-desc {
+        font-size: 0.8rem;
+    }
+}

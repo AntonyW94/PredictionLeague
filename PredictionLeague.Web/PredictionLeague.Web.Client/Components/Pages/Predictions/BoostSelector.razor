@@ -1,0 +1,36 @@
+﻿@using PredictionLeague.Contracts.Boosts
+
+<div class="boost-selector">
+    <div class="d-flex flex-wrap gap-2">
+        @foreach (var option in Options)
+        {
+            <BoostCard LeagueId="@LeagueId"
+                             RoundId="@RoundId"
+                             Eligibility="@option.Eligibility"
+                             IsSelected="@(SelectedCode == option.BoostCode)"
+                             IsSelectedChanged="@(async selected => await OnCardToggled(option.BoostCode, selected))"
+                             ImageUrl="@option.ImageUrl"
+                             SelectedImageUrl="@option.SelectedImageUrl"
+                             DisabledImageUrl="@option.DisabledImageUrl"
+                             DescriptionText="@option.Description" />
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public int LeagueId { get; set; }
+    [Parameter, EditorRequired] public int RoundId { get; set; }
+    [Parameter] public List<BoostOptionDto> Options { get; set; } = new();
+    [Parameter] public string SelectedCode { get; set; } = "None";
+    [Parameter] public EventCallback<string> SelectedCodeChanged { get; set; }
+
+    private async Task OnCardToggled(string code, bool isSelected)
+    {
+        if (!isSelected)
+            SelectedCode = "None";
+        else
+            SelectedCode = code;
+
+        await SelectedCodeChanged.InvokeAsync(SelectedCode);
+    }
+}

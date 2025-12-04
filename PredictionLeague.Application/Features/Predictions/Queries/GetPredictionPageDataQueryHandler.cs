@@ -2,6 +2,7 @@
 using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Dashboard;
 using PredictionLeague.Contracts.Predictions;
+using PredictionLeague.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Application.Features.Predictions.Queries;
@@ -21,6 +22,7 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
             SELECT
                 r.[Id] AS RoundId,
                 r.[RoundNumber],
+                s.[Id] AS SeasonId,
                 s.[Name] AS SeasonName,
                 r.[Deadline],
                 m.[Id] AS MatchId,
@@ -58,6 +60,21 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
 
         var firstRow = results.First();
 
+        const string leaguesSql = @"
+            SELECT l.[Id] AS LeagueId, l.[Name]
+            FROM [Leagues] l
+            JOIN [LeagueMembers] lm ON lm.[LeagueId] = l.[Id]
+            WHERE l.[SeasonId] = @SeasonId
+              AND lm.[UserId] = @UserId
+              AND lm.[Status] = @ApprovedStatus
+            ORDER BY l.[Name];";
+
+        var leagues = await _dbConnection.QueryAsync<PredictionLeagueQueryResult>(
+            leaguesSql,
+            cancellationToken,
+            new { firstRow.SeasonId, request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) }
+        );
+
         return new PredictionPageDto
         {
             RoundId = firstRow.RoundId,
@@ -79,6 +96,12 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
                     AwayTeamLogoUrl = r.AwayTeamLogoUrl,
                     PredictedHomeScore = r.PredictedHomeScore,
                     PredictedAwayScore = r.PredictedAwayScore
+                }).ToList(),
+            Leagues = leagues
+                .Select(l => new PredictionLeagueDto
+                {
+                    LeagueId = l.LeagueId, 
+                    Name = l.Name
                 }).ToList()
         };
     }
@@ -87,6 +110,7 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
     private record PredictionPageQueryResult(
         int RoundId,
         int RoundNumber,
+        int SeasonId,
         string SeasonName,
         DateTime Deadline,
         int? MatchId,
@@ -100,4 +124,7 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
         int? PredictedHomeScore,
         int? PredictedAwayScore
     );
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record PredictionLeagueQueryResult(int LeagueId, string Name);
 }
