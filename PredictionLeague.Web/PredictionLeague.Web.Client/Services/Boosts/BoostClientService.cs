@@ -12,12 +12,12 @@ public class BoostClientService
         _http = http;
     }
 
-    public async Task<BoostEligibilityDto?> GetEligibilityAsync(int leagueId, int roundId, string boostCode, CancellationToken cancellationToken)
+    public async Task<List<BoostOptionDto>?> GetAvailableBoostsAsync(int leagueId, int roundId, CancellationToken cancellationToken)
     {
-        var url = $"api/boosts/eligibility?leagueId={leagueId}&roundId={roundId}&boostCode={Uri.EscapeDataString(boostCode)}";
+        var url = $"api/boosts/available?leagueId={leagueId}&roundId={roundId}";
         try
         {
-            return await _http.GetFromJsonAsync<BoostEligibilityDto>(url, cancellationToken);
+            return await _http.GetFromJsonAsync< List<BoostOptionDto>>(url, cancellationToken);
         }
         catch (OperationCanceledException) { throw; }
         catch
@@ -25,7 +25,7 @@ public class BoostClientService
             return null;
         }
     }
-        
+   
     public async Task<ApplyBoostResultDto?> ApplyBoostAsync(int leagueId, int roundId, string boostCode, CancellationToken cancellationToken)
     {
         var request = new { LeagueId = leagueId, RoundId = roundId, BoostCode = boostCode };

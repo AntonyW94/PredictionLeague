@@ -10,24 +10,24 @@
      @onkeydown="HandleKeyDown">
 
     <div class="boost-hex">
-        <img src="@CurrentImageUrl" alt="@ImageAlt" class="boost-img" width="150px" />
+        <img src="@CurrentImageUrl" alt="@ImageAlt" class="boost-img" />
     </div>
 </div>
 
 @code {
     [Parameter, EditorRequired] public int LeagueId { get; set; }
     [Parameter, EditorRequired] public int RoundId { get; set; }
-    [Parameter] public string BoostCode { get; set; } = "DoubleUp";
-    [Parameter] public BoostEligibilityDto? Eligibility { get; set; }
+    
+    [Parameter] public string ImageUrl { get; set; } = string.Empty;
+    [Parameter] public string SelectedImageUrl { get; set; } = string.Empty;
+    [Parameter] public string DisabledImageUrl { get; set; } = string.Empty;
+    [Parameter] public string ImageAlt { get; set; } = string.Empty;
+    [Parameter] public string Tooltip { get; set; } = string.Empty;
     [Parameter] public bool IsSelected { get; set; }
+    
+    [Parameter] public BoostEligibilityDto? Eligibility { get; set; }
     [Parameter] public EventCallback<bool> IsSelectedChanged { get; set; }
 
-    [Parameter] public string ImageUrl { get; set; } = "/images/boosts/double-up-normal.png";
-    [Parameter] public string SelectedImageUrl { get; set; } = "/images/boosts/double-up-selected.png";
-    [Parameter] public string DisabledImageUrl { get; set; } = "/images/boosts/double-up-disabled.png";
-    [Parameter] public string ImageAlt { get; set; } = "Double Up boost";
-
-    private string Tooltip => Eligibility == null ? "Loading..." : (Eligibility.CanUse ? "Will apply on Save — doubles round points" : (Eligibility.Reason ?? "Not available"));
     private bool IsDisabled => Eligibility == null || !Eligibility.CanUse || Eligibility.AlreadyUsedThisRound;
 
     private string CurrentImageUrl =>

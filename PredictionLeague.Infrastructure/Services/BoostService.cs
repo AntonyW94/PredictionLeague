@@ -16,7 +16,7 @@ public sealed class BoostService : IBoostService
         _boostWriteRepository = boostWriteRepository;
     }
 
-    public async Task<BoostEligibilityDto> GetBoostEligibilityAsync(
+    public async Task<BoostEligibilityDto> GetEligibilityAsync(
         string userId,
         int leagueId,
         int roundId,
@@ -78,7 +78,7 @@ public sealed class BoostService : IBoostService
 
     public async Task<ApplyBoostResultDto> ApplyBoostAsync(string userId, int leagueId, int roundId, string boostCode, CancellationToken cancellationToken)
     {
-        var eligibility = await GetBoostEligibilityAsync(userId, leagueId, roundId, boostCode, cancellationToken);
+        var eligibility = await GetEligibilityAsync(userId, leagueId, roundId, boostCode, cancellationToken);
         if (!eligibility.CanUse)
         {
             return new ApplyBoostResultDto

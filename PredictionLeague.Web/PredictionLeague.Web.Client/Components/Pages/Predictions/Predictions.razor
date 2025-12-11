@@ -91,7 +91,7 @@
                 @if (!_pageData.IsPastDeadline)
                 {
                     <div class="mb-3 mt-4">
-                        <h3 class="text-white text-center mb-2">Boosts</h3>
+                        <h3 class="text-white text-center mb-4">Boosts</h3>
 
                         @if (_loadingBoostEligibility)
                         {
@@ -99,8 +99,12 @@
                         }
                         else
                         {
-                            <div class="d-flex flex-wrap gap-2">
-                                @foreach (var league in _pageData.Leagues)
+                            <div class="d-flex flex-wrap gap-4">
+                                @{
+                                    var leaguesWithBoosts = _pageData.Leagues.Where(l => l.HasBoosts).ToList();
+                                }
+
+                                @foreach (var league in leaguesWithBoosts)
                                 {
                                     var leagueId = league.LeagueId;
 
@@ -163,8 +167,8 @@
     private bool _isBusy;
     private string? _errorMessage;
     private string? _successMessage;
-    private readonly Dictionary<int, string> _boostSelections = new(); // leagueId -> selected boost code (e.g. "DoubleUp" or "None")
-    private readonly Dictionary<int, List<BoostOptionDto>> _boostOptions = new(); // leagueId -> options list
+    private readonly Dictionary<int, string> _boostSelections = new();
+    private readonly Dictionary<int, List<BoostOptionDto>> _boostOptions = new();
     private bool _loadingBoostEligibility = true;
 
     protected override async Task OnInitializedAsync()
@@ -188,48 +192,28 @@
                     m.PredictedAwayScore ?? 0
                 )).ToList();
 
-                var leagueIds = _pageData.Leagues.Select(l => l.LeagueId).ToList();
-
-                foreach (var lid in leagueIds)
+                foreach (var leagueDto in _pageData.Leagues.Where(l => l.HasBoosts))
                 {
-                    var eligibilityDto = await BoostClient.GetEligibilityAsync(lid, _pageData.RoundId, "DoubleUp", CancellationToken.None);
-
-                    var options = new List<BoostOptionDto>
+                    var options = await BoostClient.GetAvailableBoostsAsync(leagueDto.LeagueId, _pageData.RoundId, CancellationToken.None);
+                    
+                    var none = new BoostOptionDto
                     {
-                        new BoostOptionDto
-                        {
-                            BoostCode = "None",
-                            Name = "None",
-                            Description = "No boost selected",
-                            ImageUrl = "/images/boosts/none-normal.png",
-                            SelectedImageUrl = "/images/boosts/none-selected.png",
-                            DisabledImageUrl = "/images/boosts/none-disabled.png",
-                            Eligibility = new BoostEligibilityDto
-                            {
-                                BoostCode = "None",
-                                LeagueId = lid,
-                                RoundId = _pageData.RoundId,
-                                CanUse = true,
-                                Reason = null,
-                                RemainingSeasonUses = int.MaxValue,
-                                RemainingWindowUses = int.MaxValue,
-                                AlreadyUsedThisRound = false
-                            }
-                        },
-                        new BoostOptionDto
-                        {
-                            BoostCode = "DoubleUp",
-                            Name = "Double Up",
-                            Description = "Doubles your total round points for this league.",
-                            ImageUrl = "/images/boosts/double-up-normal.png",
-                            SelectedImageUrl = "/images/boosts/double-up-selected.png",
-                            DisabledImageUrl = "/images/boosts/double-up-disabled.png",
-                            Eligibility = eligibilityDto
-                        }
+                        BoostCode = "None",
+                        Name = "None",
+                        Description = "No boost selected",
+                        ImageUrl = "/images/boosts/none-normal.png",
+                        SelectedImageUrl = "/images/boosts/none-selected.png",
+                        DisabledImageUrl = "/images/boosts/none-disabled.png",
+                        Eligibility = new BoostEligibilityDto { BoostCode = "None", LeagueId = leagueDto.LeagueId, RoundId = _pageData.RoundId, CanUse = true, RemainingSeasonUses = int.MaxValue, RemainingWindowUses = int.MaxValue, AlreadyUsedThisRound = false }
                     };
 
-                    _boostOptions[lid] = options;
-                    _boostSelections[lid] = "None";
+                    var list = new List<BoostOptionDto> { none };
+                    
+                    if (options != null) 
+                        list.AddRange(options);
+
+                    _boostOptions[leagueDto.LeagueId] = list;
+                    _boostSelections[leagueDto.LeagueId] = "None";
                 }
             }
         }

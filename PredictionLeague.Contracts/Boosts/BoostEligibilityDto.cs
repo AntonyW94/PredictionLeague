@@ -2,7 +2,7 @@
 
 public sealed class BoostEligibilityDto
 {
-    public string BoostCode { get; init; } = null!;
+    public string BoostCode { get; init; } = string.Empty;
     public int LeagueId { get; init; }
     public int RoundId { get; init; }
     public bool CanUse { get; init; }

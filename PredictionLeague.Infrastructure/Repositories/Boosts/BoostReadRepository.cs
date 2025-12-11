@@ -1,17 +1,19 @@
 ﻿using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Common.Enumerations;
+using PredictionLeague.Domain.Models;
 using PredictionLeague.Domain.Services.Boosts;
+using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Infrastructure.Repositories.Boosts;
 
 public sealed class BoostReadRepository : IBoostReadRepository
 {
-    private readonly IApplicationReadDbConnection _db;
-        
-    public BoostReadRepository(IApplicationReadDbConnection db)
+    private readonly IApplicationReadDbConnection _dbConnection;
+
+    public BoostReadRepository(IApplicationReadDbConnection dbConnection)
     {
-        _db = db;
+        _dbConnection = dbConnection;
     }
 
     public async Task<(int SeasonId, int RoundNumber)> GetRoundInfoAsync(int roundId, CancellationToken cancellationToken)
@@ -21,7 +23,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
                 FROM [Rounds] r
                 WHERE r.[Id] = @RoundId;";
 
-        var rows = await _db.QueryAsync<RoundInfoRow>(
+        var rows = await _dbConnection.QueryAsync<RoundInfoRow>(
             sql,
             cancellationToken,
             new { RoundId = roundId });
@@ -38,12 +40,36 @@ public sealed class BoostReadRepository : IBoostReadRepository
                 FROM [Leagues] l
                 WHERE l.[Id] = @LeagueId;";
 
-        var rows = await _db.QueryAsync<int>(sql, cancellationToken, new { LeagueId = leagueId });
-
-        if (!rows.Any())
+        var rows = (await _dbConnection.QueryAsync<int>(sql, cancellationToken, new { LeagueId = leagueId })).ToList();
+        if (rows.Count == 0)
             return null;
 
         return rows.Single();
+    }
+
+    public async Task<IEnumerable<BoostDefinition>> GetBoostDefinitionsForLeagueAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                bd.[Id] AS BoostDefinitionId,
+                bd.[Code] AS BoostCode,
+                bd.[Name],
+                bd.[Tooltip],
+                bd.[Description],
+                bd.[ImageUrl],
+                bd.[SelectedImageUrl],
+                bd.[DisabledImageUrl]
+            FROM 
+                [BoostDefinitions] bd
+            INNER JOIN 
+                [LeagueBoostRules] lbr ON lbr.[BoostDefinitionId] = bd.[Id]
+            WHERE 
+                lbr.[LeagueId] = @LeagueId
+                AND lbr.[IsEnabled] = 1
+            ORDER BY 
+                lbr.[Id]";
+
+        return await _dbConnection.QueryAsync<BoostDefinition>(sql, cancellationToken, new { LeagueId = leagueId });
     }
 
     public async Task<bool> IsUserMemberOfLeagueAsync(string userId, int leagueId, CancellationToken cancellationToken)
@@ -55,7 +81,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
                   AND lm.[UserId] = @UserId
                   AND lm.[Status] = @ApprovedStatus;";
 
-        var rows = await _db.QueryAsync<int>(sql, cancellationToken, new { LeagueId = leagueId, UserId = userId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+        var rows = await _dbConnection.QueryAsync<int>(sql, cancellationToken, new { LeagueId = leagueId, UserId = userId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
 
         return rows.Any();
     }
@@ -73,7 +99,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
                    AND lbr.[LeagueId] = @LeagueId
                 WHERE bd.[Code] = @BoostCode;";
 
-        var ruleRows = await _db.QueryAsync<LeagueBoostRuleRow>(ruleSql, cancellationToken, new { LeagueId = leagueId, BoostCode = boostCode });
+        var ruleRows = await _dbConnection.QueryAsync<LeagueBoostRuleRow>(ruleSql, cancellationToken, new { LeagueId = leagueId, BoostCode = boostCode });
 
         var ruleRow = ruleRows.SingleOrDefault();
         if (ruleRow == null)
@@ -88,7 +114,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
                 WHERE [LeagueBoostRuleId] = @LeagueBoostRuleId
                 ORDER BY [StartRoundNumber];";
 
-        var windowRows = await _db.QueryAsync<LeagueBoostWindowRow>(
+        var windowRows = await _dbConnection.QueryAsync<LeagueBoostWindowRow>(
             windowsSql,
             cancellationToken,
             new { ruleRow.LeagueBoostRuleId });
@@ -107,7 +133,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
             Windows = windows
         };
     }
-  
+
     public async Task<BoostUsageSnapshot> GetUserBoostUsageSnapshotAsync(string userId, int leagueId, int seasonId, int roundId, string boostCode, CancellationToken cancellationToken)
     {
         // Get the round number for the roundId
@@ -126,7 +152,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
                   AND ubu.[SeasonId] = @SeasonId
                   AND bd.[Code] = @BoostCode;";
 
-        var seasonRows = await _db.QueryAsync<CountRow>(
+        var seasonRows = await _dbConnection.QueryAsync<CountRow>(
             seasonUsesSql,
             cancellationToken,
             new { UserId = userId, LeagueId = leagueId, SeasonId = seasonId, BoostCode = boostCode });
@@ -145,7 +171,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
                   AND ubu.[RoundId] = @RoundId
                   AND bd.[Code] = @BoostCode;";
 
-        var usedRows = await _db.QueryAsync<CountRow>(
+        var usedRows = await _dbConnection.QueryAsync<CountRow>(
             usedThisRoundSql,
             cancellationToken,
             new { UserId = userId, LeagueId = leagueId, SeasonId = seasonId, RoundId = roundId, BoostCode = boostCode });
@@ -164,7 +190,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
                   AND @RoundNumber BETWEEN lbw.[StartRoundNumber] AND lbw.[EndRoundNumber]
                 ORDER BY lbw.[StartRoundNumber];";
 
-        var activeWindowRows = await _db.QueryAsync<LeagueBoostWindowRow>(
+        var activeWindowRows = await _dbConnection.QueryAsync<LeagueBoostWindowRow>(
             activeWindowsSql,
             cancellationToken,
             new { LeagueId = leagueId, BoostCode = boostCode, RoundNumber = roundNumber });
@@ -195,7 +221,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
 
             foreach (var w in windowRows)
             {
-                var rows = await _db.QueryAsync<CountRow>(
+                var rows = await _dbConnection.QueryAsync<CountRow>(
                     windowCountSql,
                     cancellationToken,
                     new { UserId = userId, LeagueId = leagueId, SeasonId = seasonId, BoostCode = boostCode, StartRound = w.StartRoundNumber, EndRound = w.EndRoundNumber });
@@ -215,12 +241,14 @@ public sealed class BoostReadRepository : IBoostReadRepository
         };
     }
 
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private sealed class RoundInfoRow
     {
         public int SeasonId { get; set; }
         public int RoundNumber { get; set; }
     }
 
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private sealed class LeagueBoostRuleRow
     {
         public bool IsEnabled { get; set; }
@@ -228,7 +256,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
         public int LeagueBoostRuleId { get; set; }
     }
 
-
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private sealed class LeagueBoostWindowRow
     {
         public int StartRoundNumber { get; set; }
@@ -236,6 +264,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
         public int MaxUsesInWindow { get; set; }
     }
 
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private sealed class CountRow
     {
         public int Count { get; set; }

@@ -1,7 +1,6 @@
 ﻿/* ---------- League row styling ---------- */
 .boost-league-row {
-    margin: 1rem 0;
-    padding: 14px;
+    padding: 1em;
     border-radius: var(--bs-border-radius);
     background: var(--pl-purple-800);
 }
@@ -15,10 +14,14 @@
 }
 
 .boost-card-wrapper {
-    display: inline-flex;
-    align-items: center;
-    flex-direction: column;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 220px;
+    max-width: 320px;
+    box-sizing: border-box;
+    padding: 6px;
 }
 
     .boost-card-wrapper .boost-card {
@@ -27,26 +30,40 @@
         justify-content: center;
     }
 
-.boost-selector-grid.boost-count-2 .boost-card {
-    flex: 0 0 calc(50% - 16px);
-    max-width: calc(50% - 16px);
+.boost-selector-grid.boost-count-2 .boost-card-wrapper {
+    flex: 0 0 calc(50% - 18px);
+    max-width: calc(50% - 18px);
 }
 
-.boost-selector-grid.boost-count-3 .boost-card {
-    flex: 0 0 calc(33.333% - 16px);
-    max-width: calc(33.333% - 16px);
+/* 3 options - 3 columns */
+.boost-selector-grid.boost-count-3 .boost-card-wrapper {
+    flex: 0 0 calc(33.333% - 18px);
+    max-width: calc(33.333% - 18px);
 }
 
-.boost-selector-grid.boost-count-4 .boost-card,
-.boost-selector-grid.boost-count-5 .boost-card,
-.boost-selector-grid.boost-count-6 .boost-card {
-    flex: 0 0 calc(25% - 16px);
-    max-width: calc(25% - 16px);
+/* 4+ options - 4 columns */
+.boost-selector-grid.boost-count-4 .boost-card-wrapper,
+.boost-selector-grid.boost-count-5 .boost-card-wrapper,
+.boost-selector-grid.boost-count-6 .boost-card-wrapper {
+    flex: 0 0 calc(25% - 18px);
+    max-width: calc(25% - 18px);
 }
 
 .boost-card {
     flex: 1 1 220px;
-    max-width: 320px;
+    max-width: 160px;
+}
+
+.boost-hex {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.boost-img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
 }
 
 /* ---------- Description full-width styling (centered) ---------- */
@@ -66,16 +83,19 @@
         padding: 0 6px;
     }
 
-    .boost-selector-grid.boost-count-2 .boost-card,
-    .boost-selector-grid.boost-count-3 .boost-card,
-    .boost-selector-grid.boost-count-4 .boost-card {
-        flex: 0 0 calc(50% - 12px);
+    .boost-card-wrapper {
         max-width: calc(50% - 12px);
+        flex: 0 0 calc(50% - 12px);
     }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 480px) {
     .boost-description {
         font-size: 0.88rem;
+    }
+
+    .boost-card-wrapper {
+        flex: 0 0 100%;
+        max-width: 100%;
     }
 }

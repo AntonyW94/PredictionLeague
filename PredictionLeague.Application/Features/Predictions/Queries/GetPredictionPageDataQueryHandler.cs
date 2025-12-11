@@ -61,13 +61,29 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
         var firstRow = results.First();
 
         const string leaguesSql = @"
-            SELECT l.[Id] AS LeagueId, l.[Name]
-            FROM [Leagues] l
-            JOIN [LeagueMembers] lm ON lm.[LeagueId] = l.[Id]
-            WHERE l.[SeasonId] = @SeasonId
-              AND lm.[UserId] = @UserId
-              AND lm.[Status] = @ApprovedStatus
-            ORDER BY l.[Name];";
+            SELECT 
+                l.[Id] AS LeagueId, 
+                l.[Name],
+                CAST
+                    (
+                        CASE WHEN EXISTS (
+                        SELECT 1
+                        FROM [LeagueBoostRules] lbr
+                        WHERE 
+                            lbr.[LeagueId] = l.[Id]
+                            AND lbr.[IsEnabled] = 1
+                        ) THEN 1 ELSE 0 END AS BIT
+                    ) AS HasBoosts
+            FROM 
+                [Leagues] l
+            JOIN
+                [LeagueMembers] lm ON lm.[LeagueId] = l.[Id]
+            WHERE 
+                l.[SeasonId] = @SeasonId
+                AND lm.[UserId] = @UserId
+                AND lm.[Status] = @ApprovedStatus
+            ORDER BY 
+                l.[Name];";
 
         var leagues = await _dbConnection.QueryAsync<PredictionLeagueQueryResult>(
             leaguesSql,
@@ -101,7 +117,8 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
                 .Select(l => new PredictionLeagueDto
                 {
                     LeagueId = l.LeagueId, 
-                    Name = l.Name
+                    Name = l.Name,
+                    HasBoosts = l.HasBoosts
                 }).ToList()
         };
     }
@@ -126,5 +143,5 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
     );
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PredictionLeagueQueryResult(int LeagueId, string Name);
+    private record PredictionLeagueQueryResult(int LeagueId, string Name, bool HasBoosts);
 }

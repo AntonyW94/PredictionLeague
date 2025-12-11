@@ -4,7 +4,7 @@ namespace PredictionLeague.Application.Services.Boosts;
 
 public interface IBoostService
 {
-    Task<BoostEligibilityDto> GetBoostEligibilityAsync(
+    Task<BoostEligibilityDto> GetEligibilityAsync(
         string userId,
         int leagueId,
         int roundId,

@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using PredictionLeague.Application.Features.Predictions.Queries;
 using PredictionLeague.Application.Services.Boosts;
 using PredictionLeague.Contracts.Boosts;
 using System.Security.Claims;
@@ -11,27 +13,27 @@ namespace PredictionLeague.API.Controllers;
 public class BoostsController : ControllerBase
 {
     private readonly IBoostService _boostService;
-
-    public BoostsController(IBoostService boostService)
+    private readonly IMediator _mediator;
+    
+    public BoostsController(IBoostService boostService, IMediator mediator)
     {
         _boostService = boostService;
+        _mediator = mediator;
     }
 
-    [HttpGet("eligibility")]
+    [HttpGet("available")]
     [Authorize]
-    public async Task<ActionResult<BoostEligibilityDto>> GetEligibility(
-        [FromQuery] int leagueId,
-        [FromQuery] int roundId,
-        [FromQuery] string boostCode,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAvailable(int leagueId, int roundId, CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
-        if (string.IsNullOrEmpty(userId)) 
+        
+        if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
-        var dto = await _boostService.GetBoostEligibilityAsync(userId, leagueId, roundId, boostCode, cancellationToken);
-        return Ok(dto);
+        var query = new GetAvailableBoostsQuery(leagueId, roundId, userId);
+        var result = await _mediator.Send(query, cancellationToken);
+        
+        return Ok(result);
     }
 
     [HttpPost("apply")]
@@ -48,12 +50,5 @@ public class BoostsController : ControllerBase
             return Ok(result);
 
         return BadRequest(result);
-    }
-
-    public class ApplyBoostRequest
-    {
-        public int LeagueId { get; set; }
-        public int RoundId { get; set; }
-        public string BoostCode { get; set; } = null!;
     }
 }

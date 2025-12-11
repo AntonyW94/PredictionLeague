@@ -9,13 +9,14 @@
                 <div class="boost-card-wrapper" role="listitem">
                     <BoostCard LeagueId="@LeagueId"
                                RoundId="@RoundId"
-                               Eligibility="@option.Eligibility"
-                               IsSelected="@(SelectedCode == option.BoostCode)"
-                               IsSelectedChanged="@(async selected => await OnCardToggled(option.BoostCode, selected))"
                                ImageUrl="@option.ImageUrl"
                                SelectedImageUrl="@option.SelectedImageUrl"
                                DisabledImageUrl="@option.DisabledImageUrl"
-                               ImageAlt="@option.Name" />
+                               ImageAlt="@option.Name"
+                               Tooltip="@option.Tooltip"
+                               IsSelected="@(SelectedCode == option.BoostCode)"
+                               Eligibility="@option.Eligibility"
+                               IsSelectedChanged="@(async selected => await OnCardToggled(option.BoostCode, selected))" />
                 </div>
             }
         </div>
