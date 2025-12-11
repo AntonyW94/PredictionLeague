@@ -2,7 +2,7 @@
 
 @inject IJSRuntime JsRuntime
 
-<div class="select-boost-card" role="button" tabindex="0"
+<div class="boost-card" role="button" tabindex="0"
      aria-pressed="@IsSelected"
      aria-disabled="@IsDisabled"
      title="@Tooltip"
@@ -11,14 +11,6 @@
 
     <div class="boost-hex">
         <img src="@CurrentImageUrl" alt="@ImageAlt" class="boost-img" width="150px" />
-    </div>
-
-    <div class="boost-meta">
-        <div class="boost-title">@Title</div>
-        @if (IsSelected)
-        {
-            <div class="boost-desc">@DescriptionText</div>
-        }
     </div>
 </div>
 
@@ -34,9 +26,7 @@
     [Parameter] public string SelectedImageUrl { get; set; } = "/images/boosts/double-up-selected.png";
     [Parameter] public string DisabledImageUrl { get; set; } = "/images/boosts/double-up-disabled.png";
     [Parameter] public string ImageAlt { get; set; } = "Double Up boost";
-    [Parameter] public string DescriptionText { get; set; } = "Doubles your total points for this round for this league when applied.";
 
-    private string Title => "Double Up";
     private string Tooltip => Eligibility == null ? "Loading..." : (Eligibility.CanUse ? "Will apply on Save — doubles round points" : (Eligibility.Reason ?? "Not available"));
     private bool IsDisabled => Eligibility == null || !Eligibility.CanUse || Eligibility.AlreadyUsedThisRound;
 

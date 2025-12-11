@@ -1,89 +1,81 @@
-﻿/* SelectBoostCard styling (image-only hex + small description) */
-.select-boost-card {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 10px;
-    cursor: pointer;
-    user-select: none;
-    transition: transform 0.08s ease, box-shadow 0.12s ease;
-    border-radius: 8px;
-    background: transparent; /* keep existing card background */
-    border: 1px solid rgba(255,255,255,0.03); /* subtle boundary */
+﻿/* ---------- League row styling ---------- */
+.boost-league-row {
+    margin: 1rem 0;
+    padding: 14px;
+    border-radius: var(--bs-border-radius);
+    background: var(--pl-purple-800);
 }
 
-    .select-boost-card[aria-disabled="true"] {
-        cursor: not-allowed;
-        opacity: 0.6;
-    }
-
-/* hex container: uses clip-path to enforce hexagon */
-.boost-hex {
-    width: 56px;
-    height: 64px; /* taller so hex looks proper */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px;
-    background: transparent; /* image will be visible */
-    clip-path: polygon( 25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50% );
-    -webkit-clip-path: polygon( 25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50% );
-}
-
-/* image sizing inside hex - allow transparency to show through */
-.boost-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-}
-
-/* Meta text */
-.boost-meta {
+/* ---------- Grid + card sizing ---------- */
+.boost-selector-grid {
     display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: space-around;
+}
+
+.boost-card-wrapper {
+    display: inline-flex;
+    align-items: center;
     flex-direction: column;
-    min-width: 180px; /* leave room for description */
+    cursor: pointer;
 }
 
-.boost-title {
-    color: white;
-    font-weight: 700;
-    font-size: 0.95rem;
-    line-height: 1;
-}
-
-.boost-desc {
-    margin-top: 6px;
-    color: rgba(255,255,255,0.85);
-    font-size: 0.85rem;
-}
-
-/* hover / focus affordance */
-.select-boost-card:focus,
-.select-boost-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(0,0,0,0.35);
-    outline: none;
-}
-
-/* selected emphasis - you may style differently */
-.select-boost-card.selected {
-    box-shadow: 0 14px 32px rgba(0,0,0,0.45);
-}
-
-/* responsive tweak */
-@media (max-width: 768px) {
-    .boost-hex {
-        width: 46px;
-        height: 52px;
-        padding: 5px;
+    .boost-card-wrapper .boost-card {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .boost-meta {
-        min-width: 140px;
+.boost-selector-grid.boost-count-2 .boost-card {
+    flex: 0 0 calc(50% - 16px);
+    max-width: calc(50% - 16px);
+}
+
+.boost-selector-grid.boost-count-3 .boost-card {
+    flex: 0 0 calc(33.333% - 16px);
+    max-width: calc(33.333% - 16px);
+}
+
+.boost-selector-grid.boost-count-4 .boost-card,
+.boost-selector-grid.boost-count-5 .boost-card,
+.boost-selector-grid.boost-count-6 .boost-card {
+    flex: 0 0 calc(25% - 16px);
+    max-width: calc(25% - 16px);
+}
+
+.boost-card {
+    flex: 1 1 220px;
+    max-width: 320px;
+}
+
+/* ---------- Description full-width styling (centered) ---------- */
+.boost-description-wrapper {
+    border-top: 3px solid var(--pl-purple-600);
+}
+
+.boost-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    transition: transform 0.12s ease;
+}
+
+/* ---------- Responsive tweaks ---------- */
+@media (max-width: 991px) {
+    .boost-description {
+        font-size: 0.9rem;
+        padding: 0 6px;
     }
 
-    .boost-desc {
-        font-size: 0.8rem;
+    .boost-selector-grid.boost-count-2 .boost-card,
+    .boost-selector-grid.boost-count-3 .boost-card,
+    .boost-selector-grid.boost-count-4 .boost-card {
+        flex: 0 0 calc(50% - 12px);
+        max-width: calc(50% - 12px);
+    }
+}
+
+@media (max-width: 420px) {
+    .boost-description {
+        font-size: 0.88rem;
     }
 }

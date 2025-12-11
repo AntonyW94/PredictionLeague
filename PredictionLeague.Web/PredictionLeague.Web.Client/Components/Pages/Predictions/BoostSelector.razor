@@ -1,28 +1,51 @@
 ﻿@using PredictionLeague.Contracts.Boosts
 
-<div class="boost-selector">
-    <div class="d-flex flex-wrap gap-2">
-        @foreach (var option in Options)
-        {
-            <BoostCard LeagueId="@LeagueId"
-                             RoundId="@RoundId"
-                             Eligibility="@option.Eligibility"
-                             IsSelected="@(SelectedCode == option.BoostCode)"
-                             IsSelectedChanged="@(async selected => await OnCardToggled(option.BoostCode, selected))"
-                             ImageUrl="@option.ImageUrl"
-                             SelectedImageUrl="@option.SelectedImageUrl"
-                             DisabledImageUrl="@option.DisabledImageUrl"
-                             DescriptionText="@option.Description" />
-        }
+@if (Options.Count > 0)
+{
+    <div class="boost-selector">
+        <div class="boost-selector-grid @($"boost-count-{Options.Count}")" role="list">
+            @foreach (var option in Options)
+            {
+                <div class="boost-card-wrapper" role="listitem">
+                    <BoostCard LeagueId="@LeagueId"
+                               RoundId="@RoundId"
+                               Eligibility="@option.Eligibility"
+                               IsSelected="@(SelectedCode == option.BoostCode)"
+                               IsSelectedChanged="@(async selected => await OnCardToggled(option.BoostCode, selected))"
+                               ImageUrl="@option.ImageUrl"
+                               SelectedImageUrl="@option.SelectedImageUrl"
+                               DisabledImageUrl="@option.DisabledImageUrl"
+                               ImageAlt="@option.Name" />
+                </div>
+            }
+        </div>
+
+        <div class="boost-description-wrapper text-white mt-2 pt-4 pb-2 w-100" aria-live="polite" aria-atomic="true">
+            @if (SelectedOption is not null)
+            {
+                <div class="boost-description text-center">
+                    <div class="boost-desc-title fw-bold">@SelectedOption.Name</div>
+                    <div class="boost-desc-text mt-1">@SelectedOption.Description</div>
+                </div>
+            }
+            else
+            {
+                <div class="boost-description text-muted">Select a boost to see details.</div>
+            }
+        </div>
     </div>
-</div>
+}
 
 @code {
     [Parameter, EditorRequired] public int LeagueId { get; set; }
     [Parameter, EditorRequired] public int RoundId { get; set; }
+
     [Parameter] public List<BoostOptionDto> Options { get; set; } = new();
+
     [Parameter] public string SelectedCode { get; set; } = "None";
     [Parameter] public EventCallback<string> SelectedCodeChanged { get; set; }
+
+    private BoostOptionDto? SelectedOption => Options.FirstOrDefault(o => o.BoostCode == SelectedCode);
 
     private async Task OnCardToggled(string code, bool isSelected)
     {
