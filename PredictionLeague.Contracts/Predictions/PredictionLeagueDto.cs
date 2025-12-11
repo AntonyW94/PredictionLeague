@@ -4,5 +4,6 @@ public class PredictionLeagueDto
 {
     public int LeagueId { get; init; }
     public string Name { get; init; } = string.Empty;
-    public bool HasBoosts { get; init; } = false;
+    public bool HasBoosts { get; init; }
+    public string? SelectedBoostCode { get; init; }
 }

@@ -28,6 +28,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-direction: column;
     }
 
 .boost-selector-grid.boost-count-2 .boost-card-wrapper {

@@ -12,19 +12,47 @@
     <div class="boost-hex">
         <img src="@CurrentImageUrl" alt="@ImageAlt" class="boost-img" />
     </div>
+
+    @if (Eligibility is not null)
+    {
+        if (BoostCode == "None")
+        {
+            <div class="badge-group badge-group--green boost-remaining-badge">
+                <span class="badge-icon">
+                    <span class="fw-bold">∞</span>
+                </span>
+
+                <span>remaining</span>
+            </div>
+        }
+        else
+        {
+            <div class="@GetBoostRemainingCss(Eligibility.RemainingWindowUses)">
+                <span class="badge-icon">
+                    <span class="fw-bold">@Eligibility.RemainingWindowUses</span>
+                </span>
+
+                <span>remaining</span>
+            </div>
+
+        }
+
+
+    }
 </div>
 
 @code {
     [Parameter, EditorRequired] public int LeagueId { get; set; }
     [Parameter, EditorRequired] public int RoundId { get; set; }
-    
+
+    [Parameter] public string BoostCode { get; set; } = string.Empty;
     [Parameter] public string ImageUrl { get; set; } = string.Empty;
     [Parameter] public string SelectedImageUrl { get; set; } = string.Empty;
     [Parameter] public string DisabledImageUrl { get; set; } = string.Empty;
     [Parameter] public string ImageAlt { get; set; } = string.Empty;
     [Parameter] public string Tooltip { get; set; } = string.Empty;
     [Parameter] public bool IsSelected { get; set; }
-    
+
     [Parameter] public BoostEligibilityDto? Eligibility { get; set; }
     [Parameter] public EventCallback<bool> IsSelectedChanged { get; set; }
 
@@ -53,5 +81,10 @@
     {
         if (e.Key == "Enter" || e.Key == " ")
             await HandleToggle();
+    }
+
+    private string GetBoostRemainingCss(int remaining)
+    {
+        return remaining <= 0 ? "badge-group badge-group--red boost-remaining-badge" : "badge-group badge-group--green boost-remaining-badge";
     }
 }
