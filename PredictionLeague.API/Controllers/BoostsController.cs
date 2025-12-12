@@ -14,7 +14,7 @@ public class BoostsController : ControllerBase
 {
     private readonly IBoostService _boostService;
     private readonly IMediator _mediator;
-    
+
     public BoostsController(IBoostService boostService, IMediator mediator)
     {
         _boostService = boostService;
@@ -26,13 +26,13 @@ public class BoostsController : ControllerBase
     public async Task<IActionResult> GetAvailable(int leagueId, int roundId, CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        
+
         if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
         var query = new GetAvailableBoostsQuery(leagueId, roundId, userId);
         var result = await _mediator.Send(query, cancellationToken);
-        
+
         return Ok(result);
     }
 
@@ -41,14 +41,28 @@ public class BoostsController : ControllerBase
     public async Task<ActionResult<ApplyBoostResultDto>> Apply([FromBody] ApplyBoostRequest req, CancellationToken cancellationToken)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
-        if (string.IsNullOrEmpty(userId)) 
+
+        if (string.IsNullOrEmpty(userId))
             return Unauthorized();
 
         var result = await _boostService.ApplyBoostAsync(userId, req.LeagueId, req.RoundId, req.BoostCode, cancellationToken);
-        if (result.Success) 
+        if (result.Success)
             return Ok(result);
 
         return BadRequest(result);
+    }
+
+    [HttpDelete("user/usage")]
+    [Authorize]
+    public async Task<IActionResult> DeleteUserBoostUsage([FromQuery] int leagueId, [FromQuery] int roundId, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        await _boostService.DeleteUserBoostUsageAsync(userId, leagueId, roundId, cancellationToken);
+
+        return NoContent();
     }
 }

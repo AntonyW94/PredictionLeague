@@ -167,9 +167,11 @@
     private bool _isBusy;
     private string? _errorMessage;
     private string? _successMessage;
+    private Dictionary<int, string> _initialBoostSelections = new();
     private readonly Dictionary<int, string> _boostSelections = new();
     private readonly Dictionary<int, List<BoostOptionDto>> _boostOptions = new();
     private bool _loadingBoostEligibility = true;
+    private List<PredictionLeagueDto> _leaguesWithBoosts = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -192,7 +194,10 @@
                     m.PredictedAwayScore ?? 0
                 )).ToList();
 
-                foreach (var leagueDto in _pageData.Leagues.Where(l => l.HasBoosts))
+                _initialBoostSelections = new Dictionary<int, string>();
+                _leaguesWithBoosts = _pageData.Leagues.Where(l => l.HasBoosts).ToList();
+
+                foreach (var leagueDto in _leaguesWithBoosts)
                 {
                     var options = await BoostClient.GetAvailableBoostsAsync(leagueDto.LeagueId, _pageData.RoundId, CancellationToken.None);
                     
@@ -213,7 +218,9 @@
                         list.AddRange(options);
 
                     _boostOptions[leagueDto.LeagueId] = list;
-                    _boostSelections[leagueDto.LeagueId] = "None";
+
+                    _initialBoostSelections[leagueDto.LeagueId] = leagueDto.SelectedBoostCode ?? "None";
+                    _boostSelections[leagueDto.LeagueId] = leagueDto.SelectedBoostCode ?? "None";
                 }
             }
         }
@@ -263,19 +270,50 @@
 
         try
         {
-            var selectedLeagueBoosts = _boostSelections.Where(kv => kv.Value != "None").ToList();
-
-            foreach (var selectedBoost in selectedLeagueBoosts)
+            foreach (var leagueDto in _leaguesWithBoosts)
             {
-                var leagueId = selectedBoost.Key;
-                var boostCode = selectedBoost.Value;
+                var initial = _initialBoostSelections.ContainsKey(leagueDto.LeagueId) ? _initialBoostSelections[leagueDto.LeagueId] : "None";
+                var current = _boostSelections.ContainsKey(leagueDto.LeagueId) ? _boostSelections[leagueDto.LeagueId] : "None";
 
-                var result = await BoostClient.ApplyBoostAsync(leagueId, _pageData!.RoundId, boostCode, CancellationToken.None);
-                if (result == null || !result.Success)
+                if (initial == current)
+                    continue;
+
+                if (initial != "None" && current == "None")
                 {
-                    _errorMessage = result?.Error ?? $"Failed to apply {boostCode} for league {leagueId}.";
-                    _isBusy = false;
-                    return;
+                    var deleted = await BoostClient.DeleteUserBoostUsageAsync(leagueDto.LeagueId, _pageData!.RoundId, CancellationToken.None);
+                    if (!deleted)
+                    {
+                        _errorMessage = $"Failed to remove boost for league {leagueDto.LeagueId}.";
+                        _isBusy = false;
+                        return;
+                    }
+
+                    _initialBoostSelections[leagueDto.LeagueId] = "None";
+                    continue;
+                }
+
+                if (current != "None")
+                {
+                    if (initial != "None" && initial != current)
+                    {
+                        var deleted = await BoostClient.DeleteUserBoostUsageAsync(leagueDto.LeagueId, _pageData!.RoundId, CancellationToken.None);
+                        if (!deleted)
+                        {
+                            _errorMessage = $"Failed to remove previous boost for league {leagueDto.LeagueId}.";
+                            _isBusy = false;
+                            return;
+                        }
+                    }
+
+                    var applyResult = await BoostClient.ApplyBoostAsync(leagueDto.LeagueId, _pageData!.RoundId, current, CancellationToken.None);
+                    if (applyResult == null || !applyResult.Success)
+                    {
+                        _errorMessage = applyResult?.Error ?? $"Failed to apply {current} for league {leagueDto.LeagueId}.";
+                        _isBusy = false;
+                        return;
+                    }
+
+                    _initialBoostSelections[leagueDto.LeagueId] = current;
                 }
             }
 

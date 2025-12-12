@@ -44,4 +44,10 @@ public class BoostClientService
             return new ApplyBoostResultDto { Success = false, Error = ex.Message };
         }
     }
+
+    public async Task<bool> DeleteUserBoostUsageAsync(int leagueId, int roundId, CancellationToken cancellationToken)
+    {
+        var response = await _http.DeleteAsync($"api/boosts/user/usage?leagueId={leagueId}&roundId={roundId}", cancellationToken);
+        return response.IsSuccessStatusCode;
+    }
 }

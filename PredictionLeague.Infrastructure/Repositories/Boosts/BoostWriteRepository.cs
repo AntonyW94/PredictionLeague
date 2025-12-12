@@ -44,4 +44,18 @@ public class BoostWriteRepository(IDbConnectionFactory connectionFactory) : IBoo
       
         return (true, null);
     }
+
+    public async Task<bool> DeleteUserBoostUsageAsync(string userId, int leagueId, int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+        DELETE FROM [UserBoostUsages]
+        WHERE [UserId] = @UserId
+          AND [LeagueId] = @LeagueId
+          AND [RoundId] = @RoundId;";
+
+        var command = new CommandDefinition(sql, new { UserId = userId, LeagueId = leagueId, RoundId = roundId }, cancellationToken: cancellationToken);
+        var affected = await Connection.ExecuteAsync(command);
+       
+        return affected > 0;
+    }
 }

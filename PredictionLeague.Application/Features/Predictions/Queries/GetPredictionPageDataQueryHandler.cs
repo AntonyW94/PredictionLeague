@@ -91,6 +91,24 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
             new { firstRow.SeasonId, request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) }
         );
 
+        const string userBoostSql = @"
+            SELECT 
+                ubu.[LeagueId],
+                bd.[Code] AS SelectedBoostCode
+            FROM [UserBoostUsages] ubu
+            JOIN [BoostDefinitions] bd ON bd.[Id] = ubu.[BoostDefinitionId]
+            WHERE 
+                ubu.[UserId] = @UserId
+                AND ubu.[RoundId] = @RoundId;";
+
+        var boostUsages = await _dbConnection.QueryAsync<UserBoostUsageResult>(
+            userBoostSql,
+            cancellationToken,
+            new { request.UserId, request.RoundId }
+        );
+        
+        var boostDictionary = boostUsages.ToDictionary(x => x.LeagueId, x => x.SelectedBoostCode);
+
         return new PredictionPageDto
         {
             RoundId = firstRow.RoundId,
@@ -118,7 +136,8 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
                 {
                     LeagueId = l.LeagueId, 
                     Name = l.Name,
-                    HasBoosts = l.HasBoosts
+                    HasBoosts = l.HasBoosts,
+                    SelectedBoostCode = boostDictionary.GetValueOrDefault(l.LeagueId)
                 }).ToList()
         };
     }
@@ -144,4 +163,7 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record PredictionLeagueQueryResult(int LeagueId, string Name, bool HasBoosts);
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record UserBoostUsageResult(int LeagueId, string SelectedBoostCode);
 }

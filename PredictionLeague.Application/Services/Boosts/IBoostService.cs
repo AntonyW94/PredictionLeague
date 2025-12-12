@@ -17,4 +17,10 @@ public interface IBoostService
         int roundId,
         string boostCode,
         CancellationToken cancellationToken);
+
+    Task<bool> DeleteUserBoostUsageAsync(
+        string userId,
+        int leagueId,
+        int roundId,
+        CancellationToken cancellationToken);
 }

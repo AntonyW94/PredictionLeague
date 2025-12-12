@@ -58,11 +58,11 @@
     private int _serverRemaining;             
     private bool _localSelected;         
 
-    private bool IsDisabled => Eligibility == null || !Eligibility.CanUse || Eligibility.AlreadyUsedThisRound;
+    private bool IsDisabled => !_initiallySelected && (Eligibility == null || !Eligibility.CanUse || Eligibility.AlreadyUsedThisRound);
 
     private string CurrentImageUrl =>
-        IsDisabled ? DisabledImageUrl :
         IsSelected ? SelectedImageUrl :
+        IsDisabled ? DisabledImageUrl :
         ImageUrl;
 
 

@@ -136,14 +136,10 @@ public sealed class BoostReadRepository : IBoostReadRepository
 
     public async Task<BoostUsageSnapshot> GetUserBoostUsageSnapshotAsync(string userId, int leagueId, int seasonId, int roundId, string boostCode, CancellationToken cancellationToken)
     {
-        // Get the round number for the roundId
-        var (rnSeasonId, roundNumber) = await GetRoundInfoAsync(roundId, cancellationToken);
+        var (_, roundNumber) = await GetRoundInfoAsync(roundId, cancellationToken);
 
-        // Defensive: if the round's season doesn't match provided seasonId, still continue with counts scoped to provided seasonId.
-
-        // 1) Season uses count (total uses in this season)
         const string seasonUsesSql = @"
-                SELECT COUNT(*) AS SeasonUses
+                SELECT COUNT(*) AS Count
                 FROM [UserBoostUsages] ubu
                 INNER JOIN [BoostDefinitions] bd
                     ON ubu.[BoostDefinitionId] = bd.[Id]
@@ -159,9 +155,8 @@ public sealed class BoostReadRepository : IBoostReadRepository
 
         var seasonUses = seasonRows.SingleOrDefault()?.Count ?? 0;
 
-        // 2) Has used this specific round?
         const string usedThisRoundSql = @"
-                SELECT COUNT(*) AS UsedCount
+                SELECT COUNT(*) AS Count
                 FROM [UserBoostUsages] ubu
                 INNER JOIN [BoostDefinitions] bd
                     ON ubu.[BoostDefinitionId] = bd.[Id]
@@ -178,8 +173,6 @@ public sealed class BoostReadRepository : IBoostReadRepository
 
         var usedThisRound = (usedRows.SingleOrDefault()?.Count ?? 0) > 0;
 
-        // 3) Determine active window(s) for the given round
-        // We'll fetch any windows that contain the roundNumber and then compute windowUses for those windows.
         const string activeWindowsSql = @"
                 SELECT lbw.[StartRoundNumber], lbw.[EndRoundNumber], lbw.[MaxUsesInWindow]
                 FROM [LeagueBoostWindows] lbw
@@ -190,22 +183,17 @@ public sealed class BoostReadRepository : IBoostReadRepository
                   AND @RoundNumber BETWEEN lbw.[StartRoundNumber] AND lbw.[EndRoundNumber]
                 ORDER BY lbw.[StartRoundNumber];";
 
-        var activeWindowRows = await _dbConnection.QueryAsync<LeagueBoostWindowRow>(
+        var activeWindowRows = (await _dbConnection.QueryAsync<LeagueBoostWindowRow>(
             activeWindowsSql,
             cancellationToken,
-            new { LeagueId = leagueId, BoostCode = boostCode, RoundNumber = roundNumber });
+            new { LeagueId = leagueId, BoostCode = boostCode, RoundNumber = roundNumber })).ToList();
 
-        // If there are no active windows for this round, WindowUses = 0
         var windowUses = 0;
 
         if (activeWindowRows.Any())
         {
-            // If multiple windows overlap and include this round, treat windowUses as the max usage across those windows
-            // (this is conservative). Alternatively you could sum or choose the first; here we compute the maximum
-            // count of uses inside any matching window and return that.
             var windowRows = activeWindowRows.ToList();
 
-            // For each window, count user usages where the round's roundnumber is within window bounds
             const string windowCountSql = @"
                     SELECT COUNT(*) AS CountInWindow
                     FROM [UserBoostUsages] ubu
@@ -227,7 +215,8 @@ public sealed class BoostReadRepository : IBoostReadRepository
                     new { UserId = userId, LeagueId = leagueId, SeasonId = seasonId, BoostCode = boostCode, StartRound = w.StartRoundNumber, EndRound = w.EndRoundNumber });
 
                 var count = rows.SingleOrDefault()?.Count ?? 0;
-                if (count > maxWindowUses) maxWindowUses = count;
+                if (count > maxWindowUses)
+                    maxWindowUses = count;
             }
 
             windowUses = maxWindowUses;
@@ -242,31 +231,35 @@ public sealed class BoostReadRepository : IBoostReadRepository
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
     private sealed class RoundInfoRow
     {
-        public int SeasonId { get; set; }
-        public int RoundNumber { get; set; }
+        public int SeasonId { get; init; }
+        public int RoundNumber { get; init; }
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
     private sealed class LeagueBoostRuleRow
     {
-        public bool IsEnabled { get; set; }
-        public int TotalUsesPerSeason { get; set; }
-        public int LeagueBoostRuleId { get; set; }
+        public bool IsEnabled { get; init; }
+        public int TotalUsesPerSeason { get; init; }
+        public int LeagueBoostRuleId { get; init; }
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
     private sealed class LeagueBoostWindowRow
     {
-        public int StartRoundNumber { get; set; }
-        public int EndRoundNumber { get; set; }
-        public int MaxUsesInWindow { get; set; }
+        public int StartRoundNumber { get; init; }
+        public int EndRoundNumber { get; init; }
+        public int MaxUsesInWindow { get; init; }
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
     private sealed class CountRow
     {
-        public int Count { get; set; }
+        public int Count { get; init; }
     }
 }

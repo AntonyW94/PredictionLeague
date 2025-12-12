@@ -127,4 +127,9 @@ public sealed class BoostService : IBoostService
             AlreadyUsedThisRound = error == "AlreadyUsedThisRound"
         };
     }
+
+    public async Task<bool> DeleteUserBoostUsageAsync(string userId, int leagueId, int roundId, CancellationToken cancellationToken)
+    {
+        return await _boostWriteRepository.DeleteUserBoostUsageAsync(userId, leagueId, roundId, cancellationToken);
+    }
 }
