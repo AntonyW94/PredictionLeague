@@ -127,7 +127,7 @@
         color: white;
     }
 
-.badge-group.pulsing {
+.pulsing {
     animation: pulse 1.5s infinite;
 }
 

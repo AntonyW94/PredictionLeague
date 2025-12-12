@@ -6,6 +6,7 @@
 
 @using PredictionLeague.Contracts.Leagues
 @using PredictionLeague.Domain.Common.Enumerations
+@using PredictionLeague.Web.Client.Components.Pages.Boosts
 @using PredictionLeague.Web.Client.Services.Leagues
 
 <div class="card">
@@ -88,7 +89,10 @@
                                             <tr class="@(IsWinner(player) ? "overall-round-winner" : "") @(GetUserHighlightClass(player.UserId))">
                                                 <td class="rank-col fw-bold">@player.Rank</td>
                                                 <td class="player-name-col fw-bold">@player.PlayerName</td>
-                                                <td class="points-col fw-bold">@player.TotalPoints</td>
+                                                <td class="points-col fw-bold">
+                                                    <SmallBoostAppliedIcon Player="player" Deadline="Deadline" />
+                                                    @player.TotalPoints
+                                                </td>
                                             </tr>
                                         }
                                     </tbody>
@@ -113,13 +117,15 @@
     private int _currentIndex;
     private string _trackStyle = "transform: translateX(0%);";
     private double _touchStartX;
+    
+    private DateTime? Deadline => State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId.GetValueOrDefault())?.Deadline;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
         State.OnStateChange += StateHasChanged;
     }
-    
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && State.CurrentRoundMatches.Any())

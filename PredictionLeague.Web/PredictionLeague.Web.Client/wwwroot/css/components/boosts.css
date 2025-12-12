@@ -67,6 +67,14 @@
     object-fit: contain;
 }
 
+.small-boost-icon {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    display: inline-block;
+    vertical-align: middle;
+}
+
 /* ---------- Description full-width styling (centered) ---------- */
 .boost-description-wrapper {
     border-top: 3px solid var(--pl-purple-600);

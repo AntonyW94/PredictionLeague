@@ -1,6 +1,7 @@
 ﻿@using PredictionLeague.Contracts.Leagues
 @using PredictionLeague.Contracts.Admin.Rounds
 @using PredictionLeague.Domain.Common.Enumerations
+@using PredictionLeague.Web.Client.Components.Pages.Boosts
 
 @if (Results != null && Matches != null)
 {
@@ -20,20 +21,19 @@
                 {
                     <tr>
                         <td class="match-info">
-                            <div class="d-flex align-items-center space-around">
-                                <img src="@match.HomeTeamLogoUrl" class="match-logo-small" alt="@match.HomeTeamName Logo"/>
+                            <div class="d-flex align-items-center space-between">
+                                <img src="@match.HomeTeamLogoUrl" class="match-logo-small" alt="@match.HomeTeamName Logo" />
                                 <span class="mx-2 d-sm-none">@match.HomeTeamAbbreviation v @match.AwayTeamAbbreviation</span>
                                 <span class="mx-2 d-none d-sm-block">@match.HomeTeamShortName v @match.AwayTeamShortName</span>
-                                <img src="@match.AwayTeamLogoUrl" class="match-logo-small" alt="@match.AwayTeamName Logo"/>
+                                <img src="@match.AwayTeamLogoUrl" class="match-logo-small" alt="@match.AwayTeamName Logo" />
                             </div>
                         </td>
-                        
+
                         <td class="score-cell actual-score">
-                            <MatchStatusBadge
-                                Status="match.Status"
-                                HomeScore="match.ActualHomeTeamScore"
-                                AwayScore="match.ActualAwayTeamScore"
-                                MatchDateTime="match.MatchDateTime">
+                            <MatchStatusBadge Status="match.Status"
+                                              HomeScore="match.ActualHomeTeamScore"
+                                              AwayScore="match.ActualAwayTeamScore"
+                                              MatchDateTime="match.MatchDateTime">
                             </MatchStatusBadge>
                         </td>
 
@@ -57,7 +57,7 @@
                                     }
                                 }
                                 else
-                                { 
+                                {
                                     @if (!player.HasPredicted && Deadline < DateTime.Now)
                                     {
                                         <span class="not-predicted-icon text-pl-red bi bi-x-circle-fill" title="No predictions submitted"></span>
@@ -77,7 +77,10 @@
                     <th class="match-info">Total Score</th>
                     <th></th> @foreach (var player in Results.OrderBy(p => p.PlayerName))
                     {
-                        <th class="@(IsWinner(player) ? "winner-column" : "")">@player.TotalPoints</th>
+                        <th class="@(IsWinner(player) ? "winner-column" : "")">
+                            <SmallBoostAppliedIcon Player="player" Deadline="Deadline" />
+                            @player.TotalPoints
+                        </th>
                     }
                 </tr>
             </tfoot>

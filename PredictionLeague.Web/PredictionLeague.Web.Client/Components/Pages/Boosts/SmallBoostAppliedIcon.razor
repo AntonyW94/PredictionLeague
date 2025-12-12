@@ -1,0 +1,37 @@
+﻿@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@using PredictionLeague.Contracts.Leagues
+@using System.Security.Claims
+
+
+@if (HasVisibleBoost(Player))
+{
+    <img src="@Player.AppliedBoostImageUrl"
+         alt="@Player.AppliedBoostCode"
+         class="small-boost-icon me-2 pulsing"
+         title="@Player.AppliedBoostCode" />
+}
+
+@code {
+    [Parameter, EditorRequired] public PredictionResultDto Player { get; set; } = new();
+    [Parameter, EditorRequired] public DateTime? Deadline { get; set; }
+
+    private string? _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+
+    private bool HasVisibleBoost(PredictionResultDto player)
+    {
+        if (string.IsNullOrEmpty(player.AppliedBoostCode) || string.IsNullOrEmpty(player.AppliedBoostImageUrl))
+            return false;
+
+        if (player.UserId == _currentUserId)
+            return true;
+
+        return Deadline < DateTime.Now;
+    }
+}

@@ -2,6 +2,7 @@
 
 @using PredictionLeague.Contracts.Leagues
 @using PredictionLeague.Contracts.Admin.Rounds
+@using PredictionLeague.Web.Client.Components.Pages.Boosts
 
 <div class="leaderboard-card">
     <div class="card-header mobile-match-header">
@@ -16,21 +17,24 @@
                           HomeScore="Match.ActualHomeTeamScore"
                           AwayScore="Match.ActualAwayTeamScore" />
     </div>
+
     <div class="card-body">
         <div class="table-responsive rounded flex-grow-1">
             <table class="leaderboard-table light text-white">
                 <thead>
                 <tr>
-                    <th class="w-60 text-start fw-bold">Player</th>
-                    <th class="w-40 text-end fw-bold">Score</th>
+                    <th class="text-start fw-bold">Player</th>
+                    <th class="text-end fw-bold">Score</th>
                 </tr>
                 </thead>  <tbody>
                     @foreach (var player in Results)
                     {
                         var prediction = player.Predictions.FirstOrDefault(p => p.MatchId == Match.Id);
                         <tr class="@(GetUserHighlightClass(player.UserId))">
-                            <td class="w-60 text-start fw-bold">@player.PlayerName</td>
-                            <td class="w-40 text-end fw-bold">
+                            <td class="text-start fw-bold">@player.PlayerName</td>
+                            <td class="text-end fw-bold">
+                                <SmallBoostAppliedIcon Player="player" Deadline="Deadline" />
+                                
                                 @if (prediction?.HomeScore != null)
                                 {
                                     <PredictionStatusBadge IsHidden="prediction.IsHidden"

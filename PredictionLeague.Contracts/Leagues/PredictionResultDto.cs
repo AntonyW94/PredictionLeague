@@ -8,4 +8,6 @@ public class PredictionResultDto
     public int TotalPoints { get; init; }
     public long Rank { get; init; }
     public List<PredictionScoreDto> Predictions { get; init; } = [];
+    public string? AppliedBoostCode { get; init; }     
+    public string? AppliedBoostImageUrl { get; init; }
 }

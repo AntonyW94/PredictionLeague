@@ -99,6 +99,10 @@ main.light-grey{
     justify-content: space-around;
 }
 
+.space-between {
+    justify-content: space-between;
+}
+
 .flex-center {
     display: flex;
     align-items: center;

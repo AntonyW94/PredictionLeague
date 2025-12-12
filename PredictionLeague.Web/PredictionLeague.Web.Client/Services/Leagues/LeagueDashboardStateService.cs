@@ -21,7 +21,7 @@ public class LeagueDashboardStateService
 
     public string? DashboardLoadError { get; private set; }
     public string? RoundResultsError { get; private set; }
-
+    
     private readonly HttpClient _httpClient;
 
     public LeagueDashboardStateService(HttpClient httpClient)
