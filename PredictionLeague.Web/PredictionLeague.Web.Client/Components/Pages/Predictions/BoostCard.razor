@@ -27,17 +27,14 @@
         }
         else
         {
-            <div class="@GetBoostRemainingCss(Eligibility.RemainingWindowUses)">
+            <div class="@(GetBoostRemainingCss(DisplayRemaining))">
                 <span class="badge-icon">
-                    <span class="fw-bold">@Eligibility.RemainingWindowUses</span>
+                    <span class="fw-bold">@DisplayRemaining</span>
                 </span>
 
                 <span>remaining</span>
             </div>
-
         }
-
-
     }
 </div>
 
@@ -56,12 +53,58 @@
     [Parameter] public BoostEligibilityDto? Eligibility { get; set; }
     [Parameter] public EventCallback<bool> IsSelectedChanged { get; set; }
 
+    private bool _initialized;
+    private bool _initiallySelected;          
+    private int _serverRemaining;             
+    private bool _localSelected;         
+
     private bool IsDisabled => Eligibility == null || !Eligibility.CanUse || Eligibility.AlreadyUsedThisRound;
 
     private string CurrentImageUrl =>
         IsDisabled ? DisabledImageUrl :
         IsSelected ? SelectedImageUrl :
         ImageUrl;
+
+
+    private int DisplayRemaining
+    {
+        get
+        {
+            if (Eligibility == null)
+                return 0;
+
+            var baseVal = _serverRemaining;
+            var delta = _initiallySelected switch
+            {
+                true when !_localSelected => 1,
+                false when _localSelected => -1,
+                _ => 0
+            };
+
+            var value = baseVal + delta;
+            return Math.Max(0, value);
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_initialized)
+        {
+            _initiallySelected = IsSelected;
+            _localSelected = IsSelected;
+            _serverRemaining = Eligibility?.RemainingWindowUses ?? 0;
+            _initialized = true;
+        }
+        else
+        {
+            _localSelected = IsSelected;
+
+            if (Eligibility is not null)
+                _serverRemaining = Eligibility.RemainingWindowUses;
+        }
+
+        await base.OnParametersSetAsync();
+    }
 
     protected override async Task OnInitializedAsync()
     {
