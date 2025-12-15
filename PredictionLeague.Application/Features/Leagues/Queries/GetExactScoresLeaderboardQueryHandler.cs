@@ -11,28 +11,26 @@ public class GetExactScoresLeaderboardQueryHandler(IApplicationReadDbConnection 
     {
         const string entriesSql = @"
             SELECT
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                u.[Id] AS [UserId],
-                SUM(rr.ExactScoreCount) AS ExactScoresCount
+	            RANK() OVER (ORDER BY COALESCE(SUM(rr.[ExactScoreCount]), 0) DESC) AS [Rank],
+                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
+  	            COALESCE(SUM(rr.[ExactScoreCount]), 0) AS [ExactScoresCount],
+	            u.[Id] AS [UserId]
             FROM 
-                [RoundResults] rr
+	            [LeagueMembers] lm
             JOIN 
-                [Rounds] AS r ON r.[Id] = rr.[RoundId]
-            JOIN 
-                [Leagues] AS l ON l.[SeasonId] = r.[SeasonId]
-            JOIN
-                [LeagueMembers] lm ON lm.[LeagueId] = l.[Id] AND lm.[UserId] = rr.[UserId] AND lm.[Status] = @ApprovedStatus
-            JOIN 
-                [AspNetUsers] u ON u.[Id] = rr.[UserId]
+                [AspNetUsers] u ON u.[Id] = lm.[UserId]
+            LEFT JOIN		
+	            [RoundResults] rr ON lm.[UserId] = rr.[UserId]
             WHERE
-                l.[Id] = @LeagueId 
+                lm.[LeagueId] = @LeagueId 
+                AND lm.[Status] = @ApprovedStatus
             GROUP BY 
                 u.[FirstName],
                 u.[LastName],
                 u.[Id]
             ORDER BY
-                ExactScoresCount DESC, 
-                PlayerName";
+                [ExactScoresCount] DESC, 
+                [PlayerName]";
 
         var leaderboardEntries = await connection.QueryAsync<ExactScoresLeaderboardEntryDto>(entriesSql, cancellationToken, new { request.LeagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
       
@@ -40,16 +38,6 @@ public class GetExactScoresLeaderboardQueryHandler(IApplicationReadDbConnection 
         {
             Entries = leaderboardEntries.ToList()
         };
-
-        var rank = 1;
-        for (var i = 0; i < leaderboard.Entries.Count; i++)
-        {
-            if (i > 0 && leaderboard.Entries[i].ExactScoresCount < leaderboard.Entries[i - 1].ExactScoresCount)
-            {
-                rank = i + 1;
-            }
-            leaderboard.Entries[i].Rank = rank;
-        }
 
         return leaderboard;
     }

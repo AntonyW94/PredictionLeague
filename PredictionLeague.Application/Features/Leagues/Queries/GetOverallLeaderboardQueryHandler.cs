@@ -18,23 +18,26 @@ public class GetOverallLeaderboardQueryHandler : IRequestHandler<GetOverallLeade
     {
         const string sql = @"
             SELECT
-                RANK() OVER (ORDER BY COALESCE(SUM(lrr.BoostedPoints), 0) DESC) AS [Rank],
-                au.[FirstName] + ' ' + LEFT(au.[LastName], 1) AS [PlayerName],
-                COALESCE(SUM(lrr.BoostedPoints), 0) AS [TotalPoints],
-                au.[Id] AS [UserId]
+                RANK() OVER (ORDER BY COALESCE(SUM(lrr.[BoostedPoints]), 0) DESC) AS [Rank],
+                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
+                COALESCE(SUM(lrr.[BoostedPoints]), 0) AS [TotalPoints],
+                u.[Id] AS [UserId]
             FROM 
-	            [LeagueMembers] AS lm
+	            [LeagueMembers] lm
             JOIN 
-	            [AspNetUsers] AS au ON lm.[UserId] = au.[Id]
+	            [AspNetUsers] u ON lm.[UserId] = u.[Id]
             LEFT JOIN 
 	            [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = @LeagueId
             WHERE 
 	            lm.[LeagueId] = @LeagueId
                 AND lm.[Status] = @ApprovedStatus
             GROUP BY 
-	            au.[FirstName], au.[LastName], au.[Id]
+	            u.[FirstName], 
+                u.[LastName], 
+                u.[Id]
             ORDER BY 
-	            [Rank], [PlayerName];";
+	            [Rank], 
+                [PlayerName];";
 
         return await _dbConnection.QueryAsync<LeaderboardEntryDto>(
             sql,

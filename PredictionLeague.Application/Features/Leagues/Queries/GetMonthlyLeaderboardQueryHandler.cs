@@ -18,43 +18,36 @@ public class GetMonthlyLeaderboardQueryHandler : IRequestHandler<GetMonthlyLeade
     {
         const string sql = @"
             WITH MonthlyRounds AS (
-                SELECT [Id]
-                FROM [Rounds]
-                WHERE MONTH([StartDate]) = @Month
+                SELECT 
+                    [Id]
+                FROM 
+                    [Rounds]
+                WHERE
+                    MONTH ([StartDate]) = @Month
                     AND [SeasonId] = (SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId)
             )
 
             SELECT
-                RANK() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS Rank,
+                RANK() OVER (ORDER BY COALESCE(SUM(lrr.[BoostedPoints]), 0) DESC) AS [Rank],
                 u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                SUM(ISNULL(up.[PointsAwarded], 0)) AS TotalPoints,
+                COALESCE(SUM(lrr.[BoostedPoints]), 0) AS [TotalPoints],
                 u.[Id] AS [UserId]
             FROM 
                 [LeagueMembers] lm
             JOIN 
                 [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            JOIN 
-                [Leagues] AS l ON lm.[LeagueId] = l.[Id]
-            JOIN 
-                [Seasons] AS s ON l.[SeasonId] = s.[Id]
-            JOIN 
-                [Rounds] AS r ON s.[Id] = r.[SeasonId]
-            JOIN 
-                [Matches] AS m ON r.[Id] = m.[RoundId]
             LEFT JOIN 
-                [UserPredictions] AS up ON m.[Id] = up.[MatchId] AND lm.[UserId] = up.[UserId]
+	            [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = @LeagueId AND lrr.[RoundId] IN (SELECT [Id] FROM [MonthlyRounds])
             WHERE 
                 lm.[LeagueId] = @LeagueId
-                AND lm.[Status] = @Status
-                AND m.[RoundId] IN (SELECT [Id] FROM [MonthlyRounds])
+                AND lm.[Status] = @ApprovedStatus
             GROUP BY
-                lm.[UserId],
                 u.[FirstName],
                 u.[LastName],
                 u.[Id]
             ORDER BY
-                TotalPoints DESC,
-                PlayerName ASC;";
+                [Rank] ASC,
+                [PlayerName] ASC;";
 
         return await _dbConnection.QueryAsync<LeaderboardEntryDto>(
             sql,
@@ -63,7 +56,7 @@ public class GetMonthlyLeaderboardQueryHandler : IRequestHandler<GetMonthlyLeade
             {
                 request.LeagueId,
                 request.Month,
-                Status = nameof(LeagueMemberStatus.Approved)
+                ApprovedStatus = nameof(LeagueMemberStatus.Approved)
             }
         );
     }
