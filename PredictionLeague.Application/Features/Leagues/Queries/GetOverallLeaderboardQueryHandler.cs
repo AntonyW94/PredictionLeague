@@ -18,31 +18,23 @@ public class GetOverallLeaderboardQueryHandler : IRequestHandler<GetOverallLeade
     {
         const string sql = @"
             SELECT
-                RANK() OVER (ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS [Rank],
+                RANK() OVER (ORDER BY COALESCE(SUM(lrr.BoostedPoints), 0) DESC) AS [Rank],
                 au.[FirstName] + ' ' + LEFT(au.[LastName], 1) AS [PlayerName],
-                SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints],
+                COALESCE(SUM(lrr.BoostedPoints), 0) AS [TotalPoints],
                 au.[Id] AS [UserId]
             FROM 
-                [LeagueMembers] AS lm
+	            [LeagueMembers] AS lm
             JOIN 
-                [AspNetUsers] AS au ON lm.[UserId] = au.[Id]
-            JOIN 
-                [Leagues] AS l ON lm.[LeagueId] = l.[Id]
-            JOIN 
-                [Seasons] AS s ON l.[SeasonId] = s.[Id]
-            JOIN 
-                [Rounds] AS r ON s.[Id] = r.[SeasonId]
-            JOIN 
-                [Matches] AS m ON r.[Id] = m.[RoundId]
+	            [AspNetUsers] AS au ON lm.[UserId] = au.[Id]
             LEFT JOIN 
-                [UserPredictions] AS up ON m.[Id] = up.[MatchId] AND lm.[UserId] = up.[UserId]
-            WHERE
-                lm.[LeagueId] = @LeagueId
+	            [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = @LeagueId
+            WHERE 
+	            lm.[LeagueId] = @LeagueId
                 AND lm.[Status] = @ApprovedStatus
-            GROUP BY
-                au.[UserName], au.[FirstName], au.[LastName], au.[Id]
-            ORDER BY
-                [Rank], [PlayerName];";
+            GROUP BY 
+	            au.[FirstName], au.[LastName], au.[Id]
+            ORDER BY 
+	            [Rank], [PlayerName];";
 
         return await _dbConnection.QueryAsync<LeaderboardEntryDto>(
             sql,
