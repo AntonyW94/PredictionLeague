@@ -1,4 +1,6 @@
-﻿namespace PredictionLeague.Application.Repositories;
+﻿using PredictionLeague.Contracts.Boosts;
+
+namespace PredictionLeague.Application.Repositories;
 
 public interface IBoostWriteRepository
 {

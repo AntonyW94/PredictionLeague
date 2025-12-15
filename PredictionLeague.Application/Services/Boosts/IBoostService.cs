@@ -23,4 +23,6 @@ public interface IBoostService
         int leagueId,
         int roundId,
         CancellationToken cancellationToken);
+
+    Task ApplyRoundBoostsAsync(int roundId, CancellationToken cancellationToken);
 }

@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Contracts.Boosts;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 using System.Data;
@@ -238,9 +239,27 @@ public class LeagueRepository : ILeagueRepository
         return await QueryAndMapLeagues(sql, cancellationToken, new { AdministratorId = administratorId });
     }
 
+    public async Task<IEnumerable<LeagueRoundResult>> GetLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                [LeagueId],
+                [RoundId],
+                [UserId],
+                [BasePoints],
+                [BoostedPoints],
+                [HasBoost],
+                [AppliedBoostCode]
+            FROM [LeagueRoundResults]
+            WHERE [RoundId] = @RoundId;";
+
+        return await Connection.QueryAsync<LeagueRoundResult>(new CommandDefinition(sql, new { RoundId = roundId }, cancellationToken: cancellationToken));
+    }
+
     #endregion
 
     #region Update
+  
     public async Task UpdateAsync(League league, CancellationToken cancellationToken)
     {
         const string updateLeagueSql = @"
@@ -381,13 +400,13 @@ public class LeagueRepository : ILeagueRepository
                AND target.[UserId]  = src.[UserId]
             WHEN MATCHED THEN
                 UPDATE SET 
-                    target.[BasePoints]      = src.[BasePoints],
-                    target.[BoostedPoints]   = src.[BasePoints],
-                    target.[HasBoost]        = 0,
-                    target.[BoostMultiplier] = 1.0
+                    target.[BasePoints]       = src.[BasePoints],
+                    target.[BoostedPoints]    = src.[BasePoints],
+                    target.[HasBoost]         = 0,
+                    target.[AppliedBoostCode] = NULL
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT ([LeagueId], [RoundId], [UserId], [BasePoints], [BoostedPoints], [HasBoost], [BoostMultiplier])
-                VALUES (src.[LeagueId], src.[RoundId], src.[UserId], src.[BasePoints], src.[BasePoints], 0, 1.0);";
+                INSERT ([LeagueId], [RoundId], [UserId], [BasePoints], [BoostedPoints], [HasBoost], [AppliedBoostCode])
+                VALUES (src.[LeagueId], src.[RoundId], src.[UserId], src.[BasePoints], src.[BasePoints], 0, NULL);";
 
         var command = new CommandDefinition(
             sql,
@@ -395,6 +414,44 @@ public class LeagueRepository : ILeagueRepository
             cancellationToken: cancellationToken);
 
         await Connection.ExecuteAsync(command);
+    }
+
+    public async Task UpdateLeagueRoundBoostsAsync(IEnumerable<LeagueRoundBoostUpdate> updates, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            MERGE [LeagueRoundResults] AS target
+            USING (
+                SELECT
+                    @LeagueId          AS [LeagueId],
+                    @RoundId           AS [RoundId],
+                    @UserId            AS [UserId],
+                    @BoostedPoints     AS [BoostedPoints],
+                    @HasBoost          AS [HasBoost],
+                    @AppliedBoostCode  AS [AppliedBoostCode]
+            ) AS src
+            ON target.[LeagueId] = src.[LeagueId]
+               AND target.[RoundId] = src.[RoundId]
+               AND target.[UserId]  = src.[UserId]
+            WHEN MATCHED THEN
+                UPDATE SET
+                    target.[BoostedPoints]    = src.[BoostedPoints],
+                    target.[HasBoost]         = src.[HasBoost],
+                    target.[AppliedBoostCode] = src.[AppliedBoostCode];";
+
+        await Connection.ExecuteAsync(
+            new CommandDefinition(
+                sql,
+                updates.Select(u => new
+                {
+                    u.LeagueId,
+                    u.RoundId,
+                    u.UserId,
+                    u.BoostedPoints,
+                    u.HasBoost,
+                    u.AppliedBoostCode
+                }),
+                cancellationToken: cancellationToken
+            ));
     }
 
     #endregion

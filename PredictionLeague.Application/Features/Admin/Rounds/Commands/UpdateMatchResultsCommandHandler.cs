@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services.Boosts;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Common.Guards.Season;
 using PredictionLeague.Domain.Models;
@@ -9,12 +10,14 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
 public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResultsCommand>
 {
+    private readonly IBoostService _boostService;
     private readonly ILeagueRepository _leagueRepository;
     private readonly IRoundRepository _roundRepository;
     private readonly IMediator _mediator;
-    
-    public UpdateMatchResultsCommandHandler(ILeagueRepository leagueRepository, IRoundRepository roundRepository, IMediator mediator)
+
+    public UpdateMatchResultsCommandHandler(IBoostService boostService, ILeagueRepository leagueRepository, IRoundRepository roundRepository, IMediator mediator)
     {
+        _boostService = boostService;
         _leagueRepository = leagueRepository;
         _roundRepository = roundRepository;
         _mediator = mediator;
@@ -32,7 +35,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
             var matchToUpdate = round.Matches.FirstOrDefault(m => m.Id == matchResult.MatchId);
             if (matchToUpdate == null)
                 continue;
-            
+
             matchToUpdate.UpdateScore(matchResult.HomeScore, matchResult.AwayScore, matchResult.Status);
             matchesToUpdate.Add(matchToUpdate);
         }
@@ -63,13 +66,13 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         await _leagueRepository.UpdatePredictionPointsAsync(allUpdatedPredictions, cancellationToken);
         await _roundRepository.UpdateRoundResultsAsync(round.Id, cancellationToken);
         await _leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
-        //await _boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
+        await _boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
 
         if (round.Matches.All(m => m.Status == MatchStatus.Completed))
         {
             round.UpdateStatus(RoundStatus.Completed);
             await _roundRepository.UpdateAsync(round, cancellationToken);
-           
+
             foreach (var league in leaguesToScore)
             {
                 var processPrizesCommand = new ProcessPrizesCommand

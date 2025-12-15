@@ -1,5 +1,6 @@
 ﻿using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Contracts.Boosts;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Domain.Services.Boosts;
@@ -228,6 +229,24 @@ public sealed class BoostReadRepository : IBoostReadRepository
             WindowUses = windowUses,
             HasUsedThisRound = usedThisRound
         };
+    }
+
+    public async Task<IReadOnlyList<UserRoundBoostDto>> GetBoostsForRoundAsync(int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                ubu.[LeagueId],
+                ubu.[RoundId],
+                ubu.[UserId],
+                bd.[Code] AS [BoostCode]
+            FROM 
+                [UserBoostUsages] ubu
+            INNER JOIN 
+                [BoostDefinitions] bd ON bd.[Id] = ubu.[BoostDefinitionId]
+            WHERE 
+                ubu.[RoundId] = @RoundId;";
+
+        return (await _dbConnection.QueryAsync<UserRoundBoostDto>(sql, cancellationToken, new { RoundId = roundId })).ToList();
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]

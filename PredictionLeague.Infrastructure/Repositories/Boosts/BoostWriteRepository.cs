@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Contracts.Boosts;
 using System.Data;
 
 namespace PredictionLeague.Infrastructure.Repositories.Boosts;

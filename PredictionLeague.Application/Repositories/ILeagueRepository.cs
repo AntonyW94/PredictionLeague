@@ -1,4 +1,5 @@
-﻿using PredictionLeague.Domain.Common.Enumerations;
+﻿using PredictionLeague.Contracts.Boosts;
+using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Repositories;
@@ -18,6 +19,7 @@ public interface ILeagueRepository
     Task<League?> GetByIdWithAllDataAsync(int id, CancellationToken cancellationToken);
     Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken);
     Task<IEnumerable<League>> GetLeaguesByAdministratorIdAsync(string administratorId, CancellationToken cancellationToken);
+    Task<IEnumerable<LeagueRoundResult>> GetLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken);
 
     #endregion
 
@@ -27,6 +29,7 @@ public interface ILeagueRepository
     Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status, CancellationToken cancellationToken);
     Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate, CancellationToken cancellationToken);
     Task UpdateLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken);
+    Task UpdateLeagueRoundBoostsAsync(IEnumerable<LeagueRoundBoostUpdate> updates, CancellationToken cancellationToken);
 
     #endregion
 

@@ -9,11 +9,13 @@ public sealed class BoostService : IBoostService
 {
     private readonly IBoostReadRepository _boostReadRepository;
     private readonly IBoostWriteRepository _boostWriteRepository;
+    private readonly ILeagueRepository _leagueRepository;
 
-    public BoostService(IBoostReadRepository boostReadRepository, IBoostWriteRepository boostWriteRepository)
+    public BoostService(IBoostReadRepository boostReadRepository, IBoostWriteRepository boostWriteRepository, ILeagueRepository leagueRepository)
     {
         _boostReadRepository = boostReadRepository;
         _boostWriteRepository = boostWriteRepository;
+        _leagueRepository = leagueRepository;
     }
 
     public async Task<BoostEligibilityDto> GetEligibilityAsync(
@@ -131,5 +133,48 @@ public sealed class BoostService : IBoostService
     public async Task<bool> DeleteUserBoostUsageAsync(string userId, int leagueId, int roundId, CancellationToken cancellationToken)
     {
         return await _boostWriteRepository.DeleteUserBoostUsageAsync(userId, leagueId, roundId, cancellationToken);
+    }
+
+    public async Task ApplyRoundBoostsAsync(int roundId, CancellationToken cancellationToken)
+    {
+        var leagueResults = (await _leagueRepository.GetLeagueRoundResultsAsync(roundId, cancellationToken)).ToList();
+
+        if (!leagueResults.Any())
+            return;
+
+        var boosts = await _boostReadRepository.GetBoostsForRoundAsync(roundId, cancellationToken);
+
+        var boostLookup = boosts.ToDictionary(
+            b => (b.LeagueId, b.UserId),
+            b => b.BoostCode);
+
+        var updates = new List<LeagueRoundBoostUpdate>();
+
+        foreach (var result in leagueResults)
+        {
+            if (!boostLookup.TryGetValue((result.LeagueId, result.UserId), out var boostCode))
+                continue;
+
+            result.BoostedPoints = result.BasePoints;
+
+            switch (boostCode)
+            {
+                case "DoubleUp":
+                    result.BoostedPoints = result.BasePoints * 2;
+                    break;
+            }
+
+            updates.Add(new LeagueRoundBoostUpdate(
+                result.LeagueId,
+                result.RoundId,
+                result.UserId,
+                result.BoostedPoints,
+                true,
+                boostCode
+            ));
+        }
+
+        if (updates.Any())
+            await _leagueRepository.UpdateLeagueRoundBoostsAsync(updates, cancellationToken);
     }
 }
