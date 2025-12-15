@@ -25,26 +25,27 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                     s.[Name] AS [SeasonName],
                     u.[Id] AS [UserId],
                     u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
-                    SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints],
-                    RANK() OVER (PARTITION BY l.[Id] ORDER BY SUM(ISNULL(up.[PointsAwarded], 0)) DESC) AS [Rank]
+                    SUM(ISNULL(lrr.[BoostedPoints], 0)) AS [TotalPoints],
+                    RANK() OVER (PARTITION BY l.[Id] ORDER BY SUM(ISNULL(lrr.[BoostedPoints], 0)) DESC) AS [Rank]
                 FROM 
-                    [AspNetUsers] u
+                    [LeagueMembers] lm
                 JOIN 
-                    [LeagueMembers] lm ON u.[Id] = lm.[UserId]
-                JOIN 
+                    [AspNetUsers] u ON lm.[UserId] = u.[Id]
+	            JOIN
                     [Leagues] l ON lm.[LeagueId] = l.[Id]
+                LEFT JOIN 
+                    [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = l.[Id]
                 JOIN 
                     [Seasons] s ON l.[SeasonId] = s.[Id]
-                LEFT JOIN 
-                    [Rounds] r ON s.[Id] = r.[SeasonId]
-                LEFT JOIN 
-                    [Matches] m ON r.[Id] = m.[RoundId]
-                LEFT JOIN 
-                    [UserPredictions] up ON m.[Id] = up.[MatchId] AND u.[Id] = up.[UserId]
-                WHERE 
+                WHERE
                     lm.[Status] = @ApprovedStatus
                 GROUP BY 
-                    l.[Id], l.[Name], s.[Name], u.[Id], u.[FirstName], u.[LastName]
+                    l.[Id], 
+                    l.[Name], 
+                    s.[Name],
+                    u.[Id],
+                    u.[FirstName], 
+                    u.[LastName]
             )
             SELECT
                 alr.[LeagueId],
@@ -61,7 +62,9 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                     SELECT [LeagueId] FROM [LeagueMembers] WHERE [UserId] = @UserId AND [Status] = @ApprovedStatus
                 )
             ORDER BY 
-                alr.[LeagueName], alr.[Rank], alr.[PlayerName];";
+                alr.[LeagueName], 
+                alr.[Rank], 
+                alr.[PlayerName];";
         var flatResults = await _connection.QueryAsync<FlatLeaderboardEntry>(
             sql,
             cancellationToken,
