@@ -23,56 +23,58 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
         if (roundStatus == null || Enum.Parse<RoundStatus>(roundStatus) == RoundStatus.Draft)
             return null;
 
-        const string sql = @"
-        WITH PlayerRoundScores AS (
-            SELECT
-                lm.[UserId],
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
-                SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints]
-            FROM [LeagueMembers] lm
-            JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            JOIN [Rounds] r ON r.[Id] = @RoundId
-            JOIN [Matches] m ON m.[RoundId] = r.[Id]
-            LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = lm.[UserId]
-            WHERE lm.[LeagueId] = @LeagueId AND lm.[Status] = @Approved AND m.[RoundId] = @RoundId
-            GROUP BY lm.[UserId], u.[FirstName], u.[LastName]
-        ),
-       
-        PlayerRanks AS (
-            SELECT
-                [UserId],
-                RANK() OVER (ORDER BY [TotalPoints] DESC) AS [Rank]
-            FROM PlayerRoundScores
-        )
+        const string sql = @"WITH RoundRankings AS (
+                                SELECT 
+                                    lm.[UserId],
+                                    COALESCE(lrr.[BoostedPoints], 0) AS [TotalPoints],
+                                    RANK() OVER (ORDER BY COALESCE(lrr.[BoostedPoints], 0) DESC) AS [Rank]
+                                FROM 
+                                    [LeagueMembers] lm
+                                LEFT JOIN 
+                                    [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = @LeagueId AND lrr.[RoundId] = @RoundId
+                                WHERE 
+                                    lm.[LeagueId] = @LeagueId 
+                                    AND lm.[Status] = @Approved
+                            )
 
-        SELECT
-            lm.[UserId],
-            u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
-            m.[Id] AS [MatchId],
-            up.[PointsAwarded],
-            up.[PredictedHomeScore],
-            up.[PredictedAwayScore],
-            CAST(CASE 
-                WHEN r.[Deadline] > GETDATE() AND up.[UserId] != @CurrentUserId THEN 1 
-                ELSE 0 
-            END AS bit) AS [IsHidden],
-            pr.[Rank],
-            bd.[Code] AS AppliedBoostCode,
-            bd.[ImageUrl] AS AppliedBoostImageUrl
-        FROM [LeagueMembers] lm
-        JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]
-        JOIN [Rounds] r ON r.[Id] = @RoundId
-        CROSS JOIN [Matches] m
-        JOIN PlayerRanks pr ON pr.[UserId] = lm.[UserId]
-        LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = lm.[UserId]
-        LEFT JOIN [UserBoostUsages] ubu ON ubu.[UserId] = u.[Id] AND ubu.[RoundId] = @RoundId AND ubu.[LeagueId] = @LeagueId
-        LEFT JOIN [BoostDefinitions] bd ON bd.[Id] = ubu.[BoostDefinitionId]
-        WHERE 
-            lm.[LeagueId] = @LeagueId 
-            AND lm.[Status] = @Approved
-            AND m.[RoundId] = @RoundId
-        ORDER BY 
-            PlayerName, m.[MatchDateTime];";
+                            SELECT
+                                lm.[UserId],
+                                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
+                                
+                                m.[Id] AS [MatchId],
+                                
+                                up.[PredictedHomeScore],
+                                up.[PredictedAwayScore],
+                                ISNULL(up.[Outcome], 0) AS [Outcome],
+                                
+                                CAST(CASE 
+                                    WHEN r.[Deadline] > GETDATE() AND lm.[UserId] != @CurrentUserId THEN 1 
+                                    ELSE 0 
+                                END AS bit) AS [IsHidden],
+
+                                rr.[Rank],
+                                rr.[TotalPoints],
+                                bd.[Code] AS AppliedBoostCode,
+                                bd.[ImageUrl] AS AppliedBoostImageUrl
+
+                            FROM [LeagueMembers] lm
+                            JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]
+                            JOIN [RoundRankings] rr ON rr.[UserId] = lm.[UserId]
+                            JOIN [Rounds] r ON r.[Id] = @RoundId
+                            CROSS JOIN [Matches] m
+                            LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = lm.[UserId]
+                            LEFT JOIN [UserBoostUsages] ubu ON ubu.[UserId] = lm.[UserId] 
+                                                            AND ubu.[RoundId] = @RoundId 
+                                                            AND ubu.[LeagueId] = @LeagueId
+                            LEFT JOIN [BoostDefinitions] bd ON bd.[Id] = ubu.[BoostDefinitionId]
+                            WHERE 
+                                lm.[LeagueId] = @LeagueId 
+                                AND lm.[Status] = @Approved
+                                AND m.[RoundId] = @RoundId
+                            ORDER BY 
+                                rr.[Rank], 
+                                PlayerName, 
+                                m.[MatchDateTime];";
 
         var parameters = new
         {
@@ -85,7 +87,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
         var queryResult = await _dbConnection.QueryAsync<PredictionQueryResult>(sql, cancellationToken, parameters);
 
         var groupedResults = queryResult
-             .GroupBy(r => new { r.UserId, r.PlayerName, r.Rank })
+             .GroupBy(r => new { r.UserId, r.PlayerName, r.Rank, r.TotalPoints })
              .Select(g =>
              {
                  var boostCode = g.Select(x => x.AppliedBoostCode).FirstOrDefault(x => !string.IsNullOrEmpty(x));
@@ -97,7 +99,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
                          p.MatchId,
                          p.PredictedHomeScore,
                          p.PredictedAwayScore,
-                         p.PointsAwarded,
+                         p.Outcome,
                          p.IsHidden
                      );
 
@@ -108,7 +110,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
                  {
                      UserId = g.Key.UserId,
                      PlayerName = g.Key.PlayerName,
-                     TotalPoints = g.Sum(p => p.PointsAwarded ?? 0),
+                     TotalPoints = g.Key.TotalPoints,
                      Rank = g.Key.Rank,
                      HasPredicted = g.Any(p => p.PredictedHomeScore.HasValue),
                      Predictions = predictions,
@@ -125,11 +127,12 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
         string UserId,
         string PlayerName,
         int MatchId,
-        int? PointsAwarded,
         int? PredictedHomeScore,
-        int? PredictedAwayScore, 
+        int? PredictedAwayScore,
+        PredictionOutcome Outcome,
         bool IsHidden,
         long Rank,
+        int TotalPoints,
         string? AppliedBoostCode,
         string? AppliedBoostImageUrl
     );

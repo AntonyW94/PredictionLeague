@@ -20,7 +20,7 @@
     public MatchStatus Status { get; set; }
 
     [Parameter]
-    public int? PointsAwarded { get; set; }
+    public PredictionOutcome Outcome { get; set; }
 
     [Parameter]
     public int? HomeScore { get; set; }
@@ -33,19 +33,19 @@
 
     private string BadgeClass => $"prediction-badge badge-group {GetColorClass()} {(Status == MatchStatus.InProgress ? "pulsing" : "")}";
 
-    private string GetColorClass() => PointsAwarded switch
+    private string GetColorClass() => Outcome switch
     {
-        0 => "badge-group--red",
-        3 => "badge-group--yellow",
-        5 => "badge-group--green",
+        PredictionOutcome.Incorrect => "badge-group--red",
+        PredictionOutcome.CorrectResult => "badge-group--yellow",
+        PredictionOutcome.CorrectScore => "badge-group--green",
         _ => "badge-group--blue"
     };
 
-    private string IconClass => PointsAwarded switch
+    private string IconClass => Outcome switch
     {
-        0 => "bi bi-x-circle",
-        3 => "bi bi-check-circle",
-        5 => "bi bi-check-circle-fill",
+        PredictionOutcome.Incorrect => "bi bi-x-circle",
+        PredictionOutcome.CorrectResult => "bi bi-check-circle",
+        PredictionOutcome.CorrectScore => "bi bi-check-circle-fill",
         _ => "bi bi-clock"
     };
 }

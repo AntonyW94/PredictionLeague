@@ -36,8 +36,8 @@ public class LeagueMember
 
     public static LeagueMember Create(int leagueId, string userId)
     {
-        Guard.Against.NegativeOrZero(leagueId, nameof(leagueId));
-        Guard.Against.NullOrWhiteSpace(userId, nameof(userId));
+        Guard.Against.NegativeOrZero(leagueId);
+        Guard.Against.NullOrWhiteSpace(userId);
 
         return new LeagueMember
         {
@@ -68,7 +68,7 @@ public class LeagueMember
 
     public void ScorePredictionForMatch(Match match)
     {
-        Guard.Against.Null(match, nameof(match));
+        Guard.Against.Null(match);
 
         foreach (var prediction in _predictions.Where(p => p.MatchId == match.Id))
         {

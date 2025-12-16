@@ -90,10 +90,10 @@ public class Round
 
     private static void Validate(int seasonId, int roundNumber, DateTime startDate, DateTime deadline)
     {
-        Guard.Against.NegativeOrZero(seasonId, nameof(seasonId), "Season ID must be greater than 0");
+        Guard.Against.NegativeOrZero(seasonId, "Season ID must be greater than 0");
         Guard.Against.NegativeOrZero(roundNumber, parameterName: null, message: "Round Number must be greater than 0");
-        Guard.Against.Default(startDate, nameof(startDate), "Please enter a Start Date");
-        Guard.Against.Default(deadline, nameof(deadline), "Please enter a Deadline");
+        Guard.Against.Default(startDate, "Please enter a Start Date");
+        Guard.Against.Default(deadline, "Please enter a Deadline");
         Guard.Against.Expression(d => d >= startDate, deadline, "Start date must be after the prediction deadline.");
     }
 }

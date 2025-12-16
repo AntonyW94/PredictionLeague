@@ -51,9 +51,9 @@ public class Season
 
     private static void Validate(string name, DateTime startDate, DateTime endDate, int numberOfRounds)
     {
-        Guard.Against.NullOrWhiteSpace(name, nameof(name));
-        Guard.Against.Default(startDate, nameof(startDate));
-        Guard.Against.Default(endDate, nameof(endDate));
+        Guard.Against.NullOrWhiteSpace(name);
+        Guard.Against.Default(startDate);
+        Guard.Against.Default(endDate);
         Guard.Against.InvalidSeasonDuration(startDate, endDate);
         Guard.Against.OutOfRange(numberOfRounds, nameof(numberOfRounds), 1, 52);
     }

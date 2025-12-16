@@ -1,8 +1,10 @@
-﻿namespace PredictionLeague.Contracts.Leagues;
+﻿using PredictionLeague.Domain.Common.Enumerations;
+
+namespace PredictionLeague.Contracts.Leagues;
 
 public record PredictionScoreDto(
     int MatchId,
     int? HomeScore,
     int? AwayScore,
-    int? PointsAwarded,
+    PredictionOutcome Outcome,
     bool IsHidden);

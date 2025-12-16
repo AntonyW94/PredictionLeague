@@ -17,9 +17,9 @@ public class Winning
 
     public static Winning Create(string userId, int leaguePrizeSettingId, decimal amount, int? roundNumber, int? month)
     {
-        Guard.Against.NullOrWhiteSpace(userId, nameof(userId));
-        Guard.Against.NegativeOrZero(leaguePrizeSettingId, nameof(leaguePrizeSettingId));
-        Guard.Against.Negative(amount, nameof(amount));
+        Guard.Against.NullOrWhiteSpace(userId);
+        Guard.Against.NegativeOrZero(leaguePrizeSettingId);
+        Guard.Against.Negative(amount);
 
         return new Winning
         {

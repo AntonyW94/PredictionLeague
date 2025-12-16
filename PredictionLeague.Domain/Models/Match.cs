@@ -35,7 +35,7 @@ public class Match
     
     public static Match Create(int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTime, int? externalId)
     {
-        Guard.Against.Default(matchDateTime, nameof(matchDateTime));
+        Guard.Against.Default(matchDateTime);
         Guard.Against.Expression(h => h == awayTeamId, homeTeamId, "A team cannot play against itself.");
 
         return new Match
@@ -51,8 +51,8 @@ public class Match
 
     public void UpdateScore(int homeScore, int awayScore, MatchStatus status)
     {
-        Guard.Against.Negative(homeScore, nameof(homeScore));
-        Guard.Against.Negative(awayScore, nameof(awayScore));
+        Guard.Against.Negative(homeScore);
+        Guard.Against.Negative(awayScore);
 
         if (status == MatchStatus.Scheduled)
         {
@@ -70,7 +70,7 @@ public class Match
 
     public void UpdateDetails(int homeTeamId, int awayTeamId, DateTime matchDateTime)
     {
-        Guard.Against.Default(matchDateTime, nameof(matchDateTime));
+        Guard.Against.Default(matchDateTime);
         Guard.Against.Expression(h => h == awayTeamId, homeTeamId, "A team cannot play against itself.");
 
         HomeTeamId = homeTeamId;

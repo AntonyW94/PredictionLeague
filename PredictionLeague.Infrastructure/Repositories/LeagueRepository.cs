@@ -357,6 +357,7 @@ public class LeagueRepository : ILeagueRepository
         const string sql = @"
             UPDATE [UserPredictions]
             SET [PointsAwarded] = @PointsAwarded,
+                [Outcome] = @Outcome,
                 [UpdatedAt] = GETDATE()
             WHERE [Id] = @Id;";
 

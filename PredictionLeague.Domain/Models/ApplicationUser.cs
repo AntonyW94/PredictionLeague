@@ -11,7 +11,7 @@ public class ApplicationUser : IdentityUser
     public static ApplicationUser Create(string firstName, string lastName, string email)
     {
         Validate(firstName, lastName);
-        Guard.Against.NullOrWhiteSpace(email, nameof(email));
+        Guard.Against.NullOrWhiteSpace(email);
 
         return new ApplicationUser
         {
@@ -33,7 +33,7 @@ public class ApplicationUser : IdentityUser
     
     private static void Validate(string firstName, string lastName)
     {
-        Guard.Against.NullOrWhiteSpace(firstName, nameof(firstName));
-        Guard.Against.NullOrWhiteSpace(lastName, nameof(lastName));
+        Guard.Against.NullOrWhiteSpace(firstName);
+        Guard.Against.NullOrWhiteSpace(lastName);
     }
 }

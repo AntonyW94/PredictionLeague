@@ -389,12 +389,12 @@ public class RoundRepository : IRoundRepository
                     m.[RoundId],
                     up.[UserId],
                     SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints],
-                    SUM(CASE WHEN up.[PointsAwarded] = 5 THEN 1 ELSE 0 END) AS [ExactScoreCount],
-                    SUM(CASE WHEN up.[PointsAwarded] >= 3 THEN 1 ELSE 0 END) AS [CorrectResultCount]
+                    SUM(CASE WHEN up.[Outcome] = @CorrectScore THEN 1 ELSE 0 END) AS [ExactScoreCount],
+                    SUM(CASE WHEN up.[Outcome] = @CorrectResult THEN 1 ELSE 0 END) AS [CorrectResultCount]
                 FROM [UserPredictions] up
                 INNER JOIN [Matches] m ON m.[Id] = up.[MatchId]
                 WHERE m.[RoundId] = @RoundId
-                AND up.[PointsAwarded] IS NOT NULL
+                AND up.[Outcome] <> 0
                 GROUP BY
                     m.[RoundId],
                     up.[UserId]
@@ -412,7 +412,7 @@ public class RoundRepository : IRoundRepository
 
         var command = new CommandDefinition(
             sql,
-            new { RoundId = roundId },
+            new { RoundId = roundId, CorrectScore = nameof(PredictionOutcome.CorrectScore), CorrectResult = nameof(PredictionOutcome.CorrectResult) },
             cancellationToken: cancellationToken);
 
         await Connection.ExecuteAsync(command);

@@ -42,10 +42,10 @@ public class Team
 
     private static void Validate(string name, string shortName, string logoUrl, string abbreviation)
     {
-        Guard.Against.NullOrWhiteSpace(name, nameof(name));
-        Guard.Against.NullOrWhiteSpace(shortName, nameof(shortName));
-        Guard.Against.NullOrWhiteSpace(logoUrl, nameof(logoUrl));
-        Guard.Against.NullOrWhiteSpace(abbreviation, nameof(abbreviation));
-        Guard.Against.LengthOutOfRange(abbreviation, 3, 3, nameof(abbreviation));
+        Guard.Against.NullOrWhiteSpace(name);
+        Guard.Against.NullOrWhiteSpace(shortName);
+        Guard.Against.NullOrWhiteSpace(logoUrl);
+        Guard.Against.NullOrWhiteSpace(abbreviation);
+        Guard.Against.LengthOutOfRange(abbreviation, 3, 3);
     }
 }

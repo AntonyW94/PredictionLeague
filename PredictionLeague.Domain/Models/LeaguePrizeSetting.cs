@@ -17,9 +17,9 @@ public class LeaguePrizeSetting
 
     public static LeaguePrizeSetting Create(int leagueId, PrizeType prizeType, int rank, decimal prizeAmount)
     {
-        Guard.Against.NegativeOrZero(leagueId, nameof(leagueId));
-        Guard.Against.NegativeOrZero(rank, nameof(rank));
-        Guard.Against.Negative(prizeAmount, nameof(prizeAmount));
+        Guard.Against.NegativeOrZero(leagueId);
+        Guard.Against.NegativeOrZero(rank);
+        Guard.Against.Negative(prizeAmount);
 
         return new LeaguePrizeSetting
         {

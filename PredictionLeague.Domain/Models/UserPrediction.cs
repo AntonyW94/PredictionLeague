@@ -15,15 +15,16 @@ public class UserPrediction
     public int? PointsAwarded { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
+    public PredictionOutcome Outcome { get; private set; } = PredictionOutcome.Pending;
 
     private UserPrediction() { }
 
     public static UserPrediction Create(string userId, int matchId, int homeScore, int awayScore)
     {
-        Guard.Against.NullOrWhiteSpace(userId, nameof(userId));
-        Guard.Against.NegativeOrZero(matchId, nameof(matchId));
-        Guard.Against.Negative(homeScore, nameof(homeScore));
-        Guard.Against.Negative(awayScore, nameof(awayScore));
+        Guard.Against.NullOrWhiteSpace(userId);
+        Guard.Against.NegativeOrZero(matchId);
+        Guard.Against.Negative(homeScore);
+        Guard.Against.Negative(awayScore);
 
         var now = DateTime.Now;
 
@@ -35,25 +36,36 @@ public class UserPrediction
             PredictedAwayScore = awayScore,
             PointsAwarded = null,
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
+            Outcome = PredictionOutcome.Pending
         };
     }
-
-    public void CalculatePoints(MatchStatus status, int? actualHomeScore, int? actualAwayScore)
+    
+    public void CalculatePoints(MatchStatus status, int? actualHomeScore, int? actualAwayScore, int correctScorePoints = 5, int correctResultPoints = 3)
     {
         if (status == MatchStatus.Scheduled || actualHomeScore == null || actualAwayScore == null)
         {
             PointsAwarded = null;
-            UpdatedAt = DateTime.Now; 
+            Outcome = PredictionOutcome.Pending;
+            UpdatedAt = DateTime.Now;
             return;
         }
 
         if (PredictedHomeScore == actualHomeScore && PredictedAwayScore == actualAwayScore)
-            PointsAwarded = 5;
+        {
+            Outcome = PredictionOutcome.CorrectScore;
+            PointsAwarded = correctScorePoints;
+        }
         else if (Math.Sign(PredictedHomeScore - PredictedAwayScore) == Math.Sign(actualHomeScore.Value - actualAwayScore.Value))
-            PointsAwarded = 3;
+        {
+            Outcome = PredictionOutcome.CorrectResult;
+            PointsAwarded = correctResultPoints;
+        }
         else
+        {
+            Outcome = PredictionOutcome.Incorrect;
             PointsAwarded = 0;
+        }
 
         UpdatedAt = DateTime.Now;
     }
