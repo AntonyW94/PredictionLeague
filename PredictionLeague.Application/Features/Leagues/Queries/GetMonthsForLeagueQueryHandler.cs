@@ -2,6 +2,7 @@
 using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Enumerations;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;
@@ -26,39 +27,52 @@ public class GetMonthsForLeagueQueryHandler : IRequestHandler<GetMonthsForLeague
                 WHERE l.[Id] = @LeagueId
             ),
 
-            MonthlyStats AS (
+            MonthlyAggregates AS (
                 SELECT 
                     MONTH(r.[StartDate]) AS [Month],
-                    SUM (
-                            CASE 
-                                WHEN r.[Status] <> @CompletedStatus THEN 1 
-                                ELSE 0 
-                            END
-                        ) AS [RoundsRemaining]            
+
+                    SUM(CASE 
+                        WHEN r.[Status] <> @CompletedStatus THEN 1 
+                        ELSE 0 
+                    END) AS [RoundsRemaining],
+
+                    SUM(CASE 
+                        WHEN r.[Status] = @CompletedStatus THEN 1 
+                        ELSE 0 
+                    END) AS [RoundsCompleted],
+
+                    SUM(CASE 
+                        WHEN r.[Status] <> @DraftStatus THEN 1 
+                        ELSE 0 
+                    END) AS [NonDraftCount]
+
                 FROM [Rounds] r
                 JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
                 WHERE l.[Id] = @LeagueId
-                AND r.[Status] <> @DraftStatus
                 GROUP BY MONTH(r.[StartDate])
             )
 
-            SELECT
-                ms.[Month],
-                ms.[RoundsRemaining]
+           SELECT
+                ma.[Month],
+                ma.[RoundsRemaining],
+                ma.[RoundsCompleted]
             FROM
-                [MonthlyStats] ms,
+                [MonthlyAggregates] ma,
                 [SeasonInfo] si
+            WHERE 
+                ma.[NonDraftCount] > 0
             ORDER BY
                 CASE
-                    WHEN ms.[Month] >= si.[StartMonth] THEN 1
+                    WHEN ma.[Month] >= si.[StartMonth] THEN 1
                     ELSE 2
                 END,
-                ms.[Month]";
+                ma.[Month]";
 
-        var months = await _dbConnection.QueryAsync<MonthRow>(sql, cancellationToken, new { request.LeagueId, DraftStatus = nameof(RoundStatus.Draft), CompletedStatus = nameof(RoundStatus.Completed)
-        });
-        return months.Select(m => new MonthDto(m.Month, CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m.Month), m.RoundsRemaining));
+        var months = await _dbConnection.QueryAsync<MonthRow>(sql, cancellationToken, new { request.LeagueId, DraftStatus = nameof(RoundStatus.Draft), CompletedStatus = nameof(RoundStatus.Completed) });
+       
+        return months.Select(m => new MonthDto(m.Month, CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m.Month), m.RoundsRemaining, m.RoundsCompleted));
     }
 
-    private sealed record MonthRow(int Month, int RoundsRemaining);
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private sealed record MonthRow(int Month, int RoundsRemaining, int RoundsCompleted);
 }

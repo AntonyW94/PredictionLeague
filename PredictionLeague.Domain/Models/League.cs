@@ -61,8 +61,8 @@ public class League
         Season season)
     {
         Validate(name, entryDeadline, season);
-        Guard.Against.NullOrWhiteSpace(administratorUserId, nameof(administratorUserId));
-        Guard.Against.NegativeOrZero(seasonId, nameof(seasonId));
+        Guard.Against.NullOrWhiteSpace(administratorUserId);
+        Guard.Against.NegativeOrZero(seasonId);
 
         return new League
         {
@@ -78,7 +78,7 @@ public class League
 
     private static void Validate(string name, DateTime entryDeadline, Season season)
     {
-        Guard.Against.NullOrWhiteSpace(name, nameof(name));
+        Guard.Against.NullOrWhiteSpace(name);
         //Guard.Against.Expression(d => d <= DateTime.Now, entryDeadline, "Entry deadline must be in the future.");
 
         if (entryDeadline.Date >= season.StartDate.Date)
@@ -128,7 +128,7 @@ public class League
 
     public void AddMember(string userId)
     {
-        Guard.Against.NullOrWhiteSpace(userId, nameof(userId));
+        Guard.Against.NullOrWhiteSpace(userId);
 
         if (_members.Any(m => m.UserId == userId))
             throw new InvalidOperationException("This user is already a member of the league.");
@@ -173,7 +173,7 @@ public class League
 
     public void ScoreMatch(Match completedMatch)
     {
-        Guard.Against.Null(completedMatch, nameof(completedMatch));
+        Guard.Against.Null(completedMatch);
 
         foreach (var member in _members)
         {
@@ -189,7 +189,7 @@ public class League
 
     public void ReassignAdministrator(string newAdministratorUserId)
     {
-        Guard.Against.NullOrWhiteSpace(newAdministratorUserId, nameof(newAdministratorUserId));
+        Guard.Against.NullOrWhiteSpace(newAdministratorUserId);
         AdministratorUserId = newAdministratorUserId;
     }
 
