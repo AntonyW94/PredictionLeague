@@ -1,7 +1,5 @@
 ﻿@using PredictionLeague.Contracts.Boosts
 
-@inject IJSRuntime JsRuntime
-
 <div class="boost-card" role="button" tabindex="0"
      aria-pressed="@IsSelected"
      aria-disabled="@IsDisabled"
@@ -104,11 +102,6 @@
         }
 
         await base.OnParametersSetAsync();
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        await JsRuntime.InvokeVoidAsync("boosts.preloadImages", ImageUrl, SelectedImageUrl, DisabledImageUrl);
     }
 
     private async Task HandleToggle()
