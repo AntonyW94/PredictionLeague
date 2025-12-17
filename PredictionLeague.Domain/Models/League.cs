@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using PredictionLeague.Domain.Common.Constants;
 using PredictionLeague.Domain.Services;
 
 namespace PredictionLeague.Domain.Models;
@@ -8,46 +9,59 @@ public class League
     public int Id { get; init; }
     public string Name { get; private set; } = string.Empty;
     public int SeasonId { get; private set; }
-    public decimal Price { get; private set; }
     public string AdministratorUserId { get; private set; } = string.Empty;
     public string? EntryCode { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime EntryDeadline { get; private set; }
-    public int PointsForExactScore { get; private set; } = 5;
-    public int PointsForCorrectResult { get; private set; } = 3;
+
+    public int PointsForExactScore { get; private set; }
+    public int PointsForCorrectResult { get; private set; }
+
+    public decimal Price { get; private set; }
+    public bool IsFree { get; private set; }
+    public bool HasPrizes { get; private set; }
+    public decimal? PrizeFundOverride { get; private set; }
+
+    public IReadOnlyCollection<LeagueMember> Members => _members.AsReadOnly();
+    public IReadOnlyCollection<LeaguePrizeSetting> PrizeSettings => _prizeSettings.AsReadOnly();
 
     private readonly List<LeagueMember> _members = new();
-    public IReadOnlyCollection<LeagueMember> Members => _members.AsReadOnly();
-
     private readonly List<LeaguePrizeSetting> _prizeSettings = new();
-    public IReadOnlyCollection<LeaguePrizeSetting> PrizeSettings => _prizeSettings.AsReadOnly();
 
     private League() { }
 
     public League(
         int id,
         string name,
-        decimal price,
         int seasonId,
         string administratorUserId,
         string? entryCode,
         DateTime createdAt,
         DateTime entryDeadline,
+        int pointsForExactScore,
+        int pointsForCorrectResult,
+        decimal price,
+        bool isFree,             
+        bool hasPrizes,          
+        decimal? prizeFundOverride,
         IEnumerable<LeagueMember?>? members,
-        IEnumerable<LeaguePrizeSetting?>? prizeSettings,
-        int pointsForExactScore = 5,
-        int pointsForCorrectResult = 3)
+        IEnumerable<LeaguePrizeSetting?>? prizeSettings)
     {
         Id = id;
         Name = name;
-        Price = price;
         SeasonId = seasonId;
         AdministratorUserId = administratorUserId;
         EntryCode = entryCode;
         CreatedAt = createdAt;
         EntryDeadline = entryDeadline;
+       
         PointsForExactScore = pointsForExactScore;
         PointsForCorrectResult = pointsForCorrectResult;
+
+        Price = price;
+        IsFree = isFree;
+        HasPrizes = hasPrizes;
+        PrizeFundOverride = prizeFundOverride;
 
         if (members != null)
             _members.AddRange(members.Where(m => m != null).Select(m => m!));
@@ -61,17 +75,19 @@ public class League
     public static League Create(
         int seasonId,
         string name,
-        decimal price,
         string administratorUserId,
         DateTime entryDeadline,
-        Season season,
-        int pointsForExactScore = 5,
-        int pointsForCorrectResult = 3)
+        int pointsForExactScore,
+        int pointsForCorrectResult,
+        decimal price,
+        Season season)
     {
         Validate(name, entryDeadline, season);
         Guard.Against.NullOrWhiteSpace(administratorUserId);
         Guard.Against.NegativeOrZero(seasonId);
-
+        
+        var isFree = price == 0;
+       
         return new League
         {
             SeasonId = seasonId,
@@ -82,7 +98,10 @@ public class League
             EntryDeadline = entryDeadline,
             CreatedAt = DateTime.Now,
             PointsForExactScore = pointsForExactScore,
-            PointsForCorrectResult = pointsForCorrectResult
+            PointsForCorrectResult = pointsForCorrectResult,
+            IsFree = isFree,
+            HasPrizes = false,
+            PrizeFundOverride = null
         };
     }
 
@@ -101,9 +120,11 @@ public class League
         var league = Create(
             seasonId,
             $"Official {seasonName} League",
-            price,
             administratorUserId,
             entryDeadline,
+            PublicLeagueSettings.PointsForExactScore,
+            PublicLeagueSettings.PointsForCorrectResult,
+            price,
             season
         );
 
@@ -181,10 +202,25 @@ public class League
             _members.Remove(memberToRemove);
     }
 
-    public void DefinePrizes(IEnumerable<LeaguePrizeSetting> prizes)
+    public void DefinePrizes(IEnumerable<LeaguePrizeSetting>? prizes)
     {
         _prizeSettings.Clear();
-        _prizeSettings.AddRange(prizes);
+
+        var prizesList = (prizes ?? []).ToList();
+        if (prizesList.Any())
+        {
+            _prizeSettings.AddRange(prizesList);
+            HasPrizes = true;
+        }
+        else
+        {
+            HasPrizes = false;
+        }
+    }
+
+    public void SetPrizeFundOverride(decimal? amount)
+    {
+        PrizeFundOverride = amount;
     }
 
     public void ReassignAdministrator(string newAdministratorUserId)

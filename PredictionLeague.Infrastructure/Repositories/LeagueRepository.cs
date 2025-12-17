@@ -38,7 +38,12 @@ public class LeagueRepository : ILeagueRepository
                 [AdministratorUserId], 
                 [EntryCode], 
                 [CreatedAt], 
-                [EntryDeadline]
+                [EntryDeadline],
+                [PointsForExactScore],
+                [PointsForCorrectResult],
+                [IsFree],
+                [HasPrizes],
+                [PrizeFundOverride]
             )
             VALUES 
             (
@@ -48,7 +53,12 @@ public class LeagueRepository : ILeagueRepository
                 @AdministratorUserId, 
                 @EntryCode, 
                 @CreatedAt, 
-                @EntryDeadline
+                @EntryDeadline,
+                @PointsForExactScore,
+                @PointsForCorrectResult,
+                @IsFree,
+                @HasPrizes,
+                @PrizeFundOverride
             );
             SELECT CAST(SCOPE_IDENTITY() as int);";
 
@@ -160,12 +170,17 @@ public class LeagueRepository : ILeagueRepository
         return new League(
             league.Id,
             league.Name,
-            league.Price,
             league.SeasonId,
             league.AdministratorUserId,
             league.EntryCode,
             league.CreatedAt,
             league.EntryDeadline,
+            league.PointsForExactScore,
+            league.PointsForCorrectResult,
+            league.Price,
+            league.IsFree,
+            league.HasPrizes,
+            league.PrizeFundOverride,
             hydratedMembers,
             prizeSettings
         );
@@ -190,7 +205,7 @@ public class LeagueRepository : ILeagueRepository
     public async Task<IEnumerable<LeagueRoundResult>> GetLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT
+            SELECT                
                 [LeagueId],
                 [RoundId],
                 [UserId],
@@ -198,15 +213,25 @@ public class LeagueRepository : ILeagueRepository
                 [BoostedPoints],
                 [HasBoost],
                 [AppliedBoostCode]
-            FROM [LeagueRoundResults]
-            WHERE [RoundId] = @RoundId;";
+            FROM 
+                [LeagueRoundResults]
+            WHERE 
+                [RoundId] = @RoundId;";
 
         return await Connection.QueryAsync<LeagueRoundResult>(new CommandDefinition(sql, new { RoundId = roundId }, cancellationToken: cancellationToken));
     }
 
     public async Task<IEnumerable<int>> GetLeagueIdsForSeasonAsync(int seasonId, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT [Id] FROM [Leagues] WHERE [SeasonId] = @SeasonId";
+        const string sql = @"
+            SELECT 
+                [Id] 
+            FROM 
+                [Leagues] 
+            WHERE 
+                [SeasonId] = @SeasonId
+                AND [HasPrizes] = 1";
+        
         return await Connection.QueryAsync<int>(new CommandDefinition(sql, new { SeasonId = seasonId }, cancellationToken: cancellationToken));
     }
 
@@ -217,12 +242,18 @@ public class LeagueRepository : ILeagueRepository
     public async Task UpdateAsync(League league, CancellationToken cancellationToken)
     {
         const string updateLeagueSql = @"
-            UPDATE [Leagues]
-            SET [Name] = @Name,
+            UPDATE 
+                [Leagues]
+            SET 
+                [Name] = @Name,
                 [Price] = @Price,
                 [EntryCode] = @EntryCode,
-                [EntryDeadline] = @EntryDeadline
-            WHERE [Id] = @Id;";
+                [EntryDeadline] = @EntryDeadline,
+                [IsFree] = @IsFree,
+                [HasPrizes] = @HasPrizes,
+                [PrizeFundOverride] = @PrizeFundOverride
+            WHERE 
+                [Id] = @Id;";
 
         var leagueCommand = new CommandDefinition(
             updateLeagueSql,
@@ -423,12 +454,17 @@ public class LeagueRepository : ILeagueRepository
                 return new League(
                     firstLeague.Id,
                     firstLeague.Name,
-                    firstLeague.Price,
                     firstLeague.SeasonId,
                     firstLeague.AdministratorUserId,
                     firstLeague.EntryCode,
                     firstLeague.CreatedAt,
                     firstLeague.EntryDeadline,
+                    firstLeague.PointsForExactScore,
+                    firstLeague.PointsForCorrectResult,
+                    firstLeague.Price,
+                    firstLeague.IsFree,
+                    firstLeague.HasPrizes,
+                    firstLeague.PrizeFundOverride,
                     members,
                     null
                 );

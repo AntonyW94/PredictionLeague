@@ -48,17 +48,20 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         await _roundRepository.UpdateMatchScoresAsync(matchesToUpdate, cancellationToken);
 
         var matchIds = matchesToUpdate.Select(m => m.Id).ToList();
+      
         var predictionsToUpdate = (await _userPredictionRepository.GetByMatchIdsAsync(matchIds, cancellationToken)).ToList();
-
-        foreach (var prediction in predictionsToUpdate)
+        if (predictionsToUpdate.Any())
         {
-            var match = matchesToUpdate.FirstOrDefault(m => m.Id == prediction.MatchId);
-            if (match == null)
-                continue;
-            
-            prediction.SetOutcome(match.Status, match.ActualHomeTeamScore, match.ActualAwayTeamScore);
-        }
+            foreach (var prediction in predictionsToUpdate)
+            {
+                var match = matchesToUpdate.FirstOrDefault(m => m.Id == prediction.MatchId);
+                if (match == null)
+                    continue;
 
+                prediction.SetOutcome(match.Status, match.ActualHomeTeamScore, match.ActualAwayTeamScore);
+            }
+        }
+        
         await _userPredictionRepository.UpdateOutcomesAsync(predictionsToUpdate, cancellationToken);
         await _roundRepository.UpdateRoundResultsAsync(round.Id, cancellationToken);
         await _leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);

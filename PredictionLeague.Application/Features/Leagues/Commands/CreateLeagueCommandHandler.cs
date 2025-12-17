@@ -2,6 +2,7 @@
 using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Common.Constants;
 using PredictionLeague.Domain.Common.Guards.Season;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Domain.Services;
@@ -29,9 +30,11 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
         var league = League.Create(
              request.SeasonId,
              request.Name,
-             request.Price,
              request.CreatingUserId,
              request.EntryDeadline,
+             PublicLeagueSettings.PointsForExactScore, //TODO: Add this to the front end and CreateLeagueCommand
+             PublicLeagueSettings.PointsForCorrectResult, //TODO: Add this to the front end and CreateLeagueCommand
+             request.Price,
              season
          );
 
