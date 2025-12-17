@@ -19,22 +19,24 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
         const string sql = @"
                      WITH RoundPredictionCounts AS (
                         SELECT
-                            r.Id AS RoundId,
-                            COUNT(DISTINCT up.UserId) AS PredictionsCount
-                        FROM Rounds r
-                        LEFT JOIN Matches m ON m.RoundId = r.Id
-                        LEFT JOIN UserPredictions up ON up.MatchId = m.Id
-                        GROUP BY r.Id
+                            r.[Id] AS RoundId,
+                            COUNT(DISTINCT up.[UserId]) AS PredictionsCount
+                        FROM [Rounds] r
+                        LEFT JOIN [Matches] m ON m.[RoundId] = r.[Id]
+                        LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id]
+                        GROUP BY r.[Id]
                     ),
+
                     ActiveMemberCount AS (
                         SELECT
-                            l.SeasonId,
-                            COUNT(DISTINCT lm.UserId) AS MemberCount
-                        FROM LeagueMembers lm
-                        JOIN Leagues l ON lm.LeagueId = l.Id
-                        WHERE lm.Status = @ApprovedStatus
-                        GROUP BY l.SeasonId
+                            l.[SeasonId],
+                            COUNT(DISTINCT lm.[UserId]) AS MemberCount
+                        FROM [LeagueMembers] lm
+                        JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
+                        WHERE lm.[Status] = @ApprovedStatus
+                        GROUP BY l.[SeasonId]
                     )
+
                     SELECT
                         r.[Id],
                         s.[Name] AS SeasonName,
@@ -65,10 +67,10 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                         r.[Status] = @PublishedStatus
                         AND r.[Deadline] > GETUTCDATE()
                         AND r.[SeasonId] IN (
-                            SELECT l.SeasonId
+                            SELECT l.[SeasonId]
                             FROM [Leagues] l
-                            JOIN [LeagueMembers] lm ON l.Id = lm.LeagueId
-                            WHERE lm.UserId = @UserId AND lm.Status = @ApprovedStatus
+                            JOIN [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
+                            WHERE lm.[UserId] = @UserId AND lm.[Status] = @ApprovedStatus
                         )
                     ORDER BY
                         r.[Deadline] ASC";

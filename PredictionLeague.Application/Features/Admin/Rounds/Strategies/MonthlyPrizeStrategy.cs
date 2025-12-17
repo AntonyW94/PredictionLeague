@@ -45,9 +45,9 @@ public class MonthlyPrizeStrategy : IPrizeStrategy
         var month = currentRound.StartDate.Month;
         await _winningsRepository.DeleteWinningsForMonthAsync(league.Id, month, cancellationToken);
 
-        var allMatchesInMonth = (await _roundRepository.GetAllMatchesForMonthAsync(month, currentRound.SeasonId, cancellationToken)).ToList();
-
-        var monthlyWinners = league.GetTopScorersForMatches(allMatchesInMonth);
+        var roundIdsInMonth = await _roundRepository.GetRoundsIdsForMonthAsync(month, currentRound.SeasonId, cancellationToken);
+       
+        var monthlyWinners = league.GetPeriodWinners(roundIdsInMonth);
         if (!monthlyWinners.Any())
             return;
 

@@ -20,21 +20,23 @@ public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSe
         const string sql = @"
             WITH RoundPredictionCounts AS (
                 SELECT
-                    r.Id AS RoundId,
-                    COUNT(DISTINCT up.UserId) AS PredictionsCount
-                FROM Rounds r
-                LEFT JOIN Matches m ON m.RoundId = r.Id
-                LEFT JOIN UserPredictions up ON up.MatchId = m.Id
-                WHERE r.SeasonId = @SeasonId
-                GROUP BY r.Id
+                    r.[Id] AS RoundId,
+                    COUNT(DISTINCT up.[UserId]) AS PredictionsCount
+                FROM [Rounds] r
+                LEFT JOIN [Matches] m ON m.[RoundId] = r.[Id]
+                LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id]
+                WHERE r.[SeasonId] = @SeasonId
+                GROUP BY r.[Id]
             ),
+
             ActiveMemberCount AS (
                 SELECT
-                    COUNT(DISTINCT lm.UserId) AS MemberCount
-                FROM LeagueMembers lm
-                JOIN Leagues l ON lm.LeagueId = l.Id
-                WHERE l.SeasonId = @SeasonId AND lm.Status = 'Approved'
+                    COUNT(DISTINCT lm.[UserId]) AS MemberCount
+                FROM [LeagueMembers] lm
+                JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
+                WHERE l.[SeasonId] = @SeasonId AND lm.[Status] = @ApprovedStatus
             )
+
             SELECT
                 r.[Id],
                 r.[SeasonId],
@@ -61,7 +63,7 @@ public class FetchRoundsForSeasonQueryHandler : IRequestHandler<FetchRoundsForSe
             ORDER BY
                 r.[RoundNumber];";
 
-        var queryResult = await _dbConnection.QueryAsync<RoundQueryResult>(sql, cancellationToken, new { request.SeasonId });
+        var queryResult = await _dbConnection.QueryAsync<RoundQueryResult>(sql, cancellationToken, new { request.SeasonId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
 
         return queryResult.Select(r => new RoundWithAllPredictionsInDto(
             r.Id,

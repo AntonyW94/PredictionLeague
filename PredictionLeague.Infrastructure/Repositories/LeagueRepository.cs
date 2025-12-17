@@ -108,59 +108,6 @@ public class LeagueRepository : ILeagueRepository
         return (await QueryAndMapLeagues(sql, cancellationToken, new { EntryCode = entryCode })).FirstOrDefault();
     }
 
-    public async Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-        
-        SELECT l.* FROM [Leagues] l
-        WHERE l.[SeasonId] = @SeasonId;
-
-        SELECT lm.* FROM [LeagueMembers] lm
-        INNER JOIN [Leagues] l ON l.Id = lm.LeagueId
-        WHERE l.[SeasonId] = @SeasonId;
-
-        SELECT up.* FROM [UserPredictions] up
-        INNER JOIN [LeagueMembers] lm ON up.UserId = lm.UserId
-        INNER JOIN [Leagues] l ON l.Id = lm.LeagueId
-        WHERE l.[SeasonId] = @SeasonId AND up.MatchId IN (SELECT Id FROM Matches WHERE RoundId IN (SELECT Id FROM Rounds WHERE SeasonId = @SeasonId));";
-
-        var command = new CommandDefinition(
-            commandText: sql,
-            parameters: new { SeasonId = seasonId, RoundId = roundId },
-            cancellationToken: cancellationToken
-        );
-
-        await using var multi = await Connection.QueryMultipleAsync(command);
-
-        var leagues = multi.Read<League>().AsList();
-        var membersLookup = multi.Read<LeagueMember>().ToLookup(m => m.LeagueId);
-        var predictionsLookup = multi.Read<UserPrediction>().ToLookup(p => p.UserId);
-
-        var result = leagues.Select(league =>
-        {
-            var members = membersLookup[league.Id].Select(member =>
-            {
-                var predictions = predictionsLookup[member.UserId].ToList();
-                return new LeagueMember(member.LeagueId, member.UserId, member.Status, member.JoinedAt, member.ApprovedAt, predictions);
-            }).ToList();
-
-            return new League(
-                league.Id,
-                league.Name,
-                league.Price,
-                league.SeasonId,
-                league.AdministratorUserId,
-                league.EntryCode,
-                league.CreatedAt,
-                league.EntryDeadline,
-                members,
-                null
-            );
-        });
-
-        return result;
-    }
-
     public async Task<League?> GetByIdWithAllDataAsync(int id, CancellationToken cancellationToken)
     {
         const string sql = @"
@@ -171,13 +118,14 @@ public class LeagueRepository : ILeagueRepository
             WHERE lm.[LeagueId] = @Id
             AND lm.[Status] = @ApprovedStatus;
 
-            SELECT up.* FROM [UserPredictions] up
-            INNER JOIN [LeagueMembers] lm ON up.[UserId] = lm.[UserId]
-            WHERE lm.[LeagueId] = @Id;
-
             SELECT lps.*
             FROM [LeaguePrizeSettings] lps
-            WHERE lps.[LeagueId] = @Id;";
+            WHERE lps.[LeagueId] = @Id;
+
+            SELECT lrr.*, rr.[ExactScoreCount]
+            FROM [LeagueRoundResults] lrr
+            INNER JOIN [RoundResults] rr ON rr.[RoundId] = lrr.[RoundId] AND rr.[UserId] = lrr.[UserId]
+            WHERE lrr.[LeagueId] = @Id;";
 
         var command = new CommandDefinition(
             commandText: sql,
@@ -192,12 +140,12 @@ public class LeagueRepository : ILeagueRepository
             return null;
 
         var membersData = (await multi.ReadAsync<LeagueMember>()).ToList();
-        var predictionsLookup = (await multi.ReadAsync<UserPrediction>()).ToLookup(p => p.UserId);
         var prizeSettings = (await multi.ReadAsync<LeaguePrizeSetting>()).ToList();
+        var roundResultsLookup = (await multi.ReadAsync<LeagueRoundResult>()).ToLookup(p => p.UserId);
 
         var hydratedMembers = membersData.Select(member =>
         {
-            var memberPredictions = predictionsLookup[member.UserId].ToList();
+            var memberRoundResults = roundResultsLookup[member.UserId].ToList();
 
             return new LeagueMember(
                 member.LeagueId,
@@ -205,7 +153,7 @@ public class LeagueRepository : ILeagueRepository
                 member.Status,
                 member.JoinedAt,
                 member.ApprovedAt,
-                memberPredictions
+                memberRoundResults
             );
         }).ToList();
 
@@ -256,10 +204,16 @@ public class LeagueRepository : ILeagueRepository
         return await Connection.QueryAsync<LeagueRoundResult>(new CommandDefinition(sql, new { RoundId = roundId }, cancellationToken: cancellationToken));
     }
 
+    public async Task<IEnumerable<int>> GetLeagueIdsForSeasonAsync(int seasonId, CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT [Id] FROM [Leagues] WHERE [SeasonId] = @SeasonId";
+        return await Connection.QueryAsync<int>(new CommandDefinition(sql, new { SeasonId = seasonId }, cancellationToken: cancellationToken));
+    }
+
     #endregion
 
     #region Update
-  
+
     public async Task UpdateAsync(League league, CancellationToken cancellationToken)
     {
         const string updateLeagueSql = @"
@@ -352,66 +306,52 @@ public class LeagueRepository : ILeagueRepository
         await Connection.ExecuteAsync(command);
     }
 
-    public async Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            UPDATE [UserPredictions]
-            SET [PointsAwarded] = @PointsAwarded,
-                [Outcome] = @Outcome,
-                [UpdatedAt] = GETDATE()
-            WHERE [Id] = @Id;";
-
-        if (predictionsToUpdate.Any())
-        {
-            var command = new CommandDefinition(
-                commandText: sql,
-                parameters: predictionsToUpdate,
-                cancellationToken: cancellationToken
-            );
-
-            await Connection.ExecuteAsync(command);
-        }
-
-        await Task.CompletedTask;
-    }
-
     public async Task UpdateLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken)
     {
         const string sql = @"
             MERGE [LeagueRoundResults] AS target
             USING (
-                SELECT
-                    lm.[LeagueId],
-                    rr.[RoundId],
-                    rr.[UserId],
-                    rr.[TotalPoints] AS [BasePoints]
-                FROM [RoundResults] rr
-                INNER JOIN [Rounds] r
-                    ON r.[Id] = rr.[RoundId]
-                INNER JOIN [Leagues] l
-                    ON l.[SeasonId] = r.[SeasonId]
-                INNER JOIN [LeagueMembers] lm
-                    ON lm.[LeagueId] = l.[Id]
-                   AND lm.[UserId]  = rr.[UserId]
-                   AND lm.[Status]  = @ApprovedStatus
-                WHERE rr.[RoundId] = @RoundId
-            ) AS src
+                    SELECT
+                        lm.[LeagueId],
+                        rr.[RoundId],
+                        rr.[UserId],
+                        (
+                            (rr.[ExactScoreCount] * l.[PointsForExactScore]) + 
+                            (rr.[CorrectResultCount] * l.[PointsForCorrectResult])
+                        ) AS [BasePoints]
+                    FROM 
+                        [RoundResults] rr
+                    INNER JOIN 
+                        [Rounds] r ON r.[Id] = rr.[RoundId]
+                    INNER JOIN 
+                        [Leagues] l ON l.[SeasonId] = r.[SeasonId]
+                    INNER JOIN 
+                        [LeagueMembers] lm ON lm.[LeagueId] = l.[Id] AND lm.[UserId]  = rr.[UserId] AND lm.[Status]  = @ApprovedStatus
+                    WHERE 
+                        rr.[RoundId] = @RoundId
+                   ) AS src
             ON target.[LeagueId] = src.[LeagueId]
                AND target.[RoundId] = src.[RoundId]
                AND target.[UserId]  = src.[UserId]
+            
             WHEN MATCHED THEN
                 UPDATE SET 
                     target.[BasePoints]       = src.[BasePoints],
                     target.[BoostedPoints]    = src.[BasePoints],
                     target.[HasBoost]         = 0,
                     target.[AppliedBoostCode] = NULL
+            
             WHEN NOT MATCHED BY TARGET THEN
                 INSERT ([LeagueId], [RoundId], [UserId], [BasePoints], [BoostedPoints], [HasBoost], [AppliedBoostCode])
                 VALUES (src.[LeagueId], src.[RoundId], src.[UserId], src.[BasePoints], src.[BasePoints], 0, NULL);";
 
         var command = new CommandDefinition(
             sql,
-            new { RoundId = roundId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) },
+            new
+            {
+                RoundId = roundId, 
+                ApprovedStatus = nameof(LeagueMemberStatus.Approved)
+            },
             cancellationToken: cancellationToken);
 
         await Connection.ExecuteAsync(command);

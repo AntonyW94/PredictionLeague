@@ -20,23 +20,25 @@ public class GetRoundByIdQueryHandler : IRequestHandler<GetRoundByIdQuery, Round
         const string sql = @"
             WITH RoundPredictionCounts AS (
                 SELECT
-                    r.Id AS RoundId,
-                    COUNT(DISTINCT up.UserId) AS PredictionsCount
-                FROM Rounds r
-                LEFT JOIN Matches m ON m.RoundId = r.Id
-                LEFT JOIN UserPredictions up ON up.MatchId = m.Id
-                WHERE r.Id = @Id
-                GROUP BY r.Id
+                    r.[Id] AS RoundId,
+                    COUNT(DISTINCT up.[UserId]) AS PredictionsCount
+                FROM [Rounds] r
+                LEFT JOIN [Matches] m ON m.[RoundId] = r.[Id]
+                LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id]
+                WHERE r.[Id] = @Id
+                GROUP BY r.[Id]
             ),
+
             ActiveMemberCount AS (
                 SELECT
-                    l.SeasonId,
-                    COUNT(DISTINCT lm.UserId) AS MemberCount
-                FROM LeagueMembers lm
-                JOIN Leagues l ON lm.LeagueId = l.Id
-                WHERE l.SeasonId = (SELECT SeasonId FROM Rounds WHERE Id = @Id) AND lm.Status = @ApprovedStatus
-                GROUP BY l.SeasonId
+                    l.[SeasonId],
+                    COUNT(DISTINCT lm.[UserId]) AS MemberCount
+                FROM [LeagueMembers] lm
+                JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
+                WHERE l.[SeasonId] = (SELECT [SeasonId] FROM [Rounds] WHERE [Id] = @Id) AND lm.[Status] = @ApprovedStatus
+                GROUP BY l.[SeasonId]
             )
+
             SELECT
                 r.[Id] AS RoundId,
                 r.[SeasonId],

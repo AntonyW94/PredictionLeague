@@ -195,31 +195,28 @@ public class RoundRepository : IRoundRepository
         return await Connection.ExecuteScalarAsync<bool>(command);
     }
 
-    public async Task<IEnumerable<Match>> GetAllMatchesForMonthAsync(int month, int seasonId, CancellationToken cancellationToken)
+    public async Task<IEnumerable<int>> GetRoundsIdsForMonthAsync(int month, int seasonId, CancellationToken cancellationToken)
     {
         const string sql = @"
-            SELECT
-                m.*
-            FROM
-                [Matches] m
-            WHERE
-                m.[RoundId] IN (
-                    SELECT 
-                        r.[Id] 
-                    FROM 
-                        [Rounds] r 
-                    WHERE 
-                        r.[SeasonId] = @SeasonId AND 
-                        MONTH(r.[StartDate]) = @Month
-                );";
+            SELECT                
+                r.[Id]
+            FROM 
+                [Rounds] r 
+            WHERE 
+                r.[SeasonId] = @SeasonId 
+                AND MONTH(r.[StartDate]) = @Month";
 
         var command = new CommandDefinition(
             sql,
-            new { month, seasonId },
+            new
+            {
+                Month = month, 
+                SeasonId = seasonId
+            },
             cancellationToken: cancellationToken
         );
 
-        return await Connection.QueryAsync<Match>(command);
+        return await Connection.QueryAsync<int>(command);
     }
 
     public async Task<Round?> GetNextRoundForReminderAsync(CancellationToken cancellationToken)
@@ -388,9 +385,9 @@ public class RoundRepository : IRoundRepository
                 SELECT
                     m.[RoundId],
                     up.[UserId],
-                    SUM(ISNULL(up.[PointsAwarded], 0)) AS [TotalPoints],
-                    SUM(CASE WHEN up.[Outcome] = @CorrectScore THEN 1 ELSE 0 END) AS [ExactScoreCount],
-                    SUM(CASE WHEN up.[Outcome] = @CorrectResult THEN 1 ELSE 0 END) AS [CorrectResultCount]
+                    SUM(CASE WHEN up.[Outcome] = @ExactScore THEN 1 ELSE 0 END) AS [ExactScoreCount],
+                    SUM(CASE WHEN up.[Outcome] = @CorrectResult THEN 1 ELSE 0 END) AS [CorrectResultCount],
+                    SUM(CASE WHEN up.[Outcome] = @Incorrect THEN 1 ELSE 0 END) AS [IncorrectCount]
                 FROM [UserPredictions] up
                 INNER JOIN [Matches] m ON m.[Id] = up.[MatchId]
                 WHERE m.[RoundId] = @RoundId
@@ -403,16 +400,23 @@ public class RoundRepository : IRoundRepository
             AND target.[UserId] = src.[UserId]
             WHEN MATCHED THEN
                 UPDATE SET 
-                    target.[TotalPoints]        = src.[TotalPoints],
                     target.[ExactScoreCount]    = src.[ExactScoreCount],
-                    target.[CorrectResultCount] = src.[CorrectResultCount]
+                    target.[CorrectResultCount] = src.[CorrectResultCount],
+                    target.[IncorrectCount]     = src.[IncorrectCount]
+
             WHEN NOT MATCHED BY TARGET THEN
-                INSERT ([RoundId], [UserId], [TotalPoints], [ExactScoreCount], [CorrectResultCount])
-                VALUES (src.[RoundId], src.[UserId], src.[TotalPoints], src.[ExactScoreCount], src.[CorrectResultCount]);";
+                INSERT ([RoundId], [UserId], [ExactScoreCount], [CorrectResultCount], [IncorrectCount])
+                VALUES (src.[RoundId], src.[UserId], src.[ExactScoreCount], src.[CorrectResultCount], src.[IncorrectCount]);";
 
         var command = new CommandDefinition(
             sql,
-            new { RoundId = roundId, CorrectScore = nameof(PredictionOutcome.CorrectScore), CorrectResult = nameof(PredictionOutcome.CorrectResult) },
+            new
+            {
+                RoundId = roundId, 
+                ExactScore = (int)PredictionOutcome.ExactScore, 
+                CorrectResult = (int)PredictionOutcome.CorrectResult, 
+                Incorrect = (int)PredictionOutcome.Incorrect
+            },
             cancellationToken: cancellationToken);
 
         await Connection.ExecuteAsync(command);

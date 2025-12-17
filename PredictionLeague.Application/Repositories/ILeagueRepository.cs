@@ -17,17 +17,16 @@ public interface ILeagueRepository
     Task<League?> GetByIdAsync(int id, CancellationToken cancellationToken);
     Task<League?> GetByEntryCodeAsync(string entryCode, CancellationToken cancellationToken);
     Task<League?> GetByIdWithAllDataAsync(int id, CancellationToken cancellationToken);
-    Task<IEnumerable<League>> GetLeaguesForScoringAsync(int seasonId, int roundId, CancellationToken cancellationToken);
     Task<IEnumerable<League>> GetLeaguesByAdministratorIdAsync(string administratorId, CancellationToken cancellationToken);
     Task<IEnumerable<LeagueRoundResult>> GetLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken);
-
+    Task<IEnumerable<int>> GetLeagueIdsForSeasonAsync(int seasonId, CancellationToken cancellationToken);
+    
     #endregion
 
     #region Update
 
     Task UpdateAsync(League league, CancellationToken cancellationToken);
     Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status, CancellationToken cancellationToken);
-    Task UpdatePredictionPointsAsync(IEnumerable<UserPrediction> predictionsToUpdate, CancellationToken cancellationToken);
     Task UpdateLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken);
     Task UpdateLeagueRoundBoostsAsync(IEnumerable<LeagueRoundBoostUpdate> updates, CancellationToken cancellationToken);
 

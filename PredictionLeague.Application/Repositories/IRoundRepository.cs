@@ -18,7 +18,7 @@ public interface IRoundRepository
     Task<IEnumerable<int>> GetMatchIdsWithPredictionsAsync(IEnumerable<int> matchIds, CancellationToken cancellationToken);
     Task<bool> IsLastRoundOfMonthAsync(int roundId, int seasonId, CancellationToken cancellationToken);
     Task<bool> IsLastRoundOfSeasonAsync(int roundId, int seasonId, CancellationToken cancellationToken);
-    Task<IEnumerable<Match>> GetAllMatchesForMonthAsync(int month, int seasonId, CancellationToken cancellationToken);
+    Task<IEnumerable<int>> GetRoundsIdsForMonthAsync(int month, int seasonId, CancellationToken cancellationToken);
     Task<Round?> GetNextRoundForReminderAsync(CancellationToken cancellationToken);
     Task<Dictionary<int, Round>> GetDraftRoundsStartingBeforeAsync(DateTime dateLimit, CancellationToken cancellationToken);
 

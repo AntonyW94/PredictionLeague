@@ -10,9 +10,9 @@ public class LeagueMember
     public LeagueMemberStatus Status { get; private set; }
     public DateTime JoinedAt { get; private set; }
     public DateTime? ApprovedAt { get; private set; }
+    public IReadOnlyCollection<LeagueRoundResult> RoundResults => _roundResults.AsReadOnly();
 
-    private readonly List<UserPrediction> _predictions = new();
-    public IReadOnlyCollection<UserPrediction> Predictions => _predictions.AsReadOnly();
+    private readonly List<LeagueRoundResult> _roundResults = new();
 
     private LeagueMember() { }
 
@@ -22,7 +22,7 @@ public class LeagueMember
         LeagueMemberStatus status,
         DateTime joinedAt,
         DateTime? approvedAt,
-        IEnumerable<UserPrediction?>? predictions)
+        IEnumerable<LeagueRoundResult>? roundResults)
     {
         LeagueId = leagueId;
         UserId = userId;
@@ -30,8 +30,8 @@ public class LeagueMember
         JoinedAt = joinedAt;
         ApprovedAt = approvedAt;
 
-        if (predictions != null)
-            _predictions.AddRange(predictions.Where(p => p != null).Select(p => p!));
+        if (roundResults != null) 
+            _roundResults.AddRange(roundResults);
     }
 
     public static LeagueMember Create(int leagueId, string userId)
@@ -64,15 +64,5 @@ public class LeagueMember
             throw new InvalidOperationException("Only pending members can be rejected.");
 
         Status = LeagueMemberStatus.Rejected;
-    }
-
-    public void ScorePredictionForMatch(Match match)
-    {
-        Guard.Against.Null(match);
-
-        foreach (var prediction in _predictions.Where(p => p.MatchId == match.Id))
-        {
-            prediction.CalculatePoints(match.Status, match.ActualHomeTeamScore, match.ActualAwayTeamScore);
-        }
     }
 }

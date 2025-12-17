@@ -12,7 +12,6 @@ public class UserPrediction
     public string UserId { get; private set; } = string.Empty;
     public int PredictedHomeScore { get; init; }
     public int PredictedAwayScore { get; init; }
-    public int? PointsAwarded { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public PredictionOutcome Outcome { get; private set; } = PredictionOutcome.Pending;
@@ -34,38 +33,27 @@ public class UserPrediction
             MatchId = matchId,
             PredictedHomeScore = homeScore,
             PredictedAwayScore = awayScore,
-            PointsAwarded = null,
             CreatedAt = now,
             UpdatedAt = now,
             Outcome = PredictionOutcome.Pending
         };
     }
     
-    public void CalculatePoints(MatchStatus status, int? actualHomeScore, int? actualAwayScore, int correctScorePoints = 5, int correctResultPoints = 3)
+    public void SetOutcome(MatchStatus status, int? actualHomeScore, int? actualAwayScore)
     {
         if (status == MatchStatus.Scheduled || actualHomeScore == null || actualAwayScore == null)
         {
-            PointsAwarded = null;
             Outcome = PredictionOutcome.Pending;
             UpdatedAt = DateTime.Now;
             return;
         }
 
         if (PredictedHomeScore == actualHomeScore && PredictedAwayScore == actualAwayScore)
-        {
-            Outcome = PredictionOutcome.CorrectScore;
-            PointsAwarded = correctScorePoints;
-        }
+            Outcome = PredictionOutcome.ExactScore;
         else if (Math.Sign(PredictedHomeScore - PredictedAwayScore) == Math.Sign(actualHomeScore.Value - actualAwayScore.Value))
-        {
             Outcome = PredictionOutcome.CorrectResult;
-            PointsAwarded = correctResultPoints;
-        }
         else
-        {
             Outcome = PredictionOutcome.Incorrect;
-            PointsAwarded = 0;
-        }
 
         UpdatedAt = DateTime.Now;
     }

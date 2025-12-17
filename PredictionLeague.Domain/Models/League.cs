@@ -13,6 +13,8 @@ public class League
     public string? EntryCode { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime EntryDeadline { get; private set; }
+    public int PointsForExactScore { get; private set; } = 5;
+    public int PointsForCorrectResult { get; private set; } = 3;
 
     private readonly List<LeagueMember> _members = new();
     public IReadOnlyCollection<LeagueMember> Members => _members.AsReadOnly();
@@ -32,7 +34,9 @@ public class League
         DateTime createdAt,
         DateTime entryDeadline,
         IEnumerable<LeagueMember?>? members,
-        IEnumerable<LeaguePrizeSetting?>? prizeSettings)
+        IEnumerable<LeaguePrizeSetting?>? prizeSettings,
+        int pointsForExactScore = 5,
+        int pointsForCorrectResult = 3)
     {
         Id = id;
         Name = name;
@@ -42,6 +46,8 @@ public class League
         EntryCode = entryCode;
         CreatedAt = createdAt;
         EntryDeadline = entryDeadline;
+        PointsForExactScore = pointsForExactScore;
+        PointsForCorrectResult = pointsForCorrectResult;
 
         if (members != null)
             _members.AddRange(members.Where(m => m != null).Select(m => m!));
@@ -58,7 +64,9 @@ public class League
         decimal price,
         string administratorUserId,
         DateTime entryDeadline,
-        Season season)
+        Season season,
+        int pointsForExactScore = 5,
+        int pointsForCorrectResult = 3)
     {
         Validate(name, entryDeadline, season);
         Guard.Against.NullOrWhiteSpace(administratorUserId);
@@ -72,14 +80,16 @@ public class League
             AdministratorUserId = administratorUserId,
             EntryCode = null,
             EntryDeadline = entryDeadline,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.Now,
+            PointsForExactScore = pointsForExactScore,
+            PointsForCorrectResult = pointsForCorrectResult
         };
     }
 
     private static void Validate(string name, DateTime entryDeadline, Season season)
     {
         Guard.Against.NullOrWhiteSpace(name);
-        //Guard.Against.Expression(d => d <= DateTime.Now, entryDeadline, "Entry deadline must be in the future.");
+        Guard.Against.Expression(d => d <= DateTime.Now, entryDeadline, "Entry deadline must be in the future.");
 
         if (entryDeadline.Date >= season.StartDate.Date)
             throw new ArgumentException("Entry deadline must be at least one day before the season start date.", nameof(entryDeadline));
@@ -163,22 +173,12 @@ public class League
 
         member.Reject();
     }
-    
+
     public void RemoveMember(string userId)
     {
         var memberToRemove = _members.FirstOrDefault(m => m.UserId == userId);
         if (memberToRemove != null)
             _members.Remove(memberToRemove);
-    }
-
-    public void ScoreMatch(Match completedMatch)
-    {
-        Guard.Against.Null(completedMatch);
-
-        foreach (var member in _members)
-        {
-            member.ScorePredictionForMatch(completedMatch);
-        }
     }
 
     public void DefinePrizes(IEnumerable<LeaguePrizeSetting> prizes)
@@ -193,33 +193,49 @@ public class League
         AdministratorUserId = newAdministratorUserId;
     }
 
-    public List<LeagueMember> GetTopScorersForMatches(List<Match> matches)
+    public List<LeagueMember> GetRoundWinners(int roundId)
     {
-        if (!_members.Any() || !matches.Any())
+        if (!_members.Any())
             return [];
 
-        var matchIds = matches.Select(m => m.Id).ToHashSet();
-
-        var scores = new Dictionary<LeagueMember, int>();
-
-        foreach (var member in _members)
+        var roundScores = _members.Select(m => new
         {
-            var predictions = member.Predictions.Where(p => matchIds.Contains(p.MatchId)).DistinctBy(p => p.Id);
-            var score = predictions.Sum(p => p.PointsAwarded ?? 0);
-          
-            scores.Add(member, score);
-        }
+            Member = m,
+            Score = m.RoundResults.FirstOrDefault(r => r.RoundId == roundId)?.BoostedPoints ?? 0
+        }).ToList();
 
-        if (!scores.Any())
-            return [];
-        
-        var maxScore = scores.Max(s => s.Value);
+        var maxScore = roundScores.Max(s => s.Score);
         if (maxScore == 0)
             return [];
-        
-        return scores
-            .Where(s => s.Value == maxScore)
-            .Select(s => s.Key)
+
+        return roundScores
+            .Where(s => s.Score == maxScore)
+            .Select(s => s.Member)
+            .ToList();
+    }
+
+    public List<LeagueMember> GetPeriodWinners(IEnumerable<int> roundIdsInPeriod)
+    {
+        if (!_members.Any())
+            return [];
+
+        var targetRounds = roundIdsInPeriod.ToHashSet();
+
+        var periodScores = _members.Select(m => new
+        {
+            Member = m,
+            Score = m.RoundResults
+                .Where(r => targetRounds.Contains(r.RoundId))
+                .Sum(r => r.BoostedPoints)
+        }).ToList();
+
+        var maxScore = periodScores.Max(s => s.Score);
+        if (maxScore == 0)
+            return [];
+
+        return periodScores
+            .Where(s => s.Score == maxScore)
+            .Select(s => s.Member)
             .ToList();
     }
 
@@ -229,7 +245,12 @@ public class League
             return new List<OverallRanking>();
 
         var scoresByGroup = _members
-            .GroupBy(m => m.Predictions.Sum(p => p.PointsAwarded ?? 0))
+            .Select(m => new
+            {
+                Member = m,
+                TotalScore = m.RoundResults.Sum(r => r.BoostedPoints)
+            })
+            .GroupBy(x => x.TotalScore)
             .OrderByDescending(g => g.Key)
             .ToList();
 
@@ -238,7 +259,7 @@ public class League
 
         foreach (var scoreGroup in scoresByGroup)
         {
-            var membersInGroup = scoreGroup.ToList();
+            var membersInGroup = scoreGroup.Select(x => x.Member).ToList();
             rankings.Add(new OverallRanking(currentRank, membersInGroup));
             currentRank += membersInGroup.Count;
         }
@@ -250,12 +271,12 @@ public class League
     {
         if (!_members.Any())
             return new List<LeagueMember>();
-        
+
         var exactScoreCounts = _members
             .Select(member => new
             {
                 Member = member,
-                ExactCount = member.Predictions.Count(p => p.PointsAwarded == 5)
+                ExactCount = member.RoundResults.Sum(r => r.ExactScoreCount)
             }).ToList();
 
         if (!exactScoreCounts.Any())
@@ -264,7 +285,7 @@ public class League
         var maxCount = exactScoreCounts.Max(s => s.ExactCount);
         if (maxCount == 0)
             return new List<LeagueMember>();
-        
+
         return exactScoreCounts
             .Where(s => s.ExactCount == maxCount)
             .Select(s => s.Member)

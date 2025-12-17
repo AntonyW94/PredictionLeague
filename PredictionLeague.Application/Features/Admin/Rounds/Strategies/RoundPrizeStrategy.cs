@@ -40,7 +40,7 @@ public class RoundPrizeStrategy : IPrizeStrategy
         {
             await _winningsRepository.DeleteWinningsForRoundAsync(league.Id, round.RoundNumber, cancellationToken);
 
-            var roundWinners = league.GetTopScorersForMatches(round.Matches.ToList());
+            var roundWinners = league.GetRoundWinners(round.Id);
             if (!roundWinners.Any())
                 return;
 

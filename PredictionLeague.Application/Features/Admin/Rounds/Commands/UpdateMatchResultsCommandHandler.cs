@@ -10,17 +10,19 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
 public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResultsCommand>
 {
+    private readonly IMediator _mediator;
     private readonly IBoostService _boostService;
     private readonly ILeagueRepository _leagueRepository;
     private readonly IRoundRepository _roundRepository;
-    private readonly IMediator _mediator;
+    private readonly IUserPredictionRepository _userPredictionRepository;
 
-    public UpdateMatchResultsCommandHandler(IBoostService boostService, ILeagueRepository leagueRepository, IRoundRepository roundRepository, IMediator mediator)
+    public UpdateMatchResultsCommandHandler(IMediator mediator, IBoostService boostService, ILeagueRepository leagueRepository, IRoundRepository roundRepository, IUserPredictionRepository userPredictionRepository)
     {
+        _mediator = mediator;
         _boostService = boostService;
         _leagueRepository = leagueRepository;
         _roundRepository = roundRepository;
-        _mediator = mediator;
+        _userPredictionRepository = userPredictionRepository;
     }
 
     public async Task Handle(UpdateMatchResultsCommand request, CancellationToken cancellationToken)
@@ -40,30 +42,24 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
             matchesToUpdate.Add(matchToUpdate);
         }
 
-        if (matchesToUpdate.Any())
-            await _roundRepository.UpdateMatchScoresAsync(matchesToUpdate, cancellationToken);
-        else
+        if (!matchesToUpdate.Any())
             return;
 
-        var leaguesToScore = (await _leagueRepository.GetLeaguesForScoringAsync(round.SeasonId, round.Id, cancellationToken)).ToList();
+        await _roundRepository.UpdateMatchScoresAsync(matchesToUpdate, cancellationToken);
 
-        foreach (var league in leaguesToScore)
+        var matchIds = matchesToUpdate.Select(m => m.Id).ToList();
+        var predictionsToUpdate = (await _userPredictionRepository.GetByMatchIdsAsync(matchIds, cancellationToken)).ToList();
+
+        foreach (var prediction in predictionsToUpdate)
         {
-            foreach (var scoredMatch in matchesToUpdate)
-            {
-                league.ScoreMatch(scoredMatch);
-            }
+            var match = matchesToUpdate.FirstOrDefault(m => m.Id == prediction.MatchId);
+            if (match == null)
+                continue;
+            
+            prediction.SetOutcome(match.Status, match.ActualHomeTeamScore, match.ActualAwayTeamScore);
         }
 
-        var matchIdsToUpdate = matchesToUpdate.Select(ma => ma.Id).ToHashSet();
-
-        var allUpdatedPredictions = leaguesToScore
-            .SelectMany(l => l.Members)
-            .SelectMany(m => m.Predictions)
-            .Where(p => matchIdsToUpdate.Contains(p.MatchId))
-            .DistinctBy(u => u.Id);
-
-        await _leagueRepository.UpdatePredictionPointsAsync(allUpdatedPredictions, cancellationToken);
+        await _userPredictionRepository.UpdateOutcomesAsync(predictionsToUpdate, cancellationToken);
         await _roundRepository.UpdateRoundResultsAsync(round.Id, cancellationToken);
         await _leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
         await _boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
@@ -73,12 +69,14 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
             round.UpdateStatus(RoundStatus.Completed);
             await _roundRepository.UpdateAsync(round, cancellationToken);
 
-            foreach (var league in leaguesToScore)
+            var leagueIds = await _leagueRepository.GetLeagueIdsForSeasonAsync(round.SeasonId, cancellationToken);
+
+            foreach (var leagueId in leagueIds)
             {
                 var processPrizesCommand = new ProcessPrizesCommand
                 {
                     RoundId = round.Id,
-                    LeagueId = league.Id
+                    LeagueId = leagueId
                 };
                 await _mediator.Send(processPrizesCommand, cancellationToken);
             }
