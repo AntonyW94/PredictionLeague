@@ -13,6 +13,7 @@ public interface IRoundRepository
     #region Read
 
     Task<Round?> GetByIdAsync(int id, CancellationToken cancellationToken);
+    Task<Dictionary<int, Round>> GetAllForSeasonAsync(int seasonId, CancellationToken cancellationToken);
     Task<Round?> GetByApiRoundNameAsync(int seasonId, string apiRoundName, CancellationToken cancellationToken);
     Task<Round?> GetOldestInProgressRoundAsync(int seasonId, CancellationToken cancellationToken);
     Task<IEnumerable<int>> GetMatchIdsWithPredictionsAsync(IEnumerable<int> matchIds, CancellationToken cancellationToken);

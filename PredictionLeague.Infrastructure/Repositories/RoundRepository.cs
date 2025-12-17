@@ -107,6 +107,12 @@ public class RoundRepository : IRoundRepository
         return await QueryAndMapRound(sql, cancellationToken, new { RoundId = roundId });
     }
 
+    public async Task<Dictionary<int, Round>> GetAllForSeasonAsync(int seasonId, CancellationToken cancellationToken)
+    {
+        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[SeasonId] = @SeasonId;";
+        return await QueryAndMapRounds(sql, cancellationToken, new { SeasonId = seasonId });
+    }
+
     public async Task<Round?> GetByApiRoundNameAsync(int seasonId, string apiRoundName, CancellationToken cancellationToken)
     {
         const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[SeasonId] = @SeasonId AND r.[ApiRoundName] = @ApiRoundName;";

@@ -68,4 +68,16 @@ public class TasksController : ApiControllerBase
 
         return NoContent();
     }
+    
+    [AllowAnonymous]
+    [HttpPost("recalculate-season-stats/{seasonId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RecalculateSeasonStats(int seasonId, CancellationToken cancellationToken)
+    {
+        var command = new RecalculateSeasonStatsCommand(seasonId);
+        await _mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
 }
