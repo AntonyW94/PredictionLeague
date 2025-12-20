@@ -17,7 +17,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var match in Matches.OrderBy(m => m.MatchDateTime).ThenBy(m => m.HomeTeamAbbreviation))
+                @foreach (var match in Matches.OrderBy(m => m.MatchDateTime).ThenBy(m => m.HomeTeamShortName))
                 {
                     <tr>
                         <td class="match-info">
