@@ -48,7 +48,7 @@
                     <div class="carousel-wrapper mobile-results-carousel">
                         <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
                             <div class="carousel-track" style="@_trackStyle">
-                                @foreach (var match in State.CurrentRoundMatches.OrderBy(m => m.MatchDateTime).ThenBy(m => m.HomeTeamAbbreviation))
+                                @foreach (var match in State.CurrentRoundMatches.OrderBy(m => m.MatchDateTime).ThenBy(m => m.HomeTeamShortName))
                                 {
                                     <div class="carousel-item-wrapper">
                                         <div class="carousel-item-content">

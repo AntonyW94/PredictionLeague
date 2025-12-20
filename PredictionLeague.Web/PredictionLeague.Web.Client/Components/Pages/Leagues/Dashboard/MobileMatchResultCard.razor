@@ -27,7 +27,7 @@
                     <th class="text-end fw-bold">Score</th>
                 </tr>
                 </thead>  <tbody>
-                    @foreach (var player in Results)
+                    @foreach (var player in Results.OrderBy(r => r.PlayerName))
                     {
                         var prediction = player.Predictions.FirstOrDefault(p => p.MatchId == Match.Id);
                         <tr class="@(GetUserHighlightClass(player.UserId))">
