@@ -1,8 +1,6 @@
 @inject NavigationManager NavigationManager
 @inject IDashboardStateService DashboardState
-@inject IJSRuntime JsRuntime
 
-@using PredictionLeague.Domain.Common.Enumerations
 @using PredictionLeague.Web.Client.Services.Dashboard
 
 @implements IAsyncDisposable
@@ -32,78 +30,66 @@
                     </div>
 
                     <div class="action-card-body">
-                        @switch (league.Status)
-                        {
-                            case LeagueMemberStatus.Approved:
+                        <div class="action-card-row">
+                            @if (league.RoundRank.HasValue && league.MemberCount.HasValue)
                             {
-                                <div class="action-card-row">
-                                    <div class="badge-group badge-group--green">
-                                        <span class="badge-icon" title="Approved"><i class="bi bi-check-lg"></i></span>
-                                        <span>Approved</span>
-                                    </div>
-
-                                    @if (league.Rank.HasValue && league.MemberCount.HasValue)
-                                    {
-                                        var statusPillClass = league.Rank switch
-                                        {
-                                            1 => "badge-group--gold",
-                                            2 => "badge-group--silver",
-                                            3 => "badge-group--bronze",
-                                            _ => "badge-group--blue"
-                                        };
-
-                                        <div class="badge-group @statusPillClass ms-4">
-                                            <span class="badge-icon" title="Rank"><i class="bi bi-trophy-fill"></i></span>
-                                            <div class="position-info">
-                                                <span>@league.Rank</span>
-                                                <span> / @league.MemberCount</span>
-                                            </div>
+                                <div class="badge-group-with-header">
+                                    <div class="pb-1">@league.CurrentRound</div>
+                                    <div class="badge-group @GetStatusClass(league.RoundRank, league.MemberCount)">
+                                        <span class="badge-icon" title="Rank"><i class="bi bi-trophy-fill"></i></span>
+                                        <div class="position-info">
+                                            <span>@league.RoundRank</span>
+                                            <span> / @league.MemberCount</span>
                                         </div>
-                                    }
+                                    </div>
                                 </div>
-                                break;
                             }
 
-                            case LeagueMemberStatus.Pending:
-                                <div class="action-card-row action-card-row--centered">
-                                    <div class="badge-group badge-group--purple">
-                                        <span class="badge-icon" title="Pending Approval"><i class="bi bi-clock-fill"></i></span>
-                                        <span>Pending Approval</span>
+                            @if (league.MonthRank.HasValue && league.MemberCount.HasValue)
+                            {
+                                <div class="badge-group-with-header">
+                                    <div class="pb-1">@league.CurrentMonth</div>
+                                    <div class="badge-group @GetStatusClass(league.MonthRank, league.MemberCount)">
+                                        <span class="badge-icon" title="Rank"><i class="bi bi-trophy-fill"></i></span>
+                                        <div class="position-info">
+                                            <span>@league.MonthRank</span>
+                                            <span> / @league.MemberCount</span>
+                                        </div>
                                     </div>
                                 </div>
-                                break;
+                            }
 
-                            case LeagueMemberStatus.Rejected:
-                                <div class="action-card-row action-card-row--centered">
-                                    <div class="badge-group badge-group--red">
-                                        <span class="badge-icon" title="Rejected"><i class="bi bi-x-lg"></i></span>
-                                        <span>Rejected by Admin</span>
+                            @if (league.Rank.HasValue && league.MemberCount.HasValue)
+                            {
+                                <div class="badge-group-with-header">
+                                    <div class="pb-1">Overall</div>
+                                    <div class="badge-group @GetStatusClass(league.Rank, league.MemberCount)">
+                                        <span class="badge-icon" title="Rank"><i class="bi bi-trophy-fill"></i></span>
+                                        <div class="position-info">
+                                            <span>@league.Rank</span>
+                                            <span> / @league.MemberCount</span>
+                                        </div>
                                     </div>
                                 </div>
-                                break;
-                            
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
+                            }
+                        </div>
                     </div>
 
                     <div class="action-card-footer">
-                        @if (league.Status == LeagueMemberStatus.Rejected)
+                        @*  @if (league.Status == LeagueMemberStatus.Rejected)
                         {
                             <button class="btn btn-sm red-button w-100" @onclick="() => HandleRemoveLeagueAsync(league.Id, league.Name)" disabled="@DashboardState.IsMyLeaguesLoading">
                                 Remove
                             </button>
                         }
                         else
-                        {
-                            var canViewDashboard = league.Status == LeagueMemberStatus.Approved;
-                            <button class="btn btn-sm @(canViewDashboard ? "purple-accent-button" : "grey-button") w-100"
-                                    disabled="@(!canViewDashboard)"
-                                    title="@(canViewDashboard ? "View League Dashboard" : "Unavailable until approved by the league admin")"
-                                    @onclick="() => ViewLeagueDashboard(league.Id)">
-                                View
-                            </button>
-                        }
+                        { *@
+                        <button class="btn btn-sm purple-accent-button w-100"
+                                title="View League Dashboard"
+                                @onclick="() => ViewLeagueDashboard(league.Id)">
+                            View
+                        </button>
+                        @* } *@
                     </div>
                 </div>
             }
@@ -125,13 +111,27 @@
         NavigationManager.NavigateTo($"/leagues/{leagueId}/dashboard");
     }
 
-    private async Task HandleRemoveLeagueAsync(int leagueId, string leagueName)
-    {
-        var confirmed = await JsRuntime.InvokeAsync<bool>("blazorInterop.showConfirm",
-            new object[] { $"Remove '{leagueName}'?", "This will remove the rejected league from your dashboard.", "Yes, Remove It", "Cancel" });
+    // private async Task HandleRemoveLeagueAsync(int leagueId, string leagueName)
+    // {
+    //     var confirmed = await JsRuntime.InvokeAsync<bool>("blazorInterop.showConfirm",
+    //         new object[] { $"Remove '{leagueName}'?", "This will remove the rejected league from your dashboard.", "Yes, Remove It", "Cancel" });
 
-        if (confirmed)
-            await DashboardState.RemoveRejectedLeagueAsync(leagueId);
+    //     if (confirmed)
+    //         await DashboardState.RemoveRejectedLeagueAsync(leagueId);
+    // }
+
+    private static string GetStatusClass(long? rank, int? memberCount)
+    {
+        var statusPillClass = rank switch
+        {
+            1 => "badge-group--gold",
+            2 => "badge-group--silver",
+            3 => "badge-group--bronze",
+            { } r when memberCount.HasValue && r > memberCount.Value * 0.75 => "badge-group--red",
+            _ => "badge-group--blue"
+        };
+
+        return statusPillClass;
     }
 
     public ValueTask DisposeAsync()

@@ -6,7 +6,10 @@ public record MyLeagueDto(
     int Id,
     string Name,
     string SeasonName,
-    LeagueMemberStatus Status,
+    long? RoundRank,
+    long? MonthRank,
     long? Rank,
+    string CurrentRound,
+    string CurrentMonth,
     int? MemberCount
 );
