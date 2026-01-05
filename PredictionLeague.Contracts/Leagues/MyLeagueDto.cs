@@ -11,5 +11,8 @@ public record MyLeagueDto(
     long? Rank,
     string CurrentRound,
     string CurrentMonth,
-    int? MemberCount
+    int? MemberCount,
+    decimal PrizeMoneyWon,
+    decimal PrizeMoneyRemaining,
+    decimal TotalPrizeFund
 );

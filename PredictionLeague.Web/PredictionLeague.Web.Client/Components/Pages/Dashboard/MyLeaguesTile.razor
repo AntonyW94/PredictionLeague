@@ -5,6 +5,68 @@
 
 @implements IAsyncDisposable
 
+<svg style="width:0;height:0;position:absolute;visibility:hidden;" aria-hidden="true" focusable="false">
+    <defs>
+        <linearGradient id="grad-gold" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#C9B037" />
+            <stop offset="40%" stop-color="#F2E29F" /> <stop offset="60%" stop-color="#AA8825" />
+            <stop offset="100%" stop-color="#7A631A" />
+        </linearGradient>
+
+        <linearGradient id="grad-silver" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#9CA3AF" />
+            <stop offset="40%" stop-color="#F9FAFB" /> <stop offset="60%" stop-color="#6B7280" />
+            <stop offset="100%" stop-color="#374151" />
+        </linearGradient>
+
+        <linearGradient id="grad-bronze" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#8B5A2B" />
+            <stop offset="40%" stop-color="#EBCBA6" /> <stop offset="60%" stop-color="#8B5A2B" />
+            <stop offset="100%" stop-color="#5C3A1A" />
+        </linearGradient>
+
+        <linearGradient id="grad-blue" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#3B82F6" />
+            <stop offset="40%" stop-color="#93C5FD" /> <stop offset="60%" stop-color="#2563EB" />
+            <stop offset="100%" stop-color="#1E40AF" />
+        </linearGradient>
+
+        <linearGradient id="grad-red" x1="20%" y1="0%" x2="80%" y2="100%">
+            <stop offset="0%" stop-color="#EF4444" />
+            <stop offset="40%" stop-color="#FCA5A5" /> <stop offset="60%" stop-color="#B91C1C" />
+            <stop offset="100%" stop-color="#7F1D1D" />
+        </linearGradient>
+
+        <linearGradient id="rim-gold" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FFF8D1" /> <stop offset="100%" stop-color="#C9B037" />
+        </linearGradient>
+
+        <linearGradient id="rim-silver" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FFFFFF" />
+            <stop offset="100%" stop-color="#9CA3AF" />
+        </linearGradient>
+
+        <linearGradient id="rim-bronze" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FFE8CC" />
+            <stop offset="100%" stop-color="#A67C52" />
+        </linearGradient>
+
+        <linearGradient id="rim-blue" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#E0F2FE" />
+            <stop offset="100%" stop-color="#3B82F6" />
+        </linearGradient>
+
+        <linearGradient id="rim-red" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FEE2E2" />
+            <stop offset="100%" stop-color="#EF4444" />
+        </linearGradient>
+
+        <filter id="shield-shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#000" flood-opacity="0.5" />
+        </filter>
+    </defs>
+</svg>
+
 <div class="card h-100">
     <h3 class="text-white text-center fw-bold mb-4">My Leagues</h3>
 
@@ -47,7 +109,7 @@
                                                     @league.Rank
                                                 </span>
                                             </div>
-                                            <div class="text-white-50 fs-6">/ @league.MemberCount</div>
+                                            <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
                                         </div>
                                     }
                                 </div>
@@ -69,7 +131,7 @@
                                                     @league.RoundRank
                                                 </span>
                                             </div>
-                                            <div class="text-white-50 fs-6">/ @league.MemberCount</div>
+                                            <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
                                         </div>
                                     }
                                     else
@@ -93,7 +155,7 @@
                                                     @league.MonthRank
                                                 </span>
                                             </div>
-                                            <div class="text-white-50 fs-6">/ @league.MemberCount</div>
+                                            <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
                                         </div>
                                     }
                                     else
@@ -103,6 +165,29 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        @if (league.TotalPrizeFund > 0)
+                        {
+                            <div class="row g-2 mb-3">
+                                <div class="col-12">
+                                    <div class="financial-row">
+                                        <div class="financial-col">
+                                            <small class="d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Won So Far</small>
+                                            <div class="fw-bold text-pl-green fs-5">
+                                                @league.PrizeMoneyWon.ToString("£0.00")
+                                            </div>
+                                        </div>
+
+                                        <div class="financial-col">
+                                            <small class="d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Pot Remaining</small>
+                                            <div class="fw-bold text-white fs-5">
+                                                @league.PrizeMoneyRemaining.ToString("£0.00")
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
 
                         <button class="btn btn-sm purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(league.Id)">
                             Enter League
@@ -110,7 +195,7 @@
                     </div>
                 </div>
 
-              @*   <div class="action-card light">
+                @*   <div class="action-card light">
                     <div class="card-header">
                         <h5 class="fw-bold text-white">@league.Name</h5>
                         <small class="text-white-50">@league.SeasonName</small>

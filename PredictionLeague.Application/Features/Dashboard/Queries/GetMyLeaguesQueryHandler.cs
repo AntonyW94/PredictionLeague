@@ -16,74 +16,13 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
 
     public async Task<IEnumerable<MyLeagueDto>> Handle(GetMyLeaguesQuery request, CancellationToken cancellationToken)
     {
-        //const string sql = @"
-        //    WITH LeagueMemberCounts AS (
-        //        SELECT 
-        //            [LeagueId],
-        //            COUNT([UserId]) AS [MemberCount]
-        //        FROM 
-        //            [LeagueMembers]
-        //        WHERE 
-        //            [Status] = @ApprovedStatus
-        //        GROUP BY 
-        //            [LeagueId]
-        //    ),
-
-        //    LeagueUserPoints AS (
-        //        SELECT
-        //            lm.UserId,
-        //            lm.LeagueId,
-        //            COALESCE(SUM(lrr.[BoostedPoints]), 0) AS [TotalPoints]
-        //        FROM 
-        //      [LeagueMembers] lm
-        //        LEFT JOIN 
-        //      [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = lm.[LeagueId]
-        //        WHERE 
-        //      lm.[Status] = @ApprovedStatus
-        //        GROUP BY 
-        //            lm.[UserId],
-        //      lm.[LeagueId]
-        //    ),
-
-        //    RankedUsers AS (
-        //        SELECT
-        //            [UserId],
-        //            [LeagueId],
-        //            RANK() OVER (PARTITION BY [LeagueId] ORDER BY [TotalPoints] DESC) AS [OverallRank]
-        //        FROM [LeagueUserPoints]
-        //    )
-
-        //    SELECT
-        //        l.[Id],
-        //        l.[Name],
-        //        s.[Name] AS [SeasonName],
-        //        lm.[Status],
-        //        ru.[OverallRank] AS [Rank],
-        //        COALESCE(lmc.[MemberCount], 0) AS [MemberCount]
-        //    FROM 
-        //        [Leagues] l
-        //    JOIN 
-        //        [Seasons] s ON l.[SeasonId] = s.[Id]
-        //    JOIN 
-        //        [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
-        //    LEFT JOIN
-        //        [LeagueMemberCounts] lmc ON l.[Id] = lmc.[LeagueId]
-        //    LEFT JOIN
-        //        [RankedUsers] ru ON ru.[UserId] = lm.[UserId] AND ru.[LeagueId] = l.[Id]
-        //    WHERE 
-        //        lm.[UserId] = @UserId
-        //    ORDER BY 
-        //        s.[StartDate] DESC, 
-        //     l.[Price] DESC,
-        //        COALESCE(lmc.[MemberCount], 0) DESC,
-        //        l.[Name];";
-
         const string sql = @"
         WITH MyLeagues AS (
             SELECT 
                 l.[Id] AS LeagueId,
                 l.[Name] AS LeagueName,
                 l.[Price],
+		        l.[PrizeFundOverride],
                 s.[Id] AS SeasonId,
                 s.[Name] AS SeasonName,
                 lm.[UserId],
@@ -187,6 +126,19 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
                 [LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
             GROUP BY 
                 [LeagueId]
+        ),
+
+        LeagueFinancials AS (
+            SELECT 
+                lfl.[Id] AS LeagueId,
+                -- Get total members for pot calculation
+                (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = lfl.[Id] AND [Status] = @ApprovedStatus) as MemberCount,
+                -- Get total money already paid out to anyone
+                (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w INNER JOIN [LeaguePrizeSettings] lps ON w.[LeaguePrizeSettingId] = lps.[Id] WHERE lps.[LeagueId] = lfl.[Id]) as TotalPaidOut,
+                 -- Get money won by THIS user
+                (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w INNER JOIN [LeaguePrizeSettings] lps ON w.[LeaguePrizeSettingId] = lps.[Id] WHERE lps.[LeagueId] = lfl.[Id] AND [UserId] = @UserId) as UserWinnings
+            FROM [Leagues] lfl
+            WHERE lfl.[Id] IN (SELECT [LeagueId] FROM [MyLeagues])
         )
 
         -- FINAL SELECT: Stitch it all together
@@ -203,7 +155,11 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
             -- Display Info
             CASE WHEN ar.[RoundId] IS NOT NULL THEN 'Round ' + CAST(ar.[RoundNumber] AS VARCHAR(10)) ELSE NULL END AS CurrentRound,
             CASE WHEN ar.[RoundId] IS NOT NULL THEN DATENAME(MONTH, ar.[StartDate]) ELSE NULL END AS CurrentMonth,
-            ISNULL(mc.[Total], 0) AS MemberCount
+            ISNULL(mc.[Total], 0) AS MemberCount,
+
+            lf.[UserWinnings] AS PrizeMoneyWon,
+            (COALESCE(l.[PrizeFundOverride], l.[Price] * lf.[MemberCount]) - lf.[TotalPaidOut]) AS PrizeMoneyRemaining,
+            COALESCE(l.[PrizeFundOverride], l.[Price] * lf.[MemberCount]) AS TotalPrizeFund
 
         FROM [MyLeagues] l
         LEFT JOIN [ActiveRounds] ar ON l.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
@@ -211,6 +167,7 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
         LEFT JOIN [RoundRanks] rr ON l.[LeagueId] = rr.[LeagueId] AND l.[UserId] = rr.[UserId]
         LEFT JOIN [MonthRanks] mr ON l.[LeagueId] = mr.[LeagueId] AND l.[UserId] = mr.[UserId]
         LEFT JOIN [MemberCounts] mc ON l.[LeagueId] = mc.[LeagueId]
+        LEFT JOIN [LeagueFinancials] lf ON l.[LeagueId] = lf.[LeagueId]
 
         ORDER BY 
             ar.[StartDate] DESC,
