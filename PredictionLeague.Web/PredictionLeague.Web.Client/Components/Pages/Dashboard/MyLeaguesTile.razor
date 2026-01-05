@@ -23,7 +23,94 @@
         <div class="card-grid">
             @foreach (var league in DashboardState.MyLeagues)
             {
-                <div class="action-card light">
+                <div class="action-card dark mb-3">
+                    <div class="card-header border-bottom-0 pb-1">
+                        <h5 class="fw-bold text-white mb-0">@league.Name</h5>
+                        <small class="text-white-50">@league.SeasonName</small>
+                    </div>
+
+                    <div class="action-card-body pt-2">
+
+                        <div class="hero-rank-container">
+                            <div class="text-center w-100">
+                                <div class="text-uppercase text-white fw-bold mb-2" style="font-size: 0.75rem;">Overall Rank</div>
+
+                                <div class="d-flex align-items-center justify-content-center">
+                                    @if (league.Rank.HasValue && league.MemberCount.HasValue)
+                                    {
+                                        <div class="d-flex align-items-center">
+                                            <div class="rank-shield-container">
+                                                <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.Rank, league.MemberCount)">
+                                                    <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" />
+                                                </svg>
+                                                <span class="rank-shield-text @(league.Rank <= 3 ? "dark-text" : "")">
+                                                    @league.Rank
+                                                </span>
+                                            </div>
+                                            <div class="text-white-50 fs-6">/ @league.MemberCount</div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div class="secondary-rank-box">
+                                    <small class="text-uppercase text-white fw-bold d-block mb-1" style="font-size: 0.7rem;">@league.CurrentRound</small>
+                                    @if (league.RoundRank.HasValue)
+                                    {
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            <div class="rank-shield-container small">
+                                                <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.RoundRank, league.MemberCount)">
+                                                    <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" />
+                                                </svg>
+                                                <span class="rank-shield-text @(league.RoundRank <= 3 ? "dark-text" : "")">
+                                                    @league.RoundRank
+                                                </span>
+                                            </div>
+                                            <div class="text-white-50 fs-6">/ @league.MemberCount</div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-white-50">-</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="col-6">
+                                <div class="secondary-rank-box">
+                                    <small class="text-uppercase text-white fw-bold d-block mb-1" style="font-size: 0.7rem;">@league.CurrentMonth</small>
+                                    @if (league.MonthRank.HasValue)
+                                    {
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            <div class="rank-shield-container small">
+                                                <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.MonthRank, league.MemberCount)">
+                                                    <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" />
+                                                </svg>
+                                                <span class="rank-shield-text @(league.MonthRank <= 3 ? "dark-text" : "")">
+                                                    @league.MonthRank
+                                                </span>
+                                            </div>
+                                            <div class="text-white-50 fs-6">/ @league.MemberCount</div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-white-50">-</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-sm purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(league.Id)">
+                            Enter League
+                        </button>
+                    </div>
+                </div>
+
+              @*   <div class="action-card light">
                     <div class="card-header">
                         <h5 class="fw-bold text-white">@league.Name</h5>
                         <small class="text-white-50">@league.SeasonName</small>
@@ -83,15 +170,15 @@
                             </button>
                         }
                         else
-                        { *@
+                        { 
                         <button class="btn btn-sm purple-accent-button w-100"
                                 title="View League Dashboard"
                                 @onclick="() => ViewLeagueDashboard(league.Id)">
                             View
                         </button>
-                        @* } *@
+                        @* } 
                     </div>
-                </div>
+                </div> *@
             }
         </div>
     }
@@ -120,18 +207,27 @@
     //         await DashboardState.RemoveRejectedLeagueAsync(leagueId);
     // }
 
-    private static string GetStatusClass(long? rank, int? memberCount)
+    private string GetShieldColorClass(long? rank, int? memberCount)
     {
-        var statusPillClass = rank switch
+        switch (rank)
         {
-            1 => "badge-group--gold",
-            2 => "badge-group--silver",
-            3 => "badge-group--bronze",
-            { } r when memberCount.HasValue && r > memberCount.Value * 0.75 => "badge-group--red",
-            _ => "badge-group--blue"
-        };
+            case null:
+                return "shield-blue";
 
-        return statusPillClass;
+            case 1:
+                return "shield-gold";
+
+            case 2:
+                return "shield-silver";
+
+            case 3:
+                return "shield-bronze";
+        }
+
+        if (memberCount > 4 && rank > (memberCount.Value * 0.75))
+            return "shield-red";
+
+        return "shield-blue";
     }
 
     public ValueTask DisposeAsync()
