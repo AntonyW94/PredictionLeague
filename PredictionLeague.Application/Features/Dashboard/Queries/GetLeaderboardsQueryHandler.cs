@@ -26,26 +26,40 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                     u.[Id] AS [UserId],
                     u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
                     SUM(ISNULL(lrr.[BoostedPoints], 0)) AS [TotalPoints],
-                    RANK() OVER (PARTITION BY l.[Id] ORDER BY SUM(ISNULL(lrr.[BoostedPoints], 0)) DESC) AS [Rank]
+                    RANK() OVER (PARTITION BY l.[Id] ORDER BY SUM(ISNULL(lrr.[BoostedPoints], 0)) DESC) AS [Rank],
+                    stats.[SnapshotOverallRank] AS [SnapshotRank],
+                    ar.[IsInProgress] AS [IsRoundInProgress]
                 FROM 
                     [LeagueMembers] lm
                 JOIN 
                     [AspNetUsers] u ON lm.[UserId] = u.[Id]
 	            JOIN
                     [Leagues] l ON lm.[LeagueId] = l.[Id]
-                LEFT JOIN 
-                    [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = l.[Id]
                 JOIN 
                     [Seasons] s ON l.[SeasonId] = s.[Id]
+                CROSS APPLY (
+                    SELECT CASE WHEN EXISTS (
+                        SELECT 1 
+                        FROM [Rounds] r 
+                        WHERE r.[SeasonId] = l.[SeasonId] AND r.[Status] = @InProgressStatus
+                    ) THEN 1 ELSE 0 END AS IsInProgress
+                ) ar
+                LEFT JOIN 
+                    [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = l.[Id]
+                LEFT JOIN
+                    [LeagueMemberStats] stats ON lm.[LeagueId] = stats.[LeagueId] AND lm.[UserId] = stats.[UserId]
                 WHERE
                     lm.[Status] = @ApprovedStatus
                 GROUP BY 
                     l.[Id], 
                     l.[Name], 
                     s.[Name],
+                    l.[SeasonId],
                     u.[Id],
                     u.[FirstName], 
-                    u.[LastName]
+                    u.[LastName],
+                    stats.[SnapshotOverallRank],
+                    ar.[IsInProgress]
             )
             SELECT
                 alr.[LeagueId],
@@ -54,9 +68,11 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                 alr.[Rank],
                 alr.[PlayerName],
                 alr.[TotalPoints],
-                alr.[UserId]
+                alr.[UserId],
+                alr.[SnapshotRank],
+                alr.[IsRoundInProgress]
             FROM 
-                AllLeagueRanks alr
+                [AllLeagueRanks] alr
             WHERE 
                 alr.[LeagueId] IN (
                     SELECT [LeagueId] FROM [LeagueMembers] WHERE [UserId] = @UserId AND [Status] = @ApprovedStatus
@@ -65,10 +81,16 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                 alr.[LeagueName], 
                 alr.[Rank], 
                 alr.[PlayerName];";
+
         var flatResults = await _connection.QueryAsync<FlatLeaderboardEntry>(
             sql,
             cancellationToken,
-            new { request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) }
+            new
+            {
+                request.UserId,
+                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
+                InProgressStatus = nameof(RoundStatus.InProgress)
+            }
         );
 
         var result = flatResults
@@ -83,7 +105,9 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                     Rank = entry.Rank,
                     PlayerName = entry.PlayerName,
                     TotalPoints = entry.TotalPoints,
-                    UserId = entry.UserId
+                    UserId = entry.UserId,
+                    SnapshotRank = entry.SnapshotRank,
+                    IsRoundInProgress = entry.IsRoundInProgress == 1
                 }).ToList()
             }).OrderByDescending(l => l.Entries.Count());
 
@@ -102,5 +126,7 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
         public string PlayerName { get; init; } = null!;
         public int TotalPoints { get; init; }
         public string UserId { get; init; } = null!;
+        public long? SnapshotRank { get; init; }
+        public int IsRoundInProgress { get; init; }
     }
 }
