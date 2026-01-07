@@ -6,6 +6,7 @@ namespace PredictionLeague.Domain.Common.Enumerations;
 public enum RoundStatus
 {
     Draft,      
-    Published,  
+    Published, 
+    InProgress,
     Completed 
 }

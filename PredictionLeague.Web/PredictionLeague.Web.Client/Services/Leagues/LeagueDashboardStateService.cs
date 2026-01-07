@@ -46,7 +46,7 @@ public class LeagueDashboardStateService
 
                 if (ViewableRounds.Any())
                 {
-                    var defaultRound = ViewableRounds.OrderBy(r => r.StartDate).FirstOrDefault(r => r.Status == RoundStatus.Published);
+                    var defaultRound = ViewableRounds.OrderBy(r => r.StartDate).FirstOrDefault(r => r.Status == RoundStatus.InProgress) ?? ViewableRounds.OrderBy(r => r.StartDate).FirstOrDefault(r => r.Status == RoundStatus.Published);
                     if (defaultRound != null)
                     {
                         SelectedRoundId = defaultRound.Id;

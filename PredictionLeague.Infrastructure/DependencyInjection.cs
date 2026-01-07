@@ -50,8 +50,8 @@ public static class DependencyInjection
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
         services.AddScoped<IWinningsRepository, WinningsRepository>();
         services.AddScoped<IBoostReadRepository, BoostReadRepository>();
-        services.AddScoped<IBoostWriteRepository, BoostWriteRepository>();
-        
+        services.AddScoped<IBoostWriteRepository, BoostWriteRepository>(); 
+        services.AddScoped<ILeagueStatsRepository, LeagueStatsRepository>();
         services.AddScoped<IPrizeStrategy, RoundPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, MonthlyPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, OverallPrizeStrategy>();
@@ -66,5 +66,6 @@ public static class DependencyInjection
         services.AddScoped<IEntryCodeUniquenessChecker, EntryCodeUniquenessChecker>();
         services.AddScoped<IUserManager, UserManagerService>();
         services.AddHttpClient<IFootballDataService, FootballDataService>();
+        services.AddScoped<ILeagueStatsService, LeagueStatsService>();
     }
 }

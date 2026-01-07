@@ -1,18 +1,27 @@
-﻿using PredictionLeague.Domain.Common.Enumerations;
-
-namespace PredictionLeague.Contracts.Leagues;
+﻿namespace PredictionLeague.Contracts.Leagues;
 
 public record MyLeagueDto(
     int Id,
     string Name,
     string SeasonName,
-    long? RoundRank,
-    long? MonthRank,
-    long? Rank,
+
     string CurrentRound,
     string CurrentMonth,
     int? MemberCount,
+
+    int? Rank,
+    int? MonthRank,
+    int? RoundRank,
+
+    int? PreRoundOverallRank,
+    int? PreRoundMonthRank,
+    int? StableRoundRank,
+    string RoundStatus,
+    int InProgressCount,
+    int CompletedCount,
+
     decimal PrizeMoneyWon,
     decimal PrizeMoneyRemaining,
-    decimal TotalPrizeFund
+    decimal TotalPrizeFund,
+    decimal EntryFee
 );

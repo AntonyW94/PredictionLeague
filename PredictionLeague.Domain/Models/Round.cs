@@ -10,6 +10,7 @@ public class Round
     public int RoundNumber { get; private set; }
     public DateTime StartDate { get; set; }
     public DateTime Deadline { get; private set; }
+    public DateTime? CompletedDate { get; private set; }
     public RoundStatus Status { get; private set; }
     public string? ApiRoundName { get; private set; }
     public DateTime? LastReminderSent { get; private set; }
@@ -68,7 +69,14 @@ public class Round
 
     public void UpdateStatus(RoundStatus status)
     {
+        var originalStatus = Status;
+
         Status = status;
+
+        if (originalStatus != RoundStatus.Completed && status == RoundStatus.Completed)
+            CompletedDate = DateTime.UtcNow;
+        else if (originalStatus == RoundStatus.Completed && status != RoundStatus.Completed)
+            CompletedDate = null;
     }
 
     public void AddMatch(int homeTeamId, int awayTeamId, DateTime matchTime, int? externalId)

@@ -33,144 +33,81 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
             WHERE lm.[UserId] = @UserId AND lm.[Status] = @ApprovedStatus
         ),
 
-        -- 1. Determine the 'Current Round' for every Season involved
-        -- We prioritize 'In Progress' rounds (Oldest first), then 'Completed' rounds (Newest first)
         ActiveRounds AS (
             SELECT 
                 r.[SeasonId],
                 r.[Id] AS RoundId,
                 r.[RoundNumber],
                 r.[StartDate],
+                r.[Status],
+                (SELECT COUNT(*) FROM [Matches] WHERE [RoundId] = r.[Id] AND [Status] = @InProgressStatus) AS InProgressCount,
+                (SELECT COUNT(*) FROM [Matches] WHERE [RoundId] = r.[Id] AND [Status] = @CompletedStatus) AS CompletedCount,
                 ROW_NUMBER() OVER (
                     PARTITION BY r.[SeasonId] 
-                    ORDER BY 
-                        -- Priority: 0 = In Progress, 1 = Completed, 2 = Future
-                        CASE 
-                            WHEN r.[Status] <> @CompletedStatus AND r.[StartDate] <= GETDATE() THEN 0 
-                            WHEN r.[Status] = @CompletedStatus THEN 1 
-                            ELSE 2 
+                        ORDER BY 
+                           CASE 
+                            WHEN r.[Status] = @InProgressStatus THEN 0 
+                            WHEN r.[Status] = @CompletedStatus AND r.[CompletedDate] > DATEADD(HOUR, -48, GETUTCDATE()) THEN 1
+                            WHEN r.[Status] = @PublishedStatus THEN 2
+                            ELSE 3 
                         END ASC,
-                        -- Tiebreaker 1 (In Progress): Oldest first
-                        CASE WHEN r.[Status] <> @CompletedStatus AND r.[StartDate] <= GETDATE() THEN r.[StartDate] END ASC,
-                        -- Tiebreaker 2 (Completed): Newest first
-                        r.[StartDate] DESC
+                        r.[StartDate] ASC
                 ) as [PriorityRank]
             FROM [Rounds] r
             WHERE 
                 r.[Status] <> @DraftStatus
                 AND r.[SeasonId] IN (SELECT DISTINCT [SeasonId] FROM [MyLeagues])
         ),
-
-        -- 2. Overall Rankings CTE
-        OverallRanks AS (
+        
+        LeagueContext AS (
             SELECT 
-                lrr.[LeagueId],
-                lrr.[UserId],
-                RANK() OVER (PARTITION BY lrr.[LeagueId] ORDER BY SUM(lrr.[BoostedPoints]) DESC) as Rank
-            FROM 
-                [LeagueRoundResults] lrr
-            WHERE 
-                lrr.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
-            GROUP BY 
-                lrr.[LeagueId], 
-                lrr.[UserId]
-        ),
-
-        -- 3. Round Rankings CTE (Specific to the Active Round found above)
-        RoundRanks AS (
-            SELECT 
-                lrr.[LeagueId],
-                lrr.[UserId],
-                lrr.[RoundId],
-                RANK() OVER (PARTITION BY lrr.[LeagueId] ORDER BY lrr.[BoostedPoints] DESC) as Rank
-            FROM 
-                [LeagueRoundResults] lrr
-            JOIN 
-                [ActiveRounds] ar ON lrr.[RoundId] = ar.[RoundId]
-            WHERE 
-                lrr.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues]) 
-                AND ar.[PriorityRank] = 1 -- Only look at the single active round per season
-        ),
-
-        -- 4. Month Rankings CTE (Specific to the Month of the Active Round)
-        MonthRanks AS (
-            SELECT 
-                lrr.[LeagueId],
-                lrr.[UserId],
-                RANK() OVER (PARTITION BY lrr.[LeagueId] ORDER BY SUM(lrr.[BoostedPoints]) DESC) as Rank
-            FROM 
-                [LeagueRoundResults] lrr
-            JOIN 
-                [Rounds] r ON lrr.[RoundId] = r.[Id]
-            JOIN 
-                [ActiveRounds] ar ON r.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
-            WHERE 
-                lrr.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
-                AND MONTH(r.[StartDate]) = MONTH(ar.[StartDate])
-                AND YEAR(r.[StartDate]) = YEAR(ar.[StartDate])
-            GROUP BY 
-                lrr.[LeagueId], 
-                lrr.[UserId]
-        ),
-
-        -- 5. Simple Member Counts
-        MemberCounts AS (
-            SELECT 
-                [LeagueId],
-                COUNT(*) as Total
-            FROM 
-                [LeagueMembers]
-            WHERE 
-                [Status] = @ApprovedStatus 
-            AND 
-                [LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
-            GROUP BY 
-                [LeagueId]
-        ),
-
-        LeagueFinancials AS (
-            SELECT 
-                lfl.[Id] AS LeagueId,
-                -- Get total members for pot calculation
-                (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = lfl.[Id] AND [Status] = @ApprovedStatus) as MemberCount,
-                -- Get total money already paid out to anyone
-                (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w INNER JOIN [LeaguePrizeSettings] lps ON w.[LeaguePrizeSettingId] = lps.[Id] WHERE lps.[LeagueId] = lfl.[Id]) as TotalPaidOut,
-                 -- Get money won by THIS user
-                (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w INNER JOIN [LeaguePrizeSettings] lps ON w.[LeaguePrizeSettingId] = lps.[Id] WHERE lps.[LeagueId] = lfl.[Id] AND [UserId] = @UserId) as UserWinnings
-            FROM [Leagues] lfl
-            WHERE lfl.[Id] IN (SELECT [LeagueId] FROM [MyLeagues])
+                l.[Id] AS LeagueId,
+                (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) AS MemberCount,
+                (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w JOIN [LeaguePrizeSettings] s ON w.[LeaguePrizeSettingId] = s.[Id] WHERE s.[LeagueId] = l.[Id]) AS TotalPaidOut,
+                (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w JOIN [LeaguePrizeSettings] s ON w.[LeaguePrizeSettingId] = s.[Id] WHERE s.[LeagueId] = l.[Id] AND [UserId] = @UserId) AS UserWinnings
+            FROM [Leagues] l 
+            WHERE l.[Id] IN (SELECT [LeagueId] FROM [MyLeagues])
         )
-
-        -- FINAL SELECT: Stitch it all together
+       
         SELECT 
             l.[LeagueId] AS Id,
             l.[LeagueName] AS Name,
             l.[SeasonName],
             
-            -- Rankings
-            rr.[Rank] AS RoundRank,
-            mr.[Rank] AS MonthRank,
-            o.[Rank] AS Rank,
-          
-            -- Display Info
             CASE WHEN ar.[RoundId] IS NOT NULL THEN 'Round ' + CAST(ar.[RoundNumber] AS VARCHAR(10)) ELSE NULL END AS CurrentRound,
             CASE WHEN ar.[RoundId] IS NOT NULL THEN DATENAME(MONTH, ar.[StartDate]) ELSE NULL END AS CurrentMonth,
-            ISNULL(mc.[Total], 0) AS MemberCount,
+            ISNULL(lc.[MemberCount], 0) AS MemberCount,
 
-            lf.[UserWinnings] AS PrizeMoneyWon,
-            (COALESCE(l.[PrizeFundOverride], l.[Price] * lf.[MemberCount]) - lf.[TotalPaidOut]) AS PrizeMoneyRemaining,
-            COALESCE(l.[PrizeFundOverride], l.[Price] * lf.[MemberCount]) AS TotalPrizeFund
+            stats.[OverallRank] AS Rank,
+            stats.[MonthRank] AS MonthRank,
+            CASE 
+                WHEN ar.[Status] = @PublishedStatus THEN 1                    
+                ELSE stats.[LiveRoundRank]
+            END AS RoundRank,
+
+            stats.[SnapshotOverallRank] AS PreRoundOverallRank,
+            stats.[SnapshotMonthRank] AS PreRoundMonthRank,
+            CASE 
+                WHEN ar.[Status] = @PublishedStatus THEN 1                    
+                ELSE stats.[StableRoundRank]
+            END AS StableRoundRank,
+
+            ar.[Status] AS RoundStatus,
+            ISNULL(ar.[InProgressCount], 0) AS InProgressCount,
+            ISNULL(ar.[CompletedCount], 0) AS CompletedCount,
+
+            lc.[UserWinnings] AS PrizeMoneyWon,
+            (COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) - lc.[TotalPaidOut]) AS PrizeMoneyRemaining,
+            COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) AS TotalPrizeFund,
+            l.[Price] AS EntryFee 
 
         FROM [MyLeagues] l
+        LEFT JOIN [LeagueMemberStats] stats ON l.[LeagueId] = stats.[LeagueId] AND l.[UserId] = stats.[UserId]  
         LEFT JOIN [ActiveRounds] ar ON l.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
-        LEFT JOIN [OverallRanks] o ON l.[LeagueId] = o.[LeagueId] AND l.[UserId] = o.[UserId]
-        LEFT JOIN [RoundRanks] rr ON l.[LeagueId] = rr.[LeagueId] AND l.[UserId] = rr.[UserId]
-        LEFT JOIN [MonthRanks] mr ON l.[LeagueId] = mr.[LeagueId] AND l.[UserId] = mr.[UserId]
-        LEFT JOIN [MemberCounts] mc ON l.[LeagueId] = mc.[LeagueId]
-        LEFT JOIN [LeagueFinancials] lf ON l.[LeagueId] = lf.[LeagueId]
+        LEFT JOIN [LeagueContext] lc ON l.[LeagueId] = lc.[LeagueId]
 
         ORDER BY 
-            ar.[StartDate] DESC,
+            CASE WHEN ar.[Status] = @InProgressStatus THEN 0 ELSE 1 END ASC,
             l.[Price] DESC,
             l.[LeagueName]";
 
@@ -182,6 +119,8 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
                 request.UserId, 
                 ApprovedStatus = nameof(LeagueMemberStatus.Approved),
                 DraftStatus = nameof(RoundStatus.Draft),
+                PublishedStatus = nameof(RoundStatus.Published),
+                InProgressStatus = nameof(RoundStatus.InProgress),
                 CompletedStatus = nameof(RoundStatus.Completed)
             });
     }

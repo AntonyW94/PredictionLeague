@@ -265,6 +265,7 @@ public class RoundRepository : IRoundRepository
                 [RoundNumber] = @RoundNumber,
                 [StartDate] = @StartDate,
                 [Deadline] = @Deadline,
+                [CompletedDate] = @CompletedDate,
                 [Status] = @Status,
                 [ApiRoundName] = @ApiRoundName,
                 [LastReminderSent] = @LastReminderSent
@@ -277,6 +278,7 @@ public class RoundRepository : IRoundRepository
             round.RoundNumber,
             round.StartDate,
             round.Deadline,
+            round.CompletedDate,
             Status = round.Status.ToString(),
             round.ApiRoundName,
             round.LastReminderSent

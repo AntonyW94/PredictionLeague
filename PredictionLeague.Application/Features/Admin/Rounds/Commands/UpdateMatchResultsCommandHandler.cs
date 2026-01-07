@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Application.Services.Boosts;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Common.Guards.Season;
@@ -14,21 +15,29 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
     private readonly IBoostService _boostService;
     private readonly ILeagueRepository _leagueRepository;
     private readonly IRoundRepository _roundRepository;
-    private readonly IUserPredictionRepository _userPredictionRepository;
+    private readonly IUserPredictionRepository _userPredictionRepository; 
+    private readonly ILeagueStatsService _statsService;
 
-    public UpdateMatchResultsCommandHandler(IMediator mediator, IBoostService boostService, ILeagueRepository leagueRepository, IRoundRepository roundRepository, IUserPredictionRepository userPredictionRepository)
+    public UpdateMatchResultsCommandHandler(IMediator mediator, IBoostService boostService, ILeagueRepository leagueRepository, IRoundRepository roundRepository, IUserPredictionRepository userPredictionRepository, ILeagueStatsService statsService)
     {
         _mediator = mediator;
         _boostService = boostService;
         _leagueRepository = leagueRepository;
         _roundRepository = roundRepository;
         _userPredictionRepository = userPredictionRepository;
+        _statsService = statsService;
     }
 
     public async Task Handle(UpdateMatchResultsCommand request, CancellationToken cancellationToken)
     {
         var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
         Guard.Against.EntityNotFound(request.RoundId, round, "Round");
+        var wasRoundPublished = round.Status == RoundStatus.Published;
+
+        var completedMatchIdsBefore = round.Matches
+            .Where(m => m.Status == MatchStatus.Completed)
+            .Select(m => m.Id)
+            .ToList();
 
         var matchesToUpdate = new List<Match>();
 
@@ -44,6 +53,14 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
 
         if (!matchesToUpdate.Any())
             return;
+
+        var isRoundStarting = wasRoundPublished && matchesToUpdate.Any(m => m.Status is MatchStatus.InProgress or MatchStatus.Completed);
+        if (isRoundStarting)
+        {
+            round.UpdateStatus(RoundStatus.InProgress);
+            await _roundRepository.UpdateAsync(round, cancellationToken);
+            await _statsService.TakeRoundStartSnapshotsAsync(round.Id, cancellationToken);
+        }
 
         await _roundRepository.UpdateMatchScoresAsync(matchesToUpdate, cancellationToken);
 
@@ -66,7 +83,13 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         await _roundRepository.UpdateRoundResultsAsync(round.Id, cancellationToken);
         await _leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
         await _boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
-
+        
+        var hasNewCompletedMatch = matchesToUpdate.Any(m => m.Status == MatchStatus.Completed && !completedMatchIdsBefore.Contains(m.Id));
+        if (hasNewCompletedMatch)
+            await _statsService.UpdateStableStatsAsync(round.Id, cancellationToken);
+        
+        await _statsService.UpdateLiveStatsAsync(round.Id, cancellationToken);
+      
         if (round.Matches.All(m => m.Status == MatchStatus.Completed))
         {
             round.UpdateStatus(RoundStatus.Completed);

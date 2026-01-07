@@ -53,7 +53,7 @@ public class GetLeagueDashboardQueryHandler : IRequestHandler<GetLeagueDashboard
                 [Leagues] l ON r.[SeasonId] = l.[SeasonId]
             WHERE
                 l.[Id] = @LeagueId
-                AND r.[Status] IN (@PublishedStatus, @CompletedStatus)
+                AND r.[Status] IN (@PublishedStatus, @InProgressStatus, @CompletedStatus)
             ORDER BY
                 r.[RoundNumber] DESC;";
 
@@ -61,6 +61,7 @@ public class GetLeagueDashboardQueryHandler : IRequestHandler<GetLeagueDashboard
         {
             request.LeagueId,
             PublishedStatus = nameof(RoundStatus.Published),
+            InProgressStatus = nameof(RoundStatus.InProgress),
             CompletedStatus = nameof(RoundStatus.Completed)
         };
         var rounds = await _dbConnection.QueryAsync<RoundDto>(roundsSql, cancellationToken, parameters);
