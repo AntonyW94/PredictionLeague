@@ -99,11 +99,11 @@
                                 <div class="text-uppercase text-white fw-bold mb-2" style="font-size: 0.75rem;">Overall Rank</div>
 
                                 <div class="d-flex align-items-center justify-content-center">
-                                    @if (league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundOverallRank.HasValue && league.Rank.HasValue)
-                                    {
-                                        @RenderRankChange(league.PreRoundOverallRank.Value, league.Rank.Value)
-                                    }
-
+                                    <RankChangeArrow 
+                                        PreviousRank="@league.PreRoundOverallRank" 
+                                        CurrentRank="@league.Rank.GetValueOrDefault()"
+                                        IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundOverallRank.HasValue && league.Rank.HasValue)" />
+                                    
                                     @if (league.Rank.HasValue && league.MemberCount.HasValue)
                                     {
                                         <div class="d-flex align-items-center gap-1">
@@ -129,10 +129,10 @@
                                     @if (league.RoundRank.HasValue)
                                     {
                                         <div class="d-flex align-items-center justify-content-center gap-1">
-                                            @if (league.RoundStatus == nameof(RoundStatus.InProgress) && league.InProgressCount > 0 && league.CompletedCount > 0 && league.StableRoundRank.HasValue)
-                                            {
-                                                @RenderRankChange(league.StableRoundRank.Value, league.RoundRank.Value)
-                                            }
+                                            <RankChangeArrow 
+                                                PreviousRank="@league.StableRoundRank" 
+                                                CurrentRank="@league.RoundRank.GetValueOrDefault()"
+                                                IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.InProgressCount > 0 && league.CompletedCount > 0 && league.StableRoundRank.HasValue)" />
 
                                             <div class="rank-shield-container small">
                                                 <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.RoundRank, league.MemberCount)">
@@ -158,10 +158,10 @@
                                     @if (league.MonthRank.HasValue)
                                     {
                                         <div class="d-flex align-items-center justify-content-center gap-1">
-                                            @if (league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundMonthRank.HasValue)
-                                            {
-                                                @RenderRankChange(league.PreRoundMonthRank.Value, league.MonthRank.Value)
-                                            }
+                                            <RankChangeArrow 
+                                                PreviousRank="@league.PreRoundMonthRank" 
+                                                CurrentRank="@league.MonthRank.GetValueOrDefault()"
+                                                IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundMonthRank.HasValue)" />
 
                                             <div class="rank-shield-container small">
                                                 <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.MonthRank, league.MemberCount)">
@@ -308,20 +308,7 @@
     //         await DashboardState.RemoveRejectedLeagueAsync(leagueId);
     // }
 
-    private RenderFragment RenderRankChange(long previousRank, long currentRank)
-    {
-        var diff = previousRank - currentRank;
-        var isUp = diff > 0;
-        var colorClass = diff == 0 ? "text-white-50" : isUp ? "text-pl-green" : "text-pl-red";
-        var icon = diff ==  0 ? "bi-dash" : isUp ? "bi-caret-up-fill" : "bi-caret-down-fill";
-        
-        return @<div class="@colorClass d-flex flex-column align-items-center" style="line-height: 1;">
-                   <i class="bi @icon fs-5"></i>
-                   <small class="fw-bold" style="font-size: 0.75rem">@Math.Abs(diff)</small>
-               </div>;
-    }
-
-    private string GetShieldColorClass(long? rank, int? memberCount)
+    private static string GetShieldColorClass(long? rank, int? memberCount)
     {
         switch (rank)
         {

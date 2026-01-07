@@ -46,6 +46,11 @@
         text-align: left;
     }
 
+    .leaderboard-table .rank-change-col {
+        width: 5%;
+        text-align: left;
+    }
+
     .leaderboard-table .player-name-col {
         white-space: normal;
         word-wrap: break-word;

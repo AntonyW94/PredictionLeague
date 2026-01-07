@@ -97,7 +97,12 @@
 /* Helper classes for Arrows to match your palette */
 .text-pl-green {
     color: var(--pl-green) !important;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.5); /* Subtle shadow for readability */
+    text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+}
+
+.current-user-highlight .text-pl-green {
+    color: var(--pl-white) !important;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.5);
 }
 
 .text-pl-red {
