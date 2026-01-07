@@ -48,7 +48,7 @@
 
     .leaderboard-table .rank-change-col {
         width: 5%;
-        text-align: left;
+        padding-right: 0;
     }
 
     .leaderboard-table .player-name-col {

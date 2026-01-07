@@ -28,7 +28,10 @@
                 <table class="leaderboard-table text-white">
                     <thead>
                         <tr>
-                            <th class="rank-change-col"></th>
+                            @if (_leaderboardEntries.First().IsRoundInProgress)
+                            {
+                                <th class="rank-change-col"></th>
+                            }
                             <th class="rank-col">#</th>
                             <th class="player-name-col">Player</th>
                             <th class="points-col">Pts</th>
@@ -38,11 +41,14 @@
                         @foreach (var entry in _leaderboardEntries)
                         {
                             <tr class="@(GetUserHighlightClass(entry.UserId)) @entry.UserId">
-                                <td class="rank-change-col">
-                                    <RankChangeArrow PreviousRank="@entry.SnapshotRank"
-                                                     CurrentRank="@entry.Rank"
-                                                     IsVisible="@entry.IsRoundInProgress" />
-                                </td>
+                                @if (entry.IsRoundInProgress)
+                                {
+                                    <td class="rank-change-col">
+                                        <RankChangeArrow PreviousRank="@entry.SnapshotRank"
+                                                         CurrentRank="@entry.Rank"
+                                                         IsVisible="@entry.IsRoundInProgress" />
+                                    </td>
+                                }
                                 <td class="rank-col"><span class="fw-bold">@entry.Rank</span></td>
                                 <td class="player-name-col fw-bold">@entry.PlayerName</td>
                                 <td class="points-col fw-bold">@entry.TotalPoints</td>

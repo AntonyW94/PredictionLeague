@@ -1,4 +1,4 @@
-﻿@if (ShouldRender)
+﻿@if (ShouldDisplay)
 {
     <div class="@ColorClass d-flex flex-column align-items-center" style="line-height: 1;">
         <i class="bi @IconClass fs-5"></i>
@@ -12,7 +12,7 @@
     [Parameter] public bool IsVisible { get; set; } = true;
 
     private long Diff => (PreviousRank ?? 0) - CurrentRank;
-    private new bool ShouldRender => IsVisible && PreviousRank > 0;
+    private bool ShouldDisplay => IsVisible && PreviousRank > 0;
     private bool IsUp => Diff > 0;
     private string ColorClass => Diff == 0 ? "text-white-50" : IsUp ? "text-pl-green" : "text-pl-red";
     private string IconClass => Diff == 0 ? "bi-dash" : IsUp ? "bi-caret-up-fill" : "bi-caret-down-fill";
