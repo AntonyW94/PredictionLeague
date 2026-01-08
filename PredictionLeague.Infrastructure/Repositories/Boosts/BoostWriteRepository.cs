@@ -1,7 +1,6 @@
 ﻿using Dapper;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
-using PredictionLeague.Contracts.Boosts;
 using System.Data;
 
 namespace PredictionLeague.Infrastructure.Repositories.Boosts;
@@ -42,7 +41,7 @@ public class BoostWriteRepository(IDbConnectionFactory connectionFactory) : IBoo
 
         var insertCommand = new CommandDefinition(insertSql, insertParams, cancellationToken: cancellationToken);
         await Connection.ExecuteAsync(insertCommand);
-      
+
         return (true, null);
     }
 
@@ -56,7 +55,7 @@ public class BoostWriteRepository(IDbConnectionFactory connectionFactory) : IBoo
 
         var command = new CommandDefinition(sql, new { UserId = userId, LeagueId = leagueId, RoundId = roundId }, cancellationToken: cancellationToken);
         var affected = await Connection.ExecuteAsync(command);
-       
+
         return affected > 0;
     }
 }

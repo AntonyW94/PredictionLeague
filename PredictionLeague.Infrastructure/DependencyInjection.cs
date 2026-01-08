@@ -43,6 +43,7 @@ public static class DependencyInjection
         });
         
         services.AddScoped<ILeagueRepository, LeagueRepository>();
+        services.AddScoped<ILeagueMemberRepository, LeagueMemberRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();

@@ -43,9 +43,15 @@
                                 </div>
                             }
                         </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <PendingRequestsTile />
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="col-lg-4">
+                    <div class="col-lg-4 mt-4 mt-lg-0">
                         <LeaderboardsTile />
                     </div>
                 </div>
@@ -63,7 +69,8 @@
             DashboardState.LoadMyLeaguesAsync(),
             DashboardState.LoadAvailableLeaguesAsync(),
             DashboardState.LoadLeaderboardsAsync(),
-            DashboardState.LoadUpcomingRoundsAsync()
+            DashboardState.LoadUpcomingRoundsAsync(),
+            DashboardState.LoadPendingRequestsAsync()
         );
     }
 

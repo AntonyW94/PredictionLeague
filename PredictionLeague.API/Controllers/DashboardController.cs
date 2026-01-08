@@ -59,4 +59,13 @@ public class DashboardController : ApiControllerBase
         var query = new GetLeaderboardsQuery(CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
+
+    [HttpGet("pending-requests")]
+    [ProducesResponseType(typeof(IEnumerable<LeagueRequestDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<LeagueRequestDto>>> GetPendingRequests(CancellationToken cancellationToken)
+    {
+        var query = new GetPendingRequestsQuery(CurrentUserId);
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
 }

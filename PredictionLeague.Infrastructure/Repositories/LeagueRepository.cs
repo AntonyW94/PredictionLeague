@@ -161,6 +161,7 @@ public class LeagueRepository : ILeagueRepository
                 member.LeagueId,
                 member.UserId,
                 member.Status,
+                member.IsAlertDismissed,
                 member.JoinedAt,
                 member.ApprovedAt,
                 memberRoundResults
@@ -231,7 +232,7 @@ public class LeagueRepository : ILeagueRepository
             WHERE 
                 [SeasonId] = @SeasonId
                 AND [HasPrizes] = 1";
-        
+
         return await Connection.QueryAsync<int>(new CommandDefinition(sql, new { SeasonId = seasonId }, cancellationToken: cancellationToken));
     }
 
@@ -320,23 +321,6 @@ public class LeagueRepository : ILeagueRepository
         }
     }
 
-    public async Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus status, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            UPDATE [LeagueMembers]
-            SET [Status] = @Status,
-                [ApprovedAt] = CASE WHEN @Status = @ApprovedStatus THEN GETDATE() ELSE [ApprovedAt] END
-            WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId;";
-
-        var command = new CommandDefinition(
-            commandText: sql,
-            parameters: new { Status = status.ToString(), ApprovedStatus = nameof(LeagueMemberStatus.Approved), LeagueId = leagueId, UserId = userId },
-            cancellationToken: cancellationToken
-        );
-
-        await Connection.ExecuteAsync(command);
-    }
-
     public async Task UpdateLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken)
     {
         const string sql = @"
@@ -380,7 +364,7 @@ public class LeagueRepository : ILeagueRepository
             sql,
             new
             {
-                RoundId = roundId, 
+                RoundId = roundId,
                 ApprovedStatus = nameof(LeagueMemberStatus.Approved)
             },
             cancellationToken: cancellationToken);

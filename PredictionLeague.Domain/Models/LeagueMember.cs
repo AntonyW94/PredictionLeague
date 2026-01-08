@@ -8,6 +8,7 @@ public class LeagueMember
     public int LeagueId { get; private set; }
     public string UserId { get; private set; } = string.Empty;
     public LeagueMemberStatus Status { get; private set; }
+    public bool IsAlertDismissed { get; private set; }
     public DateTime JoinedAt { get; private set; }
     public DateTime? ApprovedAt { get; private set; }
     public IReadOnlyCollection<LeagueRoundResult> RoundResults => _roundResults.AsReadOnly();
@@ -20,6 +21,7 @@ public class LeagueMember
         int leagueId,
         string userId,
         LeagueMemberStatus status,
+        bool isAlertDismissed,
         DateTime joinedAt,
         DateTime? approvedAt,
         IEnumerable<LeagueRoundResult>? roundResults)
@@ -27,6 +29,7 @@ public class LeagueMember
         LeagueId = leagueId;
         UserId = userId;
         Status = status;
+        IsAlertDismissed = isAlertDismissed;
         JoinedAt = joinedAt;
         ApprovedAt = approvedAt;
 
@@ -44,6 +47,7 @@ public class LeagueMember
             LeagueId = leagueId,
             UserId = userId,
             Status = LeagueMemberStatus.Pending,
+            IsAlertDismissed = false,
             JoinedAt = DateTime.Now,
             ApprovedAt = null
         };
@@ -64,5 +68,11 @@ public class LeagueMember
             throw new InvalidOperationException("Only pending members can be rejected.");
 
         Status = LeagueMemberStatus.Rejected;
+        IsAlertDismissed = false;
+    }
+
+    public void DismissAlert()
+    {
+        IsAlertDismissed = true;
     }
 }

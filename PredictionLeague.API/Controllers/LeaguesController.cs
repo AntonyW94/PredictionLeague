@@ -261,6 +261,30 @@ public class LeaguesController : ApiControllerBase
         return NoContent();
     }
 
+    [HttpDelete("{leagueId:int}/join-request")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)] 
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CancelJoinRequest(int leagueId, CancellationToken cancellationToken)
+    {
+        var command = new CancelLeagueRequestCommand(leagueId, CurrentUserId);
+        await _mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPut("{leagueId:int}/dismiss-alert")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> DismissAlert(int leagueId, CancellationToken cancellationToken)
+    {
+        var command = new DismissRejectedNotificationCommand(leagueId, CurrentUserId);
+        await _mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
     #endregion
 
     #region Delete
@@ -277,17 +301,5 @@ public class LeaguesController : ApiControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{leagueId:int}/members/me")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RemoveMyLeagueMembershipAsync(int leagueId, CancellationToken cancellationToken)
-    {
-        var command = new RemoveRejectedLeagueCommand(leagueId, CurrentUserId);
-        await _mediator.Send(command, cancellationToken);
-
-        return NoContent();
-    }
-
     #endregion
-
 }

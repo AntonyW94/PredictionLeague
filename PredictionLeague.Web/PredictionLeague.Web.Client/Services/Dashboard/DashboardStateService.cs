@@ -11,24 +11,25 @@ public class DashboardStateService : IDashboardStateService
     public List<AvailableLeagueDto> AvailableLeagues { get; private set; } = new();
     public List<LeagueLeaderboardDto> Leaderboards { get; private set; } = new();
     public List<UpcomingRoundDto> UpcomingRounds { get; private set; } = new();
+    public List<LeagueRequestDto> PendingRequests { get; private set; } = new();
 
     public bool HasAvailablePrivateLeagues { get; private set; }
     public bool IsMyLeaguesLoading { get; private set; }
     public bool IsAvailableLeaguesLoading { get; private set; }
     public bool IsLeaderboardsLoading { get; private set; }
     public bool IsUpcomingRoundsLoading { get; private set; }
+    public bool IsPendingRequestsLoading { get; private set; }
 
     public string? AvailableLeaguesErrorMessage { get; private set; }
     public string? MyLeaguesErrorMessage { get; private set; }
     public string? LeaderboardsErrorMessage { get; private set; }
     public string? UpcomingRoundsErrorMessage { get; private set; }
     public string? UpcomingRoundsSuccessMessage { get; private set; }
-
+    public string? PendingRequestsErrorMessage { get; private set; }
 
     public event Action? OnStateChange;
 
     private readonly ILeagueService _leagueService;
-
 
     public DashboardStateService(ILeagueService leagueService)
     {
@@ -132,6 +133,27 @@ public class DashboardStateService : IDashboardStateService
         }
     }
 
+    public async Task LoadPendingRequestsAsync()
+    {
+        IsPendingRequestsLoading = true;
+        PendingRequestsErrorMessage = null;
+        NotifyStateChanged();
+
+        try
+        {
+             PendingRequests = await _leagueService.GetPendingRequestsAsync();
+        }
+        catch
+        {
+            PendingRequestsErrorMessage = "Could not load pending requests.";
+        }
+        finally
+        {
+            IsPendingRequestsLoading = false;
+            NotifyStateChanged();
+        }
+    }
+
     public async Task JoinPublicLeagueAsync(int leagueId)
     {
         AvailableLeaguesErrorMessage = null;
@@ -150,20 +172,37 @@ public class DashboardStateService : IDashboardStateService
         }
     }
 
-    public async Task RemoveRejectedLeagueAsync(int leagueId)
+    public async Task CancelJoinRequestAsync(int leagueId)
     {
-        MyLeaguesErrorMessage = null;
-
+        PendingRequestsErrorMessage = null;
         NotifyStateChanged();
 
-        var (success, errorMessage) = await _leagueService.RemoveMyLeagueMembershipAsync(leagueId);
+        var (success, errorMessage) = await _leagueService.CancelJoinRequestAsync(leagueId);
         if (success)
         {
-            await Task.WhenAll(LoadMyLeaguesAsync(), LoadAvailableLeaguesAsync());
+            await LoadPendingRequestsAsync();
+            await LoadAvailableLeaguesAsync();
         }
         else
         {
-            MyLeaguesErrorMessage = errorMessage;
+            PendingRequestsErrorMessage = errorMessage;
+            NotifyStateChanged();
+        }
+    }
+
+    public async Task DismissAlertAsync(int leagueId)
+    {
+        PendingRequestsErrorMessage = null;
+        NotifyStateChanged();
+
+        var (success, errorMessage) = await _leagueService.DismissAlertAsync(leagueId);
+        if (success)
+        {
+            await LoadPendingRequestsAsync();
+        }
+        else
+        {
+            PendingRequestsErrorMessage = errorMessage;
             NotifyStateChanged();
         }
     }

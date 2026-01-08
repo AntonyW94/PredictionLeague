@@ -103,16 +103,44 @@ public class LeagueService : ILeagueService
         }
     }
 
-    public async Task<(bool Success, string? ErrorMessage)> RemoveMyLeagueMembershipAsync(int leagueId)
+    public async Task<List<LeagueRequestDto>> GetPendingRequestsAsync()
     {
+        return await _httpClient.GetFromJsonAsync<List<LeagueRequestDto>>("api/dashboard/pending-requests") ?? new List<LeagueRequestDto>();
+    }
+
+    public async Task<(bool Success, string? ErrorMessage)> CancelJoinRequestAsync(int leagueId)
+    {
+        var response = await _httpClient.DeleteAsync($"api/leagues/{leagueId}/join-request");
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
         try
         {
-            var response = await _httpClient.DeleteAsync($"api/leagues/{leagueId}/members/me");
-            return response.IsSuccessStatusCode ? (true, null) : (false, "Could not remove the league. Please try again.");
+            var errorContent = await response.Content.ReadFromJsonAsync<JsonNode>();
+            var errorMessage = errorContent?["message"]?.ToString() ?? "Could not cancel request.";
+            return (false, errorMessage);
         }
-        catch (Exception)
+        catch
         {
-            return (false, "An error occurred while removing the league.");
+            return (false, "An unexpected error occurred.");
+        }
+    }
+
+    public async Task<(bool Success, string? ErrorMessage)> DismissAlertAsync(int leagueId)
+    {
+        var response = await _httpClient.PutAsync($"api/leagues/{leagueId}/dismiss-alert", null);
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        try
+        {
+            var errorContent = await response.Content.ReadFromJsonAsync<JsonNode>();
+            var errorMessage = errorContent?["message"]?.ToString() ?? "Could not dismiss notification.";
+            return (false, errorMessage);
+        }
+        catch
+        {
+            return (false, "An unexpected error occurred.");
         }
     }
 }
