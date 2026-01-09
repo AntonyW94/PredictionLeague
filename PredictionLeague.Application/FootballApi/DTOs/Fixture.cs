@@ -6,8 +6,13 @@ public class Fixture
 {
     [JsonPropertyName("id")]
     public int Id { get; set; }
+  
+    [JsonPropertyName("timezone")]
+    public string TimeZone { get; set; }
+  
     [JsonPropertyName("date")]
-    public DateTime Date { get; set; }
+    public DateTimeOffset Date { get; set; }
+  
     [JsonPropertyName("status")]
     public Status Status { get; set; }
 }
