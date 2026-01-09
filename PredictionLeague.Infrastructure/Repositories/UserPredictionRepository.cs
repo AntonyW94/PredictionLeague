@@ -28,10 +28,10 @@ public class UserPredictionRepository : IUserPredictionRepository
             UPDATE SET 
                 [PredictedHomeScore] = @PredictedHomeScore,
                 [PredictedAwayScore] = @PredictedAwayScore,
-                [UpdatedAt] = @UpdatedAt
+                [UpdatedAtUtc] = @UpdatedAtUtc
         WHEN NOT MATCHED THEN
-            INSERT ([MatchId], [UserId], [PredictedHomeScore], [PredictedAwayScore], [CreatedAt], [UpdatedAt], [Outcome])
-            VALUES (@MatchId, @UserId, @PredictedHomeScore, @PredictedAwayScore, @CreatedAt, @UpdatedAt, @Outcome);";
+            INSERT ([MatchId], [UserId], [PredictedHomeScore], [PredictedAwayScore], [CreatedAtUtc], [UpdatedAtUtc], [Outcome])
+            VALUES (@MatchId, @UserId, @PredictedHomeScore, @PredictedAwayScore, @CreatedAtUtc, @UpdatedAtUtc, @Outcome);";
 
         var command = new CommandDefinition(
             commandText: sql,
@@ -70,7 +70,7 @@ public class UserPredictionRepository : IUserPredictionRepository
                 [UserPredictions]
             SET 
                 [Outcome] = @Outcome,
-                [UpdatedAt] = GETDATE()
+                [UpdatedAtUtc] = GETUTCDATE()
             WHERE 
                 [Id] = @Id;";
 

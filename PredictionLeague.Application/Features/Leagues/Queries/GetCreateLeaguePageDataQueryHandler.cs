@@ -20,10 +20,10 @@ public class GetCreateLeaguePageDataQueryHandler : IRequestHandler<GetCreateLeag
             SELECT
                 s.[Id],
                 s.[Name],
-                s.[StartDate]
+                s.[StartDateUtc]
             FROM [Seasons] s
             WHERE s.[IsActive] = 1
-            ORDER BY s.[StartDate] DESC;";
+            ORDER BY s.[StartDateUtc] DESC;";
 
         var seasons = await _dbConnection.QueryAsync<SeasonLookupDto>(sql, cancellationToken);
 

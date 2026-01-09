@@ -44,12 +44,12 @@ public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleComm
                 user = await CreateNewUserFromExternalLogin(principal, provider, providerKey);
         }
 
-        var (accessToken, refreshToken, expiresAt) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
+        var (accessToken, refreshToken, expiresAtUtc) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
 
         return new SuccessfulAuthenticationResponse(
             AccessToken: accessToken,
             RefreshTokenForCookie: refreshToken,
-            ExpiresAt: expiresAt
+            ExpiresAtUtc: expiresAtUtc
         );
     }
 

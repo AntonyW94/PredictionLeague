@@ -4,7 +4,15 @@
     <span class="badge-icon">
         <i class="@IconClass"></i>
     </span>
-    <span>@StatusText</span>
+
+    @if (Status == MatchStatus.Scheduled)
+    {
+        <LocalTime UtcDate="@MatchDateTimeUtc" Format="dd/MM/yyyy 'at' HH:mm" />
+    }
+    else
+    {
+        <span>@ScoreText</span>
+    }
 </div>
 
 @code {
@@ -12,7 +20,7 @@
     public MatchStatus Status { get; set; }
 
     [Parameter]
-    public DateTime MatchDateTime { get; set; }
+    public DateTime MatchDateTimeUtc { get; set; }
 
     [Parameter]
     public int? HomeScore { get; set; }
@@ -30,10 +38,9 @@
         _ => ""
     };
 
-    private string StatusText => Status switch
+    private string ScoreText => Status switch
     {
-        MatchStatus.Scheduled => $"{MatchDateTime:dd/MM/yyyy} at {MatchDateTime:HH:mm}",
         MatchStatus.InProgress or MatchStatus.Completed => $"{HomeScore} - {AwayScore}",
         _ => "Unknown"
-    };
+    }; 
 }

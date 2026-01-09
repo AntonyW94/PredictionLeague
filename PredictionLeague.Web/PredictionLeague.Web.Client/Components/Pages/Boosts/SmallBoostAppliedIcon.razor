@@ -14,7 +14,7 @@
 
 @code {
     [Parameter, EditorRequired] public PredictionResultDto Player { get; set; } = new();
-    [Parameter, EditorRequired] public DateTime? Deadline { get; set; }
+    [Parameter, EditorRequired] public DateTime? DeadlineUtc { get; set; }
 
     private string? _currentUserId;
 
@@ -32,6 +32,6 @@
         if (player.UserId == _currentUserId)
             return true;
 
-        return Deadline < DateTime.Now;
+        return DeadlineUtc < DateTime.UtcNow;
     }
 }

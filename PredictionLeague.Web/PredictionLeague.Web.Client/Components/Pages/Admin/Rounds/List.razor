@@ -6,7 +6,6 @@
 @inject NavigationManager NavigationManager
 
 @using PredictionLeague.Contracts.Admin.Rounds
-@using PredictionLeague.Domain.Common.Enumerations
 
 <PageTitle>Manage Rounds</PageTitle>
 
@@ -48,12 +47,12 @@
                             <dl class="mb-0">
                                 <div class="action-card-row">
                                     <dt>Start Date</dt>
-                                    <dd>@round.StartDate.ToString("dd MMM yyyy")</dd>
+                                    <dd>@round.StartDateUtc.ToString("dd MMM yyyy")</dd>
                                 </div>
 
                                 <div class="action-card-row">
                                     <dt>Deadline</dt>
-                                    <dd>@round.Deadline.ToString("dd MMM, HH:mm")</dd>
+                                    <dd><LocalTime UtcDate="@round.DeadlineUtc" Format="dd MMM, HH:mm" /></dd>
                                 </div>
 
                                 <div class="action-card-row">
@@ -92,7 +91,7 @@
 
 @code {
     [Parameter] public int SeasonId { get; set; }
-    private List<RoundWithAllPredictionsInDto>? _rounds;
+    private List<RoundDto>? _rounds;
     private string? _errorMessage;
     private string? _successMessage;
 
@@ -103,7 +102,7 @@
 
         try
         {
-            _rounds = await Http.GetFromJsonAsync<List<RoundWithAllPredictionsInDto>>($"api/admin/rounds/by-season/{SeasonId}");
+            _rounds = await Http.GetFromJsonAsync<List<RoundDto>>($"api/admin/rounds/by-season/{SeasonId}");
         }
         catch (Exception)
         {

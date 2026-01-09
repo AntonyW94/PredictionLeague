@@ -21,7 +21,7 @@ public class UpdateLeagueCommandHandler : IRequestHandler<UpdateLeagueCommand>
         var league = await _leagueRepository.GetByIdAsync(request.Id, cancellationToken);
         Guard.Against.EntityNotFound(request.Id, league, "League");
         
-        if (league.EntryDeadline < DateTime.Now)
+        if (league.EntryDeadlineUtc < DateTime.UtcNow)
             throw new InvalidOperationException("This league cannot be edited because its entry deadline has passed.");
       
         if (league.Price != request.Price && league.Members.Count > 1)
@@ -33,7 +33,7 @@ public class UpdateLeagueCommandHandler : IRequestHandler<UpdateLeagueCommand>
         league.UpdateDetails(
             request.Name,
             request.Price,
-            request.EntryDeadline,
+            request.EntryDeadlineUtc,
             season
         );
         

@@ -6,8 +6,8 @@ namespace PredictionLeague.Application.Features.Admin.Seasons.Commands;
 
 public record CreateSeasonCommand(
     string Name, 
-    DateTime StartDate, 
-    DateTime EndDate,
+    DateTime StartDateUtc, 
+    DateTime EndDateUtc,
     string CreatorId,
     bool IsActive,
     int NumberOfRounds,

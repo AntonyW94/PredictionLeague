@@ -32,8 +32,8 @@ public class RoundsController : ApiControllerBase
             request.SeasonId,
             request.RoundNumber,
             request.ApiRoundName,
-            request.StartDate,
-            request.Deadline,
+            request.StartDateUtc,
+            request.DeadlineUtc,
             request.Matches
         );
 
@@ -47,8 +47,8 @@ public class RoundsController : ApiControllerBase
     #region Read
 
     [HttpGet("by-season/{seasonId:int}")]
-    [ProducesResponseType(typeof(IEnumerable<RoundWithAllPredictionsInDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<RoundWithAllPredictionsInDto>>> FetchRoundsForSeasonAsync(int seasonId, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(IEnumerable<RoundDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<RoundDto>>> FetchRoundsForSeasonAsync(int seasonId, CancellationToken cancellationToken)
     {
         var query = new FetchRoundsForSeasonQuery(seasonId);
         return Ok(await _mediator.Send(query, cancellationToken));
@@ -82,8 +82,8 @@ public class RoundsController : ApiControllerBase
             roundId,
             request.RoundNumber,
             request.ApiRoundName,
-            request.StartDate,
-            request.Deadline,
+            request.StartDateUtc,
+            request.DeadlineUtc,
             request.Status,
             request.Matches);
 

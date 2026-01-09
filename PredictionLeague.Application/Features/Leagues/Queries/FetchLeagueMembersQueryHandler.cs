@@ -22,7 +22,7 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
                 l.[Name] AS LeagueName,
                 lm.[UserId],
                 u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS FullName,
-                lm.[JoinedAt],
+                lm.[JoinedAtUtc],
                 lm.[Status]
             FROM 
                 [Leagues] l
@@ -51,7 +51,7 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
                 (
                     m.UserId,
                     m.FullName,
-                    m.JoinedAt,
+                    m.JoinedAtUtc,
                     m.Status
                 )).ToList()
             };
@@ -68,7 +68,7 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
         string LeagueName,
         string UserId,
         string FullName,
-        DateTime JoinedAt,
+        DateTime JoinedAtUtc,
         LeagueMemberStatus Status
     );
 }

@@ -31,7 +31,7 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
              request.SeasonId,
              request.Name,
              request.CreatingUserId,
-             request.EntryDeadline,
+             request.EntryDeadlineUtc,
              PublicLeagueSettings.PointsForExactScore, //TODO: Add this to the front end and CreateLeagueCommand
              PublicLeagueSettings.PointsForCorrectResult, //TODO: Add this to the front end and CreateLeagueCommand
              request.Price,
@@ -49,7 +49,7 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
             1,
             createdLeague.Price,
             createdLeague.EntryCode ?? "Public",
-            createdLeague.EntryDeadline
+            createdLeague.EntryDeadlineUtc
         );
     }
 }

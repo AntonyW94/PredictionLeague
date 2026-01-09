@@ -34,7 +34,7 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
         if (season.ApiLeagueId == null)
             return;
 
-        var seasonYear = season.StartDate.Year;
+        var seasonYear = season.StartDateUtc.Year;
         var apiRoundNames = (await _footballDataService.GetRoundsForSeasonAsync(season.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
 
         var rescheduledMatchesToCheck = new List<FootballApi.DTOs.FixtureResponse>();
@@ -118,7 +118,7 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
                 if (existingMatches.TryGetValue(fixture.Fixture.Id, out var localMatch))
                 {
-                    if (localMatch.MatchDateTime != gmtDate)
+                    if (localMatch.MatchDateTimeUtc != gmtDate)
                     {
                         localMatch.UpdateDate(gmtDate);
                         hasChanges = true;
@@ -146,10 +146,10 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
             if (round.Matches.Any())
             {
-                var earliestMatchDate = round.Matches.Min(m => m.MatchDateTime);
-                if (earliestMatchDate != round.StartDate)
+                var earliestMatchDateUtc = round.Matches.Min(m => m.MatchDateTimeUtc);
+                if (earliestMatchDateUtc != round.StartDateUtc)
                 {
-                    round.UpdateDetails(round.RoundNumber, earliestMatchDate, earliestMatchDate.AddMinutes(-30), round.Status, round.ApiRoundName);
+                    round.UpdateDetails(round.RoundNumber, earliestMatchDateUtc, earliestMatchDateUtc.AddMinutes(-30), round.Status, round.ApiRoundName);
                     hasChanges = true;
                 }
             }
@@ -163,8 +163,8 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
     {
         const DayOfWeek targetStartDay = DayOfWeek.Wednesday;
 
-        var daysToSubtract = ((int)round.StartDate.DayOfWeek - (int)targetStartDay + 7) % 7;
-        var roundStartDate = round.StartDate.AddDays(-daysToSubtract).Date;
+        var daysToSubtract = ((int)round.StartDateUtc.DayOfWeek - (int)targetStartDay + 7) % 7;
+        var roundStartDate = round.StartDateUtc.AddDays(-daysToSubtract).Date;
         var roundEndDate = roundStartDate.AddDays(7);
 
         return apiFixtureDate >= roundStartDate && apiFixtureDate < roundEndDate;

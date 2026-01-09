@@ -25,11 +25,13 @@
                 <ApiSuccess Message="@ViewModel.SuccessMessage" />
 
                 <div class="prediction-grid">
-                    @foreach (var match in ViewModel.Matches.OrderBy(m => m.MatchDateTime))
+                    @foreach (var match in ViewModel.Matches.OrderBy(m => m.MatchDateTimeUtc))
                     {
                         <div class="prediction-card">
                             <div class="prediction-card-header">
-                                <h6 class="card-title text-white fw-bold centre mb-2">@match.MatchDateTime.ToString("dddd dd MMMM, HH:mm")</h6>
+                                <h6 class="card-title text-white fw-bold centre mb-2">
+                                    <LocalTime UtcDate="@match.MatchDateTimeUtc" Format="dddd dd MMMM, HH:mm"></LocalTime>
+                                </h6>
 
                                 @{
                                     var statusClass = $"form-select-sm status-select-pill {GetStatusSelectClass(match.Status)}";

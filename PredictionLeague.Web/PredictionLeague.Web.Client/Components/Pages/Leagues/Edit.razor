@@ -62,8 +62,11 @@
 
                     <div class="mb-3">
                         <label for="entryDeadline" class="form-label text-white">Entry Deadline</label>
-                        <InputDate id="entryDeadline" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.EntryDeadline" disabled="@_isPastDeadline" />
-                        <StyledValidationMessage For="@(() => _model.EntryDeadline)" />
+                        <UtcInputDate id="entryDeadline" 
+                                      @bind-Value="_model.EntryDeadlineUtc" 
+                                      Class="form-control"  
+                                      Disabled="@_isPastDeadline" />
+                        <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
                     </div>
 
                     @if (_isPastDeadline)
@@ -95,11 +98,11 @@
             {
                 Name = league.Name,
                 Price = league.Price,
-                EntryDeadline = league.EntryDeadline
+                EntryDeadlineUtc = league.EntryDeadlineUtc
             };
             _entryCodeForDisplay = league.EntryCode;
             _seasonName = league.SeasonName; 
-            _isPastDeadline = league.EntryDeadline < DateTime.Now;
+            _isPastDeadline = league.EntryDeadlineUtc < DateTime.UtcNow;
             _isPriceLocked = league.MemberCount > 1;
         }
     }

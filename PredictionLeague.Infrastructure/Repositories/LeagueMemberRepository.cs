@@ -18,8 +18,8 @@ public class LeagueMemberRepository(IDbConnectionFactory connectionFactory) : IL
                 [UserId],
                 [Status],
                 [IsAlertDismissed],
-                [JoinedAt],
-                [ApprovedAt]
+                [JoinedAtUtc],
+                [ApprovedAtUtc]
             FROM
                 [LeagueMembers]
             WHERE
@@ -38,7 +38,7 @@ public class LeagueMemberRepository(IDbConnectionFactory connectionFactory) : IL
             SET
                 [Status] = @Status,
                 [IsAlertDismissed] = @IsAlertDismissed,
-                [ApprovedAt] = @ApprovedAt
+                [ApprovedAtUtc] = @ApprovedAtUtc
             WHERE
                 [LeagueId] = @LeagueId
                 AND [UserId] = @UserId";
@@ -47,7 +47,7 @@ public class LeagueMemberRepository(IDbConnectionFactory connectionFactory) : IL
         {
             Status = member.Status.ToString(),
             member.IsAlertDismissed,
-            member.ApprovedAt,
+            member.ApprovedAtUtc,
             member.LeagueId,
             member.UserId
         }, cancellationToken: cancellationToken);

@@ -29,7 +29,7 @@ public class UpdateScoresForNextRoundCommandHandler : IRequestHandler<UpdateScor
             return;
 
         var matchesToCheck = activeRound.Matches
-            .Where(m => m.MatchDateTime < DateTime.Now && m.Status != MatchStatus.Completed)
+            .Where(m => m.MatchDateTimeUtc < DateTime.UtcNow && m.Status != MatchStatus.Completed)
             .ToList();
 
         if (!matchesToCheck.Any())

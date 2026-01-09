@@ -9,33 +9,39 @@ public class Match
     public int Id { get; private set; }
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")] 
     public int RoundId { get; private set; }
-    public int HomeTeamId { get; private set; }
-    public int AwayTeamId { get; private set; }
-    public DateTime MatchDateTime { get; private set; }
+    public int? HomeTeamId { get; private set; }
+    public int? AwayTeamId { get; private set; }
+    public DateTime MatchDateTimeUtc { get; private set; }
+    public DateTime? CustomLockTimeUtc { get; private set; }
     public MatchStatus Status { get; private set; }
     public int? ActualHomeTeamScore { get; private set; }
     public int? ActualAwayTeamScore { get; private set; }
     public int? ExternalId { get; private set; }
+    public string? PlaceholderHomeName { get; private set; }
+    public string? PlaceholderAwayName { get; private set; }
 
     private Match() { }
 
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
-    public Match(int id, int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTime, MatchStatus status, int? actualHomeTeamScore, int? actualAwayTeamScore, int? externalId)
+    public Match(int id, int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTimeUtc, DateTime? customLockTimeUtc, MatchStatus status, int? actualHomeTeamScore, int? actualAwayTeamScore, int? externalId, string? placeholderHomeName, string? placeholderAwayName)
     {
         Id = id;
         RoundId = roundId;
         HomeTeamId = homeTeamId;
         AwayTeamId = awayTeamId;
-        MatchDateTime = matchDateTime;
+        MatchDateTimeUtc = matchDateTimeUtc;
+        CustomLockTimeUtc = customLockTimeUtc;
         Status = status;
         ActualHomeTeamScore = actualHomeTeamScore;
         ActualAwayTeamScore = actualAwayTeamScore;
         ExternalId = externalId;
+        PlaceholderHomeName = placeholderHomeName;
+        PlaceholderAwayName = placeholderAwayName;
     }
     
-    public static Match Create(int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTime, int? externalId)
+    public static Match Create(int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTimeUtc, int? externalId)
     {
-        Guard.Against.Default(matchDateTime);
+        Guard.Against.Default(matchDateTimeUtc);
         Guard.Against.Expression(h => h == awayTeamId, homeTeamId, "A team cannot play against itself.");
 
         return new Match
@@ -43,9 +49,12 @@ public class Match
             RoundId = roundId,
             HomeTeamId = homeTeamId,
             AwayTeamId = awayTeamId,
-            MatchDateTime = matchDateTime,
+            MatchDateTimeUtc = matchDateTimeUtc,
+            CustomLockTimeUtc = null,
             Status = MatchStatus.Scheduled,
-            ExternalId = externalId
+            ExternalId = externalId,
+            PlaceholderHomeName = null,
+            PlaceholderAwayName = null
         };
     }
 
@@ -68,18 +77,18 @@ public class Match
         Status = status;
     }
 
-    public void UpdateDetails(int homeTeamId, int awayTeamId, DateTime matchDateTime)
+    public void UpdateDetails(int homeTeamId, int awayTeamId, DateTime matchDateTimeUtc)
     {
-        Guard.Against.Default(matchDateTime);
+        Guard.Against.Default(matchDateTimeUtc);
         Guard.Against.Expression(h => h == awayTeamId, homeTeamId, "A team cannot play against itself.");
 
         HomeTeamId = homeTeamId;
         AwayTeamId = awayTeamId;
-        MatchDateTime = matchDateTime;
+        MatchDateTimeUtc = matchDateTimeUtc;
     }
 
-    public void UpdateDate(DateTime newDate)
+    public void UpdateDate(DateTime newDateUtc)
     {
-        MatchDateTime = newDate;
+        MatchDateTimeUtc = newDateUtc;
     }
 }

@@ -17,17 +17,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
     public async Task<IEnumerable<UpcomingRoundDto>> Handle(GetUpcomingRoundsQuery request, CancellationToken cancellationToken)
     {
         const string sql = @"
-                     WITH RoundPredictionCounts AS (
-                        SELECT
-                            r.[Id] AS RoundId,
-                            COUNT(DISTINCT up.[UserId]) AS PredictionsCount
-                        FROM [Rounds] r
-                        LEFT JOIN [Matches] m ON m.[RoundId] = r.[Id]
-                        LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id]
-                        GROUP BY r.[Id]
-                    ),
-
-                    ActiveMemberCount AS (
+                     WITH ActiveMemberCount AS (
                         SELECT
                             l.[SeasonId],
                             COUNT(DISTINCT lm.[UserId]) AS MemberCount
@@ -41,7 +31,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                         r.[Id],
                         s.[Name] AS SeasonName,
                         r.[RoundNumber],
-                        r.[Deadline],
+                        r.[DeadlineUtc],
                         CAST(CASE 
                             WHEN EXISTS (
                                 SELECT 1 
@@ -50,22 +40,16 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                                 WHERE m.RoundId = r.Id AND up.UserId = @UserId
                             ) THEN 1 
                             ELSE 0 
-                        END AS bit) AS HasUserPredicted,
-                        CAST(CASE
-                            WHEN rpc.PredictionsCount >= amc.MemberCount AND amc.MemberCount > 0 THEN 1
-                            ELSE 0
-                        END AS BIT) AS AllPredictionsIn
+                        END AS bit) AS HasUserPredicted
                     FROM 
                         [Rounds] r
                     JOIN 
                         [Seasons] s ON r.[SeasonId] = s.[Id]
                     LEFT JOIN 
-                        RoundPredictionCounts rpc ON r.Id = rpc.RoundId
-                    LEFT JOIN 
-                        ActiveMemberCount amc ON r.SeasonId = amc.SeasonId
+                        [ActiveMemberCount] amc ON r.[SeasonId] = amc.[SeasonId]
                     WHERE
                         r.[Status] = @PublishedStatus
-                        AND r.[Deadline] > GETUTCDATE()
+                        AND r.[DeadlineUtc] > GETUTCDATE()
                         AND r.[SeasonId] IN (
                             SELECT l.[SeasonId]
                             FROM [Leagues] l
@@ -73,7 +57,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                             WHERE lm.[UserId] = @UserId AND lm.[Status] = @ApprovedStatus
                         )
                     ORDER BY
-                        r.[Deadline] ASC";
+                        r.[DeadlineUtc] ASC";
 
         var parameters = new
         {

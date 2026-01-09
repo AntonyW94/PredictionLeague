@@ -1,6 +1,12 @@
 ﻿const countdownTimers = {};
 
 window.blazorInterop = {
+    getTimezoneOffset: function (dateString) {
+        if (dateString) {
+            return new Date(dateString).getTimezoneOffset();
+        }
+        return new Date().getTimezoneOffset();
+    },
     getWindowWidth: function () {
         return window.innerWidth;
     },

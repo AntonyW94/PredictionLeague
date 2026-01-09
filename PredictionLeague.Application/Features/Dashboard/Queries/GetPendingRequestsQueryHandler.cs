@@ -22,7 +22,7 @@ public class GetPendingRequestsQueryHandler : IRequestHandler<GetPendingRequests
                 l.[Name] AS [LeagueName],
                 s.[Name] AS [SeasonName],
                 lm.[Status],
-                lm.[JoinedAt] AS [SentAt],
+                lm.[JoinedAtUtc],
                 u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [AdminName],
                 (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) AS [MemberCount],
                 l.[Price] AS [EntryFee],
@@ -43,7 +43,7 @@ public class GetPendingRequestsQueryHandler : IRequestHandler<GetPendingRequests
                     (lm.[Status] = @RejectedStatus AND lm.[IsAlertDismissed] = 0)
                 )
             ORDER BY
-                lm.[JoinedAt] DESC";
+                lm.[JoinedAtUtc] DESC";
 
         return await _dbConnection.QueryAsync<LeagueRequestDto>(
             sql,

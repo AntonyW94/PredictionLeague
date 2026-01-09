@@ -26,15 +26,15 @@
                 <h3 class="fw-bold text-white mb-1">@_pageData.SeasonName</h3>
                 <p class="text-white-50 mb-2">Round @_pageData.RoundNumber</p>
 
-                @if ((_pageData.Deadline - DateTime.Now).TotalHours < 24)
+                @if ((_pageData.DeadlineUtc - DateTime.UtcNow).TotalHours < 24)
                 {
-                    <CountdownTimer Deadline="_pageData.Deadline" />
+                    <CountdownTimer DeadlineUtc="_pageData.DeadlineUtc" />
                 }
                 else
                 {
                     <div class="badge-group badge-group--red">
                         <span class="badge-icon"><i class="bi bi-alarm"></i></span>
-                        <span>@_pageData.Deadline.ToString("dd MMM yyyy HH:mm")</span>
+                        <LocalTime UtcDate="@_pageData.DeadlineUtc"/>
                     </div>
                 }
             </div>
@@ -45,11 +45,11 @@
                 <ApiSuccess Message="@_successMessage" />
 
                 <div class="prediction-grid">
-                    @foreach (var match in _pageData.Matches.OrderBy(m => m.MatchDateTime).ThenBy(m => m.HomeTeamAbbreviation))
+                    @foreach (var match in _pageData.Matches.OrderBy(m => m.MatchDateTimeUtc).ThenBy(m => m.HomeTeamShortName))
                     {
                         <div class="prediction-card">
                             <div class="prediction-card-header">
-                                @match.MatchDateTime.ToString("dddd dd MMMM, HH:mm")
+                                <LocalTime UtcDate="@match.MatchDateTimeUtc" />
                             </div>
                             <div class="prediction-card-body">
                                 <div class="team-display">

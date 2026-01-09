@@ -36,13 +36,13 @@
                                BusyText="Saving...">
                 <ChildContent>
                     <div class="row">
-                        <div class="col-md-1 mb-3">
+                        <div class="col-md-3">
                             <label for="roundNumber" class="form-label text-white">Round No</label>
                             <InputNumber id="roundNumber" class="form-control" @bind-Value="_model.RoundNumber" />
                             <StyledValidationMessage For="@(() => _model.RoundNumber)" />
                         </div>
 
-                        <div class="col-md-2 mb-3">
+                        <div class="col-md-6">
                             <label for="apiRoundName" class="form-label text-white">API Round Name</label>
                             <div class="input-group">
                                 <InputText id="apiRoundName" class="form-control" @bind-Value="_model.ApiRoundName" />
@@ -50,24 +50,7 @@
                             <StyledValidationMessage For="@(() => _model.ApiRoundName)" />
                         </div>
 
-                        <div class="col-md-3 mb-3">
-                            <label for="startDate" class="form-label text-white">Round Start Date</label>
-                            <div class="input-group">
-                                <InputDate id="startDate" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.StartDate" />
-                                <button type="button" class="btn btn-secondary" @onclick="ApplyStartDateToMatches" title="Apply this date to all matches">
-                                    <i class="bi bi-arrow-down-square-fill"></i>
-                                </button>
-                            </div>
-                            <StyledValidationMessage For="@(() => _model.StartDate)" />
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <label for="deadline" class="form-label text-white">Prediction Deadline</label>
-                            <InputDate id="deadline" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Deadline" />
-                            <StyledValidationMessage For="@(() => _model.Deadline)" />
-                        </div>
-
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-3">
                             <label for="status" class="form-label text-white">Status</label>
                             <InputSelect id="status" class="form-select" @bind-Value="_model.Status">
                                 @foreach (RoundStatus status in Enum.GetValues(typeof(RoundStatus)))
@@ -77,6 +60,26 @@
                             </InputSelect>
                             <StyledValidationMessage For="@(() => _model.Status)" />
                         </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <label for="startDate" class="form-label text-white">Round Start Date</label>
+                            <div class="input-group">
+                                <UtcInputDate id="startDate" Class="form-control" @bind-Value="_model.StartDateUtc" />
+                                <button type="button" class="btn btn-secondary" @onclick="ApplyStartDateToMatches" title="Apply this date to all matches">
+                                    <i class="bi bi-arrow-down-square-fill"></i>
+                                </button>
+                            </div>
+                            <StyledValidationMessage For="@(() => _model.StartDateUtc)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="deadline" class="form-label text-white">Prediction Deadline</label>
+                            <UtcInputDate id="deadline" Class="form-control" @bind-Value="_model.DeadlineUtc" />
+                            <StyledValidationMessage For="@(() => _model.DeadlineUtc)" />
+                        </div>
+
                     </div>
 
                     <hr class="text-white" />
@@ -96,7 +99,7 @@
                         <div class="match-editor-row">
                             <!-- Desktop View -->
                             <div class="row gx-2 align-items-center d-none d-md-flex">
-                                <div class="col-md-3"><InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTime" /></div>
+                                <div class="col-md-3"><UtcInputDate Class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTimeUtc" /></div>
 
                                 <div class="col">
                                     <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].HomeTeamId">
@@ -137,7 +140,7 @@
                                 <div class="p-3">
                                     <div class="mb-2">
                                         <label class="form-label text-white-50">Date</label>
-                                        <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTime" />
+                                        <UtcInputDate Class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTimeUtc" />
                                     </div>
 
                                     <div class="mb-2">
@@ -193,15 +196,15 @@
                 {
                     RoundNumber = roundDetails.Round.RoundNumber,
                     ApiRoundName = roundDetails.Round.ApiRoundName,
-                    StartDate = roundDetails.Round.StartDate,
-                    Deadline = roundDetails.Round.Deadline,
+                    StartDateUtc = roundDetails.Round.StartDateUtc,
+                    DeadlineUtc = roundDetails.Round.DeadlineUtc,
                     Status = roundDetails.Round.Status,
                     Matches = roundDetails.Matches.Select(m => new UpdateMatchRequest
                     {
                         Id = m.Id,
                         HomeTeamId = m.HomeTeamId,
                         AwayTeamId = m.AwayTeamId,
-                        MatchDateTime = m.MatchDateTime
+                        MatchDateTimeUtc = m.MatchDateTimeUtc
                     }).ToList()
                 };
             }
@@ -219,15 +222,15 @@
         if (_model == null)
             return;
 
-        var newDate = _model.StartDate;
+        var newDate = _model.StartDateUtc;
         foreach (var match in _model.Matches)
         {
-            var originalTime = match.MatchDateTime.TimeOfDay;
-            match.MatchDateTime = newDate.Date + originalTime;
+            var originalTime = match.MatchDateTimeUtc.TimeOfDay;
+            match.MatchDateTimeUtc = newDate.Date + originalTime;
         }
     }
 
-    private void AddMatch() => _model?.Matches.Add(new UpdateMatchRequest { MatchDateTime = _model.StartDate });
+    private void AddMatch() => _model?.Matches.Add(new UpdateMatchRequest { MatchDateTimeUtc = _model.StartDateUtc });
 
     private void RemoveMatch(int index)
     {

@@ -22,7 +22,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         if (leagueData == null)
             return new WinningsDto();
 
-        if (leagueData.EntryDeadline > DateTime.Now || !leagueData.PrizeSettings.Any())
+        if (leagueData.EntryDeadlineUtc > DateTime.UtcNow || !leagueData.PrizeSettings.Any())
         {
             return new WinningsDto
             {
@@ -89,7 +89,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         if (monthlyPrizeSetting == null)
             return;
 
-        var seasonMonths = GetSeasonMonths(data.SeasonStartDate, data.SeasonEndDate);
+        var seasonMonths = GetSeasonMonths(data.SeasonStartDateUtc, data.SeasonEndDateUtc);
 
         var wonMonthlyPrizes = data.Winnings
             .Where(w => w.PrizeType == PrizeType.Monthly)
@@ -119,7 +119,7 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
 
         dto.MonthlyPrizes = dto.MonthlyPrizes.OrderBy(p => {
             var monthNumber = DateTime.ParseExact(p.Name, "MMMM", CultureInfo.CurrentCulture).Month;
-            var year = monthNumber < data.SeasonStartDate.Month ? data.SeasonStartDate.Year + 1 : data.SeasonStartDate.Year;
+            var year = monthNumber < data.SeasonStartDateUtc.Month ? data.SeasonStartDateUtc.Year + 1 : data.SeasonStartDateUtc.Year;
             return new DateTime(year, monthNumber, 1);
         }).ToList();
     }
@@ -185,10 +185,10 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
     {
         const string leagueDataSql = @"
             SELECT 
-                l.[EntryDeadline],
+                l.[EntryDeadlineUtc],
                 l.[Price] AS [EntryCost],
-                s.[StartDate] AS SeasonStartDate,
-                s.[EndDate] AS SeasonEndDate,
+                s.[StartDateUtc] AS SeasonStartDateUtc,
+                s.[EndDateUtc] AS SeasonEndDateUtc,
                 s.[NumberOfRounds] AS TotalRoundsInSeason,
                 (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus) AS EntryCount
             FROM 
@@ -253,9 +253,9 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
         return leagueData;
     }
 
-    private static IEnumerable<int> GetSeasonMonths(DateTime startDate, DateTime endDate)
+    private static IEnumerable<int> GetSeasonMonths(DateTime startDateUtc, DateTime endDateUtc)
     {
-        for (var dt = startDate; dt <= endDate; dt = dt.AddMonths(1))
+        for (var dt = startDateUtc; dt <= endDateUtc; dt = dt.AddMonths(1))
         {
             yield return dt.Month;
         }
@@ -265,11 +265,11 @@ public class GetWinningsQueryHandler : IRequestHandler<GetWinningsQuery, Winning
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
     private class LeagueData
     {
-        public DateTime EntryDeadline { get; set; }
+        public DateTime EntryDeadlineUtc { get; set; }
         public decimal EntryCost { get; set; }
         public int EntryCount { get; set; }
-        public DateTime SeasonStartDate { get; set; }
-        public DateTime SeasonEndDate { get; set; }
+        public DateTime SeasonStartDateUtc { get; set; }
+        public DateTime SeasonEndDateUtc { get; set; }
         public int TotalRoundsInSeason { get; set; }
         public List<PrizeSettingQueryResult> PrizeSettings { get; set; } = new();
         public List<WinningsQueryResult> Winnings { get; set; } = new();

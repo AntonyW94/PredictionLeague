@@ -35,12 +35,12 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Authentic
 
         await _userManager.AddToRoleAsync(newUser, nameof(ApplicationUserRole.Player));
 
-        var (accessToken, refreshToken, expiresAt) = await _tokenService.GenerateTokensAsync(newUser, cancellationToken);
+        var (accessToken, refreshToken, expiresAtUtc) = await _tokenService.GenerateTokensAsync(newUser, cancellationToken);
 
         return new SuccessfulAuthenticationResponse(
             AccessToken: accessToken,
             RefreshTokenForCookie: refreshToken,
-            ExpiresAt: expiresAt
+            ExpiresAtUtc: expiresAtUtc
         );
     }
 }

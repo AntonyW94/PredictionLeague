@@ -7,7 +7,7 @@ public class PredictionPageDto
     public int RoundId { get; init; }
     public int RoundNumber { get; init; }
     public string SeasonName { get; init; } = string.Empty;
-    public DateTime Deadline { get; init; }
+    public DateTime DeadlineUtc { get; init; }
     public bool IsPastDeadline { get; init; }
     public List<MatchPredictionDto> Matches { get; init; } = [];
     public List<PredictionLeagueDto> Leagues { get; init; } = [];

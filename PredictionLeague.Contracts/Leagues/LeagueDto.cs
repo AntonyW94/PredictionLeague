@@ -7,5 +7,5 @@ public record LeagueDto(
     int MemberCount,
     decimal Price,
     string EntryCode,
-    DateTime EntryDeadline
+    DateTime EntryDeadlineUtc
 );

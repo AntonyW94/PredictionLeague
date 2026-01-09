@@ -14,7 +14,7 @@ public abstract class BaseMatchRequestValidator<T> : AbstractValidator<T> where 
             .GreaterThan(0).WithMessage("A valid away team must be selected.")
             .NotEqual(x => x.HomeTeamId).WithMessage("Home and away teams cannot be the same.");
 
-        RuleFor(x => x.MatchDateTime)
+        RuleFor(x => x.MatchDateTimeUtc)
             .NotEmpty().WithMessage("A match date and time must be provided.");
     }
 }

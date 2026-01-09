@@ -15,10 +15,10 @@ public class ReminderService : IReminderService
         _dbConnection = dbConnection;
     }
 
-    public Task<bool> ShouldSendReminderAsync(Round round, DateTime now, CancellationToken cancellationToken)
+    public Task<bool> ShouldSendReminderAsync(Round round, DateTime nowUtc)
     {
-        var deadline = round.Deadline;
-        var lastSent = round.LastReminderSent;
+        var deadline = round.DeadlineUtc;
+        var lastSent = round.LastReminderSentUtc;
 
         var milestones = new[]
         {
@@ -31,7 +31,7 @@ public class ReminderService : IReminderService
 
         foreach (var targetTime in milestones.OrderByDescending(m => m))
         {
-            if (now >= targetTime)
+            if (nowUtc >= targetTime)
                 return Task.FromResult(lastSent == null || lastSent < targetTime);
         }
 
@@ -45,7 +45,7 @@ public class ReminderService : IReminderService
                 u.[Email],
                 u.[FirstName],
                 'Round ' + CONVERT(NVARCHAR(MAX), r.[RoundNumber]) AS RoundName,
-                r.[Deadline],
+                r.[DeadlineUtc],
                 u.[Id] AS UserId
             FROM 
                 [AspNetUsers] u

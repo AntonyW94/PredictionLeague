@@ -11,7 +11,7 @@ public class PredictionDomainService
     {
         Guard.Against.Null(round);
         
-        if (round.Deadline < DateTime.Now)
+        if (round.DeadlineUtc < DateTime.UtcNow)
             throw new InvalidOperationException("The deadline for submitting predictions for this round has passed.");
         
         var predictions = predictedScores.Select(p => UserPrediction.Create(

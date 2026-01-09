@@ -7,23 +7,23 @@ public class Season
 {
     public int Id { get; init; }
     public string Name { get; private set; } = string.Empty;
-    public DateTime StartDate { get; private set; }
-    public DateTime EndDate { get; private set; }
+    public DateTime StartDateUtc { get; private set; }
+    public DateTime EndDateUtc { get; private set; }
     public bool IsActive { get; private set; }
     public int NumberOfRounds { get; private set; }
     public int? ApiLeagueId { get; private set; }
 
     private Season() { }
 
-    public static Season Create(string name, DateTime startDate, DateTime endDate, bool isActive, int numberOfRounds, int? apiLeagueId)
+    public static Season Create(string name, DateTime startDateUtc, DateTime endDateUtc, bool isActive, int numberOfRounds, int? apiLeagueId)
     {
-        Validate(name, startDate, endDate, numberOfRounds);
+        Validate(name, startDateUtc, endDateUtc, numberOfRounds);
 
         var season = new Season
         {
             Name = name,
-            StartDate = startDate,
-            EndDate = endDate,
+            StartDateUtc = startDateUtc,
+            EndDateUtc = endDateUtc,
             IsActive = isActive,
             NumberOfRounds = numberOfRounds,
             ApiLeagueId = apiLeagueId
@@ -32,13 +32,13 @@ public class Season
         return season;
     }
 
-    public void UpdateDetails(string name, DateTime startDate, DateTime endDate, bool isActive, int numberOfRounds, int? apiLeagueId)
+    public void UpdateDetails(string name, DateTime startDateUtc, DateTime endDateUtc, bool isActive, int numberOfRounds, int? apiLeagueId)
     {
-        Validate(name, startDate, endDate, numberOfRounds);
+        Validate(name, startDateUtc, endDateUtc, numberOfRounds);
 
         Name = name;
-        StartDate = startDate;
-        EndDate = endDate;
+        StartDateUtc = startDateUtc;
+        EndDateUtc = endDateUtc;
         IsActive = isActive; 
         NumberOfRounds = numberOfRounds;
         ApiLeagueId = apiLeagueId;
@@ -49,12 +49,12 @@ public class Season
         IsActive = isActive;
     }
 
-    private static void Validate(string name, DateTime startDate, DateTime endDate, int numberOfRounds)
+    private static void Validate(string name, DateTime startDateUtc, DateTime endDateUtc, int numberOfRounds)
     {
         Guard.Against.NullOrWhiteSpace(name);
-        Guard.Against.Default(startDate);
-        Guard.Against.Default(endDate);
-        Guard.Against.InvalidSeasonDuration(startDate, endDate);
+        Guard.Against.Default(startDateUtc);
+        Guard.Against.Default(endDateUtc);
+        Guard.Against.InvalidSeasonDuration(startDateUtc, endDateUtc);
         Guard.Against.OutOfRange(numberOfRounds, nameof(numberOfRounds), 1, 52);
     }
 }

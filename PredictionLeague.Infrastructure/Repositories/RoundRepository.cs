@@ -20,18 +20,24 @@ public class RoundRepository : IRoundRepository
             [RoundId], 
             [HomeTeamId], 
             [AwayTeamId], 
-            [MatchDateTime], 
+            [MatchDateTimeUtc], 
+            [CustomLockTimeUtc], 
             [Status],
-            [ExternalId]
+            [ExternalId],
+            [PlaceholderHomeName],
+            [PlaceholderAwayName]
         )
         VALUES 
         (
             @RoundId, 
             @HomeTeamId, 
             @AwayTeamId, 
-            @MatchDateTime, 
+            @MatchDateTimeUtc, 
+            @CustomLockTimeUtc, 
             @Status,
-            @ExternalId
+            @ExternalId,
+            @PlaceholderHomeName,
+            @PlaceholderAwayName
         );";
 
     private const string GetRoundsWithMatchesSql = @"
@@ -53,8 +59,8 @@ public class RoundRepository : IRoundRepository
     public async Task<Round> CreateAsync(Round round, CancellationToken cancellationToken)
     {
         const string sql = @"
-            INSERT INTO [Rounds] ([SeasonId], [RoundNumber], [StartDate], [Deadline], [ApiRoundName], [LastReminderSent])
-            VALUES (@SeasonId, @RoundNumber, @StartDate, @Deadline, @ApiRoundName, @LastReminderSent);
+            INSERT INTO [Rounds] ([SeasonId], [RoundNumber], [StartDateUtc], [DeadlineUtc], [ApiRoundName], [LastReminderSentUtc])
+            VALUES (@SeasonId, @RoundNumber, @StartDateUtc, @DeadlineUtc, @ApiRoundName, @LastReminderSentUtc);
             SELECT CAST(SCOPE_IDENTITY() as int);";
 
         var command = new CommandDefinition(
@@ -63,10 +69,10 @@ public class RoundRepository : IRoundRepository
             {
                 round.SeasonId,
                 round.RoundNumber,
-                round.StartDate,
-                round.Deadline,
+                round.StartDateUtc,
+                round.DeadlineUtc,
                 round.ApiRoundName,
-                round.LastReminderSent
+                round.LastReminderSentUtc
             },
             cancellationToken: cancellationToken
         );
@@ -80,8 +86,12 @@ public class RoundRepository : IRoundRepository
                 RoundId = newRoundId,
                 m.HomeTeamId,
                 m.AwayTeamId,
-                m.MatchDateTime,
-                Status = m.Status.ToString()
+                m.MatchDateTimeUtc,
+                m.CustomLockTimeUtc,
+                Status = m.Status.ToString(),
+                m.ExternalId,
+                m.PlaceholderHomeName,
+                m.PlaceholderAwayName
             }).ToList();
 
             var insertMatchesCommand = new CommandDefinition(
@@ -121,7 +131,7 @@ public class RoundRepository : IRoundRepository
 
     public async Task<Round?> GetOldestInProgressRoundAsync(int seasonId, CancellationToken cancellationToken)
     {
-        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = (SELECT TOP 1 [Id] FROM [Rounds] WHERE [SeasonId] = @SeasonId AND [Status] != @CompletedStatus AND [StartDate] < GETDATE() ORDER BY [StartDate] ASC)";
+        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = (SELECT TOP 1 [Id] FROM [Rounds] WHERE [SeasonId] = @SeasonId AND [Status] != @CompletedStatus AND [StartDateUtc] < GETUTCDATE() ORDER BY [StartDateUtc] ASC)";
         return await QueryAndMapRound(sql, cancellationToken, new { SeasonId = seasonId, CompletedStatus = nameof(RoundStatus.Completed) });
     }
 
@@ -154,8 +164,8 @@ public class RoundRepository : IRoundRepository
         const string sql = @"
         WITH RoundMonth AS (
             SELECT 
-                MONTH([StartDate]) AS TargetMonth,
-                YEAR([StartDate]) AS TargetYear
+                MONTH([StartDateUtc]) AS TargetMonth,
+                YEAR([StartDateUtc]) AS TargetYear
             FROM [Rounds]
             WHERE [Id] = @RoundId
         )
@@ -165,9 +175,9 @@ public class RoundRepository : IRoundRepository
                 FROM [Rounds]
                 WHERE 
                     [SeasonId] = @SeasonId 
-                    AND MONTH([StartDate]) = (SELECT TargetMonth FROM RoundMonth) 
-                    AND YEAR([StartDate]) = (SELECT TargetYear FROM RoundMonth)
-                ORDER BY [StartDate] DESC
+                    AND MONTH([StartDateUtc]) = (SELECT [TargetMonth] FROM [RoundMonth]) 
+                    AND YEAR([StartDateUtc]) = (SELECT [TargetYear] FROM [RoundMonth])
+                ORDER BY [StartDateUtc] DESC
             ) THEN 1 ELSE 0 END;";
 
         var command = new CommandDefinition(
@@ -210,7 +220,7 @@ public class RoundRepository : IRoundRepository
                 [Rounds] r 
             WHERE 
                 r.[SeasonId] = @SeasonId 
-                AND MONTH(r.[StartDate]) = @Month";
+                AND MONTH(r.[StartDateUtc]) = @Month";
 
         var command = new CommandDefinition(
             sql,
@@ -232,8 +242,8 @@ public class RoundRepository : IRoundRepository
                 SELECT TOP 1 [Id]
                 FROM [Rounds]
                 WHERE [Status] = @PublishedStatus
-                AND [Deadline] > GETUTCDATE()
-                ORDER BY [Deadline] ASC
+                AND [DeadlineUtc] > GETUTCDATE()
+                ORDER BY [DeadlineUtc] ASC
             )
 
             SELECT 
@@ -246,10 +256,10 @@ public class RoundRepository : IRoundRepository
         return await QueryAndMapRound(sqlWithMatches, cancellationToken, new { PublishedStatus = nameof(RoundStatus.Published) });
     }
 
-    public async Task<Dictionary<int, Round>> GetDraftRoundsStartingBeforeAsync(DateTime dateLimit, CancellationToken cancellationToken)
+    public async Task<Dictionary<int, Round>> GetDraftRoundsStartingBeforeAsync(DateTime dateLimitUtc, CancellationToken cancellationToken)
     {
-        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Status] = @DraftStatus AND r.[StartDate] <= @DateLimit";
-        return await QueryAndMapRounds(sql, cancellationToken, new { DraftStatus = nameof(RoundStatus.Draft), DateLimit = dateLimit });
+        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Status] = @DraftStatus AND r.[StartDateUtc] <= @DateLimit";
+        return await QueryAndMapRounds(sql, cancellationToken, new { DraftStatus = nameof(RoundStatus.Draft), DateLimit = dateLimitUtc });
     }
 
     #endregion
@@ -263,12 +273,12 @@ public class RoundRepository : IRoundRepository
                 [Rounds]
             SET 
                 [RoundNumber] = @RoundNumber,
-                [StartDate] = @StartDate,
-                [Deadline] = @Deadline,
-                [CompletedDate] = @CompletedDate,
+                [StartDateUtc] = @StartDateUtc,
+                [DeadlineUtc] = @DeadlineUtc,
+                [CompletedDateUtc] = @CompletedDateUtc,
                 [Status] = @Status,
                 [ApiRoundName] = @ApiRoundName,
-                [LastReminderSent] = @LastReminderSent
+                [LastReminderSentUtc] = @LastReminderSentUtc
             WHERE 
                 [Id] = @Id;";
 
@@ -276,12 +286,12 @@ public class RoundRepository : IRoundRepository
         {
             round.Id,
             round.RoundNumber,
-            round.StartDate,
-            round.Deadline,
-            round.CompletedDate,
+            round.StartDateUtc,
+            round.DeadlineUtc,
+            round.CompletedDateUtc,
             Status = round.Status.ToString(),
             round.ApiRoundName,
-            round.LastReminderSent
+            round.LastReminderSentUtc
         }, cancellationToken: cancellationToken);
         await Connection.ExecuteAsync(updateRoundCommand);
 
@@ -300,9 +310,12 @@ public class RoundRepository : IRoundRepository
                 RoundId = round.Id,
                 m.HomeTeamId,
                 m.AwayTeamId,
-                m.MatchDateTime,
+                m.MatchDateTimeUtc,
+                m.CustomLockTimeUtc,
                 Status = m.Status.ToString(),
-                m.ExternalId
+                m.ExternalId,
+                m.PlaceholderHomeName,
+                m.PlaceholderAwayName
             }), cancellationToken: cancellationToken);
             await Connection.ExecuteAsync(insertMatchesCommand);
         }
@@ -315,7 +328,7 @@ public class RoundRepository : IRoundRepository
                 SET
                     [HomeTeamId] = @HomeTeamId,
                     [AwayTeamId] = @AwayTeamId,
-                    [MatchDateTime] = @MatchDateTime,
+                    [MatchDateTimeUtc] = @MatchDateTimeUtc,
                     [ExternalId] = @ExternalId
                 WHERE
                     [Id] = @Id;";
@@ -338,7 +351,7 @@ public class RoundRepository : IRoundRepository
             UPDATE 
                 [Rounds]
             SET 
-                [LastReminderSent] = @LastReminderSent
+                [LastReminderSentUtc] = @LastReminderSentUtc
             WHERE 
                 [Id] = @Id;";
 
@@ -347,7 +360,7 @@ public class RoundRepository : IRoundRepository
             parameters: new
             {
                 round.Id,
-                round.LastReminderSent
+                round.LastReminderSentUtc
             },
             cancellationToken: cancellationToken
         );
@@ -464,11 +477,11 @@ public class RoundRepository : IRoundRepository
                     groupedRound.Id,
                     groupedRound.SeasonId,
                     groupedRound.RoundNumber,
-                    groupedRound.StartDate,
-                    groupedRound.Deadline,
+                    groupedRound.StartDateUtc,
+                    groupedRound.DeadlineUtc,
                     groupedRound.Status,
                     groupedRound.ApiRoundName,
-                    groupedRound.LastReminderSent,
+                    groupedRound.LastReminderSentUtc,
                     matches
                 );
             });

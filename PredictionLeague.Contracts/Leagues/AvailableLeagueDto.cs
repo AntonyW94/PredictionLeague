@@ -5,5 +5,5 @@ public record AvailableLeagueDto(
     string Name,
     string SeasonName,
     decimal Price,
-    DateTime EntryDeadline,
+    DateTime EntryDeadlineUtc,
     int MemberCount);

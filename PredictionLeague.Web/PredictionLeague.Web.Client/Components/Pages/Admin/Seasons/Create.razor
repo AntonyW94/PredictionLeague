@@ -38,14 +38,14 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="startDate" class="form-label text-white">Start Date</label>
-                        <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDate" />
-                        <StyledValidationMessage For="@(() => _model.StartDate)" />
+                        <InputDate id="startDate" Type="InputDateType.Date" class="form-control" @bind-Value="_model.StartDateUtc" />
+                        <StyledValidationMessage For="@(() => _model.StartDateUtc)" />
                     </div>
 
                     <div class="col-md-6 mb-3">
                         <label for="endDate" class="form-label text-white">End Date</label>
-                        <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDate" />
-                        <StyledValidationMessage For="@(() => _model.EndDate)" />
+                        <InputDate id="endDate" Type="InputDateType.Date" class="form-control" @bind-Value="_model.EndDateUtc" />
+                        <StyledValidationMessage For="@(() => _model.EndDateUtc)" />
                     </div>
                 </div>
 
@@ -62,8 +62,8 @@
 @code {
     private readonly CreateSeasonRequest _model = new()
     {
-        StartDate = DateTime.Today,
-        EndDate = DateTime.Today.AddMonths(9),
+        StartDateUtc = DateTime.UtcNow.Date,
+        EndDateUtc = DateTime.UtcNow.Date.AddMonths(9),
         NumberOfRounds = 38
     };
 

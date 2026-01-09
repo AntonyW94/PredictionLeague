@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PredictionLeague.Application.Configuration;
+using PredictionLeague.Application.Formatters;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 
@@ -12,26 +13,29 @@ public class SendScheduledRemindersCommandHandler : IRequestHandler<SendSchedule
     private readonly IRoundRepository _roundRepository;
     private readonly IEmailService _emailService;
     private readonly IReminderService _reminderService;
+    private readonly IEmailDateFormatter _dateFormatter;
     private readonly BrevoSettings _brevoSettings;
     private readonly ILogger<SendScheduledRemindersCommandHandler> _logger;
 
     public SendScheduledRemindersCommandHandler(
         IRoundRepository roundRepository,
         IEmailService emailService,
-        IReminderService reminderService,
+        IReminderService reminderService, 
+        IEmailDateFormatter dateFormatter,
         IOptions<BrevoSettings> brevoSettings,
         ILogger<SendScheduledRemindersCommandHandler> logger)
     {
         _roundRepository = roundRepository;
         _emailService = emailService;
         _reminderService = reminderService;
+        _dateFormatter = dateFormatter;
         _brevoSettings = brevoSettings.Value;
         _logger = logger;
     }
 
     public async Task Handle(SendScheduledRemindersCommand request, CancellationToken cancellationToken)
     {
-        var now = DateTime.Now;
+        var nowUtc = DateTime.UtcNow;
 
         var nextRound = await _roundRepository.GetNextRoundForReminderAsync(cancellationToken);
         if (nextRound == null)
@@ -40,7 +44,7 @@ public class SendScheduledRemindersCommandHandler : IRequestHandler<SendSchedule
             return;
         }
 
-        var shouldSend = await _reminderService.ShouldSendReminderAsync(nextRound, now, cancellationToken);
+        var shouldSend = await _reminderService.ShouldSendReminderAsync(nextRound, nowUtc);
         if (!shouldSend)
         {
             _logger.LogInformation("Sending Email Reminders: Active Round Not Due.");
@@ -69,7 +73,7 @@ public class SendScheduledRemindersCommandHandler : IRequestHandler<SendSchedule
             {
                 FIRST_NAME = user.FirstName,
                 ROUND_NAME = user.RoundName,
-                DEADLINE = user.Deadline.ToString("dddd, dd MMMM yyyy 'at' HH:mm")
+                DEADLINE = _dateFormatter.FormatDeadline(user.DeadlineUtc)
             };
             await _emailService.SendTemplatedEmailAsync(user.Email, templateId.Value, parameters);
 

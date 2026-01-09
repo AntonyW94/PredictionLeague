@@ -20,12 +20,12 @@ public class GetLeaguePrizesPageQueryHandler : IRequestHandler<GetLeaguePrizesPa
         const string sql = @"
             SELECT
                 l.[Name] AS LeagueName,
-                l.[EntryDeadline],
+                l.[EntryDeadlineUtc],
                 l.[Price],
                 (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.LeagueId = l.Id) AS MemberCount,
                 s.[NumberOfRounds],
-                s.[StartDate] AS SeasonStartDate,
-                s.[EndDate] AS SeasonEndDate,
+                s.[StartDateUtc] AS SeasonStartDateUtc,
+                s.[EndDateUtc] AS SeasonEndDateUtc,
                 ps.[PrizeType],
                 ps.[Rank],
                 ps.[PrizeAmount]
@@ -48,12 +48,12 @@ public class GetLeaguePrizesPageQueryHandler : IRequestHandler<GetLeaguePrizesPa
         var pageDto = new LeaguePrizesPageDto
         {
             LeagueName = firstRow.LeagueName,
-            EntryDeadline = firstRow.EntryDeadline,
+            EntryDeadlineUtc = firstRow.EntryDeadlineUtc,
             Price = firstRow.Price,
             MemberCount = firstRow.MemberCount,
             NumberOfRounds = firstRow.NumberOfRounds,
-            SeasonStartDate = firstRow.SeasonStartDate,
-            SeasonEndDate = firstRow.SeasonEndDate,
+            SeasonStartDateUtc = firstRow.SeasonStartDateUtc,
+            SeasonEndDateUtc = firstRow.SeasonEndDateUtc,
             PrizeSettings = results
                 .Where(r => r.PrizeType != null)
                 .Select(r => new PrizeSettingDto(
@@ -69,12 +69,12 @@ public class GetLeaguePrizesPageQueryHandler : IRequestHandler<GetLeaguePrizesPa
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record PrizesQueryResult(
         string LeagueName,
-        DateTime EntryDeadline,
+        DateTime EntryDeadlineUtc,
         decimal Price,
         int MemberCount,
         int NumberOfRounds,
-        DateTime SeasonStartDate,
-        DateTime SeasonEndDate,
+        DateTime SeasonStartDateUtc,
+        DateTime SeasonEndDateUtc,
         string? PrizeType,
         int? Rank,
         decimal? PrizeAmount

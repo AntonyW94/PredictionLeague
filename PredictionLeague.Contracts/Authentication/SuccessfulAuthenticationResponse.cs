@@ -2,6 +2,6 @@
 
 public record SuccessfulAuthenticationResponse(
     string AccessToken,
-    DateTime ExpiresAt,
+    DateTime ExpiresAtUtc,
     string RefreshTokenForCookie
 ) : AuthenticationResponse(true);

@@ -6,7 +6,8 @@ public record RoundDto(
     int Id,
     int SeasonId,
     int RoundNumber,
-    DateTime StartDate,
-    DateTime Deadline,
+    string? ApiRoundName,
+    DateTime StartDateUtc,
+    DateTime DeadlineUtc,
     RoundStatus Status,
     int MatchCount);

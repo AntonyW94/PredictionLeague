@@ -21,12 +21,12 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthenticationR
         if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
             return new FailedAuthenticationResponse("Invalid email or password.");
 
-        var (accessToken, refreshToken, expiresAt) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
+        var (accessToken, refreshToken, expiresAtUtc) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
 
         return new SuccessfulAuthenticationResponse(
             AccessToken: accessToken,
             RefreshTokenForCookie: refreshToken,
-            ExpiresAt: expiresAt
+            ExpiresAtUtc: expiresAtUtc
         );
     }
 }

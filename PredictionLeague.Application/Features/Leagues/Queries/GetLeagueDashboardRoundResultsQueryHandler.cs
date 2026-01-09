@@ -48,7 +48,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
                                 ISNULL(up.[Outcome], 0) AS [Outcome],
                                 
                                 CAST(CASE 
-                                    WHEN r.[Deadline] > GETDATE() AND lm.[UserId] != @CurrentUserId THEN 1 
+                                    WHEN r.[DeadlineUtc] > GETUTCDATE() AND lm.[UserId] != @CurrentUserId THEN 1 
                                     ELSE 0 
                                 END AS bit) AS [IsHidden],
 
@@ -74,7 +74,7 @@ public class GetLeagueDashboardRoundResultsQueryHandler : IRequestHandler<GetLea
                             ORDER BY 
                                 rr.[Rank], 
                                 PlayerName, 
-                                m.[MatchDateTime];";
+                                m.[MatchDateTimeUtc];";
 
         var parameters = new
         {

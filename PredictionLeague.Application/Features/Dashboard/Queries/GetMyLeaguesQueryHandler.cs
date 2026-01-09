@@ -38,7 +38,7 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
                 r.[SeasonId],
                 r.[Id] AS RoundId,
                 r.[RoundNumber],
-                r.[StartDate],
+                r.[StartDateUtc],
                 r.[Status],
                 (SELECT COUNT(*) FROM [Matches] WHERE [RoundId] = r.[Id] AND [Status] = @InProgressStatus) AS InProgressCount,
                 (SELECT COUNT(*) FROM [Matches] WHERE [RoundId] = r.[Id] AND [Status] = @CompletedStatus) AS CompletedCount,
@@ -47,11 +47,11 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
                         ORDER BY 
                            CASE 
                             WHEN r.[Status] = @InProgressStatus THEN 0 
-                            WHEN r.[Status] = @CompletedStatus AND r.[CompletedDate] > DATEADD(HOUR, -48, GETUTCDATE()) THEN 1
+                            WHEN r.[Status] = @CompletedStatus AND r.[CompletedDateUtc] > DATEADD(HOUR, -48, GETUTCDATE()) THEN 1
                             WHEN r.[Status] = @PublishedStatus THEN 2
                             ELSE 3 
                         END ASC,
-                        r.[StartDate] ASC
+                        r.[StartDateUtc] ASC
                 ) as [PriorityRank]
             FROM [Rounds] r
             WHERE 
@@ -75,7 +75,7 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
             l.[SeasonName],
             
             CASE WHEN ar.[RoundId] IS NOT NULL THEN 'Round ' + CAST(ar.[RoundNumber] AS VARCHAR(10)) ELSE NULL END AS CurrentRound,
-            CASE WHEN ar.[RoundId] IS NOT NULL THEN DATENAME(MONTH, ar.[StartDate]) ELSE NULL END AS CurrentMonth,
+            CASE WHEN ar.[RoundId] IS NOT NULL THEN DATENAME(MONTH, ar.[StartDateUtc]) ELSE NULL END AS CurrentMonth,
             ISNULL(lc.[MemberCount], 0) AS MemberCount,
 
             stats.[OverallRank] AS Rank,

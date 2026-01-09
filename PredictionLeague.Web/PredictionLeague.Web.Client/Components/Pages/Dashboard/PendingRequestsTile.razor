@@ -34,7 +34,7 @@
                                     <small class="text-white-50">@request.SeasonName</small>
                                     <div class="d-flex justify-content-between align-items-center gap-4 mb-1">
                                         <div style="font-size: 0.75rem; color: var(--pl-grey-500); margin-top: 2px;">
-                                            Sent: @GetTimeAgo(request.SentAt)
+                                            Sent: @GetTimeAgo(request.JoinedAtUtc)
                                         </div>
                                        
                                         <div class="flex-shrink-0">
@@ -179,9 +179,10 @@
         }
     }
 
-    private static string GetTimeAgo(DateTimeOffset date)
+    private static string GetTimeAgo(DateTime dateUtc)
     {
-        var span = DateTime.Now - date.LocalDateTime;
+        var span = DateTime.UtcNow - dateUtc;
+
         if (span.TotalDays > 1) 
             return $"{(int)span.TotalDays}d ago";
 

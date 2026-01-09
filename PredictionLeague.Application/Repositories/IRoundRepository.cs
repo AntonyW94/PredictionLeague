@@ -21,7 +21,7 @@ public interface IRoundRepository
     Task<bool> IsLastRoundOfSeasonAsync(int roundId, int seasonId, CancellationToken cancellationToken);
     Task<IEnumerable<int>> GetRoundsIdsForMonthAsync(int month, int seasonId, CancellationToken cancellationToken);
     Task<Round?> GetNextRoundForReminderAsync(CancellationToken cancellationToken);
-    Task<Dictionary<int, Round>> GetDraftRoundsStartingBeforeAsync(DateTime dateLimit, CancellationToken cancellationToken);
+    Task<Dictionary<int, Round>> GetDraftRoundsStartingBeforeAsync(DateTime dateLimitUtc, CancellationToken cancellationToken);
 
     #endregion
 

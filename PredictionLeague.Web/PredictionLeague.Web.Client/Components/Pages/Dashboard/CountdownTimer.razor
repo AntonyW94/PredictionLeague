@@ -12,7 +12,7 @@
 
 @code {
     [Parameter, EditorRequired]
-    public DateTime Deadline { get; set; }
+    public DateTime DeadlineUtc { get; set; }
    
     private readonly string _timerId = Guid.NewGuid().ToString();
     private DotNetObjectReference<CountdownTimer>? _dotNetHelper;
@@ -36,7 +36,7 @@
 
     private void UpdateDisplay()
     {
-        var remaining = Deadline - DateTime.Now;
+        var remaining = DeadlineUtc - DateTime.UtcNow;
         _timeRemaining = remaining.TotalSeconds <= 0 ? "Deadline Passed" : $"{(int)remaining.TotalHours:D2}:{remaining.Minutes:D2}:{remaining.Seconds:D2}";
     }
 

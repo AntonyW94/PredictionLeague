@@ -21,8 +21,8 @@ public class GetLeagueRoundsForDashboardQueryHandler : IRequestHandler<GetLeague
                 r.[Id],
                 r.[SeasonId],
                 r.[RoundNumber],
-                r.[StartDate],
-                r.[Deadline],
+                r.[StartDateUtc],
+                r.[DeadlineUtc],
                 r.[Status],
                 (SELECT COUNT(*) FROM [Matches] m WHERE m.[RoundId] = r.[Id]) as MatchCount
             FROM

@@ -28,7 +28,7 @@ public class WinningsRepository : IWinningsRepository
                 [UserId],
                 [LeaguePrizeSettingId],
                 [Amount],
-                [AwardedDate],
+                [AwardedDateUtc],
                 [RoundNumber],
                 [Month]
             )
@@ -37,7 +37,7 @@ public class WinningsRepository : IWinningsRepository
                 @UserId,
                 @LeaguePrizeSettingId,
                 @Amount,
-                @AwardedDate,
+                @AwardedDateUtc,
                 @RoundNumber,
                 @Month
             );";

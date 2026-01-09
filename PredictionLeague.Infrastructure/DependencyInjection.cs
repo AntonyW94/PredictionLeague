@@ -2,12 +2,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Features.Admin.Rounds.Strategies;
+using PredictionLeague.Application.Formatters;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Application.Services.Boosts;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Domain.Services;
 using PredictionLeague.Infrastructure.Data;
+using PredictionLeague.Infrastructure.Formatters;
 using PredictionLeague.Infrastructure.Identity;
 using PredictionLeague.Infrastructure.Repositories;
 using PredictionLeague.Infrastructure.Repositories.Boosts;
@@ -59,6 +61,7 @@ public static class DependencyInjection
         services.AddScoped<IPrizeStrategy, MostExactScoresPrizeStrategy>();
 
         services.AddScoped<PredictionDomainService>();
+        services.AddSingleton<IEmailDateFormatter, UkEmailDateFormatter>();
         
         services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>(); 
         services.AddScoped<IEmailService, BrevoEmailService>();

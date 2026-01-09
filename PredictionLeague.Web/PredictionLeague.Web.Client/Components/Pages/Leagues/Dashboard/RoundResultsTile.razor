@@ -40,7 +40,7 @@
             <div class="d-none d-lg-block">
                 <PredictionGrid Results="State.CurrentRoundResults"
                                 Matches="State.CurrentRoundMatches"
-                                Deadline="selectedRound.Deadline" />
+                                DeadlineUtc="selectedRound.DeadlineUtc" />
             </div>
 
             <div class="d-lg-none">
@@ -48,13 +48,13 @@
                     <div class="carousel-wrapper mobile-results-carousel">
                         <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
                             <div class="carousel-track" style="@_trackStyle">
-                                @foreach (var match in State.CurrentRoundMatches.OrderBy(m => m.MatchDateTime).ThenBy(m => m.HomeTeamShortName))
+                                @foreach (var match in State.CurrentRoundMatches.OrderBy(m => m.MatchDateTimeUtc).ThenBy(m => m.HomeTeamShortName))
                                 {
                                     <div class="carousel-item-wrapper">
                                         <div class="carousel-item-content">
                                             <MobileMatchResultCard Match="match"
                                                                    Results="State.CurrentRoundResults"
-                                                                   Deadline="selectedRound.Deadline" />
+                                                                   DeadlineUtc="selectedRound.DeadlineUtc" />
                                         </div>
                                     </div>
                                 }
@@ -90,7 +90,7 @@
                                                 <td class="rank-col fw-bold">@player.Rank</td>
                                                 <td class="player-name-col fw-bold">@player.PlayerName</td>
                                                 <td class="points-col fw-bold">
-                                                    <SmallBoostAppliedIcon Player="player" Deadline="Deadline" />
+                                                    <SmallBoostAppliedIcon Player="player" DeadlineUtc="DeadlineUtc" />
                                                     @player.TotalPoints
                                                 </td>
                                             </tr>
@@ -118,7 +118,7 @@
     private string _trackStyle = "transform: translateX(0%);";
     private double _touchStartX;
     
-    private DateTime? Deadline => State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId.GetValueOrDefault())?.Deadline;
+    private DateTime? DeadlineUtc => State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId.GetValueOrDefault())?.DeadlineUtc;
 
     protected override async Task OnInitializedAsync()
     {

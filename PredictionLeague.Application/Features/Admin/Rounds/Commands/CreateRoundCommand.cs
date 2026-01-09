@@ -9,6 +9,6 @@ public record CreateRoundCommand(
     int SeasonId, 
     int RoundNumber,
     string ApiRoundName,
-    DateTime StartDate,
-    DateTime Deadline, 
+    DateTime StartDateUtc,
+    DateTime DeadlineUtc, 
     List<CreateMatchRequest> Matches) : IRequest<RoundDto>, ITransactionalRequest;

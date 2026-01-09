@@ -31,7 +31,7 @@ namespace PredictionLeague.Application.Features.Admin.Seasons.Commands
 
             var completedRounds = rounds
                 .Where(r => r.Status == RoundStatus.Completed)
-                .OrderBy(r => r.StartDate)
+                .OrderBy(r => r.StartDateUtc)
                 .ToList();
 
             foreach (var round in completedRounds)

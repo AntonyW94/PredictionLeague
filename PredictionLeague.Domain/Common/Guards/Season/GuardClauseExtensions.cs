@@ -6,12 +6,12 @@ namespace PredictionLeague.Domain.Common.Guards.Season;
 
 public static class GuardClauseExtensions
 {
-    public static void InvalidSeasonDuration(this IGuardClause _, DateTime startDate, DateTime endDate)
+    public static void InvalidSeasonDuration(this IGuardClause _, DateTime startDateUtc, DateTime endDateUtc)
     {
-        if (endDate <= startDate)
-            throw new ArgumentException("End date must be after the start date.", nameof(endDate));
+        if (endDateUtc <= startDateUtc)
+            throw new ArgumentException("End date must be after the start date.", nameof(endDateUtc));
             
-        if (endDate > startDate.AddMonths(10))
+        if (endDateUtc > startDateUtc.AddMonths(10))
             throw new ArgumentException("A season cannot span more than 10 months.");
     }
 

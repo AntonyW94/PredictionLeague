@@ -11,8 +11,8 @@ public class League
     public int SeasonId { get; private set; }
     public string AdministratorUserId { get; private set; } = string.Empty;
     public string? EntryCode { get; private set; }
-    public DateTime CreatedAt { get; private set; }
-    public DateTime EntryDeadline { get; private set; }
+    public DateTime CreatedAtUtc { get; private set; }
+    public DateTime EntryDeadlineUtc { get; private set; }
 
     public int PointsForExactScore { get; private set; }
     public int PointsForCorrectResult { get; private set; }
@@ -36,8 +36,8 @@ public class League
         int seasonId,
         string administratorUserId,
         string? entryCode,
-        DateTime createdAt,
-        DateTime entryDeadline,
+        DateTime createdAtUtc,
+        DateTime entryDeadlineUtc,
         int pointsForExactScore,
         int pointsForCorrectResult,
         decimal price,
@@ -52,8 +52,8 @@ public class League
         SeasonId = seasonId;
         AdministratorUserId = administratorUserId;
         EntryCode = entryCode;
-        CreatedAt = createdAt;
-        EntryDeadline = entryDeadline;
+        CreatedAtUtc = createdAtUtc;
+        EntryDeadlineUtc = entryDeadlineUtc;
        
         PointsForExactScore = pointsForExactScore;
         PointsForCorrectResult = pointsForCorrectResult;
@@ -76,13 +76,13 @@ public class League
         int seasonId,
         string name,
         string administratorUserId,
-        DateTime entryDeadline,
+        DateTime entryDeadlineUtc,
         int pointsForExactScore,
         int pointsForCorrectResult,
         decimal price,
         Season season)
     {
-        Validate(name, entryDeadline, season);
+        Validate(name, entryDeadlineUtc, season);
         Guard.Against.NullOrWhiteSpace(administratorUserId);
         Guard.Against.NegativeOrZero(seasonId);
         
@@ -95,8 +95,8 @@ public class League
             Price = price,
             AdministratorUserId = administratorUserId,
             EntryCode = null,
-            EntryDeadline = entryDeadline,
-            CreatedAt = DateTime.Now,
+            EntryDeadlineUtc = entryDeadlineUtc,
+            CreatedAtUtc = DateTime.UtcNow,
             PointsForExactScore = pointsForExactScore,
             PointsForCorrectResult = pointsForCorrectResult,
             IsFree = isFree,
@@ -105,23 +105,23 @@ public class League
         };
     }
 
-    private static void Validate(string name, DateTime entryDeadline, Season season)
+    private static void Validate(string name, DateTime entryDeadlineUtc, Season season)
     {
         Guard.Against.NullOrWhiteSpace(name);
-        Guard.Against.Expression(d => d <= DateTime.Now, entryDeadline, "Entry deadline must be in the future.");
+        Guard.Against.Expression(d => d <= DateTime.UtcNow, entryDeadlineUtc, "Entry deadline must be in the future.");
 
-        if (entryDeadline.Date >= season.StartDate.Date)
-            throw new ArgumentException("Entry deadline must be at least one day before the season start date.", nameof(entryDeadline));
+        if (entryDeadlineUtc.Date >= season.StartDateUtc.Date)
+            throw new ArgumentException("Entry deadline must be at least one day before the season start date.", nameof(entryDeadlineUtc));
     }
 
 
-    public static League CreateOfficialPublicLeague(int seasonId, string seasonName, decimal price, string administratorUserId, DateTime entryDeadline, Season season)
+    public static League CreateOfficialPublicLeague(int seasonId, string seasonName, decimal price, string administratorUserId, DateTime entryDeadlineUtc, Season season)
     {
         var league = Create(
             seasonId,
             $"Official {seasonName} League",
             administratorUserId,
-            entryDeadline,
+            entryDeadlineUtc,
             PublicLeagueSettings.PointsForExactScore,
             PublicLeagueSettings.PointsForCorrectResult,
             price,
@@ -148,13 +148,13 @@ public class League
         }
     }
 
-    public void UpdateDetails(string newName, decimal newPrice, DateTime newEntryDeadline, Season season)
+    public void UpdateDetails(string newName, decimal newPrice, DateTime newEntryDeadlineUtc, Season season)
     {
-        Validate(newName, newEntryDeadline, season);
+        Validate(newName, newEntryDeadlineUtc, season);
 
         Name = newName;
         Price = newPrice;
-        EntryDeadline = newEntryDeadline;
+        EntryDeadlineUtc = newEntryDeadlineUtc;
     }
 
     public void AddMember(string userId)
@@ -164,7 +164,7 @@ public class League
         if (_members.Any(m => m.UserId == userId))
             throw new InvalidOperationException("This user is already a member of the league.");
 
-        if (EntryDeadline < DateTime.Now)
+        if (EntryDeadlineUtc < DateTime.UtcNow)
             throw new InvalidOperationException("The entry deadline for this league has passed.");
 
         var newMember = LeagueMember.Create(Id, userId);

@@ -19,8 +19,8 @@ public class GetSeasonByIdQueryHandler : IRequestHandler<GetSeasonByIdQuery, Sea
             SELECT
                 s.[Id],
                 s.[Name],
-                s.[StartDate],
-                s.[EndDate],
+                s.[StartDateUtc],
+                s.[EndDateUtc],
                 s.[IsActive],
                 s.[NumberOfRounds],
                 (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id]) as 'RoundCount'

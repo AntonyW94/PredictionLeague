@@ -1,0 +1,37 @@
+﻿@inject IJSRuntime JsRuntime
+
+@if (_localTime == null)
+{
+    <span>@UtcDate.ToString(Format)</span>
+}
+else
+{
+    <span>@_localTime.Value.ToString(Format)</span>
+}
+
+@code {
+    [Parameter] public DateTime UtcDate { get; set; }
+    [Parameter] public string Format { get; set; } = "dd MMM yyyy HH:mm";
+
+    private DateTime? _localTime;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var isoDate = UtcDate.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                var offsetMinutes = await JsRuntime.InvokeAsync<int>("blazorInterop.getTimezoneOffset", isoDate);
+                
+                _localTime = UtcDate.AddMinutes(-offsetMinutes);
+                StateHasChanged();
+            }
+            catch
+            {
+                _localTime = UtcDate;
+                StateHasChanged();
+            }
+        }
+    }
+}

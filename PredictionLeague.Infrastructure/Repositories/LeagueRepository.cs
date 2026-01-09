@@ -37,8 +37,8 @@ public class LeagueRepository : ILeagueRepository
                 [Price], 
                 [AdministratorUserId], 
                 [EntryCode], 
-                [CreatedAt], 
-                [EntryDeadline],
+                [CreatedAtUtc], 
+                [EntryDeadlineUtc],
                 [PointsForExactScore],
                 [PointsForCorrectResult],
                 [IsFree],
@@ -52,8 +52,8 @@ public class LeagueRepository : ILeagueRepository
                 @Price, 
                 @AdministratorUserId, 
                 @EntryCode, 
-                @CreatedAt, 
-                @EntryDeadline,
+                @CreatedAtUtc, 
+                @EntryDeadlineUtc,
                 @PointsForExactScore,
                 @PointsForCorrectResult,
                 @IsFree,
@@ -81,8 +81,8 @@ public class LeagueRepository : ILeagueRepository
     private Task AddMemberAsync(LeagueMember member, CancellationToken cancellationToken)
     {
         const string sql = @"
-            INSERT INTO [LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAt], [ApprovedAt])
-            VALUES (@LeagueId, @UserId, @Status, @JoinedAt, @ApprovedAt);";
+            INSERT INTO [LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAtUtc], [ApprovedAtUtc])
+            VALUES (@LeagueId, @UserId, @Status, @JoinedAtUtc, @ApprovedAtUtc);";
 
         var command = new CommandDefinition(
             commandText: sql,
@@ -91,8 +91,8 @@ public class LeagueRepository : ILeagueRepository
                 member.LeagueId,
                 member.UserId,
                 Status = member.Status.ToString(),
-                member.JoinedAt,
-                member.ApprovedAt
+                member.JoinedAtUtc,
+                member.ApprovedAtUtc
             },
             cancellationToken: cancellationToken
         );
@@ -162,8 +162,8 @@ public class LeagueRepository : ILeagueRepository
                 member.UserId,
                 member.Status,
                 member.IsAlertDismissed,
-                member.JoinedAt,
-                member.ApprovedAt,
+                member.JoinedAtUtc,
+                member.ApprovedAtUtc,
                 memberRoundResults
             );
         }).ToList();
@@ -174,8 +174,8 @@ public class LeagueRepository : ILeagueRepository
             league.SeasonId,
             league.AdministratorUserId,
             league.EntryCode,
-            league.CreatedAt,
-            league.EntryDeadline,
+            league.CreatedAtUtc,
+            league.EntryDeadlineUtc,
             league.PointsForExactScore,
             league.PointsForCorrectResult,
             league.Price,
@@ -249,7 +249,7 @@ public class LeagueRepository : ILeagueRepository
                 [Name] = @Name,
                 [Price] = @Price,
                 [EntryCode] = @EntryCode,
-                [EntryDeadline] = @EntryDeadline,
+                [EntryDeadlineUtc] = @EntryDeadlineUtc,
                 [IsFree] = @IsFree,
                 [HasPrizes] = @HasPrizes,
                 [PrizeFundOverride] = @PrizeFundOverride
@@ -305,16 +305,16 @@ public class LeagueRepository : ILeagueRepository
         if (league.Members.Any())
         {
             const string insertMemberSql = @"
-                INSERT INTO [LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAt], [ApprovedAt])
-                VALUES (@LeagueId, @UserId, @Status, @JoinedAt, @ApprovedAt);";
+                INSERT INTO [LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAtUtc], [ApprovedAtUtc])
+                VALUES (@LeagueId, @UserId, @Status, @JoinedAtUtc, @ApprovedAtUtc);";
 
             var insertCommand = new CommandDefinition(insertMemberSql, league.Members.Select(m => new
             {
                 m.LeagueId,
                 m.UserId,
                 Status = m.Status.ToString(),
-                m.JoinedAt,
-                m.ApprovedAt
+                m.JoinedAtUtc,
+                m.ApprovedAtUtc
             }), cancellationToken: cancellationToken);
 
             await Connection.ExecuteAsync(insertCommand);
@@ -441,8 +441,8 @@ public class LeagueRepository : ILeagueRepository
                     firstLeague.SeasonId,
                     firstLeague.AdministratorUserId,
                     firstLeague.EntryCode,
-                    firstLeague.CreatedAt,
-                    firstLeague.EntryDeadline,
+                    firstLeague.CreatedAtUtc,
+                    firstLeague.EntryDeadlineUtc,
                     firstLeague.PointsForExactScore,
                     firstLeague.PointsForCorrectResult,
                     firstLeague.Price,

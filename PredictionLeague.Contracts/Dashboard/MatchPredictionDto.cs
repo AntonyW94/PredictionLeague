@@ -3,11 +3,13 @@
 public class MatchPredictionDto
 {
     public int MatchId { get; init; }
-    public DateTime MatchDateTime { get; init; }
+    public DateTime MatchDateTimeUtc { get; init; }
     public string HomeTeamName { get; init; } = string.Empty;
+    public string HomeTeamShortName { get; init; } = string.Empty;
     public string HomeTeamAbbreviation { get; init; } = string.Empty; 
     public string? HomeTeamLogoUrl { get; init; } = string.Empty;
     public string AwayTeamName { get; init; } = string.Empty;
+    public string AwayTeamShortName { get; init; } = string.Empty;
     public string AwayTeamAbbreviation { get; init; } = string.Empty; 
     public string? AwayTeamLogoUrl { get; init; } = string.Empty;
     public int? PredictedHomeScore { get; set; }

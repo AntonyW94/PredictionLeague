@@ -61,6 +61,8 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services));
 
+Dapper.SqlMapper.AddTypeHandler(new DapperUtcDateTimeHandler());
+
 var app = builder.Build();
 
 app.UseForwardedHeaders(new ForwardedHeadersOptions

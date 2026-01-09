@@ -19,15 +19,15 @@ public class FetchAllSeasonsQueryHandler : IRequestHandler<FetchAllSeasonsQuery,
             SELECT
                 s.[Id],
                 s.[Name],
-                s.[StartDate],
-                s.[EndDate],
+                s.[StartDateUtc],
+                s.[EndDateUtc],
                 s.[IsActive],
                 s.[NumberOfRounds],
                 (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id]) as RoundCount
             FROM 
                 [Seasons] s
             ORDER BY 
-                s.[StartDate] DESC;";
+                s.[StartDateUtc] DESC;";
 
         return await _dbConnection.QueryAsync<SeasonDto>(sql, cancellationToken);
     }

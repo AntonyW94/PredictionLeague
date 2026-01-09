@@ -11,12 +11,12 @@ public abstract class BaseSeasonRequestValidator<T> : AbstractValidator<T> where
             .NotEmpty().WithMessage("Please enter a name for the season.")
             .Length(4, 50).WithMessage("The season name must be between 4 and 50 characters.");
 
-        RuleFor(x => x.StartDate)
+        RuleFor(x => x.StartDateUtc)
             .NotEmpty().WithMessage("Please provide a start date for the season.");
 
-        RuleFor(x => x.EndDate)
+        RuleFor(x => x.EndDateUtc)
             .NotEmpty().WithMessage("Please provide an end date for the season.")
-            .GreaterThan(x => x.StartDate).WithMessage("The end date must be after the start date.");
+            .GreaterThan(x => x.StartDateUtc).WithMessage("The end date must be after the start date.");
    
         RuleFor(x => x.NumberOfRounds)
             .InclusiveBetween(1, 52).WithMessage("Number of rounds must be between 1 and 52.");

@@ -37,6 +37,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    border-radius: var(--bs-border-radius) var(--bs-border-radius) 0 0 !important
 }
 
     .card-header h5 {

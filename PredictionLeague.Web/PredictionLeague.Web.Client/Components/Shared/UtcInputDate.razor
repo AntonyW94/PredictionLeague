@@ -1,0 +1,69 @@
+﻿@using System.Linq.Expressions
+@inject IJSRuntime JsRuntime
+
+<input type="datetime-local"
+       class="@Class"
+       id="@Id"
+       value="@_localDateTime.ToString("yyyy-MM-ddTHH:mm")"
+       @onchange="OnInputChange"
+       disabled="@Disabled"
+       max="@Max"
+       min="@Min" />
+
+@code {
+    [Parameter] public DateTime Value { get; set; }
+    [Parameter] public EventCallback<DateTime> ValueChanged { get; set; }
+    [Parameter] public Expression<Func<DateTime>>? ValueExpression { get; set; }
+
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Max { get; set; }
+    [Parameter] public string? Min { get; set; }
+
+    private DateTime _localDateTime;
+    private int _timezoneOffsetMinutes;
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var isoDate = Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                _timezoneOffsetMinutes = await JsRuntime.InvokeAsync<int>("blazorInterop.getTimezoneOffset", isoDate);
+                _localDateTime = Value != default ? Value.AddMinutes(-_timezoneOffsetMinutes) : DateTime.Now;
+                _initialized = true;
+
+                StateHasChanged();
+            }
+            catch
+            {
+                _localDateTime = Value;
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_initialized && Value != default)
+        {
+            var calculatedLocal = Value.AddMinutes(-_timezoneOffsetMinutes);
+
+            if (Math.Abs((calculatedLocal - _localDateTime).TotalMinutes) > 1)
+                _localDateTime = calculatedLocal;
+        }
+    }
+
+    private async Task OnInputChange(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var newLocalTime))
+        {
+            _localDateTime = newLocalTime;
+
+            var utcValue = newLocalTime.AddMinutes(_timezoneOffsetMinutes);
+            await ValueChanged.InvokeAsync(utcValue);
+        }
+    }
+}

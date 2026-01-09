@@ -49,7 +49,7 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
         if (!request.ApiLeagueId.HasValue)
             return;
 
-        var seasonYear = request.StartDate.Year;
+        var seasonYear = request.StartDateUtc.Year;
         var validationFailures = new List<ValidationFailure>();
 
         try
@@ -58,11 +58,11 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
             if (apiSeason == null)
                 throw new ValidationException($"The API returned no season data for League ID {request.ApiLeagueId.Value} and Year {seasonYear}. Please verify the details.");
             
-            if (request.StartDate.Date != apiSeason.Start.Date)
-                validationFailures.Add(new ValidationFailure(nameof(request.StartDate), $"The Start Date does not match the API. Expected: {apiSeason.Start:yyyy-MM-dd}, but you entered: {request.StartDate:yyyy-MM-dd}."));
+            if (request.StartDateUtc.Date != apiSeason.Start.Date)
+                validationFailures.Add(new ValidationFailure(nameof(request.StartDateUtc), $"The Start Date does not match the API. Expected: {apiSeason.Start:yyyy-MM-dd}, but you entered: {request.StartDateUtc:yyyy-MM-dd}."));
 
-            if (request.EndDate.Date != apiSeason.End.Date)
-                validationFailures.Add(new ValidationFailure(nameof(request.EndDate), $"The End Date does not match the API. Expected: {apiSeason.End:yyyy-MM-dd}, but you entered: {request.EndDate:yyyy-MM-dd}."));
+            if (request.EndDateUtc.Date != apiSeason.End.Date)
+                validationFailures.Add(new ValidationFailure(nameof(request.EndDateUtc), $"The End Date does not match the API. Expected: {apiSeason.End:yyyy-MM-dd}, but you entered: {request.EndDateUtc:yyyy-MM-dd}."));
             
             var apiRoundNames = (await _footballDataService.GetRoundsForSeasonAsync(request.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
             if (request.NumberOfRounds != apiRoundNames.Count)
@@ -97,8 +97,8 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
     {
         return Season.Create(
             request.Name,
-            request.StartDate,
-            request.EndDate,
+            request.StartDateUtc,
+            request.EndDateUtc,
             request.IsActive,
             request.NumberOfRounds,
             request.ApiLeagueId);
@@ -111,7 +111,7 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
             createdSeason.Name,
             0,
             request.CreatorId,
-            createdSeason.StartDate.AddDays(-1),
+            createdSeason.StartDateUtc.AddDays(-1),
             createdSeason
         );
     }
@@ -121,8 +121,8 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
         return new SeasonDto(
             createdSeason.Id,
             createdSeason.Name,
-            createdSeason.StartDate,
-            createdSeason.EndDate,
+            createdSeason.StartDateUtc,
+            createdSeason.EndDateUtc,
             createdSeason.IsActive,
             createdSeason.NumberOfRounds,
             0

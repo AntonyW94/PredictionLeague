@@ -23,7 +23,7 @@ public class GetMonthlyLeaderboardQueryHandler : IRequestHandler<GetMonthlyLeade
                 FROM 
                     [Rounds]
                 WHERE
-                    MONTH ([StartDate]) = @Month
+                    MONTH ([StartDateUtc]) = @Month
                     AND [SeasonId] = (SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId)
             )
 

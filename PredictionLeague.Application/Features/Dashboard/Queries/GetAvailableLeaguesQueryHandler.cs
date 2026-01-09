@@ -22,22 +22,23 @@ public class GetAvailableLeaguesQueryHandler : IRequestHandler<GetAvailableLeagu
                 l.[Name],
                 s.[Name] AS SeasonName,
                 l.[Price],
-                l.[EntryDeadline],
-                (SELECT COUNT(*) FROM [LeagueMembers] WHERE LeagueId = l.Id AND Status = @ApprovedStatus) AS MemberCount
+                l.[EntryDeadlineUtc],
+                (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) AS MemberCount
             FROM 
                 [Leagues] l
             JOIN 
                 [Seasons] s ON l.[SeasonId] = s.[Id]
             WHERE 
                 l.[EntryCode] IS NULL                                   
-                AND l.[EntryDeadline] > GETDATE()                    
+                AND l.[EntryDeadlineUtc] > GETUTCDATE()                    
                 AND NOT EXISTS (                                        
                     SELECT 1 
                     FROM [LeagueMembers] lm 
                     WHERE lm.[LeagueId] = l.[Id] AND lm.[UserId] = @UserId
                 )
             ORDER BY 
-                s.[StartDate] DESC, l.[Name];";
+                s.[StartDateUtc] DESC, 
+                l.[Name];";
 
         return await _dbConnection.QueryAsync<AvailableLeagueDto>(sql, cancellationToken, new { request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
     }

@@ -4,7 +4,7 @@ namespace PredictionLeague.Contracts.Admin.Rounds;
 
 public record MatchInRoundDto(
     int Id,
-    DateTime MatchDateTime,
+    DateTime MatchDateTimeUtc,
     int HomeTeamId,
     string HomeTeamName,
     string HomeTeamShortName,

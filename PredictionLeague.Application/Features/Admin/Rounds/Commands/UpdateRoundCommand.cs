@@ -9,7 +9,7 @@ public record UpdateRoundCommand(
     int RoundId, 
     int RoundNumber,
     string ApiRoundName,
-    DateTime StartDate, 
-    DateTime Deadline, 
+    DateTime StartDateUtc, 
+    DateTime DeadlineUtc, 
     RoundStatus Status,
     List<UpdateMatchRequest> Matches) : IRequest, ITransactionalRequest;

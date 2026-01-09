@@ -16,12 +16,10 @@ namespace PredictionLeague.API.Controllers;
 public class SeasonsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly IConfiguration _configuration;
 
-    public SeasonsController(IMediator mediator, IConfiguration configuration)
+    public SeasonsController(IMediator mediator)
     {
         _mediator = mediator;
-        _configuration = configuration;
     }
 
     #region Create 
@@ -33,8 +31,8 @@ public class SeasonsController : ApiControllerBase
     {
         var command = new CreateSeasonCommand(
             request.Name,
-            request.StartDate,
-            request.EndDate,
+            request.StartDateUtc,
+            request.EndDateUtc,
             CurrentUserId,
             request.IsActive,
             request.NumberOfRounds,
@@ -85,8 +83,8 @@ public class SeasonsController : ApiControllerBase
         var command = new UpdateSeasonCommand(
             seasonId,
             request.Name,
-            request.StartDate,
-            request.EndDate,
+            request.StartDateUtc,
+            request.EndDateUtc,
             request.IsActive,
             request.NumberOfRounds,
             request.ApiLeagueId);

@@ -18,12 +18,12 @@ public class PublishUpcomingRoundsCommandHandler : IRequestHandler<PublishUpcomi
 
     public async Task Handle(PublishUpcomingRoundsCommand request, CancellationToken cancellationToken)
     {
-        var fourWeeksFromNow = DateTime.Now.AddDays(28);
-        var roundsToPublish = await _roundRepository.GetDraftRoundsStartingBeforeAsync(fourWeeksFromNow, cancellationToken);
+        var fourWeeksFromNowUtc = DateTime.UtcNow.AddDays(28);
+        var roundsToPublish = await _roundRepository.GetDraftRoundsStartingBeforeAsync(fourWeeksFromNowUtc, cancellationToken);
 
         if (!roundsToPublish.Any())
         {
-            _logger.LogInformation("No draft rounds found starting before{FourWeeksFromNow} to publish.", fourWeeksFromNow);
+            _logger.LogInformation("No draft rounds found starting before{FourWeeksFromNow} to publish.", fourWeeksFromNowUtc);
             return;
         }
 

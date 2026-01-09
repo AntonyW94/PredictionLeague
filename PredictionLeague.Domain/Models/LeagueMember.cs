@@ -9,8 +9,8 @@ public class LeagueMember
     public string UserId { get; private set; } = string.Empty;
     public LeagueMemberStatus Status { get; private set; }
     public bool IsAlertDismissed { get; private set; }
-    public DateTime JoinedAt { get; private set; }
-    public DateTime? ApprovedAt { get; private set; }
+    public DateTime JoinedAtUtc { get; private set; }
+    public DateTime? ApprovedAtUtc { get; private set; }
     public IReadOnlyCollection<LeagueRoundResult> RoundResults => _roundResults.AsReadOnly();
 
     private readonly List<LeagueRoundResult> _roundResults = new();
@@ -22,16 +22,16 @@ public class LeagueMember
         string userId,
         LeagueMemberStatus status,
         bool isAlertDismissed,
-        DateTime joinedAt,
-        DateTime? approvedAt,
+        DateTime joinedAtUtc,
+        DateTime? approvedAtUtc,
         IEnumerable<LeagueRoundResult>? roundResults)
     {
         LeagueId = leagueId;
         UserId = userId;
         Status = status;
         IsAlertDismissed = isAlertDismissed;
-        JoinedAt = joinedAt;
-        ApprovedAt = approvedAt;
+        JoinedAtUtc = joinedAtUtc;
+        ApprovedAtUtc = approvedAtUtc;
 
         if (roundResults != null) 
             _roundResults.AddRange(roundResults);
@@ -48,8 +48,8 @@ public class LeagueMember
             UserId = userId,
             Status = LeagueMemberStatus.Pending,
             IsAlertDismissed = false,
-            JoinedAt = DateTime.Now,
-            ApprovedAt = null
+            JoinedAtUtc = DateTime.UtcNow,
+            ApprovedAtUtc = null
         };
     }
 
@@ -59,7 +59,7 @@ public class LeagueMember
             throw new InvalidOperationException("Only pending members can be approved.");
 
         Status = LeagueMemberStatus.Approved;
-        ApprovedAt = DateTime.Now;
+        ApprovedAtUtc = DateTime.UtcNow;
     }
 
     public void Reject()

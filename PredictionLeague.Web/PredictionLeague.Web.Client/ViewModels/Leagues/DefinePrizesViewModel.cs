@@ -16,13 +16,13 @@ public class DefinePrizesViewModel
 
     private decimal TotalAllocated => PrizeSettings.Sum(p => p.PrizeAmount) + MonthlyWinnerAmount * NumberOfMonths + RoundWinnerAmount * NumberOfRounds;
 
-    public DefinePrizesViewModel(decimal prizePot, int numberOfRounds, DateTime seasonStartDate, DateTime seasonEndDate)
+    public DefinePrizesViewModel(decimal prizePot, int numberOfRounds, DateTime seasonStartDateUtc, DateTime seasonEndDateUtc)
     {
         PrizePot = prizePot;
         NumberOfRounds = numberOfRounds;
 
         var months = new HashSet<string>();
-        for (var date = seasonStartDate; date <= seasonEndDate; date = date.AddMonths(1))
+        for (var date = seasonStartDateUtc; date <= seasonEndDateUtc; date = date.AddMonths(1))
         {
             months.Add(date.ToString("MMMM"));
         }

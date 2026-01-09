@@ -42,7 +42,7 @@ public class MonthlyPrizeStrategy : IPrizeStrategy
         if (monthlyPrize == null)
             return;
 
-        var month = currentRound.StartDate.Month;
+        var month = currentRound.StartDateUtc.Month;
         await _winningsRepository.DeleteWinningsForMonthAsync(league.Id, month, cancellationToken);
 
         var roundIdsInMonth = await _roundRepository.GetRoundsIdsForMonthAsync(month, currentRound.SeasonId, cancellationToken);

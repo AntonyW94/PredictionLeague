@@ -21,7 +21,7 @@ public class GetMonthsForLeagueQueryHandler : IRequestHandler<GetMonthsForLeague
         const string sql = @"
             WITH SeasonInfo AS (
                 SELECT
-                    MONTH(MIN(r.[StartDate])) AS [StartMonth]
+                    MONTH(MIN(r.[StartDateUtc])) AS [StartMonth]
                 FROM [Rounds] r
                 JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
                 WHERE l.[Id] = @LeagueId
@@ -29,7 +29,7 @@ public class GetMonthsForLeagueQueryHandler : IRequestHandler<GetMonthsForLeague
 
             MonthlyAggregates AS (
                 SELECT 
-                    MONTH(r.[StartDate]) AS [Month],
+                    MONTH(r.[StartDateUtc]) AS [Month],
 
                     SUM(CASE 
                         WHEN r.[Status] <> @CompletedStatus THEN 1 
@@ -49,7 +49,7 @@ public class GetMonthsForLeagueQueryHandler : IRequestHandler<GetMonthsForLeague
                 FROM [Rounds] r
                 JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
                 WHERE l.[Id] = @LeagueId
-                GROUP BY MONTH(r.[StartDate])
+                GROUP BY MONTH(r.[StartDateUtc])
             )
 
            SELECT

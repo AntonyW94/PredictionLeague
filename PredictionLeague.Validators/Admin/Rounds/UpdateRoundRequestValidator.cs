@@ -10,12 +10,12 @@ public class UpdateRoundRequestValidator : AbstractValidator<UpdateRoundRequest>
 {
     public UpdateRoundRequestValidator()
     {
-        RuleFor(x => x.StartDate)
+        RuleFor(x => x.StartDateUtc)
             .NotEmpty().WithMessage("Please provide a start date for the round.");
 
-        RuleFor(x => x.Deadline)
+        RuleFor(x => x.DeadlineUtc)
             .NotEmpty().WithMessage("Please provide a prediction deadline.")
-            .GreaterThan(x => x.StartDate).WithMessage("The prediction deadline must be after the round's start date.");
+            .GreaterThan(x => x.StartDateUtc).WithMessage("The prediction deadline must be after the round's start date.");
 
         RuleFor(x => x.Matches)
             .NotEmpty().WithMessage("A round must contain at least one match.");

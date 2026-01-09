@@ -27,7 +27,7 @@
 
             <ApiError Message="@_errorMessage" />
 
-            @if (DateTime.Now < _pageData.EntryDeadline)
+            @if (DateTime.UtcNow < _pageData.EntryDeadlineUtc)
             {
                 <div class="message-box-solid warning">
                     Prize setup is locked until the entry deadline has passed.
@@ -38,7 +38,7 @@
                         <div class="action-card-row">
                             <div class="badge-group badge-group--red">
                                 <span class="badge-icon"><i class="bi bi-alarm"></i></span>
-                                <span>@_pageData.EntryDeadline.ToString("dd MMM yyyy HH:mm")</span>
+                                <LocalTime UtcDate="@_pageData.EntryDeadlineUtc"/>
                             </div>
 
                             <div class="badge-group badge-group--green">
@@ -214,10 +214,10 @@
         {
             _pageData = await Http.GetFromJsonAsync<LeaguePrizesPageDto>($"api/leagues/{LeagueId}/prizes");
 
-            if (_pageData != null && DateTime.Now > _pageData.EntryDeadline && !_pageData.PrizeSettings.Any())
+            if (_pageData != null && DateTime.UtcNow > _pageData.EntryDeadlineUtc && !_pageData.PrizeSettings.Any())
             {
                 var prizePot = _pageData.Price * _pageData.MemberCount;
-                _model = new DefinePrizesViewModel(prizePot, _pageData.NumberOfRounds, _pageData.SeasonStartDate, _pageData.SeasonEndDate);
+                _model = new DefinePrizesViewModel(prizePot, _pageData.NumberOfRounds, _pageData.SeasonStartDateUtc, _pageData.SeasonEndDateUtc);
             }
         }
         catch

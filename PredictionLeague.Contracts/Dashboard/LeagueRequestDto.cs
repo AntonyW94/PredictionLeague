@@ -7,7 +7,7 @@ public record LeagueRequestDto(
     string LeagueName,
     string SeasonName,
     LeagueMemberStatus Status,
-    DateTimeOffset SentAt,    
+    DateTime JoinedAtUtc,    
     string AdminName,
     int MemberCount,
     decimal EntryFee,

@@ -13,7 +13,7 @@
         </div>
 
         <MatchStatusBadge Status="Match.Status"
-                          MatchDateTime="Match.MatchDateTime"
+                          MatchDateTimeUtc="Match.MatchDateTimeUtc"
                           HomeScore="Match.ActualHomeTeamScore"
                           AwayScore="Match.ActualAwayTeamScore" />
     </div>
@@ -33,7 +33,7 @@
                         <tr class="@(GetUserHighlightClass(player.UserId))">
                             <td class="text-start fw-bold">@player.PlayerName</td>
                             <td class="text-end fw-bold">
-                                <SmallBoostAppliedIcon Player="player" Deadline="Deadline" />
+                                <SmallBoostAppliedIcon Player="player" DeadlineUtc="DeadlineUtc" />
                                 
                                 @if (prediction?.HomeScore != null)
                                 {
@@ -45,7 +45,7 @@
                                 }
                                 else
                                 {
-                                    @if (!player.HasPredicted && Deadline < DateTime.Now)
+                                    @if (!player.HasPredicted && DeadlineUtc < DateTime.UtcNow)
                                     {
                                         <span class="not-predicted-icon text-pl-red bi bi-x-circle-fill" title="No predictions submitted"></span>
                                     }
@@ -66,5 +66,5 @@
 @code {
     [Parameter, EditorRequired] public MatchInRoundDto Match { get; set; } = null!;
     [Parameter, EditorRequired] public List<PredictionResultDto> Results { get; set; } = null!;
-    [Parameter, EditorRequired] public DateTime Deadline { get; set; }
+    [Parameter, EditorRequired] public DateTime DeadlineUtc { get; set; }
 }

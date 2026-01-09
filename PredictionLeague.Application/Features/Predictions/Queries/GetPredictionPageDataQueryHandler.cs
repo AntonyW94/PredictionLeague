@@ -24,13 +24,15 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
                 r.[RoundNumber],
                 s.[Id] AS SeasonId,
                 s.[Name] AS SeasonName,
-                r.[Deadline],
+                r.[DeadlineUtc],
                 m.[Id] AS MatchId,
-                m.[MatchDateTime],
+                m.[MatchDateTimeUtc],
                 ht.[Name] AS HomeTeamName,
+                ht.[ShortName] AS HomeTeamShortName,
                 ht.[Abbreviation] AS HomeTeamAbbreviation,
                 ht.[LogoUrl] AS HomeTeamLogoUrl,
                 at.[Name] AS AwayTeamName,
+                at.[ShortName] AS AwayTeamShortName,
                 at.[Abbreviation] AS AwayTeamAbbreviation, 
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 up.[PredictedHomeScore],
@@ -42,7 +44,7 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
             LEFT JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
             LEFT JOIN [UserPredictions] up ON m.[Id] = up.[MatchId] AND up.[UserId] = @UserId
             WHERE r.[Id] = @RoundId
-            ORDER BY m.[MatchDateTime];";
+            ORDER BY m.[MatchDateTimeUtc];";
 
         var queryResult = await _dbConnection.QueryAsync<PredictionPageQueryResult>(
             sql,
@@ -114,18 +116,20 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
             RoundId = firstRow.RoundId,
             RoundNumber = firstRow.RoundNumber,
             SeasonName = firstRow.SeasonName,
-            Deadline = firstRow.Deadline,
-            IsPastDeadline = firstRow.Deadline < DateTime.Now,
+            DeadlineUtc = firstRow.DeadlineUtc,
+            IsPastDeadline = firstRow.DeadlineUtc < DateTime.UtcNow,
             Matches = results
                 .Where(r => r.MatchId.HasValue)
                 .Select(r => new MatchPredictionDto
                 {
                     MatchId = r.MatchId!.Value,
-                    MatchDateTime = r.MatchDateTime!.Value,
+                    MatchDateTimeUtc = r.MatchDateTimeUtc!.Value,
                     HomeTeamName = r.HomeTeamName,
+                    HomeTeamShortName = r.HomeTeamShortName,
                     HomeTeamAbbreviation = r.HomeTeamAbbreviation,
                     HomeTeamLogoUrl = r.HomeTeamLogoUrl,
                     AwayTeamName = r.AwayTeamName,
+                    AwayTeamShortName = r.AwayTeamShortName,
                     AwayTeamAbbreviation = r.AwayTeamAbbreviation,
                     AwayTeamLogoUrl = r.AwayTeamLogoUrl,
                     PredictedHomeScore = r.PredictedHomeScore,
@@ -148,13 +152,15 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
         int RoundNumber,
         int SeasonId,
         string SeasonName,
-        DateTime Deadline,
+        DateTime DeadlineUtc,
         int? MatchId,
-        DateTime? MatchDateTime,
+        DateTime? MatchDateTimeUtc,
         string HomeTeamName,
+        string HomeTeamShortName,
         string HomeTeamAbbreviation,
         string HomeTeamLogoUrl,
         string AwayTeamName,
+        string AwayTeamShortName,
         string AwayTeamAbbreviation,
         string AwayTeamLogoUrl,
         int? PredictedHomeScore,

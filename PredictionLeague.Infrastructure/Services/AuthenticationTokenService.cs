@@ -23,7 +23,7 @@ public class AuthenticationTokenService : IAuthenticationTokenService
         _refreshTokenRepository = refreshTokenRepository;
     }
 
-    public async Task<(string AccessToken, string RefreshToken, DateTime ExpiresAt)> GenerateTokensAsync(ApplicationUser user, CancellationToken cancellationToken)
+    public async Task<(string AccessToken, string RefreshToken, DateTime ExpiresAtUtc)> GenerateTokensAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
         var userRoles = await _userManager.GetRolesAsync(user);
 

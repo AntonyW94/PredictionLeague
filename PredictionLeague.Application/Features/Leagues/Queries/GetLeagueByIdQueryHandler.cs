@@ -23,7 +23,7 @@ public class GetLeagueByIdQueryHandler : IRequestHandler<GetLeagueByIdQuery, Lea
                 COUNT(lm.[UserId]) AS MemberCount,
                 l.[Price],
                 ISNULL(l.[EntryCode], 'Public') AS EntryCode,
-                ISNULL(l.[EntryDeadline], '1900-01-01') AS 'EntryDeadline'
+                ISNULL(l.[EntryDeadlineUtc], '1900-01-01') AS 'EntryDeadlineUtc'
             FROM 
                 [Leagues] l
             JOIN 
@@ -38,7 +38,7 @@ public class GetLeagueByIdQueryHandler : IRequestHandler<GetLeagueByIdQuery, Lea
                 s.[Name],
                 l.[Price],
                 ISNULL(l.[EntryCode], 'Public'),
-                ISNULL(l.[EntryDeadline], '1900-01-01');";
+                ISNULL(l.[EntryDeadlineUtc], '1900-01-01');";
 
         return await _dbConnection.QuerySingleOrDefaultAsync<LeagueDto>(
             sql,

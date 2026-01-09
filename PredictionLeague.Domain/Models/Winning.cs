@@ -9,7 +9,7 @@ public class Winning
     public string UserId { get; private set; } = string.Empty;
     public int LeaguePrizeSettingId { get; private set; }
     public decimal Amount { get; private set; } 
-    public DateTime AwardedDate { get; private set; }
+    public DateTime AwardedDateUtc { get; private set; }
     public int? RoundNumber { get; private set; }
     public int? Month { get; private set; }
 
@@ -26,7 +26,7 @@ public class Winning
             UserId = userId,
             LeaguePrizeSettingId = leaguePrizeSettingId,
             Amount = amount,
-            AwardedDate = DateTime.UtcNow,
+            AwardedDateUtc = DateTime.UtcNow,
             RoundNumber = roundNumber,
             Month = month
         };

@@ -3,4 +3,4 @@
 public record SeasonLookupDto(
     int Id, 
     string Name,
-    DateTime StartDate);
+    DateTime StartDateUtc);

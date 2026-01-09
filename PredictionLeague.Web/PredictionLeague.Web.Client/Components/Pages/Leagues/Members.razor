@@ -35,7 +35,7 @@
                                 <div class="action-card">
                                     <div class="card-header">
                                         <h5 class="fw-bold text-white">@member.FullName</h5>
-                                        <small class="text-white-50">Joined: @member.JoinedAt.ToString("dd MMM yyyy")</small>
+                                        <small class="text-white-50">Joined: @member.JoinedAtUtc.ToString("dd MMM yyyy")</small>
                                     </div>
                                     <div class="action-card-footer">
                                         <button class="btn btn-sm red-button" @onclick="() => RejectMemberAsync(member.UserId)"><i class="bi bi-x-circle me-2 fw-bold"></i>Reject</button>
@@ -61,7 +61,7 @@
                                 <div class="member-card">
                                     <div>
                                         <div class="fw-bold text-center">@member.FullName</div>
-                                        <div class="small text-white-50 text-center">Joined: @member.JoinedAt.ToString("dd MMM yyyy")</div>
+                                        <div class="small text-white-50 text-center">Joined: @member.JoinedAtUtc.ToString("dd MMM yyyy")</div>
                                     </div>
                                     <span class="badge bg-pl-green">Approved</span>
                                 </div>
@@ -84,7 +84,7 @@
                                 <div class="member-card">
                                     <div>
                                         <div class="fw-bold text-center">@member.FullName</div>
-                                        <div class="small text-white-50 text-center">Joined: @member.JoinedAt.ToString("dd MMM yyyy")</div>
+                                        <div class="small text-white-50 text-center">Joined: @member.JoinedAtUtc.ToString("dd MMM yyyy")</div>
                                     </div>
                                     <span class="badge bg-pl-red">Rejected</span>
                                 </div>

@@ -12,8 +12,8 @@ public class UserPrediction
     public string UserId { get; private set; } = string.Empty;
     public int PredictedHomeScore { get; init; }
     public int PredictedAwayScore { get; init; }
-    public DateTime CreatedAt { get; private set; }
-    public DateTime UpdatedAt { get; private set; }
+    public DateTime CreatedAtUtc { get; private set; }
+    public DateTime UpdatedAtUtc { get; private set; }
     public PredictionOutcome Outcome { get; private set; } = PredictionOutcome.Pending;
 
     private UserPrediction() { }
@@ -25,7 +25,7 @@ public class UserPrediction
         Guard.Against.Negative(homeScore);
         Guard.Against.Negative(awayScore);
 
-        var now = DateTime.Now;
+        var nowUtc = DateTime.UtcNow;
 
         return new UserPrediction
         {
@@ -33,8 +33,8 @@ public class UserPrediction
             MatchId = matchId,
             PredictedHomeScore = homeScore,
             PredictedAwayScore = awayScore,
-            CreatedAt = now,
-            UpdatedAt = now,
+            CreatedAtUtc = nowUtc,
+            UpdatedAtUtc = nowUtc,
             Outcome = PredictionOutcome.Pending
         };
     }
@@ -44,7 +44,7 @@ public class UserPrediction
         if (status == MatchStatus.Scheduled || actualHomeScore == null || actualAwayScore == null)
         {
             Outcome = PredictionOutcome.Pending;
-            UpdatedAt = DateTime.Now;
+            UpdatedAtUtc = DateTime.UtcNow;
             return;
         }
 
@@ -55,6 +55,6 @@ public class UserPrediction
         else
             Outcome = PredictionOutcome.Incorrect;
 
-        UpdatedAt = DateTime.Now;
+        UpdatedAtUtc = DateTime.UtcNow;
     }
 }

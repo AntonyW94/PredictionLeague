@@ -24,8 +24,8 @@ public class SeasonRepository : ISeasonRepository
                 INSERT INTO [Seasons]
                 (
                     [Name],
-                    [StartDate],
-                    [EndDate],
+                    [StartDateUtc],
+                    [EndDateUtc],
                     [IsActive],
                     [NumberOfRounds],
                     [ApiLeagueId]
@@ -33,8 +33,8 @@ public class SeasonRepository : ISeasonRepository
                 VALUES
                 (
                     @Name,
-                    @StartDate,
-                    @EndDate,
+                    @StartDateUtc,
+                    @EndDateUtc,
                     @IsActive,
                     @NumberOfRounds,
                     @ApiLeagueId
@@ -92,8 +92,8 @@ public class SeasonRepository : ISeasonRepository
                 UPDATE [Seasons]
                 SET
                     [Name] = @Name,
-                    [StartDate] = @StartDate,
-                    [EndDate] = @EndDate,
+                    [StartDateUtc] = @StartDateUtc,
+                    [EndDateUtc] = @EndDateUtc,
                     [IsActive] = @IsActive,
                     [NumberOfRounds] = @NumberOfRounds,
                     [ApiLeagueId] = @ApiLeagueId

@@ -18,7 +18,7 @@ public class GetMatchesForRoundQueryHandler : IRequestHandler<GetMatchesForRound
         const string sql = @"
             SELECT
                 m.[Id],
-                m.[MatchDateTime],
+                m.[MatchDateTimeUtc],
                 m.[HomeTeamId],
                 ht.[Name] AS HomeTeamName,
                 ht.[ShortName] AS HomeTeamShortName,
@@ -41,7 +41,7 @@ public class GetMatchesForRoundQueryHandler : IRequestHandler<GetMatchesForRound
             WHERE 
                 m.[RoundId] = @RoundId
             ORDER BY 
-                m.[MatchDateTime];";
+                m.[MatchDateTimeUtc];";
 
         return await _dbConnection.QueryAsync<MatchInRoundDto>(sql, cancellationToken, new { request.RoundId });
     }

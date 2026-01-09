@@ -21,8 +21,8 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
 
         round.UpdateDetails(
             request.RoundNumber,
-            request.StartDate,
-            request.Deadline,
+            request.StartDateUtc,
+            request.DeadlineUtc,
             request.Status,
             request.ApiRoundName
         );
@@ -35,11 +35,11 @@ public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
             switch (matchDto.Id)
             {
                 case > 0 when existingMatches.TryGetValue(matchDto.Id, out var existingMatch):
-                    existingMatch.UpdateDetails(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTime);
+                    existingMatch.UpdateDetails(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTimeUtc);
                     break;
               
                 case 0:
-                    round.AddMatch(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTime, matchDto.ExternalId);
+                    round.AddMatch(matchDto.HomeTeamId, matchDto.AwayTeamId, matchDto.MatchDateTimeUtc, matchDto.ExternalId);
                     break;
             }
         }

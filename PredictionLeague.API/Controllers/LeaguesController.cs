@@ -35,7 +35,7 @@ public class LeaguesController : ApiControllerBase
             request.SeasonId,
             request.Price,
             CurrentUserId,
-            request.EntryDeadline);
+            request.EntryDeadlineUtc);
 
         var newLeague = await _mediator.Send(command, cancellationToken);
 
@@ -207,7 +207,7 @@ public class LeaguesController : ApiControllerBase
             leagueId,
             request.Name,
             request.Price,
-            request.EntryDeadline);
+            request.EntryDeadlineUtc);
 
         await _mediator.Send(command, cancellationToken);
 

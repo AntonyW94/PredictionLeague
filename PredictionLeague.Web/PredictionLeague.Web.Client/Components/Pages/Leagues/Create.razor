@@ -55,12 +55,16 @@
                             <div class="form-text text-white-50">Enter 0 for a free-to-play league.</div>
                             <StyledValidationMessage For="@(() => _model.Price)" />
                         </div>
-
+                      
                         <div class="col-md-6 mb-3">
                             <label for="entryDeadline" class="form-label text-white">Entry Deadline</label>
-                            <InputDate id="entryDeadline" Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.EntryDeadline" max="@MaxDate" disabled="@ShouldDisableFields" />
+                            <UtcInputDate id="entryDeadline" 
+                                          @bind-Value="_model.EntryDeadlineUtc" 
+                                          Class="form-control" 
+                                          Max="@MaxDate" 
+                                          Disabled="@ShouldDisableFields" />
                             <div class="form-text text-white-50">Deadline must be before the season starts.</div>
-                            <StyledValidationMessage For="@(() => _model.EntryDeadline)" />
+                            <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
                         </div>
                     </div>
                 </ChildContent>
@@ -74,6 +78,7 @@
     private readonly CreateLeagueRequest _model = new();
     private bool ShouldDisableFields => _pageData?.Seasons.Count != 1 && _model.SeasonId == 0;
     private string? MaxDate { get; set; }
+   
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,7 +88,8 @@
         {
             var singleSeason = _pageData.Seasons.First();
             _model.SeasonId = singleSeason.Id;
-            UpdateDeadlineAndMaxDate(singleSeason.StartDate);
+
+            UpdateDeadlineAndMaxDate(singleSeason.StartDateUtc);
         }
     }
 
@@ -96,7 +102,7 @@
         {
             var selectedSeason = _pageData.Seasons.FirstOrDefault(s => s.Id == selectedSeasonId);
             if (selectedSeason != null)
-                UpdateDeadlineAndMaxDate(selectedSeason.StartDate);
+                UpdateDeadlineAndMaxDate(selectedSeason.StartDateUtc);
         }
         else
         {
@@ -104,11 +110,12 @@
         }
     }
 
-    private void UpdateDeadlineAndMaxDate(DateTime seasonStartDate)
+    private void UpdateDeadlineAndMaxDate(DateTime seasonStartDateUtc)
     {
-        var deadline = seasonStartDate.AddDays(-1);
-        _model.EntryDeadline = deadline;
-        MaxDate = deadline.ToString("yyyy-MM-dd");
+        var deadlineUtc = seasonStartDateUtc.AddDays(-1);
+      
+        _model.EntryDeadlineUtc = deadlineUtc;
+        MaxDate = deadlineUtc.ToString("yyyy-MM-ddTHH:mm");
     }
 
     private Task<HttpResponseMessage> HandleCreateLeagueAsync()

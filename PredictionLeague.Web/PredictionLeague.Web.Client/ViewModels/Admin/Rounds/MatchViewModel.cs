@@ -6,7 +6,7 @@ namespace PredictionLeague.Web.Client.ViewModels.Admin.Rounds;
 public class MatchViewModel
 {
     public int MatchId { get; }
-    public DateTime MatchDateTime { get; }
+    public DateTime MatchDateTimeUtc { get; }
     public string HomeTeamName { get; }
     public string? HomeTeamLogoUrl { get; }
     public string AwayTeamName { get; }
@@ -18,7 +18,7 @@ public class MatchViewModel
     public MatchViewModel(MatchInRoundDto match)
     {
         MatchId = match.Id;
-        MatchDateTime = match.MatchDateTime;
+        MatchDateTimeUtc = match.MatchDateTimeUtc;
         HomeTeamName = match.HomeTeamName;
         HomeTeamLogoUrl = match.HomeTeamLogoUrl;
         AwayTeamName = match.AwayTeamName;

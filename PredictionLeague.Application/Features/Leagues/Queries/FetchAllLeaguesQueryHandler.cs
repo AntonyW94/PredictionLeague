@@ -23,7 +23,7 @@ public class FetchAllLeaguesQueryHandler : IRequestHandler<FetchAllLeaguesQuery,
                 COUNT(lm.[UserId]) AS MemberCount,
                 l.[Price],
                 ISNULL(l.[EntryCode], 'Public') AS EntryCode,
-                l.[EntryDeadline]
+                l.[EntryDeadlineUtc]
             FROM 
                 [Leagues] l
             JOIN 
@@ -36,10 +36,10 @@ public class FetchAllLeaguesQueryHandler : IRequestHandler<FetchAllLeaguesQuery,
                 s.[Name],
                 l.[Price],  
                 ISNULL(l.[EntryCode], 'Public'),
-                l.[EntryDeadline],
-                s.[StartDate]
+                l.[EntryDeadlineUtc],
+                s.[StartDateUtc]
             ORDER BY
-                s.[StartDate] DESC,
+                s.[StartDateUtc] DESC,
                 l.[Name] ASC;";
 
         return await _dbConnection.QueryAsync<LeagueDto>(sql, cancellationToken);

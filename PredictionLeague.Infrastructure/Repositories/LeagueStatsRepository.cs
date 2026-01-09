@@ -51,7 +51,7 @@ namespace PredictionLeague.Infrastructure.Repositories
                                                                             JOIN [Rounds] r ON lrr.[RoundId] = r.[Id] 
                                                                             WHERE lrr.[LeagueId] = lms.[LeagueId] 
                                                                             AND lrr.[UserId] = lms.[UserId]
-                                                                            AND MONTH(r.[StartDate]) = MONTH(GETDATE()) AND YEAR(r.StartDate) = YEAR(GETDATE())
+                                                                            AND MONTH(r.[StartDateUtc]) = MONTH(GETUTCDATE()) AND YEAR(r.[StartDateUtc]) = YEAR(GETUTCDATE())
                                                                       ) DESC) as NewMonthRank
                 FROM [LeagueMemberStats] lms
                 JOIN [Leagues] l ON lms.[LeagueId] = l.[Id]

@@ -17,7 +17,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var match in Matches.OrderBy(m => m.MatchDateTime).ThenBy(m => m.HomeTeamShortName))
+                @foreach (var match in Matches.OrderBy(m => m.MatchDateTimeUtc).ThenBy(m => m.HomeTeamShortName))
                 {
                     <tr>
                         <td class="match-info">
@@ -33,7 +33,7 @@
                             <MatchStatusBadge Status="match.Status"
                                               HomeScore="match.ActualHomeTeamScore"
                                               AwayScore="match.ActualAwayTeamScore"
-                                              MatchDateTime="match.MatchDateTime">
+                                              MatchDateTimeUtc="match.MatchDateTimeUtc">
                             </MatchStatusBadge>
                         </td>
 
@@ -58,7 +58,7 @@
                                 }
                                 else
                                 {
-                                    @if (!player.HasPredicted && Deadline < DateTime.Now)
+                                    @if (!player.HasPredicted && DeadlineUtc < DateTime.UtcNow)
                                     {
                                         <span class="not-predicted-icon text-pl-red bi bi-x-circle-fill" title="No predictions submitted"></span>
                                     }
@@ -78,7 +78,7 @@
                     <th></th> @foreach (var player in Results.OrderBy(p => p.PlayerName))
                     {
                         <th class="@(IsWinner(player) ? "winner-column" : "")">
-                            <SmallBoostAppliedIcon Player="player" Deadline="Deadline" />
+                            <SmallBoostAppliedIcon Player="player" DeadlineUtc="DeadlineUtc" />
                             @player.TotalPoints
                         </th>
                     }
@@ -91,7 +91,7 @@
 @code {
     [Parameter, EditorRequired] public List<PredictionResultDto>? Results { get; set; }
     [Parameter, EditorRequired] public List<MatchInRoundDto>? Matches { get; set; }
-    [Parameter, EditorRequired] public DateTime Deadline { get; set; }
+    [Parameter, EditorRequired] public DateTime DeadlineUtc { get; set; }
 
     private bool IsWinner(PredictionResultDto player)
     {

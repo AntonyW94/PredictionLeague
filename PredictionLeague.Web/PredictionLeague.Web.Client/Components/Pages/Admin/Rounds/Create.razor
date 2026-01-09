@@ -53,18 +53,18 @@
                         <div class="col-md-4 mb-3">
                             <label for="startDate" class="form-label text-white">Round Start Date</label>
                             <div class="input-group">
-                                <InputDate Type="InputDateType.DateTimeLocal" id="startDate" class="form-control" @bind-Value="_model.StartDate" />
+                                <UtcInputDate id="startDate" Class="form-control" @bind-Value="_model.StartDateUtc" />
                                 <button type="button" class="btn btn-secondary" @onclick="ApplyStartDateToMatches" title="Apply this date to all matches">
                                     <i class="bi bi-arrow-down-square-fill"></i>
                                 </button>
                             </div>
-                            <StyledValidationMessage For="@(() => _model.StartDate)" />
+                            <StyledValidationMessage For="@(() => _model.StartDateUtc)" />
                         </div>
 
                         <div class="col-md-4 mb-3">
                             <label for="deadline" class="form-label text-white">Prediction Deadline</label>
-                            <InputDate Type="InputDateType.DateTimeLocal" id="deadline" class="form-control" @bind-Value="_model.Deadline" />
-                            <StyledValidationMessage For="@(() => _model.Deadline)" />
+                            <UtcInputDate id="deadline" Class="form-control" @bind-Value="_model.DeadlineUtc" />
+                            <StyledValidationMessage For="@(() => _model.DeadlineUtc)" />
                         </div>
                     </div>
 
@@ -84,7 +84,7 @@
                         <div class="match-editor-row">
                             <!-- Desktop View -->
                             <div class="row gx-2 align-items-center d-none d-md-flex">
-                                <div class="col-md-3"><InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTime" /></div>
+                                <div class="col-md-3"><UtcInputDate Class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTimeUtc" /></div>
                                 <div class="col">
                                     <InputSelect class="form-select" @bind-Value="_model.Matches[matchIndex].HomeTeamId">
                                         <option value="0">Home</option>
@@ -124,7 +124,7 @@
                                 <div class="p-3">
                                     <div class="mb-2">
                                         <label class="form-label text-white-50">Date</label>
-                                        <InputDate Type="InputDateType.DateTimeLocal" class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTime" />
+                                        <UtcInputDate class="form-control" @bind-Value="_model.Matches[matchIndex].MatchDateTimeUtc" />
                                     </div>
 
                                     <div class="mb-2">
@@ -172,19 +172,19 @@
 
         try
         {
-            var now = DateTime.Now;
+            var nowUtc = DateTime.UtcNow;
 
             _model = new CreateRoundRequest
             {
                 SeasonId = SeasonId,
-                StartDate = now.Date,
-                Deadline = now,
+                StartDateUtc = nowUtc.Date,
+                DeadlineUtc = nowUtc,
                 Matches = new List<CreateMatchRequest>()
             };
 
             for (var i = 0; i < 10; i++)
             {
-                _model.Matches.Add(new CreateMatchRequest { MatchDateTime = now });
+                _model.Matches.Add(new CreateMatchRequest { MatchDateTimeUtc = nowUtc });
             }
 
             _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/teams") ?? new List<TeamDto>();
@@ -200,16 +200,16 @@
         if (_model == null) 
             return;
 
-        var newDate = _model.StartDate;
+        var newDate = _model.StartDateUtc;
         foreach (var match in _model.Matches)
         {
-            match.MatchDateTime = newDate;
+            match.MatchDateTimeUtc = newDate;
         }
 
-        _model.Deadline = _model.StartDate.AddHours(-1);
+        _model.DeadlineUtc = _model.StartDateUtc.AddHours(-1);
     }
 
-    private void AddMatch() => _model?.Matches.Add(new CreateMatchRequest { MatchDateTime = _model.StartDate });
+    private void AddMatch() => _model?.Matches.Add(new CreateMatchRequest { MatchDateTimeUtc = _model.StartDateUtc });
 
     private void RemoveMatch(int index)
     {

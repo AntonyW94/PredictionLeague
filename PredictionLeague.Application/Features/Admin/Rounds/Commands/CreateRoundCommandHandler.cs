@@ -19,13 +19,13 @@ public class CreateRoundCommandHandler : IRequestHandler<CreateRoundCommand, Rou
         var round = Round.Create(
             request.SeasonId,
             request.RoundNumber,
-            request.StartDate,
-            request.Deadline,
+            request.StartDateUtc,
+            request.DeadlineUtc,
             request.ApiRoundName);
 
         foreach (var matchToAdd in request.Matches)
         {
-            round.AddMatch(matchToAdd.HomeTeamId, matchToAdd.AwayTeamId, matchToAdd.MatchDateTime, matchToAdd.ExternalId);
+            round.AddMatch(matchToAdd.HomeTeamId, matchToAdd.AwayTeamId, matchToAdd.MatchDateTimeUtc, matchToAdd.ExternalId);
         }
 
         var createdRound = await _roundRepository.CreateAsync(round, cancellationToken);
@@ -35,8 +35,9 @@ public class CreateRoundCommandHandler : IRequestHandler<CreateRoundCommand, Rou
             createdRound.Id,
             createdRound.SeasonId,
             createdRound.RoundNumber,
-            createdRound.StartDate,
-            createdRound.Deadline,
+            createdRound.ApiRoundName,
+            createdRound.StartDateUtc,
+            createdRound.DeadlineUtc,
             createdRound.Status,
             createdRound.Matches.Count
         );

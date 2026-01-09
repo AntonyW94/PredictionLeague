@@ -19,7 +19,7 @@ public class CheckForAvailablePrivateLeaguesQueryHandler : IRequestHandler<Check
                 SELECT 1 
                 FROM [Leagues] l
                 WHERE l.[EntryCode] IS NOT NULL 
-                AND l.[EntryDeadline] > GETDATE()                    
+                AND l.[EntryDeadlineUtc] > GETUTCDATE()                    
                 AND NOT EXISTS (                                        
                     SELECT 1 
                     FROM [LeagueMembers] lm 
