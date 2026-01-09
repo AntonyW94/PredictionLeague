@@ -21,6 +21,7 @@ public class GetLeagueRoundsForDashboardQueryHandler : IRequestHandler<GetLeague
                 r.[Id],
                 r.[SeasonId],
                 r.[RoundNumber],
+                r.[ApiRoundName],
                 r.[StartDateUtc],
                 r.[DeadlineUtc],
                 r.[Status],
