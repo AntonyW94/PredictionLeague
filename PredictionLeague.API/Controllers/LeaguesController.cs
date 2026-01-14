@@ -173,10 +173,10 @@ public class LeaguesController : ApiControllerBase
 
     [HttpGet("{leagueId:int}/leaderboard/exact-scores")]
     [ProducesResponseType(typeof(ExactScoresLeaderboardDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ExactScoresLeaderboardDto>> GetExactScoresLeaderboard(int leagueId)
+    public async Task<ActionResult<ExactScoresLeaderboardDto>> GetExactScoresLeaderboard(int leagueId, CancellationToken cancellationToken)
     {
         var query = new GetExactScoresLeaderboardQuery(leagueId);
-        return Ok(await _mediator.Send(query));
+        return Ok(await _mediator.Send(query, cancellationToken));
     }
 
     #endregion

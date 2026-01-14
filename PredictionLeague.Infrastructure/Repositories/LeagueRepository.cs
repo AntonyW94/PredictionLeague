@@ -96,7 +96,7 @@ public class LeagueRepository : ILeagueRepository
         return newLeague;
     }
 
-    private Task AddMemberAsync(LeagueMember member, CancellationToken cancellationToken)
+    private async Task AddMemberAsync(LeagueMember member, CancellationToken cancellationToken)
     {
         const string sql = @"
             INSERT INTO [LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAtUtc], [ApprovedAtUtc])
@@ -115,7 +115,7 @@ public class LeagueRepository : ILeagueRepository
             cancellationToken: cancellationToken
         );
 
-        return Connection.ExecuteAsync(command);
+        await Connection.ExecuteAsync(command);
     }
 
     #endregion
@@ -126,14 +126,14 @@ public class LeagueRepository : ILeagueRepository
     {
         const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[Id] = @Id;";
 
-        return (await QueryAndMapLeagues(sql, cancellationToken, new { Id = id })).FirstOrDefault();
+        return (await QueryAndMapLeaguesAsync(sql, cancellationToken, new { Id = id })).FirstOrDefault();
     }
 
     public async Task<League?> GetByEntryCodeAsync(string? entryCode, CancellationToken cancellationToken)
     {
         const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[EntryCode] = @EntryCode;";
 
-        return (await QueryAndMapLeagues(sql, cancellationToken, new { EntryCode = entryCode })).FirstOrDefault();
+        return (await QueryAndMapLeaguesAsync(sql, cancellationToken, new { EntryCode = entryCode })).FirstOrDefault();
     }
 
     public async Task<League?> GetByIdWithAllDataAsync(int id, CancellationToken cancellationToken)
@@ -218,7 +218,7 @@ public class LeagueRepository : ILeagueRepository
         WHERE
             l.[AdministratorUserId] = @AdministratorId;";
 
-        return await QueryAndMapLeagues(sql, cancellationToken, new { AdministratorId = administratorId });
+        return await QueryAndMapLeaguesAsync(sql, cancellationToken, new { AdministratorId = administratorId });
     }
 
     public async Task<IEnumerable<LeagueRoundResult>> GetLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken)
@@ -432,7 +432,7 @@ public class LeagueRepository : ILeagueRepository
 
     #region Private Helper Methods
 
-    private async Task<IEnumerable<League>> QueryAndMapLeagues(string sql, CancellationToken cancellationToken, object? param = null)
+    private async Task<IEnumerable<League>> QueryAndMapLeaguesAsync(string sql, CancellationToken cancellationToken, object? param = null)
     {
         var command = new CommandDefinition(
             commandText: sql,

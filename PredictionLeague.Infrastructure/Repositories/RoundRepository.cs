@@ -123,25 +123,25 @@ public class RoundRepository : IRoundRepository
     public async Task<Round?> GetByIdAsync(int roundId, CancellationToken cancellationToken)
     {
         const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = @RoundId;";
-        return await QueryAndMapRound(sql, cancellationToken, new { RoundId = roundId });
+        return await QueryAndMapRoundAsync(sql, cancellationToken, new { RoundId = roundId });
     }
 
     public async Task<Dictionary<int, Round>> GetAllForSeasonAsync(int seasonId, CancellationToken cancellationToken)
     {
         const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[SeasonId] = @SeasonId;";
-        return await QueryAndMapRounds(sql, cancellationToken, new { SeasonId = seasonId });
+        return await QueryAndMapRoundsAsync(sql, cancellationToken, new { SeasonId = seasonId });
     }
 
     public async Task<Round?> GetByApiRoundNameAsync(int seasonId, string apiRoundName, CancellationToken cancellationToken)
     {
         const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[SeasonId] = @SeasonId AND r.[ApiRoundName] = @ApiRoundName;";
-        return await QueryAndMapRound(sql, cancellationToken, new { SeasonId = seasonId, ApiRoundName = apiRoundName });
+        return await QueryAndMapRoundAsync(sql, cancellationToken, new { SeasonId = seasonId, ApiRoundName = apiRoundName });
     }
 
     public async Task<Round?> GetOldestInProgressRoundAsync(int seasonId, CancellationToken cancellationToken)
     {
         const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = (SELECT TOP 1 [Id] FROM [Rounds] WHERE [SeasonId] = @SeasonId AND [Status] != @CompletedStatus AND [StartDateUtc] < GETUTCDATE() ORDER BY [StartDateUtc] ASC)";
-        return await QueryAndMapRound(sql, cancellationToken, new { SeasonId = seasonId, CompletedStatus = nameof(RoundStatus.Completed) });
+        return await QueryAndMapRoundAsync(sql, cancellationToken, new { SeasonId = seasonId, CompletedStatus = nameof(RoundStatus.Completed) });
     }
 
     public async Task<IEnumerable<int>> GetMatchIdsWithPredictionsAsync(IEnumerable<int> matchIds, CancellationToken cancellationToken)
@@ -262,13 +262,13 @@ public class RoundRepository : IRoundRepository
             LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]
             WHERE r.[Id] IN (SELECT [Id] FROM NextRound);";
 
-        return await QueryAndMapRound(sqlWithMatches, cancellationToken, new { PublishedStatus = nameof(RoundStatus.Published) });
+        return await QueryAndMapRoundAsync(sqlWithMatches, cancellationToken, new { PublishedStatus = nameof(RoundStatus.Published) });
     }
 
     public async Task<Dictionary<int, Round>> GetDraftRoundsStartingBeforeAsync(DateTime dateLimitUtc, CancellationToken cancellationToken)
     {
         const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Status] = @DraftStatus AND r.[StartDateUtc] <= @DateLimit";
-        return await QueryAndMapRounds(sql, cancellationToken, new { DraftStatus = nameof(RoundStatus.Draft), DateLimit = dateLimitUtc });
+        return await QueryAndMapRoundsAsync(sql, cancellationToken, new { DraftStatus = nameof(RoundStatus.Draft), DateLimit = dateLimitUtc });
     }
 
     #endregion
@@ -456,12 +456,12 @@ public class RoundRepository : IRoundRepository
 
     #region Private Helper Methods
 
-    private async Task<Round?> QueryAndMapRound(string sql, CancellationToken cancellationToken, object? param = null)
+    private async Task<Round?> QueryAndMapRoundAsync(string sql, CancellationToken cancellationToken, object? param = null)
     {
-        return (await QueryAndMapRounds(sql, cancellationToken, param)).Values.FirstOrDefault();
+        return (await QueryAndMapRoundsAsync(sql, cancellationToken, param)).Values.FirstOrDefault();
     }
 
-    private async Task<Dictionary<int, Round>> QueryAndMapRounds(string sql, CancellationToken cancellationToken, object? param = null)
+    private async Task<Dictionary<int, Round>> QueryAndMapRoundsAsync(string sql, CancellationToken cancellationToken, object? param = null)
     {
         var command = new CommandDefinition(
             commandText: sql,
