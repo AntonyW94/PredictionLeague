@@ -1,23 +1,19 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
-using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Common.Guards.Season;
 using PredictionLeague.Domain.Models;
-using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 
 public class JoinLeagueCommandHandler : IRequestHandler<JoinLeagueCommand>
 {
     private readonly ILeagueRepository _leagueRepository;
-    private readonly IApplicationReadDbConnection _dbConnection;
     private readonly IMediator _mediator;
 
-    public JoinLeagueCommandHandler(ILeagueRepository leagueRepository, IApplicationReadDbConnection dbConnection, IMediator mediator)
+    public JoinLeagueCommandHandler(ILeagueRepository leagueRepository, IMediator mediator)
     {
         _leagueRepository = leagueRepository;
-        _dbConnection = dbConnection;
         _mediator = mediator;
     }
 
@@ -48,17 +44,10 @@ public class JoinLeagueCommandHandler : IRequestHandler<JoinLeagueCommand>
     {
         if (league.Members.Any(m => m.UserId == request.JoiningUserId))
         {
-            var newMember = await _dbConnection.QuerySingleOrDefaultAsync<NewMemberDto>("SELECT [FirstName], [LastName] FROM [AspNetUsers] WHERE [Id] = @UserId", cancellationToken, new { UserId = request.JoiningUserId });
-            if (newMember != null)
-            {
-                await _mediator.Send(new NotifyLeagueAdminOfJoinRequestCommand(
-                    league.Id,
-                    newMember.FirstName,
-                    newMember.LastName), cancellationToken);
-            }
+            await _mediator.Send(new NotifyLeagueAdminOfJoinRequestCommand(
+                league.Id,
+                request.JoiningUserFirstName,
+                request.JoiningUserLastName), cancellationToken);
         }
     }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record NewMemberDto(string FirstName, string LastName);
 }

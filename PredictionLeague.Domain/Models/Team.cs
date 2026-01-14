@@ -15,6 +15,16 @@ public class Team
     {
     }
 
+    public Team(int id, string name, string shortName, string logoUrl, string abbreviation, int? apiTeamId)
+    {
+        Id = id;
+        Name = name;
+        ShortName = shortName;
+        LogoUrl = logoUrl;
+        Abbreviation = abbreviation;
+        ApiTeamId = apiTeamId;
+    }
+
     public static Team Create(string name, string shortName, string logoUrl, string abbreviation, int? apiTeamId)
     {
         Validate(name, shortName, logoUrl, abbreviation);

@@ -15,9 +15,7 @@ public class FetchAllTeamsQueryHandler : IRequestHandler<FetchAllTeamsQuery, IEn
 
     public async Task<IEnumerable<TeamDto>> Handle(FetchAllTeamsQuery request, CancellationToken cancellationToken)
     {
-        try
-        {
-            const string sql = @"
+        const string sql = @"
             SELECT
                 [Id],
                 [Name],
@@ -28,11 +26,6 @@ public class FetchAllTeamsQueryHandler : IRequestHandler<FetchAllTeamsQuery, IEn
             FROM [Teams]
             ORDER BY [Name] ASC";
 
-            return await _dbConnection.QueryAsync<TeamDto>(sql, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            throw new ApplicationException("An error occurred while fetching teams from the database.", ex);
-        }
+        return await _dbConnection.QueryAsync<TeamDto>(sql, cancellationToken);
     }
 }

@@ -220,7 +220,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> JoinLeagueAsync([FromBody] JoinLeagueRequest request, CancellationToken cancellationToken)
     {
-        var command = new JoinLeagueCommand(CurrentUserId, null, request.EntryCode);
+        var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, null, request.EntryCode);
         await _mediator.Send(command, cancellationToken);
 
         return NoContent();
@@ -231,7 +231,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> JoinPublicLeagueAsync(int leagueId, CancellationToken cancellationToken)
     {
-        var command = new JoinLeagueCommand(CurrentUserId, leagueId, null);
+        var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, leagueId, null);
         await _mediator.Send(command, cancellationToken);
 
         return NoContent();
