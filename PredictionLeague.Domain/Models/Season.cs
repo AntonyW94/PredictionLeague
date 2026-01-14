@@ -15,6 +15,17 @@ public class Season
 
     private Season() { }
 
+    public Season(int id, string name, DateTime startDateUtc, DateTime endDateUtc, bool isActive, int numberOfRounds, int? apiLeagueId)
+    {
+        Id = id;
+        Name = name;
+        StartDateUtc = startDateUtc;
+        EndDateUtc = endDateUtc;
+        IsActive = isActive;
+        NumberOfRounds = numberOfRounds;
+        ApiLeagueId = apiLeagueId;
+    }
+
     public static Season Create(string name, DateTime startDateUtc, DateTime endDateUtc, bool isActive, int numberOfRounds, int? apiLeagueId)
     {
         Validate(name, startDateUtc, endDateUtc, numberOfRounds);

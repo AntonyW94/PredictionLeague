@@ -69,13 +69,31 @@ public class LeagueRepository : ILeagueRepository
         );
 
         var newLeagueId = await Connection.ExecuteScalarAsync<int>(command);
-        typeof(League).GetProperty(nameof(League.Id))?.SetValue(league, newLeagueId);
 
         var adminMember = LeagueMember.Create(newLeagueId, league.AdministratorUserId);
         adminMember.Approve();
+
         await AddMemberAsync(adminMember, cancellationToken);
 
-        return league;
+        var newLeague = new League(
+            id: newLeagueId,
+            name: league.Name,
+            seasonId: league.SeasonId,
+            administratorUserId: league.AdministratorUserId,
+            entryCode: league.EntryCode,
+            createdAtUtc: league.CreatedAtUtc,
+            entryDeadlineUtc: league.EntryDeadlineUtc,
+            pointsForExactScore: league.PointsForExactScore,
+            pointsForCorrectResult: league.PointsForCorrectResult,
+            price: league.Price,
+            isFree: league.IsFree,
+            hasPrizes: league.HasPrizes,
+            prizeFundOverride: league.PrizeFundOverride,
+            members: [adminMember], 
+            prizeSettings: null
+        );
+
+        return newLeague;
     }
 
     private Task AddMemberAsync(LeagueMember member, CancellationToken cancellationToken)

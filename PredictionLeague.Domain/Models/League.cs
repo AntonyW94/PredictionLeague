@@ -171,30 +171,6 @@ public class League
         _members.Add(newMember);
     }
 
-    public void ApproveMember(string memberToApproveUserId, string approverUserId)
-    {
-        if (approverUserId != AdministratorUserId)
-            throw new UnauthorizedAccessException("Only the league administrator can approve new members.");
-
-        var member = _members.FirstOrDefault(m => m.UserId == memberToApproveUserId);
-        if (member == null)
-            throw new KeyNotFoundException("Member not found in this league.");
-
-        member.Approve();
-    }
-
-    public void RejectMember(string memberToRejectUserId, string rejecterUserId)
-    {
-        if (rejecterUserId != AdministratorUserId)
-            throw new UnauthorizedAccessException("Only the league administrator can reject members.");
-
-        var member = _members.FirstOrDefault(m => m.UserId == memberToRejectUserId);
-        if (member == null)
-            throw new KeyNotFoundException("Member not found in this league.");
-
-        member.Reject();
-    }
-
     public void RemoveMember(string userId)
     {
         var memberToRemove = _members.FirstOrDefault(m => m.UserId == userId);

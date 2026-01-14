@@ -103,8 +103,17 @@ public class RoundRepository : IRoundRepository
             await Connection.ExecuteAsync(insertMatchesCommand);
         }
 
-        typeof(Round).GetProperty(nameof(Round.Id))?.SetValue(round, newRoundId);
-        return round;
+        return new Round(
+            id: newRoundId,
+            seasonId: round.SeasonId,
+            roundNumber: round.RoundNumber,
+            startDateUtc: round.StartDateUtc,
+            deadlineUtc: round.DeadlineUtc,
+            status: round.Status,
+            apiRoundName: round.ApiRoundName,
+            lastReminderSentUtc: round.LastReminderSentUtc,
+            matches: round.Matches
+        );
     }
 
     #endregion

@@ -19,10 +19,4 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 
 var host = builder.Build();
 
-//var jsRuntime = host.Services.GetRequiredService<IJSRuntime>();
-//var datadogProvider = new DatadogBrowserLoggerProvider(jsRuntime);
-//var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
-
-//loggerFactory.AddProvider(datadogProvider);
-
 await host.RunAsync();

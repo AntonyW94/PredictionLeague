@@ -49,8 +49,15 @@ public class SeasonRepository : ISeasonRepository
 
         var newSeasonId = await Connection.ExecuteScalarAsync<int>(command);
 
-        typeof(Season).GetProperty(nameof(Season.Id))?.SetValue(season, newSeasonId);
-        return season;
+        return new Season(
+            id: newSeasonId,
+            name: season.Name,
+            startDateUtc: season.StartDateUtc,
+            endDateUtc: season.EndDateUtc,
+            isActive: season.IsActive,
+            numberOfRounds: season.NumberOfRounds,
+            apiLeagueId: season.ApiLeagueId
+        );
     }
 
     #endregion
