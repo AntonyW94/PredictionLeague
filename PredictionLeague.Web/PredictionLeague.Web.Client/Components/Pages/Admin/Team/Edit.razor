@@ -67,7 +67,7 @@
   
     protected override async Task OnInitializedAsync()
     {
-        var team = await Http.GetFromJsonAsync<TeamDto>($"api/teams/{TeamId}");
+        var team = await Http.GetFromJsonAsync<TeamDto>($"api/admin/teams/{TeamId}");
         if (team != null)
         {
             _model = new UpdateTeamRequest
@@ -83,6 +83,6 @@
 
     private Task<HttpResponseMessage> HandleUpdateTeamAsync()
     {
-        return Http.PutAsJsonAsync($"api/teams/{TeamId}/update", _model);
+        return Http.PutAsJsonAsync($"api/admin/teams/{TeamId}/update", _model);
     }
 }

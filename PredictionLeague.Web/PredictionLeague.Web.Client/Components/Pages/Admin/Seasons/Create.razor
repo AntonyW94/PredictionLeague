@@ -69,6 +69,6 @@
 
     private Task<HttpResponseMessage> HandleCreateSeasonAsync()
     {
-        return Http.PostAsJsonAsync("api/seasons/create", _model);
+        return Http.PostAsJsonAsync("api/admin/seasons/create", _model);
     }
 }

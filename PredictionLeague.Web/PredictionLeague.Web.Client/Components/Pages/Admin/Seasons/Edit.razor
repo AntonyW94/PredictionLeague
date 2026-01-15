@@ -92,7 +92,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var seasonDto = await Http.GetFromJsonAsync<SeasonDto>($"api/seasons/{SeasonId}");
+        var seasonDto = await Http.GetFromJsonAsync<SeasonDto>($"api/admin/seasons/{SeasonId}");
         if (seasonDto != null)
         {
             _model = new UpdateSeasonRequest
@@ -109,7 +109,7 @@
 
     private Task<HttpResponseMessage> HandleUpdateSeasonAsync()
     {
-        return Http.PutAsJsonAsync($"api/seasons/{SeasonId}/update", _model);
+        return Http.PutAsJsonAsync($"api/admin/seasons/{SeasonId}/update", _model);
     }
 
     private void AddRound(int seasonId) => NavigationManager.NavigateTo($"/admin/seasons/{seasonId}/create-round");

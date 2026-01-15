@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Admin.Teams.Commands;
@@ -6,11 +6,11 @@ using PredictionLeague.Application.Features.Admin.Teams.Queries;
 using PredictionLeague.Contracts.Admin.Teams;
 using PredictionLeague.Domain.Common.Enumerations;
 
-namespace PredictionLeague.API.Controllers;
+namespace PredictionLeague.API.Controllers.Admin;
 
 [Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/admin/[controller]")]
 public class TeamsController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -59,10 +59,10 @@ public class TeamsController : ApiControllerBase
     {
         var query = new GetTeamByIdQuery(teamId);
         var team = await _mediator.Send(query, cancellationToken);
-       
+
         if (team == null)
             return NotFound();
-        
+
         return Ok(team);
     }
 
@@ -84,7 +84,7 @@ public class TeamsController : ApiControllerBase
             request.Abbreviation,
             request.ApiTeamId
         );
-        
+
         await _mediator.Send(command, cancellationToken);
 
         return NoContent();

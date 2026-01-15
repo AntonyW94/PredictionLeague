@@ -3,7 +3,7 @@ using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Constants;
-using PredictionLeague.Domain.Common.Guards.Season;
+using PredictionLeague.Domain.Common.Guards;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Domain.Services;
 

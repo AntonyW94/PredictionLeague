@@ -49,7 +49,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/teams");
+        _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/admin/teams");
     }
 
     private void EditTeam(int teamId)

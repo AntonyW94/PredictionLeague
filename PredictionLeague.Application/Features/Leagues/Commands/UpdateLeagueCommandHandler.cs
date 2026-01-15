@@ -1,7 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
-using PredictionLeague.Domain.Common.Guards.Season;
+using PredictionLeague.Domain.Common.Guards;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 

@@ -58,6 +58,6 @@
 
     private Task<HttpResponseMessage> HandleCreateTeamAsync()
     {
-        return Http.PostAsJsonAsync("api/teams/create", _model);
+        return Http.PostAsJsonAsync("api/admin/teams/create", _model);
     }
 }
