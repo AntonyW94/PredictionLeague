@@ -1,5 +1,4 @@
 ﻿using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.API.Filters;
 using PredictionLeague.Application.Features.Admin.Rounds.Commands;
@@ -19,7 +18,6 @@ public class TasksController : ApiControllerBase
         _mediator = mediator;
     }
 
-    [AllowAnonymous]
     [HttpPost("score-update")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -32,7 +30,6 @@ public class TasksController : ApiControllerBase
         return NoContent();
     }
 
-    [AllowAnonymous]
     [HttpPost("sync")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -45,7 +42,6 @@ public class TasksController : ApiControllerBase
         return NoContent();
     }
 
-    [AllowAnonymous]
     [HttpPost("send-reminders")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -57,7 +53,6 @@ public class TasksController : ApiControllerBase
         return NoContent();
     }
 
-    [AllowAnonymous]
     [HttpPost("publish-upcoming-rounds")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -69,7 +64,6 @@ public class TasksController : ApiControllerBase
         return NoContent();
     }
     
-    [AllowAnonymous]
     [HttpPost("recalculate-season-stats/{seasonId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
