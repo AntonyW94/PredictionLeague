@@ -4,6 +4,7 @@ using PredictionLeague.Application.Common.Exceptions;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
 using PredictionLeague.Domain.Common.Enumerations;
+using PredictionLeague.Domain.Common.Validation;
 using PredictionLeague.Domain.Models;
 using System.Security.Claims;
 
@@ -61,8 +62,8 @@ public class LoginWithGoogleCommandHandler : IRequestHandler<LoginWithGoogleComm
         {
             UserName = email,
             Email = email,
-            FirstName = principal.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty,
-            LastName = principal.FindFirstValue(ClaimTypes.Surname) ?? string.Empty,
+            FirstName = NameValidator.Sanitize(principal.FindFirstValue(ClaimTypes.GivenName)),
+            LastName = NameValidator.Sanitize(principal.FindFirstValue(ClaimTypes.Surname)),
             EmailConfirmed = true
         };
 
