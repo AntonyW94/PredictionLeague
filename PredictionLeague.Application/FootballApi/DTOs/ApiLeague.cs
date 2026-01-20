@@ -8,5 +8,5 @@ public class ApiLeague
     public int Id { get; set; }
     
     [JsonPropertyName("round")]
-    public string RoundName { get; set; }
+    public string RoundName { get; set; } = null!;
 }

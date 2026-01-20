@@ -5,8 +5,8 @@ namespace PredictionLeague.Application.FootballApi.DTOs;
 public class LeagueDetailsResponse
 {
     [JsonPropertyName("league")]
-    public ApiLeague League { get; set; }
+    public ApiLeague League { get; set; } = null!;
 
     [JsonPropertyName("seasons")]
-    public List<ApiSeason> Seasons { get; set; }
+    public List<ApiSeason> Seasons { get; set; } = null!;
 }

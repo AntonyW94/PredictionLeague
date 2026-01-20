@@ -195,7 +195,7 @@
                 _model = new UpdateRoundRequest
                 {
                     RoundNumber = roundDetails.Round.RoundNumber,
-                    ApiRoundName = roundDetails.Round.ApiRoundName,
+                    ApiRoundName = roundDetails.Round.ApiRoundName ?? string.Empty,
                     StartDateUtc = roundDetails.Round.StartDateUtc,
                     DeadlineUtc = roundDetails.Round.DeadlineUtc,
                     Status = roundDetails.Round.Status,
