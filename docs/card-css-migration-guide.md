@@ -9,6 +9,47 @@ This document outlines the plan to restructure card CSS from business-domain nam
 2. Multiple card types with duplicated styles (action-card, league-card, leaderboard-card)
 3. Inconsistent body/footer classes
 4. Business-domain naming (league-card, match-card) instead of conceptual naming
+5. Inconsistent background colours across cards (mix of purple-600, 800, 900)
+6. Card headers darker than card bodies
+
+---
+
+## Colour Scheme (CONFIRMED)
+
+All colours are now standardised:
+
+| Element | CSS Variable | Hex | Purpose |
+|---------|--------------|-----|---------|
+| **Section** | `--pl-purple-600` | #4A2E6C | Outer containers (lightest) |
+| **Card** (all parts) | `--pl-purple-1000` | #2C0A3D | Cards - header, body, footer all same (darkest) |
+| **Table stripe odd** | `--pl-purple-800` | #3D195B | Lighter than card |
+| **Table stripe even** | `--pl-purple-900` | #31144A | Lighter than card |
+| **Glass panels** | Keep gradient | - | Existing radial gradient effect preserved |
+
+### Key Rules
+1. **All cards use the same background colour** - No more bg-600, bg-800, bg-900 variants
+2. **Card header = body = footer colour** - No darker headers
+3. **Table rows never match card background** - Both stripe colours (800, 900) are lighter than card (1000)
+4. **Glass panels keep gradient** - May change to flat colour later
+
+### Visual Hierarchy
+```
+┌─────────────────────────────────┐  ← Section (purple-600) - Lightest
+│  Section Title                  │
+│  ┌───────────────────────────┐  │
+│  │ Card Header (purple-1000) │  │  ← Card - Darkest (all same colour)
+│  │ Card Body   (purple-1000) │  │
+│  │ ┌─────────────────────┐   │  │
+│  │ │ Table row (800)     │   │  │  ← Lighter than card
+│  │ │ Table row (900)     │   │  │  ← Lighter than card
+│  │ │ Table row (800)     │   │  │
+│  │ └─────────────────────┘   │  │
+│  │ Card Footer (purple-1000) │  │
+│  └───────────────────────────┘  │
+└─────────────────────────────────┘
+```
+
+---
 
 ### New Structure
 
@@ -102,6 +143,7 @@ The carousel CSS itself does NOT change. The carousel uses these classes:
 #### 1. `section.css` (NEW)
 ```css
 /* Section - Outer container (purple boxes with titles) */
+/* Background: purple-600 (#4A2E6C) - Lightest */
 .section {
     background-color: var(--pl-purple-600);
     padding: 1.5rem;
@@ -129,8 +171,10 @@ The carousel CSS itself does NOT change. The carousel uses these classes:
 **Add:**
 ```css
 /* Base Card */
+/* Background: purple-1000 (#2C0A3D) - Darkest (same as login form) */
+/* ALL card parts (header, body, footer) use the SAME background colour */
 .card {
-    background-color: var(--pl-purple-800);
+    background-color: var(--pl-purple-1000);
     border-radius: var(--bs-border-radius);
     color: white;
     display: flex;
@@ -138,7 +182,7 @@ The carousel CSS itself does NOT change. The carousel uses these classes:
     overflow: hidden;
 }
 
-/* Card Variants */
+/* Card Variants (layout only, NOT colour) */
 .card.slide {
     /* Carousel items - same as base, width handled by carousel */
     height: 100%;
@@ -160,19 +204,15 @@ The carousel CSS itself does NOT change. The carousel uses these classes:
     margin-bottom: 0.75rem;
 }
 
-/* Background Variants */
-.card.bg-600 { background-color: var(--pl-purple-600); }
-.card.bg-800 { background-color: var(--pl-purple-800); }
-.card.bg-900 { background-color: var(--pl-purple-900); }
+/* NO background variants - all cards use purple-1000 */
 
-/* Card Sub-elements */
+/* Card Sub-elements - ALL use same background as card (purple-1000) */
 .card > .header {
     padding: 1rem 1.5rem;
-    background-color: var(--pl-purple-900);
+    /* NO background-color - inherits from card (purple-1000) */
     display: flex;
     flex-direction: column;
     align-items: center;
-    border-radius: var(--bs-border-radius) var(--bs-border-radius) 0 0;
 }
 
 .card > .header.row-layout {
@@ -298,6 +338,25 @@ Change selector from `.leaderboard-card` to `.card.slide` or just `.card`:
 }
 ```
 
+#### 5b. `effects.css` - UPDATE table striping
+
+Update `.table-striped-purple` to use colours that contrast with card background (purple-1000):
+
+```css
+/* BEFORE - may have used colours that blend with card */
+.table-striped-purple tbody tr:nth-child(odd) { ... }
+.table-striped-purple tbody tr:nth-child(even) { ... }
+
+/* AFTER - neither row matches card background (purple-1000) */
+.table-striped-purple tbody tr:nth-child(odd) {
+    background-color: var(--pl-purple-800);  /* Lighter than card */
+}
+
+.table-striped-purple tbody tr:nth-child(even) {
+    background-color: var(--pl-purple-900);  /* Lighter than card */
+}
+```
+
 #### 6. `match-cards.css` - UPDATE
 
 Keep `.match-editor-row`, `.match-logo`, `.logo-wrapper`.
@@ -335,10 +394,10 @@ Keep `.team-card-logo-bg`, `.team-card-logo`, `.team-card-name` but consider ren
 
 | File | Line | Current | New |
 |------|------|---------|-----|
-| MyLeaguesTile.razor | 89 | `<div class="action-card dark mb-3">` | `<div class="card bg-900 mb-3">` |
-| PendingRequestsTile.razor | 29 | `<div class="action-card dark mb-3">` | `<div class="card bg-900 mb-3">` |
-| AvailableLeaguesTile.razor | 23 | `<div class="action-card light">` | `<div class="card bg-800">` |
-| RoundCard.razor | 4 | `<div class="action-card light">` | `<div class="card slide bg-800">` |
+| MyLeaguesTile.razor | 89 | `<div class="action-card dark mb-3">` | `<div class="card mb-3">` |
+| PendingRequestsTile.razor | 29 | `<div class="action-card dark mb-3">` | `<div class="card mb-3">` |
+| AvailableLeaguesTile.razor | 23 | `<div class="action-card light">` | `<div class="card">` |
+| RoundCard.razor | 4 | `<div class="action-card light">` | `<div class="card slide">` |
 
 ### League Dashboard Tiles
 
@@ -363,23 +422,23 @@ Keep `.team-card-logo-bg`, `.team-card-logo`, `.team-card-name` but consider ren
 
 | File | Line | Current | New |
 |------|------|---------|-----|
-| Admin/Rounds/List.razor | 42 | `<div class="action-card light">` | `<div class="card bg-800">` |
-| Admin/Seasons/List.razor | 37 | `<div class="action-card light">` | `<div class="card bg-800">` |
-| Admin/Users/List.razor | 33 | `<div class="action-card light">` | `<div class="card bg-800">` |
-| Admin/Team/List.razor | 31 | `<div class="team-card">` | `<div class="card thumbnail bg-600">` |
-| Admin/Rounds/Create.razor | 118 | `<div class="d-md-none match-card">` | `<div class="d-md-none card bordered">` |
+| Admin/Rounds/List.razor | 42 | `<div class="action-card light">` | `<div class="card">` |
+| Admin/Seasons/List.razor | 37 | `<div class="action-card light">` | `<div class="card">` |
+| Admin/Users/List.razor | 33 | `<div class="action-card light">` | `<div class="card">` |
+| Admin/Team/List.razor | 31 | `<div class="team-card">` | `<div class="card thumbnail">` |
+| Admin/Rounds/Create.razor | 118 | `<div class="d-md-none match-card">` | `<div class="d-md-none card">` |
 | Admin/Rounds/Create.razor | 119 | `<div class="... match-card-header">` | `<div class="header">` |
 
 ### League Pages
 
 | File | Line | Current | New |
 |------|------|---------|-----|
-| Members.razor | 35 | `<div class="action-card">` | `<div class="card bg-900">` |
-| Members.razor | 61,84 | `<div class="member-card">` | `<div class="card row bg-900">` |
-| LeagueCardList.razor | 13 | `<div class="action-card">` | `<div class="card bg-900">` |
-| Prizes.razor | 36 | `<div class="action-card light">` | `<div class="card bg-800">` |
-| Prizes.razor | 62,78 | `<div class="action-card light w-100">` | `<div class="card bg-800 w-100">` |
-| Prizes.razor | 119 | `<div class="action-card purple-600">` | `<div class="card bg-600">` |
+| Members.razor | 35 | `<div class="action-card">` | `<div class="card">` |
+| Members.razor | 61,84 | `<div class="member-card">` | `<div class="card row">` |
+| LeagueCardList.razor | 13 | `<div class="action-card">` | `<div class="card">` |
+| Prizes.razor | 36 | `<div class="action-card light">` | `<div class="card">` |
+| Prizes.razor | 62,78 | `<div class="action-card light w-100">` | `<div class="card w-100">` |
+| Prizes.razor | 119 | `<div class="action-card purple-600">` | `<div class="card">` |
 
 ### Sub-element Class Changes (All Files)
 
@@ -439,6 +498,7 @@ Keep `.team-card-logo-bg`, `.team-card-logo`, `.team-card-name` but consider ren
 ### CSS Files to Update
 - `card-base.css` (major rewrite)
 - `leaderboard.css` (selector updates)
+- `effects.css` (table striping colours)
 - `match-cards.css` (remove absorbed classes)
 - `member-cards.css` (remove absorbed classes)
 - `team-cards.css` (partial rename)
@@ -460,6 +520,15 @@ Keep `.team-card-logo-bg`, `.team-card-logo`, `.team-card-name` but consider ren
 
 After migration, verify:
 
+### Colours
+- [ ] All sections use purple-600 background
+- [ ] All cards use purple-1000 background (same as login form)
+- [ ] Card headers, bodies, and footers are all the same colour (no darker headers)
+- [ ] Table rows alternate between purple-800 and purple-900 (both lighter than card)
+- [ ] No table row blends into the card background
+- [ ] Glass panels still have gradient effect
+
+### Functionality
 - [ ] All carousels still swipe/navigate correctly
 - [ ] Carousel dots work
 - [ ] Cards display correctly inside carousel-item-content
@@ -467,6 +536,5 @@ After migration, verify:
 - [ ] Admin pages display correctly
 - [ ] Team selection grid works with hover states
 - [ ] Member cards display horizontally (desktop) and stack (mobile)
-- [ ] Glass panels still render correctly inside cards
-- [ ] Leaderboard tables render correctly
+- [ ] Leaderboard tables render correctly with visible striping
 - [ ] All buttons in footers display correctly
