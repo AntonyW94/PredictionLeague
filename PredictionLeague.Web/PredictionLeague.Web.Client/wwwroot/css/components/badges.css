@@ -48,6 +48,11 @@
     background-color: var(--pl-blue-700);
 }
 
+.badge-group--yellow {
+    background-color: var(--pl-yellow);
+    color: var(--pl-purple-800);
+}
+
 .badge-icon {
     display: inline-flex;
     align-items: center;
@@ -83,6 +88,10 @@
 
 .badge-group--orange .badge-icon {
     color: var(--pl-orange);
+}
+
+.badge-group--yellow .badge-icon {
+    color: var(--pl-purple-800);
 }
 
 .current-user-highlight .badge-group--green {

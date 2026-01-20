@@ -84,6 +84,27 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
 
 ## Code Conventions
 
+### Language and Spelling
+
+**Use UK English spelling throughout the codebase:**
+
+| US English | UK English (Use This) |
+|------------|----------------------|
+| color | colour |
+| center | centre |
+| organize | organise |
+| favorite | favourite |
+| license (verb) | licence |
+| analyze | analyse |
+| canceled | cancelled |
+
+This applies to:
+- File names (e.g., `colours.css` not `colors.css`)
+- CSS class names (where practical)
+- Comments and documentation
+- Variable names and string literals
+- Error messages and UI text
+
 ### Naming
 
 | Element | Convention | Example |
@@ -251,15 +272,15 @@ CSS follows a layered architecture with clear separation of concerns:
 
 ```
 wwwroot/css/
-├── variables.css          → Design tokens (colors, spacing, radii)
+├── variables.css          → Design tokens (colours, spacing, radii)
 ├── app.css                → Global styles and imports
-├── utilities/             → Reusable utility classes
-│   ├── colors.css         → Text and background color utilities
+├── utilities/             → Reusable utility classes (complete sets)
+│   ├── colours.css        → Text and background colour utilities
 │   ├── effects.css        → Shadows, glass-panel, table-striped
 │   ├── sizing.css         → Width, height, spacing utilities
 │   ├── typography.css     → Font sizes, text alignment, whitespace
 │   ├── borders.css        → Border utilities
-│   └── layout.css         → Flexbox, grid, display utilities
+│   └── flex.css           → Flexbox utilities
 ├── components/            → Reusable component styles
 │   ├── badges.css         → Badge and badge-group styles
 │   ├── buttons.css        → Button variants
@@ -329,16 +350,23 @@ wwwroot/css/
 --pl-gold, --pl-silver, --pl-bronze  /* Medals */
 ```
 
+### Utility Classes Philosophy
+
+**Complete utility sets are preferred** - Include all logical values even if not currently used, to provide a predictable and complete framework. This applies especially to:
+- Width utilities (w-10 through w-100)
+- Colour utilities (all design token colours)
+- Common spacing values
+
 ### Utility Classes
 
-**Text Colors:**
+**Text Colours:**
 - `.text-green-600` - Success, positive values
 - `.text-red` - Errors, negative values
 - `.text-blue-500` - Highlights, links
 - `.text-grey-300`, `.text-grey-500` - Muted text
 - `.text-purple-1000` - Dark text on light backgrounds
 
-**Background Colors:**
+**Background Colours:**
 - `.bg-purple-600` through `.bg-purple-1000`
 - `.bg-green-600`, `.bg-green-300`
 - `.bg-blue-500`, `.bg-blue-700`
@@ -373,15 +401,16 @@ wwwroot/css/
 
 ### CSS Rules to Follow
 
-1. **Always use design tokens** - Never hardcode colors, use `var(--pl-color-xxx)`
-2. **Use numeric color scale** - `.text-green-600` not `.text-green`
+1. **Always use design tokens** - Never hardcode colours, use `var(--pl-colour-xxx)`
+2. **Use numeric colour scale** - `.text-green-600` not `.text-green`
 3. **Prefer utilities over custom CSS** - Use existing utility classes when possible
 4. **Keep component CSS focused** - One component per file in `/components/`
 5. **Page styles are last resort** - Only for truly page-specific styles
+6. **Maintain complete utility sets** - Don't remove unused utilities from sizing/colours
 
 ### CSS Things to Avoid
 
-1. **Never use old color class names:**
+1. **Never use old colour class names:**
    - ❌ `.text-green`, `.bg-green`, `.text-cyan`, `.bg-blue-light`
    - ✅ `.text-green-600`, `.bg-green-600`, `.text-blue-500`, `.bg-blue-700`
 
@@ -392,7 +421,7 @@ wwwroot/css/
 
 3. **Never duplicate existing utilities** - Check utilities folder first
 
-4. **Never hardcode colors** - Always use CSS variables
+4. **Never hardcode colours** - Always use CSS variables
 
 5. **Never put component styles in page files** - Create proper component CSS
 
