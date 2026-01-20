@@ -68,7 +68,7 @@
     </defs>
 </svg>
 
-<div class="card h-100">
+<div class="section h-100">
     <h3 class="text-white text-center fw-bold mb-4">My Leagues</h3>
 
     <ApiError Message="@DashboardState.MyLeaguesErrorMessage" />
@@ -86,13 +86,13 @@
         <div class="card-grid">
             @foreach (var league in DashboardState.MyLeagues)
             {
-                <div class="action-card dark mb-3">
-                    <div class="card-header border-bottom-0 pb-1">
+                <div class="card mb-3">
+                    <div class="header">
                         <h5 class="fw-bold text-white mb-0">@league.Name</h5>
                         <small class="text-white-50">@league.SeasonName</small>
                     </div>
 
-                    <div class="action-card-body pt-2 space-between">
+                    <div class="body pt-2 space-between">
 
                         <div class="glass-panel hero-rank-container">
                             <div class="text-center w-100">
@@ -211,7 +211,7 @@
                     </div>
                 </div>
 
-                @*   <div class="action-card light">
+                @*   <div class="card">
                     <div class="card-header">
                         <h5 class="fw-bold text-white">@league.Name</h5>
                         <small class="text-white-50">@league.SeasonName</small>

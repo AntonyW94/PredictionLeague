@@ -33,9 +33,10 @@
                     Prize setup is locked until the entry deadline has passed.
                 </div>
 
-                <div class="action-card light">
-                    <div class="action-card-body no-margin">
-                        <div class="action-card-row">
+                <div class="card">
+                    <div class="body">
+                        <div class="detail-list">
+                            <div class="detail-row">
                             <div class="badge-group badge-group--red">
                                 <span class="badge-icon"><i class="bi bi-alarm"></i></span>
                                 <LocalTime UtcDate="@_pageData.EntryDeadlineUtc"/>
@@ -44,6 +45,7 @@
                             <div class="badge-group badge-group--green">
                                 <span class="badge-icon"><i class="bi bi-currency-pound"></i></span>
                                 <span>@((_pageData.Price * _pageData.MemberCount).ToString("C", new CultureInfo("en-GB")))</span>
+                            </div>
                             </div>
                         </div>
                     </div>
@@ -59,11 +61,11 @@
             else if (_pageData.PrizeSettings.Any())
             {
                 <div class="card-grid">
-                    <div class="action-card light w-100">
-                        <div class="card-header">
+                    <div class="card w-100">
+                        <div class="header">
                             <h5 class="text-white text-center fw-bold mb-0">Overall Prizes</h5>
                         </div>
-                        <div class="action-card-body">
+                        <div class="body">
                             @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Overall).OrderBy(p => p.Rank))
                             {
                                 <div class="prize-row">
@@ -75,11 +77,11 @@
                         </div>
                     </div>
 
-                    <div class="action-card light w-100">
-                        <div class="card-header">
+                    <div class="card w-100">
+                        <div class="header">
                             <h5 class="text-white text-center fw-bold mb-0">Other Prizes</h5>
                         </div>
-                        <div class="action-card-body">
+                        <div class="body">
                             @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Round))
                             {
                                 <div class="prize-row">
@@ -116,8 +118,8 @@
             }
             else if (_model != null)
             {
-                <div class="action-card purple-600">
-                    <div class="action-card-body no-padding">
+                <div class="card">
+                    <div class="body no-padding">
                         <div class="text-center text-white mb-4">
                             <h5 class="text-white">Total Prize Pot to Allocate: @_model.PrizePot.ToString("C", new CultureInfo("en-GB"))</h5>
                         </div>

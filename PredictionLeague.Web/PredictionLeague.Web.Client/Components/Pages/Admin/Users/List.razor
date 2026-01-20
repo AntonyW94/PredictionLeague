@@ -30,9 +30,9 @@
             <div class="card-grid">
                 @foreach (var user in _users)
                 {
-                    <div class="action-card light">
+                    <div class="card">
 
-                        <div class="card-header">
+                        <div class="header">
                             <h5 class="fw-bold text-white">@user.FullName</h5>
                             <small class="text-white-50">
                                 <div class="d-flex align-items-center">
@@ -58,18 +58,19 @@
                             </small>
                         </div>
 
-                        <div class="action-card-body">
-                            <div class="action-card-row">
+                        <div class="body">
+                            <div class="detail-list">
+                                <div class="detail-row">
                                 <dt><span class="bi bi-envelope-at-fill" title="Email"></span></dt>
                                 <dd class="text-end word-break-all">@user.Email</dd>
                             </div>
 
-                            <div class="action-card-row">
+                            <div class="detail-row">
                                 <dt><span class="bi bi-telephone-fill" title="Phone Number"></span></dt>
                                 <dd>@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "Not Provided" : user.PhoneNumber)</dd>
                             </div>
 
-                            <div class="action-card-row">
+                            <div class="detail-row">
                                 <dt><span class="bi bi-person-badge-fill" title="Role"></span></dt>
                                 <dd>
                                     @if (user.IsAdmin)
@@ -81,6 +82,7 @@
                                         <span class="badge rounded-pill bg-blue-700">Player</span>
                                     }
                                 </dd>
+                                </div>
                             </div>
                         </div>
 
@@ -88,7 +90,7 @@
                             var isLoggedInUser = _currentUserId == user.Id;
                         }
 
-                        <div class="action-card-footer">
+                        <div class="footer">
                             <button class="btn @(isLoggedInUser ? "grey-button" : "green-button") flex-grow-1" @onclick="() => ChangeRole(user)" disabled="@(isLoggedInUser)">
                                 <span class="bi bi-person-badge-fill me-2"></span>Change Role
                             </button>

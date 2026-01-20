@@ -3,8 +3,8 @@
 @using PredictionLeague.Web.Client.Services.Leagues
 @if (_isLoading)
 {
-    <div class="card">
-        <div class="card-body text-center">
+    <div class="section">
+        <div class="body centered">
             <div class="d-flex justify-content-center align-items-center h-100">
                 <div class="spinner-border text-light" role="status">
                     <span class="visually-hidden">Loading...</span>
@@ -47,8 +47,8 @@ else if (_winningsData != null)
 }
 else
 {
-    <div class="card">
-        <div class="card-body text-center">
+    <div class="section">
+        <div class="body centered">
             <p class="text-red">Could not load winnings data.</p>
         </div>
     </div>
