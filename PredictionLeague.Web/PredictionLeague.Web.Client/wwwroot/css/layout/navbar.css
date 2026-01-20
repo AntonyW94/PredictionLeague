@@ -54,7 +54,7 @@ a.navbar-brand span {
         .navbar-nav > .nav-item:hover .nav-link,
         .navbar-nav > .nav-item:hover .navbar-text,
         .navbar-nav > .nav-item:hover .bi-person-fill {
-            color: var(--pl-purple-800) !important;
+            color: var(--purple-800) !important;
         }
 
 .dropdown-menu {
@@ -63,24 +63,24 @@ a.navbar-brand span {
 }
 
 .dropdown-item {
-    color: var(--pl-purple-800);
+    color: var(--purple-800);
     font-weight: 500;
 }
 
     .dropdown-item:hover, .dropdown-item:focus {
-        color: var(--pl-purple-600);
+        color: var(--purple-600);
         background-color: white;
         font-weight: bold;
     }
 
     .dropdown-item.active {
-        color: var(--pl-purple-600);
+        color: var(--purple-600);
         background-color: white;
     }
 
     .dropdown-item .bi {
         font-weight: bold !important;
-        color: var(--pl-purple-800);
+        color: var(--purple-800);
     }
 
 .dropdown-divider {
@@ -94,7 +94,7 @@ a.navbar-brand span {
 
     .mobile-nav-header {
         font-weight: 700;
-        color: var(--pl-blue-500) !important;
+        color: var(--blue-500) !important;
         font-size: 1.1rem;
         padding-top: 1rem;
     }

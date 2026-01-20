@@ -51,7 +51,7 @@
     font-weight: 800;
     font-size: 1.6rem;
     margin-top: 3px;
-    color: var(--pl-white);
+    color: var(--white);
     text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
@@ -95,7 +95,7 @@
 }
 
 .current-user-highlight .text-green-600 {
-    color: var(--pl-white) !important;
+    color: var(--white) !important;
     text-shadow: 0 1px 1px rgba(0,0,0,0.5);
 }
 

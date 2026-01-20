@@ -22,7 +22,7 @@
 /* Background: purple-1000 (#2C0A3D) - Darkest (same as login form) */
 /* ALL card parts (header, body, footer) use the SAME background colour */
 .card {
-    background-color: var(--pl-purple-1000);
+    background-color: var(--purple-1000);
     border-radius: var(--bs-border-radius);
     color: white;
     display: flex;

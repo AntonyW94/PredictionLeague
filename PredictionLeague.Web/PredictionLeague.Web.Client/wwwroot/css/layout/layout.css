@@ -1,5 +1,5 @@
 ﻿main {
-    background: var(--pl-purple-800);
+    background: var(--purple-800);
 }
 
 .page-container {
@@ -11,7 +11,7 @@
 }
 
 .admin-table-container {
-    background-color: var(--pl-purple-600);
+    background-color: var(--purple-600);
     padding: 2.5rem;
     border-radius: var(--bs-border-radius);
     width: 80%;

@@ -29,28 +29,28 @@
     }
 
 .badge-group--green {
-    background-color: var(--pl-green-600);
+    background-color: var(--green-600);
 }
 
 .badge-group--purple {
-    background-color: var(--pl-purple-200);
+    background-color: var(--purple-200);
 }
 
 .badge-group--red {
-    background-color: var(--pl-red);
+    background-color: var(--red);
 }
 
 .badge-group--orange {
-    background-color: var(--pl-orange);
+    background-color: var(--orange);
 }
 
 .badge-group--blue {
-    background-color: var(--pl-blue-700);
+    background-color: var(--blue-700);
 }
 
 .badge-group--yellow {
-    background-color: var(--pl-yellow);
-    color: var(--pl-purple-800);
+    background-color: var(--yellow);
+    color: var(--purple-800);
 }
 
 .badge-icon {
@@ -71,32 +71,32 @@
     }
 
 .badge-group--green .badge-icon {
-    color: var(--pl-green-600);
+    color: var(--green-600);
 }
 
 .badge-group--purple .badge-icon {
-    color: var(--pl-purple-200);
+    color: var(--purple-200);
 }
 
 .badge-group--red .badge-icon {
-    color: var(--pl-red);
+    color: var(--red);
 }
 
 .badge-group--blue .badge-icon {
-    color: var(--pl-blue-700);
+    color: var(--blue-700);
 }
 
 .badge-group--orange .badge-icon {
-    color: var(--pl-orange);
+    color: var(--orange);
 }
 
 .badge-group--yellow .badge-icon {
-    color: var(--pl-purple-800);
+    color: var(--purple-800);
 }
 
 .current-user-highlight .badge-group--green {
     background-color: white;
-    color: var(--pl-green-600);
+    color: var(--green-600);
 }
 
 @media (max-width: 768px) {

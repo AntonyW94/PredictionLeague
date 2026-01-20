@@ -19,7 +19,7 @@
 
 .detail-row dt {
     font-weight: normal;
-    color: var(--pl-grey-500);
+    color: var(--grey-500);
 }
 
 .detail-row dd {
@@ -30,7 +30,7 @@
 .detail-row code {
     font-size: 1rem;
     font-weight: bold;
-    color: var(--pl-white);
+    color: var(--white);
 }
 
 .detail-row.centered {

@@ -2,43 +2,43 @@
 
 :root {
     /* Base Colors */
-    --pl-white: #FFFFFF;
-    --pl-black: #1f1f1f;
+    --white: #FFFFFF;
+    --black: #1f1f1f;
 
     /* Purples (higher number = darker) */
-    --pl-purple-1000: #2C0A3D;
-    --pl-purple-900: #31144A;
-    --pl-purple-800: #3D195B;
-    --pl-purple-700: #432468;
-    --pl-purple-600: #4A2E6C;
-    --pl-purple-300: #75559D;
-    --pl-purple-200: #963CFF;
+    --purple-1000: #2C0A3D;
+    --purple-900: #31144A;
+    --purple-800: #3D195B;
+    --purple-700: #432468;
+    --purple-600: #4A2E6C;
+    --purple-300: #75559D;
+    --purple-200: #963CFF;
 
     /* Reds */
-    --pl-red: #E90052;
+    --red: #E90052;
 
     /* Blues (higher number = darker) */
-    --pl-blue-500: #04F5FF;
-    --pl-blue-700: #03c2b4;
+    --blue-500: #04F5FF;
+    --blue-700: #03c2b4;
 
     /* Greens (higher number = darker) */
-    --pl-green-300: #84fab0;
-    --pl-green-600: #00B960;
+    --green-300: #84fab0;
+    --green-600: #00B960;
 
     /* Yellows */
-    --pl-yellow: #EBFF01;
-    --pl-orange: #CC8200;
+    --yellow: #EBFF01;
+    --orange: #CC8200;
 
     /* Greys */
-    --pl-grey-100: #EAEAEA;
-    --pl-grey-200: #DADCE0;
-    --pl-grey-300: #CECECE;
-    --pl-grey-500: #6C757D;
+    --grey-100: #EAEAEA;
+    --grey-200: #DADCE0;
+    --grey-300: #CECECE;
+    --grey-500: #6C757D;
 
     /* Medals */
-    --pl-gold: #C9B037;
-    --pl-silver: #B4B4B4;
-    --pl-bronze: #6A3805;
+    --gold: #C9B037;
+    --silver: #B4B4B4;
+    --bronze: #6A3805;
 
     /* Border Radiuses */
     --bs-border-radius: 20px;

@@ -46,11 +46,11 @@
 
 html, body {
     font-family: 'Poppins', sans-serif;
-    background-color: var(--pl-grey-100);
+    background-color: var(--grey-100);
 }
 
 h1, h2, h3, h4, h5, h6 {
-    color: var(--pl-purple-800);
+    color: var(--purple-800);
     font-weight: 700;
 }
 

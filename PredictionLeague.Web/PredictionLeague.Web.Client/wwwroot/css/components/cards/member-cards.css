@@ -2,7 +2,7 @@
 /* Note: .member-card has been replaced by .card.row in card-base.css */
 
 .member-status-column {
-    background-color: var(--pl-purple-800);
+    background-color: var(--purple-800);
     border-radius: var(--bs-border-radius);
     padding: 1.5rem;
     height: 100%;

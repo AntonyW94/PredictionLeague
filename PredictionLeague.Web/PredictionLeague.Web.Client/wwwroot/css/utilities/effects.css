@@ -16,9 +16,9 @@
 /* Table Striping - Purple variant */
 /* Both stripe colours (800, 900) are lighter than card background (1000) */
 .table-striped-purple tbody tr:nth-child(odd) td {
-    background-color: var(--pl-purple-800);
+    background-color: var(--purple-800);
 }
 
 .table-striped-purple tbody tr:nth-child(even) td {
-    background-color: var(--pl-purple-900);
+    background-color: var(--purple-900);
 }

@@ -1,5 +1,5 @@
 ﻿.form-container {
-    background-color: var(--pl-purple-1000);
+    background-color: var(--purple-1000);
     padding: 2.5rem;
     border-radius: var(--bs-border-radius);
     width: 100%;
@@ -15,29 +15,29 @@
     }
 
 .form-check-input {
-    background-color: var(--pl-red);
-    border-color: var(--pl-red);
+    background-color: var(--red);
+    border-color: var(--red);
 }
 
     .form-check-input:checked {
-        background-color: var(--pl-green-600);
-        border-color: var(--pl-green-600);
+        background-color: var(--green-600);
+        border-color: var(--green-600);
     }
 
 .form-sub-header {
-    color: var(--pl-grey-100);
+    color: var(--grey-100);
     font-weight: 500;
 }
 
 .input-group-text.prize-label {
-    background-color: var(--pl-purple-900);
-    border-color: var(--pl-purple-900);
+    background-color: var(--purple-900);
+    border-color: var(--purple-900);
     color: white;
     font-weight: 500;
 }
 
 .prize-summary .league-card-row {
-    border-bottom: 1px solid var(--pl-purple-800);
+    border-bottom: 1px solid var(--purple-800);
 }
 
     .prize-summary .league-card-row:last-child {
@@ -72,7 +72,7 @@
     }
 
     .message-box-solid.error {
-        background-color: var(--pl-red);
+        background-color: var(--red);
     }
 
         .message-box-solid.error::before {
@@ -80,18 +80,18 @@
         }
 
     .message-box-solid.warning {
-        background-color: var(--pl-yellow);
-        color: var(--pl-purple-900);
+        background-color: var(--yellow);
+        color: var(--purple-900);
         font-weight: bold;
     }
 
         .message-box-solid.warning::before {
             content: "\F33B";
-            color: var(--pl-purple-900);
+            color: var(--purple-900);
         }
 
     .message-box-solid.success {
-        background-color: var(--pl-green-600);
+        background-color: var(--green-600);
     }
 
         .message-box-solid.success::before {
@@ -103,21 +103,21 @@
     width: 100%;
     border-radius: 28px;
     padding: 0 18px;
-    background: var(--pl-purple-1000);
-    border: 1px solid var(--pl-white);
-    color: var(--pl-white);
+    background: var(--purple-1000);
+    border: 1px solid var(--white);
+    color: var(--white);
     font-size: 1rem;
     transition: all 0.18s ease;
 }
 
     .form-control::placeholder {
-        color: var(--pl-white);
+        color: var(--white);
     }
 
     .form-control:focus {
-        background: var(--pl-purple-800);
-        color: var(--pl-white);
-        border-color: var(--pl-white);
+        background: var(--purple-800);
+        color: var(--white);
+        border-color: var(--white);
         box-shadow: none;
         outline: none;
     }
@@ -132,8 +132,8 @@
 }
 
 .input-group:focus-within .password-toggle-btn {
-    background-color: var(--pl-purple-800);
-    color: var(--pl-white);
+    background-color: var(--purple-800);
+    color: var(--white);
     z-index: 2
 }
 

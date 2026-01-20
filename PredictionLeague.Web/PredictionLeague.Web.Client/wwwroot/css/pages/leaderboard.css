@@ -10,12 +10,12 @@
     .leaderboard-table td {
         padding: 0.75rem;
         text-align: center;
-        border-bottom: 1px solid var(--pl-purple-800);
+        border-bottom: 1px solid var(--purple-800);
         white-space: nowrap;
     }
 
     .leaderboard-table th {
-        background-color: var(--pl-purple-900);
+        background-color: var(--purple-900);
         font-weight: bold;
         position: sticky;
         top: 0;
@@ -23,7 +23,7 @@
     }
 
     .leaderboard-table td {
-        background: var(--pl-purple-800);
+        background: var(--purple-800);
     }
 
     /* Striping now handled by .table-striped-purple utility */
@@ -50,15 +50,15 @@
     }
 
     .leaderboard-table tbody tr.current-user-highlight td {
-        background-color: var(--pl-green-600) !important;
+        background-color: var(--green-600) !important;
         color: white !important;
     }
 
     .leaderboard-table tbody tr.overall-round-winner,
     .leaderboard-table tbody tr.overall-round-winner td,
     .leaderboard-table tbody tr.overall-round-winner.current-user-highlight td {
-        background-color: var(--pl-gold) !important;
-        color: var(--pl-white) !important;
+        background-color: var(--gold) !important;
+        color: var(--white) !important;
         border: none;
     }
 
