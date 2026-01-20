@@ -2,7 +2,7 @@
 
 .swal2-select {
     background-color: white !important;
-    color: var(--pl-purple-800) !important;
+    color: var(--purple-800) !important;
     border-radius: var(--bs-border-radius);
     padding: 0.5rem;
 }

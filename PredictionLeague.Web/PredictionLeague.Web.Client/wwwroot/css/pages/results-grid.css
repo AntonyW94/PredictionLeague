@@ -14,12 +14,12 @@
     .results-grid td {
         padding: 0.75rem;
         text-align: center;
-        border-bottom: 1px solid var(--pl-purple-800);
+        border-bottom: 1px solid var(--purple-800);
         white-space: nowrap;
     }
 
     .results-grid th {
-        background-color: var(--pl-purple-900);
+        background-color: var(--purple-900);
         font-weight: bold;
         position: sticky;
         top: 0;
@@ -31,7 +31,7 @@
         min-width: 60px;
         position: sticky;
         left: 0;
-        background-color: var(--pl-purple-900);
+        background-color: var(--purple-900);
         font-weight: bold;
     }
 
@@ -41,7 +41,7 @@
     }
 
     .results-grid td.match-info {
-        background-color: var(--pl-purple-800);
+        background-color: var(--purple-800);
         z-index: 2;
     }
 
@@ -50,12 +50,12 @@
     .results-grid .score-cell {
         font-weight: bold;
         font-size: 1.1em;
-        background: var(--pl-purple-800);
+        background: var(--purple-800);
     }
 
     .results-grid .not-predicted-icon {
         font-size: 1.5em;
-        color: var(--pl-grey-100);
+        color: var(--grey-100);
     }
 
     .results-grid .match-info .match-logo-small {
@@ -64,28 +64,28 @@
     }
 
     .results-grid .score-cell.correct-score {
-        background-color: var(--pl-green-600);
-        color: var(--pl-purple-900);
+        background-color: var(--green-600);
+        color: var(--purple-900);
     }
 
     .results-grid .score-cell.correct-result {
-        background-color: var(--pl-yellow);
-        color: var(--pl-purple-900);
+        background-color: var(--yellow);
+        color: var(--purple-900);
     }
 
     .results-grid .score-cell.incorrect-result {
-        background-color: var(--pl-red);
+        background-color: var(--red);
     }
 
     .results-grid tfoot th {
-        background-color: var(--pl-purple-900);
+        background-color: var(--purple-900);
         font-size: 1.2em;
         position: sticky;
         bottom: 0;
     }
 
     .results-grid .actual-score.in-progress {
-        color: var(--pl-green-600);
+        color: var(--green-600);
         animation: pulse-scale 1.5s infinite;
     }
 
@@ -97,7 +97,7 @@
 
 .results-grid thead th.winner-column, 
 .results-grid tfoot th.winner-column {
-    background-color: var(--pl-gold) !important;
+    background-color: var(--gold) !important;
 }
 
 /* --- Mobile Carousel and Card Styles --- */
@@ -106,7 +106,7 @@
 }
 
 .mobile-match-card {
-    background-color: var(--pl-purple-800);
+    background-color: var(--purple-800);
     border-radius: var(--bs-border-radius);
     color: white;
     overflow: hidden;
@@ -117,7 +117,7 @@
 }
 
 .mobile-match-header {
-    background-color: var(--pl-purple-900);
+    background-color: var(--purple-900);
     padding: 0.75rem 1rem;
     position: sticky;
     top: 0;

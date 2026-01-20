@@ -42,14 +42,14 @@
 .match-preview-score {
     min-width: 14px;
     text-align: center;
-    color: var(--pl-white);
+    color: var(--white);
     font-size: 14px;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
 
 .match-preview-vs {
-    color: var(--pl-grey-300);
+    color: var(--grey-300);
     font-size: 12px;
     opacity: 0.7;
 }
