@@ -7,18 +7,6 @@
     color: white;
 }
 
-.bg-pl-red {
-    background-color: var(--pl-red);
-}
-
-.bg-pl-green {
-    background-color: var(--pl-green);
-}
-
-.bg-pl-blue-light {
-    background-color: var(--pl-blue-light);
-}
-
 .badge-group {
     display: inline-flex;
     align-items: center;
@@ -139,27 +127,9 @@
         color: white;
     }
 
-.pulsing {
-    animation: pulse 1.5s infinite;
-}
-
 .current-user-highlight .badge-group--green {
     background-color: white;
     color: var(--pl-green);
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
-    }
-
-    70% {
-        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
-    }
 }
 
 @media (max-width: 768px) {

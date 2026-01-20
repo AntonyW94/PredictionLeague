@@ -94,19 +94,17 @@
     stroke: url(#rim-red);
 }
 
-/* Helper classes for Arrows to match your palette */
-.text-pl-green {
-    color: var(--pl-green) !important;
+/* Rank arrow text shadows for readability */
+.hero-rank-container .text-pl-green,
+.hero-rank-container .text-pl-red,
+.secondary-rank-box .text-pl-green,
+.secondary-rank-box .text-pl-red {
     text-shadow: 0 1px 1px rgba(0,0,0,0.5);
 }
 
 .current-user-highlight .text-pl-green {
     color: var(--pl-white) !important;
     text-shadow: 0 1px 1px rgba(0,0,0,0.5);
-}
-
-.text-pl-red {
-    color: var(--pl-red) !important;
 }
 
 /* --- Financial Row Styles --- */

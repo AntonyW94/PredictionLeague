@@ -88,7 +88,7 @@
 
     .results-grid .actual-score.in-progress {
         color: var(--pl-green);
-        animation: pulse 1.5s infinite;
+        animation: pulse-scale 1.5s infinite;
     }
 
 .blurred-score {
@@ -164,21 +164,4 @@
     width: 68px;
     max-width: 68px;
     min-width: 68px;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-        opacity: 1;
-    }
-
-    50% {
-        transform: scale(1.05);
-        opacity: 0.7;
-    }
-
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
 }

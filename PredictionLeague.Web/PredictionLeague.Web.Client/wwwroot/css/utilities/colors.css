@@ -42,8 +42,18 @@
     background-color: var(--pl-purple-900);
 }
 
-.bg-red {
+.bg-red,
+.bg-pl-red {
     background-color: var(--pl-red);
+}
+
+.bg-green,
+.bg-pl-green {
+    background-color: var(--pl-green);
+}
+
+.bg-pl-blue-light {
+    background-color: var(--pl-blue-light);
 }
 
 .bg-transparent {

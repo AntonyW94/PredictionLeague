@@ -1,13 +1,16 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap');
 
-/* Base styles */
-@import url('colours.css');
+/* Design tokens (CSS variables) */
+@import url('variables.css');
 
 /* Utility styles */
 @import url('utilities/typography.css');
 @import url('utilities/colors.css');
 @import url('utilities/borders.css');
+@import url('utilities/sizing.css');
+@import url('utilities/flex.css');
+@import url('utilities/animations.css');
 @import url('utilities/misc.css');
 
 /* Layout styles */
@@ -22,6 +25,7 @@
 @import url('components/cards.css');
 @import url('components/carousel.css');
 @import url('components/forms.css');
+@import url('components/modals.css');
 @import url('components/my-leagues-tile.css');
 
 /* Page-specific styles */
@@ -33,16 +37,6 @@
 @import url('pages/results-grid.css');
 @import url('pages/user-list.css');
 
-
-:root {
-    /* Border Radiuses */
-    --bs-border-radius: 20px;
-    --bs-border-radius-sm: 20px;
-    --bs-border-radius-lg: 20px;
-    --bs-border-radius-xl: 20px;
-    --bs-border-radius-xxl: 20px;
-}
-
 html, body {
     font-family: 'Poppins', sans-serif;
     background-color: var(--pl-grey-100);
@@ -51,10 +45,6 @@ html, body {
 h1, h2, h3, h4, h5, h6 {
     color: var(--pl-purple-800);
     font-weight: 700;
-}
-
-.centre{
-    text-align: center;
 }
 
 #blazor-error-ui {
