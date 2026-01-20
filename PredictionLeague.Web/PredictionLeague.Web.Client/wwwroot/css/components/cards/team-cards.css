@@ -1,0 +1,49 @@
+/* Team Selection Cards */
+
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+}
+
+.team-card {
+    background-color: var(--pl-purple-600);
+    border-radius: var(--bs-border-radius);
+    overflow: hidden;
+    text-align: center;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+    .team-card:hover .team-card-logo-bg {
+        background-color: var(--pl-green);
+    }
+
+.team-card-logo-bg {
+    background-color: var(--pl-grey-100);
+    padding: 1.5rem;
+    height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.team-card-logo {
+    height: 80px;
+    max-width: 100%;
+}
+
+.team-card-body {
+    padding: 1rem;
+}
+
+.team-card-name {
+    color: white;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

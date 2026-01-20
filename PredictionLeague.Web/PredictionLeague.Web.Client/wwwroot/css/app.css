@@ -11,22 +11,29 @@
 @import url('utilities/sizing.css');
 @import url('utilities/flex.css');
 @import url('utilities/animations.css');
-@import url('utilities/misc.css');
+@import url('utilities/effects.css');
 
 /* Layout styles */
 @import url('layout/layout.css');
 @import url('layout/loading.css');
 @import url('layout/navbar.css');
 
-/* Component styles */
+/* Component styles - Cards */
+@import url('components/cards/card-base.css');
+@import url('components/cards/team-cards.css');
+@import url('components/cards/league-cards.css');
+@import url('components/cards/action-cards.css');
+@import url('components/cards/match-cards.css');
+@import url('components/cards/member-cards.css');
+
+/* Component styles - Other */
 @import url('components/badges.css');
 @import url('components/boosts.css');
 @import url('components/buttons.css');
-@import url('components/cards.css');
 @import url('components/carousel.css');
 @import url('components/forms.css');
 @import url('components/modals.css');
-@import url('components/my-leagues-tile.css');
+@import url('components/rank-display.css');
 
 /* Page-specific styles */
 @import url('pages/dashboard.css');
@@ -35,7 +42,6 @@
 @import url('pages/predictions.css');
 @import url('pages/prizes.css');
 @import url('pages/results-grid.css');
-@import url('pages/user-list.css');
 
 html, body {
     font-family: 'Poppins', sans-serif;

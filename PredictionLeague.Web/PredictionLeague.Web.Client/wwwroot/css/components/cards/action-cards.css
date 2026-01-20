@@ -1,0 +1,106 @@
+/* Action/CTA Cards */
+
+.action-card {
+    background-color: var(--pl-purple-900);
+    border-radius: var(--bs-border-radius);
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+    .action-card.light {
+        background-color: var(--pl-purple-800);
+    }
+
+    .action-card.purple-600 {
+        background-color: var(--pl-purple-600);
+    }
+
+/* Action card header override - uses different layout than base card-header */
+.action-card .card-header {
+    background-color: var(--pl-purple-900);
+    padding: 1rem 1.5rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+}
+
+.action-card-body {
+    padding: 1rem 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.action-card-body.no-padding {
+    padding: 0;
+}
+
+.action-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+    .action-card-row:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .action-card-row dt {
+        font-weight: normal;
+        color: var(--light-text);
+    }
+
+    .action-card-row dd {
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+
+    .action-card-row code {
+        font-size: 1rem;
+        font-weight: bold;
+        color: var(--pl-white);
+    }
+
+.action-card-row--centered {
+    justify-content: center;
+}
+
+.action-card.light .action-card-footer {
+    padding-top: 0;
+}
+
+.action-card-footer {
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+    .action-card-footer .btn {
+        flex-grow: 1;
+    }
+
+    .action-card-footer.columns-2 .btn {
+        flex-basis: calc(50% - 0.5rem);
+    }
+
+@media (max-width: 768px) {
+    .action-card {
+        max-width: 350px;
+        width: 100%;
+    }
+
+    .action-card-footer .btn {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+}

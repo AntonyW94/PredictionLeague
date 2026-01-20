@@ -70,3 +70,8 @@
         transform: rotate(360deg);
     }
 }
+
+/* Transitions */
+.transition-all {
+    transition: all 0.3s;
+}

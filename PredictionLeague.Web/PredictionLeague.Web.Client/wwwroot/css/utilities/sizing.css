@@ -45,7 +45,18 @@
     width: 70%;
 }
 
+/* Heights */
+.h-screen {
+    height: 100vh;
+}
+
 /* Max Heights */
 .mh-600 {
     max-height: 600px;
+}
+
+/* Max Widths */
+.max-w-60,
+.max-w-logo { /* Legacy alias */
+    max-width: 60px;
 }

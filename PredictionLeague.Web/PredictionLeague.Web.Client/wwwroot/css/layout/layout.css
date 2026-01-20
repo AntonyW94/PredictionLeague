@@ -33,10 +33,6 @@ main.light-grey{
     margin: auto;
 }
 
-.hero-section {
-    background-color: var(--pl-purple-800);
-}
-
 .hero-image {
     height: 100px;
     border-radius: var(--bs-border-radius);
