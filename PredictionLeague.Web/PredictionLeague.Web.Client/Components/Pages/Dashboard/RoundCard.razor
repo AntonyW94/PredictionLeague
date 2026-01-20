@@ -23,6 +23,30 @@
                 }
             </div>
         </dl>
+
+        @if (Round.Matches.Any())
+        {
+            <div class="match-preview-grid">
+                @foreach (var match in Round.Matches)
+                {
+                    <div class="match-preview-row">
+                        <img src="@(match.HomeTeamLogoUrl ?? "images/team-placeholder.svg")"
+                             class="match-preview-logo"
+                             alt="Home"
+                             loading="lazy"
+                             onerror="this.onerror=null; this.src='images/team-placeholder.svg';" />
+                        <span class="match-preview-score">@(match.PredictedHomeScore?.ToString() ?? "-")</span>
+                        <span class="match-preview-vs">v</span>
+                        <span class="match-preview-score">@(match.PredictedAwayScore?.ToString() ?? "-")</span>
+                        <img src="@(match.AwayTeamLogoUrl ?? "images/team-placeholder.svg")"
+                             class="match-preview-logo"
+                             alt="Away"
+                             loading="lazy"
+                             onerror="this.onerror=null; this.src='images/team-placeholder.svg';" />
+                    </div>
+                }
+            </div>
+        }
     </div>
     <div class="action-card-footer">
         @if (Round.DeadlineUtc > DateTime.UtcNow)

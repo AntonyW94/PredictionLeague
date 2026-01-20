@@ -2,7 +2,8 @@
 
 public record UpcomingRoundDto(
     int Id,
-    string SeasonName, 
-    int RoundNumber, 
+    string SeasonName,
+    int RoundNumber,
     DateTime DeadlineUtc,
-    bool HasUserPredicted);
+    bool HasUserPredicted,
+    IEnumerable<UpcomingMatchDto> Matches);
