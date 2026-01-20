@@ -243,6 +243,159 @@ public class DashboardStateService
 3. Auto-refreshes expired tokens via `/api/auth/refresh-token`
 4. Sets `Authorization: Bearer {token}` header on HttpClient
 
+## CSS Architecture
+
+### File Structure
+
+CSS follows a layered architecture with clear separation of concerns:
+
+```
+wwwroot/css/
+├── variables.css          → Design tokens (colors, spacing, radii)
+├── app.css                → Global styles and imports
+├── utilities/             → Reusable utility classes
+│   ├── colors.css         → Text and background color utilities
+│   ├── effects.css        → Shadows, glass-panel, table-striped
+│   ├── sizing.css         → Width, height, spacing utilities
+│   ├── typography.css     → Font sizes, text alignment, whitespace
+│   ├── borders.css        → Border utilities
+│   └── layout.css         → Flexbox, grid, display utilities
+├── components/            → Reusable component styles
+│   ├── badges.css         → Badge and badge-group styles
+│   ├── buttons.css        → Button variants
+│   ├── carousel.css       → Carousel/slider styles
+│   ├── forms.css          → Form controls and validation
+│   ├── rank-display.css   → Shield icons and rank displays
+│   └── cards/             → Card component styles
+│       ├── card-base.css  → Base card styles
+│       ├── action-cards.css
+│       ├── league-cards.css
+│       ├── match-cards.css
+│       ├── member-cards.css
+│       └── team-cards.css
+├── layout/                → Layout and structural styles
+│   ├── navigation.css
+│   └── loading.css
+└── pages/                 → Page-specific styles
+    ├── home.css
+    ├── leaderboard.css
+    ├── predictions.css
+    ├── prizes.css
+    └── results-grid.css
+```
+
+### Color Naming Convention
+
+**Use numeric scale (Tailwind-style) for colors with multiple shades:**
+
+| Scale | Meaning | Usage |
+|-------|---------|-------|
+| 100-200 | Lightest | Accents, highlights |
+| 300-400 | Light | Secondary elements |
+| 500 | Base | Default/primary usage |
+| 600-700 | Dark | Text, emphasis |
+| 800-900 | Darker | Backgrounds |
+| 1000 | Darkest | Deep backgrounds |
+
+**Higher number = darker color**
+
+### Design Tokens (variables.css)
+
+```css
+/* Purples - Primary brand color */
+--pl-purple-1000: #2C0A3D;  /* Darkest */
+--pl-purple-900: #31144A;
+--pl-purple-800: #3D195B;   /* Common background */
+--pl-purple-700: #432468;
+--pl-purple-600: #4A2E6C;
+--pl-purple-300: #75559D;
+--pl-purple-200: #963CFF;   /* Accent/highlight */
+
+/* Blues */
+--pl-blue-500: #04F5FF;     /* Bright cyan - base */
+--pl-blue-700: #03c2b4;     /* Darker teal */
+
+/* Greens */
+--pl-green-300: #84fab0;    /* Light/pastel */
+--pl-green-600: #00B960;    /* Base green */
+
+/* Greys */
+--pl-grey-100 to --pl-grey-500  /* Light to dark */
+
+/* Single-value colors (no scale needed) */
+--pl-red: #E90052;
+--pl-yellow: #EBFF01;
+--pl-orange: #CC8200;
+--pl-gold, --pl-silver, --pl-bronze  /* Medals */
+```
+
+### Utility Classes
+
+**Text Colors:**
+- `.text-green-600` - Success, positive values
+- `.text-red` - Errors, negative values
+- `.text-blue-500` - Highlights, links
+- `.text-grey-300`, `.text-grey-500` - Muted text
+- `.text-purple-1000` - Dark text on light backgrounds
+
+**Background Colors:**
+- `.bg-purple-600` through `.bg-purple-1000`
+- `.bg-green-600`, `.bg-green-300`
+- `.bg-blue-500`, `.bg-blue-700`
+- `.bg-red`
+
+**Effects:**
+- `.glass-panel` - Radial gradient with subtle border and inner glow
+- `.table-striped-purple` - Purple row striping for tables
+- `.shadow` - Standard drop shadow
+
+### Component Patterns
+
+**Glass Panel Effect:**
+```html
+<div class="glass-panel hero-rank-container">
+    <!-- Content with frosted glass appearance -->
+</div>
+```
+
+**Table Striping:**
+```html
+<table class="leaderboard-table table-striped-purple">
+    <!-- Rows automatically striped -->
+</table>
+```
+
+**Button Naming:**
+- `.green-button` - Primary actions
+- `.red-button` - Destructive actions
+- `.purple-accent-button` - Secondary actions
+- `.blue-light-button` - Tertiary actions
+
+### CSS Rules to Follow
+
+1. **Always use design tokens** - Never hardcode colors, use `var(--pl-color-xxx)`
+2. **Use numeric color scale** - `.text-green-600` not `.text-green`
+3. **Prefer utilities over custom CSS** - Use existing utility classes when possible
+4. **Keep component CSS focused** - One component per file in `/components/`
+5. **Page styles are last resort** - Only for truly page-specific styles
+
+### CSS Things to Avoid
+
+1. **Never use old color class names:**
+   - ❌ `.text-green`, `.bg-green`, `.text-cyan`, `.bg-blue-light`
+   - ✅ `.text-green-600`, `.bg-green-600`, `.text-blue-500`, `.bg-blue-700`
+
+2. **Never use deprecated aliases:**
+   - ❌ `.text-success`, `.text-danger` (use `.text-green-600`, `.text-red`)
+   - ❌ `.centre` (use `.text-center`)
+   - ❌ `.email-address` (use `.word-break-all`)
+
+3. **Never duplicate existing utilities** - Check utilities folder first
+
+4. **Never hardcode colors** - Always use CSS variables
+
+5. **Never put component styles in page files** - Create proper component CSS
+
 ## Database
 
 ### Key Tables
