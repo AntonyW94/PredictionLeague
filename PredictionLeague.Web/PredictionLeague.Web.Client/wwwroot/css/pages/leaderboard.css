@@ -77,7 +77,7 @@
     }
 
         .leaderboard-table tbody tr.current-user-highlight td {
-            background-color: var(--pl-green) !important;
+            background-color: var(--pl-green-600) !important;
             color: white !important;
         }
 

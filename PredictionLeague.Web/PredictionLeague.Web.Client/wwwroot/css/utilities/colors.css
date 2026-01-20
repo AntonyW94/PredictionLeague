@@ -13,12 +13,12 @@
     color: var(--pl-grey-500);
 }
 
-.text-cyan {
-    color: var(--pl-blue);
+.text-blue-500 {
+    color: var(--pl-blue-500);
 }
 
-.text-green {
-    color: var(--pl-green);
+.text-green-600 {
+    color: var(--pl-green-600);
 }
 
 .text-red {
@@ -50,12 +50,20 @@
     background-color: var(--pl-red);
 }
 
-.bg-green {
-    background-color: var(--pl-green);
+.bg-green-600 {
+    background-color: var(--pl-green-600);
 }
 
-.bg-blue-light {
-    background-color: var(--pl-blue-light);
+.bg-green-300 {
+    background-color: var(--pl-green-300);
+}
+
+.bg-blue-500 {
+    background-color: var(--pl-blue-500);
+}
+
+.bg-blue-700 {
+    background-color: var(--pl-blue-700);
 }
 
 .bg-transparent {

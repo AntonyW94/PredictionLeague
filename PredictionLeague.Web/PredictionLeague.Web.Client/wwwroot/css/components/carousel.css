@@ -72,7 +72,7 @@
 }
 
     .carousel-dot.active, .carousel-dot:hover {
-        background-color: var(--pl-green);
+        background-color: var(--pl-green-600);
     }
 
 @media (min-width: 992px) {

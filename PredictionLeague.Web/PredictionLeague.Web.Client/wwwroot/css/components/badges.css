@@ -29,11 +29,11 @@
     }
 
 .badge-group--green {
-    background-color: var(--pl-green);
+    background-color: var(--pl-green-600);
 }
 
 .badge-group--purple {
-    background-color: var(--pl-purple-accent);
+    background-color: var(--pl-purple-200);
 }
 
 .badge-group--red {
@@ -50,7 +50,7 @@
 }
 
 .badge-group--blue {
-    background-color: var(--pl-blue-light);
+    background-color: var(--pl-blue-700);
 }
 
 .badge-group--gold {
@@ -83,11 +83,11 @@
     }
 
 .badge-group--green .badge-icon {
-    color: var(--pl-green);
+    color: var(--pl-green-600);
 }
 
 .badge-group--purple .badge-icon {
-    color: var(--pl-purple-accent);
+    color: var(--pl-purple-200);
 }
 
 .badge-group--red .badge-icon {
@@ -95,7 +95,7 @@
 }
 
 .badge-group--blue .badge-icon {
-    color: var(--pl-blue-light);
+    color: var(--pl-blue-700);
 }
 
 .badge-group--orange .badge-icon {
@@ -129,7 +129,7 @@
 
 .current-user-highlight .badge-group--green {
     background-color: white;
-    color: var(--pl-green);
+    color: var(--pl-green-600);
 }
 
 @media (max-width: 768px) {

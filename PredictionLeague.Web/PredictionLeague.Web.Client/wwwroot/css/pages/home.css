@@ -12,12 +12,12 @@
 
 .feature-icon {
     font-size: 3rem;
-    color: var(--pl-green);
+    color: var(--pl-green-600);
 }
 
 .tick-icon {
     font-size: 1rem;
-    color: var(--pl-green);
+    color: var(--pl-green-600);
 }
 
 .testimonial-card {

@@ -20,8 +20,8 @@
 }
 
     .form-check-input:checked {
-        background-color: var(--pl-green);
-        border-color: var(--pl-green);
+        background-color: var(--pl-green-600);
+        border-color: var(--pl-green-600);
     }
 
 .form-sub-header {
@@ -91,7 +91,7 @@
         }
 
     .message-box-solid.success {
-        background-color: var(--pl-green);
+        background-color: var(--pl-green-600);
     }
 
         .message-box-solid.success::before {

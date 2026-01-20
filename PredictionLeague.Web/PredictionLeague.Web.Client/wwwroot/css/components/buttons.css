@@ -1,7 +1,7 @@
 ﻿.green-button,
 .green-button:disabled,
 .green-button:active {
-    background-color: var(--pl-green);
+    background-color: var(--pl-green-600);
     color: var(--pl-white);
     font-weight: bold;
     transition: background-color 0.2s, color 0.2s;
@@ -9,7 +9,7 @@
 
     .green-button:not(.badge):hover {
         background-color: var(--pl-white);
-        color: var(--pl-green);
+        color: var(--pl-green-600);
     }
 
 .red-button,
@@ -42,27 +42,27 @@
 .purple-accent-button,
 .purple-accent-button:disabled,
 .purple-accent-button:active {
-    background-color: var(--pl-purple-accent);
+    background-color: var(--pl-purple-200);
     color: var(--pl-white);
     font-weight: bold;
 }
 
     .purple-accent-button:not(.badge):hover {
         background-color: var(--pl-white);
-        color: var(--pl-purple-accent);
+        color: var(--pl-purple-200);
     }
 
 .blue-light-button,
 .blue-light-button:disabled,
 .blue-light-button:active {
-    background-color: var(--pl-blue-light);
+    background-color: var(--pl-blue-700);
     color: var(--pl-white);
     font-weight: bold;
 }
 
     .blue-light-button:not(.badge):hover {
         background-color: var(--pl-white);
-        color: var(--pl-blue-light);
+        color: var(--pl-blue-700);
     }
 
 .btn.grey-button,
@@ -105,14 +105,14 @@
 
     .password-toggle-btn:hover,
     .password-toggle-btn:active {
-        color: var(--pl-green);
+        color: var(--pl-green-600);
         border: 1px solid var(--pl-white);
         border-left: 0;
         background-color: var(--pl-purple-1000);
     }
 
     .password-toggle-btn:focus {
-        color: var(--pl-green);
+        color: var(--pl-green-600);
         border: 1px solid var(--pl-white);
         border-left: 0;
         background-color: var(--pl-purple-800);

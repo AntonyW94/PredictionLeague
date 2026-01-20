@@ -65,7 +65,7 @@
     }
 
     .status-select-pill.completed {
-        background-color: var(--pl-green);
+        background-color: var(--pl-green-600);
         color: white;
     }
 
@@ -129,7 +129,7 @@
 }
 
     .stepper-btn:hover {
-        color: var(--pl-green);
+        color: var(--pl-green-600);
     }
 
     .stepper-btn:disabled {

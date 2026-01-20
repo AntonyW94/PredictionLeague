@@ -64,7 +64,7 @@
     }
 
     .results-grid .score-cell.correct-score {
-        background-color: var(--pl-green);
+        background-color: var(--pl-green-600);
         color: var(--pl-purple-900);
     }
 
@@ -85,7 +85,7 @@
     }
 
     .results-grid .actual-score.in-progress {
-        color: var(--pl-green);
+        color: var(--pl-green-600);
         animation: pulse-scale 1.5s infinite;
     }
 

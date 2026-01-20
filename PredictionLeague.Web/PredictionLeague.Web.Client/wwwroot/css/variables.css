@@ -5,26 +5,25 @@
     --pl-white: #FFFFFF;
     --pl-black: #1f1f1f;
 
-    /* Purples */
+    /* Purples (higher number = darker) */
     --pl-purple-1000: #2C0A3D;
     --pl-purple-900: #31144A;
     --pl-purple-800: #3D195B;
     --pl-purple-700: #432468;
     --pl-purple-600: #4A2E6C;
     --pl-purple-300: #75559D;
-    --pl-purple-accent: #963CFF;
+    --pl-purple-200: #963CFF;
 
     /* Reds */
     --pl-red: #E90052;
 
-    /* Blues/Cyan */
-    --pl-blue: #04F5FF;
-    --pl-cyan: #04F5FF; /* Alias for --pl-blue */
-    --pl-blue-light: #03c2b4;
+    /* Blues (higher number = darker) */
+    --pl-blue-500: #04F5FF;
+    --pl-blue-700: #03c2b4;
 
-    /* Greens */
-    --pl-green: #00B960;
-    --pl-green-light: #84fab0;
+    /* Greens (higher number = darker) */
+    --pl-green-300: #84fab0;
+    --pl-green-600: #00B960;
 
     /* Yellows */
     --pl-yellow: #EBFF01;

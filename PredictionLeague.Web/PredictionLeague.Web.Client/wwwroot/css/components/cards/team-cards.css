@@ -16,7 +16,7 @@
 }
 
     .team-card:hover .team-card-logo-bg {
-        background-color: var(--pl-green);
+        background-color: var(--pl-green-600);
     }
 
 .team-card-logo-bg {

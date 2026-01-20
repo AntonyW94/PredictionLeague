@@ -43,7 +43,7 @@
 .prize-icon {
     flex: 0 0 40px;
     font-size: 1.5rem;
-    color: var(--pl-green);
+    color: var(--pl-green-600);
 }
 
 .prize-description {
