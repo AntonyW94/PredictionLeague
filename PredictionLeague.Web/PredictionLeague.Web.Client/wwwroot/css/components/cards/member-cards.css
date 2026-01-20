@@ -11,11 +11,6 @@
     color: white;
 }
 
-.member-card-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
 .member-status-column {
     background-color: var(--pl-purple-800);
     border-radius: var(--bs-border-radius);

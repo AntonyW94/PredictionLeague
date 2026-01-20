@@ -48,19 +48,6 @@
         justify-content: start;
     }
 
-.league-price {
-    font-weight: bold;
-    color: var(--pl-blue-700);
-    font-size: 1.1em;
-}
-
-.member-count-info {
-    color: var(--text-white-50);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
 .league-card-footer {
     padding: 0.5rem 1.5rem 1.5rem;
 }

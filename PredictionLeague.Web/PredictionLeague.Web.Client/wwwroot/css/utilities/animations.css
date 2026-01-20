@@ -19,11 +19,7 @@
     }
 }
 
-/* Pulse scale effect (for live scores) */
-.pulse-scale {
-    animation: pulse-scale 1.5s infinite;
-}
-
+/* Pulse scale effect (for live scores - keyframes used in results-grid.css) */
 @keyframes pulse-scale {
     0% {
         transform: scale(1);
@@ -41,25 +37,6 @@
     }
 }
 
-/* Badge pop effect (quick scale) */
-.badge-pulse {
-    animation: badge-pulse 350ms ease-out;
-}
-
-@keyframes badge-pulse {
-    0% {
-        transform: scale(1);
-    }
-
-    40% {
-        transform: scale(1.18);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-}
-
 /* Spinner rotation */
 @keyframes spin {
     0% {
@@ -69,9 +46,4 @@
     100% {
         transform: rotate(360deg);
     }
-}
-
-/* Transitions */
-.transition-all {
-    transition: all 0.3s;
 }

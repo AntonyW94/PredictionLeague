@@ -2,14 +2,6 @@
     background: var(--pl-purple-800);
 }
 
-main.light-grey{
-    background: var(--pl-grey-100);
-}
-
-    main.purple-gradient {
-        background: linear-gradient(135deg, var(--pl-purple-300) 0%, var(--pl-purple-900) 100%);
-    }
-
 .page-container {
     min-height: calc(100vh - 56px);
     display: flex;

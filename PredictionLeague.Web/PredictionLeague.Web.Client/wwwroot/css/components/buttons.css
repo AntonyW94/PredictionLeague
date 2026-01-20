@@ -151,18 +151,3 @@
         background-color: var(--pl-grey-300);
         border-color: var(--pl-grey-300);
     }
-
-.apple-btn {
-    background-color: var(--pl-black);
-    color: var(--pl-white);
-    border: 1px solid var(--pl-black);
-}
-
-    .apple-btn:hover {
-        background-color: var(--pl-white);
-        color: var(--pl-black);
-    }
-
-        .apple-btn:hover .social-icon {
-            fill: var(--pl-black);
-        }

@@ -73,18 +73,6 @@
     padding: 0.5rem 1.5rem 1.5rem;
 }
 
-.card-info-row {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    width: 100%;
-    gap: 1rem;
-}
-
-.flex-fill-grid {
-    flex-grow: 1;
-}
-
 /* Gradient info boxes used in dashboard tiles (use with .glass-panel) */
 .gradient-flex-info {
     padding: 0.8rem;

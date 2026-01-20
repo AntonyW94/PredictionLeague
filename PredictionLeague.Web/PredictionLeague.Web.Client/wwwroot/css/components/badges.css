@@ -44,25 +44,8 @@
     background-color: var(--pl-orange);
 }
 
-.badge-group--yellow {
-    background-color: var(--pl-yellow);
-    color: var(--pl-purple-800);
-}
-
 .badge-group--blue {
     background-color: var(--pl-blue-700);
-}
-
-.badge-group--gold {
-    background-color: var(--pl-gold);
-}
-
-.badge-group--silver {
-    background-color: var(--pl-silver);
-}
-
-.badge-group--bronze {
-    background-color: var(--pl-bronze);
 }
 
 .badge-icon {
@@ -101,31 +84,6 @@
 .badge-group--orange .badge-icon {
     color: var(--pl-orange);
 }
-
-.badge-group--yellow .badge-icon {
-    color: var(--pl-purple-800);
-}
-
-.badge-group--gold .badge-icon {
-    color: var(--pl-gold);
-}
-
-.badge-group--silver .badge-icon {
-    color: var(--pl-silver);
-}
-
-.badge-group--bronze .badge-icon {
-    color: var(--pl-bronze);
-}
-
-.badge-group--icon-only {
-    padding: 4px;
-}
-
-    .badge-group--icon-only .badge-icon {
-        background-color: transparent;
-        color: white;
-    }
 
 .current-user-highlight .badge-group--green {
     background-color: white;
