@@ -59,7 +59,7 @@
                                             else if (leaderboard.Entries.Any())
                                             {
                                                 <div class="table-responsive rounded w-100">
-                                                    <table class="leaderboard-table light text-white">
+                                                    <table class="leaderboard-table table-striped-purple light text-white">
                                                         <thead>
                                                         <tr>
                                                             @if (leaderboard.Entries.FirstOrDefault()?.IsRoundInProgress == true && leaderboard.Entries.FirstOrDefault()?.SnapshotRank.HasValue == true)

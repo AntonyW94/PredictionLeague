@@ -85,16 +85,12 @@
     flex-grow: 1;
 }
 
-/* Gradient info boxes used in dashboard tiles */
+/* Gradient info boxes used in dashboard tiles (use with .glass-panel) */
 .gradient-flex-info {
-    background: radial-gradient(circle at center, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.08) 100%);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
     padding: 0.8rem;
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
     flex-direction: column;
 }
 

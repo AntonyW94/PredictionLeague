@@ -13,14 +13,6 @@
     color: var(--pl-grey-500);
 }
 
-.text-success {
-    color: var(--pl-green);
-}
-
-.text-danger {
-    color: var(--pl-red);
-}
-
 .text-cyan {
     color: var(--pl-blue);
 }

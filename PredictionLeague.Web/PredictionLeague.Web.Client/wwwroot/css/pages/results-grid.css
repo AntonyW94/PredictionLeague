@@ -45,9 +45,7 @@
         z-index: 2;
     }
 
-    .results-grid tbody tr:nth-child(even) td {
-        background-color: var(--pl-purple-700);
-    }
+    /* Striping handled by .table-striped-purple utility */
 
     .results-grid .score-cell {
         font-weight: bold;
@@ -152,9 +150,7 @@
         text-align: left;
     }
 
-    .mobile-match-table tbody tr:nth-child(even) td {
-        background-color: var(--pl-purple-700);
-    }
+    /* Striping handled by .table-striped-purple utility */
 
     .mobile-match-table tbody tr:last-child {
         border-bottom: none;

@@ -37,9 +37,7 @@
         background: var(--pl-purple-600);
     }
 
-    .leaderboard-table tbody tr:nth-child(even) td {
-        background-color: var(--pl-purple-700);
-    }
+    /* Striping now handled by .table-striped-purple utility */
 
     .leaderboard-table .rank-col {
         width: 15%;
