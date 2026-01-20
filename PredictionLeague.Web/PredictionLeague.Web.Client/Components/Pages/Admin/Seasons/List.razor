@@ -105,7 +105,7 @@
         _errorMessage = null;
         try
         {
-            _seasons = await Http.GetFromJsonAsync<List<SeasonDto>>("api/seasons");
+            _seasons = await Http.GetFromJsonAsync<List<SeasonDto>>("api/admin/seasons");
         }
         catch (Exception)
         {
@@ -125,7 +125,7 @@
 
         try
         {
-            var response = await Http.PutAsJsonAsync($"api/seasons/{seasonToUpdate.Id}/status", newStatus);
+            var response = await Http.PutAsJsonAsync($"api/admin/seasons/{seasonToUpdate.Id}/status", newStatus);
             if (!response.IsSuccessStatusCode)
             {
                 _errorMessage = "Failed to update season status.";

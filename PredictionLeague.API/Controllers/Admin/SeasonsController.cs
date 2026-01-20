@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Admin.Seasons.Commands;
@@ -7,11 +7,11 @@ using PredictionLeague.Contracts.Admin.Seasons;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Enumerations;
 
-namespace PredictionLeague.API.Controllers;
+namespace PredictionLeague.API.Controllers.Admin;
 
 [Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/admin/[controller]")]
 
 public class SeasonsController : ApiControllerBase
 {
@@ -22,7 +22,7 @@ public class SeasonsController : ApiControllerBase
         _mediator = mediator;
     }
 
-    #region Create 
+    #region Create
 
     [HttpPost("create")]
     [ProducesResponseType(typeof(SeasonDto), StatusCodes.Status201Created)]
@@ -101,7 +101,7 @@ public class SeasonsController : ApiControllerBase
     {
         var command = new UpdateSeasonStatusCommand(seasonId, isActive);
         await _mediator.Send(command, cancellationToken);
-      
+
         return NoContent();
     }
 

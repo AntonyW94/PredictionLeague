@@ -2,7 +2,7 @@
 using MediatR;
 using PredictionLeague.Application.Common.Exceptions;
 using PredictionLeague.Application.Services;
-using PredictionLeague.Domain.Common.Guards.Season;
+using PredictionLeague.Domain.Common.Guards;
 
 namespace PredictionLeague.Application.Features.Account.Commands;
 

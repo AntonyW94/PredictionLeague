@@ -4,7 +4,7 @@ using FluentValidation.Results;
 using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
-using PredictionLeague.Domain.Common.Guards.Season;
+using PredictionLeague.Domain.Common.Guards;
 
 namespace PredictionLeague.Application.Features.Admin.Seasons.Commands;
 

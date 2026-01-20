@@ -209,7 +209,7 @@
                 };
             }
 
-            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/teams") ?? new List<TeamDto>();
+            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/admin/teams") ?? new List<TeamDto>();
         }
         catch (Exception)
         {

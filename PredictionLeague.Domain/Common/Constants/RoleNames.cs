@@ -1,6 +1,6 @@
-﻿using PredictionLeague.Domain.Common.Enumerations;
+using PredictionLeague.Domain.Common.Enumerations;
 
-namespace PredictionLeague.Contracts;
+namespace PredictionLeague.Domain.Common.Constants;
 
 public static class RoleNames
 {
