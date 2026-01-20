@@ -499,6 +499,31 @@ All scheduled endpoints are protected by API key (`X-Api-Key` header).
 - **No fallback data** - App relies entirely on API availability
 - **Future consideration:** Add caching/fallback for API outages
 
+### CSS Cache Busting
+
+CSS files are automatically versioned during `dotnet publish` to prevent browser caching issues.
+
+**How it works:**
+1. An MSBuild target runs after Publish
+2. Generates a timestamp version (e.g., `20260120153045`)
+3. Updates `index.html`: `app.css` → `app.css?v=VERSION`
+4. Updates `app.css`: All `@import url('file.css')` → `@import url('file.css?v=VERSION')`
+5. External URLs (https://) are NOT versioned
+
+**Location:** `PredictionLeague.Web.Client.csproj` - Target `AddCssCacheBusting`
+
+**Result after publish:**
+```html
+<!-- index.html -->
+<link rel="stylesheet" href="css/app.css?v=20260120153045" />
+```
+```css
+/* app.css */
+@import url('variables.css?v=20260120153045');
+@import url('utilities/colours.css?v=20260120153045');
+/* etc. */
+```
+
 ## Boosts System
 
 ### Current Implementation

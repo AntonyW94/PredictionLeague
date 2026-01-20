@@ -18,13 +18,15 @@ This document outlines the plan to restructure card CSS from business-domain nam
 
 All colours are now standardised:
 
-| Element | CSS Variable | Hex | Purpose |
-|---------|--------------|-----|---------|
-| **Section** | `--pl-purple-600` | #4A2E6C | Outer containers (lightest) |
-| **Card** (all parts) | `--pl-purple-1000` | #2C0A3D | Cards - header, body, footer all same (darkest) |
-| **Table stripe odd** | `--pl-purple-800` | #3D195B | Lighter than card |
-| **Table stripe even** | `--pl-purple-900` | #31144A | Lighter than card |
+| Element | CSS Variable (New) | Hex | Purpose |
+|---------|-------------------|-----|---------|
+| **Section** | `--purple-600` | #4A2E6C | Outer containers (lightest) |
+| **Card** (all parts) | `--purple-1000` | #2C0A3D | Cards - header, body, footer all same (darkest) |
+| **Table stripe odd** | `--purple-800` | #3D195B | Lighter than card |
+| **Table stripe even** | `--purple-900` | #31144A | Lighter than card |
 | **Glass panels** | Keep gradient | - | Existing radial gradient effect preserved |
+
+> **Note:** Variable names shown above use the NEW naming convention (without `--pl-` prefix). See "CSS Variable Renaming" section below for full details.
 
 ### Key Rules
 1. **All cards use the same background colour** - No more bg-600, bg-800, bg-900 variants
@@ -48,6 +50,68 @@ All colours are now standardised:
 │  └───────────────────────────┘  │
 └─────────────────────────────────┘
 ```
+
+---
+
+## CSS Variable Renaming (Remove `--pl-` Prefix)
+
+All CSS custom properties will be renamed to remove the `--pl-` prefix for cleaner, more concise code.
+
+### Variable Name Changes
+
+| Current | New |
+|---------|-----|
+| `--pl-white` | `--white` |
+| `--pl-black` | `--black` |
+| `--pl-purple-1000` | `--purple-1000` |
+| `--pl-purple-900` | `--purple-900` |
+| `--pl-purple-800` | `--purple-800` |
+| `--pl-purple-700` | `--purple-700` |
+| `--pl-purple-600` | `--purple-600` |
+| `--pl-purple-300` | `--purple-300` |
+| `--pl-purple-200` | `--purple-200` |
+| `--pl-red` | `--red` |
+| `--pl-blue-500` | `--blue-500` |
+| `--pl-blue-700` | `--blue-700` |
+| `--pl-green-300` | `--green-300` |
+| `--pl-green-600` | `--green-600` |
+| `--pl-yellow` | `--yellow` |
+| `--pl-orange` | `--orange` |
+| `--pl-grey-100` | `--grey-100` |
+| `--pl-grey-200` | `--grey-200` |
+| `--pl-grey-300` | `--grey-300` |
+| `--pl-grey-500` | `--grey-500` |
+| `--pl-gold` | `--gold` |
+| `--pl-silver` | `--silver` |
+| `--pl-bronze` | `--bronze` |
+
+### Files Affected
+
+**variables.css** - Update all variable definitions:
+```css
+/* BEFORE */
+--pl-purple-600: #4A2E6C;
+
+/* AFTER */
+--purple-600: #4A2E6C;
+```
+
+**All other CSS files** - Update all `var(--xxx)` references:
+```css
+/* BEFORE */
+background-color: var(--purple-600);
+
+/* AFTER */
+background-color: var(--purple-600);
+```
+
+### Migration Command (Find & Replace)
+
+Use find and replace across all `.css` files:
+- Find: `--pl-`
+- Replace: `--`
+
+**Important:** Run this AFTER all other CSS changes are complete to avoid conflicts.
 
 ---
 
@@ -145,7 +209,7 @@ The carousel CSS itself does NOT change. The carousel uses these classes:
 /* Section - Outer container (purple boxes with titles) */
 /* Background: purple-600 (#4A2E6C) - Lightest */
 .section {
-    background-color: var(--pl-purple-600);
+    background-color: var(--purple-600);
     padding: 1.5rem;
     border-radius: var(--bs-border-radius);
     color: white;
@@ -174,7 +238,7 @@ The carousel CSS itself does NOT change. The carousel uses these classes:
 /* Background: purple-1000 (#2C0A3D) - Darkest (same as login form) */
 /* ALL card parts (header, body, footer) use the SAME background colour */
 .card {
-    background-color: var(--pl-purple-1000);
+    background-color: var(--purple-1000);
     border-radius: var(--bs-border-radius);
     color: white;
     display: flex;
@@ -288,7 +352,7 @@ Keep only the detail-list pattern (label-value rows):
 
 .detail-row dt {
     font-weight: normal;
-    color: var(--pl-grey-500);
+    color: var(--grey-500);
 }
 
 .detail-row dd {
@@ -299,7 +363,7 @@ Keep only the detail-list pattern (label-value rows):
 .detail-row code {
     font-size: 1rem;
     font-weight: bold;
-    color: var(--pl-white);
+    color: var(--white);
 }
 
 .detail-row.centered {
@@ -349,11 +413,11 @@ Update `.table-striped-purple` to use colours that contrast with card background
 
 /* AFTER - neither row matches card background (purple-1000) */
 .table-striped-purple tbody tr:nth-child(odd) {
-    background-color: var(--pl-purple-800);  /* Lighter than card */
+    background-color: var(--purple-800);  /* Lighter than card */
 }
 
 .table-striped-purple tbody tr:nth-child(even) {
-    background-color: var(--pl-purple-900);  /* Lighter than card */
+    background-color: var(--purple-900);  /* Lighter than card */
 }
 ```
 
@@ -481,7 +545,12 @@ Keep `.team-card-logo-bg`, `.team-card-logo`, `.team-card-name` but consider ren
 4. Admin pages
 5. League pages
 
-### Phase 5: Testing
+### Phase 5: Variable Renaming (Final Step)
+1. Update `variables.css` - rename all `--pl-xxx` to `--xxx`
+2. Find and replace `--pl-` with `--` across ALL CSS files
+3. Verify no broken variable references
+
+### Phase 6: Testing
 1. Test all carousels (UpcomingRounds, Leaderboards, MonthlyLeaderboard, RoundResults mobile)
 2. Test all admin pages
 3. Test all league pages
@@ -496,13 +565,15 @@ Keep `.team-card-logo-bg`, `.team-card-logo`, `.team-card-name` but consider ren
 - `detail-list.css`
 
 ### CSS Files to Update
+- `variables.css` (rename all `--pl-xxx` to `--xxx`)
 - `card-base.css` (major rewrite)
 - `leaderboard.css` (selector updates)
 - `effects.css` (table striping colours)
 - `match-cards.css` (remove absorbed classes)
 - `member-cards.css` (remove absorbed classes)
 - `team-cards.css` (partial rename)
-- `app.css` (import updates)
+- `app.css` (import updates + variable references)
+- **ALL CSS files** (replace `--pl-` with `--` in variable references)
 
 ### CSS Files to Delete
 - `action-cards.css`
@@ -527,6 +598,11 @@ After migration, verify:
 - [ ] Table rows alternate between purple-800 and purple-900 (both lighter than card)
 - [ ] No table row blends into the card background
 - [ ] Glass panels still have gradient effect
+
+### Variables
+- [ ] No `--pl-` prefixed variables remain in any CSS file
+- [ ] All `var(--pl-xxx)` references updated to `var(--xxx)`
+- [ ] No broken/undefined variable references (check browser dev tools for warnings)
 
 ### Functionality
 - [ ] All carousels still swipe/navigate correctly
