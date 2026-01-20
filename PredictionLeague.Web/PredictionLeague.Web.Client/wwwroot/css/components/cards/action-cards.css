@@ -56,7 +56,7 @@
 
     .action-card-row dt {
         font-weight: normal;
-        color: var(--light-text);
+        color: var(--pl-grey-500);
     }
 
     .action-card-row dd {

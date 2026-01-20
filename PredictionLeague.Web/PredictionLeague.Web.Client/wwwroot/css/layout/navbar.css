@@ -87,14 +87,14 @@ a.navbar-brand span {
     border-top: 1px solid rgba(61, 25, 91, 0.25);
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 992px) {
     .navbar-nav .nav-link {
         padding: 0.5rem 1rem;
     }
 
     .mobile-nav-header {
         font-weight: 700;
-        color: var(--pl-light-cyan) !important;
+        color: var(--pl-blue-500) !important;
         font-size: 1.1rem;
         padding-top: 1rem;
     }

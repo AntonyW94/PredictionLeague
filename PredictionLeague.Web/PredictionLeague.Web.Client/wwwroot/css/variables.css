@@ -47,3 +47,17 @@
     --bs-border-radius-xl: 20px;
     --bs-border-radius-xxl: 20px;
 }
+
+/* ============================================
+   BREAKPOINTS (Reference Only)
+   Note: CSS custom properties cannot be used in media queries.
+   These values are documented here for consistency.
+   ============================================
+
+   Mobile:     max-width: 576px   (xs)
+   Tablet:     max-width: 768px   (sm/md)
+   Desktop:    max-width: 992px   (lg)
+   Large:      max-width: 1200px  (xl)
+
+   Primary breakpoint used throughout: 768px
+   ============================================ */
