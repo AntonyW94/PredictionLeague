@@ -1,4 +1,4 @@
-/* Color Utilities - Using design tokens from colours.css */
+/* Color Utilities - Using design tokens from variables.css */
 
 /* Text Colors */
 .text-muted {
@@ -25,8 +25,16 @@
     color: var(--pl-blue);
 }
 
-.text-pl-green {
+.text-green {
     color: var(--pl-green);
+}
+
+.text-red {
+    color: var(--pl-red) !important;
+}
+
+.text-purple-1000 {
+    color: var(--pl-purple-1000) !important;
 }
 
 /* Background Colors */
@@ -42,34 +50,22 @@
     background-color: var(--pl-purple-900);
 }
 
-.bg-red,
-.bg-pl-red {
+.bg-purple-1000 {
+    background-color: var(--pl-purple-1000);
+}
+
+.bg-red {
     background-color: var(--pl-red);
 }
 
-.bg-green,
-.bg-pl-green {
+.bg-green {
     background-color: var(--pl-green);
 }
 
-.bg-pl-blue-light {
+.bg-blue-light {
     background-color: var(--pl-blue-light);
 }
 
 .bg-transparent {
     background: transparent;
-}
-
-/* Legacy color utilities (moved from colours.css) */
-.text-pl-red {
-    color: var(--pl-red) !important;
-}
-
-.text-pl-purple-1000 {
-    color: var(--pl-purple-1000) !important;
-}
-
-.purple-1000,
-.bg-purple-1000 {
-    background-color: var(--pl-purple-1000);
 }

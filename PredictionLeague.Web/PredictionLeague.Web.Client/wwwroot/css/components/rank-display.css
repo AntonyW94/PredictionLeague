@@ -95,14 +95,14 @@
 }
 
 /* Rank arrow text shadows for readability */
-.hero-rank-container .text-pl-green,
-.hero-rank-container .text-pl-red,
-.secondary-rank-box .text-pl-green,
-.secondary-rank-box .text-pl-red {
+.hero-rank-container .text-green,
+.hero-rank-container .text-red,
+.secondary-rank-box .text-green,
+.secondary-rank-box .text-red {
     text-shadow: 0 1px 1px rgba(0,0,0,0.5);
 }
 
-.current-user-highlight .text-pl-green {
+.current-user-highlight .text-green {
     color: var(--pl-white) !important;
     text-shadow: 0 1px 1px rgba(0,0,0,0.5);
 }
