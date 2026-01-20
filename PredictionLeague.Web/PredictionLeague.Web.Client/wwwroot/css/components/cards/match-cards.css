@@ -4,29 +4,6 @@
     margin-bottom: 1.5rem;
 }
 
-.match-card {
-    border: 1px solid var(--pl-purple-900);
-    border-radius: var(--bs-border-radius);
-    background-color: var(--pl-purple-800);
-}
-
-.match-card-header {
-    padding: 0.5rem 1rem;
-    background-color: var(--pl-purple-900);
-    color: white;
-}
-
-.round-card {
-    background-color: var(--pl-purple-800);
-    border-radius: var(--bs-border-radius);
-    overflow: hidden;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    flex-shrink: 0;
-}
-
 /* Match logo styling for admin forms */
 .match-logo {
     height: 25px;

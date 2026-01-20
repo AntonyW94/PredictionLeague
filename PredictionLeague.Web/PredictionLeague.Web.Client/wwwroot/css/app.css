@@ -23,8 +23,6 @@
 /* Component styles - Cards */
 @import url('components/cards/card-base.css');
 @import url('components/cards/team-cards.css');
-@import url('components/cards/league-cards.css');
-@import url('components/cards/action-cards.css');
 @import url('components/cards/match-cards.css');
 @import url('components/cards/member-cards.css');
 
