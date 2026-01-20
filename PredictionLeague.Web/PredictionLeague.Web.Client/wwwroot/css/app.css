@@ -18,6 +18,7 @@
 @import url('layout/layout.css');
 @import url('layout/loading.css');
 @import url('layout/navbar.css');
+@import url('layout/section.css');
 
 /* Component styles - Cards */
 @import url('components/cards/card-base.css');
@@ -30,6 +31,7 @@
 /* Component styles - Other */
 @import url('components/badges.css');
 @import url('components/boosts.css');
+@import url('components/detail-list.css');
 @import url('components/buttons.css');
 @import url('components/carousel.css');
 @import url('components/forms.css');

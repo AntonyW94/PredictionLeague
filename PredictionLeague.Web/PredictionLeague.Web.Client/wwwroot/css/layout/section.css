@@ -1,0 +1,15 @@
+/* Section - Outer container (purple boxes with titles) */
+/* Background: purple-600 (#4A2E6C) - Lightest */
+.section {
+    background-color: var(--pl-purple-600);
+    padding: 1.5rem;
+    border-radius: var(--bs-border-radius);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.section.center-content {
+    justify-content: center;
+}
