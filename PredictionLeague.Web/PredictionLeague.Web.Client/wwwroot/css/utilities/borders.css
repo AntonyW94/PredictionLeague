@@ -1,0 +1,13 @@
+/* Border Utilities */
+
+.border-red {
+    border: 1px solid var(--pl-red);
+}
+
+.border-purple-900 {
+    border-color: var(--pl-purple-900);
+}
+
+.border-none {
+    border: none;
+}

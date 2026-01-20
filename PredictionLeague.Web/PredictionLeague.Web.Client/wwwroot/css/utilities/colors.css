@@ -1,0 +1,65 @@
+/* Color Utilities - Using design tokens from colours.css */
+
+/* Text Colors */
+.text-muted {
+    color: var(--pl-grey-500);
+}
+
+.text-grey-300 {
+    color: var(--pl-grey-300);
+}
+
+.text-grey-500 {
+    color: var(--pl-grey-500);
+}
+
+.text-success {
+    color: var(--pl-green);
+}
+
+.text-danger {
+    color: var(--pl-red);
+}
+
+.text-cyan {
+    color: var(--pl-blue);
+}
+
+.text-pl-green {
+    color: var(--pl-green);
+}
+
+/* Background Colors */
+.bg-purple-600 {
+    background-color: var(--pl-purple-600);
+}
+
+.bg-purple-800 {
+    background-color: var(--pl-purple-800);
+}
+
+.bg-purple-900 {
+    background-color: var(--pl-purple-900);
+}
+
+.bg-red {
+    background-color: var(--pl-red);
+}
+
+.bg-transparent {
+    background: transparent;
+}
+
+/* Legacy color utilities (moved from colours.css) */
+.text-pl-red {
+    color: var(--pl-red) !important;
+}
+
+.text-pl-purple-1000 {
+    color: var(--pl-purple-1000) !important;
+}
+
+.purple-1000,
+.bg-purple-1000 {
+    background-color: var(--pl-purple-1000);
+}

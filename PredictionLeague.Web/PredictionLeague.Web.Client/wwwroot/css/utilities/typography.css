@@ -1,0 +1,44 @@
+/* Typography Utilities - Tailwind-style naming */
+
+/* Font Sizes */
+.text-2xs {
+    font-size: 0.65rem;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.text-sm {
+    font-size: 0.75rem;
+}
+
+.text-base {
+    font-size: 1rem;
+}
+
+.text-lg {
+    font-size: 1.3rem;
+}
+
+.text-xl {
+    font-size: 1.5rem;
+}
+
+/* Line Heights */
+.leading-none {
+    line-height: 1;
+}
+
+.leading-tight {
+    line-height: 1.25;
+}
+
+.leading-normal {
+    line-height: 1.5;
+}
+
+/* Font Families */
+.font-mono {
+    font-family: monospace;
+}

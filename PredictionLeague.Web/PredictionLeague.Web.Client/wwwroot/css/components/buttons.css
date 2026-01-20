@@ -18,11 +18,25 @@
     background-color: var(--pl-red);
     color: var(--pl-white);
     font-weight: bold;
+    border: none;
 }
 
     .red-button:not(.badge):hover {
         background-color: var(--pl-white);
         color: var(--pl-red);
+    }
+
+.red-outline-button {
+    border: 1px solid var(--pl-red);
+    color: var(--pl-red);
+    background: transparent;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+    .red-outline-button:hover {
+        background-color: var(--pl-red);
+        color: var(--pl-white);
     }
 
 .purple-accent-button,

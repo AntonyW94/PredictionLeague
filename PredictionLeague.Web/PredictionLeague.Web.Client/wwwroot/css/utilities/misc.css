@@ -1,0 +1,21 @@
+/* Miscellaneous Utilities */
+
+/* Whitespace */
+.whitespace-pre {
+    white-space: pre-wrap;
+}
+
+/* Heights */
+.h-screen {
+    height: 100vh;
+}
+
+/* Max Widths */
+.max-w-logo {
+    max-width: 60px;
+}
+
+/* Transitions */
+.transition-all {
+    transition: all 0.3s;
+}
