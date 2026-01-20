@@ -44,8 +44,7 @@
 }
 
 /* Text Alignment */
-.text-center,
-.centre { /* Legacy alias */
+.text-center {
     text-align: center;
 }
 
@@ -59,7 +58,6 @@
     word-wrap: break-word;
 }
 
-.word-break-all,
-.email-address { /* Legacy alias */
+.word-break-all {
     word-break: break-all;
 }
