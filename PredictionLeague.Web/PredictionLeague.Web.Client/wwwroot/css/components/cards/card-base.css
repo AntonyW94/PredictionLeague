@@ -56,7 +56,7 @@
 
 /* Card Sub-elements - ALL use same background as card (purple-1000) */
 .card > .header {
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.5rem 0;
     /* NO background-color - inherits from card (purple-1000) */
     display: flex;
     flex-direction: column;
@@ -99,7 +99,7 @@
 }
 
 .card > .footer {
-    padding: 1rem 1.5rem;
+    padding: 0 1.5rem 1rem;
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
