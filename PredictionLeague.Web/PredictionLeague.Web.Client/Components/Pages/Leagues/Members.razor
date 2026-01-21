@@ -35,7 +35,7 @@
                                 <div class="card">
                                     <div class="header">
                                         <h5 class="fw-bold text-white">@member.FullName</h5>
-                                        <small class="text-white-50">Joined: @member.JoinedAtUtc.ToString("dd MMM yyyy")</small>
+                                        <small class="text-white-50 fw-bold">Joined: @member.JoinedAtUtc.ToString("dd MMM yyyy")</small>
                                     </div>
                                     <div class="footer">
                                         <button class="btn btn-sm red-button" @onclick="() => RejectMemberAsync(member.UserId)"><i class="bi bi-x-circle me-2 fw-bold"></i>Reject</button>

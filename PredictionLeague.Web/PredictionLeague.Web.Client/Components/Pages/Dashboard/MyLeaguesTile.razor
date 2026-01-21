@@ -89,7 +89,7 @@
                 <div class="card mb-3">
                     <div class="header">
                         <h5 class="fw-bold text-white mb-0">@league.Name</h5>
-                        <small class="text-white-50">@league.SeasonName</small>
+                        <small class="text-white-50 fw-bold">@league.SeasonName</small>
                     </div>
 
                     <div class="body pt-2 space-between">
@@ -190,14 +190,14 @@
                                         <div class="financial-col">
                                             <small class="d-block text-uppercase fw-bold text-2xs">Won So Far</small>
                                             <div class="fw-bold text-green-600 fs-5">
-                                                @league.PrizeMoneyWon.ToString("�0.00")
+                                                @((MarkupString)$"&pound;{league.PrizeMoneyWon:0.00}")
                                             </div>
                                         </div>
 
                                         <div class="financial-col">
                                             <small class="d-block text-uppercase fw-bold text-2xs">Pot Remaining</small>
                                             <div class="fw-bold text-white fs-5">
-                                                @league.PrizeMoneyRemaining.ToString("�0.00")
+                                                @((MarkupString)$"&pound;{league.PrizeMoneyRemaining:0.00}")
                                             </div>
                                         </div>
                                     </div>
@@ -205,8 +205,8 @@
                             </div>
                         }
 
-                        <button class="btn btn-sm purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(league.Id)">
-                            Enter League
+                        <button class="btn purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(league.Id)">
+                            View Dashboard
                         </button>
                     </div>
                 </div>

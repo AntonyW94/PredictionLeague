@@ -23,7 +23,7 @@
     }
 
     .leaderboard-table td {
-        background: var(--purple-800);
+        background: var(--purple-700);
     }
 
     /* Striping now handled by .table-striped-purple utility */

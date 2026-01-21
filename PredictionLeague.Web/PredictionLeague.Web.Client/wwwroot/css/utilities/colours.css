@@ -153,6 +153,10 @@
     background-color: var(--purple-1000);
 }
 
+.bg-purple-gradient {
+    background: linear-gradient(135deg, var(--purple-300) 0%, var(--purple-900) 100%);
+}
+
 /* Blues */
 .bg-blue-500 {
     background-color: var(--blue-500);
