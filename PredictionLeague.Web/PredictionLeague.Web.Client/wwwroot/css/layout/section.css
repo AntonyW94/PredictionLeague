@@ -13,3 +13,15 @@
 .section.center-content {
     justify-content: center;
 }
+
+/* Section body - matches card body behaviour */
+.section > .body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.section > .body.no-padding {
+    padding: 0;
+}
