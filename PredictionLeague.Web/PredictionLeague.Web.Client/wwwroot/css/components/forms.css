@@ -38,14 +38,6 @@
     font-weight: 500;
 }
 
-.prize-summary .league-card-row {
-    border-bottom: 1px solid var(--purple-800);
-}
-
-.prize-summary .league-card-row:last-child {
-    border-bottom: none;
-}
-
 .message-box-solid {
     color: var(--white);
     border-radius: var(--bs-border-radius);

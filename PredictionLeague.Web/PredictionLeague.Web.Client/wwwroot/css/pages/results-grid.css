@@ -63,20 +63,6 @@
         width: 30px;
     }
 
-    .results-grid .score-cell.correct-score {
-        background-color: var(--green-600);
-        color: var(--purple-900);
-    }
-
-    .results-grid .score-cell.correct-result {
-        background-color: var(--yellow);
-        color: var(--purple-900);
-    }
-
-    .results-grid .score-cell.incorrect-result {
-        background-color: var(--red);
-    }
-
     .results-grid tfoot th {
         background-color: var(--purple-900);
         font-size: 1.2em;
@@ -105,17 +91,6 @@
     max-height: none;
 }
 
-.mobile-match-card {
-    background-color: var(--purple-800);
-    border-radius: var(--bs-border-radius);
-    color: var(--white);
-    overflow: hidden;
-    max-height: 450px;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
 .mobile-match-header {
     background-color: var(--purple-900);
     padding: 0.75rem 1rem;
@@ -131,29 +106,6 @@
     .mobile-match-header .match-logo-small {
         height: 30px;
         width: 30px;
-    }
-
-.mobile-match-card .table-responsive {
-    overflow-y: auto;
-    overflow-x: hidden;
-    flex-grow: 1;
-}
-
-.mobile-match-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
-
-    .mobile-match-table td, .mobile-match-table th {
-        padding: 0.5rem 1rem;
-        text-align: left;
-    }
-
-    /* Striping handled by .table-striped-purple utility */
-
-    .mobile-match-table tbody tr:last-child {
-        border-bottom: none;
     }
 
 .card-body .prediction-badge {

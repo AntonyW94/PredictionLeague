@@ -10,10 +10,6 @@
     box-shadow: 0 8px 20px var(--black-alpha-35), inset 0 0 0 1px var(--white-alpha-05);
 }
 
-.section.center-content {
-    justify-content: center;
-}
-
 /* Section body - matches card body behaviour */
 .section > .body {
     flex-grow: 1;
