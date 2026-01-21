@@ -1,4 +1,6 @@
-﻿.badge {
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+
+.badge {
     padding: 0.25rem 0.75rem;
     border-radius: 50rem;
     font-size: 0.8em;
@@ -12,10 +14,22 @@
     align-items: center;
     gap: 0.5rem;
     border-radius: 50rem;
-    padding: 4px 12px 4px 4px;
-    font-size: 0.8em;
+    padding: 0px 10px 0px 0px;
+    font-size: 0.6em;
     font-weight: bold;
     color: white;
+}
+
+.badge-group.prediction-badge {
+    font-size: 0.9em;
+}
+
+.badge-group .badge-icon {
+    font-size: 1em;
+}
+
+.badge-group .badge-icon.large-font {
+    font-size: 1.5em;
 }
 
 .badge-group-with-header {
@@ -24,9 +38,10 @@
     align-items: center;
 }
 
-    .badge-group-with-header > div:first-of-type {
-        font-weight: bold;
-    }
+.badge-group-with-header > div:first-of-type {
+    font-weight: bold;
+    font-size: 0.75em;
+}
 
 .badge-group--green {
     background-color: var(--green-600);
@@ -61,14 +76,14 @@
     height: 24px;
     min-width: 24px;
     border-radius: 50%;
-    font-size: 12px;
+    font-size: 1.1em;
     background-color: white;
 }
 
-    .badge-icon .bi {
-        position: relative;
-        top: 1px;
-    }
+.badge-icon .bi {
+    position: relative;
+    top: 1px;
+}
 
 .badge-group--green .badge-icon {
     color: var(--green-600);
@@ -99,29 +114,30 @@
     color: var(--green-600);
 }
 
-@media (max-width: 768px) {
+/* Tablet and up (--breakpoint-tablet: 768px) */
+@media (min-width: 768px) {
     .badge-group {
-        font-size: 0.6em;
-        padding: 0px 10px 0px 0px;
+        padding: 4px 12px 4px 4px;
+        font-size: 0.8em;
     }
 
-        .badge-group.prediction-badge {
-            font-size: 0.9em;
-        }
+    .badge-group.prediction-badge {
+        font-size: 0.8em;
+    }
 
-        .badge-group .badge-icon {
-            font-size: 1em;
-        }
+    .badge-group .badge-icon {
+        font-size: 12px;
+    }
 
-            .badge-group .badge-icon.large-font {
-                font-size: 1.5em;
-            }
+    .badge-group .badge-icon.large-font {
+        font-size: 12px;
+    }
 
     .badge-icon {
-        font-size: 1.1em;
+        font-size: 12px;
     }
 
     .badge-group-with-header > div:first-of-type {
-        font-size: 0.75em;
+        font-size: 1em;
     }
 }

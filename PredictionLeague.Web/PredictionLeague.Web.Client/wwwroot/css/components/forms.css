@@ -1,4 +1,6 @@
-﻿.form-container {
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+
+.form-container {
     background-color: var(--purple-1000);
     padding: 2.5rem;
     border-radius: var(--bs-border-radius);
@@ -6,23 +8,23 @@
     max-width: 600px;
 }
 
-    .form-container.wide {
-        max-width: 900px;
-    }
+.form-container.wide {
+    max-width: 900px;
+}
 
-    .form-container.extra-wide {
-        max-width: 1200px;
-    }
+.form-container.extra-wide {
+    max-width: 1200px;
+}
 
 .form-check-input {
     background-color: var(--red);
     border-color: var(--red);
 }
 
-    .form-check-input:checked {
-        background-color: var(--green-600);
-        border-color: var(--green-600);
-    }
+.form-check-input:checked {
+    background-color: var(--green-600);
+    border-color: var(--green-600);
+}
 
 .form-sub-header {
     color: var(--grey-100);
@@ -40,9 +42,9 @@
     border-bottom: 1px solid var(--purple-800);
 }
 
-    .prize-summary .league-card-row:last-child {
-        border-bottom: none;
-    }
+.prize-summary .league-card-row:last-child {
+    border-bottom: none;
+}
 
 .message-box-solid {
     color: white;
@@ -52,51 +54,52 @@
     font-weight: 700;
     display: flex;
     align-items: center;
+    text-align: center;
     margin-bottom: 0.5rem;
     margin-top: 0.5rem;
 }
 
-    .message-box-solid::before {
-        display: inline-block;
-        font-family: bootstrap-icons !important;
-        font-style: normal;
-        font-weight: normal !important;
-        font-variant: normal;
-        text-transform: none;
-        line-height: 1;
-        vertical-align: -.125em;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        margin-right: 0.5em;
-        font-size: 1.1em;
-    }
+.message-box-solid::before {
+    display: inline-block;
+    font-family: bootstrap-icons !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    vertical-align: -.125em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin-right: 0.5em;
+    font-size: 1.1em;
+}
 
-    .message-box-solid.error {
-        background-color: var(--red);
-    }
+.message-box-solid.error {
+    background-color: var(--red);
+}
 
-        .message-box-solid.error::before {
-            content: "\F333";
-        }
+.message-box-solid.error::before {
+    content: "\F333";
+}
 
-    .message-box-solid.warning {
-        background-color: var(--yellow);
-        color: var(--purple-900);
-        font-weight: bold;
-    }
+.message-box-solid.warning {
+    background-color: var(--yellow);
+    color: var(--purple-900);
+    font-weight: bold;
+}
 
-        .message-box-solid.warning::before {
-            content: "\F33B";
-            color: var(--purple-900);
-        }
+.message-box-solid.warning::before {
+    content: "\F33B";
+    color: var(--purple-900);
+}
 
-    .message-box-solid.success {
-        background-color: var(--green-600);
-    }
+.message-box-solid.success {
+    background-color: var(--green-600);
+}
 
-        .message-box-solid.success::before {
-            content: "\F26B";
-        }
+.message-box-solid.success::before {
+    content: "\F26B";
+}
 
 .form-control {
     height: 48px;
@@ -110,17 +113,17 @@
     transition: all 0.18s ease;
 }
 
-    .form-control::placeholder {
-        color: var(--white);
-    }
+.form-control::placeholder {
+    color: var(--white);
+}
 
-    .form-control:focus {
-        background: var(--purple-800);
-        color: var(--white);
-        border-color: var(--white);
-        box-shadow: none;
-        outline: none;
-    }
+.form-control:focus {
+    background: var(--purple-800);
+    color: var(--white);
+    border-color: var(--white);
+    box-shadow: none;
+    outline: none;
+}
 
 /* Match form input height for buttons */
 .input-height {
@@ -137,8 +140,9 @@
     z-index: 2
 }
 
-@media(max-width: 768px) {
+/* Tablet and up (--breakpoint-tablet: 768px) */
+@media (min-width: 768px) {
     .message-box-solid {
-        text-align: center;
+        text-align: left;
     }
 }

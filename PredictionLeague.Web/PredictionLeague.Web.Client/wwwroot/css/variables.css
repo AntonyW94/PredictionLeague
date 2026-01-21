@@ -46,6 +46,12 @@
     --bs-border-radius-lg: 20px;
     --bs-border-radius-xl: 20px;
     --bs-border-radius-xxl: 20px;
+
+    /* Breakpoints (documented as variables for reference) */
+    --breakpoint-phone-small: 480px;
+    --breakpoint-phone: 576px;
+    --breakpoint-tablet: 768px;
+    --breakpoint-desktop: 992px;
 }
 
 /* ============================================
@@ -54,10 +60,15 @@
    These values are documented here for consistency.
    ============================================
 
-   Mobile:     max-width: 576px   (xs)
-   Tablet:     max-width: 768px   (sm/md)
-   Desktop:    max-width: 992px   (lg)
-   Large:      max-width: 1200px  (xl)
+   --breakpoint-phone-small: 480px  (Extra small phones)
+   --breakpoint-phone: 576px        (Standard phones)
+   --breakpoint-tablet: 768px       (Tablets)
+   --breakpoint-desktop: 992px      (Desktop)
 
-   Primary breakpoint used throughout: 768px
+   Mobile-First Approach:
+   - Base styles: Extra-small mobile (< 480px)
+   - @media (min-width: 480px): Small phone and up
+   - @media (min-width: 576px): Phone and up
+   - @media (min-width: 768px): Tablet and up
+   - @media (min-width: 992px): Desktop and up
    ============================================ */

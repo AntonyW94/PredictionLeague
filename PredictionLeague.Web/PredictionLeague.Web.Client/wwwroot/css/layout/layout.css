@@ -1,4 +1,6 @@
-﻿main {
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+
+main {
     background: var(--purple-800);
 }
 
@@ -6,17 +8,17 @@
     min-height: calc(100vh - 56px);
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 1.5rem;
+    align-items: flex-start;
+    padding: 1em;
 }
 
 .admin-table-container {
     background-color: var(--purple-600);
-    padding: 2.5rem;
+    padding: 1.5rem;
     border-radius: var(--bs-border-radius);
-    width: 80%;
+    width: 100%;
     max-width: 1400px;
-    margin: auto;
+    margin: 0;
 }
 
 .admin-content-container {
@@ -40,19 +42,24 @@
     scrollbar-width: auto;
 }
 
-@media (max-width: 768px) {
+dd {
+    font-size: 0.8em;
+}
+
+/* Tablet and up (--breakpoint-tablet: 768px) */
+@media (min-width: 768px) {
     .page-container {
-        padding: 1em;
-        align-items: flex-start;
+        padding: 1.5rem;
+        align-items: center;
     }
 
-    .admin-table-container, .form-container {
-        padding: 1.5rem;
-        margin: 0;
-        width: 100%;
+    .admin-table-container {
+        padding: 2.5rem;
+        width: 80%;
+        margin: auto;
     }
 
     dd {
-        font-size: 0.8em;
+        font-size: 1em;
     }
 }
