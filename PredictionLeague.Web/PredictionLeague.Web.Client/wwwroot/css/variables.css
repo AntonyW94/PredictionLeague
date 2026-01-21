@@ -40,6 +40,29 @@
     --silver: #B4B4B4;
     --bronze: #6A3805;
 
+    /* Transparent Black (for shadows and overlays) */
+    --black-alpha-15: rgba(0, 0, 0, 0.15);
+    --black-alpha-20: rgba(0, 0, 0, 0.2);
+    --black-alpha-35: rgba(0, 0, 0, 0.35);
+    --black-alpha-50: rgba(0, 0, 0, 0.5);
+    --black-alpha-60: rgba(0, 0, 0, 0.6);
+
+    /* Transparent White (for highlights and borders) */
+    --white-alpha-02: rgba(255, 255, 255, 0.02);
+    --white-alpha-05: rgba(255, 255, 255, 0.05);
+    --white-alpha-08: rgba(255, 255, 255, 0.08);
+    --white-alpha-10: rgba(255, 255, 255, 0.1);
+    --white-alpha-15: rgba(255, 255, 255, 0.15);
+    --white-alpha-30: rgba(255, 255, 255, 0.3);
+
+    /* Transparent Purples (for overlays and borders) */
+    --purple-800-alpha-25: rgba(61, 25, 91, 0.25);
+    --purple-900-alpha-80: rgba(49, 20, 74, 0.8);
+
+    /* Transparent Yellow (for animations) */
+    --yellow-alpha-70: rgba(255, 193, 7, 0.7);
+    --yellow-alpha-00: rgba(255, 193, 7, 0);
+
     /* Border Radiuses */
     --bs-border-radius: 20px;
     --bs-border-radius-sm: 20px;

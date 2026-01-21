@@ -94,6 +94,7 @@ a.navbar-brand span {
 .dropdown-item.active {
     color: var(--purple-600);
     background-color: var(--white);
+    font-weight: bold;
 }
 
 .dropdown-item .bi {
@@ -102,7 +103,7 @@ a.navbar-brand span {
 }
 
 .dropdown-divider {
-    border-top: 1px solid rgba(61, 25, 91, 0.25);
+    border-top: 1px solid var(--purple-800-alpha-25);
 }
 
 /* Desktop and up (--breakpoint-desktop: 992px) */

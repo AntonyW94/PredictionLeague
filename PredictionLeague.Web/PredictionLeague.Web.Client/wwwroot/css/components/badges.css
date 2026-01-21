@@ -121,19 +121,10 @@
         font-size: 0.8em;
     }
 
-    .badge-group.prediction-badge {
-        font-size: 0.8em;
-    }
-
-    .badge-group .badge-icon {
-        font-size: 12px;
-    }
-
+    /* Consolidated badge-icon font-size for tablet */
+    .badge-icon,
+    .badge-group .badge-icon,
     .badge-group .badge-icon.large-font {
-        font-size: 12px;
-    }
-
-    .badge-icon {
         font-size: 12px;
     }
 

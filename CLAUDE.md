@@ -354,6 +354,12 @@ wwwroot/css/
 --yellow: #EBFF01;
 --orange: #CC8200;
 --gold, --silver, --bronze  /* Medals */
+
+/* Transparent colours (for shadows, overlays, and effects) */
+--black-alpha-15, --black-alpha-20, --black-alpha-35, --black-alpha-50, --black-alpha-60
+--white-alpha-02, --white-alpha-05, --white-alpha-08, --white-alpha-10, --white-alpha-15, --white-alpha-30
+--purple-800-alpha-25, --purple-900-alpha-80
+--yellow-alpha-70, --yellow-alpha-00  /* For animations */
 ```
 
 ### Mobile-First CSS Approach
@@ -458,6 +464,8 @@ All CSS uses mobile-first media queries. Base styles target extra-small phones (
 4. **Never hardcode colours** - Always use CSS variables:
    - ❌ `color: white;` or `background-color: white;`
    - ✅ `color: var(--white);` or `background-color: var(--white);`
+   - ❌ `rgba(0, 0, 0, 0.35)` or `rgba(255, 255, 255, 0.1)`
+   - ✅ `var(--black-alpha-35)` or `var(--white-alpha-10)`
 
 5. **Never put component styles in page files** - Create proper component CSS
 
