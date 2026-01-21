@@ -43,7 +43,7 @@
         var isAuthenticationPage = relativePath.StartsWith("authentication/");
 
         _navLayoutClass = isHomePage ? "navbar-overlay" : "";
-        _backgroundClass = isAuthenticationPage ? "purple-gradient" : isHomePage ? "light-grey" : "";
+        _backgroundClass = isAuthenticationPage ? "bg-purple-gradient" : isHomePage ? "bg-grey-100" : "";
     }
 
     public void Dispose()
