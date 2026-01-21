@@ -21,5 +21,5 @@
 }
 
     .logo-wrapper.visible {
-        background-color: white;
+        background-color: var(--white);
     }

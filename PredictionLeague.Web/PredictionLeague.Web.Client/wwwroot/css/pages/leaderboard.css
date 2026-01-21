@@ -1,66 +1,68 @@
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+
 .leaderboard-table {
     border-collapse: collapse;
     width: 100%;
-    color: white;
+    color: var(--white);
     font-size: 0.9em;
     table-layout: fixed;
 }
 
-    .leaderboard-table th,
-    .leaderboard-table td {
-        padding: 0.75rem;
-        text-align: center;
-        border-bottom: 1px solid var(--purple-800);
-        white-space: nowrap;
-    }
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: 0.75rem;
+    text-align: center;
+    border-bottom: 1px solid var(--purple-800);
+    white-space: nowrap;
+}
 
-    .leaderboard-table th {
-        background-color: var(--purple-900);
-        font-weight: bold;
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
+.leaderboard-table th {
+    background-color: var(--purple-900);
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
 
-    .leaderboard-table td {
-        background: var(--purple-700);
-    }
+.leaderboard-table td {
+    background: var(--purple-700);
+}
 
-    /* Striping now handled by .table-striped-purple utility */
+/* Striping now handled by .table-striped-purple utility */
 
-    .leaderboard-table .rank-col {
-        width: 15%;
-        text-align: left;
-    }
+.leaderboard-table .rank-col {
+    width: 15%;
+    text-align: left;
+}
 
-    .leaderboard-table .rank-change-col {
-        width: 5%;
-        padding-right: 0;
-    }
+.leaderboard-table .rank-change-col {
+    width: 5%;
+    padding-right: 0;
+}
 
-    .leaderboard-table .player-name-col {
-        white-space: normal;
-        word-wrap: break-word;
-        text-align: left;
-    }
+.leaderboard-table .player-name-col {
+    white-space: normal;
+    word-wrap: break-word;
+    text-align: left;
+}
 
-    .leaderboard-table .points-col {
-        width: 30%;
-        text-align: right;
-    }
+.leaderboard-table .points-col {
+    width: 30%;
+    text-align: right;
+}
 
-    .leaderboard-table tbody tr.current-user-highlight td {
-        background-color: var(--green-600) !important;
-        color: white !important;
-    }
+.leaderboard-table tbody tr.current-user-highlight td {
+    background-color: var(--green-600) !important;
+    color: var(--white) !important;
+}
 
-    .leaderboard-table tbody tr.overall-round-winner,
-    .leaderboard-table tbody tr.overall-round-winner td,
-    .leaderboard-table tbody tr.overall-round-winner.current-user-highlight td {
-        background-color: var(--gold) !important;
-        color: var(--white) !important;
-        border: none;
-    }
+.leaderboard-table tbody tr.overall-round-winner,
+.leaderboard-table tbody tr.overall-round-winner td,
+.leaderboard-table tbody tr.overall-round-winner.current-user-highlight td {
+    background-color: var(--gold) !important;
+    color: var(--white) !important;
+    border: none;
+}
 
 /* Carousel card sizing */
 .carousel-item-content .card {
@@ -68,11 +70,17 @@
     min-width: 0;
 }
 
-@media (max-width: 992px) {
-    .leaderboard-table .body.leaderboard-body {
-        padding-top: 1.5em;
-        padding-bottom: 1.5em;
-        padding-left: 3em;
-        padding-right: 3em;
+/* Mobile/tablet padding for leaderboard body */
+.body.leaderboard-body {
+    padding-top: 1.5em;
+    padding-bottom: 1.5em;
+    padding-left: 3em;
+    padding-right: 3em;
+}
+
+/* Desktop and up (--breakpoint-desktop: 992px) */
+@media (min-width: 992px) {
+    .body.leaderboard-body {
+        padding: 1.5em;
     }
 }

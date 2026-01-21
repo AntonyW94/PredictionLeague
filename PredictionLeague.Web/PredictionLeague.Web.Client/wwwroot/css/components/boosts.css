@@ -1,8 +1,11 @@
-﻿/* ---------- League row styling ---------- */
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+
+/* ---------- League row styling ---------- */
 .boost-league-row {
     padding: 1em;
     border-radius: var(--bs-border-radius);
-    background: var(--purple-800);
+    background: var(--purple-600);
+    box-shadow: 0 8px 20px var(--black-alpha-35), inset 0 0 0 1px var(--white-alpha-05);
 }
 
 /* ---------- Grid + card sizing ---------- */
@@ -18,36 +21,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 1 1 220px;
-    max-width: 320px;
+    flex: 0 0 100%;
+    max-width: 100%;
     box-sizing: border-box;
     padding: 6px;
 }
 
-    .boost-card-wrapper .boost-card {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-    }
-
-.boost-selector-grid.boost-count-2 .boost-card-wrapper {
-    flex: 0 0 calc(50% - 18px);
-    max-width: calc(50% - 18px);
-}
-
-/* 3 options - 3 columns */
-.boost-selector-grid.boost-count-3 .boost-card-wrapper {
-    flex: 0 0 calc(33.333% - 18px);
-    max-width: calc(33.333% - 18px);
-}
-
-/* 4+ options - 4 columns */
-.boost-selector-grid.boost-count-4 .boost-card-wrapper,
-.boost-selector-grid.boost-count-5 .boost-card-wrapper,
-.boost-selector-grid.boost-count-6 .boost-card-wrapper {
-    flex: 0 0 calc(25% - 18px);
-    max-width: calc(25% - 18px);
+.boost-card-wrapper .boost-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
 
 .boost-card {
@@ -80,13 +64,17 @@
     border-top: 3px solid var(--purple-600);
 }
 
+.boost-description {
+    font-size: 0.88rem;
+}
+
 .boost-card:hover {
     transform: translateY(-6px) scale(1.02);
     transition: transform 0.12s ease;
 }
 
-/* ---------- Responsive tweaks ---------- */
-@media (max-width: 991px) {
+/* Small phone and up (--breakpoint-phone-small: 480px) */
+@media (min-width: 480px) {
     .boost-description {
         font-size: 0.9rem;
         padding: 0 6px;
@@ -98,13 +86,34 @@
     }
 }
 
-@media (max-width: 480px) {
+/* Desktop and up (--breakpoint-desktop: 992px) */
+@media (min-width: 992px) {
     .boost-description {
-        font-size: 0.88rem;
+        font-size: 1rem;
+        padding: 0;
     }
 
     .boost-card-wrapper {
-        flex: 0 0 100%;
-        max-width: 100%;
+        flex: 1 1 220px;
+        max-width: 320px;
+    }
+
+    .boost-selector-grid.boost-count-2 .boost-card-wrapper {
+        flex: 0 0 calc(50% - 18px);
+        max-width: calc(50% - 18px);
+    }
+
+    /* 3 options - 3 columns */
+    .boost-selector-grid.boost-count-3 .boost-card-wrapper {
+        flex: 0 0 calc(33.333% - 18px);
+        max-width: calc(33.333% - 18px);
+    }
+
+    /* 4+ options - 4 columns */
+    .boost-selector-grid.boost-count-4 .boost-card-wrapper,
+    .boost-selector-grid.boost-count-5 .boost-card-wrapper,
+    .boost-selector-grid.boost-count-6 .boost-card-wrapper {
+        flex: 0 0 calc(25% - 18px);
+        max-width: calc(25% - 18px);
     }
 }
