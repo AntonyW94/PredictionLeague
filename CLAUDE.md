@@ -323,32 +323,64 @@ wwwroot/css/
 ### Design Tokens (variables.css)
 
 ```css
+/* Breakpoints (mobile-first) */
+--breakpoint-phone-small: 480px;  /* Extra small phones */
+--breakpoint-phone: 576px;        /* Standard phones */
+--breakpoint-tablet: 768px;       /* Tablets */
+--breakpoint-desktop: 992px;      /* Desktop */
+
 /* Purples - Primary brand color */
---pl-purple-1000: #2C0A3D;  /* Darkest */
---pl-purple-900: #31144A;
---pl-purple-800: #3D195B;   /* Common background */
---pl-purple-700: #432468;
---pl-purple-600: #4A2E6C;
---pl-purple-300: #75559D;
---pl-purple-200: #963CFF;   /* Accent/highlight */
+--purple-1000: #2C0A3D;  /* Darkest */
+--purple-900: #31144A;
+--purple-800: #3D195B;   /* Common background */
+--purple-700: #432468;
+--purple-600: #4A2E6C;
+--purple-300: #75559D;
+--purple-200: #963CFF;   /* Accent/highlight */
 
 /* Blues */
---pl-blue-500: #04F5FF;     /* Bright cyan - base */
---pl-blue-700: #03c2b4;     /* Darker teal */
+--blue-500: #04F5FF;     /* Bright cyan - base */
+--blue-700: #03c2b4;     /* Darker teal */
 
 /* Greens */
---pl-green-300: #84fab0;    /* Light/pastel */
---pl-green-600: #00B960;    /* Base green */
+--green-300: #84fab0;    /* Light/pastel */
+--green-600: #00B960;    /* Base green */
 
 /* Greys */
---pl-grey-100 to --pl-grey-500  /* Light to dark */
+--grey-100 to --grey-500  /* Light to dark */
 
 /* Single-value colors (no scale needed) */
---pl-red: #E90052;
---pl-yellow: #EBFF01;
---pl-orange: #CC8200;
---pl-gold, --pl-silver, --pl-bronze  /* Medals */
+--red: #E90052;
+--yellow: #EBFF01;
+--orange: #CC8200;
+--gold, --silver, --bronze  /* Medals */
 ```
+
+### Mobile-First CSS Approach
+
+All CSS uses mobile-first media queries. Base styles target extra-small phones (<480px), then progressively enhance for larger screens.
+
+**Breakpoint Comment Format:**
+```css
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+.element {
+    /* Mobile styles here */
+}
+
+/* Small phone and up (--breakpoint-phone-small: 480px) */
+@media (min-width: 480px) { }
+
+/* Phone and up (--breakpoint-phone: 576px) */
+@media (min-width: 576px) { }
+
+/* Tablet and up (--breakpoint-tablet: 768px) */
+@media (min-width: 768px) { }
+
+/* Desktop and up (--breakpoint-desktop: 992px) */
+@media (min-width: 992px) { }
+```
+
+**Key Principle:** Always use `min-width` queries, never `max-width`. Start with mobile styles in the base, then add enhancements for larger screens.
 
 ### Utility Classes Philosophy
 
@@ -401,12 +433,14 @@ wwwroot/css/
 
 ### CSS Rules to Follow
 
-1. **Always use design tokens** - Never hardcode colours, use `var(--pl-colour-xxx)`
+1. **Always use design tokens** - Never hardcode colours, use `var(--colour-xxx)` (e.g., `var(--white)`, `var(--purple-800)`)
 2. **Use numeric colour scale** - `.text-green-600` not `.text-green`
 3. **Prefer utilities over custom CSS** - Use existing utility classes when possible
 4. **Keep component CSS focused** - One component per file in `/components/`
 5. **Page styles are last resort** - Only for truly page-specific styles
 6. **Maintain complete utility sets** - Don't remove unused utilities from sizing/colours
+7. **Use mobile-first media queries** - Always use `min-width`, never `max-width`
+8. **Include breakpoint comments** - Use the standard comment format for media query sections
 
 ### CSS Things to Avoid
 
@@ -421,9 +455,15 @@ wwwroot/css/
 
 3. **Never duplicate existing utilities** - Check utilities folder first
 
-4. **Never hardcode colours** - Always use CSS variables
+4. **Never hardcode colours** - Always use CSS variables:
+   - ❌ `color: white;` or `background-color: white;`
+   - ✅ `color: var(--white);` or `background-color: var(--white);`
 
 5. **Never put component styles in page files** - Create proper component CSS
+
+6. **Never use max-width media queries** - Use mobile-first `min-width` queries:
+   - ❌ `@media (max-width: 768px) { }`
+   - ✅ `@media (min-width: 768px) { }`
 
 ## Database
 

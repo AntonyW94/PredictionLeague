@@ -11,7 +11,7 @@
     background-color: var(--purple-600);
     border-radius: var(--bs-border-radius);
     overflow: hidden;
-    color: white;
+    color: var(--white);
 }
 
 .prediction-card-header {
@@ -51,7 +51,7 @@
 
 .status-select-pill.scheduled {
     background-color: var(--red);
-    color: white;
+    color: var(--white);
 }
 
 .status-select-pill.in-progress {
@@ -62,7 +62,7 @@
 
 .status-select-pill.completed {
     background-color: var(--green-600);
-    color: white;
+    color: var(--white);
 }
 
 .team-display {
@@ -105,7 +105,7 @@
     font-weight: bold;
     font-size: 1.5rem;
     border: 2px solid var(--purple-900);
-    background-color: white;
+    background-color: var(--white);
     color: var(--purple-800);
     display: flex;
     align-items: center;
@@ -116,7 +116,7 @@
 .stepper-btn {
     background: none;
     border: none;
-    color: white;
+    color: var(--white);
     font-size: 1.5rem;
     line-height: 1;
     cursor: pointer;

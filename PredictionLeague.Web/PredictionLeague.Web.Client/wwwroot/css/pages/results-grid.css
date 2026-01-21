@@ -6,7 +6,7 @@
 .results-grid {
     border-collapse: collapse;
     width: 100%;
-    color: white;
+    color: var(--white);
     font-size: 0.9em;
 }
 
@@ -108,7 +108,7 @@
 .mobile-match-card {
     background-color: var(--purple-800);
     border-radius: var(--bs-border-radius);
-    color: white;
+    color: var(--white);
     overflow: hidden;
     max-height: 450px;
     width: 100%;

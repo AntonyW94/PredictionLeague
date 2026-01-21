@@ -27,7 +27,7 @@ a.navbar-brand span {
 
 .navbar-nav .nav-item .nav-link,
 .navbar-nav .nav-item .navbar-text {
-    color: white !important;
+    color: var(--white) !important;
     font-weight: 700;
 }
 
@@ -65,7 +65,7 @@ a.navbar-brand span {
 }
 
 .navbar-nav > .nav-item:not(.no-hover):hover {
-    background-color: white;
+    background-color: var(--white);
 }
 
 .navbar-nav > .nav-item:hover .nav-link,
@@ -75,7 +75,7 @@ a.navbar-brand span {
 }
 
 .dropdown-menu {
-    background-color: white;
+    background-color: var(--white);
     border: none;
 }
 
@@ -87,13 +87,13 @@ a.navbar-brand span {
 .dropdown-item:hover,
 .dropdown-item:focus {
     color: var(--purple-600);
-    background-color: white;
+    background-color: var(--white);
     font-weight: bold;
 }
 
 .dropdown-item.active {
     color: var(--purple-600);
-    background-color: white;
+    background-color: var(--white);
 }
 
 .dropdown-item .bi {

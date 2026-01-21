@@ -3,7 +3,7 @@
 .leaderboard-table {
     border-collapse: collapse;
     width: 100%;
-    color: white;
+    color: var(--white);
     font-size: 0.9em;
     table-layout: fixed;
 }
@@ -53,7 +53,7 @@
 
 .leaderboard-table tbody tr.current-user-highlight td {
     background-color: var(--green-600) !important;
-    color: white !important;
+    color: var(--white) !important;
 }
 
 .leaderboard-table tbody tr.overall-round-winner,

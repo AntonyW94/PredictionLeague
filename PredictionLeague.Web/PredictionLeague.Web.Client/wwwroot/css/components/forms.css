@@ -34,7 +34,7 @@
 .input-group-text.prize-label {
     background-color: var(--purple-900);
     border-color: var(--purple-900);
-    color: white;
+    color: var(--white);
     font-weight: 500;
 }
 
@@ -47,7 +47,7 @@
 }
 
 .message-box-solid {
-    color: white;
+    color: var(--white);
     border-radius: var(--bs-border-radius);
     padding: 0.4rem 0.8rem;
     font-size: 0.85em;
