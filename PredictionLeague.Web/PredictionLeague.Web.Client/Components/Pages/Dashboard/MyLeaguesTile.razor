@@ -190,14 +190,14 @@
                                         <div class="financial-col">
                                             <small class="d-block text-uppercase fw-bold text-2xs">Won So Far</small>
                                             <div class="fw-bold text-green-600 fs-5">
-                                                @league.PrizeMoneyWon.ToString("�0.00")
+                                                @((MarkupString)$"&pound;{league.PrizeMoneyWon:0.00}")
                                             </div>
                                         </div>
 
                                         <div class="financial-col">
                                             <small class="d-block text-uppercase fw-bold text-2xs">Pot Remaining</small>
                                             <div class="fw-bold text-white fs-5">
-                                                @league.PrizeMoneyRemaining.ToString("�0.00")
+                                                @((MarkupString)$"&pound;{league.PrizeMoneyRemaining:0.00}")
                                             </div>
                                         </div>
                                     </div>
