@@ -36,4 +36,22 @@
       </Content>
     </ItemGroup>
 
+    <!-- CSS Cache Busting - Adds version query strings to all CSS files during Publish -->
+    <Target Name="AddCssCacheBusting" AfterTargets="Publish">
+        <PropertyGroup>
+            <CssVersion>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</CssVersion>
+            <PublishWwwRoot>$(PublishDir)wwwroot\</PublishWwwRoot>
+        </PropertyGroup>
+
+        <Message Importance="high" Text="Adding CSS cache busting version: $(CssVersion)" />
+
+        <!-- Update index.html: app.css -> app.css?v=VERSION -->
+        <Exec Command="powershell -NoProfile -Command &quot;(Get-Content '$(PublishWwwRoot)index.html') -replace 'href=\&quot;css/app\.css\&quot;', 'href=\&quot;css/app.css?v=$(CssVersion)\&quot;' | Set-Content '$(PublishWwwRoot)index.html'&quot;" />
+
+        <!-- Update app.css: Add version to all LOCAL @import url() statements (not external URLs) -->
+        <Exec Command="powershell -NoProfile -Command &quot;(Get-Content '$(PublishWwwRoot)css/app.css') -replace '@import url\(\x27((?!https?://)[^)]+)\x27\)', '@import url(\x27$$1?v=$(CssVersion)\x27)' | Set-Content '$(PublishWwwRoot)css/app.css'&quot;" />
+
+        <Message Importance="high" Text="CSS cache busting applied successfully!" />
+    </Target>
+
 </Project>

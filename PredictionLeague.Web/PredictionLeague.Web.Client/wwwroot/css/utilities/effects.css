@@ -1,0 +1,24 @@
+/* Visual Effect Utilities */
+
+/* Shadows */
+.shadow {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Glass Panel Effect */
+.glass-panel {
+    background: radial-gradient(circle at center, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.08) 100%);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+/* Table Striping - Purple variant */
+/* Both stripe colours (800, 900) are lighter than card background (1000) */
+.table-striped-purple tbody tr:nth-child(odd) td {
+    background-color: var(--purple-800);
+}
+
+.table-striped-purple tbody tr:nth-child(even) td {
+    background-color: var(--purple-900);
+}

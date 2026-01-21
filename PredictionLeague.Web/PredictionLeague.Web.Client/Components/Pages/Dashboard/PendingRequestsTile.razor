@@ -8,7 +8,7 @@
 
 @if (DashboardState.PendingRequests.Any())
 {
-    <div class="card h-100 d-flex flex-column">
+    <div class="section h-100">
         <h3 class="text-white text-center fw-bold mb-4">Requests & Alerts</h3>
 
         <ApiError Message="@DashboardState.PendingRequestsErrorMessage" />
@@ -26,14 +26,14 @@
             <div class="card-grid">
                 @foreach (var request in DashboardState.PendingRequests)
                 {
-                    <div class="action-card dark mb-3">
-                        <div class="card-header border-bottom-0 pb-1">
+                    <div class="card mb-3">
+                        <div class="header">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <h5 class="fw-bold text-white mb-0">@request.LeagueName</h5>
                                     <small class="text-white-50">@request.SeasonName</small>
                                     <div class="d-flex justify-content-between align-items-center gap-4 mb-1">
-                                        <div style="font-size: 0.75rem; color: var(--pl-grey-500); margin-top: 2px;">
+                                        <div class="text-sm text-muted mt-1">
                                             Sent: @GetTimeAgo(request.JoinedAtUtc)
                                         </div>
                                        
@@ -55,30 +55,30 @@
                         <div class="px-3">
                             <div class="row g-2">
                                 <div class="col-6">
-                                    <div class="gradient-flex-info center">
+                                    <div class="glass-panel gradient-flex-info center">
                                         <div class="d-flex align-items-center mb-1 gap-1">
-                                            <i class="bi bi-person-fill me-1" style="color: var(--pl-grey-300);"></i>
-                                            <small class="text-white-50" style="font-size: 0.7rem;">Admin</small>
+                                            <i class="bi bi-person-fill me-1 text-grey-300"></i>
+                                            <small class="text-white-50 text-xs">Admin</small>
                                         </div>
                                         <span class="text-white small fw-bold text-truncate">@request.AdminName</span>
                                     </div>
                                 </div>
 
                                 <div class="col-6">
-                                    <div class="gradient-flex-info center">
+                                    <div class="glass-panel gradient-flex-info center">
                                         <div class="d-flex align-items-center mb-1 gap-1">
-                                            <i class="bi bi-people-fill me-1" style="color: var(--pl-grey-300);"></i>
-                                            <small class="text-white-50" style="font-size: 0.7rem;">Members</small>
+                                            <i class="bi bi-people-fill me-1 text-grey-300"></i>
+                                            <small class="text-white-50 text-xs">Members</small>
                                         </div>
                                         <span class="text-white small fw-bold">@request.MemberCount</span>
                                     </div>
                                 </div>
 
                                 <div class="col-6">
-                                    <div class="gradient-flex-info center">
+                                    <div class="glass-panel gradient-flex-info center">
                                         <div class="d-flex align-items-center mb-1 gap-1">
-                                            <i class="bi bi-cash-stack me-1" style="color: var(--pl-grey-300);"></i>
-                                            <small class="text-white-50" style="font-size: 0.7rem;">Entry</small>
+                                            <i class="bi bi-cash-stack me-1 text-grey-300"></i>
+                                            <small class="text-white-50 text-xs">Entry</small>
                                         </div>
                                         <span class="text-white small fw-bold">
                                             @(request.EntryFee > 0 ? request.EntryFee.ToString("C", new CultureInfo("en-GB")) : "Free")
@@ -87,10 +87,10 @@
                                 </div>
 
                                 <div class="col-6">
-                                    <div class="gradient-flex-info center">
+                                    <div class="glass-panel gradient-flex-info center">
                                         <div class="d-flex align-items-center mb-1 gap-1">
-                                            <i class="bi bi-trophy-fill me-1" style="color: var(--pl-grey-300);"></i>
-                                            <small class="text-white-50" style="font-size: 0.7rem;">Est. Pot</small>
+                                            <i class="bi bi-trophy-fill me-1 text-grey-300"></i>
+                                            <small class="text-white-50 text-xs">Est. Pot</small>
                                         </div>
                                         <span class="text-white small fw-bold">
                                             @(request.PotValue > 0 ? request.PotValue.ToString("C", new CultureInfo("en-GB")) : "£0.00")
@@ -100,13 +100,12 @@
                             </div>
                         </div>
 
-                        <div class="action-card-footer px-3">
+                        <div class="footer px-3">
                             @if (request.Status == LeagueMemberStatus.Pending)
                             {
-                                <button class="btn btn-sm w-100 fw-bold"
+                                <button class="btn btn-sm w-100 red-outline-button"
                                         @onclick="() => CancelRequest(request.LeagueId)"
-                                        disabled="@_processingIds.Contains(request.LeagueId)"
-                                        style="border: 1px solid var(--pl-red); color: var(--pl-red); background: transparent; transition: all 0.3s;">
+                                        disabled="@_processingIds.Contains(request.LeagueId)">
                                     @if (_processingIds.Contains(request.LeagueId))
                                     {
                                         <span><i class="spinner-border spinner-border-sm me-1"></i> Cancelling...</span>
@@ -119,10 +118,9 @@
                             }
                             else if (request.Status == LeagueMemberStatus.Rejected)
                             {
-                                <button class="btn btn-sm w-100 fw-bold"
+                                <button class="btn btn-sm w-100 red-button"
                                         @onclick="() => DismissAlert(request.LeagueId)"
-                                        disabled="@_processingIds.Contains(request.LeagueId)"
-                                        style="background-color: var(--pl-red); color: var(--pl-white); border: none;">
+                                        disabled="@_processingIds.Contains(request.LeagueId)">
                                     @if (_processingIds.Contains(request.LeagueId))
                                     {
                                         <span><i class="spinner-border spinner-border-sm me-1"></i> Removing...</span>

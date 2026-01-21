@@ -2,7 +2,7 @@
 .boost-league-row {
     padding: 1em;
     border-radius: var(--bs-border-radius);
-    background: var(--pl-purple-800);
+    background: var(--purple-800);
 }
 
 /* ---------- Grid + card sizing ---------- */
@@ -77,7 +77,7 @@
 
 /* ---------- Description full-width styling (centered) ---------- */
 .boost-description-wrapper {
-    border-top: 3px solid var(--pl-purple-600);
+    border-top: 3px solid var(--purple-600);
 }
 
 .boost-card:hover {
@@ -106,25 +106,5 @@
     .boost-card-wrapper {
         flex: 0 0 100%;
         max-width: 100%;
-    }
-}
-
-/* Animations */
-
-.badge-pulse {
-    animation: badgePulse 350ms ease-out;
-}
-
-@keyframes badgePulse {
-    0% {
-        transform: scale(1);
-    }
-
-    40% {
-        transform: scale(1.18);
-    }
-
-    100% {
-        transform: scale(1);
     }
 }

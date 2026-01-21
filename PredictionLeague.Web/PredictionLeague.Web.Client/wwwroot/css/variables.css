@@ -1,0 +1,63 @@
+/* Design Tokens - CSS Custom Properties */
+
+:root {
+    /* Base Colors */
+    --white: #FFFFFF;
+    --black: #1f1f1f;
+
+    /* Purples (higher number = darker) */
+    --purple-1000: #2C0A3D;
+    --purple-900: #31144A;
+    --purple-800: #3D195B;
+    --purple-700: #432468;
+    --purple-600: #4A2E6C;
+    --purple-300: #75559D;
+    --purple-200: #963CFF;
+
+    /* Reds */
+    --red: #E90052;
+
+    /* Blues (higher number = darker) */
+    --blue-500: #04F5FF;
+    --blue-700: #03c2b4;
+
+    /* Greens (higher number = darker) */
+    --green-300: #84fab0;
+    --green-600: #00B960;
+
+    /* Yellows */
+    --yellow: #EBFF01;
+    --orange: #CC8200;
+
+    /* Greys */
+    --grey-100: #EAEAEA;
+    --grey-200: #DADCE0;
+    --grey-300: #CECECE;
+    --grey-500: #6C757D;
+
+    /* Medals */
+    --gold: #C9B037;
+    --silver: #B4B4B4;
+    --bronze: #6A3805;
+
+    /* Border Radiuses */
+    --bs-border-radius: 20px;
+    --bs-border-radius-sm: 20px;
+    --bs-border-radius-lg: 20px;
+    --bs-border-radius-xl: 20px;
+    --bs-border-radius-xxl: 20px;
+}
+
+/* ============================================
+   BREAKPOINTS (Reference Only)
+   Note: CSS custom properties cannot be used in media queries.
+   These values are documented here for consistency.
+   ============================================
+
+   Mobile:     max-width: 576px   (xs)
+   Tablet:     max-width: 768px   (sm/md)
+   Desktop:    max-width: 992px   (lg)
+   Large:      max-width: 1200px  (xl)
+
+   Primary breakpoint used throughout: 768px
+   ============================================ */

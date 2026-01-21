@@ -6,8 +6,8 @@
 @using PredictionLeague.Contracts.Leagues
 @using PredictionLeague.Web.Client.Services.Leagues
 
-<div class="card w-100 mh-600">
-    <h5 class="card-title text-white fw-bold mb-3">Monthly Leaderboard</h5>
+<div class="section w-100 mh-600">
+    <h5 class="text-white fw-bold mb-3">Monthly Leaderboard</h5>
     <ApiError Message="@_errorMessage" />
 
     @if (_isLoadingMonths)
@@ -27,9 +27,9 @@
                     {
                         <div class="carousel-item-wrapper">
                             <div class="carousel-item-content">
-                                <div class="leaderboard-card">
-                                    <div class="card-header w-100 flex-row flex-center justify-center">
-                                        <h5 class="card-title text-white fw-bold centre mb-0">
+                                <div class="card slide">
+                                    <div class="header w-100 row-layout flex-center justify-center">
+                                        <h5 class="text-white fw-bold text-center mb-0">
                                             @month.Name
                                         </h5>
                                         @if (month.RoundsRemaining > 0)
@@ -45,7 +45,7 @@
                                             </div>
                                         }
                                     </div>
-                                    <div class="league-card-body justify-start w-100 inner-card">
+                                    <div class="body leaderboard-body justify-start w-100">
                                         @if (_leaderboards.TryGetValue(month.Month, out var leaderboard))
                                         {
                                             @if (leaderboard.IsLoading)
@@ -59,7 +59,7 @@
                                             else if (leaderboard.Entries.Any())
                                             {
                                                 <div class="table-responsive rounded w-100">
-                                                    <table class="leaderboard-table light text-white">
+                                                    <table class="leaderboard-table table-striped-purple light text-white">
                                                         <thead>
                                                         <tr>
                                                             @if (leaderboard.Entries.FirstOrDefault()?.IsRoundInProgress == true && leaderboard.Entries.FirstOrDefault()?.SnapshotRank.HasValue == true)

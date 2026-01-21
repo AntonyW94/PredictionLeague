@@ -1,0 +1,215 @@
+/* Colour Utilities - Complete palette using design tokens from variables.css */
+
+/* ============================================
+   TEXT COLOURS
+   ============================================ */
+
+/* White/Black */
+.text-white {
+    color: var(--white);
+}
+
+.text-black {
+    color: var(--black);
+}
+
+/* Purples */
+.text-purple-200 {
+    color: var(--purple-200);
+}
+
+.text-purple-300 {
+    color: var(--purple-300);
+}
+
+.text-purple-600 {
+    color: var(--purple-600);
+}
+
+.text-purple-700 {
+    color: var(--purple-700);
+}
+
+.text-purple-800 {
+    color: var(--purple-800);
+}
+
+.text-purple-900 {
+    color: var(--purple-900);
+}
+
+.text-purple-1000 {
+    color: var(--purple-1000) !important;
+}
+
+/* Blues */
+.text-blue-500 {
+    color: var(--blue-500);
+}
+
+.text-blue-700 {
+    color: var(--blue-700);
+}
+
+/* Greens */
+.text-green-300 {
+    color: var(--green-300);
+}
+
+.text-green-600 {
+    color: var(--green-600);
+}
+
+/* Reds/Yellows/Orange */
+.text-red {
+    color: var(--red) !important;
+}
+
+.text-yellow {
+    color: var(--yellow);
+}
+
+.text-orange {
+    color: var(--orange);
+}
+
+/* Greys */
+.text-grey-100 {
+    color: var(--grey-100);
+}
+
+.text-grey-200 {
+    color: var(--grey-200);
+}
+
+.text-grey-300 {
+    color: var(--grey-300);
+}
+
+.text-grey-500 {
+    color: var(--grey-500);
+}
+
+.text-muted {
+    color: var(--grey-500);
+}
+
+/* Medals */
+.text-gold {
+    color: var(--gold);
+}
+
+.text-silver {
+    color: var(--silver);
+}
+
+.text-bronze {
+    color: var(--bronze);
+}
+
+/* ============================================
+   BACKGROUND COLOURS
+   ============================================ */
+
+/* White/Black */
+.bg-white {
+    background-color: var(--white);
+}
+
+.bg-black {
+    background-color: var(--black);
+}
+
+.bg-transparent {
+    background-color: transparent;
+}
+
+/* Purples */
+.bg-purple-200 {
+    background-color: var(--purple-200);
+}
+
+.bg-purple-300 {
+    background-color: var(--purple-300);
+}
+
+.bg-purple-600 {
+    background-color: var(--purple-600);
+}
+
+.bg-purple-700 {
+    background-color: var(--purple-700);
+}
+
+.bg-purple-800 {
+    background-color: var(--purple-800);
+}
+
+.bg-purple-900 {
+    background-color: var(--purple-900);
+}
+
+.bg-purple-1000 {
+    background-color: var(--purple-1000);
+}
+
+/* Blues */
+.bg-blue-500 {
+    background-color: var(--blue-500);
+}
+
+.bg-blue-700 {
+    background-color: var(--blue-700);
+}
+
+/* Greens */
+.bg-green-300 {
+    background-color: var(--green-300);
+}
+
+.bg-green-600 {
+    background-color: var(--green-600);
+}
+
+/* Reds/Yellows/Orange */
+.bg-red {
+    background-color: var(--red);
+}
+
+.bg-yellow {
+    background-color: var(--yellow);
+}
+
+.bg-orange {
+    background-color: var(--orange);
+}
+
+/* Greys */
+.bg-grey-100 {
+    background-color: var(--grey-100);
+}
+
+.bg-grey-200 {
+    background-color: var(--grey-200);
+}
+
+.bg-grey-300 {
+    background-color: var(--grey-300);
+}
+
+.bg-grey-500 {
+    background-color: var(--grey-500);
+}
+
+/* Medals */
+.bg-gold {
+    background-color: var(--gold);
+}
+
+.bg-silver {
+    background-color: var(--silver);
+}
+
+.bg-bronze {
+    background-color: var(--bronze);
+}

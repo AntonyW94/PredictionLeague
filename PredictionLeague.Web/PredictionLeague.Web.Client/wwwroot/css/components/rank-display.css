@@ -1,27 +1,19 @@
-﻿/* --- Dashboard Card Layout --- */
+﻿/* --- Dashboard Card Layout (use with .glass-panel) --- */
 .hero-rank-container {
-    background: radial-gradient(circle at center, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.08) 100%);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
     padding: 1rem;
     margin-bottom: 1rem;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
 }
 
 .secondary-rank-box {
-    background: radial-gradient(circle at center, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.08) 100%);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
     padding: 0.75rem 0.5rem;
     height: 100%;
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
 }
 
 /* --- Shield Icon System --- */
@@ -59,7 +51,7 @@
     font-weight: 800;
     font-size: 1.6rem;
     margin-top: 3px;
-    color: var(--pl-white);
+    color: var(--white);
     text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
@@ -94,29 +86,24 @@
     stroke: url(#rim-red);
 }
 
-/* Helper classes for Arrows to match your palette */
-.text-pl-green {
-    color: var(--pl-green) !important;
+/* Rank arrow text shadows for readability */
+.hero-rank-container .text-green-600,
+.hero-rank-container .text-red,
+.secondary-rank-box .text-green-600,
+.secondary-rank-box .text-red {
     text-shadow: 0 1px 1px rgba(0,0,0,0.5);
 }
 
-.current-user-highlight .text-pl-green {
-    color: var(--pl-white) !important;
+.current-user-highlight .text-green-600 {
+    color: var(--white) !important;
     text-shadow: 0 1px 1px rgba(0,0,0,0.5);
 }
 
-.text-pl-red {
-    color: var(--pl-red) !important;
-}
-
-/* --- Financial Row Styles --- */
+/* --- Financial Row Styles (use with .glass-panel) --- */
 .financial-row {
     display: flex;
-    background: radial-gradient(circle at center, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.08) 100%);
-    border: 1px solid rgba(255,255,255,0.1);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
-    border-radius: 8px;
-    overflow: hidden; 
+    border-radius: 8px; /* Override glass-panel's 12px */
+    overflow: hidden;
     margin-bottom: 0.5rem;
 }
 

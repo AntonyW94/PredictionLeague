@@ -6,7 +6,7 @@
 @if (Results != null && Matches != null)
 {
     <div class="results-grid-container">
-        <table class="results-grid">
+        <table class="results-grid table-striped-purple">
             <thead>
                 <tr>
                     <th class="match-info">Match</th>
@@ -60,7 +60,7 @@
                                 {
                                     @if (!player.HasPredicted && DeadlineUtc < DateTime.UtcNow)
                                     {
-                                        <span class="not-predicted-icon text-pl-red bi bi-x-circle-fill" title="No predictions submitted"></span>
+                                        <span class="not-predicted-icon text-red bi bi-x-circle-fill" title="No predictions submitted"></span>
                                     }
                                     else
                                     {

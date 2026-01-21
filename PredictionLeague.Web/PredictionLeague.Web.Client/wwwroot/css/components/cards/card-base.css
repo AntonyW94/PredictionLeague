@@ -1,0 +1,159 @@
+/* Base Card Structure */
+
+.card-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+        .card-grid .card:last-child:nth-child(odd) {
+            grid-column: 1 / -1;
+            width: calc(50% - 0.5rem);
+            justify-self: center;
+        }
+}
+
+/* Base Card */
+/* Background: purple-1000 (#2C0A3D) - Darkest (same as login form) */
+/* ALL card parts (header, body, footer) use the SAME background colour */
+.card {
+    background-color: var(--purple-1000);
+    border-radius: var(--bs-border-radius);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Card Variants (layout only, NOT colour) */
+.card.slide {
+    /* Carousel items - same as base, width handled by carousel */
+    height: 100%;
+}
+
+.card.thumbnail {
+    /* Interactive selection cards */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    cursor: pointer;
+    text-align: center;
+}
+
+.card.row {
+    /* Horizontal inline cards */
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+/* NO background variants - all cards use purple-1000 */
+
+/* Card Sub-elements - ALL use same background as card (purple-1000) */
+.card > .header {
+    padding: 1rem 1.5rem;
+    /* NO background-color - inherits from card (purple-1000) */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.card > .header.row-layout {
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.card > .header h5 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.card > .header small {
+    font-size: 0.85rem;
+}
+
+.card > .body {
+    padding: 1rem 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.card > .body.no-padding {
+    padding: 0;
+}
+
+.card > .body.centered {
+    align-items: center;
+    justify-content: center;
+}
+
+.card > .body.leaderboard-body {
+    padding: 1.5em;
+    overflow-y: auto;
+}
+
+.card > .footer {
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.card > .footer .btn {
+    flex-grow: 1;
+}
+
+.card > .footer.columns-2 .btn {
+    flex-basis: calc(50% - 0.5rem);
+}
+
+/* Gradient info boxes used in dashboard tiles (use with .glass-panel) */
+.gradient-flex-info {
+    padding: 0.8rem;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    flex-direction: column;
+}
+
+    .gradient-flex-info.center {
+        justify-content: center;
+    }
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .card.slide {
+        max-width: 350px;
+        width: 100%;
+    }
+
+    .card.row {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card > .header h5 {
+        font-size: 1rem;
+    }
+
+    .card > .header span {
+        font-size: 0.8rem;
+    }
+
+    .card > .body .btn {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .card > .footer .btn {
+        font-size: 0.9rem;
+        padding: 0.5rem 0.75rem;
+    }
+}

@@ -1,15 +1,15 @@
 ﻿@using PredictionLeague.Contracts.Dashboard
 
 
-<div class="action-card light">
-    <div class="card-header">
+<div class="card slide">
+    <div class="header">
         <h5 class="fw-bold text-white">@Round.SeasonName</h5>
         <small class="text-white-50">Round @Round.RoundNumber</small>
     </div>
 
-    <div class="action-card-body">
-        <dl class="mb-0">
-            <div class="action-card-row action-card-row--centered">
+    <div class="body">
+        <dl class="mb-0 detail-list">
+            <div class="detail-row centered">
                 @if ((Round.DeadlineUtc - DateTime.UtcNow).TotalHours < 24)
                 {
                     <CountdownTimer DeadlineUtc="Round.DeadlineUtc" />
@@ -48,7 +48,7 @@
             </div>
         }
     </div>
-    <div class="action-card-footer">
+    <div class="footer">
         @if (Round.DeadlineUtc > DateTime.UtcNow)
         {
             <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">

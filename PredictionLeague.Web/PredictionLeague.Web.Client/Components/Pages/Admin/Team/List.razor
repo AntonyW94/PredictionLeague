@@ -28,7 +28,7 @@
             <div class="team-grid">
                 @foreach (var team in _teams)
                 {
-                    <div class="team-card" @onclick="() => EditTeam(team.Id)">
+                    <div class="card thumbnail" @onclick="() => EditTeam(team.Id)">
                         <div class="team-card-logo-bg">
                             <img src="@team.LogoUrl" alt="@team.Name logo" class="team-card-logo" />
                         </div>

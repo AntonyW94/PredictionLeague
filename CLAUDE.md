@@ -84,6 +84,27 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
 
 ## Code Conventions
 
+### Language and Spelling
+
+**Use UK English spelling throughout the codebase:**
+
+| US English | UK English (Use This) |
+|------------|----------------------|
+| color | colour |
+| center | centre |
+| organize | organise |
+| favorite | favourite |
+| license (verb) | licence |
+| analyze | analyse |
+| canceled | cancelled |
+
+This applies to:
+- File names (e.g., `colours.css` not `colors.css`)
+- CSS class names (where practical)
+- Comments and documentation
+- Variable names and string literals
+- Error messages and UI text
+
 ### Naming
 
 | Element | Convention | Example |
@@ -243,6 +264,167 @@ public class DashboardStateService
 3. Auto-refreshes expired tokens via `/api/auth/refresh-token`
 4. Sets `Authorization: Bearer {token}` header on HttpClient
 
+## CSS Architecture
+
+### File Structure
+
+CSS follows a layered architecture with clear separation of concerns:
+
+```
+wwwroot/css/
+├── variables.css          → Design tokens (colours, spacing, radii)
+├── app.css                → Global styles and imports
+├── utilities/             → Reusable utility classes (complete sets)
+│   ├── colours.css        → Text and background colour utilities
+│   ├── effects.css        → Shadows, glass-panel, table-striped
+│   ├── sizing.css         → Width, height, spacing utilities
+│   ├── typography.css     → Font sizes, text alignment, whitespace
+│   ├── borders.css        → Border utilities
+│   └── flex.css           → Flexbox utilities
+├── components/            → Reusable component styles
+│   ├── badges.css         → Badge and badge-group styles
+│   ├── buttons.css        → Button variants
+│   ├── carousel.css       → Carousel/slider styles
+│   ├── forms.css          → Form controls and validation
+│   ├── rank-display.css   → Shield icons and rank displays
+│   └── cards/             → Card component styles
+│       ├── card-base.css  → Base card styles
+│       ├── action-cards.css
+│       ├── league-cards.css
+│       ├── match-cards.css
+│       ├── member-cards.css
+│       └── team-cards.css
+├── layout/                → Layout and structural styles
+│   ├── navigation.css
+│   └── loading.css
+└── pages/                 → Page-specific styles
+    ├── home.css
+    ├── leaderboard.css
+    ├── predictions.css
+    ├── prizes.css
+    └── results-grid.css
+```
+
+### Color Naming Convention
+
+**Use numeric scale (Tailwind-style) for colors with multiple shades:**
+
+| Scale | Meaning | Usage |
+|-------|---------|-------|
+| 100-200 | Lightest | Accents, highlights |
+| 300-400 | Light | Secondary elements |
+| 500 | Base | Default/primary usage |
+| 600-700 | Dark | Text, emphasis |
+| 800-900 | Darker | Backgrounds |
+| 1000 | Darkest | Deep backgrounds |
+
+**Higher number = darker color**
+
+### Design Tokens (variables.css)
+
+```css
+/* Purples - Primary brand color */
+--pl-purple-1000: #2C0A3D;  /* Darkest */
+--pl-purple-900: #31144A;
+--pl-purple-800: #3D195B;   /* Common background */
+--pl-purple-700: #432468;
+--pl-purple-600: #4A2E6C;
+--pl-purple-300: #75559D;
+--pl-purple-200: #963CFF;   /* Accent/highlight */
+
+/* Blues */
+--pl-blue-500: #04F5FF;     /* Bright cyan - base */
+--pl-blue-700: #03c2b4;     /* Darker teal */
+
+/* Greens */
+--pl-green-300: #84fab0;    /* Light/pastel */
+--pl-green-600: #00B960;    /* Base green */
+
+/* Greys */
+--pl-grey-100 to --pl-grey-500  /* Light to dark */
+
+/* Single-value colors (no scale needed) */
+--pl-red: #E90052;
+--pl-yellow: #EBFF01;
+--pl-orange: #CC8200;
+--pl-gold, --pl-silver, --pl-bronze  /* Medals */
+```
+
+### Utility Classes Philosophy
+
+**Complete utility sets are preferred** - Include all logical values even if not currently used, to provide a predictable and complete framework. This applies especially to:
+- Width utilities (w-10 through w-100)
+- Colour utilities (all design token colours)
+- Common spacing values
+
+### Utility Classes
+
+**Text Colours:**
+- `.text-green-600` - Success, positive values
+- `.text-red` - Errors, negative values
+- `.text-blue-500` - Highlights, links
+- `.text-grey-300`, `.text-grey-500` - Muted text
+- `.text-purple-1000` - Dark text on light backgrounds
+
+**Background Colours:**
+- `.bg-purple-600` through `.bg-purple-1000`
+- `.bg-green-600`, `.bg-green-300`
+- `.bg-blue-500`, `.bg-blue-700`
+- `.bg-red`
+
+**Effects:**
+- `.glass-panel` - Radial gradient with subtle border and inner glow
+- `.table-striped-purple` - Purple row striping for tables
+- `.shadow` - Standard drop shadow
+
+### Component Patterns
+
+**Glass Panel Effect:**
+```html
+<div class="glass-panel hero-rank-container">
+    <!-- Content with frosted glass appearance -->
+</div>
+```
+
+**Table Striping:**
+```html
+<table class="leaderboard-table table-striped-purple">
+    <!-- Rows automatically striped -->
+</table>
+```
+
+**Button Naming:**
+- `.green-button` - Primary actions
+- `.red-button` - Destructive actions
+- `.purple-accent-button` - Secondary actions
+- `.blue-light-button` - Tertiary actions
+
+### CSS Rules to Follow
+
+1. **Always use design tokens** - Never hardcode colours, use `var(--pl-colour-xxx)`
+2. **Use numeric colour scale** - `.text-green-600` not `.text-green`
+3. **Prefer utilities over custom CSS** - Use existing utility classes when possible
+4. **Keep component CSS focused** - One component per file in `/components/`
+5. **Page styles are last resort** - Only for truly page-specific styles
+6. **Maintain complete utility sets** - Don't remove unused utilities from sizing/colours
+
+### CSS Things to Avoid
+
+1. **Never use old colour class names:**
+   - ❌ `.text-green`, `.bg-green`, `.text-cyan`, `.bg-blue-light`
+   - ✅ `.text-green-600`, `.bg-green-600`, `.text-blue-500`, `.bg-blue-700`
+
+2. **Never use deprecated aliases:**
+   - ❌ `.text-success`, `.text-danger` (use `.text-green-600`, `.text-red`)
+   - ❌ `.centre` (use `.text-center`)
+   - ❌ `.email-address` (use `.word-break-all`)
+
+3. **Never duplicate existing utilities** - Check utilities folder first
+
+4. **Never hardcode colours** - Always use CSS variables
+
+5. **Never put component styles in page files** - Create proper component CSS
+
 ## Database
 
 ### Key Tables
@@ -316,6 +498,31 @@ All scheduled endpoints are protected by API key (`X-Api-Key` header).
 - **Provider:** api-sports.io (Football API)
 - **No fallback data** - App relies entirely on API availability
 - **Future consideration:** Add caching/fallback for API outages
+
+### CSS Cache Busting
+
+CSS files are automatically versioned during `dotnet publish` to prevent browser caching issues.
+
+**How it works:**
+1. An MSBuild target runs after Publish
+2. Generates a timestamp version (e.g., `20260120153045`)
+3. Updates `index.html`: `app.css` → `app.css?v=VERSION`
+4. Updates `app.css`: All `@import url('file.css')` → `@import url('file.css?v=VERSION')`
+5. External URLs (https://) are NOT versioned
+
+**Location:** `PredictionLeague.Web.Client.csproj` - Target `AddCssCacheBusting`
+
+**Result after publish:**
+```html
+<!-- index.html -->
+<link rel="stylesheet" href="css/app.css?v=20260120153045" />
+```
+```css
+/* app.css */
+@import url('variables.css?v=20260120153045');
+@import url('utilities/colours.css?v=20260120153045');
+/* etc. */
+```
 
 ## Boosts System
 

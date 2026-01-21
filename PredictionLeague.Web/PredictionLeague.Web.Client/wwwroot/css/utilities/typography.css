@@ -1,0 +1,47 @@
+/* Typography Utilities - Tailwind-style naming */
+
+/* Font Sizes */
+.text-2xs {
+    font-size: 0.65rem;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.text-sm {
+    font-size: 0.75rem;
+}
+
+.text-lg {
+    font-size: 1.3rem;
+}
+
+/* Line Heights */
+.leading-none {
+    line-height: 1;
+}
+
+/* Font Families */
+.font-mono {
+    font-family: monospace;
+}
+
+/* Text Alignment */
+.text-center {
+    text-align: center;
+}
+
+/* Whitespace */
+.whitespace-pre {
+    white-space: pre-wrap;
+}
+
+.break-word {
+    white-space: normal !important;
+    word-wrap: break-word;
+}
+
+.word-break-all {
+    word-break: break-all;
+}

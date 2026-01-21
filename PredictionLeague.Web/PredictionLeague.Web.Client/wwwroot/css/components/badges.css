@@ -7,18 +7,6 @@
     color: white;
 }
 
-.bg-pl-red {
-    background-color: var(--pl-red);
-}
-
-.bg-pl-green {
-    background-color: var(--pl-green);
-}
-
-.bg-pl-blue-light {
-    background-color: var(--pl-blue-light);
-}
-
 .badge-group {
     display: inline-flex;
     align-items: center;
@@ -41,40 +29,28 @@
     }
 
 .badge-group--green {
-    background-color: var(--pl-green);
+    background-color: var(--green-600);
 }
 
 .badge-group--purple {
-    background-color: var(--pl-purple-accent);
+    background-color: var(--purple-200);
 }
 
 .badge-group--red {
-    background-color: var(--pl-red);
+    background-color: var(--red);
 }
 
 .badge-group--orange {
-    background-color: var(--pl-orange);
-}
-
-.badge-group--yellow {
-    background-color: var(--pl-yellow);
-    color: var(--pl-purple-800);
+    background-color: var(--orange);
 }
 
 .badge-group--blue {
-    background-color: var(--pl-blue-light);
+    background-color: var(--blue-700);
 }
 
-.badge-group--gold {
-    background-color: var(--pl-gold);
-}
-
-.badge-group--silver {
-    background-color: var(--pl-silver);
-}
-
-.badge-group--bronze {
-    background-color: var(--pl-bronze);
+.badge-group--yellow {
+    background-color: var(--yellow);
+    color: var(--purple-800);
 }
 
 .badge-icon {
@@ -95,71 +71,32 @@
     }
 
 .badge-group--green .badge-icon {
-    color: var(--pl-green);
+    color: var(--green-600);
 }
 
 .badge-group--purple .badge-icon {
-    color: var(--pl-purple-accent);
+    color: var(--purple-200);
 }
 
 .badge-group--red .badge-icon {
-    color: var(--pl-red);
+    color: var(--red);
 }
 
 .badge-group--blue .badge-icon {
-    color: var(--pl-blue-light);
+    color: var(--blue-700);
 }
 
 .badge-group--orange .badge-icon {
-    color: var(--pl-orange);
+    color: var(--orange);
 }
 
 .badge-group--yellow .badge-icon {
-    color: var(--pl-purple-800);
-}
-
-.badge-group--gold .badge-icon {
-    color: var(--pl-gold);
-}
-
-.badge-group--silver .badge-icon {
-    color: var(--pl-silver);
-}
-
-.badge-group--bronze .badge-icon {
-    color: var(--pl-bronze);
-}
-
-.badge-group--icon-only {
-    padding: 4px;
-}
-
-    .badge-group--icon-only .badge-icon {
-        background-color: transparent;
-        color: white;
-    }
-
-.pulsing {
-    animation: pulse 1.5s infinite;
+    color: var(--purple-800);
 }
 
 .current-user-highlight .badge-group--green {
     background-color: white;
-    color: var(--pl-green);
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
-    }
-
-    70% {
-        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
-    }
+    color: var(--green-600);
 }
 
 @media (max-width: 768px) {

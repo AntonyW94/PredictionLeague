@@ -1,0 +1,5 @@
+/* Border Utilities */
+
+.border-purple-900 {
+    border-color: var(--purple-900);
+}

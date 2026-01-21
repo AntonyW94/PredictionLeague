@@ -34,13 +34,14 @@
             <div class="card-grid">
                 @foreach (var season in _seasons)
                 {
-                    <div class="action-card light">
-                        <div class="card-header">
+                    <div class="card">
+                        <div class="header">
                             <h5 class="fw-bold text-white mb-0">@season.Name</h5>
                         </div>
 
-                        <div class="action-card-body">
-                            <div class="action-card-row">
+                        <div class="body">
+                            <div class="detail-list">
+                                <div class="detail-row">
                                 <dt>Active</dt>
                                 <dd>
                                     <div class="form-check form-switch ms-0">
@@ -52,23 +53,24 @@
                                 </dd>
                             </div>
 
-                            <div class="action-card-row">
+                            <div class="detail-row">
                                 <dt>Rounds</dt>
                                 <dd>@season.RoundCount / @season.NumberOfRounds</dd>
                             </div>
 
-                            <div class="action-card-row">
+                            <div class="detail-row">
                                 <dt>Starts</dt>
                                 <dd>@season.StartDateUtc.ToString("dd MMM yyyy")</dd>
                             </div>
 
-                            <div class="action-card-row">
+                            <div class="detail-row">
                                 <dt>Ends</dt>
                                 <dd>@season.EndDateUtc.ToString("dd MMM yyyy")</dd>
                             </div>
+                            </div>
                         </div>
 
-                        <div class="action-card-footer">
+                        <div class="footer">
                             @if (season.RoundCount < season.NumberOfRounds)
                             {
                                 <button class="btn blue-light-button flex-grow-1" @onclick="() => AddRound(season.Id)">

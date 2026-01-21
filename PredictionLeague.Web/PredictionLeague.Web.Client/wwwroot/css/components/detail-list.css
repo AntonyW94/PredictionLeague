@@ -1,0 +1,38 @@
+/* Detail List - Label/Value rows inside card body */
+.detail-list {
+    width: 100%;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.detail-row dt {
+    font-weight: normal;
+    color: var(--grey-500);
+}
+
+.detail-row dd {
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+.detail-row code {
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--white);
+}
+
+.detail-row.centered {
+    justify-content: center;
+}

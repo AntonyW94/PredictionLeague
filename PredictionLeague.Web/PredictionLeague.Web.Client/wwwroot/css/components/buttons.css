@@ -1,61 +1,75 @@
 ﻿.green-button,
 .green-button:disabled,
 .green-button:active {
-    background-color: var(--pl-green);
-    color: var(--pl-white);
+    background-color: var(--green-600);
+    color: var(--white);
     font-weight: bold;
     transition: background-color 0.2s, color 0.2s;
 }
 
     .green-button:not(.badge):hover {
-        background-color: var(--pl-white);
-        color: var(--pl-green);
+        background-color: var(--white);
+        color: var(--green-600);
     }
 
 .red-button,
 .red-button:disabled,
 .red-button:active {
-    background-color: var(--pl-red);
-    color: var(--pl-white);
+    background-color: var(--red);
+    color: var(--white);
     font-weight: bold;
+    border: none;
 }
 
     .red-button:not(.badge):hover {
-        background-color: var(--pl-white);
-        color: var(--pl-red);
+        background-color: var(--white);
+        color: var(--red);
+    }
+
+.red-outline-button {
+    border: 1px solid var(--red);
+    color: var(--red);
+    background: transparent;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+    .red-outline-button:hover {
+        background-color: var(--red);
+        color: var(--white);
     }
 
 .purple-accent-button,
 .purple-accent-button:disabled,
 .purple-accent-button:active {
-    background-color: var(--pl-purple-accent);
-    color: var(--pl-white);
+    background-color: var(--purple-200);
+    color: var(--white);
     font-weight: bold;
 }
 
     .purple-accent-button:not(.badge):hover {
-        background-color: var(--pl-white);
-        color: var(--pl-purple-accent);
+        background-color: var(--white);
+        color: var(--purple-200);
     }
 
 .blue-light-button,
 .blue-light-button:disabled,
 .blue-light-button:active {
-    background-color: var(--pl-blue-light);
-    color: var(--pl-white);
+    background-color: var(--blue-700);
+    color: var(--white);
     font-weight: bold;
 }
 
     .blue-light-button:not(.badge):hover {
-        background-color: var(--pl-white);
-        color: var(--pl-blue-light);
+        background-color: var(--white);
+        color: var(--blue-700);
     }
 
 .btn.grey-button,
 .btn.grey-button:disabled,
 .btn.grey-button:active {
-    background-color: var(--pl-grey-500);
-    border-color: var(--pl-grey-500);
+    background-color: var(--grey-500);
+    border-color: var(--grey-500);
     opacity: 0.65;
     cursor: not-allowed;
 }
@@ -67,13 +81,13 @@
     top: -15px;
     left: 0;
     transform: translateY(-50%);
-    color: var(--pl-white);
+    color: var(--white);
     transition: color 0.2s ease-in-out;
     text-decoration: none;
 }
 
     .back-button:not(.badge):hover {
-        color: var(--pl-white);
+        color: var(--white);
         text-decoration: underline;
     }
 
@@ -82,35 +96,31 @@
     }
 
 .password-toggle-btn {
-    background-color: var(--pl-purple-1000);
-    color: var(--pl-white);
-    border: 1px solid var(--pl-white);
+    background-color: var(--purple-1000);
+    color: var(--white);
+    border: 1px solid var(--white);
     border-left: 0;
     transition: color 0.2s ease-in-out;
 }
 
     .password-toggle-btn:hover,
     .password-toggle-btn:active {
-        color: var(--pl-green);
-        border: 1px solid var(--pl-white);
+        color: var(--green-600);
+        border: 1px solid var(--white);
         border-left: 0;
-        background-color: var(--pl-purple-1000);
+        background-color: var(--purple-1000);
     }
 
     .password-toggle-btn:focus {
-        color: var(--pl-green);
-        border: 1px solid var(--pl-white);
+        color: var(--green-600);
+        border: 1px solid var(--white);
         border-left: 0;
-        background-color: var(--pl-purple-800);
+        background-color: var(--purple-800);
     }
 
 .btn .bi {
     vertical-align: middle;
     line-height: 1;
-}
-
-.input-height{
-    height: 48px;
 }
 
 /* Social Buttons */
@@ -132,27 +142,12 @@
 }
 
 .google-btn {
-    background-color: var(--pl-white);
-    color: var(--pl-black);
-    border: 1px solid var(--pl-grey-200);
+    background-color: var(--white);
+    color: var(--black);
+    border: 1px solid var(--grey-200);
 }
 
     .google-btn:hover {
-        background-color: var(--pl-grey-300);
-        border-color: var(--pl-grey-300);
+        background-color: var(--grey-300);
+        border-color: var(--grey-300);
     }
-
-.apple-btn {
-    background-color: var(--pl-black);
-    color: var(--pl-white);
-    border: 1px solid var(--pl-black);
-}
-
-    .apple-btn:hover {
-        background-color: var(--pl-white);
-        color: var(--pl-black);
-    }
-
-        .apple-btn:hover .social-icon {
-            fill: var(--pl-black);
-        }
