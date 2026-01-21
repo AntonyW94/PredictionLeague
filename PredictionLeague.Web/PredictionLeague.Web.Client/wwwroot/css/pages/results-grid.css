@@ -92,7 +92,6 @@
 }
 
 .mobile-match-header {
-    background-color: var(--purple-900);
     padding: 0.75rem 1rem;
     position: sticky;
     top: 0;

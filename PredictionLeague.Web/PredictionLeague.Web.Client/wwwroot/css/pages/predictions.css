@@ -12,10 +12,11 @@
     border-radius: var(--bs-border-radius);
     overflow: hidden;
     color: var(--white);
+    box-shadow: 0 8px 20px var(--black-alpha-35), inset 0 0 0 1px var(--white-alpha-05);
 }
 
 .prediction-card-header {
-    background-color: var(--purple-900);
+    background-color: var(--purple-800);
     padding: 0.75rem 1.5rem;
     text-align: center;
     font-weight: bold;
@@ -27,7 +28,7 @@
 }
 
 .prediction-card-body {
-    background-color: var(--purple-800);
+    background-color: var(--purple-600);
     padding: 0.5rem;
     display: flex;
     align-items: center;

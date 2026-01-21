@@ -4,7 +4,8 @@
 .boost-league-row {
     padding: 1em;
     border-radius: var(--bs-border-radius);
-    background: var(--purple-800);
+    background: var(--purple-600);
+    box-shadow: 0 8px 20px var(--black-alpha-35), inset 0 0 0 1px var(--white-alpha-05);
 }
 
 /* ---------- Grid + card sizing ---------- */
