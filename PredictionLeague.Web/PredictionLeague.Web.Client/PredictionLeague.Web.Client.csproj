@@ -49,12 +49,13 @@
     -->
 
     <!--
-    Exclude app.min.css from static web assets in Debug mode.
-    BuildBundlerMinifier registers outputs as static web assets, but in Debug mode
-    the bundler doesn't run (BundleOnBuild=false), so the file doesn't exist.
-    This prevents the "No file exists for the asset" error on fresh clones.
+    Exclude app.min.css from static web assets.
+    BuildBundlerMinifier creates this file during Release builds, but the static web
+    assets system checks for its existence before the bundler runs. Since the file
+    is gitignored (it's a build artifact), it won't exist on fresh clones.
+    The bundler still creates it, and the post-publish target in Web.csproj processes it.
     -->
-    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <ItemGroup>
         <Content Remove="wwwroot\css\app.min.css" />
     </ItemGroup>
 </Project>
