@@ -126,7 +126,7 @@
                                                             <div class="d-flex align-items-center gap-1">
                                                                 <div class="rank-shield-container">
                                                                     @{ var overallColour = GetShieldColour(league.Rank, league.MemberCount); }
-                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon" style="filter: url(#shield-shadow);">
+                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon" filter="url(#shield-shadow)">
                                                                         <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@overallColour)" stroke="url(#rim-@overallColour)"/>
                                                                     </svg>
                                                                     <span class="rank-shield-text">
@@ -154,7 +154,7 @@
 
                                                                 <div class="rank-shield-container small">
                                                                     @{ var roundColour = GetShieldColour(league.RoundRank, league.MemberCount); }
-                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon" style="filter: url(#shield-shadow);">
+                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon" filter="url(#shield-shadow)">
                                                                         <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@roundColour)" stroke="url(#rim-@roundColour)" />
                                                                     </svg>
                                                                     <span class="rank-shield-text">
@@ -184,7 +184,7 @@
 
                                                                 <div class="rank-shield-container small">
                                                                     @{ var monthColour = GetShieldColour(league.MonthRank, league.MemberCount); }
-                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon" style="filter: url(#shield-shadow);">
+                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon" filter="url(#shield-shadow)">
                                                                         <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@monthColour)" stroke="url(#rim-@monthColour)" />
                                                                     </svg>
                                                                     <span class="rank-shield-text">
