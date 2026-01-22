@@ -53,7 +53,7 @@
 .section-body-collapsible {
     overflow: hidden;
     transition: max-height 0.3s ease, opacity 0.3s ease;
-    max-height: 600px;
+    max-height: 37.5rem;
     opacity: 1;
 }
 

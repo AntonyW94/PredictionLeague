@@ -44,10 +44,10 @@
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 0.5rem center;
-    background-size: 16px 12px;
+    background-size: 1rem 0.75rem;
     padding: 0.25rem 2rem 0.25rem 0.75rem;
     border-radius: 50rem;
-    font-size: 0.8em;
+    font-size: 0.8rem;
 }
 
 .status-select-pill.scheduled {
@@ -71,18 +71,18 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    width: 80px;
+    width: 5rem;
 }
 
 .team-display .match-logo {
-    height: 40px;
+    height: 2.5rem;
 }
 
 .team-display .team-name {
     font-weight: 500;
-    min-height: 40px;
-    font-size: 14px;
-    margin-top: 0.5em;
+    min-height: 2.5rem;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
 }
 
 /* --- Score Stepper --- */
@@ -100,8 +100,8 @@
 }
 
 .score-value {
-    width: 50px;
-    height: 50px;
+    width: 3.125rem;
+    height: 3.125rem;
     text-align: center;
     font-weight: bold;
     font-size: 1.5rem;
@@ -159,11 +159,11 @@
     }
 
     .team-display {
-        width: 120px;
+        width: 7.5rem;
     }
 
     .team-display .match-logo {
-        height: 60px;
+        height: 3.75rem;
     }
 
     .score-input-group {
@@ -172,8 +172,8 @@
     }
 
     .score-value {
-        width: 70px;
-        height: 70px;
+        width: 4.375rem;
+        height: 4.375rem;
         font-size: 2rem;
     }
 

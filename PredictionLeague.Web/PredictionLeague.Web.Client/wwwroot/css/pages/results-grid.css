@@ -1,4 +1,4 @@
-﻿/* --- Desktop Grid Styles --- */
+/* --- Desktop Grid Styles --- */
 .results-grid-container {
     overflow-x: auto;
 }
@@ -7,7 +7,7 @@
     border-collapse: collapse;
     width: 100%;
     color: var(--white);
-    font-size: 0.9em;
+    font-size: 0.9rem;
 }
 
     .results-grid th,
@@ -28,7 +28,7 @@
 
     .results-grid .match-info {
         text-align: left;
-        min-width: 60px;
+        min-width: 3.75rem;
         position: sticky;
         left: 0;
         background-color: var(--purple-900);
@@ -49,23 +49,23 @@
 
     .results-grid .score-cell {
         font-weight: bold;
-        font-size: 1.1em;
+        font-size: 1.1rem;
         background: var(--purple-800);
     }
 
     .results-grid .not-predicted-icon {
-        font-size: 1.5em;
+        font-size: 1.5rem;
         color: var(--grey-100);
     }
 
     .results-grid .match-info .match-logo-small {
-        height: 30px;
-        width: 30px;
+        height: 1.875rem;
+        width: 1.875rem;
     }
 
     .results-grid tfoot th {
         background-color: var(--purple-900);
-        font-size: 1.2em;
+        font-size: 1.2rem;
         position: sticky;
         bottom: 0;
     }
@@ -81,7 +81,7 @@
     user-select: none;
 }
 
-.results-grid thead th.winner-column, 
+.results-grid thead th.winner-column,
 .results-grid tfoot th.winner-column {
     background-color: var(--gold) !important;
 }
@@ -103,12 +103,12 @@
 }
 
     .mobile-match-header .match-logo-small {
-        height: 30px;
-        width: 30px;
+        height: 1.875rem;
+        width: 1.875rem;
     }
 
 .card-body .prediction-badge {
-    width: 68px;
-    max-width: 68px;
-    min-width: 68px;
+    width: 4.25rem;
+    max-width: 4.25rem;
+    min-width: 4.25rem;
 }

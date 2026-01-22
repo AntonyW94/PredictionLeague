@@ -4,7 +4,7 @@
     border-collapse: collapse;
     width: 100%;
     color: var(--white);
-    font-size: 0.9em;
+    font-size: 0.9rem;
     table-layout: fixed;
 }
 
@@ -90,15 +90,15 @@
 
 /* Mobile/tablet padding for leaderboard body */
 .body.leaderboard-body {
-    padding-top: 1.5em;
-    padding-bottom: 1.5em;
-    padding-left: 3em;
-    padding-right: 3em;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    padding-left: 3rem;
+    padding-right: 3rem;
 }
 
 /* Desktop and up (--breakpoint-desktop: 992px) */
 @media (min-width: 992px) {
     .body.leaderboard-body {
-        padding: 1.5em;
+        padding: 1.5rem;
     }
 }

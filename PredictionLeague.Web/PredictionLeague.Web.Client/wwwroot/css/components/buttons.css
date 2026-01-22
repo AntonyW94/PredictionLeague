@@ -78,7 +78,7 @@
 .back-button:disabled,
 .back-button:active {
     position: absolute;
-    top: -15px;
+    top: -0.9375rem;
     left: 0;
     transform: translateY(-50%);
     color: var(--white);
@@ -92,7 +92,7 @@
     }
 
     .back-button span {
-        font-size: 24px;
+        font-size: 1.5rem;
     }
 
 .password-toggle-btn {
@@ -135,9 +135,9 @@
 }
 
 .social-icon {
-    width: 20px;
-    height: 20px;
-    margin-right: 12px;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
     transition: fill 0.2s ease-in-out;
 }
 
