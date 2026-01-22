@@ -55,15 +55,12 @@
             <BundleExists Condition="Exists('$(BundledCss)')">true</BundleExists>
         </PropertyGroup>
 
-        <!-- If bundle exists: Replace app.css with bundled version -->
-        <ReadLinesFromFile File="$(BundledCss)" Condition="$(BundleExists)">
-            <Output TaskParameter="Lines" ItemName="BundledCssLines"/>
-        </ReadLinesFromFile>
-
-        <WriteLinesToFile
-            File="$(TargetCss)"
-            Lines="$(GoogleFontsImport);@(BundledCssLines)"
-            Overwrite="true"
+        <!-- If bundle exists: Prepend Google Fonts import to bundled CSS, then replace app.css -->
+        <!-- Note: We use PowerShell instead of WriteLinesToFile because WriteLinesToFile
+             treats semicolons as item separators, which breaks the Google Fonts URL
+             (wght@300;400;500;700 gets split into separate lines) -->
+        <Exec
+            Command="powershell -NoProfile -Command &quot;$googleFonts = '@import url(''https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;display=swap'');'; $bundled = Get-Content -Raw '$(BundledCss)'; Set-Content -Path '$(TargetCss)' -Value ($googleFonts + [Environment]::NewLine + $bundled) -NoNewline&quot;"
             Condition="$(BundleExists)" />
 
         <Delete Files="$(BundledCss)" Condition="$(BundleExists)" />
