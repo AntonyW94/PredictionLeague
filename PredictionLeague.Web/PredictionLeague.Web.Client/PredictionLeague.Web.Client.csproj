@@ -38,61 +38,13 @@
     </ItemGroup>
 
     <!--
-    CSS Bundling and Cache Busting for Production
+    CSS Bundling for Production
 
-    Development (dotnet run): Uses separate CSS files with @imports for easy debugging
-    Production (dotnet publish): Bundles all CSS into one minified file with cache busting
+    BuildBundlerMinifier creates app.min.css during Release builds.
+    The actual bundling/cleanup happens in PredictionLeague.Web.csproj
+    after publish (since that's the project that gets published).
+
+    Development (dotnet run): Uses separate CSS files with @imports
+    Production (dotnet publish): See Web.csproj for bundling target
     -->
-    <Target Name="ReplaceCssWithBundle" AfterTargets="Publish">
-        <PropertyGroup>
-            <PublishCssDir>$(PublishDir)wwwroot\css\</PublishCssDir>
-            <BundledCss>$(PublishCssDir)app.min.css</BundledCss>
-            <TargetCss>$(PublishCssDir)app.css</TargetCss>
-            <GoogleFontsImport>@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;display=swap');&#10;&#10;</GoogleFontsImport>
-            <CssVersion>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</CssVersion>
-        </PropertyGroup>
-
-        <!-- Read the bundled CSS content -->
-        <ReadLinesFromFile File="$(BundledCss)" Condition="Exists('$(BundledCss)')">
-            <Output TaskParameter="Lines" ItemName="BundledCssLines"/>
-        </ReadLinesFromFile>
-
-        <!-- Create final CSS with Google Fonts import prepended -->
-        <WriteLinesToFile
-            File="$(TargetCss)"
-            Lines="$(GoogleFontsImport);@(BundledCssLines)"
-            Overwrite="true"
-            Condition="Exists('$(BundledCss)')" />
-
-        <!-- Delete the intermediate bundled file -->
-        <Delete Files="$(BundledCss)" Condition="Exists('$(BundledCss)')" />
-
-        <!-- Delete individual CSS files that are now bundled (keep app.css) -->
-        <ItemGroup>
-            <CssFilesToDelete Include="$(PublishCssDir)**\*.css" Exclude="$(TargetCss)" />
-        </ItemGroup>
-        <Delete Files="@(CssFilesToDelete)" />
-
-        <!-- Remove empty CSS directories -->
-        <RemoveDir Directories="$(PublishCssDir)utilities" Condition="Exists('$(PublishCssDir)utilities')" />
-        <RemoveDir Directories="$(PublishCssDir)layout" Condition="Exists('$(PublishCssDir)layout')" />
-        <RemoveDir Directories="$(PublishCssDir)components\cards" Condition="Exists('$(PublishCssDir)components\cards')" />
-        <RemoveDir Directories="$(PublishCssDir)components" Condition="Exists('$(PublishCssDir)components')" />
-        <RemoveDir Directories="$(PublishCssDir)pages" Condition="Exists('$(PublishCssDir)pages')" />
-
-        <!-- Add cache busting version to index.html -->
-        <PropertyGroup>
-            <IndexHtmlPath>$(PublishDir)wwwroot\index.html</IndexHtmlPath>
-        </PropertyGroup>
-        <ReadLinesFromFile File="$(IndexHtmlPath)">
-            <Output TaskParameter="Lines" ItemName="IndexHtmlLines"/>
-        </ReadLinesFromFile>
-        <PropertyGroup>
-            <IndexHtmlContent>@(IndexHtmlLines->'%(Identity)', '&#10;')</IndexHtmlContent>
-            <IndexHtmlContent>$(IndexHtmlContent.Replace('app.css', 'app.css?v=$(CssVersion)'))</IndexHtmlContent>
-        </PropertyGroup>
-        <WriteLinesToFile File="$(IndexHtmlPath)" Lines="$(IndexHtmlContent)" Overwrite="true" />
-
-        <Message Importance="high" Text="CSS bundled and minified. Cache version: $(CssVersion)" />
-    </Target>
 </Project>
