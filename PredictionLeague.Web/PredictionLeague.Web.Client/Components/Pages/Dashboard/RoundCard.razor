@@ -1,5 +1,5 @@
-﻿@using PredictionLeague.Contracts.Dashboard
-
+@using PredictionLeague.Contracts.Dashboard
+@using PredictionLeague.Domain.Common.Enumerations
 
 <div class="card slide">
     <div class="header">
@@ -10,7 +10,14 @@
     <div class="body">
         <dl class="mb-0 detail-list">
             <div class="detail-row centered">
-                @if ((Round.DeadlineUtc - DateTime.UtcNow).TotalHours < 24)
+                @if (IsInProgress)
+                {
+                    <div class="badge-group badge-group--blue">
+                        <span class="badge-icon" title="In Progress"><i class="bi bi-play-fill"></i></span>
+                        <span>In Progress</span>
+                    </div>
+                }
+                else if ((Round.DeadlineUtc - DateTime.UtcNow).TotalHours < 24)
                 {
                     <CountdownTimer DeadlineUtc="Round.DeadlineUtc" />
                 }
@@ -29,7 +36,7 @@
             <div class="match-preview-grid">
                 @foreach (var match in Round.Matches)
                 {
-                    <div class="match-preview-row">
+                    <div class="match-preview-row @GetMatchBackgroundClass(match)">
                         <img src="@(match.HomeTeamLogoUrl ?? "images/team-placeholder.svg")"
                              class="match-preview-logo"
                              alt="Home"
@@ -49,7 +56,7 @@
         }
     </div>
     <div class="footer">
-        @if (Round.DeadlineUtc > DateTime.UtcNow)
+        @if (!IsInProgress && Round.DeadlineUtc > DateTime.UtcNow)
         {
             <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
                 @if (Round.HasUserPredicted)
@@ -69,5 +76,18 @@
 
 @code {
     [Parameter, EditorRequired]
-    public UpcomingRoundDto Round { get; set; } = null!;
+    public ActiveRoundDto Round { get; set; } = null!;
+
+    private bool IsInProgress => Round.Status == RoundStatus.InProgress;
+
+    private string GetMatchBackgroundClass(ActiveRoundMatchDto match)
+    {
+        return match.Outcome switch
+        {
+            PredictionOutcome.ExactScore => "match-outcome-exact",
+            PredictionOutcome.CorrectResult => "match-outcome-correct-result",
+            PredictionOutcome.Incorrect => "match-outcome-incorrect",
+            _ => "" // Pending or null - use default background
+        };
+    }
 }

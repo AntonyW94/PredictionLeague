@@ -6,34 +6,25 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Application.Features.Dashboard.Queries;
 
-public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQuery, IEnumerable<UpcomingRoundDto>>
+public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery, IEnumerable<ActiveRoundDto>>
 {
     private readonly IApplicationReadDbConnection _dbConnection;
 
-    public GetUpcomingRoundsQueryHandler(IApplicationReadDbConnection dbConnection)
+    public GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnection)
     {
         _dbConnection = dbConnection;
     }
 
-    public async Task<IEnumerable<UpcomingRoundDto>> Handle(GetUpcomingRoundsQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<ActiveRoundDto>> Handle(GetActiveRoundsQuery request, CancellationToken cancellationToken)
     {
-        // Query 1: Get upcoming rounds
+        // Query 1: Get active rounds (upcoming + in-progress)
         const string roundsSql = @"
-            WITH ActiveMemberCount AS (
-                SELECT
-                    l.[SeasonId],
-                    COUNT(DISTINCT lm.[UserId]) AS MemberCount
-                FROM [LeagueMembers] lm
-                JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
-                WHERE lm.[Status] = @ApprovedStatus
-                GROUP BY l.[SeasonId]
-            )
-
             SELECT
                 r.[Id],
                 s.[Name] AS SeasonName,
                 r.[RoundNumber],
                 r.[DeadlineUtc],
+                r.[Status],
                 CAST(CASE
                     WHEN EXISTS (
                         SELECT 1
@@ -47,11 +38,8 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                 [Rounds] r
             JOIN
                 [Seasons] s ON r.[SeasonId] = s.[Id]
-            LEFT JOIN
-                [ActiveMemberCount] amc ON r.[SeasonId] = amc.[SeasonId]
             WHERE
-                r.[Status] = @PublishedStatus
-                AND r.[DeadlineUtc] > GETUTCDATE()
+                r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
                 AND r.[SeasonId] IN (
                     SELECT l.[SeasonId]
                     FROM [Leagues] l
@@ -59,26 +47,27 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                     WHERE lm.[UserId] = @UserId AND lm.[Status] = @ApprovedStatus
                 )
             ORDER BY
+                CASE WHEN r.[Status] = @InProgressStatus THEN 0 ELSE 1 END,
                 r.[DeadlineUtc] ASC";
 
         var parameters = new
         {
             request.UserId,
-            PublishedStatus = nameof(RoundStatus.Published),
+            DraftStatus = nameof(RoundStatus.Draft),
+            CompletedStatus = nameof(RoundStatus.Completed),
+            InProgressStatus = nameof(RoundStatus.InProgress),
             ApprovedStatus = nameof(LeagueMemberStatus.Approved)
         };
 
-        var rounds = (await _dbConnection.QueryAsync<UpcomingRoundQueryResult>(
+        var rounds = (await _dbConnection.QueryAsync<ActiveRoundQueryResult>(
             roundsSql,
             cancellationToken,
             parameters)).ToList();
 
         if (!rounds.Any())
-        {
-            return Enumerable.Empty<UpcomingRoundDto>();
-        }
+            return Enumerable.Empty<ActiveRoundDto>();
 
-        // Query 2: Get matches with predictions for all upcoming rounds
+        // Query 2: Get matches with predictions and outcomes for all active rounds
         var roundIds = rounds.Select(r => r.Id).ToArray();
 
         const string matchesSql = @"
@@ -89,6 +78,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 up.[PredictedHomeScore],
                 up.[PredictedAwayScore],
+                up.[Outcome],
                 m.[MatchDateTimeUtc],
                 ht.[ShortName] AS HomeTeamShortName
             FROM [Matches] m
@@ -98,7 +88,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
             WHERE m.[RoundId] IN @RoundIds
             ORDER BY m.[RoundId], m.[MatchDateTimeUtc] ASC, ht.[ShortName] ASC";
 
-        var matches = await _dbConnection.QueryAsync<UpcomingMatchQueryResult>(
+        var matches = await _dbConnection.QueryAsync<ActiveRoundMatchQueryResult>(
             matchesSql,
             cancellationToken,
             new { request.UserId, RoundIds = roundIds });
@@ -109,39 +99,43 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
             .ToDictionary(g => g.Key, g => g.ToList());
 
         // Map to DTOs
-        return rounds.Select(r => new UpcomingRoundDto(
+        return rounds.Select(r => new ActiveRoundDto(
             r.Id,
             r.SeasonName,
             r.RoundNumber,
             r.DeadlineUtc,
             r.HasUserPredicted,
+            Enum.Parse<RoundStatus>(r.Status),
             matchesByRound.TryGetValue(r.Id, out var roundMatches)
-                ? roundMatches.Select(m => new UpcomingMatchDto(
+                ? roundMatches.Select(m => new ActiveRoundMatchDto(
                     m.MatchId,
                     m.HomeTeamLogoUrl,
                     m.AwayTeamLogoUrl,
                     m.PredictedHomeScore,
-                    m.PredictedAwayScore))
-                : Enumerable.Empty<UpcomingMatchDto>()
+                    m.PredictedAwayScore,
+                    m.Outcome != null ? Enum.Parse<PredictionOutcome>(m.Outcome) : null))
+                : Enumerable.Empty<ActiveRoundMatchDto>()
         ));
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record UpcomingRoundQueryResult(
+    private record ActiveRoundQueryResult(
         int Id,
         string SeasonName,
         int RoundNumber,
         DateTime DeadlineUtc,
+        string Status,
         bool HasUserPredicted);
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record UpcomingMatchQueryResult(
+    private record ActiveRoundMatchQueryResult(
         int RoundId,
         int MatchId,
         string? HomeTeamLogoUrl,
         string? AwayTeamLogoUrl,
         int? PredictedHomeScore,
         int? PredictedAwayScore,
+        string? Outcome,
         DateTime MatchDateTimeUtc,
         string HomeTeamShortName);
 }
