@@ -87,7 +87,7 @@
     {
         <div class="carousel-wrapper carousel--desktop-multi-item">
             <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
-                @if (_isDesktop && DashboardState.MyLeagues.Count > 2)
+                @if (_showTwoItems && DashboardState.MyLeagues.Count > 2)
                 {
                     <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentIndex == 0)">
                         <span class="bi bi-chevron-left"></span>
@@ -229,7 +229,7 @@
                     </div>
                 </div>
 
-                @if (_isDesktop && DashboardState.MyLeagues.Count > 2)
+                @if (_showTwoItems && DashboardState.MyLeagues.Count > 2)
                 {
                     <button class="carousel-btn" @onclick="ShowNext" disabled="@IsAtEnd()">
                         <span class="bi bi-chevron-right"></span>
@@ -255,12 +255,12 @@
     private int _currentIndex;
     private double _touchStartX;
     private string _trackStyle = "transform: translateX(0%);";
-    private bool _isDesktop;
+    private bool _showTwoItems;
 
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
-        _isDesktop = await BrowserService.IsDesktop();
+        _showTwoItems = await BrowserService.IsTabletOrAbove();
 
         if (!DashboardState.MyLeagues.Any())
             await DashboardState.LoadMyLeaguesAsync();
@@ -273,7 +273,7 @@
             if (!DashboardState.MyLeagues.Any())
                 return 0;
 
-            var leaguesPerPage = _isDesktop ? 2 : 1;
+            var leaguesPerPage = _showTwoItems ? 2 : 1;
 
             if (DashboardState.MyLeagues.Count <= leaguesPerPage)
                 return 0;
@@ -334,13 +334,13 @@
 
     private void UpdateTrackStyle()
     {
-        var percentageToMove = _isDesktop ? 50 : 100;
+        var percentageToMove = _showTwoItems ? 50 : 100;
         _trackStyle = $"transform: translateX(-{_currentIndex * percentageToMove}%);";
     }
 
     private bool IsAtEnd()
     {
-        var leaguesPerPage = _isDesktop ? 2 : 1;
+        var leaguesPerPage = _showTwoItems ? 2 : 1;
         return _currentIndex >= DashboardState.MyLeagues.Count - leaguesPerPage;
     }
 

@@ -87,10 +87,7 @@
     .carousel-item-content {
         padding: 0 0.5rem;
     }
-}
 
-/* Desktop and up (--breakpoint-desktop: 992px) */
-@media (min-width: 992px) {
     .carousel--desktop-multi-item .carousel-item-wrapper {
         flex: 0 0 50%;
     }
