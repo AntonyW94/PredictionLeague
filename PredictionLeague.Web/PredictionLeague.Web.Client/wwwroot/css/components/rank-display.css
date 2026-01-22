@@ -38,7 +38,7 @@
     width: 100%;
     height: 100%;
     z-index: 1;
-    filter: url(#shield-shadow);
+    /* Note: filter is applied as inline style to work with SVG defs and <base href> */
     stroke-width: 0.1875rem;
     stroke-linejoin: round;
     paint-order: stroke fill;
@@ -60,31 +60,12 @@
     margin-top: 0.1875rem;
 }
 
-/* Shield Gradients (Referencing the SVG Defs IDs) */
-.shield-gold {
-    fill: url(#grad-gold);
-    stroke: url(#rim-gold);
-}
-
-.shield-silver {
-    fill: url(#grad-silver);
-    stroke: url(#rim-silver);
-}
-
-.shield-bronze {
-    fill: url(#grad-bronze);
-    stroke: url(#rim-bronze);
-}
-
-.shield-blue {
-    fill: url(#grad-blue);
-    stroke: url(#rim-blue);
-}
-
-.shield-red {
-    fill: url(#grad-red);
-    stroke: url(#rim-red);
-}
+/*
+ * Shield gradient colours are applied via inline SVG attributes (fill, stroke)
+ * to work around the <base href> issue where url(#id) references in CSS
+ * resolve relative to the base URL rather than the current document.
+ * See MyLeaguesTile.razor for the gradient definitions and usage.
+ */
 
 /* Rank arrow text shadows for readability */
 .hero-rank-container .text-green-600,
