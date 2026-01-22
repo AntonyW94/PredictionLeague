@@ -8,7 +8,7 @@
 
 ## Goal
 
-Modify the `GetUpcomingRoundsQueryHandler` to include in-progress rounds and return actual match scores, enabling the dashboard to display rounds with live prediction outcome feedback.
+Modify the `GetUpcomingRoundsQueryHandler` to include in-progress rounds and return the pre-calculated prediction outcome from the `UserPredictions` table.
 
 ## Files to Modify
 
@@ -20,7 +20,7 @@ Modify the `GetUpcomingRoundsQueryHandler` to include in-progress rounds and ret
 
 ### Step 1: Update the Rounds SQL Query
 
-Modify the WHERE clause to include both:
+Modify the WHERE clause to include all rounds that are not Draft and not Completed:
 - Published rounds with deadline in the future
 - In-progress rounds (regardless of deadline)
 
@@ -34,7 +34,7 @@ SELECT
     s.[Name] AS SeasonName,
     r.[RoundNumber],
     r.[DeadlineUtc],
-    r.[Status],  -- NEW
+    r.[Status],
     CAST(CASE
         WHEN EXISTS (
             SELECT 1
@@ -48,13 +48,9 @@ FROM
     [Rounds] r
 JOIN
     [Seasons] s ON r.[SeasonId] = s.[Id]
-LEFT JOIN
-    [ActiveMemberCount] amc ON r.[SeasonId] = amc.[SeasonId]
 WHERE
-    (
-        (r.[Status] = @PublishedStatus AND r.[DeadlineUtc] > GETUTCDATE())
-        OR r.[Status] = @InProgressStatus
-    )
+    r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
+    AND (r.[Status] = @InProgressStatus OR r.[DeadlineUtc] > GETUTCDATE())
     AND r.[SeasonId] IN (
         SELECT l.[SeasonId]
         FROM [Leagues] l
@@ -66,9 +62,13 @@ ORDER BY
     r.[DeadlineUtc] ASC
 ```
 
+**Note:** The WHERE clause uses:
+- `NOT IN (Draft, Completed)` to exclude those statuses
+- Additional check for `InProgress OR DeadlineUtc > GETUTCDATE()` to exclude Published rounds with past deadlines
+
 ### Step 2: Update the Matches SQL Query
 
-Add actual score columns to the SELECT.
+Select the `Outcome` from `UserPredictions` instead of actual scores.
 
 ```sql
 SELECT
@@ -78,8 +78,7 @@ SELECT
     at.[LogoUrl] AS AwayTeamLogoUrl,
     up.[PredictedHomeScore],
     up.[PredictedAwayScore],
-    m.[ActualHomeTeamScore] AS ActualHomeScore,  -- NEW
-    m.[ActualAwayTeamScore] AS ActualAwayScore,  -- NEW
+    up.[Outcome],
     m.[MatchDateTimeUtc],
     ht.[ShortName] AS HomeTeamShortName
 FROM [Matches] m
@@ -92,14 +91,15 @@ ORDER BY m.[RoundId], m.[MatchDateTimeUtc] ASC, ht.[ShortName] ASC
 
 ### Step 3: Update Query Parameters
 
-Add the InProgress status parameter.
+Add the status parameters.
 
 ```csharp
 var parameters = new
 {
     request.UserId,
-    PublishedStatus = nameof(RoundStatus.Published),
-    InProgressStatus = nameof(RoundStatus.InProgress),  // NEW
+    DraftStatus = nameof(RoundStatus.Draft),
+    CompletedStatus = nameof(RoundStatus.Completed),
+    InProgressStatus = nameof(RoundStatus.InProgress),
     ApprovedStatus = nameof(LeagueMemberStatus.Approved)
 };
 ```
@@ -115,7 +115,7 @@ private record UpcomingRoundQueryResult(
     string SeasonName,
     int RoundNumber,
     DateTime DeadlineUtc,
-    string Status,  // NEW
+    string Status,
     bool HasUserPredicted);
 
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
@@ -126,15 +126,16 @@ private record UpcomingMatchQueryResult(
     string? AwayTeamLogoUrl,
     int? PredictedHomeScore,
     int? PredictedAwayScore,
-    int? ActualHomeScore,   // NEW
-    int? ActualAwayScore,   // NEW
+    string? Outcome,
     DateTime MatchDateTimeUtc,
     string HomeTeamShortName);
 ```
 
+**Note:** `Status` and `Outcome` are strings from SQL. They will be parsed to enums during mapping.
+
 ### Step 5: Update DTO Mapping
 
-Update the mapping to include the new fields.
+Parse the status and outcome strings to enums when mapping to DTOs.
 
 ```csharp
 return rounds.Select(r => new UpcomingRoundDto(
@@ -143,7 +144,7 @@ return rounds.Select(r => new UpcomingRoundDto(
     r.RoundNumber,
     r.DeadlineUtc,
     r.HasUserPredicted,
-    r.Status,  // NEW
+    Enum.Parse<RoundStatus>(r.Status),
     matchesByRound.TryGetValue(r.Id, out var roundMatches)
         ? roundMatches.Select(m => new UpcomingMatchDto(
             m.MatchId,
@@ -151,8 +152,7 @@ return rounds.Select(r => new UpcomingRoundDto(
             m.AwayTeamLogoUrl,
             m.PredictedHomeScore,
             m.PredictedAwayScore,
-            m.ActualHomeScore,   // NEW
-            m.ActualAwayScore))  // NEW
+            m.Outcome != null ? Enum.Parse<PredictionOutcome>(m.Outcome) : null))
         : Enumerable.Empty<UpcomingMatchDto>()
 ));
 ```
@@ -181,16 +181,6 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
     {
         // Query 1: Get active rounds (upcoming + in-progress)
         const string roundsSql = @"
-            WITH ActiveMemberCount AS (
-                SELECT
-                    l.[SeasonId],
-                    COUNT(DISTINCT lm.[UserId]) AS MemberCount
-                FROM [LeagueMembers] lm
-                JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
-                WHERE lm.[Status] = @ApprovedStatus
-                GROUP BY l.[SeasonId]
-            )
-
             SELECT
                 r.[Id],
                 s.[Name] AS SeasonName,
@@ -210,13 +200,9 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                 [Rounds] r
             JOIN
                 [Seasons] s ON r.[SeasonId] = s.[Id]
-            LEFT JOIN
-                [ActiveMemberCount] amc ON r.[SeasonId] = amc.[SeasonId]
             WHERE
-                (
-                    (r.[Status] = @PublishedStatus AND r.[DeadlineUtc] > GETUTCDATE())
-                    OR r.[Status] = @InProgressStatus
-                )
+                r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
+                AND (r.[Status] = @InProgressStatus OR r.[DeadlineUtc] > GETUTCDATE())
                 AND r.[SeasonId] IN (
                     SELECT l.[SeasonId]
                     FROM [Leagues] l
@@ -230,7 +216,8 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
         var parameters = new
         {
             request.UserId,
-            PublishedStatus = nameof(RoundStatus.Published),
+            DraftStatus = nameof(RoundStatus.Draft),
+            CompletedStatus = nameof(RoundStatus.Completed),
             InProgressStatus = nameof(RoundStatus.InProgress),
             ApprovedStatus = nameof(LeagueMemberStatus.Approved)
         };
@@ -241,11 +228,9 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
             parameters)).ToList();
 
         if (!rounds.Any())
-        {
             return Enumerable.Empty<UpcomingRoundDto>();
-        }
 
-        // Query 2: Get matches with predictions and actual scores for all active rounds
+        // Query 2: Get matches with predictions and outcomes for all active rounds
         var roundIds = rounds.Select(r => r.Id).ToArray();
 
         const string matchesSql = @"
@@ -256,8 +241,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 up.[PredictedHomeScore],
                 up.[PredictedAwayScore],
-                m.[ActualHomeTeamScore] AS ActualHomeScore,
-                m.[ActualAwayTeamScore] AS ActualAwayScore,
+                up.[Outcome],
                 m.[MatchDateTimeUtc],
                 ht.[ShortName] AS HomeTeamShortName
             FROM [Matches] m
@@ -284,7 +268,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
             r.RoundNumber,
             r.DeadlineUtc,
             r.HasUserPredicted,
-            r.Status,
+            Enum.Parse<RoundStatus>(r.Status),
             matchesByRound.TryGetValue(r.Id, out var roundMatches)
                 ? roundMatches.Select(m => new UpcomingMatchDto(
                     m.MatchId,
@@ -292,8 +276,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                     m.AwayTeamLogoUrl,
                     m.PredictedHomeScore,
                     m.PredictedAwayScore,
-                    m.ActualHomeScore,
-                    m.ActualAwayScore))
+                    m.Outcome != null ? Enum.Parse<PredictionOutcome>(m.Outcome) : null))
                 : Enumerable.Empty<UpcomingMatchDto>()
         ));
     }
@@ -315,8 +298,7 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
         string? AwayTeamLogoUrl,
         int? PredictedHomeScore,
         int? PredictedAwayScore,
-        int? ActualHomeScore,
-        int? ActualAwayScore,
+        string? Outcome,
         DateTime MatchDateTimeUtc,
         string HomeTeamShortName);
 }
@@ -324,35 +306,38 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
 
 ## Code Patterns to Follow
 
-From `GetMyLeaguesQueryHandler.cs` - similar pattern for handling multiple statuses:
+From existing query handlers - parsing enum from string:
 
 ```csharp
-// Ordering by status priority
-ORDER BY
-    CASE
-        WHEN r.[Status] = 'InProgress' THEN 1
-        WHEN r.[Status] = 'Published' THEN 2
-        ELSE 3
-    END
+Enum.Parse<RoundStatus>(r.Status)
+```
+
+For nullable enum parsing:
+
+```csharp
+m.Outcome != null ? Enum.Parse<PredictionOutcome>(m.Outcome) : null
 ```
 
 ## Verification
 
 - [ ] Solution builds without errors
 - [ ] Query returns both Published (future deadline) and InProgress rounds
+- [ ] Draft and Completed rounds are excluded
 - [ ] In-progress rounds appear before upcoming rounds in results
-- [ ] Actual scores are returned for matches (null when not yet available)
-- [ ] Round status is correctly returned as string ("Published" or "InProgress")
+- [ ] Outcome is returned from UserPredictions (null when no prediction exists)
+- [ ] Round status is correctly parsed to `RoundStatus` enum
 
 ## Edge Cases to Consider
 
 - Rounds with no matches - should still return the round with empty Matches collection
 - Users not in any leagues - returns empty collection (existing behaviour)
 - Mixed seasons - user might have rounds from multiple seasons; all should be included
-- Actual scores partially set - if only home score is set (shouldn't happen, but defensive)
+- No prediction for a match - `Outcome` will be null (LEFT JOIN returns null)
+- Published round with past deadline but not yet InProgress - excluded (edge case during status transition)
 
 ## Notes
 
-- The `ActiveMemberCount` CTE isn't actually used in the current query but is left in place for potential future use
-- Consider whether to remove it as dead code or keep for future requirements
-- The ordering ensures in-progress rounds always appear first, which matches user expectations
+- Using `NOT IN (Draft, Completed)` is cleaner than explicitly listing included statuses
+- The `Outcome` comes directly from `UserPredictions.[Outcome]` column - no calculation needed
+- Removed the unused `ActiveMemberCount` CTE from the original query
+- The internal query result records use strings for enums because Dapper returns them as strings

@@ -8,29 +8,43 @@
 
 ## Goal
 
-Extend the `UpcomingRoundDto` and `UpcomingMatchDto` to include round status and actual match scores, enabling the UI to display in-progress rounds with colour-coded prediction outcomes.
+Extend the existing DTOs to include round status and prediction outcome, enabling the dashboard to display in-progress rounds with colour-coded match backgrounds.
 
 ## Files to Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `PredictionLeague.Contracts/Dashboard/UpcomingRoundDto.cs` | Modify | Add `Status` property |
-| `PredictionLeague.Contracts/Dashboard/UpcomingMatchDto.cs` | Modify | Add actual score properties |
+| `PredictionLeague.Contracts/Dashboard/UpcomingRoundDto.cs` | Modify | Add `Status` property using `RoundStatus` enum |
+| `PredictionLeague.Contracts/Dashboard/UpcomingMatchDto.cs` | Modify | Add `Outcome` property using `PredictionOutcome` enum |
 
 ## Implementation Steps
 
 ### Step 1: Update UpcomingRoundDto
 
-Add a `Status` property to indicate whether the round is Published or InProgress.
+Add a `Status` property using the `RoundStatus` enum to indicate whether the round is Published or InProgress.
 
-**File:** `PredictionLeague.Contracts/Dashboard/UpcomingRoundDto.cs`
-
+**Current:**
 ```csharp
 namespace PredictionLeague.Contracts.Dashboard;
 
+public record UpcomingRoundDto(
+    int Id,
+    string SeasonName,
+    int RoundNumber,
+    DateTime DeadlineUtc,
+    bool HasUserPredicted,
+    IEnumerable<UpcomingMatchDto> Matches
+);
+```
+
+**Updated:**
+```csharp
+using PredictionLeague.Domain.Common.Enumerations;
+
+namespace PredictionLeague.Contracts.Dashboard;
+
 /// <summary>
-/// DTO for displaying rounds on the dashboard active rounds tile.
-/// Includes both upcoming (Published) and in-progress rounds.
+/// DTO for displaying active rounds (upcoming + in-progress) on the dashboard tile.
 /// </summary>
 public record UpcomingRoundDto(
     int Id,
@@ -38,25 +52,37 @@ public record UpcomingRoundDto(
     int RoundNumber,
     DateTime DeadlineUtc,
     bool HasUserPredicted,
-    string Status,  // NEW: "Published" or "InProgress"
+    RoundStatus Status,
     IEnumerable<UpcomingMatchDto> Matches
 );
 ```
 
-**Note:** Using `string` for status to avoid coupling the Contracts project to Domain enums. The handler will convert `RoundStatus` enum to string.
-
 ### Step 2: Update UpcomingMatchDto
 
-Add actual score properties so the UI can calculate prediction outcomes.
+Add an `Outcome` property to carry the pre-calculated prediction outcome from the `UserPredictions` table. This avoids recalculating the outcome in the UI since it's already stored in the database.
 
-**File:** `PredictionLeague.Contracts/Dashboard/UpcomingMatchDto.cs`
-
+**Current:**
 ```csharp
+namespace PredictionLeague.Contracts.Dashboard;
+
+public record UpcomingMatchDto(
+    int MatchId,
+    string? HomeTeamLogoUrl,
+    string? AwayTeamLogoUrl,
+    int? PredictedHomeScore,
+    int? PredictedAwayScore
+);
+```
+
+**Updated:**
+```csharp
+using PredictionLeague.Domain.Common.Enumerations;
+
 namespace PredictionLeague.Contracts.Dashboard;
 
 /// <summary>
 /// Lightweight DTO for displaying match predictions on the dashboard active rounds tile.
-/// Contains logos, predicted scores, and actual scores (for in-progress/completed matches).
+/// Contains only the data needed for the compact match preview (logos, scores, and outcome).
 /// </summary>
 public record UpcomingMatchDto(
     int MatchId,
@@ -64,45 +90,54 @@ public record UpcomingMatchDto(
     string? AwayTeamLogoUrl,
     int? PredictedHomeScore,
     int? PredictedAwayScore,
-    int? ActualHomeScore,   // NEW: Null if match hasn't started
-    int? ActualAwayScore    // NEW: Null if match hasn't started
+    PredictionOutcome? Outcome
 );
 ```
 
 ## Code Patterns to Follow
 
-Existing DTO pattern from the codebase:
+The `PredictionOutcome` enum already exists in `PredictionLeague.Domain.Common.Enumerations`:
 
 ```csharp
-// DTOs are records with init-only properties via constructor
-public record MyLeagueDto(
-    int Id,
-    string Name,
-    int? CurrentRoundId,
-    // ... other properties
-);
+public enum PredictionOutcome
+{
+    Pending = 0,        // Match not yet started or in progress without result
+    Incorrect = 1,      // Wrong result/score
+    CorrectResult = 2,  // Got the winner/draw right
+    ExactScore = 3      // Perfect prediction
+}
 ```
 
-- Use C# record types for immutability
-- Constructor parameters for all properties
-- Nullable types (`int?`, `string?`) where values may be absent
-- XML documentation comments for clarity
+The `RoundStatus` enum:
+
+```csharp
+public enum RoundStatus
+{
+    Draft,        // Not yet published
+    Published,    // Published, awaiting deadline
+    InProgress,   // Matches are being played
+    Completed     // All matches finished
+}
+```
 
 ## Verification
 
 - [ ] Solution builds without errors
-- [ ] `UpcomingRoundDto` has new `Status` property (string type)
-- [ ] `UpcomingMatchDto` has new `ActualHomeScore` and `ActualAwayScore` properties
-- [ ] No breaking changes to existing code that uses these DTOs (handler will be updated in next task)
+- [ ] `UpcomingRoundDto` has `RoundStatus Status` property
+- [ ] `UpcomingMatchDto` has `PredictionOutcome? Outcome` property
+- [ ] Both DTOs have correct `using` statements for the enums
 
 ## Edge Cases to Consider
 
-- Existing code calling these DTOs will need updating (handled in Task 2)
-- `ActualHomeScore` and `ActualAwayScore` will be `null` for matches that haven't started
-- Status will always be either "Published" or "InProgress" (Completed rounds are excluded from query)
+- `Outcome` is nullable because:
+  - User may not have made a prediction for this match (no UserPrediction row exists)
+  - For upcoming rounds, outcome will be `Pending` (or `null` if no prediction)
+- Published rounds will have `Outcome = Pending` for all matches (not yet scored)
+- In-progress rounds may have a mix of `Pending`, `Incorrect`, `CorrectResult`, and `ExactScore`
 
 ## Notes
 
-- The `Status` property uses `string` rather than importing the `RoundStatus` enum to keep Contracts project free of Domain dependencies
-- The alternative would be to create a separate enum in Contracts, but string is simpler for this use case
-- Consider future scenarios: if we ever need to expose Draft or Completed rounds, the string approach allows easy extension
+- Using the pre-calculated `Outcome` from `UserPredictions` table is more efficient than recalculating in the UI
+- The outcome is already calculated by the `SetOutcome` method when match scores are updated
+- Nullable `Outcome` handles the case where user didn't predict (no UserPrediction row)
+- Using the `RoundStatus` enum directly provides type safety and avoids string comparisons

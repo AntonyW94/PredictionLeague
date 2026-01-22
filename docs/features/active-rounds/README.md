@@ -58,11 +58,11 @@ As a league member, I want to see my in-progress rounds on the dashboard so that
 
 | Prediction Outcome | Background Colour | When Applied |
 |--------------------|-------------------|--------------|
-| Not yet started | `--black-alpha-25` (current) | Match hasn't kicked off |
-| Pending | `--black-alpha-25` (current) | Match in progress, no result yet |
+| Not yet started / Pending | `--black-alpha-25` (current) | Match hasn't kicked off or no result yet |
 | Exact Score | Green (`--green-600`) | Actual score matches prediction |
 | Correct Result | Yellow (`--yellow`) | Got winner/draw correct, but not exact score |
 | Incorrect | Red (`--red`) | Got result wrong |
+| No prediction | `--black-alpha-25` (current) | User didn't predict this match |
 
 ### Badge Styling
 
@@ -92,8 +92,8 @@ As a league member, I want to see my in-progress rounds on the dashboard so that
 
 | # | Task | Description | Status |
 |---|------|-------------|--------|
-| 1 | [Extend DTOs](./01-extend-dtos.md) | Add round status and actual match scores to DTOs | Not Started |
-| 2 | [Update Query Handler](./02-update-query-handler.md) | Modify SQL to include in-progress rounds and actual scores | Not Started |
+| 1 | [Extend DTOs](./01-extend-dtos.md) | Add `RoundStatus` to round DTO and `PredictionOutcome` to match DTO | Not Started |
+| 2 | [Update Query Handler](./02-update-query-handler.md) | Modify SQL to include in-progress rounds and fetch outcome from UserPredictions | Not Started |
 | 3 | [Update RoundCard Component](./03-update-round-card.md) | Add conditional UI for in-progress rounds | Not Started |
 | 4 | [Add CSS Styles](./04-add-css-styles.md) | Add match outcome background colours and update border-radius | Not Started |
 | 5 | [Rename Tile](./05-rename-tile.md) | Rename tile from "Upcoming Rounds" to "Active Rounds" | Not Started |
@@ -103,43 +103,35 @@ As a league member, I want to see my in-progress rounds on the dashboard so that
 - [x] `RoundStatus` enum exists with `InProgress` value
 - [x] `PredictionOutcome` enum exists with correct values
 - [x] Blue badge class (`badge-group--blue`) already exists in `badges.css`
-- [x] Actual match scores stored in `Matches` table (`ActualHomeTeamScore`, `ActualAwayTeamScore`)
+- [x] `UserPredictions.Outcome` column stores pre-calculated prediction outcome
 - [x] Colour variables exist in `variables.css`
 
 ## Technical Notes
 
-### Calculating Prediction Outcome
+### Using Pre-Calculated Outcome
 
-The prediction outcome can be calculated in Razor based on:
-- Predicted scores from user predictions
-- Actual scores from match data
-- Match status (not started vs in progress/completed)
+The `UserPredictions` table already stores the calculated `Outcome` for each prediction. This is updated by the `SetOutcome` method when match scores are updated. We use this directly rather than recalculating in the UI.
+
+**Benefits:**
+- Simpler code - no calculation logic in the Razor component
+- Consistent - same outcome value used everywhere in the app
+- Efficient - no need to fetch actual match scores
+
+### Using RoundStatus Enum
+
+The DTO uses the `RoundStatus` enum directly for type safety:
 
 ```csharp
-private PredictionOutcome GetOutcome(UpcomingMatchDto match)
-{
-    // If no actual score yet, it's pending
-    if (match.ActualHomeScore == null || match.ActualAwayScore == null)
-        return PredictionOutcome.Pending;
+public record UpcomingRoundDto(
+    // ...
+    RoundStatus Status,
+    // ...
+);
+```
 
-    // If user didn't predict, it's incorrect
-    if (match.PredictedHomeScore == null || match.PredictedAwayScore == null)
-        return PredictionOutcome.Incorrect;
-
-    // Exact score match
-    if (match.PredictedHomeScore == match.ActualHomeScore &&
-        match.PredictedAwayScore == match.ActualAwayScore)
-        return PredictionOutcome.ExactScore;
-
-    // Correct result (same outcome: home win, away win, or draw)
-    var predictedOutcome = GetMatchOutcome(match.PredictedHomeScore.Value, match.PredictedAwayScore.Value);
-    var actualOutcome = GetMatchOutcome(match.ActualHomeScore.Value, match.ActualAwayScore.Value);
-
-    if (predictedOutcome == actualOutcome)
-        return PredictionOutcome.CorrectResult;
-
-    return PredictionOutcome.Incorrect;
-}
+This allows type-safe comparisons in the component:
+```csharp
+private bool IsInProgress => Round.Status == RoundStatus.InProgress;
 ```
 
 ### Query Changes
@@ -149,24 +141,21 @@ The existing query filters by:
 WHERE r.[Status] = @PublishedStatus AND r.[DeadlineUtc] > GETUTCDATE()
 ```
 
-This needs to change to:
+This changes to exclude Draft and Completed:
 ```sql
-WHERE (
-    (r.[Status] = @PublishedStatus AND r.[DeadlineUtc] > GETUTCDATE())
-    OR r.[Status] = @InProgressStatus
-)
+WHERE
+    r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
+    AND (r.[Status] = @InProgressStatus OR r.[DeadlineUtc] > GETUTCDATE())
 ```
 
 ### Ordering
 
-Current ordering is by `DeadlineUtc ASC`. In-progress rounds should come first:
+In-progress rounds appear first, then upcoming rounds by deadline:
 ```sql
 ORDER BY
     CASE WHEN r.[Status] = @InProgressStatus THEN 0 ELSE 1 END,
     r.[DeadlineUtc] ASC
 ```
-
-Since in-progress rounds have passed their deadline, this will naturally order them before upcoming rounds.
 
 ### Existing Colour Scheme Reference
 

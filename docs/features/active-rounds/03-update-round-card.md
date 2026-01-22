@@ -8,7 +8,7 @@
 
 ## Goal
 
-Modify the `RoundCard.razor` component to handle in-progress rounds by showing a blue "In Progress" badge, hiding the edit button, and applying colour-coded backgrounds to matches based on prediction outcomes.
+Modify the `RoundCard.razor` component to handle in-progress rounds by showing a blue "In Progress" badge, hiding the edit button, and applying colour-coded backgrounds to matches based on the pre-calculated prediction outcome.
 
 ## Files to Modify
 
@@ -18,46 +18,31 @@ Modify the `RoundCard.razor` component to handle in-progress rounds by showing a
 
 ## Implementation Steps
 
-### Step 1: Add Helper Method for Prediction Outcome
+### Step 1: Add Helper Method for Match Background Class
 
-Add a code block to calculate the prediction outcome for a match.
+Add a method to map the `PredictionOutcome` enum to the appropriate CSS class.
 
 ```csharp
 @code {
     [Parameter, EditorRequired]
     public UpcomingRoundDto Round { get; set; } = null!;
 
-    private bool IsInProgress => Round.Status == "InProgress";
+    private bool IsInProgress => Round.Status == RoundStatus.InProgress;
 
     private string GetMatchBackgroundClass(UpcomingMatchDto match)
     {
-        // If match hasn't started (no actual scores), use default background
-        if (match.ActualHomeScore == null || match.ActualAwayScore == null)
-            return "";
-
-        // If user didn't predict, it's incorrect
-        if (match.PredictedHomeScore == null || match.PredictedAwayScore == null)
-            return "match-outcome-incorrect";
-
-        // Exact score match
-        if (match.PredictedHomeScore == match.ActualHomeScore &&
-            match.PredictedAwayScore == match.ActualAwayScore)
-            return "match-outcome-exact";
-
-        // Check if result is correct (home win, away win, or draw)
-        var predictedDiff = match.PredictedHomeScore.Value - match.PredictedAwayScore.Value;
-        var actualDiff = match.ActualHomeScore.Value - match.ActualAwayScore.Value;
-
-        var predictedOutcome = predictedDiff > 0 ? 1 : (predictedDiff < 0 ? -1 : 0);
-        var actualOutcome = actualDiff > 0 ? 1 : (actualDiff < 0 ? -1 : 0);
-
-        if (predictedOutcome == actualOutcome)
-            return "match-outcome-correct-result";
-
-        return "match-outcome-incorrect";
+        return match.Outcome switch
+        {
+            PredictionOutcome.ExactScore => "match-outcome-exact",
+            PredictionOutcome.CorrectResult => "match-outcome-correct-result",
+            PredictionOutcome.Incorrect => "match-outcome-incorrect",
+            _ => "" // Pending or null - use default background
+        };
     }
 }
 ```
+
+**Note:** This is much simpler than the original plan because we're using the pre-calculated `Outcome` from the database rather than calculating it ourselves.
 
 ### Step 2: Update Badge Display Logic
 
@@ -150,7 +135,7 @@ Hide the button for in-progress rounds.
 
 ```razor
 @using PredictionLeague.Contracts.Dashboard
-
+@using PredictionLeague.Domain.Common.Enumerations
 
 <div class="card slide">
     <div class="header">
@@ -229,34 +214,17 @@ Hide the button for in-progress rounds.
     [Parameter, EditorRequired]
     public UpcomingRoundDto Round { get; set; } = null!;
 
-    private bool IsInProgress => Round.Status == "InProgress";
+    private bool IsInProgress => Round.Status == RoundStatus.InProgress;
 
     private string GetMatchBackgroundClass(UpcomingMatchDto match)
     {
-        // If match hasn't started (no actual scores), use default background
-        if (match.ActualHomeScore == null || match.ActualAwayScore == null)
-            return "";
-
-        // If user didn't predict, it's incorrect
-        if (match.PredictedHomeScore == null || match.PredictedAwayScore == null)
-            return "match-outcome-incorrect";
-
-        // Exact score match
-        if (match.PredictedHomeScore == match.ActualHomeScore &&
-            match.PredictedAwayScore == match.ActualAwayScore)
-            return "match-outcome-exact";
-
-        // Check if result is correct (home win, away win, or draw)
-        var predictedDiff = match.PredictedHomeScore.Value - match.PredictedAwayScore.Value;
-        var actualDiff = match.ActualHomeScore.Value - match.ActualAwayScore.Value;
-
-        var predictedOutcome = predictedDiff > 0 ? 1 : (predictedDiff < 0 ? -1 : 0);
-        var actualOutcome = actualDiff > 0 ? 1 : (actualDiff < 0 ? -1 : 0);
-
-        if (predictedOutcome == actualOutcome)
-            return "match-outcome-correct-result";
-
-        return "match-outcome-incorrect";
+        return match.Outcome switch
+        {
+            PredictionOutcome.ExactScore => "match-outcome-exact",
+            PredictionOutcome.CorrectResult => "match-outcome-correct-result",
+            PredictionOutcome.Incorrect => "match-outcome-incorrect",
+            _ => "" // Pending or null - use default background
+        };
     }
 }
 ```
@@ -287,19 +255,22 @@ The colour scheme should match:
 - [ ] Upcoming rounds continue to show deadline badge/countdown as before
 - [ ] Edit/Predict button is hidden for in-progress rounds
 - [ ] Edit/Predict button still appears for upcoming rounds
-- [ ] Matches with results show coloured backgrounds
-- [ ] Matches without results (not started) show default dark background
+- [ ] Matches with `ExactScore` outcome show green background
+- [ ] Matches with `CorrectResult` outcome show yellow background
+- [ ] Matches with `Incorrect` outcome show red background
+- [ ] Matches with `Pending` or `null` outcome show default dark background
 - [ ] Component builds without errors
 
 ## Edge Cases to Consider
 
-- User didn't make any predictions - all matches show red background once results come in
-- All matches not yet started - all show default background (behaves like current upcoming rounds)
-- Mixed state - some matches started, others not yet - different backgrounds per match
+- User didn't make any predictions - all matches have `null` outcome, all show default background
+- All matches not yet started - all have `Pending` outcome, all show default background
+- Mixed state - some matches have results, others pending - different backgrounds per match
 - Round transitions from Published to InProgress while user is viewing - card updates on next data refresh
 
 ## Notes
 
-- The outcome calculation is intentionally in the component (not the DTO) to keep the DTO simple
-- An alternative would be to calculate outcome in the query handler, but this would couple the handler to display logic
-- The `IsInProgress` property is a simple string comparison since we use string for status in the DTO
+- Using the `RoundStatus` enum for comparison (`Round.Status == RoundStatus.InProgress`) provides type safety
+- The `GetMatchBackgroundClass` method uses a switch expression for clean, readable code
+- No calculation logic needed - we simply map the pre-calculated `Outcome` to a CSS class
+- Added `@using PredictionLeague.Domain.Common.Enumerations` for the enum references
