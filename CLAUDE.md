@@ -41,6 +41,13 @@ PredictionLeague.Validators       → FluentValidation validators
 
 **Dependency Direction:** Presentation → Application → Domain (never reverse)
 
+### Project-Specific Guidelines
+
+Some projects have additional guidelines in their own CLAUDE.md files:
+
+- [`PredictionLeague.API/CLAUDE.md`](PredictionLeague.API/CLAUDE.md) - API controllers, authentication, error handling
+- [`PredictionLeague.Web.Client/CLAUDE.md`](PredictionLeague.Web.Client/CLAUDE.md) - Blazor state management, CSS architecture
+
 ### Key Patterns
 
 1. **CQRS** - Commands modify state, Queries fetch data via MediatR
@@ -232,127 +239,6 @@ Four prize strategies:
 - `OverallPrizeStrategy` - Season-end winners
 - `MostExactScoresPrizeStrategy` - Most exact predictions
 
-## API Structure
-
-### Controller Organization
-
-```
-/api/auth           → Authentication (login, register, refresh)
-/api/account        → User profile
-/api/dashboard      → Dashboard data
-/api/leagues        → League CRUD and membership
-/api/predictions    → Prediction submission
-/api/rounds         → Round queries
-/api/admin/rounds   → Admin round management
-/api/admin/seasons  → Admin season management
-/api/tasks          → Background job triggers (API key protected)
-```
-
-### Authentication
-
-- JWT Bearer tokens with 60-minute expiry
-- Refresh tokens stored in HTTP-only cookies (7-day expiry)
-- Google OAuth for social login
-- API key authentication for scheduled tasks (`X-Api-Key` header)
-
-## Client-Side (Blazor)
-
-### State Management
-
-Services hold state and notify components via events:
-
-```csharp
-public class DashboardStateService
-{
-    public event Action? OnStateChange;
-
-    public async Task LoadMyLeaguesAsync()
-    {
-        // Load data...
-        OnStateChange?.Invoke();
-    }
-}
-```
-
-### Authentication Flow
-
-1. `ApiAuthenticationStateProvider` checks localStorage for `accessToken`
-2. Validates JWT expiration
-3. Auto-refreshes expired tokens via `/api/auth/refresh-token`
-4. Sets `Authorization: Bearer {token}` header on HttpClient
-
-## CSS Architecture
-
-**Full CSS reference:** [`/docs/css-reference.md`](docs/css-reference.md) - Design tokens, utility classes, component patterns
-
-### File Structure
-
-```
-wwwroot/css/
-├── variables.css          → Design tokens (colours, spacing, radii)
-├── app.css                → Global styles and imports
-├── utilities/             → Reusable utility classes
-├── components/            → Reusable component styles
-├── layout/                → Layout and structural styles
-└── pages/                 → Page-specific styles (last resort)
-```
-
-### Colour Naming Convention
-
-**Use numeric scale (Tailwind-style) for colours with multiple shades:**
-
-| Scale | Meaning | Example |
-|-------|---------|---------|
-| 100-300 | Lightest | Accents, highlights |
-| 500 | Base | Default usage |
-| 600-700 | Dark | Text, emphasis |
-| 800-1000 | Darkest | Backgrounds |
-
-**Higher number = darker colour.** Example: `--purple-800` (background) is darker than `--purple-300` (accent).
-
-### Mobile-First CSS Approach
-
-All CSS uses mobile-first media queries with `min-width`. Base styles target mobile, then enhance for larger screens.
-
-```css
-.element { /* Base mobile styles */ }
-
-@media (min-width: 480px) { /* Small phone+ */ }
-@media (min-width: 576px) { /* Phone+ */ }
-@media (min-width: 768px) { /* Tablet+ */ }
-@media (min-width: 992px) { /* Desktop+ */ }
-```
-
-**Never use `max-width` queries.**
-
-### CSS Rules to Follow
-
-1. **Always use design tokens** - Never hardcode colours, use `var(--colour-xxx)`
-2. **Use numeric colour scale** - `.text-green-600` not `.text-green`
-3. **Prefer utilities over custom CSS** - Check utilities folder first
-4. **Keep component CSS focused** - One component per file in `/components/`
-5. **Page styles are last resort** - Only for truly page-specific styles
-6. **Maintain complete utility sets** - Don't remove unused utilities
-7. **Use mobile-first media queries** - Always `min-width`, never `max-width`
-
-### CSS Things to Avoid
-
-1. **Never use old colour class names:**
-   - ❌ `.text-green`, `.bg-green`, `.text-cyan`
-   - ✅ `.text-green-600`, `.bg-green-600`, `.text-blue-500`
-
-2. **Never use deprecated aliases:**
-   - ❌ `.text-success`, `.text-danger`, `.centre`
-   - ✅ `.text-green-600`, `.text-red`, `.text-center`
-
-3. **Never hardcode colours:**
-   - ❌ `color: white;` or `rgba(0, 0, 0, 0.35)`
-   - ✅ `var(--white)` or `var(--black-alpha-35)`
-
-4. **Never put component styles in page files** - Create proper component CSS
-
-5. **Never use max-width media queries**
-
 ## Database
 
 ### Schema Reference
@@ -380,20 +266,6 @@ This file contains all tables, columns, types, constraints, relationships, and c
 - Column names: `[PascalCase]` with brackets
 - All queries use parameterized commands via Dapper
 - Complex aggregations use CTEs
-
-## Error Handling
-
-### ErrorHandlingMiddleware
-
-Maps exceptions to HTTP status codes:
-
-| Exception Type | Status Code |
-|---------------|-------------|
-| `KeyNotFoundException`, `EntityNotFoundException` | 404 |
-| `ArgumentException`, `InvalidOperationException` | 400 |
-| `ValidationException` (FluentValidation) | 400 |
-| `UnauthorizedAccessException` | 401 |
-| Other exceptions | 500 |
 
 ## Configuration
 
@@ -505,23 +377,7 @@ To work on a planned feature, read the feature's README.md first, then work thro
 
 ## Future Roadmap
 
-### High Priority
-- **UI Overhaul** - Main pages are styled, admin pages are broken by CSS changes
-- **Code consistency audit** - Ensure all code follows same patterns and standards
-- **Dashboard predictions** - Show predicted scores in upcoming rounds tile
-
-### Medium Priority
-- **Historic leaderboard snapshots** - Show leaderboards as they were at end of each round
-- **Additional boost types** - Need icon generation solution
-- **Trophy cabinet** - Achievement system (e.g., "75% correct in one round")
-- **Detailed stats pages** - Performance graphs and analytics
-
-### Lower Priority (Future)
-- **Tournament seasons** - Different format for FIFA World Cup 2026 (March/April 2026)
-- **Subscription payments** - Yearly sign-up fees
-- **WhatsApp reminders** - Requires business registration (Sole Trader/Limited Company)
-- **Mobile apps** - Google Play Store, iOS App Store, Apple Sign-In
-- **Automated deployments** - CI/CD within Fasthosts limitations
+**Full roadmap:** [`/docs/future-roadmap.md`](docs/future-roadmap.md)
 
 ## Things to Avoid
 
