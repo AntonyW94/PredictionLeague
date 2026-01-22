@@ -21,3 +21,43 @@
 .section > .body.no-padding {
     padding: 0;
 }
+
+/* Collapsible section header */
+.section-header-collapsible {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0.75rem;
+}
+
+.section-header-collapsible:hover {
+    opacity: 0.85;
+}
+
+.section-header-collapsible h5 {
+    margin-bottom: 0;
+}
+
+.section-header-collapsible .collapse-icon {
+    transition: transform 0.3s ease;
+    font-size: 1rem;
+}
+
+.section-header-collapsible .collapse-icon.rotated {
+    transform: rotate(180deg);
+}
+
+/* Collapsible section body */
+.section-body-collapsible {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    max-height: 600px;
+    opacity: 1;
+}
+
+.section-body-collapsible.collapsed {
+    max-height: 0;
+    opacity: 0;
+}
