@@ -15,7 +15,7 @@ Rename all "UpcomingRounds" references to "ActiveRounds" across all layers for c
 | Current Name | New Name |
 |--------------|----------|
 | `UpcomingRoundDto.cs` | `ActiveRoundDto.cs` |
-| `UpcomingMatchDto.cs` | `ActiveMatchDto.cs` |
+| `UpcomingMatchDto.cs` | `ActiveRoundMatchDto.cs` |
 | `GetUpcomingRoundsQuery.cs` | `GetActiveRoundsQuery.cs` |
 | `GetUpcomingRoundsQueryHandler.cs` | `GetActiveRoundsQueryHandler.cs` |
 | `UpcomingRoundsTile.razor` | `ActiveRoundsTile.razor` |
@@ -25,7 +25,7 @@ Rename all "UpcomingRounds" references to "ActiveRounds" across all layers for c
 | File | Action | Purpose |
 |------|--------|---------|
 | `ActiveRoundDto.cs` | Modify | Rename record to `ActiveRoundDto` |
-| `ActiveMatchDto.cs` | Modify | Rename record to `ActiveMatchDto` |
+| `ActiveRoundMatchDto.cs` | Modify | Rename record to `ActiveRoundMatchDto` |
 | `GetActiveRoundsQuery.cs` | Modify | Rename class to `GetActiveRoundsQuery` |
 | `GetActiveRoundsQueryHandler.cs` | Modify | Rename class, update references |
 | `ILeagueService.cs` | Modify | Rename method |
@@ -47,7 +47,7 @@ PredictionLeague.Contracts/Dashboard/UpcomingRoundDto.cs
 → PredictionLeague.Contracts/Dashboard/ActiveRoundDto.cs
 
 PredictionLeague.Contracts/Dashboard/UpcomingMatchDto.cs
-→ PredictionLeague.Contracts/Dashboard/ActiveMatchDto.cs
+→ PredictionLeague.Contracts/Dashboard/ActiveRoundMatchDto.cs
 ```
 
 **Update `ActiveRoundDto.cs`:**
@@ -66,11 +66,11 @@ public record ActiveRoundDto(
     DateTime DeadlineUtc,
     bool HasUserPredicted,
     RoundStatus Status,
-    IEnumerable<ActiveMatchDto> Matches
+    IEnumerable<ActiveRoundMatchDto> Matches
 );
 ```
 
-**Update `ActiveMatchDto.cs`:**
+**Update `ActiveRoundMatchDto.cs`:**
 ```csharp
 using PredictionLeague.Domain.Common.Enumerations;
 
@@ -79,7 +79,7 @@ namespace PredictionLeague.Contracts.Dashboard;
 /// <summary>
 /// Lightweight DTO for displaying match predictions on the dashboard active rounds tile.
 /// </summary>
-public record ActiveMatchDto(
+public record ActiveRoundMatchDto(
     int MatchId,
     string? HomeTeamLogoUrl,
     string? AwayTeamLogoUrl,
@@ -114,7 +114,7 @@ public record GetActiveRoundsQuery(string UserId) : IRequest<IEnumerable<ActiveR
 ```csharp
 public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery, IEnumerable<ActiveRoundDto>>
 {
-    // ... update all references to use ActiveRoundDto and ActiveMatchDto
+    // ... update all references to use ActiveRoundDto and ActiveRoundMatchDto
 }
 ```
 
@@ -223,7 +223,7 @@ Components/Pages/Dashboard/UpcomingRoundsTile.razor
 public ActiveRoundDto Round { get; set; } = null!;
 
 // Update method signature:
-private string GetMatchBackgroundClass(ActiveMatchDto match)
+private string GetMatchBackgroundClass(ActiveRoundMatchDto match)
 ```
 
 **Update `Dashboard.razor`:**
@@ -238,7 +238,7 @@ private string GetMatchBackgroundClass(ActiveMatchDto match)
 ## Verification
 
 - [ ] All files renamed correctly
-- [ ] `ActiveRoundDto` and `ActiveMatchDto` records updated
+- [ ] `ActiveRoundDto` and `ActiveRoundMatchDto` records updated
 - [ ] `GetActiveRoundsQuery` and handler updated
 - [ ] API service interface and implementation updated
 - [ ] API controller endpoint updated to `active-rounds`

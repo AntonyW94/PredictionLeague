@@ -17,7 +17,7 @@ Extend the existing DTOs to include round status and prediction outcome, enablin
 | `PredictionLeague.Contracts/Dashboard/UpcomingRoundDto.cs` | Modify | Add `Status` property using `RoundStatus` enum |
 | `PredictionLeague.Contracts/Dashboard/UpcomingMatchDto.cs` | Modify | Add `Outcome` property using `PredictionOutcome` enum |
 
-**Note:** These files will be renamed to `ActiveRoundDto.cs` and `ActiveMatchDto.cs` in Task 5.
+**Note:** These files will be renamed to `ActiveRoundDto.cs` and `ActiveRoundMatchDto.cs` in Task 5.
 
 ## Implementation Steps
 
