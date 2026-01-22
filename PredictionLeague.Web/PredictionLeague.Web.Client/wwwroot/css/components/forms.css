@@ -129,7 +129,7 @@
 .input-group:focus-within .password-toggle-btn {
     background-color: var(--purple-800);
     color: var(--white);
-    z-index: 2
+    z-index: 2;
 }
 
 /* Tablet and up (--breakpoint-tablet: 768px) */
