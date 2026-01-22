@@ -492,6 +492,12 @@ All CSS uses mobile-first media queries. Base styles target extra-small phones (
 
 ## Database
 
+### Schema Reference
+
+**Full database schema documentation:** [`/docs/database-schema.md`](docs/database-schema.md)
+
+This file contains all tables, columns, types, constraints, relationships, and common query examples.
+
 ### Key Tables
 
 - `Leagues` - League definitions
@@ -621,6 +627,18 @@ CSS files are automatically versioned during `dotnet publish` to prevent browser
 3. **MediatR** - Decouples controllers from business logic
 4. **No unit tests yet** - Planned for future implementation
 5. **Manual FTP deployment** - Hosting limitation, automated CI/CD desired for future
+
+## Feature Planning
+
+**Feature plans location:** [`/docs/features/`](docs/features/)
+
+Detailed implementation plans for new features are stored here. Each feature has:
+- `README.md` - Overview, acceptance criteria, and task list
+- Numbered task files (`01-xxx.md`, `02-xxx.md`) - Step-by-step implementation details
+
+To work on a planned feature, read the feature's README.md first, then work through tasks in order.
+
+**Templates:** [`/docs/features/_template/`](docs/features/_template/) contains templates for creating new feature plans.
 
 ## Future Roadmap
 
