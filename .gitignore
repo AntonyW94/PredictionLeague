@@ -365,3 +365,6 @@ FodyWeavers.xsd
 
 **/PredictionLeague.Web/appsettings.Production.Secrets.json
 /PredictionLeague.Web/PredictionLeague.Web/keys/*
+
+# BuildBundlerMinifier output (generated during Release builds)
+**/wwwroot/css/app.min.css
