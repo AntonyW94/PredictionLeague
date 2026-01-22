@@ -1,5 +1,6 @@
 ﻿@inject IDashboardStateService DashboardState
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
 @implements IDisposable
 
@@ -39,7 +40,7 @@
                                         <small class="text-white-50 text-center fw-bold">@leaderboard.SeasonName</small>
                                     </div>
                                     <div class="body leaderboard-body justify-start w-100">
-                                        <div class="leaderboard-scroll-container">
+                                        <div id="leaderboard-scroll-@leaderboard.LeagueId" class="leaderboard-scroll-container">
                                             <table class="leaderboard-table leaderboard-table--dashboard table-striped-purple light text-white">
                                                 <thead>
                                                     <tr>
@@ -109,6 +110,17 @@
         await base.OnInitializedAsync();
         DashboardState.OnStateChange += StateHasChanged;
         await DashboardState.LoadLeaderboardsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && DashboardState.Leaderboards.Any())
+        {
+            foreach (var leaderboard in DashboardState.Leaderboards)
+            {
+                await JS.InvokeVoidAsync("blazorInterop.scrollToUserRow", $"leaderboard-scroll-{leaderboard.LeagueId}");
+            }
+        }
     }
 
     private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;

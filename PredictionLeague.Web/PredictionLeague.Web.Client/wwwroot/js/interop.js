@@ -142,5 +142,18 @@ window.blazorInterop = {
             clearInterval(countdownTimers[timerId]);
             delete countdownTimers[timerId];
         }
+    },
+    scrollToUserRow: function (containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const userRow = container.querySelector('.current-user-highlight');
+        if (!userRow) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const rowRect = userRow.getBoundingClientRect();
+        const scrollTop = userRow.offsetTop - container.offsetTop - (containerRect.height / 2) + (rowRect.height / 2);
+
+        container.scrollTop = Math.max(0, scrollTop);
     }
 };
