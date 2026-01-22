@@ -8,65 +8,163 @@
 
 ## Goal
 
-Rename the "Upcoming Rounds" tile to "Active Rounds" to better reflect its new purpose of showing both upcoming and in-progress rounds.
+Rename the "Upcoming Rounds" tile to "Active Rounds" to better reflect its new purpose of showing both upcoming and in-progress rounds. This includes renaming the component file and updating all references.
 
 ## Files to Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `PredictionLeague.Web/PredictionLeague.Web.Client/Components/Pages/Dashboard/UpcomingRoundsTile.razor` | Modify | Update tile title |
+| `UpcomingRoundsTile.razor` | Rename | Rename to `ActiveRoundsTile.razor` |
+| `ActiveRoundsTile.razor` | Modify | Update tile title and empty state message |
+| `Dashboard.razor` | Modify | Update component reference |
+| `DashboardStateService.cs` | Modify | Rename properties and methods |
+| `IDashboardStateService.cs` | Modify | Rename interface members |
 
 ## Implementation Steps
 
-### Step 1: Update the Tile Title
+### Step 1: Rename Component File
 
-Locate the section title and change "Upcoming Rounds" to "Active Rounds".
+Rename the component file:
 
-**Current code (look for the title element):**
+```
+Components/Pages/Dashboard/UpcomingRoundsTile.razor
+→ Components/Pages/Dashboard/ActiveRoundsTile.razor
+```
+
+### Step 2: Update Tile Title and Empty State
+
+In `ActiveRoundsTile.razor`, update the title:
+
+**Current:**
 ```razor
 <SectionHeading>Upcoming Rounds</SectionHeading>
 ```
-or
-```razor
-<h4>Upcoming Rounds</h4>
-```
 
-**New code:**
+**New:**
 ```razor
 <SectionHeading>Active Rounds</SectionHeading>
 ```
-or
-```razor
-<h4>Active Rounds</h4>
-```
 
-### Step 2: Update Empty State Message (if applicable)
+Update the empty state message:
 
-If there's an empty state message mentioning "upcoming rounds", update it to say "active rounds".
-
-**Look for text like:**
+**Current:**
 ```razor
 <p>No upcoming rounds available.</p>
 ```
 
-**Change to:**
+**New:**
 ```razor
 <p>No active rounds available.</p>
 ```
 
-### Step 3: Consider File Rename (Optional)
+### Step 3: Update Dashboard.razor Reference
 
-While not strictly necessary, consider whether to rename the files for consistency:
+Update the component reference in the parent dashboard page.
 
-| Current Name | Potential New Name |
-|--------------|-------------------|
-| `UpcomingRoundsTile.razor` | `ActiveRoundsTile.razor` |
-| `UpcomingRoundDto.cs` | `ActiveRoundDto.cs` |
-| `UpcomingMatchDto.cs` | `ActiveMatchDto.cs` |
-| `GetUpcomingRoundsQuery.cs` | `GetActiveRoundsQuery.cs` |
-| `GetUpcomingRoundsQueryHandler.cs` | `GetActiveRoundsQueryHandler.cs` |
+**Current:**
+```razor
+<UpcomingRoundsTile />
+```
 
-**Recommendation:** Keep existing file names to avoid breaking changes and extensive refactoring. The tile title change is sufficient for user-facing clarity. File names can be updated in a future cleanup task if desired.
+**New:**
+```razor
+<ActiveRoundsTile />
+```
+
+### Step 4: Update State Service Interface
+
+In `IDashboardStateService.cs`, rename the members:
+
+**Current:**
+```csharp
+List<UpcomingRoundDto> UpcomingRounds { get; }
+bool IsUpcomingRoundsLoading { get; }
+string? UpcomingRoundsErrorMessage { get; }
+string? UpcomingRoundsSuccessMessage { get; }
+Task LoadUpcomingRoundsAsync();
+```
+
+**New:**
+```csharp
+List<UpcomingRoundDto> ActiveRounds { get; }
+bool IsActiveRoundsLoading { get; }
+string? ActiveRoundsErrorMessage { get; }
+string? ActiveRoundsSuccessMessage { get; }
+Task LoadActiveRoundsAsync();
+```
+
+### Step 5: Update State Service Implementation
+
+In `DashboardStateService.cs`, rename the corresponding members:
+
+```csharp
+public List<UpcomingRoundDto> ActiveRounds { get; private set; } = new();
+public bool IsActiveRoundsLoading { get; private set; }
+public string? ActiveRoundsErrorMessage { get; private set; }
+public string? ActiveRoundsSuccessMessage { get; private set; }
+
+public async Task LoadActiveRoundsAsync()
+{
+    IsActiveRoundsLoading = true;
+    ActiveRoundsErrorMessage = null;
+    NotifyStateChanged();
+
+    try
+    {
+        ActiveRounds = (await _leagueService.GetUpcomingRoundsAsync()).ToList();
+    }
+    catch (Exception ex)
+    {
+        ActiveRoundsErrorMessage = "Failed to load active rounds.";
+        _logger.LogError(ex, "Error loading active rounds");
+    }
+    finally
+    {
+        IsActiveRoundsLoading = false;
+        NotifyStateChanged();
+    }
+}
+```
+
+### Step 6: Update Component to Use Renamed Service Members
+
+In `ActiveRoundsTile.razor`, update references to use the new property/method names:
+
+**Current:**
+```razor
+@if (DashboardState.IsUpcomingRoundsLoading)
+{
+    // loading spinner
+}
+else if (DashboardState.UpcomingRounds.Any())
+{
+    // carousel
+}
+```
+
+**New:**
+```razor
+@if (DashboardState.IsActiveRoundsLoading)
+{
+    // loading spinner
+}
+else if (DashboardState.ActiveRounds.Any())
+{
+    // carousel
+}
+```
+
+Also update `OnInitializedAsync`:
+
+**Current:**
+```csharp
+await DashboardState.LoadUpcomingRoundsAsync();
+```
+
+**New:**
+```csharp
+await DashboardState.LoadActiveRoundsAsync();
+```
 
 ## Code Patterns to Follow
 
@@ -81,22 +179,18 @@ Existing section heading pattern from other tiles:
 
 ## Verification
 
+- [ ] `UpcomingRoundsTile.razor` has been renamed to `ActiveRoundsTile.razor`
 - [ ] Tile displays "Active Rounds" as its title
-- [ ] Empty state message says "No active rounds" (if applicable)
-- [ ] No other references to "Upcoming Rounds" remain in user-visible text
-- [ ] Component builds without errors
-
-## Edge Cases to Consider
-
-- Screen readers / accessibility - the new title should be equally clear
-- Mobile display - "Active Rounds" fits within the same space as "Upcoming Rounds"
+- [ ] Empty state message says "No active rounds available"
+- [ ] Dashboard.razor uses `<ActiveRoundsTile />`
+- [ ] State service interface has renamed members
+- [ ] State service implementation has renamed members
+- [ ] Component uses the new state service member names
+- [ ] Solution builds without errors
+- [ ] No remaining references to "UpcomingRounds" in the renamed areas
 
 ## Notes
 
-- This is a simple text change but important for user understanding
-- "Active Rounds" better describes the tile's purpose: rounds you're currently participating in
-- The file rename is optional and can be deferred to avoid a large refactor
-- If file rename is done later, remember to update:
-  - Component references in parent components
-  - State service method names (e.g., `LoadUpcomingRoundsAsync` → `LoadActiveRoundsAsync`)
-  - CSS classes if any are named after the component
+- The DTOs (`UpcomingRoundDto`, `UpcomingMatchDto`) and query files are not renamed to limit the scope of changes
+- The API endpoint and service method (`GetUpcomingRoundsAsync`) remain unchanged - only the state service layer is renamed
+- This keeps the refactor focused on the UI layer while maintaining backwards compatibility
