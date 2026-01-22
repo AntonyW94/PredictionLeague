@@ -112,6 +112,6 @@
     }
 
     .leaderboard-scroll-container {
-        max-height: 25rem;
+        max-height: none;
     }
 }
