@@ -283,212 +283,75 @@ public class DashboardStateService
 
 ## CSS Architecture
 
-### File Structure
+**Full CSS reference:** [`/docs/css-reference.md`](docs/css-reference.md) - Design tokens, utility classes, component patterns
 
-CSS follows a layered architecture with clear separation of concerns:
+### File Structure
 
 ```
 wwwroot/css/
 ├── variables.css          → Design tokens (colours, spacing, radii)
 ├── app.css                → Global styles and imports
-├── utilities/             → Reusable utility classes (complete sets)
-│   ├── colours.css        → Text and background colour utilities
-│   ├── effects.css        → Shadows, glass-panel, table-striped
-│   ├── sizing.css         → Width, height, spacing utilities
-│   ├── typography.css     → Font sizes, text alignment, whitespace
-│   ├── borders.css        → Border utilities
-│   └── flex.css           → Flexbox utilities
+├── utilities/             → Reusable utility classes
 ├── components/            → Reusable component styles
-│   ├── badges.css         → Badge and badge-group styles
-│   ├── buttons.css        → Button variants
-│   ├── carousel.css       → Carousel/slider styles
-│   ├── forms.css          → Form controls and validation
-│   ├── rank-display.css   → Shield icons and rank displays
-│   └── cards/             → Card component styles
-│       ├── card-base.css  → Base card styles
-│       ├── action-cards.css
-│       ├── league-cards.css
-│       ├── match-cards.css
-│       ├── member-cards.css
-│       └── team-cards.css
 ├── layout/                → Layout and structural styles
-│   ├── navigation.css
-│   └── loading.css
-└── pages/                 → Page-specific styles
-    ├── home.css
-    ├── leaderboard.css
-    ├── predictions.css
-    ├── prizes.css
-    └── results-grid.css
+└── pages/                 → Page-specific styles (last resort)
 ```
 
-### Color Naming Convention
+### Colour Naming Convention
 
-**Use numeric scale (Tailwind-style) for colors with multiple shades:**
+**Use numeric scale (Tailwind-style) for colours with multiple shades:**
 
-| Scale | Meaning | Usage |
-|-------|---------|-------|
-| 100-200 | Lightest | Accents, highlights |
-| 300-400 | Light | Secondary elements |
-| 500 | Base | Default/primary usage |
+| Scale | Meaning | Example |
+|-------|---------|---------|
+| 100-300 | Lightest | Accents, highlights |
+| 500 | Base | Default usage |
 | 600-700 | Dark | Text, emphasis |
-| 800-900 | Darker | Backgrounds |
-| 1000 | Darkest | Deep backgrounds |
+| 800-1000 | Darkest | Backgrounds |
 
-**Higher number = darker color**
-
-### Design Tokens (variables.css)
-
-```css
-/* Breakpoints (mobile-first) */
---breakpoint-phone-small: 480px;  /* Extra small phones */
---breakpoint-phone: 576px;        /* Standard phones */
---breakpoint-tablet: 768px;       /* Tablets */
---breakpoint-desktop: 992px;      /* Desktop */
-
-/* Purples - Primary brand color */
---purple-1000: #2C0A3D;  /* Darkest */
---purple-900: #31144A;
---purple-800: #3D195B;   /* Common background */
---purple-700: #432468;
---purple-600: #4A2E6C;
---purple-300: #75559D;
---purple-200: #963CFF;   /* Accent/highlight */
-
-/* Blues */
---blue-500: #04F5FF;     /* Bright cyan - base */
---blue-700: #03c2b4;     /* Darker teal */
-
-/* Greens */
---green-300: #84fab0;    /* Light/pastel */
---green-600: #00B960;    /* Base green */
-
-/* Greys */
---grey-100 to --grey-500  /* Light to dark */
-
-/* Single-value colors (no scale needed) */
---red: #E90052;
---yellow: #EBFF01;
---orange: #CC8200;
---gold, --silver, --bronze  /* Medals */
-
-/* Transparent colours (for shadows, overlays, and effects) */
---black-alpha-15, --black-alpha-20, --black-alpha-35, --black-alpha-50, --black-alpha-60
---white-alpha-02, --white-alpha-05, --white-alpha-08, --white-alpha-10, --white-alpha-15, --white-alpha-30
---purple-800-alpha-25, --purple-900-alpha-80
---yellow-alpha-70, --yellow-alpha-00  /* For animations */
-```
+**Higher number = darker colour.** Example: `--purple-800` (background) is darker than `--purple-300` (accent).
 
 ### Mobile-First CSS Approach
 
-All CSS uses mobile-first media queries. Base styles target extra-small phones (<480px), then progressively enhance for larger screens.
+All CSS uses mobile-first media queries with `min-width`. Base styles target mobile, then enhance for larger screens.
 
-**Breakpoint Comment Format:**
 ```css
-/* Base: Extra-small mobile (< --breakpoint-phone-small) */
-.element {
-    /* Mobile styles here */
-}
+.element { /* Base mobile styles */ }
 
-/* Small phone and up (--breakpoint-phone-small: 480px) */
-@media (min-width: 480px) { }
-
-/* Phone and up (--breakpoint-phone: 576px) */
-@media (min-width: 576px) { }
-
-/* Tablet and up (--breakpoint-tablet: 768px) */
-@media (min-width: 768px) { }
-
-/* Desktop and up (--breakpoint-desktop: 992px) */
-@media (min-width: 992px) { }
+@media (min-width: 480px) { /* Small phone+ */ }
+@media (min-width: 576px) { /* Phone+ */ }
+@media (min-width: 768px) { /* Tablet+ */ }
+@media (min-width: 992px) { /* Desktop+ */ }
 ```
 
-**Key Principle:** Always use `min-width` queries, never `max-width`. Start with mobile styles in the base, then add enhancements for larger screens.
-
-### Utility Classes Philosophy
-
-**Complete utility sets are preferred** - Include all logical values even if not currently used, to provide a predictable and complete framework. This applies especially to:
-- Width utilities (w-10 through w-100)
-- Colour utilities (all design token colours)
-- Common spacing values
-
-### Utility Classes
-
-**Text Colours:**
-- `.text-green-600` - Success, positive values
-- `.text-red` - Errors, negative values
-- `.text-blue-500` - Highlights, links
-- `.text-grey-300`, `.text-grey-500` - Muted text
-- `.text-purple-1000` - Dark text on light backgrounds
-
-**Background Colours:**
-- `.bg-purple-600` through `.bg-purple-1000`
-- `.bg-green-600`, `.bg-green-300`
-- `.bg-blue-500`, `.bg-blue-700`
-- `.bg-red`
-
-**Effects:**
-- `.glass-panel` - Radial gradient with subtle border and inner glow
-- `.table-striped-purple` - Purple row striping for tables
-- `.shadow` - Standard drop shadow
-
-### Component Patterns
-
-**Glass Panel Effect:**
-```html
-<div class="glass-panel hero-rank-container">
-    <!-- Content with frosted glass appearance -->
-</div>
-```
-
-**Table Striping:**
-```html
-<table class="leaderboard-table table-striped-purple">
-    <!-- Rows automatically striped -->
-</table>
-```
-
-**Button Naming:**
-- `.green-button` - Primary actions
-- `.red-button` - Destructive actions
-- `.purple-accent-button` - Secondary actions
-- `.blue-light-button` - Tertiary actions
+**Never use `max-width` queries.**
 
 ### CSS Rules to Follow
 
-1. **Always use design tokens** - Never hardcode colours, use `var(--colour-xxx)` (e.g., `var(--white)`, `var(--purple-800)`)
+1. **Always use design tokens** - Never hardcode colours, use `var(--colour-xxx)`
 2. **Use numeric colour scale** - `.text-green-600` not `.text-green`
-3. **Prefer utilities over custom CSS** - Use existing utility classes when possible
+3. **Prefer utilities over custom CSS** - Check utilities folder first
 4. **Keep component CSS focused** - One component per file in `/components/`
 5. **Page styles are last resort** - Only for truly page-specific styles
-6. **Maintain complete utility sets** - Don't remove unused utilities from sizing/colours
-7. **Use mobile-first media queries** - Always use `min-width`, never `max-width`
-8. **Include breakpoint comments** - Use the standard comment format for media query sections
+6. **Maintain complete utility sets** - Don't remove unused utilities
+7. **Use mobile-first media queries** - Always `min-width`, never `max-width`
 
 ### CSS Things to Avoid
 
 1. **Never use old colour class names:**
-   - ❌ `.text-green`, `.bg-green`, `.text-cyan`, `.bg-blue-light`
-   - ✅ `.text-green-600`, `.bg-green-600`, `.text-blue-500`, `.bg-blue-700`
+   - ❌ `.text-green`, `.bg-green`, `.text-cyan`
+   - ✅ `.text-green-600`, `.bg-green-600`, `.text-blue-500`
 
 2. **Never use deprecated aliases:**
-   - ❌ `.text-success`, `.text-danger` (use `.text-green-600`, `.text-red`)
-   - ❌ `.centre` (use `.text-center`)
-   - ❌ `.email-address` (use `.word-break-all`)
+   - ❌ `.text-success`, `.text-danger`, `.centre`
+   - ✅ `.text-green-600`, `.text-red`, `.text-center`
 
-3. **Never duplicate existing utilities** - Check utilities folder first
+3. **Never hardcode colours:**
+   - ❌ `color: white;` or `rgba(0, 0, 0, 0.35)`
+   - ✅ `var(--white)` or `var(--black-alpha-35)`
 
-4. **Never hardcode colours** - Always use CSS variables:
-   - ❌ `color: white;` or `background-color: white;`
-   - ✅ `color: var(--white);` or `background-color: var(--white);`
-   - ❌ `rgba(0, 0, 0, 0.35)` or `rgba(255, 255, 255, 0.1)`
-   - ✅ `var(--black-alpha-35)` or `var(--white-alpha-10)`
+4. **Never put component styles in page files** - Create proper component CSS
 
-5. **Never put component styles in page files** - Create proper component CSS
-
-6. **Never use max-width media queries** - Use mobile-first `min-width` queries:
-   - ❌ `@media (max-width: 768px) { }`
-   - ✅ `@media (min-width: 768px) { }`
+5. **Never use max-width media queries**
 
 ## Database
 
