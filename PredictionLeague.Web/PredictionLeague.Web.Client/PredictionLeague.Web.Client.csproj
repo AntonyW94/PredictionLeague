@@ -47,4 +47,14 @@
     Development (dotnet run): Uses separate CSS files with @imports
     Production (dotnet publish): See Web.csproj for bundling target
     -->
+
+    <!--
+    Exclude app.min.css from static web assets in Debug mode.
+    BuildBundlerMinifier registers outputs as static web assets, but in Debug mode
+    the bundler doesn't run (BundleOnBuild=false), so the file doesn't exist.
+    This prevents the "No file exists for the asset" error on fresh clones.
+    -->
+    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+        <Content Remove="wwwroot\css\app.min.css" />
+    </ItemGroup>
 </Project>
