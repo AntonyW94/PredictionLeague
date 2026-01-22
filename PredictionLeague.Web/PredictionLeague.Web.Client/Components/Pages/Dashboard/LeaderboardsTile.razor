@@ -73,6 +73,11 @@
                                             </table>
                                         </div>
                                     </div>
+                                    <div class="footer">
+                                        <button class="btn purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(leaderboard.LeagueId)">
+                                            View Dashboard
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -150,6 +155,11 @@
     private void UpdateTrackStyle()
     {
         _trackStyle = $"transform: translateX(-{_currentIndex * 100}%);";
+    }
+
+    private void ViewLeagueDashboard(int leagueId)
+    {
+        NavigationManager.NavigateTo($"/leagues/{leagueId}/dashboard");
     }
 
     public void Dispose()
