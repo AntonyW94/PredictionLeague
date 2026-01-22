@@ -1,7 +1,9 @@
 @inject NavigationManager NavigationManager
 @inject IDashboardStateService DashboardState
+@inject IBrowserService BrowserService
 
 @using PredictionLeague.Domain.Common.Enumerations
+@using PredictionLeague.Web.Client.Services.Browser
 @using PredictionLeague.Web.Client.Services.Dashboard
 
 @implements IAsyncDisposable
@@ -83,230 +85,269 @@
     }
     else
     {
-        <div class="card-grid">
-            @foreach (var league in DashboardState.MyLeagues)
-            {
-                <div class="card mb-3">
-                    <div class="header">
-                        <h5 class="fw-bold text-white mb-0">@league.Name</h5>
-                        <small class="text-white-50 fw-bold">@league.SeasonName</small>
-                    </div>
+        <div class="carousel-wrapper carousel--desktop-multi-item">
+            <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
+                @if (_isDesktop && DashboardState.MyLeagues.Count > 2)
+                {
+                    <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentIndex == 0)">
+                        <span class="bi bi-chevron-left"></span>
+                    </button>
+                }
 
-                    <div class="body pt-2 space-between">
-
-                        <div class="glass-panel hero-rank-container">
-                            <div class="text-center w-100">
-                                <div class="text-uppercase text-white fw-bold mb-2 text-sm">Overall Rank</div>
-
-                                <div class="d-flex align-items-center justify-content-center">
-                                    <RankChangeArrow 
-                                        PreviousRank="@league.PreRoundOverallRank" 
-                                        CurrentRank="@league.Rank.GetValueOrDefault()"
-                                        IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundOverallRank.HasValue && league.Rank.HasValue)" />
-                                    
-                                    @if (league.Rank.HasValue && league.MemberCount.HasValue)
-                                    {
-                                        <div class="d-flex align-items-center gap-1">
-                                            <div class="rank-shield-container">
-                                                <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.Rank, league.MemberCount)">
-                                                    <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z"/>
-                                                </svg>
-                                                <span class="rank-shield-text">
-                                                    @league.Rank
-                                                </span>
-                                            </div>
-                                            <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <div class="glass-panel secondary-rank-box">
-                                    <small class="text-uppercase text-white fw-bold d-block mb-1 text-xs">@league.CurrentRound</small>
-                                    @if (league.RoundRank.HasValue)
-                                    {
-                                        <div class="d-flex align-items-center justify-content-center gap-1">
-                                            <RankChangeArrow 
-                                                PreviousRank="@league.StableRoundRank" 
-                                                CurrentRank="@league.RoundRank.GetValueOrDefault()"
-                                                IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.InProgressCount > 0 && league.CompletedCount > 0 && league.StableRoundRank.HasValue)" />
-
-                                            <div class="rank-shield-container small">
-                                                <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.RoundRank, league.MemberCount)">
-                                                    <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" />
-                                                </svg>
-                                                <span class="rank-shield-text">
-                                                    @league.RoundRank
-                                                </span>
-                                            </div>
-                                            <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-white-50">-</span>
-                                    }
-                                </div>
-                            </div>
-
-                            <div class="col-6">
-                                <div class="glass-panel secondary-rank-box">
-                                    <small class="text-uppercase text-white fw-bold d-block mb-1 text-xs">@league.CurrentMonth</small>
-                                    @if (league.MonthRank.HasValue)
-                                    {
-                                        <div class="d-flex align-items-center justify-content-center gap-1">
-                                            <RankChangeArrow 
-                                                PreviousRank="@league.PreRoundMonthRank" 
-                                                CurrentRank="@league.MonthRank.GetValueOrDefault()"
-                                                IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundMonthRank.HasValue)" />
-
-                                            <div class="rank-shield-container small">
-                                                <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.MonthRank, league.MemberCount)">
-                                                    <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z"/>
-                                                </svg>
-                                                <span class="rank-shield-text">
-                                                    @league.MonthRank
-                                                </span>
-                                            </div>
-                                            <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-white-50">-</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        
-                        @if (league.TotalPrizeFund > 0)
+                <div class="carousel-track-wrapper">
+                    <div class="carousel-track" style="@_trackStyle">
+                        @foreach (var league in DashboardState.MyLeagues)
                         {
-                            <div class="row g-2 mb-3">
-                                <div class="col-12">
-                                    <div class="glass-panel financial-row">
-                                        <div class="financial-col">
-                                            <small class="d-block text-uppercase fw-bold text-2xs">Won So Far</small>
-                                            <div class="fw-bold text-green-600 fs-5">
-                                                @((MarkupString)$"&pound;{league.PrizeMoneyWon:0.00}")
-                                            </div>
+                            <div class="carousel-item-wrapper">
+                                <div class="carousel-item-content">
+                                    <div class="card slide">
+                                        <div class="header">
+                                            <h5 class="fw-bold text-white mb-0">@league.Name</h5>
+                                            <small class="text-white-50 fw-bold">@league.SeasonName</small>
                                         </div>
 
-                                        <div class="financial-col">
-                                            <small class="d-block text-uppercase fw-bold text-2xs">Pot Remaining</small>
-                                            <div class="fw-bold text-white fs-5">
-                                                @((MarkupString)$"&pound;{league.PrizeMoneyRemaining:0.00}")
+                                        <div class="body pt-2 space-between">
+                                            <div class="glass-panel hero-rank-container">
+                                                <div class="text-center w-100">
+                                                    <div class="text-uppercase text-white fw-bold mb-2 text-sm">Overall Rank</div>
+
+                                                    <div class="d-flex align-items-center justify-content-center">
+                                                        <RankChangeArrow
+                                                            PreviousRank="@league.PreRoundOverallRank"
+                                                            CurrentRank="@league.Rank.GetValueOrDefault()"
+                                                            IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundOverallRank.HasValue && league.Rank.HasValue)" />
+
+                                                        @if (league.Rank.HasValue && league.MemberCount.HasValue)
+                                                        {
+                                                            <div class="d-flex align-items-center gap-1">
+                                                                <div class="rank-shield-container">
+                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.Rank, league.MemberCount)">
+                                                                        <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z"/>
+                                                                    </svg>
+                                                                    <span class="rank-shield-text">
+                                                                        @league.Rank
+                                                                    </span>
+                                                                </div>
+                                                                <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
                                             </div>
+
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-6">
+                                                    <div class="glass-panel secondary-rank-box">
+                                                        <small class="text-uppercase text-white fw-bold d-block mb-1 text-xs">@league.CurrentRound</small>
+                                                        @if (league.RoundRank.HasValue)
+                                                        {
+                                                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                                                <RankChangeArrow
+                                                                    PreviousRank="@league.StableRoundRank"
+                                                                    CurrentRank="@league.RoundRank.GetValueOrDefault()"
+                                                                    IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.InProgressCount > 0 && league.CompletedCount > 0 && league.StableRoundRank.HasValue)" />
+
+                                                                <div class="rank-shield-container small">
+                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.RoundRank, league.MemberCount)">
+                                                                        <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" />
+                                                                    </svg>
+                                                                    <span class="rank-shield-text">
+                                                                        @league.RoundRank
+                                                                    </span>
+                                                                </div>
+                                                                <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-white-50">-</span>
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-6">
+                                                    <div class="glass-panel secondary-rank-box">
+                                                        <small class="text-uppercase text-white fw-bold d-block mb-1 text-xs">@league.CurrentMonth</small>
+                                                        @if (league.MonthRank.HasValue)
+                                                        {
+                                                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                                                <RankChangeArrow
+                                                                    PreviousRank="@league.PreRoundMonthRank"
+                                                                    CurrentRank="@league.MonthRank.GetValueOrDefault()"
+                                                                    IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundMonthRank.HasValue)" />
+
+                                                                <div class="rank-shield-container small">
+                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.MonthRank, league.MemberCount)">
+                                                                        <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z"/>
+                                                                    </svg>
+                                                                    <span class="rank-shield-text">
+                                                                        @league.MonthRank
+                                                                    </span>
+                                                                </div>
+                                                                <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
+                                                            </div>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-white-50">-</span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            @if (league.TotalPrizeFund > 0)
+                                            {
+                                                <div class="row g-2 mb-3">
+                                                    <div class="col-12">
+                                                        <div class="glass-panel financial-row">
+                                                            <div class="financial-col">
+                                                                <small class="d-block text-uppercase fw-bold text-2xs">Won So Far</small>
+                                                                <div class="fw-bold text-green-600 fs-5">
+                                                                    @((MarkupString)$"&pound;{league.PrizeMoneyWon:0.00}")
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="financial-col">
+                                                                <small class="d-block text-uppercase fw-bold text-2xs">Pot Remaining</small>
+                                                                <div class="fw-bold text-white fs-5">
+                                                                    @((MarkupString)$"&pound;{league.PrizeMoneyRemaining:0.00}")
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+
+                                            <button class="btn purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(league.Id)">
+                                                View Dashboard
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         }
-
-                        <button class="btn purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(league.Id)">
-                            View Dashboard
-                        </button>
                     </div>
                 </div>
 
-                @*   <div class="card">
-                    <div class="card-header">
-                        <h5 class="fw-bold text-white">@league.Name</h5>
-                        <small class="text-white-50">@league.SeasonName</small>
-                    </div>
+                @if (_isDesktop && DashboardState.MyLeagues.Count > 2)
+                {
+                    <button class="carousel-btn" @onclick="ShowNext" disabled="@IsAtEnd()">
+                        <span class="bi bi-chevron-right"></span>
+                    </button>
+                }
+            </div>
 
-                    <div class="action-card-body">
-                        <div class="action-card-row">
-                            @if (league.RoundRank.HasValue && league.MemberCount.HasValue)
-                            {
-                                <div class="badge-group-with-header">
-                                    <div class="pb-1">@league.CurrentRound</div>
-                                    <div class="badge-group @GetStatusClass(league.RoundRank, league.MemberCount)">
-                                        <span class="badge-icon" title="Rank"><i class="bi bi-trophy-fill"></i></span>
-                                        <div class="position-info">
-                                            <span>@league.RoundRank</span>
-                                            <span> / @league.MemberCount</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-
-                            @if (league.MonthRank.HasValue && league.MemberCount.HasValue)
-                            {
-                                <div class="badge-group-with-header">
-                                    <div class="pb-1">@league.CurrentMonth</div>
-                                    <div class="badge-group @GetStatusClass(league.MonthRank, league.MemberCount)">
-                                        <span class="badge-icon" title="Rank"><i class="bi bi-trophy-fill"></i></span>
-                                        <div class="position-info">
-                                            <span>@league.MonthRank</span>
-                                            <span> / @league.MemberCount</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-
-                            @if (league.Rank.HasValue && league.MemberCount.HasValue)
-                            {
-                                <div class="badge-group-with-header">
-                                    <div class="pb-1">Overall</div>
-                                    <div class="badge-group @GetStatusClass(league.Rank, league.MemberCount)">
-                                        <span class="badge-icon" title="Rank"><i class="bi bi-trophy-fill"></i></span>
-                                        <div class="position-info">
-                                            <span>@league.Rank</span>
-                                            <span> / @league.MemberCount</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="action-card-footer">
-                        @*  @if (league.Status == LeagueMemberStatus.Rejected)
-                        {
-                            <button class="btn btn-sm red-button w-100" @onclick="() => HandleRemoveLeagueAsync(league.Id, league.Name)" disabled="@DashboardState.IsMyLeaguesLoading">
-                                Remove
-                            </button>
-                        }
-                        else
-                        { 
-                        <button class="btn btn-sm purple-accent-button w-100"
-                                title="View League Dashboard"
-                                @onclick="() => ViewLeagueDashboard(league.Id)">
-                            View
-                        </button>
-                        @* } 
-                    </div>
-                </div> *@
+            @if (NumberOfDots > 1)
+            {
+                <div class="carousel-dots">
+                    @for (var i = 0; i < NumberOfDots; i++)
+                    {
+                        var dotIndex = i;
+                        <span class="carousel-dot @(i == _currentIndex ? "active" : "")" @onclick="() => GoToSlide(dotIndex)"></span>
+                    }
+                </div>
             }
         </div>
     }
 </div>
 
 @code {
+    private int _currentIndex;
+    private double _touchStartX;
+    private string _trackStyle = "transform: translateX(0%);";
+    private bool _isDesktop;
+
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
+        _isDesktop = await BrowserService.IsDesktop();
 
         if (!DashboardState.MyLeagues.Any())
             await DashboardState.LoadMyLeaguesAsync();
+    }
+
+    private int NumberOfDots
+    {
+        get
+        {
+            if (!DashboardState.MyLeagues.Any())
+                return 0;
+
+            var leaguesPerPage = _isDesktop ? 2 : 1;
+
+            if (DashboardState.MyLeagues.Count <= leaguesPerPage)
+                return 0;
+
+            return DashboardState.MyLeagues.Count - leaguesPerPage + 1;
+        }
+    }
+
+    private void HandleTouchStart(TouchEventArgs e)
+    {
+        _touchStartX = e.Touches[0].ClientX;
+    }
+
+    private static void HandleTouchMove(TouchEventArgs e)
+    {
+    }
+
+    private void HandleTouchEnd(TouchEventArgs e)
+    {
+        var touchEndX = e.ChangedTouches[0].ClientX;
+        var diffX = _touchStartX - touchEndX;
+
+        if (!(Math.Abs(diffX) > 50))
+            return;
+
+        if (diffX > 0)
+            ShowNext();
+        else
+            ShowPrevious();
+    }
+
+    private void GoToSlide(int index)
+    {
+        if (index < 0 || index >= NumberOfDots)
+            return;
+
+        _currentIndex = index;
+        UpdateTrackStyle();
+    }
+
+    private void ShowPrevious()
+    {
+        if (_currentIndex <= 0)
+            return;
+
+        _currentIndex--;
+        UpdateTrackStyle();
+    }
+
+    private void ShowNext()
+    {
+        if (IsAtEnd())
+            return;
+
+        _currentIndex++;
+        UpdateTrackStyle();
+    }
+
+    private void UpdateTrackStyle()
+    {
+        var percentageToMove = _isDesktop ? 50 : 100;
+        _trackStyle = $"transform: translateX(-{_currentIndex * percentageToMove}%);";
+    }
+
+    private bool IsAtEnd()
+    {
+        var leaguesPerPage = _isDesktop ? 2 : 1;
+        return _currentIndex >= DashboardState.MyLeagues.Count - leaguesPerPage;
     }
 
     private void ViewLeagueDashboard(int leagueId)
     {
         NavigationManager.NavigateTo($"/leagues/{leagueId}/dashboard");
     }
-
-    // private async Task HandleRemoveLeagueAsync(int leagueId, string leagueName)
-    // {
-    //     var confirmed = await JsRuntime.InvokeAsync<bool>("blazorInterop.showConfirm",
-    //         new object[] { $"Remove '{leagueName}'?", "This will remove the rejected league from your dashboard.", "Yes, Remove It", "Cancel" });
-
-    //     if (confirmed)
-    //         await DashboardState.RemoveRejectedLeagueAsync(leagueId);
-    // }
 
     private static string GetShieldColorClass(long? rank, int? memberCount)
     {
