@@ -11,6 +11,10 @@
 @import url('utilities/sizing.css');
 @import url('utilities/spacing.css');
 @import url('utilities/flex.css');
+@import url('utilities/display.css');
+@import url('utilities/position.css');
+@import url('utilities/overflow.css');
+@import url('utilities/cursor.css');
 @import url('utilities/animations.css');
 @import url('utilities/effects.css');
 
