@@ -1,0 +1,185 @@
+# Feature: Active Rounds (In-Progress Rounds on Dashboard)
+
+## Status
+
+**Not Started** | In Progress | Complete
+
+## Summary
+
+Enhance the "Upcoming Rounds" tile on the dashboard to also show in-progress rounds, providing users with instant visual feedback on their prediction performance as matches are played. The tile will be renamed to "Active Rounds" and will display colour-coded match backgrounds (green for exact score, yellow for correct result, red for wrong) once matches have started or completed.
+
+## User Story
+
+As a league member, I want to see my in-progress rounds on the dashboard so that I can instantly visualise how my predictions are performing as matches are played, without having to navigate to the league dashboard.
+
+## Design / Mockup
+
+### Current State (Upcoming Rounds)
+
+```
+┌─────────────────────────────────────────┐
+│         Premier League 2024/25          │
+│              Round 23                   │
+│                                         │
+│   [🔴 Deadline: 15 Jan 3:00pm]          │
+│                                         │
+│   ┌──────────┐  ┌──────────┐            │
+│   │ 🏠 2 v 1 🏃 │  │ 🏠 0 v 0 🏃 │            │ ← Dark background
+│   └──────────┘  └──────────┘            │
+│   ┌──────────┐  ┌──────────┐            │
+│   │ 🏠 1 v 2 🏃 │  │ 🏠 3 v 1 🏃 │            │
+│   └──────────┘  └──────────┘            │
+│                                         │
+│   [ ✏️ Edit Predictions ]               │
+└─────────────────────────────────────────┘
+```
+
+### New State (In-Progress Round)
+
+```
+┌─────────────────────────────────────────┐
+│         Premier League 2024/25          │
+│              Round 22                   │
+│                                         │
+│   [🔵 ▶ In Progress]                    │  ← Blue badge, play icon
+│                                         │
+│   ┌──────────┐  ┌──────────┐            │
+│   │ 🏠 2 v 1 🏃 │  │ 🏠 0 v 0 🏃 │            │ ← Green = exact, Yellow = correct
+│   └──────────┘  └──────────┘            │
+│   ┌──────────┐  ┌──────────┐            │
+│   │ 🏠 1 v 2 🏃 │  │ 🏠 3 v 1 🏃 │            │ ← Red = wrong, Dark = not started
+│   └──────────┘  └──────────┘            │
+│                                         │
+│                                         │  ← No button (removed)
+└─────────────────────────────────────────┘
+```
+
+### Match Background Colours
+
+| Prediction Outcome | Background Colour | When Applied |
+|--------------------|-------------------|--------------|
+| Not yet started | `--black-alpha-25` (current) | Match hasn't kicked off |
+| Pending | `--black-alpha-25` (current) | Match in progress, no result yet |
+| Exact Score | Green (`--green-600`) | Actual score matches prediction |
+| Correct Result | Yellow (`--yellow`) | Got winner/draw correct, but not exact score |
+| Incorrect | Red (`--red`) | Got result wrong |
+
+### Badge Styling
+
+| Round Status | Badge Class | Icon | Text |
+|--------------|-------------|------|------|
+| Published (deadline in future) | `badge-group--red` | `bi-alarm` | Deadline date/time |
+| Published (< 24 hours to deadline) | (countdown) | - | Countdown timer |
+| In Progress | `badge-group--blue` | `bi-play-fill` | "In Progress" |
+
+## Acceptance Criteria
+
+- [ ] Tile is renamed from "Upcoming Rounds" to "Active Rounds"
+- [ ] In-progress rounds appear in the carousel alongside upcoming rounds
+- [ ] In-progress rounds appear first (before upcoming rounds) in the carousel
+- [ ] In-progress rounds show a blue "In Progress" badge with play icon
+- [ ] The Predict/Edit button is hidden for in-progress rounds
+- [ ] Match backgrounds use standard border-radius (`--bs-border-radius`) instead of `4px`
+- [ ] Matches not yet started show the current dark background
+- [ ] Matches in progress or completed show coloured backgrounds based on prediction outcome:
+  - Green (`--green-600`) for exact score
+  - Yellow (`--yellow`) for correct result
+  - Red (`--red`) for incorrect prediction
+- [ ] Completed rounds (status = Completed) do NOT appear in the tile
+- [ ] Works correctly on mobile and tablet viewports
+
+## Tasks
+
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 1 | [Extend DTOs](./01-extend-dtos.md) | Add round status and actual match scores to DTOs | Not Started |
+| 2 | [Update Query Handler](./02-update-query-handler.md) | Modify SQL to include in-progress rounds and actual scores | Not Started |
+| 3 | [Update RoundCard Component](./03-update-round-card.md) | Add conditional UI for in-progress rounds | Not Started |
+| 4 | [Add CSS Styles](./04-add-css-styles.md) | Add match outcome background colours and update border-radius | Not Started |
+| 5 | [Rename Tile](./05-rename-tile.md) | Rename tile from "Upcoming Rounds" to "Active Rounds" | Not Started |
+
+## Dependencies
+
+- [x] `RoundStatus` enum exists with `InProgress` value
+- [x] `PredictionOutcome` enum exists with correct values
+- [x] Blue badge class (`badge-group--blue`) already exists in `badges.css`
+- [x] Actual match scores stored in `Matches` table (`ActualHomeTeamScore`, `ActualAwayTeamScore`)
+- [x] Colour variables exist in `variables.css`
+
+## Technical Notes
+
+### Calculating Prediction Outcome
+
+The prediction outcome can be calculated in Razor based on:
+- Predicted scores from user predictions
+- Actual scores from match data
+- Match status (not started vs in progress/completed)
+
+```csharp
+private PredictionOutcome GetOutcome(UpcomingMatchDto match)
+{
+    // If no actual score yet, it's pending
+    if (match.ActualHomeScore == null || match.ActualAwayScore == null)
+        return PredictionOutcome.Pending;
+
+    // If user didn't predict, it's incorrect
+    if (match.PredictedHomeScore == null || match.PredictedAwayScore == null)
+        return PredictionOutcome.Incorrect;
+
+    // Exact score match
+    if (match.PredictedHomeScore == match.ActualHomeScore &&
+        match.PredictedAwayScore == match.ActualAwayScore)
+        return PredictionOutcome.ExactScore;
+
+    // Correct result (same outcome: home win, away win, or draw)
+    var predictedOutcome = GetMatchOutcome(match.PredictedHomeScore.Value, match.PredictedAwayScore.Value);
+    var actualOutcome = GetMatchOutcome(match.ActualHomeScore.Value, match.ActualAwayScore.Value);
+
+    if (predictedOutcome == actualOutcome)
+        return PredictionOutcome.CorrectResult;
+
+    return PredictionOutcome.Incorrect;
+}
+```
+
+### Query Changes
+
+The existing query filters by:
+```sql
+WHERE r.[Status] = @PublishedStatus AND r.[DeadlineUtc] > GETUTCDATE()
+```
+
+This needs to change to:
+```sql
+WHERE (
+    (r.[Status] = @PublishedStatus AND r.[DeadlineUtc] > GETUTCDATE())
+    OR r.[Status] = @InProgressStatus
+)
+```
+
+### Ordering
+
+Current ordering is by `DeadlineUtc ASC`. In-progress rounds should come first:
+```sql
+ORDER BY
+    CASE WHEN r.[Status] = @InProgressStatus THEN 0 ELSE 1 END,
+    r.[DeadlineUtc] ASC
+```
+
+Since in-progress rounds have passed their deadline, this will naturally order them before upcoming rounds.
+
+### Existing Colour Scheme Reference
+
+From `PredictionStatusBadge.razor`:
+- Incorrect: `badge-group--red`
+- Correct Result: `badge-group--yellow`
+- Exact Score: `badge-group--green`
+- Pending: `badge-group--blue`
+
+## Open Questions
+
+- [x] Should rounds become visible immediately after deadline passes, or only when first match kicks off? → **Immediately after deadline passes**
+- [x] Should in-progress matches show live scores alongside predictions? → **No, just use background colour as indicator**
+- [x] What to show in footer area for in-progress rounds? → **Nothing (keep it clean)**
+- [x] Should tile be renamed? → **Yes, rename to "Active Rounds"**
+- [x] Ordering of in-progress vs upcoming? → **In-progress first, then upcoming by deadline**
