@@ -10,7 +10,7 @@
             <thead>
                 <tr>
                     <th class="match-info">Match</th>
-                    <th class="actual-score-header">Actual Score</th> @foreach (var player in Results.OrderBy(p => p.PlayerName))
+                    <th>Actual Score</th> @foreach (var player in Results.OrderBy(p => p.PlayerName))
                     {
                         <th class="@(IsWinner(player) ? "winner-column" : "")">@player.PlayerName</th>
                     }

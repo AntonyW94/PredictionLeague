@@ -20,7 +20,7 @@
         @if (_model == null)
         {
             <div class="d-flex justify-content-center align-items-center h-100">
-                <div class="spinner-border text-light" role="status">
+                <div class="spinner-border text-white" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
@@ -131,8 +131,8 @@
                             </div>
 
                             <!-- Mobile Card View -->
-                            <div class="d-md-none match-card">
-                                <div class="d-flex justify-content-between align-items-center match-card-header">
+                            <div class="d-md-none">
+                                <div class="d-flex justify-content-between align-items-center">
                                     <span class="fw-bold text-white">Match @(matchIndex + 1)</span>
                                     <button type="button" class="btn btn-sm red-button" @onclick="() => RemoveMatch(matchIndex)"><span class="bi bi-trash"></span></button>
                                 </div>
