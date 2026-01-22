@@ -29,7 +29,7 @@
     align-items: center;
     cursor: pointer;
     user-select: none;
-    margin-bottom: 0.75rem;
+    flex-direction: column;
 }
 
 .section-header-collapsible:hover {
