@@ -96,7 +96,7 @@ As a league member, I want to see my in-progress rounds on the dashboard so that
 | 2 | [Update Query Handler](./02-update-query-handler.md) | Modify SQL to include in-progress rounds and fetch outcome from UserPredictions | Not Started |
 | 3 | [Update RoundCard Component](./03-update-round-card.md) | Add conditional UI for in-progress rounds | Not Started |
 | 4 | [Add CSS Styles](./04-add-css-styles.md) | Add match outcome background colours and update border-radius | Not Started |
-| 5 | [Rename Tile](./05-rename-tile.md) | Rename tile from "Upcoming Rounds" to "Active Rounds" | Not Started |
+| 5 | [Rename to Active Rounds](./05-rename-tile.md) | Rename all layers: DTOs, queries, services, and components | Not Started |
 
 ## Dependencies
 
