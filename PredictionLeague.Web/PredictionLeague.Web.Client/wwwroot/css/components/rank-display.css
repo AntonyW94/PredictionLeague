@@ -39,7 +39,7 @@
     height: 100%;
     z-index: 1;
     filter: url(#shield-shadow);
-    stroke-width: 3px;
+    stroke-width: 0.1875rem;
     stroke-linejoin: round;
     paint-order: stroke fill;
     vector-effect: non-scaling-stroke;
@@ -50,14 +50,14 @@
     z-index: 2;
     font-weight: 800;
     font-size: 1.6rem;
-    margin-top: 3px;
+    margin-top: 0.1875rem;
     color: var(--white);
     text-shadow: 0 1px 2px var(--black-alpha-60);
 }
 
 .rank-shield-container.small .rank-shield-text {
-    font-size: 1.1rem; 
-    margin-top: 3px;
+    font-size: 1.1rem;
+    margin-top: 0.1875rem;
 }
 
 /* Shield Gradients (Referencing the SVG Defs IDs) */
@@ -102,7 +102,7 @@
 /* --- Financial Row Styles (use with .glass-panel) --- */
 .financial-row {
     display: flex;
-    border-radius: 8px; /* Override glass-panel's 12px */
+    border-radius: 0.5rem; /* Override glass-panel's 12px */
     overflow: hidden;
     margin-bottom: 0.5rem;
 }
@@ -121,8 +121,8 @@
         content: "";
         position: absolute;
         right: 0;
-        width: 2px;
+        width: 0.125rem;
         background-color: var(--white-alpha-10);
-        top: 15%; 
+        top: 15%;
         bottom: 15%;
     }

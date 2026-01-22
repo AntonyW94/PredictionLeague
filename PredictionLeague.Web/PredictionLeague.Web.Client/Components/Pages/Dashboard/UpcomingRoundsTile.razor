@@ -12,7 +12,11 @@
 
     @if (DashboardState.IsUpcomingRoundsLoading)
     {
-        <p class="text-center text-white"><em>Loading rounds...</em></p>
+        <div class="d-flex justify-content-center align-items-center flex-grow-1">
+            <div class="spinner-border text-white" role="status">
+                <span class="visually-hidden">Loading rounds...</span>
+            </div>
+        </div>
     }
     else if (!DashboardState.UpcomingRounds.Any())
     {
@@ -22,9 +26,9 @@
     }
     else
     {
-        <div class="carousel-wrapper carousel--desktop-multi-item">
+        <div class="carousel-wrapper carousel--multi-item">
             <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
-                @if (_isDesktop && DashboardState.UpcomingRounds.Count > 2)
+                @if (_showTwoItems && DashboardState.UpcomingRounds.Count > 2)
                 {
                     <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentIndex == 0)">
                         <span class="bi bi-chevron-left"></span>
@@ -44,7 +48,7 @@
                     </div>
                 </div>
 
-                @if (_isDesktop && DashboardState.UpcomingRounds.Count > 2)
+                @if (_showTwoItems && DashboardState.UpcomingRounds.Count > 2)
                 {
                     <button class="carousel-btn" @onclick="ShowNext" disabled="@IsAtEnd()">
                         <span class="bi bi-chevron-right"></span>
@@ -70,12 +74,12 @@
     private int _currentIndex;
     private double _touchStartX;
     private string _trackStyle = "transform: translateX(0%);";
-    private bool _isDesktop;
+    private bool _showTwoItems;
 
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
-        _isDesktop = await BrowserService.IsDesktop();
+        _showTwoItems = await BrowserService.IsTabletOrAbove();
 
         if (!DashboardState.UpcomingRounds.Any())
             await DashboardState.LoadUpcomingRoundsAsync();
@@ -88,9 +92,9 @@
             if (!DashboardState.UpcomingRounds.Any())
                 return 0;
 
-            var roundsPerPage = _isDesktop ? 2 : 1;
+            var roundsPerPage = _showTwoItems ? 2 : 1;
 
-            if (DashboardState.UpcomingRounds.Count <= roundsPerPage) 
+            if (DashboardState.UpcomingRounds.Count <= roundsPerPage)
                 return 0;
 
             return DashboardState.UpcomingRounds.Count - roundsPerPage + 1;
@@ -150,13 +154,13 @@
 
     private void UpdateTrackStyle()
     {
-        var percentageToMove = _isDesktop ? 50 : 100;
+        var percentageToMove = _showTwoItems ? 50 : 100;
         _trackStyle = $"transform: translateX(-{_currentIndex * percentageToMove}%);";
     }
 
     private bool IsAtEnd()
     {
-        var roundsPerPage = _isDesktop ? 2 : 1;
+        var roundsPerPage = _showTwoItems ? 2 : 1;
         return _currentIndex >= DashboardState.UpcomingRounds.Count - roundsPerPage;
     }
 }

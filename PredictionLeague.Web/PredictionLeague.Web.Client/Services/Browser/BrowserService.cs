@@ -16,4 +16,10 @@ public class BrowserService : IBrowserService
         var width = await _jsRuntime.InvokeAsync<int>("blazorInterop.getWindowWidth");
         return width >= 992;
     }
+
+    public async Task<bool> IsTabletOrAbove()
+    {
+        var width = await _jsRuntime.InvokeAsync<int>("blazorInterop.getWindowWidth");
+        return width >= 768;
+    }
 }

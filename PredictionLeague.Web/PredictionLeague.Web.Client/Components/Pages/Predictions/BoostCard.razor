@@ -15,7 +15,7 @@
     {
         if (BoostCode == "None")
         {
-            <div class="badge-group badge-group--green boost-remaining-badge">
+            <div class="badge-group badge-group--green">
                 <span class="badge-icon">
                     <span class="fw-bold">∞</span>
                 </span>
@@ -121,6 +121,6 @@
 
     private string GetBoostRemainingCss(int remaining)
     {
-        return remaining <= 0 ? "badge-group badge-group--red boost-remaining-badge" : "badge-group badge-group--green boost-remaining-badge";
+        return remaining <= 0 ? "badge-group badge-group--red" : "badge-group badge-group--green";
     }
 }

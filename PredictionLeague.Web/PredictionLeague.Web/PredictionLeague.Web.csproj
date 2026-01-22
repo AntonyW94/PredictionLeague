@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
@@ -23,15 +23,77 @@
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.7.1" />
     </ItemGroup>
 
-    <Target Name="AddCssCacheBusting" AfterTargets="Publish">
+    <!--
+    CSS Bundling and Cache Busting for Production
+
+    Development (dotnet run): Uses separate CSS files with @imports for easy debugging
+    Production (dotnet publish): Bundles all CSS into one minified file with cache busting
+
+    The Web.Client project creates app.min.css via BuildBundlerMinifier during Release builds.
+    This target then:
+    1. Replaces app.css with the bundled/minified version
+    2. Prepends Google Fonts import
+    3. Deletes individual CSS files
+    4. Adds cache busting version to index.html
+    -->
+    <Target Name="BundleCssAndAddCacheBusting" AfterTargets="Publish">
         <PropertyGroup>
             <CssVersion>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</CssVersion>
             <PublishWwwRoot>$(PublishDir)wwwroot\</PublishWwwRoot>
+            <PublishCssDir>$(PublishWwwRoot)css\</PublishCssDir>
+            <BundledCss>$(PublishCssDir)app.min.css</BundledCss>
+            <TargetCss>$(PublishCssDir)app.css</TargetCss>
+            <IndexHtmlPath>$(PublishWwwRoot)index.html</IndexHtmlPath>
+            <GoogleFontsImport>@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;display=swap');</GoogleFontsImport>
         </PropertyGroup>
 
+        <Message Importance="high" Text="Processing CSS bundle..." />
+
+        <!-- Check if bundled CSS exists (Release build creates it) -->
+        <PropertyGroup>
+            <BundleExists>false</BundleExists>
+            <BundleExists Condition="Exists('$(BundledCss)')">true</BundleExists>
+        </PropertyGroup>
+
+        <!-- If bundle exists: Replace app.css with bundled version -->
+        <ReadLinesFromFile File="$(BundledCss)" Condition="$(BundleExists)">
+            <Output TaskParameter="Lines" ItemName="BundledCssLines"/>
+        </ReadLinesFromFile>
+
+        <WriteLinesToFile
+            File="$(TargetCss)"
+            Lines="$(GoogleFontsImport);@(BundledCssLines)"
+            Overwrite="true"
+            Condition="$(BundleExists)" />
+
+        <Delete Files="$(BundledCss)" Condition="$(BundleExists)" />
+
+        <!-- Delete individual CSS files that are now bundled -->
+        <ItemGroup Condition="$(BundleExists)">
+            <CssFilesToDelete Include="$(PublishCssDir)**\*.css" Exclude="$(TargetCss)" />
+        </ItemGroup>
+        <Delete Files="@(CssFilesToDelete)" Condition="$(BundleExists)" />
+
+        <!-- Remove empty CSS directories -->
+        <RemoveDir Directories="$(PublishCssDir)utilities" Condition="$(BundleExists) And Exists('$(PublishCssDir)utilities')" />
+        <RemoveDir Directories="$(PublishCssDir)layout" Condition="$(BundleExists) And Exists('$(PublishCssDir)layout')" />
+        <RemoveDir Directories="$(PublishCssDir)components\cards" Condition="$(BundleExists) And Exists('$(PublishCssDir)components\cards')" />
+        <RemoveDir Directories="$(PublishCssDir)components" Condition="$(BundleExists) And Exists('$(PublishCssDir)components')" />
+        <RemoveDir Directories="$(PublishCssDir)pages" Condition="$(BundleExists) And Exists('$(PublishCssDir)pages')" />
+
+        <Message Importance="high" Text="CSS bundled and minified successfully!" Condition="$(BundleExists)" />
+
+        <!-- If no bundle (Debug build): Just add cache busting to @imports -->
+        <Exec
+            Command="powershell -NoProfile -Command &quot;(Get-Content '$(TargetCss)') -replace '@import url\(\x27((?!https?://)[^)]+)\x27\)', '@import url(''$$1?v=$(CssVersion)'')' | Set-Content '$(TargetCss)'&quot;"
+            Condition="!$(BundleExists)" />
+
+        <Message Importance="high" Text="CSS imports versioned (Debug mode)." Condition="!$(BundleExists)" />
+
+        <!-- Add cache busting version to index.html -->
         <Message Importance="high" Text="Adding CSS cache busting version: $(CssVersion)" />
-        <Exec Command="powershell -NoProfile -Command &quot;(Get-Content '$(PublishWwwRoot)index.html') -replace 'href=\&quot;css/app\.css\&quot;', 'href=\&quot;css/app.css?v=$(CssVersion)\&quot;' | Set-Content '$(PublishWwwRoot)index.html'&quot;" />
-        <Exec Command="powershell -NoProfile -Command &quot;(Get-Content '$(PublishWwwRoot)css/app.css') -replace '@import url\(\x27((?!https?://)[^)]+)\x27\)', '@import url(''$1?v=$(CssVersion)'')' | Set-Content '$(PublishWwwRoot)css/app.css'&quot;" />
-        <Message Importance="high" Text="CSS cache busting applied successfully!" />
+        <Exec Command="powershell -NoProfile -Command &quot;(Get-Content '$(IndexHtmlPath)') -replace 'href=\&quot;css/app\.css\&quot;', 'href=\&quot;css/app.css?v=$(CssVersion)\&quot;' | Set-Content '$(IndexHtmlPath)'&quot;" />
+
+        <Message Importance="high" Text="CSS processing complete. Cache version: $(CssVersion)" />
     </Target>
 </Project>

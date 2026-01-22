@@ -4,7 +4,7 @@
     border-collapse: collapse;
     width: 100%;
     color: var(--white);
-    font-size: 0.9em;
+    font-size: 0.9rem;
     table-layout: fixed;
 }
 
@@ -70,17 +70,48 @@
     min-width: 0;
 }
 
+/* Dashboard leaderboard - scrollable container */
+.leaderboard-scroll-container {
+    max-height: 20rem;
+    overflow-y: auto;
+    border-radius: var(--bs-border-radius);
+    width: 100%;
+}
+
+/* Custom scrollbar styling for webkit browsers */
+.leaderboard-scroll-container::-webkit-scrollbar {
+    width: 0.5rem;
+}
+
+.leaderboard-scroll-container::-webkit-scrollbar-track {
+    background: var(--purple-900);
+    border-radius: 0.25rem;
+}
+
+.leaderboard-scroll-container::-webkit-scrollbar-thumb {
+    background: var(--purple-300);
+    border-radius: 0.25rem;
+}
+
+.leaderboard-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: var(--purple-200);
+}
+
 /* Mobile/tablet padding for leaderboard body */
 .body.leaderboard-body {
-    padding-top: 1.5em;
-    padding-bottom: 1.5em;
-    padding-left: 3em;
-    padding-right: 3em;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    padding-left: 3rem;
+    padding-right: 3rem;
 }
 
 /* Desktop and up (--breakpoint-desktop: 992px) */
 @media (min-width: 992px) {
     .body.leaderboard-body {
-        padding: 1.5em;
+        padding: 1.5rem;
+    }
+
+    .leaderboard-scroll-container {
+        max-height: 25rem;
     }
 }

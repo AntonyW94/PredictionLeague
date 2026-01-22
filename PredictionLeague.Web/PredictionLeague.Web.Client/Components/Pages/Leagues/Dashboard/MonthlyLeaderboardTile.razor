@@ -7,13 +7,13 @@
 @using PredictionLeague.Web.Client.Services.Leagues
 
 <div class="section w-100 mh-600">
-    <h5 class="text-white fw-bold mb-3">Monthly Leaderboard</h5>
+    <h5 class="text-white fw-bold mb-3 text-center text-md-start">Monthly Leaderboard</h5>
     <ApiError Message="@_errorMessage" />
 
     @if (_isLoadingMonths)
     {
         <div class="d-flex justify-content-center align-items-center h-100">
-            <div class="spinner-border text-light" role="status">
+            <div class="spinner-border text-white" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
         </div>
@@ -51,7 +51,7 @@
                                             @if (leaderboard.IsLoading)
                                             {
                                                 <div class="d-flex justify-content-center align-items-center h-100">
-                                                    <div class="spinner-border text-light" role="status">
+                                                    <div class="spinner-border text-white" role="status">
                                                         <span class="visually-hidden">Loading...</span>
                                                     </div>
                                                 </div>

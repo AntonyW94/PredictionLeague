@@ -1,51 +1,69 @@
-﻿@inherits BaseLeaderboardComponent
+@inherits BaseLeaderboardComponent
 
 @using PredictionLeague.Contracts.Leagues
 
-<div class="section mh-600">
-    <h5 class="text-white fw-bold mb-3">Monthly Prizes</h5>
-    <div class="body no-padding justify-start">
-        @if (IsLoading)
-        {
-            <div class="d-flex justify-content-center align-items-center h-100">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
+<div class="section">
+    <div class="section-header-collapsible" @onclick="ToggleExpanded">
+        <h5 class="text-white fw-bold text-center text-md-start">Monthly Prizes</h5>
+        <i class="bi bi-chevron-down text-white collapse-icon @(_isExpanded ? "rotated" : "")"></i>
+    </div>
+    <div class="section-body-collapsible @(_isExpanded ? "" : "collapsed")">
+        <div class="body no-padding justify-start">
+            @if (IsLoading)
+            {
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="spinner-border text-white" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
                 </div>
-            </div>
-        }
-        else if (Prizes?.Any() == true)
-        {
-            <div class="table-responsive rounded">
-                <table class="leaderboard-table table-striped-purple text-white">
-                    <thead>
-                        <tr>
-                            <th class="w-35 text-start">Month</th>
-                            <th class="w-40 text-start">Player</th>
-                            <th class="w-25 text-end">Amt</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach (var prize in Prizes)
-                        {
-                            <tr class="@(GetUserHighlightClass(prize.UserId))">
-                                <td class="w-35 text-start fw-bold">@prize.Name</td>
-                                <td class="w-40 text-start break-word fw-bold">@(prize.Winner ?? "TBC")</td>
-                                <td class="w-25 text-end fw-bold">@prize.Amount.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
+            }
+            else if (Prizes?.Any() == true)
+            {
+                <div class="table-responsive rounded">
+                    <table class="leaderboard-table table-striped-purple text-white">
+                        <thead>
+                            <tr>
+                                <th class="w-35 text-start">Month</th>
+                                <th class="w-40 text-start">Player</th>
+                                <th class="w-25 text-end">Amt</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-        else
-        {
-            <p class="text-white-50">No Monthly prizes set.</p>
-        }
+                        </thead>
+
+                        <tbody>
+                            @foreach (var prize in Prizes)
+                            {
+                                <tr class="@(GetUserHighlightClass(prize.UserId))">
+                                    <td class="w-35 text-start fw-bold">@prize.Name</td>
+                                    <td class="w-40 text-start break-word fw-bold">@(prize.Winner ?? "TBC")</td>
+                                    <td class="w-25 text-end fw-bold">@prize.Amount.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-white-50">No Monthly prizes set.</p>
+            }
+        </div>
     </div>
 </div>
 
 @code {
     [Parameter] public List<PrizeDto>? Prizes { get; set; }
     [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public bool IsExpandedByDefault { get; set; } = false;
+
+    private bool _isExpanded;
+
+    protected override void OnInitialized()
+    {
+        _isExpanded = IsExpandedByDefault;
+    }
+
+    private void ToggleExpanded()
+    {
+        _isExpanded = !_isExpanded;
+    }
 }

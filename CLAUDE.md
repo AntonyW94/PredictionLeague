@@ -41,6 +41,13 @@ PredictionLeague.Validators       → FluentValidation validators
 
 **Dependency Direction:** Presentation → Application → Domain (never reverse)
 
+### Project-Specific Guidelines
+
+Some projects have additional guidelines in their own CLAUDE.md files:
+
+- [`PredictionLeague.API/CLAUDE.md`](PredictionLeague.API/CLAUDE.md) - API controllers, authentication, error handling
+- [`PredictionLeague.Web.Client/CLAUDE.md`](PredictionLeague.Web.Client/CLAUDE.md) - Blazor state management, CSS architecture
+
 ### Key Patterns
 
 1. **CQRS** - Commands modify state, Queries fetch data via MediatR
@@ -117,6 +124,23 @@ This applies to:
 | Queries | Query suffix | `GetMyLeaguesQuery` |
 | Handlers | Handler suffix | `CreateLeagueCommandHandler` |
 | DTOs | Dto suffix | `LeagueDto` |
+
+### Code Formatting
+
+**Always put statements on a new line after `if`** - Never put `return`, `continue`, `break`, or other statements on the same line as an `if`:
+
+```csharp
+// CORRECT
+if (!userRow)
+    return;
+
+if (condition)
+    continue;
+
+// WRONG
+if (!userRow) return;
+if (condition) continue;
+```
 
 ### DateTime Handling
 
@@ -215,265 +239,13 @@ Four prize strategies:
 - `OverallPrizeStrategy` - Season-end winners
 - `MostExactScoresPrizeStrategy` - Most exact predictions
 
-## API Structure
-
-### Controller Organization
-
-```
-/api/auth           → Authentication (login, register, refresh)
-/api/account        → User profile
-/api/dashboard      → Dashboard data
-/api/leagues        → League CRUD and membership
-/api/predictions    → Prediction submission
-/api/rounds         → Round queries
-/api/admin/rounds   → Admin round management
-/api/admin/seasons  → Admin season management
-/api/tasks          → Background job triggers (API key protected)
-```
-
-### Authentication
-
-- JWT Bearer tokens with 60-minute expiry
-- Refresh tokens stored in HTTP-only cookies (7-day expiry)
-- Google OAuth for social login
-- API key authentication for scheduled tasks (`X-Api-Key` header)
-
-## Client-Side (Blazor)
-
-### State Management
-
-Services hold state and notify components via events:
-
-```csharp
-public class DashboardStateService
-{
-    public event Action? OnStateChange;
-
-    public async Task LoadMyLeaguesAsync()
-    {
-        // Load data...
-        OnStateChange?.Invoke();
-    }
-}
-```
-
-### Authentication Flow
-
-1. `ApiAuthenticationStateProvider` checks localStorage for `accessToken`
-2. Validates JWT expiration
-3. Auto-refreshes expired tokens via `/api/auth/refresh-token`
-4. Sets `Authorization: Bearer {token}` header on HttpClient
-
-## CSS Architecture
-
-### File Structure
-
-CSS follows a layered architecture with clear separation of concerns:
-
-```
-wwwroot/css/
-├── variables.css          → Design tokens (colours, spacing, radii)
-├── app.css                → Global styles and imports
-├── utilities/             → Reusable utility classes (complete sets)
-│   ├── colours.css        → Text and background colour utilities
-│   ├── effects.css        → Shadows, glass-panel, table-striped
-│   ├── sizing.css         → Width, height, spacing utilities
-│   ├── typography.css     → Font sizes, text alignment, whitespace
-│   ├── borders.css        → Border utilities
-│   └── flex.css           → Flexbox utilities
-├── components/            → Reusable component styles
-│   ├── badges.css         → Badge and badge-group styles
-│   ├── buttons.css        → Button variants
-│   ├── carousel.css       → Carousel/slider styles
-│   ├── forms.css          → Form controls and validation
-│   ├── rank-display.css   → Shield icons and rank displays
-│   └── cards/             → Card component styles
-│       ├── card-base.css  → Base card styles
-│       ├── action-cards.css
-│       ├── league-cards.css
-│       ├── match-cards.css
-│       ├── member-cards.css
-│       └── team-cards.css
-├── layout/                → Layout and structural styles
-│   ├── navigation.css
-│   └── loading.css
-└── pages/                 → Page-specific styles
-    ├── home.css
-    ├── leaderboard.css
-    ├── predictions.css
-    ├── prizes.css
-    └── results-grid.css
-```
-
-### Color Naming Convention
-
-**Use numeric scale (Tailwind-style) for colors with multiple shades:**
-
-| Scale | Meaning | Usage |
-|-------|---------|-------|
-| 100-200 | Lightest | Accents, highlights |
-| 300-400 | Light | Secondary elements |
-| 500 | Base | Default/primary usage |
-| 600-700 | Dark | Text, emphasis |
-| 800-900 | Darker | Backgrounds |
-| 1000 | Darkest | Deep backgrounds |
-
-**Higher number = darker color**
-
-### Design Tokens (variables.css)
-
-```css
-/* Breakpoints (mobile-first) */
---breakpoint-phone-small: 480px;  /* Extra small phones */
---breakpoint-phone: 576px;        /* Standard phones */
---breakpoint-tablet: 768px;       /* Tablets */
---breakpoint-desktop: 992px;      /* Desktop */
-
-/* Purples - Primary brand color */
---purple-1000: #2C0A3D;  /* Darkest */
---purple-900: #31144A;
---purple-800: #3D195B;   /* Common background */
---purple-700: #432468;
---purple-600: #4A2E6C;
---purple-300: #75559D;
---purple-200: #963CFF;   /* Accent/highlight */
-
-/* Blues */
---blue-500: #04F5FF;     /* Bright cyan - base */
---blue-700: #03c2b4;     /* Darker teal */
-
-/* Greens */
---green-300: #84fab0;    /* Light/pastel */
---green-600: #00B960;    /* Base green */
-
-/* Greys */
---grey-100 to --grey-500  /* Light to dark */
-
-/* Single-value colors (no scale needed) */
---red: #E90052;
---yellow: #EBFF01;
---orange: #CC8200;
---gold, --silver, --bronze  /* Medals */
-
-/* Transparent colours (for shadows, overlays, and effects) */
---black-alpha-15, --black-alpha-20, --black-alpha-35, --black-alpha-50, --black-alpha-60
---white-alpha-02, --white-alpha-05, --white-alpha-08, --white-alpha-10, --white-alpha-15, --white-alpha-30
---purple-800-alpha-25, --purple-900-alpha-80
---yellow-alpha-70, --yellow-alpha-00  /* For animations */
-```
-
-### Mobile-First CSS Approach
-
-All CSS uses mobile-first media queries. Base styles target extra-small phones (<480px), then progressively enhance for larger screens.
-
-**Breakpoint Comment Format:**
-```css
-/* Base: Extra-small mobile (< --breakpoint-phone-small) */
-.element {
-    /* Mobile styles here */
-}
-
-/* Small phone and up (--breakpoint-phone-small: 480px) */
-@media (min-width: 480px) { }
-
-/* Phone and up (--breakpoint-phone: 576px) */
-@media (min-width: 576px) { }
-
-/* Tablet and up (--breakpoint-tablet: 768px) */
-@media (min-width: 768px) { }
-
-/* Desktop and up (--breakpoint-desktop: 992px) */
-@media (min-width: 992px) { }
-```
-
-**Key Principle:** Always use `min-width` queries, never `max-width`. Start with mobile styles in the base, then add enhancements for larger screens.
-
-### Utility Classes Philosophy
-
-**Complete utility sets are preferred** - Include all logical values even if not currently used, to provide a predictable and complete framework. This applies especially to:
-- Width utilities (w-10 through w-100)
-- Colour utilities (all design token colours)
-- Common spacing values
-
-### Utility Classes
-
-**Text Colours:**
-- `.text-green-600` - Success, positive values
-- `.text-red` - Errors, negative values
-- `.text-blue-500` - Highlights, links
-- `.text-grey-300`, `.text-grey-500` - Muted text
-- `.text-purple-1000` - Dark text on light backgrounds
-
-**Background Colours:**
-- `.bg-purple-600` through `.bg-purple-1000`
-- `.bg-green-600`, `.bg-green-300`
-- `.bg-blue-500`, `.bg-blue-700`
-- `.bg-red`
-
-**Effects:**
-- `.glass-panel` - Radial gradient with subtle border and inner glow
-- `.table-striped-purple` - Purple row striping for tables
-- `.shadow` - Standard drop shadow
-
-### Component Patterns
-
-**Glass Panel Effect:**
-```html
-<div class="glass-panel hero-rank-container">
-    <!-- Content with frosted glass appearance -->
-</div>
-```
-
-**Table Striping:**
-```html
-<table class="leaderboard-table table-striped-purple">
-    <!-- Rows automatically striped -->
-</table>
-```
-
-**Button Naming:**
-- `.green-button` - Primary actions
-- `.red-button` - Destructive actions
-- `.purple-accent-button` - Secondary actions
-- `.blue-light-button` - Tertiary actions
-
-### CSS Rules to Follow
-
-1. **Always use design tokens** - Never hardcode colours, use `var(--colour-xxx)` (e.g., `var(--white)`, `var(--purple-800)`)
-2. **Use numeric colour scale** - `.text-green-600` not `.text-green`
-3. **Prefer utilities over custom CSS** - Use existing utility classes when possible
-4. **Keep component CSS focused** - One component per file in `/components/`
-5. **Page styles are last resort** - Only for truly page-specific styles
-6. **Maintain complete utility sets** - Don't remove unused utilities from sizing/colours
-7. **Use mobile-first media queries** - Always use `min-width`, never `max-width`
-8. **Include breakpoint comments** - Use the standard comment format for media query sections
-
-### CSS Things to Avoid
-
-1. **Never use old colour class names:**
-   - ❌ `.text-green`, `.bg-green`, `.text-cyan`, `.bg-blue-light`
-   - ✅ `.text-green-600`, `.bg-green-600`, `.text-blue-500`, `.bg-blue-700`
-
-2. **Never use deprecated aliases:**
-   - ❌ `.text-success`, `.text-danger` (use `.text-green-600`, `.text-red`)
-   - ❌ `.centre` (use `.text-center`)
-   - ❌ `.email-address` (use `.word-break-all`)
-
-3. **Never duplicate existing utilities** - Check utilities folder first
-
-4. **Never hardcode colours** - Always use CSS variables:
-   - ❌ `color: white;` or `background-color: white;`
-   - ✅ `color: var(--white);` or `background-color: var(--white);`
-   - ❌ `rgba(0, 0, 0, 0.35)` or `rgba(255, 255, 255, 0.1)`
-   - ✅ `var(--black-alpha-35)` or `var(--white-alpha-10)`
-
-5. **Never put component styles in page files** - Create proper component CSS
-
-6. **Never use max-width media queries** - Use mobile-first `min-width` queries:
-   - ❌ `@media (max-width: 768px) { }`
-   - ✅ `@media (min-width: 768px) { }`
-
 ## Database
+
+### Schema Reference
+
+**Full database schema documentation:** [`/docs/database-schema.md`](docs/database-schema.md)
+
+This file contains all tables, columns, types, constraints, relationships, and common query examples.
 
 ### Key Tables
 
@@ -494,20 +266,6 @@ All CSS uses mobile-first media queries. Base styles target extra-small phones (
 - Column names: `[PascalCase]` with brackets
 - All queries use parameterized commands via Dapper
 - Complex aggregations use CTEs
-
-## Error Handling
-
-### ErrorHandlingMiddleware
-
-Maps exceptions to HTTP status codes:
-
-| Exception Type | Status Code |
-|---------------|-------------|
-| `KeyNotFoundException`, `EntityNotFoundException` | 404 |
-| `ArgumentException`, `InvalidOperationException` | 400 |
-| `ValidationException` (FluentValidation) | 400 |
-| `UnauthorizedAccessException` | 401 |
-| Other exceptions | 500 |
 
 ## Configuration
 
@@ -605,25 +363,21 @@ CSS files are automatically versioned during `dotnet publish` to prevent browser
 4. **No unit tests yet** - Planned for future implementation
 5. **Manual FTP deployment** - Hosting limitation, automated CI/CD desired for future
 
+## Feature Planning
+
+**Feature plans location:** [`/docs/features/`](docs/features/)
+
+Detailed implementation plans for new features are stored here. Each feature has:
+- `README.md` - Overview, acceptance criteria, and task list
+- Numbered task files (`01-xxx.md`, `02-xxx.md`) - Step-by-step implementation details
+
+To work on a planned feature, read the feature's README.md first, then work through tasks in order.
+
+**Templates:** [`/docs/features/_template/`](docs/features/_template/) contains templates for creating new feature plans.
+
 ## Future Roadmap
 
-### High Priority
-- **UI Overhaul** - Main pages are styled, admin pages are broken by CSS changes
-- **Code consistency audit** - Ensure all code follows same patterns and standards
-- **Dashboard predictions** - Show predicted scores in upcoming rounds tile
-
-### Medium Priority
-- **Historic leaderboard snapshots** - Show leaderboards as they were at end of each round
-- **Additional boost types** - Need icon generation solution
-- **Trophy cabinet** - Achievement system (e.g., "75% correct in one round")
-- **Detailed stats pages** - Performance graphs and analytics
-
-### Lower Priority (Future)
-- **Tournament seasons** - Different format for FIFA World Cup 2026 (March/April 2026)
-- **Subscription payments** - Yearly sign-up fees
-- **WhatsApp reminders** - Requires business registration (Sole Trader/Limited Company)
-- **Mobile apps** - Google Play Store, iOS App Store, Apple Sign-In
-- **Automated deployments** - CI/CD within Fasthosts limitations
+**Full roadmap:** [`/docs/future-roadmap.md`](docs/future-roadmap.md)
 
 ## Things to Avoid
 

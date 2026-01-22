@@ -42,7 +42,7 @@
     color: var(--white);
     border-radius: var(--bs-border-radius);
     padding: 0.4rem 0.8rem;
-    font-size: 0.85em;
+    font-size: 0.85rem;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -59,11 +59,11 @@
     font-variant: normal;
     text-transform: none;
     line-height: 1;
-    vertical-align: -.125em;
+    vertical-align: -0.125rem;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    margin-right: 0.5em;
-    font-size: 1.1em;
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
 }
 
 .message-box-solid.error {
@@ -129,7 +129,7 @@
 .input-group:focus-within .password-toggle-btn {
     background-color: var(--purple-800);
     color: var(--white);
-    z-index: 2
+    z-index: 2;
 }
 
 /* Tablet and up (--breakpoint-tablet: 768px) */

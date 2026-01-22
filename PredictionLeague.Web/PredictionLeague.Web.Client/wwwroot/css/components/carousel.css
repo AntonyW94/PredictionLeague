@@ -64,9 +64,9 @@
 
 .carousel-dot {
     cursor: pointer;
-    height: 12px;
-    width: 12px;
-    margin: 0 5px;
+    height: 0.75rem;
+    width: 0.75rem;
+    margin: 0 0.3125rem;
     background-color: var(--purple-800);
     border-radius: 50%;
     display: inline-block;
@@ -81,17 +81,14 @@
 /* Tablet and up (--breakpoint-tablet: 768px) */
 @media (min-width: 768px) {
     .carousel-item-wrapper {
-        padding: 0 5px;
+        padding: 0 0.3125rem;
     }
 
     .carousel-item-content {
         padding: 0 0.5rem;
     }
-}
 
-/* Desktop and up (--breakpoint-desktop: 992px) */
-@media (min-width: 992px) {
-    .carousel--desktop-multi-item .carousel-item-wrapper {
+    .carousel--multi-item .carousel-item-wrapper {
         flex: 0 0 50%;
     }
 

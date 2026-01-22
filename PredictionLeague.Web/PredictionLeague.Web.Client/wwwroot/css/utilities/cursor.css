@@ -1,0 +1,146 @@
+/* Cursor Utilities - Complete set */
+
+/* ============================================
+   CURSOR
+   ============================================ */
+
+.cursor-auto {
+    cursor: auto !important;
+}
+
+.cursor-default {
+    cursor: default !important;
+}
+
+.cursor-pointer {
+    cursor: pointer !important;
+}
+
+.cursor-wait {
+    cursor: wait !important;
+}
+
+.cursor-text {
+    cursor: text !important;
+}
+
+.cursor-move {
+    cursor: move !important;
+}
+
+.cursor-help {
+    cursor: help !important;
+}
+
+.cursor-not-allowed {
+    cursor: not-allowed !important;
+}
+
+.cursor-none {
+    cursor: none !important;
+}
+
+.cursor-context-menu {
+    cursor: context-menu !important;
+}
+
+.cursor-progress {
+    cursor: progress !important;
+}
+
+.cursor-cell {
+    cursor: cell !important;
+}
+
+.cursor-crosshair {
+    cursor: crosshair !important;
+}
+
+.cursor-vertical-text {
+    cursor: vertical-text !important;
+}
+
+.cursor-alias {
+    cursor: alias !important;
+}
+
+.cursor-copy {
+    cursor: copy !important;
+}
+
+.cursor-no-drop {
+    cursor: no-drop !important;
+}
+
+.cursor-grab {
+    cursor: grab !important;
+}
+
+.cursor-grabbing {
+    cursor: grabbing !important;
+}
+
+/* Resize cursors */
+.cursor-col-resize {
+    cursor: col-resize !important;
+}
+
+.cursor-row-resize {
+    cursor: row-resize !important;
+}
+
+.cursor-n-resize {
+    cursor: n-resize !important;
+}
+
+.cursor-e-resize {
+    cursor: e-resize !important;
+}
+
+.cursor-s-resize {
+    cursor: s-resize !important;
+}
+
+.cursor-w-resize {
+    cursor: w-resize !important;
+}
+
+.cursor-ne-resize {
+    cursor: ne-resize !important;
+}
+
+.cursor-nw-resize {
+    cursor: nw-resize !important;
+}
+
+.cursor-se-resize {
+    cursor: se-resize !important;
+}
+
+.cursor-sw-resize {
+    cursor: sw-resize !important;
+}
+
+.cursor-ew-resize {
+    cursor: ew-resize !important;
+}
+
+.cursor-ns-resize {
+    cursor: ns-resize !important;
+}
+
+.cursor-nesw-resize {
+    cursor: nesw-resize !important;
+}
+
+.cursor-nwse-resize {
+    cursor: nwse-resize !important;
+}
+
+.cursor-zoom-in {
+    cursor: zoom-in !important;
+}
+
+.cursor-zoom-out {
+    cursor: zoom-out !important;
+}

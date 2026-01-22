@@ -44,14 +44,17 @@
                             }
                         </div>
                         
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <PendingRequestsTile />
+                        @if (DashboardState.PendingRequests.Any() || DashboardState.IsPendingRequestsLoading)
+                        {
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <PendingRequestsTile />
+                                </div>
                             </div>
-                        </div>
+                        }
                     </div>
 
-                    <div class="col-lg-4 mt-4 mt-lg-0">
+                    <div class="col-lg-4">
                         <LeaderboardsTile />
                     </div>
                 </div>

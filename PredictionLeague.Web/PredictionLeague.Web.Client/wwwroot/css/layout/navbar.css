@@ -11,8 +11,8 @@
 }
 
 .navbar-logo {
-    height: 30px;
-    margin-right: 10px;
+    height: 1.875rem;
+    margin-right: 0.625rem;
     border-radius: var(--bs-border-radius);
 }
 

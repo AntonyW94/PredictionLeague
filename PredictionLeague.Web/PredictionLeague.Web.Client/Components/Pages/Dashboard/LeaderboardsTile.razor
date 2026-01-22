@@ -1,4 +1,6 @@
 ﻿@inject IDashboardStateService DashboardState
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
 @implements IDisposable
 
@@ -13,7 +15,11 @@
 
     @if (DashboardState.IsLeaderboardsLoading)
     {
-        <p class="text-center text-white"><em>Loading...</em></p>
+        <div class="d-flex justify-content-center align-items-center flex-grow-1">
+            <div class="spinner-border text-white" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
     }
     else if (!DashboardState.Leaderboards.Any())
     {
@@ -34,8 +40,8 @@
                                         <small class="text-white-50 text-center fw-bold">@leaderboard.SeasonName</small>
                                     </div>
                                     <div class="body leaderboard-body justify-start w-100">
-                                        <div class="table-responsive rounded w-100">
-                                            <table class="leaderboard-table table-striped-purple light text-white">
+                                        <div id="leaderboard-scroll-@leaderboard.LeagueId" class="leaderboard-scroll-container">
+                                            <table class="leaderboard-table leaderboard-table--dashboard table-striped-purple light text-white">
                                                 <thead>
                                                     <tr>
                                                         @if (leaderboard.Entries.First().IsRoundInProgress)
@@ -68,6 +74,11 @@
                                             </table>
                                         </div>
                                     </div>
+                                    <div class="footer">
+                                        <button class="btn purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(leaderboard.LeagueId)">
+                                            View Dashboard
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -99,6 +110,17 @@
         await base.OnInitializedAsync();
         DashboardState.OnStateChange += StateHasChanged;
         await DashboardState.LoadLeaderboardsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && DashboardState.Leaderboards.Any())
+        {
+            foreach (var leaderboard in DashboardState.Leaderboards)
+            {
+                await JS.InvokeVoidAsync("blazorInterop.scrollToUserRow", $"leaderboard-scroll-{leaderboard.LeagueId}");
+            }
+        }
     }
 
     private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;
@@ -145,6 +167,11 @@
     private void UpdateTrackStyle()
     {
         _trackStyle = $"transform: translateX(-{_currentIndex * 100}%);";
+    }
+
+    private void ViewLeagueDashboard(int leagueId)
+    {
+        NavigationManager.NavigateTo($"/leagues/{leagueId}/dashboard");
     }
 
     public void Dispose()
