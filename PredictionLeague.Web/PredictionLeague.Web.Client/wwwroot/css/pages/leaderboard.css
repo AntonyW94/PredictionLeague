@@ -70,22 +70,31 @@
     min-width: 0;
 }
 
-/* Dashboard leaderboard - limit to 10 rows on mobile/tablet */
-.leaderboard-table--dashboard tbody tr:nth-child(n+11) {
-    display: none;
+/* Dashboard leaderboard - scrollable container */
+.leaderboard-scroll-container {
+    max-height: 20rem;
+    overflow-y: auto;
+    border-radius: var(--bs-border-radius);
+    width: 100%;
 }
 
-.leaderboard-view-all {
-    display: block;
-    text-align: center;
-    padding: 0.75rem;
-    color: var(--blue-500);
-    font-weight: 600;
-    font-size: 0.9rem;
+/* Custom scrollbar styling for webkit browsers */
+.leaderboard-scroll-container::-webkit-scrollbar {
+    width: 0.5rem;
 }
 
-.leaderboard-view-all:hover {
-    color: var(--white);
+.leaderboard-scroll-container::-webkit-scrollbar-track {
+    background: var(--purple-900);
+    border-radius: 0.25rem;
+}
+
+.leaderboard-scroll-container::-webkit-scrollbar-thumb {
+    background: var(--purple-300);
+    border-radius: 0.25rem;
+}
+
+.leaderboard-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: var(--purple-200);
 }
 
 /* Mobile/tablet padding for leaderboard body */
@@ -100,5 +109,9 @@
 @media (min-width: 992px) {
     .body.leaderboard-body {
         padding: 1.5rem;
+    }
+
+    .leaderboard-scroll-container {
+        max-height: 25rem;
     }
 }

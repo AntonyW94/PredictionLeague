@@ -39,7 +39,7 @@
                                         <small class="text-white-50 text-center fw-bold">@leaderboard.SeasonName</small>
                                     </div>
                                     <div class="body leaderboard-body justify-start w-100">
-                                        <div class="table-responsive rounded w-100">
+                                        <div class="leaderboard-scroll-container">
                                             <table class="leaderboard-table leaderboard-table--dashboard table-striped-purple light text-white">
                                                 <thead>
                                                     <tr>
@@ -72,12 +72,6 @@
                                                 </tbody>
                                             </table>
                                         </div>
-                                        @if (leaderboard.Entries.Count() > 10)
-                                        {
-                                            <a href="/leagues/@leaderboard.LeagueId/dashboard" class="leaderboard-view-all">
-                                                View all @leaderboard.Entries.Count() players →
-                                            </a>
-                                        }
                                     </div>
                                 </div>
                             </div>
