@@ -125,8 +125,9 @@
                                                         {
                                                             <div class="d-flex align-items-center gap-1">
                                                                 <div class="rank-shield-container">
-                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.Rank, league.MemberCount)">
-                                                                        <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z"/>
+                                                                    @{ var overallColour = GetShieldColour(league.Rank, league.MemberCount); }
+                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon" style="filter: url(#shield-shadow);">
+                                                                        <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@overallColour)" stroke="url(#rim-@overallColour)"/>
                                                                     </svg>
                                                                     <span class="rank-shield-text">
                                                                         @league.Rank
@@ -152,8 +153,9 @@
                                                                     IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.InProgressCount > 0 && league.CompletedCount > 0 && league.StableRoundRank.HasValue)" />
 
                                                                 <div class="rank-shield-container small">
-                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.RoundRank, league.MemberCount)">
-                                                                        <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" />
+                                                                    @{ var roundColour = GetShieldColour(league.RoundRank, league.MemberCount); }
+                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon" style="filter: url(#shield-shadow);">
+                                                                        <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@roundColour)" stroke="url(#rim-@roundColour)" />
                                                                     </svg>
                                                                     <span class="rank-shield-text">
                                                                         @league.RoundRank
@@ -181,8 +183,9 @@
                                                                     IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundMonthRank.HasValue)" />
 
                                                                 <div class="rank-shield-container small">
-                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon @GetShieldColorClass(league.MonthRank, league.MemberCount)">
-                                                                        <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z"/>
+                                                                    @{ var monthColour = GetShieldColour(league.MonthRank, league.MemberCount); }
+                                                                    <svg viewBox="0 0 24 24" class="rank-shield-icon" style="filter: url(#shield-shadow);">
+                                                                        <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@monthColour)" stroke="url(#rim-@monthColour)" />
                                                                     </svg>
                                                                     <span class="rank-shield-text">
                                                                         @league.MonthRank
@@ -353,27 +356,27 @@
         NavigationManager.NavigateTo($"/leagues/{leagueId}/dashboard");
     }
 
-    private static string GetShieldColorClass(long? rank, int? memberCount)
+    private static string GetShieldColour(long? rank, int? memberCount)
     {
         switch (rank)
         {
             case null:
-                return "shield-blue";
+                return "blue";
 
             case 1:
-                return "shield-gold";
+                return "gold";
 
             case 2:
-                return "shield-silver";
+                return "silver";
 
             case 3:
-                return "shield-bronze";
+                return "bronze";
         }
 
         if (memberCount > 4 && rank > (memberCount.Value * 0.75))
-            return "shield-red";
+            return "red";
 
-        return "shield-blue";
+        return "blue";
     }
 
     public ValueTask DisposeAsync()
