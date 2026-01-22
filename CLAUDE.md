@@ -118,6 +118,23 @@ This applies to:
 | Handlers | Handler suffix | `CreateLeagueCommandHandler` |
 | DTOs | Dto suffix | `LeagueDto` |
 
+### Code Formatting
+
+**Always put statements on a new line after `if`** - Never put `return`, `continue`, `break`, or other statements on the same line as an `if`:
+
+```csharp
+// CORRECT
+if (!userRow)
+    return;
+
+if (condition)
+    continue;
+
+// WRONG
+if (!userRow) return;
+if (condition) continue;
+```
+
 ### DateTime Handling
 
 - **All dates stored in UTC** in the database
