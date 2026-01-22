@@ -1,14 +1,18 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <!-- Disable CSS bundling during Debug builds -->
+        <BundleOnBuild Condition="'$(Configuration)' == 'Debug'">false</BundleOnBuild>
+        <BundleOnBuild Condition="'$(Configuration)' != 'Debug'">true</BundleOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Blazored.FluentValidation" Version="2.2.0" />
         <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+        <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
         <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.17" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.17" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="8.0.17" />
@@ -32,4 +36,63 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
     </ItemGroup>
+
+    <!--
+    CSS Bundling and Cache Busting for Production
+
+    Development (dotnet run): Uses separate CSS files with @imports for easy debugging
+    Production (dotnet publish): Bundles all CSS into one minified file with cache busting
+    -->
+    <Target Name="ReplaceCssWithBundle" AfterTargets="Publish">
+        <PropertyGroup>
+            <PublishCssDir>$(PublishDir)wwwroot\css\</PublishCssDir>
+            <BundledCss>$(PublishCssDir)app.min.css</BundledCss>
+            <TargetCss>$(PublishCssDir)app.css</TargetCss>
+            <GoogleFontsImport>@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;display=swap');&#10;&#10;</GoogleFontsImport>
+            <CssVersion>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</CssVersion>
+        </PropertyGroup>
+
+        <!-- Read the bundled CSS content -->
+        <ReadLinesFromFile File="$(BundledCss)" Condition="Exists('$(BundledCss)')">
+            <Output TaskParameter="Lines" ItemName="BundledCssLines"/>
+        </ReadLinesFromFile>
+
+        <!-- Create final CSS with Google Fonts import prepended -->
+        <WriteLinesToFile
+            File="$(TargetCss)"
+            Lines="$(GoogleFontsImport);@(BundledCssLines)"
+            Overwrite="true"
+            Condition="Exists('$(BundledCss)')" />
+
+        <!-- Delete the intermediate bundled file -->
+        <Delete Files="$(BundledCss)" Condition="Exists('$(BundledCss)')" />
+
+        <!-- Delete individual CSS files that are now bundled (keep app.css) -->
+        <ItemGroup>
+            <CssFilesToDelete Include="$(PublishCssDir)**\*.css" Exclude="$(TargetCss)" />
+        </ItemGroup>
+        <Delete Files="@(CssFilesToDelete)" />
+
+        <!-- Remove empty CSS directories -->
+        <RemoveDir Directories="$(PublishCssDir)utilities" Condition="Exists('$(PublishCssDir)utilities')" />
+        <RemoveDir Directories="$(PublishCssDir)layout" Condition="Exists('$(PublishCssDir)layout')" />
+        <RemoveDir Directories="$(PublishCssDir)components\cards" Condition="Exists('$(PublishCssDir)components\cards')" />
+        <RemoveDir Directories="$(PublishCssDir)components" Condition="Exists('$(PublishCssDir)components')" />
+        <RemoveDir Directories="$(PublishCssDir)pages" Condition="Exists('$(PublishCssDir)pages')" />
+
+        <!-- Add cache busting version to index.html -->
+        <PropertyGroup>
+            <IndexHtmlPath>$(PublishDir)wwwroot\index.html</IndexHtmlPath>
+        </PropertyGroup>
+        <ReadLinesFromFile File="$(IndexHtmlPath)">
+            <Output TaskParameter="Lines" ItemName="IndexHtmlLines"/>
+        </ReadLinesFromFile>
+        <PropertyGroup>
+            <IndexHtmlContent>@(IndexHtmlLines->'%(Identity)', '&#10;')</IndexHtmlContent>
+            <IndexHtmlContent>$(IndexHtmlContent.Replace('app.css', 'app.css?v=$(CssVersion)'))</IndexHtmlContent>
+        </PropertyGroup>
+        <WriteLinesToFile File="$(IndexHtmlPath)" Lines="$(IndexHtmlContent)" Overwrite="true" />
+
+        <Message Importance="high" Text="CSS bundled and minified. Cache version: $(CssVersion)" />
+    </Target>
 </Project>
