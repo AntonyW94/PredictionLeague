@@ -20,9 +20,7 @@ Modify the `GetUpcomingRoundsQueryHandler` to include in-progress rounds and ret
 
 ### Step 1: Update the Rounds SQL Query
 
-Modify the WHERE clause to include all rounds that are not Draft and not Completed:
-- Published rounds with deadline in the future
-- In-progress rounds (regardless of deadline)
+Modify the WHERE clause to include all rounds that are not Draft and not Completed (i.e., Published and InProgress rounds).
 
 Update the ORDER BY to show in-progress rounds first.
 
@@ -50,7 +48,6 @@ JOIN
     [Seasons] s ON r.[SeasonId] = s.[Id]
 WHERE
     r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
-    AND (r.[Status] = @InProgressStatus OR r.[DeadlineUtc] > GETUTCDATE())
     AND r.[SeasonId] IN (
         SELECT l.[SeasonId]
         FROM [Leagues] l
@@ -61,10 +58,6 @@ ORDER BY
     CASE WHEN r.[Status] = @InProgressStatus THEN 0 ELSE 1 END,
     r.[DeadlineUtc] ASC
 ```
-
-**Note:** The WHERE clause uses:
-- `NOT IN (Draft, Completed)` to exclude those statuses
-- Additional check for `InProgress OR DeadlineUtc > GETUTCDATE()` to exclude Published rounds with past deadlines
 
 ### Step 2: Update the Matches SQL Query
 
@@ -202,7 +195,6 @@ public class GetUpcomingRoundsQueryHandler : IRequestHandler<GetUpcomingRoundsQu
                 [Seasons] s ON r.[SeasonId] = s.[Id]
             WHERE
                 r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
-                AND (r.[Status] = @InProgressStatus OR r.[DeadlineUtc] > GETUTCDATE())
                 AND r.[SeasonId] IN (
                     SELECT l.[SeasonId]
                     FROM [Leagues] l
@@ -321,7 +313,7 @@ m.Outcome != null ? Enum.Parse<PredictionOutcome>(m.Outcome) : null
 ## Verification
 
 - [ ] Solution builds without errors
-- [ ] Query returns both Published (future deadline) and InProgress rounds
+- [ ] Query returns both Published and InProgress rounds
 - [ ] Draft and Completed rounds are excluded
 - [ ] In-progress rounds appear before upcoming rounds in results
 - [ ] Outcome is returned from UserPredictions (null when no prediction exists)
@@ -333,11 +325,10 @@ m.Outcome != null ? Enum.Parse<PredictionOutcome>(m.Outcome) : null
 - Users not in any leagues - returns empty collection (existing behaviour)
 - Mixed seasons - user might have rounds from multiple seasons; all should be included
 - No prediction for a match - `Outcome` will be null (LEFT JOIN returns null)
-- Published round with past deadline but not yet InProgress - excluded (edge case during status transition)
 
 ## Notes
 
-- Using `NOT IN (Draft, Completed)` is cleaner than explicitly listing included statuses
+- Using `NOT IN (Draft, Completed)` keeps the query simple - all Published and InProgress rounds are included
 - The `Outcome` comes directly from `UserPredictions.[Outcome]` column - no calculation needed
 - Removed the unused `ActiveMemberCount` CTE from the original query
 - The internal query result records use strings for enums because Dapper returns them as strings

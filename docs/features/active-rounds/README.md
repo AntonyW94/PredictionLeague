@@ -141,11 +141,9 @@ The existing query filters by:
 WHERE r.[Status] = @PublishedStatus AND r.[DeadlineUtc] > GETUTCDATE()
 ```
 
-This changes to exclude Draft and Completed:
+This changes to simply exclude Draft and Completed:
 ```sql
-WHERE
-    r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
-    AND (r.[Status] = @InProgressStatus OR r.[DeadlineUtc] > GETUTCDATE())
+WHERE r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
 ```
 
 ### Ordering
