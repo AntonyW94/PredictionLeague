@@ -77,7 +77,11 @@
 
     @if (DashboardState.IsMyLeaguesLoading)
     {
-        <p class="text-center text-white"><em>Loading my leagues...</em></p>
+        <div class="d-flex justify-content-center align-items-center flex-grow-1">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading my leagues...</span>
+            </div>
+        </div>
     }
     else if (!DashboardState.MyLeagues.Any())
     {
@@ -85,7 +89,7 @@
     }
     else
     {
-        <div class="carousel-wrapper carousel--desktop-multi-item">
+        <div class="carousel-wrapper carousel--multi-item">
             <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
                 @if (_showTwoItems && DashboardState.MyLeagues.Count > 2)
                 {

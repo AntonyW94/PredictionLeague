@@ -70,6 +70,24 @@
     min-width: 0;
 }
 
+/* Dashboard leaderboard - limit to 10 rows on mobile/tablet */
+.leaderboard-table--dashboard tbody tr:nth-child(n+11) {
+    display: none;
+}
+
+.leaderboard-view-all {
+    display: block;
+    text-align: center;
+    padding: 0.75rem;
+    color: var(--blue-500);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.leaderboard-view-all:hover {
+    color: var(--white);
+}
+
 /* Mobile/tablet padding for leaderboard body */
 .body.leaderboard-body {
     padding-top: 1.5em;

@@ -12,7 +12,11 @@
 
     @if (DashboardState.IsUpcomingRoundsLoading)
     {
-        <p class="text-center text-white"><em>Loading rounds...</em></p>
+        <div class="d-flex justify-content-center align-items-center flex-grow-1">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading rounds...</span>
+            </div>
+        </div>
     }
     else if (!DashboardState.UpcomingRounds.Any())
     {
@@ -22,7 +26,7 @@
     }
     else
     {
-        <div class="carousel-wrapper carousel--desktop-multi-item">
+        <div class="carousel-wrapper carousel--multi-item">
             <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
                 @if (_showTwoItems && DashboardState.UpcomingRounds.Count > 2)
                 {

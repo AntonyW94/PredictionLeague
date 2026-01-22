@@ -1,4 +1,5 @@
 ﻿@inject IDashboardStateService DashboardState
+@inject NavigationManager NavigationManager
 
 @implements IDisposable
 
@@ -13,7 +14,11 @@
 
     @if (DashboardState.IsLeaderboardsLoading)
     {
-        <p class="text-center text-white"><em>Loading...</em></p>
+        <div class="d-flex justify-content-center align-items-center flex-grow-1">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
     }
     else if (!DashboardState.Leaderboards.Any())
     {
@@ -35,7 +40,7 @@
                                     </div>
                                     <div class="body leaderboard-body justify-start w-100">
                                         <div class="table-responsive rounded w-100">
-                                            <table class="leaderboard-table table-striped-purple light text-white">
+                                            <table class="leaderboard-table leaderboard-table--dashboard table-striped-purple light text-white">
                                                 <thead>
                                                     <tr>
                                                         @if (leaderboard.Entries.First().IsRoundInProgress)
@@ -67,6 +72,12 @@
                                                 </tbody>
                                             </table>
                                         </div>
+                                        @if (leaderboard.Entries.Count() > 10)
+                                        {
+                                            <a href="/leagues/@leaderboard.LeagueId/dashboard" class="leaderboard-view-all">
+                                                View all @leaderboard.Entries.Count() players →
+                                            </a>
+                                        }
                                     </div>
                                 </div>
                             </div>

@@ -13,7 +13,11 @@
 
     @if (DashboardState.IsAvailableLeaguesLoading)
     {
-        <p class="text-center text-white"><em>Loading leagues...</em></p>
+        <div class="d-flex justify-content-center align-items-center flex-grow-1">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading leagues...</span>
+            </div>
+        </div>
     }
     else if (DashboardState.AvailableLeagues.Any())
     {
