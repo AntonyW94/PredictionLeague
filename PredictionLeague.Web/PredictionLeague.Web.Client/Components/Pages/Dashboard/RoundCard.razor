@@ -12,7 +12,7 @@
             <div class="detail-row centered">
                 @if (IsInProgress)
                 {
-                    <div class="badge-group badge-group--blue">
+                    <div class="badge-group badge-group--blue pulsing-blue">
                         <span class="badge-icon" title="In Progress"><i class="bi bi-play-fill"></i></span>
                         <span>In Progress</span>
                     </div>
@@ -36,7 +36,7 @@
             <div class="match-preview-grid">
                 @foreach (var match in Round.Matches)
                 {
-                    <div class="match-preview-row @GetMatchBackgroundClass(match)">
+                    <div class="match-preview-row @GetMatchBackgroundClass(match) @GetMatchPulsingClass(match)">
                         <img src="@(match.HomeTeamLogoUrl ?? "images/team-placeholder.svg")"
                              class="match-preview-logo"
                              alt="Home"
@@ -88,6 +88,20 @@
             PredictionOutcome.CorrectResult => "match-outcome-correct-result",
             PredictionOutcome.Incorrect => "match-outcome-incorrect",
             _ => "" // Pending or null - use default background
+        };
+    }
+
+    private string GetMatchPulsingClass(ActiveRoundMatchDto match)
+    {
+        if (match.Status != MatchStatus.InProgress)
+            return "";
+
+        return match.Outcome switch
+        {
+            PredictionOutcome.ExactScore => "pulsing-green",
+            PredictionOutcome.CorrectResult => "pulsing",
+            PredictionOutcome.Incorrect => "pulsing-red",
+            _ => "" // Pending - no pulsing
         };
     }
 }

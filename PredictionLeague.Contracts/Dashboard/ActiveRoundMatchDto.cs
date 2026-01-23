@@ -12,5 +12,6 @@ public record ActiveRoundMatchDto(
     string? AwayTeamLogoUrl,
     int? PredictedHomeScore,
     int? PredictedAwayScore,
-    PredictionOutcome? Outcome
+    PredictionOutcome? Outcome,
+    MatchStatus Status
 );

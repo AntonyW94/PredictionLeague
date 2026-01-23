@@ -60,9 +60,21 @@
     --purple-800-alpha-25: rgba(61, 25, 91, 0.25);
     --purple-900-alpha-80: rgba(49, 20, 74, 0.8);
 
-    /* Transparent Yellow (for animations) */
-    --yellow-alpha-70: rgba(255, 193, 7, 0.7);
-    --yellow-alpha-00: rgba(255, 193, 7, 0);
+    /* Transparent Yellow (for animations) - matches --yellow: #EBFF01 */
+    --yellow-alpha-70: rgba(235, 255, 1, 0.7);
+    --yellow-alpha-00: rgba(235, 255, 1, 0);
+
+    /* Transparent Blue (for animations) */
+    --blue-700-alpha-70: rgba(3, 194, 180, 0.7);
+    --blue-700-alpha-00: rgba(3, 194, 180, 0);
+
+    /* Transparent Green (for animations) */
+    --green-600-alpha-70: rgba(0, 185, 96, 0.7);
+    --green-600-alpha-00: rgba(0, 185, 96, 0);
+
+    /* Transparent Red (for animations) */
+    --red-alpha-70: rgba(233, 0, 82, 0.7);
+    --red-alpha-00: rgba(233, 0, 82, 0);
 
     /* Spacing Scale (based on 0.25rem = 4px) */
     --space-0: 0;
