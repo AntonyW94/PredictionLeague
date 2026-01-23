@@ -78,9 +78,7 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 up.[PredictedHomeScore],
                 up.[PredictedAwayScore],
-                up.[Outcome],
-                m.[MatchDateTimeUtc],
-                ht.[ShortName] AS HomeTeamShortName
+                up.[Outcome]
             FROM [Matches] m
             INNER JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
             INNER JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
@@ -113,7 +111,7 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
                     m.AwayTeamLogoUrl,
                     m.PredictedHomeScore,
                     m.PredictedAwayScore,
-                    m.Outcome != null ? Enum.Parse<PredictionOutcome>(m.Outcome) : null))
+                    m.Outcome))
                 : Enumerable.Empty<ActiveRoundMatchDto>()
         ));
     }
@@ -135,7 +133,5 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
         string? AwayTeamLogoUrl,
         int? PredictedHomeScore,
         int? PredictedAwayScore,
-        string? Outcome,
-        DateTime MatchDateTimeUtc,
-        string HomeTeamShortName);
+        PredictionOutcome? Outcome);
 }
