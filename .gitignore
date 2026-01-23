@@ -368,3 +368,6 @@ FodyWeavers.xsd
 
 # BuildBundlerMinifier output (generated during Release builds)
 **/wwwroot/css/app.min.css
+
+# Claude Code local settings
+.claude/settings.local.json
