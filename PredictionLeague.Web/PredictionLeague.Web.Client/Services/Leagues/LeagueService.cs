@@ -30,9 +30,9 @@ public class LeagueService : ILeagueService
         return await _httpClient.GetFromJsonAsync<List<LeagueLeaderboardDto>>("api/dashboard/leaderboards") ?? new List<LeagueLeaderboardDto>();
     }
 
-    public async Task<List<UpcomingRoundDto>> GetUpcomingRoundsAsync()
+    public async Task<List<ActiveRoundDto>> GetActiveRoundsAsync()
     {
-        return await _httpClient.GetFromJsonAsync<List<UpcomingRoundDto>>("api/dashboard/upcoming-rounds") ?? new List<UpcomingRoundDto>();
+        return await _httpClient.GetFromJsonAsync<List<ActiveRoundDto>>("api/dashboard/active-rounds") ?? new List<ActiveRoundDto>();
     }
 
     public async Task<List<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId)

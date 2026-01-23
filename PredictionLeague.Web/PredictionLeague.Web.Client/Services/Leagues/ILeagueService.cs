@@ -9,7 +9,7 @@ public interface ILeagueService
     Task<List<MyLeagueDto>> GetMyLeaguesAsync();
     Task<List<AvailableLeagueDto>> GetAvailableLeaguesAsync();
     Task<List<LeagueLeaderboardDto>> GetLeaderboardsAsync();
-    Task<List<UpcomingRoundDto>> GetUpcomingRoundsAsync();
+    Task<List<ActiveRoundDto>> GetActiveRoundsAsync();
     Task<List<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId);
     Task<List<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month);
     Task<ExactScoresLeaderboardDto> GetExactScoresLeaderboardAsync(int leagueId);
