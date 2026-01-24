@@ -59,18 +59,18 @@
         @if (IsInProgress && Round.OutcomeSummary != null)
         {
             <div class="outcome-summary">
-                <span class="outcome-item outcome-exact">
-                    <i class="bi bi-bullseye"></i>
+                <span class="outcome-item">
+                    <span>🎯</span>
                     <span>@Round.OutcomeSummary.ExactScoreCount</span>
                 </span>
                 <span class="outcome-separator">·</span>
-                <span class="outcome-item outcome-correct">
-                    <i class="bi bi-check-lg"></i>
+                <span class="outcome-item">
+                    <span>✅</span>
                     <span>@Round.OutcomeSummary.CorrectResultCount</span>
                 </span>
                 <span class="outcome-separator">·</span>
-                <span class="outcome-item outcome-incorrect">
-                    <i class="bi bi-x-lg"></i>
+                <span class="outcome-item">
+                    <span>❌</span>
                     <span>@Round.OutcomeSummary.IncorrectCount</span>
                 </span>
             </div>

@@ -77,35 +77,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     width: 100%;
     padding: 0.5rem 0.75rem;
     background-color: var(--black-alpha-25);
     border-radius: var(--bs-border-radius);
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 600;
+    color: var(--white);
 }
 
 .outcome-item {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-}
-
-.outcome-item i {
-    font-size: 1.1rem;
-}
-
-.outcome-exact {
-    color: var(--green-600);
-}
-
-.outcome-correct {
-    color: var(--yellow);
-}
-
-.outcome-incorrect {
-    color: var(--red);
 }
 
 .outcome-separator {
