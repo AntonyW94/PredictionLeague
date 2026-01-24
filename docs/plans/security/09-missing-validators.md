@@ -304,7 +304,19 @@ public static class DependencyInjection
 
 ## Testing Requirements
 
-### Unit Tests
+> **Note**: Automated testing is deferred until test project infrastructure is in place.
+> Test code is preserved below for future implementation.
+
+### Manual Testing (Required for this implementation)
+
+1. Test each validator by submitting invalid requests via API
+2. Verify 400 Bad Request is returned with appropriate error messages
+3. Verify valid requests pass through
+
+### Future: Unit Tests
+
+<details>
+<summary>Click to expand test code for future implementation</summary>
 
 ```csharp
 public class ApplyBoostRequestValidatorTests
@@ -379,6 +391,8 @@ public class CreateLeagueRequestValidatorTests
 }
 ```
 
+</details>
+
 ---
 
 ## Checklist
@@ -390,7 +404,9 @@ public class CreateLeagueRequestValidatorTests
 - [ ] Create `DeleteUserRequestValidator` (optional)
 - [ ] Create `RefreshTokenRequestValidator` (optional)
 - [ ] Verify validators are registered in DI
-- [ ] Write unit tests for all validators
-- [ ] Test validation errors return 400 Bad Request
+- [ ] Manual testing - validation errors return 400 Bad Request
 - [ ] Code review approved
 - [ ] Deployed to production
+
+### Future (when test projects added)
+- [ ] Write unit tests for all validators

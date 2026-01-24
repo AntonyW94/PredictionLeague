@@ -230,9 +230,28 @@ Test thoroughly after enabling CSP to ensure Blazor functionality isn't broken.
 
 ## Testing Requirements
 
-### Automated Tests
+> **Note**: Automated testing is deferred until test project infrastructure is in place.
+> Test code is preserved below for future implementation.
 
-Use SecurityHeaders.com API or similar:
+### Manual Testing (Required for this implementation)
+
+1. Deploy changes to test environment
+2. Visit https://securityheaders.com and scan your site
+3. Aim for grade A or A+
+4. Test all Blazor functionality still works with CSP
+
+### Browser DevTools Verification
+
+1. Open browser DevTools (F12)
+2. Go to Network tab
+3. Make a request
+4. Check Response Headers
+5. Verify all security headers are present
+
+### Future: Automated Tests
+
+<details>
+<summary>Click to expand test code for future implementation</summary>
 
 ```csharp
 [Fact]
@@ -258,20 +277,7 @@ public async Task XFrameOptions_IsDeny()
 }
 ```
 
-### Manual Testing
-
-1. Deploy changes to test environment
-2. Visit https://securityheaders.com and scan your site
-3. Aim for grade A or A+
-4. Test all Blazor functionality still works with CSP
-
-### Browser DevTools
-
-1. Open browser DevTools (F12)
-2. Go to Network tab
-3. Make a request
-4. Check Response Headers
-5. Verify all security headers are present
+</details>
 
 ---
 
@@ -296,9 +302,11 @@ After implementation, securityheaders.com should show:
 - [ ] Register middleware in `Program.cs`
 - [ ] Configure Content-Security-Policy for Blazor
 - [ ] Test Blazor WASM functionality with CSP
-- [ ] Write automated tests for header presence
 - [ ] Scan with securityheaders.com
 - [ ] Fix any CSP violations in browser console
 - [ ] Code review approved
 - [ ] Deployed to production
 - [ ] Re-scan production with securityheaders.com
+
+### Future (when test projects added)
+- [ ] Write automated tests for header presence

@@ -178,7 +178,19 @@ private IActionResult RedirectWithError(string returnUrl, string error)
 
 ## Testing Requirements
 
-### Unit Tests
+> **Note**: Automated testing is deferred until test project infrastructure is in place.
+> Test code is preserved below for future implementation.
+
+### Manual Testing (Required for this implementation)
+
+1. Attempt OAuth flow with `returnUrl=https://evil.com`
+2. Verify redirect goes to `/` not external site
+3. Test with various bypass attempts: `//evil.com`, `/\evil.com`, `javascript:alert(1)`
+
+### Future: Unit Tests
+
+<details>
+<summary>Click to expand test code for future implementation</summary>
 
 ```csharp
 [Theory]
@@ -198,17 +210,13 @@ public void IsValidLocalUrl_ValidatesCorrectly(string url, bool expected)
 }
 ```
 
-### Integration Tests
+</details>
+
+### Future: Integration Tests
 
 1. Call `/external-auth/google-login?returnUrl=https://evil.com` - should use `/` as returnUrl
 2. Call `/external-auth/google-login?returnUrl=//evil.com` - should use `/` as returnUrl
 3. Call `/external-auth/google-login?returnUrl=/dashboard` - should preserve `/dashboard`
-
-### Manual Testing
-
-1. Attempt OAuth flow with `returnUrl=https://evil.com`
-2. Verify redirect goes to `/` not external site
-3. Test with various bypass attempts: `//evil.com`, `/\evil.com`, `javascript:alert(1)`
 
 ---
 
@@ -227,9 +235,11 @@ public void IsValidLocalUrl_ValidatesCorrectly(string url, bool expected)
 - [ ] Update `GoogleCallback` with defense-in-depth validation
 - [ ] Update `RedirectWithError` to validate URL
 - [ ] Add logging for invalid URL attempts
-- [ ] Write unit tests for URL validation
-- [ ] Write integration tests
 - [ ] Manual testing with bypass attempts
 - [ ] Code review approved
 - [ ] Deployed to production
 - [ ] Verified in production
+
+### Future (when test projects added)
+- [ ] Write unit tests for URL validation
+- [ ] Write integration tests

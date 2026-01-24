@@ -268,7 +268,19 @@ public async Task<IEnumerable<LeaderboardEntryDto>> Handle(
 
 ## Testing Requirements
 
-### Unit Tests
+> **Note**: Automated testing is deferred until test project infrastructure is in place.
+> Test code is preserved below for future implementation.
+
+### Manual Testing (Required for this implementation)
+
+1. User who is not a member calls leaderboard endpoint - should return 401/403
+2. User who is a member calls leaderboard endpoint - should return leaderboard data
+3. Test all three leaderboard endpoints (overall, monthly, exact scores)
+
+### Future: Unit Tests
+
+<details>
+<summary>Click to expand test code for future implementation</summary>
 
 ```csharp
 [Fact]
@@ -304,7 +316,9 @@ public async Task GetOverallLeaderboard_WhenUserIsMember_ReturnsLeaderboard()
 }
 ```
 
-### Integration Tests
+</details>
+
+### Future: Integration Tests
 
 1. User who is not a member calls leaderboard endpoint - should return 401/403
 2. User who is a member calls leaderboard endpoint - should return leaderboard data
@@ -324,8 +338,11 @@ public async Task GetOverallLeaderboard_WhenUserIsMember_ReturnsLeaderboard()
 - [ ] Update `GetExactScoresLeaderboardQuery` with `CurrentUserId`
 - [ ] Update `GetExactScoresLeaderboardQueryHandler` with auth check
 - [ ] Update `LeaguesController` to pass `CurrentUserId`
-- [ ] Write unit tests for each handler
-- [ ] Write integration tests
+- [ ] Manual testing complete
 - [ ] Code review approved
 - [ ] Deployed to production
 - [ ] Verified in production
+
+### Future (when test projects added)
+- [ ] Write unit tests for each handler
+- [ ] Write integration tests

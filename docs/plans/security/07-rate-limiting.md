@@ -280,7 +280,20 @@ options.IpWhitelist = new List<string> { "127.0.0.1", "::1", "10.0.0.0/8" };
 
 ## Testing Requirements
 
-### Unit Tests
+> **Note**: Automated testing is deferred until test project infrastructure is in place.
+> Test code is preserved below for future implementation.
+
+### Manual Testing (Required for this implementation)
+
+1. Make requests up to the limit - should succeed
+2. Exceed the limit - should return 429
+3. Wait for window to expire - should succeed again
+4. Verify Retry-After header is present
+
+### Future: Unit/Integration Tests
+
+<details>
+<summary>Click to expand test code for future implementation</summary>
 
 ```csharp
 [Fact]
@@ -304,16 +317,12 @@ public async Task Login_ExceedsRateLimit_Returns429()
 }
 ```
 
-### Integration Tests
+</details>
 
-1. Make requests up to the limit - should succeed
-2. Exceed the limit - should return 429
-3. Wait for window to expire - should succeed again
-4. Verify Retry-After header is present
+### Future: Load Testing
 
-### Load Testing
-
-Use a tool like k6, Artillery, or Apache Bench to verify rate limiting works under load:
+<details>
+<summary>Click to expand k6 load test script</summary>
 
 ```javascript
 // k6 script
@@ -335,6 +344,8 @@ export default function () {
 }
 ```
 
+</details>
+
 ---
 
 ## Checklist
@@ -348,8 +359,11 @@ export default function () {
 - [ ] Configure correct IP header for proxy
 - [ ] Consider distributed storage if multi-instance
 - [ ] Add IP whitelist for internal services
-- [ ] Write integration tests
-- [ ] Load test to verify limits
+- [ ] Manual testing complete
 - [ ] Monitor 429 responses in production
 - [ ] Code review approved
 - [ ] Deployed to production
+
+### Future (when test projects added)
+- [ ] Write integration tests
+- [ ] Load test to verify limits

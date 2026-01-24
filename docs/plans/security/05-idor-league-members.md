@@ -155,7 +155,22 @@ if (hasAccess == 0)
 
 ## Testing Requirements
 
-### Unit Tests
+> **Note**: Automated testing is deferred until test project infrastructure is in place.
+> Test code is preserved below for future implementation.
+
+### Manual Testing (Required for this implementation)
+
+1. Log in as User A, create a league
+2. Log in as User B (not a member)
+3. Call API: `GET /api/leagues/{leagueId}/members`
+4. Verify 401/403 response
+5. Join User B to league, approve membership
+6. Retry API call - should now succeed
+
+### Future: Unit Tests
+
+<details>
+<summary>Click to expand test code for future implementation</summary>
 
 ```csharp
 [Fact]
@@ -201,21 +216,14 @@ public async Task Handle_WhenUserIsMember_ReturnsMemberList()
 }
 ```
 
-### Integration Tests
+</details>
+
+### Future: Integration Tests
 
 1. User A creates a league
 2. User B (not a member) attempts to fetch league members - should return 401/403
 3. User B joins and is approved
 4. User B fetches league members - should succeed
-
-### Manual Testing
-
-1. Log in as User A, create a league
-2. Log in as User B (not a member)
-3. Call API: `GET /api/leagues/{leagueId}/members`
-4. Verify 401/403 response
-5. Join User B to league, approve membership
-6. Retry API call - should now succeed
 
 ---
 
@@ -224,9 +232,11 @@ public async Task Handle_WhenUserIsMember_ReturnsMemberList()
 - [ ] Add membership verification query at start of handler
 - [ ] Throw `UnauthorizedAccessException` when user is not a member
 - [ ] Consider allowing administrator access
-- [ ] Write unit tests for authorization check
-- [ ] Write integration tests
 - [ ] Manual testing complete
 - [ ] Code review approved
 - [ ] Deployed to production
 - [ ] Verified in production
+
+### Future (when test projects added)
+- [ ] Write unit tests for authorization check
+- [ ] Write integration tests

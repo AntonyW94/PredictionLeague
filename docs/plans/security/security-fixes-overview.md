@@ -82,11 +82,17 @@ Recommended sequence for implementation:
 
 ## Testing Requirements
 
-All security fixes must include:
+> **Note**: Automated testing is deferred until a test project infrastructure is in place.
+> Test code examples are preserved in each plan for future implementation.
+
+**Current approach (this implementation round):**
+1. Manual testing of attack vectors
+2. Verification that existing functionality is not broken
+
+**Future (when test projects are added):**
 1. Unit tests for the fix logic
 2. Integration tests for the endpoint
-3. Manual testing of attack vectors
-4. Verification that existing functionality is not broken
+3. Regression tests for security vulnerabilities
 
 ---
 

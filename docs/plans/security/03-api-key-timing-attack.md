@@ -181,7 +181,19 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
 
 ## Testing Requirements
 
-### Unit Tests
+> **Note**: Automated testing is deferred until test project infrastructure is in place.
+> Test code is preserved below for future implementation.
+
+### Manual Testing (Required for this implementation)
+
+1. Test with valid API key - should succeed
+2. Test with invalid API key - should return 401
+3. Test with missing API key header - should return 401
+
+### Future: Unit Tests
+
+<details>
+<summary>Click to expand test code for future implementation</summary>
 
 ```csharp
 [Fact]
@@ -209,7 +221,12 @@ public void ConstantTimeEquals_EmptyStrings_ReturnsTrue()
 }
 ```
 
-### Timing Analysis Test (Optional)
+</details>
+
+### Future: Timing Analysis Test (Optional)
+
+<details>
+<summary>Click to expand timing test code</summary>
 
 ```csharp
 [Fact]
@@ -237,6 +254,8 @@ public void ConstantTimeEquals_TimingIsConsistent()
 }
 ```
 
+</details>
+
 ---
 
 ## Security Considerations
@@ -253,8 +272,11 @@ public void ConstantTimeEquals_TimingIsConsistent()
 - [ ] Import `System.Security.Cryptography` namespace
 - [ ] Add `ConstantTimeEquals` helper method
 - [ ] Update API key comparison to use constant-time method
-- [ ] Write unit tests
-- [ ] Consider timing analysis test
+- [ ] Manual testing complete
 - [ ] Code review approved
 - [ ] Deployed to production
 - [ ] Verified in production
+
+### Future (when test projects added)
+- [ ] Write unit tests
+- [ ] Consider timing analysis test

@@ -432,7 +432,20 @@ public record CreateSeasonCommand(string Name, DateTime StartDateUtc, DateTime E
 
 ## Testing Requirements
 
-### Unit Tests for Each Handler
+> **Note**: Automated testing is deferred until test project infrastructure is in place.
+> Test code is preserved below for future implementation.
+
+### Manual Testing (Required for this implementation)
+
+For each handler fix:
+1. Log in as non-admin user, attempt admin operation - should return 401/403
+2. Log in as admin user, attempt admin operation - should succeed
+3. Attempt to modify resources belonging to another user - should return 401/403
+
+### Future: Unit Tests for Each Handler
+
+<details>
+<summary>Click to expand test code for future implementation</summary>
 
 ```csharp
 [Fact]
@@ -469,6 +482,8 @@ public async Task UpdateUserRole_WhenAdmin_Succeeds()
     _userManagerMock.Verify(m => m.AddToRoleAsync(user, ApplicationRoles.Administrator), Times.Once);
 }
 ```
+
+</details>
 
 ---
 
@@ -523,7 +538,9 @@ public async Task UpdateUserRole_WhenAdmin_Succeeds()
 - [ ] Fix `LeaveLeagueCommandHandler`
 
 ### Testing
-- [ ] Write unit tests for authorization checks
-- [ ] Write integration tests
 - [ ] Manual testing complete
 - [ ] Code review approved
+
+### Future (when test projects added)
+- [ ] Write unit tests for authorization checks
+- [ ] Write integration tests

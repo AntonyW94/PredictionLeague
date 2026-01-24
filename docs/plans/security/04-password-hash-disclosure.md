@@ -192,7 +192,27 @@ CAST(CASE WHEN u.[PasswordHash] IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS HasLoca
 
 ## Testing Requirements
 
-### Unit Tests
+> **Note**: Automated testing is deferred until test project infrastructure is in place.
+> Test code is preserved below for future implementation.
+
+### Manual Testing (Required for this implementation)
+
+```bash
+# After deployment, verify no password hashes in response
+curl -X GET "https://predictionleague.com/api/admin/users" \
+  -H "Authorization: Bearer <admin-token>" \
+  | jq '.[] | has("passwordHash")'
+# Should return all false
+```
+
+1. Call admin users endpoint
+2. Verify response JSON does not contain `passwordHash` field
+3. Verify existing functionality still works
+
+### Future: Unit Tests
+
+<details>
+<summary>Click to expand test code for future implementation</summary>
 
 ```csharp
 [Fact]
@@ -208,21 +228,7 @@ public async Task Handle_DoesNotReturnPasswordHash()
 }
 ```
 
-### Integration Tests
-
-1. Call admin users endpoint
-2. Verify response JSON does not contain `passwordHash` field
-3. Verify existing functionality still works
-
-### Security Verification
-
-```bash
-# After deployment, verify no password hashes in response
-curl -X GET "https://predictionleague.com/api/admin/users" \
-  -H "Authorization: Bearer <admin-token>" \
-  | jq '.[] | has("passwordHash")'
-# Should return all false
-```
+</details>
 
 ---
 
@@ -234,8 +240,11 @@ curl -X GET "https://predictionleague.com/api/admin/users" \
 - [ ] Update mapping to not include `PasswordHash`
 - [ ] Search codebase for other `PasswordHash` exposures
 - [ ] Add `HasLocalPassword` if needed by admin UI
-- [ ] Write unit tests
-- [ ] Write integration tests
+- [ ] Manual testing complete
 - [ ] Code review approved
 - [ ] Deployed to production
 - [ ] Verify response doesn't contain password hashes
+
+### Future (when test projects added)
+- [ ] Write unit tests
+- [ ] Write integration tests

@@ -147,7 +147,19 @@ public async Task<IActionResult> UpdateLeagueAsync(
 
 ## Testing Requirements
 
-### Unit Tests
+> **Note**: Automated testing is deferred until test project infrastructure is in place.
+> Test code is preserved below for future implementation.
+
+### Manual Testing (Required for this implementation)
+
+1. Log in as User A, create a league
+2. Log in as User B, attempt to update User A's league via API
+3. Verify request is rejected with appropriate error message
+
+### Future: Unit Tests
+
+<details>
+<summary>Click to expand test code for future implementation</summary>
 
 ```csharp
 [Fact]
@@ -183,17 +195,13 @@ public async Task Handle_WhenUserIsAdministrator_UpdatesLeague()
 }
 ```
 
-### Integration Tests
+</details>
+
+### Future: Integration Tests
 
 1. Authenticated user attempts to update their own league - should succeed
 2. Authenticated user attempts to update another user's league - should return 401/403
 3. Unauthenticated user attempts to update a league - should return 401
-
-### Manual Testing
-
-1. Log in as User A, create a league
-2. Log in as User B, attempt to update User A's league via API
-3. Verify request is rejected with appropriate error message
 
 ---
 
@@ -211,9 +219,11 @@ If issues arise after deployment:
 - [ ] Update `UpdateLeagueCommand` with `UserId` parameter
 - [ ] Update `UpdateLeagueCommandHandler` with authorization check
 - [ ] Update `LeaguesController` to pass `CurrentUserId`
-- [ ] Write unit tests
-- [ ] Write integration tests
 - [ ] Manual testing complete
 - [ ] Code review approved
 - [ ] Deployed to production
 - [ ] Verified in production
+
+### Future (when test projects added)
+- [ ] Write unit tests
+- [ ] Write integration tests
