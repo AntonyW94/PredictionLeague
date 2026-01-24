@@ -1,6 +1,7 @@
 using MediatR;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Dashboard;
+using PredictionLeague.Domain.Common.Constants;
 using PredictionLeague.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -98,14 +99,10 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
             .ToDictionary(g => g.Key, g => g.ToList());
 
         // Map to DTOs
-        return rounds.Select(r => new ActiveRoundDto(
-            r.Id,
-            r.SeasonName,
-            r.RoundNumber,
-            r.DeadlineUtc,
-            r.HasUserPredicted,
-            Enum.Parse<RoundStatus>(r.Status),
-            matchesByRound.TryGetValue(r.Id, out var roundMatches)
+        return rounds.Select(r =>
+        {
+            var status = Enum.Parse<RoundStatus>(r.Status);
+            var matches = matchesByRound.TryGetValue(r.Id, out var roundMatches)
                 ? roundMatches.Select(m => new ActiveRoundMatchDto(
                     m.MatchId,
                     m.HomeTeamLogoUrl,
@@ -114,8 +111,30 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
                     m.PredictedAwayScore,
                     m.Outcome,
                     Enum.Parse<MatchStatus>(m.Status)))
-                : Enumerable.Empty<ActiveRoundMatchDto>()
-        ));
+                : Enumerable.Empty<ActiveRoundMatchDto>();
+
+            // Calculate user points for in-progress rounds
+            int? userPoints = null;
+            if (status == RoundStatus.InProgress && r.HasUserPredicted)
+            {
+                userPoints = roundMatches?.Sum(m => m.Outcome switch
+                {
+                    PredictionOutcome.ExactScore => PublicLeagueSettings.PointsForExactScore,
+                    PredictionOutcome.CorrectResult => PublicLeagueSettings.PointsForCorrectResult,
+                    _ => 0
+                }) ?? 0;
+            }
+
+            return new ActiveRoundDto(
+                r.Id,
+                r.SeasonName,
+                r.RoundNumber,
+                r.DeadlineUtc,
+                r.HasUserPredicted,
+                status,
+                matches,
+                userPoints);
+        });
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]

@@ -71,3 +71,17 @@
 .match-preview-row.match-outcome-incorrect {
     background-color: var(--red);
 }
+
+/* User Points Display - In-Progress Rounds */
+.user-points-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--green-600);
+    color: var(--white);
+    border-radius: var(--bs-border-radius);
+    font-size: 0.9rem;
+    font-weight: 600;
+}

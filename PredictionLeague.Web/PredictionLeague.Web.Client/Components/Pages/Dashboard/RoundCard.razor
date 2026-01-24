@@ -56,7 +56,14 @@
         }
     </div>
     <div class="footer">
-        @if (!IsInProgress && Round.DeadlineUtc > DateTime.UtcNow)
+        @if (IsInProgress && Round.UserPoints.HasValue)
+        {
+            <div class="user-points-display">
+                <span class="bi bi-trophy-fill me-2"></span>
+                <span>@Round.UserPoints.Value pts</span>
+            </div>
+        }
+        else if (!IsInProgress && Round.DeadlineUtc > DateTime.UtcNow)
         {
             <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
                 @if (Round.HasUserPredicted)
