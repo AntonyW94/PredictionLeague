@@ -13,4 +13,12 @@ public record ActiveRoundDto(
     bool HasUserPredicted,
     RoundStatus Status,
     IEnumerable<ActiveRoundMatchDto> Matches,
-    int? UserPoints);
+    OutcomeSummaryDto? OutcomeSummary);
+
+/// <summary>
+/// Summary of prediction outcomes for in-progress rounds.
+/// </summary>
+public record OutcomeSummaryDto(
+    int ExactScoreCount,
+    int CorrectResultCount,
+    int IncorrectCount);

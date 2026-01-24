@@ -72,16 +72,43 @@
     background-color: var(--red);
 }
 
-/* User Points Display - In-Progress Rounds */
-.user-points-display {
+/* Outcome Summary - In-Progress Rounds */
+.outcome-summary {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 0.5rem;
     width: 100%;
     padding: 0.5rem 0.75rem;
-    background-color: var(--green-600);
-    color: var(--white);
+    background-color: var(--black-alpha-25);
     border-radius: var(--bs-border-radius);
-    font-size: 0.9rem;
+    font-size: 1rem;
     font-weight: 600;
+}
+
+.outcome-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.outcome-item i {
+    font-size: 1.1rem;
+}
+
+.outcome-exact {
+    color: var(--green-600);
+}
+
+.outcome-correct {
+    color: var(--yellow);
+}
+
+.outcome-incorrect {
+    color: var(--red);
+}
+
+.outcome-separator {
+    color: var(--grey-300);
+    opacity: 0.5;
 }

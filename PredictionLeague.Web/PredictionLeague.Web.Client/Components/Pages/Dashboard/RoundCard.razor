@@ -56,11 +56,23 @@
         }
     </div>
     <div class="footer">
-        @if (IsInProgress && Round.UserPoints.HasValue)
+        @if (IsInProgress && Round.OutcomeSummary != null)
         {
-            <div class="user-points-display">
-                <span class="bi bi-trophy-fill me-2"></span>
-                <span>@Round.UserPoints.Value pts</span>
+            <div class="outcome-summary">
+                <span class="outcome-item outcome-exact">
+                    <i class="bi bi-bullseye"></i>
+                    <span>@Round.OutcomeSummary.ExactScoreCount</span>
+                </span>
+                <span class="outcome-separator">·</span>
+                <span class="outcome-item outcome-correct">
+                    <i class="bi bi-check-lg"></i>
+                    <span>@Round.OutcomeSummary.CorrectResultCount</span>
+                </span>
+                <span class="outcome-separator">·</span>
+                <span class="outcome-item outcome-incorrect">
+                    <i class="bi bi-x-lg"></i>
+                    <span>@Round.OutcomeSummary.IncorrectCount</span>
+                </span>
             </div>
         }
         else if (!IsInProgress && Round.DeadlineUtc > DateTime.UtcNow)

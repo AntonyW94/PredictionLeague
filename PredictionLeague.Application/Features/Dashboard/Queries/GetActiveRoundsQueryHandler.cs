@@ -1,7 +1,6 @@
 using MediatR;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Dashboard;
-using PredictionLeague.Domain.Common.Constants;
 using PredictionLeague.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -113,16 +112,14 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
                     Enum.Parse<MatchStatus>(m.Status)))
                 : Enumerable.Empty<ActiveRoundMatchDto>();
 
-            // Calculate user points for in-progress rounds
-            int? userPoints = null;
-            if (status == RoundStatus.InProgress && r.HasUserPredicted)
+            // Calculate outcome summary for in-progress rounds
+            OutcomeSummaryDto? outcomeSummary = null;
+            if (status == RoundStatus.InProgress && r.HasUserPredicted && roundMatches != null)
             {
-                userPoints = roundMatches?.Sum(m => m.Outcome switch
-                {
-                    PredictionOutcome.ExactScore => PublicLeagueSettings.PointsForExactScore,
-                    PredictionOutcome.CorrectResult => PublicLeagueSettings.PointsForCorrectResult,
-                    _ => 0
-                }) ?? 0;
+                outcomeSummary = new OutcomeSummaryDto(
+                    ExactScoreCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.ExactScore),
+                    CorrectResultCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.CorrectResult),
+                    IncorrectCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.Incorrect));
             }
 
             return new ActiveRoundDto(
@@ -133,7 +130,7 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
                 r.HasUserPredicted,
                 status,
                 matches,
-                userPoints);
+                outcomeSummary);
         });
     }
 
