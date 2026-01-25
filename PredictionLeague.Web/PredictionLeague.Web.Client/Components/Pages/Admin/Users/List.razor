@@ -40,7 +40,7 @@
                                         var iconCount = 0;
                                     }
 
-                                    @if (!string.IsNullOrWhiteSpace(user.PasswordHash))
+                                    @if (user.HasLocalPassword)
                                     {
                                         <span class="bi bi-envelope-fill" title="Email & Password"></span>
                                         {

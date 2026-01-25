@@ -4,8 +4,8 @@ public record UserDto(
     string Id,
     string FullName,
     string Email,
-    string? PhoneNumber, 
+    string? PhoneNumber,
     bool IsAdmin,
-    string? PasswordHash,
+    bool HasLocalPassword,
     List<string> SocialProviders
 );

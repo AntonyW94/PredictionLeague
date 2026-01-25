@@ -23,12 +23,12 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, IEnumer
                 u.[FirstName] + ' ' + u.[LastName] AS FullName,
                 u.[Email],
                 u.[PhoneNumber],
-                u.[PasswordHash],
+                CAST(CASE WHEN u.[PasswordHash] IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS HasLocalPassword,
                 CAST(CASE WHEN EXISTS (SELECT 1 FROM [AspNetUserRoles] ur WHERE ur.UserId = u.Id AND ur.RoleId = (SELECT Id FROM AspNetRoles WHERE Name = @AdminRoleName)) THEN 1 ELSE 0 END AS bit) AS IsAdmin,
                 STRING_AGG(ul.[LoginProvider], ',') AS SocialProviders
-            FROM 
+            FROM
                 [AspNetUsers] u
-            LEFT JOIN 
+            LEFT JOIN
                 [AspNetUserLogins] ul ON u.Id = ul.UserId
             GROUP BY
                 u.[Id], u.[FirstName], u.[LastName], u.[Email], u.[PhoneNumber], u.[PasswordHash]
@@ -44,7 +44,7 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, IEnumer
             u.Email,
             u.PhoneNumber,
             u.IsAdmin,
-            u.PasswordHash,
+            u.HasLocalPassword,
             u.SocialProviders?.Split(',').ToList() ?? new List<string>()
         ));
     }
@@ -55,7 +55,7 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, IEnumer
         string FullName,
         string Email,
         string? PhoneNumber,
-        string? PasswordHash,
+        bool HasLocalPassword,
         bool IsAdmin,
         string? SocialProviders
     );
