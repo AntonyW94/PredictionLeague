@@ -15,6 +15,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseSecurityHeaders();
 
 app.UseHttpsRedirection();
 app.UseRouting();
