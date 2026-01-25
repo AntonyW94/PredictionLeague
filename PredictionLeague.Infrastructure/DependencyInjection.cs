@@ -71,5 +71,6 @@ public static class DependencyInjection
         services.AddScoped<IUserManager, UserManagerService>();
         services.AddHttpClient<IFootballDataService, FootballDataService>();
         services.AddScoped<ILeagueStatsService, LeagueStatsService>();
+        services.AddScoped<ILeagueMembershipService, LeagueMembershipService>();
     }
 }

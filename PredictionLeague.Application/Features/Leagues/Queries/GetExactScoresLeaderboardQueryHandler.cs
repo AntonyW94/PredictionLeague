@@ -1,14 +1,18 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Data;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;
 
-public class GetExactScoresLeaderboardQueryHandler(IApplicationReadDbConnection connection) : IRequestHandler<GetExactScoresLeaderboardQuery, ExactScoresLeaderboardDto>
+public class GetExactScoresLeaderboardQueryHandler(
+    IApplicationReadDbConnection connection,
+    ILeagueMembershipService membershipService) : IRequestHandler<GetExactScoresLeaderboardQuery, ExactScoresLeaderboardDto>
 {
     public async Task<ExactScoresLeaderboardDto> Handle(GetExactScoresLeaderboardQuery request, CancellationToken cancellationToken)
     {
+        await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
         const string entriesSql = @"
             SELECT
 	            RANK() OVER (ORDER BY COALESCE(SUM(rr.[ExactScoreCount]), 0) DESC) AS [Rank],
