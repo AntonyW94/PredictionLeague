@@ -8,14 +8,18 @@ namespace PredictionLeague.Application.Features.Admin.Users.Commands;
 public class UpdateUserRoleCommandHandler : IRequestHandler<UpdateUserRoleCommand>
 {
     private readonly IUserManager _userManager;
+    private readonly ICurrentUserService _currentUserService;
 
-    public UpdateUserRoleCommandHandler(IUserManager userManager)
+    public UpdateUserRoleCommandHandler(IUserManager userManager, ICurrentUserService currentUserService)
     {
         _userManager = userManager;
+        _currentUserService = currentUserService;
     }
 
     public async Task Handle(UpdateUserRoleCommand request, CancellationToken cancellationToken)
     {
+        _currentUserService.EnsureAdministrator();
+
         var user = await _userManager.FindByIdAsync(request.UserId);
         Guard.Against.EntityNotFound(request.UserId, user, "User");
 

@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PredictionLeague.API.Filters;
 using PredictionLeague.Application.Features.Admin.Rounds.Commands;
 using PredictionLeague.Application.Features.Admin.Seasons.Commands;
@@ -9,6 +10,7 @@ namespace PredictionLeague.API.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [ApiKeyAuthorise]
+[DisableRateLimiting]
 public class TasksController : ApiControllerBase
 {
     private readonly IMediator _mediator;

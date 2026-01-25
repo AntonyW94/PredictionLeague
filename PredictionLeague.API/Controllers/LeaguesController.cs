@@ -158,7 +158,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboard(int leagueId, CancellationToken cancellationToken)
     {
-        var query = new GetOverallLeaderboardQuery(leagueId);
+        var query = new GetOverallLeaderboardQuery(leagueId, CurrentUserId);
         var result = await _mediator.Send(query, cancellationToken);
 
         return Ok(result);
@@ -168,7 +168,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetMonthlyLeaderboardAsync(int leagueId, int month, CancellationToken cancellationToken)
     {
-        var query = new GetMonthlyLeaderboardQuery(leagueId, month);
+        var query = new GetMonthlyLeaderboardQuery(leagueId, month, CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 
@@ -176,7 +176,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(typeof(ExactScoresLeaderboardDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ExactScoresLeaderboardDto>> GetExactScoresLeaderboard(int leagueId, CancellationToken cancellationToken)
     {
-        var query = new GetExactScoresLeaderboardQuery(leagueId);
+        var query = new GetExactScoresLeaderboardQuery(leagueId, CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 
@@ -208,7 +208,8 @@ public class LeaguesController : ApiControllerBase
             leagueId,
             request.Name,
             request.Price,
-            request.EntryDeadlineUtc);
+            request.EntryDeadlineUtc,
+            CurrentUserId);
 
         await _mediator.Send(command, cancellationToken);
 

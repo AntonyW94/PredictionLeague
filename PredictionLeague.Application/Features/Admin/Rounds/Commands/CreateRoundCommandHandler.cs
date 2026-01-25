@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Admin.Rounds;
 using PredictionLeague.Domain.Models;
 
@@ -8,14 +9,18 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 public class CreateRoundCommandHandler : IRequestHandler<CreateRoundCommand, RoundDto>
 {
     private readonly IRoundRepository _roundRepository;
+    private readonly ICurrentUserService _currentUserService;
 
-    public CreateRoundCommandHandler(IRoundRepository roundRepository)
+    public CreateRoundCommandHandler(IRoundRepository roundRepository, ICurrentUserService currentUserService)
     {
         _roundRepository = roundRepository;
+        _currentUserService = currentUserService;
     }
 
     public async Task<RoundDto> Handle(CreateRoundCommand request, CancellationToken cancellationToken)
     {
+        _currentUserService.EnsureAdministrator();
+
         var round = Round.Create(
             request.SeasonId,
             request.RoundNumber,

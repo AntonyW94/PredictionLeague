@@ -11,17 +11,21 @@ public class DeleteUserCommandHandler : IRequestHandler<DeleteUserCommand>
 {
     private readonly IUserManager _userManager;
     private readonly ILeagueRepository _leagueRepository;
+    private readonly ICurrentUserService _currentUserService;
 
-    public DeleteUserCommandHandler(IUserManager userManager, ILeagueRepository leagueRepository)
+    public DeleteUserCommandHandler(
+        IUserManager userManager,
+        ILeagueRepository leagueRepository,
+        ICurrentUserService currentUserService)
     {
         _userManager = userManager;
         _leagueRepository = leagueRepository;
+        _currentUserService = currentUserService;
     }
 
     public async Task Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
-        if (!request.IsDeletingUserAdmin)
-            throw new AuthenticationException("You do not have permission to delete users.");
+        _currentUserService.EnsureAdministrator();
 
         if (request.UserIdToDelete == request.DeletingUserId)
             throw new InvalidOperationException("Administrators cannot delete their own account.");

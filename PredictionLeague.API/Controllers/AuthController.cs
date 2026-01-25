@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PredictionLeague.Application.Features.Authentication.Commands.Login;
 using PredictionLeague.Application.Features.Authentication.Commands.Logout;
 using PredictionLeague.Application.Features.Authentication.Commands.RefreshToken;
@@ -13,6 +14,7 @@ namespace PredictionLeague.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+[EnableRateLimiting("auth")]
 public class AuthController : AuthControllerBase
 {
     private readonly ILogger<AuthController> _logger;
