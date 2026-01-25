@@ -5,7 +5,7 @@ using PredictionLeague.Web.Client.Components;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 
-builder.Logging.SetMinimumLevel(LogLevel.Information);
+builder.Logging.SetMinimumLevel(LogLevel.Warning);
 builder.RootComponents.Add<App>("#app");
 builder.Services.AddClientServices();
 
