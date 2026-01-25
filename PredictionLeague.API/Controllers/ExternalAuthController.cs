@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PredictionLeague.Application.Features.Authentication.Commands.LoginWithGoogle;
 using PredictionLeague.Contracts.Authentication;
 using System.Net;
@@ -11,6 +12,7 @@ using System.Net;
 namespace PredictionLeague.API.Controllers;
 
 [Route("external-auth")]
+[EnableRateLimiting("auth")]
 public class ExternalAuthController : AuthControllerBase
 {
     private readonly ILogger<ExternalAuthController> _logger;
