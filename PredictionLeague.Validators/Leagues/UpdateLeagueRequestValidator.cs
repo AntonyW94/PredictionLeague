@@ -12,5 +12,12 @@ public class UpdateLeagueRequestValidator : AbstractValidator<UpdateLeagueReques
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("League name cannot be empty.")
             .Length(3, 100).WithMessage("League name must be between 3 and 100 characters.");
+
+        RuleFor(x => x.Price)
+            .GreaterThanOrEqualTo(0).WithMessage("Price must be 0 or greater.")
+            .LessThanOrEqualTo(10000).WithMessage("Price must not exceed 10,000.");
+
+        RuleFor(x => x.EntryDeadlineUtc)
+            .GreaterThan(DateTime.UtcNow).WithMessage("Entry deadline must be in the future.");
     }
 }
