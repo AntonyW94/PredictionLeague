@@ -15,10 +15,18 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
     private readonly IBoostService _boostService;
     private readonly ILeagueRepository _leagueRepository;
     private readonly IRoundRepository _roundRepository;
-    private readonly IUserPredictionRepository _userPredictionRepository; 
+    private readonly IUserPredictionRepository _userPredictionRepository;
     private readonly ILeagueStatsService _statsService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public UpdateMatchResultsCommandHandler(IMediator mediator, IBoostService boostService, ILeagueRepository leagueRepository, IRoundRepository roundRepository, IUserPredictionRepository userPredictionRepository, ILeagueStatsService statsService)
+    public UpdateMatchResultsCommandHandler(
+        IMediator mediator,
+        IBoostService boostService,
+        ILeagueRepository leagueRepository,
+        IRoundRepository roundRepository,
+        IUserPredictionRepository userPredictionRepository,
+        ILeagueStatsService statsService,
+        ICurrentUserService currentUserService)
     {
         _mediator = mediator;
         _boostService = boostService;
@@ -26,10 +34,16 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         _roundRepository = roundRepository;
         _userPredictionRepository = userPredictionRepository;
         _statsService = statsService;
+        _currentUserService = currentUserService;
     }
 
     public async Task Handle(UpdateMatchResultsCommand request, CancellationToken cancellationToken)
     {
+        // If user is authenticated (admin UI call), verify they're an administrator.
+        // If not authenticated (scheduled task via API key), skip the check.
+        if (_currentUserService.IsAuthenticated)
+            _currentUserService.EnsureAdministrator();
+
         var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
         Guard.Against.EntityNotFound(request.RoundId, round, "Round");
         var wasRoundPublished = round.Status == RoundStatus.Published;

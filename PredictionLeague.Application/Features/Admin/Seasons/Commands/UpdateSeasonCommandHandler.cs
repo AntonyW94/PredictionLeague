@@ -12,15 +12,22 @@ public class UpdateSeasonCommandHandler : IRequestHandler<UpdateSeasonCommand>
 {
     private readonly ISeasonRepository _seasonRepository;
     private readonly IFootballDataService _footballDataService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public UpdateSeasonCommandHandler(ISeasonRepository seasonRepository, IFootballDataService footballDataService)
+    public UpdateSeasonCommandHandler(
+        ISeasonRepository seasonRepository,
+        IFootballDataService footballDataService,
+        ICurrentUserService currentUserService)
     {
         _seasonRepository = seasonRepository;
         _footballDataService = footballDataService;
+        _currentUserService = currentUserService;
     }
 
     public async Task Handle(UpdateSeasonCommand request, CancellationToken cancellationToken)
     {
+        _currentUserService.EnsureAdministrator();
+
         var season = await _seasonRepository.GetByIdAsync(request.Id, cancellationToken);
         Guard.Against.EntityNotFound(request.Id, season, "Season");
        

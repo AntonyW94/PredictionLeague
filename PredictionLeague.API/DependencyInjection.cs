@@ -3,8 +3,10 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using PredictionLeague.API.Services;
 using PredictionLeague.Application.Common.Behaviours;
 using PredictionLeague.Application.Common.Interfaces;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Infrastructure.Authentication.Settings;
 using PredictionLeague.Validators.Authentication;
 using System.Text;
@@ -66,6 +68,10 @@ public static class DependencyInjection
     private static void AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+
+        // Add HttpContextAccessor for CurrentUserService
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
 
         services.AddMediatR(cfg =>
         {

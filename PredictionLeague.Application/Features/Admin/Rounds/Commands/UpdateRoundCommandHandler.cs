@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Common.Guards;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
@@ -8,14 +9,18 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 public class UpdateRoundCommandHandler : IRequestHandler<UpdateRoundCommand>
 {
     private readonly IRoundRepository _roundRepository;
+    private readonly ICurrentUserService _currentUserService;
 
-    public UpdateRoundCommandHandler(IRoundRepository roundRepository)
+    public UpdateRoundCommandHandler(IRoundRepository roundRepository, ICurrentUserService currentUserService)
     {
         _roundRepository = roundRepository;
+        _currentUserService = currentUserService;
     }
 
     public async Task Handle(UpdateRoundCommand request, CancellationToken cancellationToken)
     {
+        _currentUserService.EnsureAdministrator();
+
         var round = await _roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
         Guard.Against.EntityNotFound(request.RoundId, round, "Round");
 
