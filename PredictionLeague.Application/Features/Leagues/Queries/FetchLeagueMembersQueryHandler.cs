@@ -17,6 +17,21 @@ public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembers
 
     public async Task<LeagueMembersPageDto?> Handle(FetchLeagueMembersQuery request, CancellationToken cancellationToken)
     {
+        // Verify user is the league administrator
+        const string adminCheckSql = @"
+            SELECT COUNT(*)
+            FROM [Leagues]
+            WHERE [Id] = @LeagueId
+              AND [AdministratorUserId] = @CurrentUserId;";
+
+        var isAdmin = await _dbConnection.QuerySingleOrDefaultAsync<int>(
+            adminCheckSql,
+            cancellationToken,
+            new { request.LeagueId, request.CurrentUserId });
+
+        if (isAdmin == 0)
+            throw new UnauthorizedAccessException("Only the league administrator can view the members list.");
+
         const string sql = @"
             SELECT
                 l.[Name] AS LeagueName,
