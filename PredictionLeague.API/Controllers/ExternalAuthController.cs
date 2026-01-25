@@ -28,14 +28,18 @@ public class ExternalAuthController : AuthControllerBase
     {
         _logger.LogInformation("Called google-login");
 
+        // Validate and sanitise redirect URLs to prevent open redirect attacks
+        var safeReturnUrl = IsValidLocalUrl(returnUrl) ? returnUrl : "/";
+        var safeSource = IsValidLocalUrl(source) ? source : "/login";
+
         var callbackUrl = Url.Action("GoogleCallback");
         var properties = new AuthenticationProperties
         {
             RedirectUri = callbackUrl,
             Items =
             {
-                { "returnUrl", returnUrl },
-                { "source", source }
+                { "returnUrl", safeReturnUrl },
+                { "source", safeSource }
             }
         };
 
@@ -51,6 +55,20 @@ public class ExternalAuthController : AuthControllerBase
         var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
         var returnUrl = authenticateResult.Properties?.Items["returnUrl"] ?? "/";
         var source = authenticateResult.Properties?.Items["source"] ?? "/login";
+
+        // Defence in depth - validate URLs again before redirect
+        if (!IsValidLocalUrl(returnUrl))
+        {
+            _logger.LogWarning("Invalid returnUrl detected in callback: {ReturnUrl}", returnUrl);
+            returnUrl = "/";
+        }
+
+        if (!IsValidLocalUrl(source))
+        {
+            _logger.LogWarning("Invalid source detected in callback: {Source}", source);
+            source = "/login";
+        }
+
         var command = new LoginWithGoogleCommand(authenticateResult, source);
         var result = await _mediator.Send(command, cancellationToken);
 
@@ -71,6 +89,30 @@ public class ExternalAuthController : AuthControllerBase
 
     private IActionResult RedirectWithError(string returnUrl, string error)
     {
-        return Redirect($"{returnUrl}?error={Uri.EscapeDataString(error)}");
+        var safeReturnUrl = IsValidLocalUrl(returnUrl) ? returnUrl : "/login";
+        return Redirect($"{safeReturnUrl}?error={Uri.EscapeDataString(error)}");
+    }
+
+    /// <summary>
+    /// Validates that a URL is a local relative path to prevent open redirect attacks.
+    /// </summary>
+    private static bool IsValidLocalUrl(string? url)
+    {
+        if (string.IsNullOrEmpty(url))
+            return false;
+
+        // Only allow relative URLs starting with /
+        if (!url.StartsWith('/'))
+            return false;
+
+        // Block protocol-relative URLs (//evil.com)
+        if (url.StartsWith("//"))
+            return false;
+
+        // Block URLs with backslash (/\evil.com in some browsers)
+        if (url.Contains('\\'))
+            return false;
+
+        return true;
     }
 }
