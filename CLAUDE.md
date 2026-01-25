@@ -125,6 +125,29 @@ This applies to:
 | Handlers | Handler suffix | `CreateLeagueCommandHandler` |
 | DTOs | Dto suffix | `LeagueDto` |
 
+### File Organisation
+
+**One public class or interface per file** - Each public class, record, or interface must be in its own file. Never define multiple public types in a single file.
+
+```csharp
+// CORRECT - Each type in its own file
+// LeagueDto.cs
+public record LeagueDto(int Id, string Name);
+
+// LeagueMemberDto.cs
+public record LeagueMemberDto(int Id, string UserId);
+
+// WRONG - Multiple public types in one file
+// LeagueDtos.cs
+public record LeagueDto(int Id, string Name);
+public record LeagueMemberDto(int Id, string UserId); // Should be in separate file
+```
+
+This applies to:
+- Classes and records
+- Interfaces
+- All projects in the solution
+
 ### Code Formatting
 
 **Always put statements on a new line after `if`** - Never put `return`, `continue`, `break`, or other statements on the same line as an `if`:

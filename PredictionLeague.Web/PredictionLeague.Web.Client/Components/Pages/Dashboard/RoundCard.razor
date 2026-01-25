@@ -56,7 +56,26 @@
         }
     </div>
     <div class="footer">
-        @if (!IsInProgress && Round.DeadlineUtc > DateTime.UtcNow)
+        @if (IsInProgress && Round.OutcomeSummary != null)
+        {
+            <div class="outcome-summary">
+                <span class="outcome-item">
+                    <span>🎯</span>
+                    <span>@Round.OutcomeSummary.ExactScoreCount</span>
+                </span>
+                <span class="outcome-separator">·</span>
+                <span class="outcome-item">
+                    <span>✅</span>
+                    <span>@Round.OutcomeSummary.CorrectResultCount</span>
+                </span>
+                <span class="outcome-separator">·</span>
+                <span class="outcome-item">
+                    <span>❌</span>
+                    <span>@Round.OutcomeSummary.IncorrectCount</span>
+                </span>
+            </div>
+        }
+        else if (!IsInProgress && Round.DeadlineUtc > DateTime.UtcNow)
         {
             <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
                 @if (Round.HasUserPredicted)

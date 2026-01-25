@@ -12,4 +12,5 @@ public record ActiveRoundDto(
     DateTime DeadlineUtc,
     bool HasUserPredicted,
     RoundStatus Status,
-    IEnumerable<ActiveRoundMatchDto> Matches);
+    IEnumerable<ActiveRoundMatchDto> Matches,
+    OutcomeSummaryDto? OutcomeSummary);

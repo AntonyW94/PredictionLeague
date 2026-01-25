@@ -98,14 +98,10 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
             .ToDictionary(g => g.Key, g => g.ToList());
 
         // Map to DTOs
-        return rounds.Select(r => new ActiveRoundDto(
-            r.Id,
-            r.SeasonName,
-            r.RoundNumber,
-            r.DeadlineUtc,
-            r.HasUserPredicted,
-            Enum.Parse<RoundStatus>(r.Status),
-            matchesByRound.TryGetValue(r.Id, out var roundMatches)
+        return rounds.Select(r =>
+        {
+            var status = Enum.Parse<RoundStatus>(r.Status);
+            var matches = matchesByRound.TryGetValue(r.Id, out var roundMatches)
                 ? roundMatches.Select(m => new ActiveRoundMatchDto(
                     m.MatchId,
                     m.HomeTeamLogoUrl,
@@ -114,8 +110,28 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
                     m.PredictedAwayScore,
                     m.Outcome,
                     Enum.Parse<MatchStatus>(m.Status)))
-                : Enumerable.Empty<ActiveRoundMatchDto>()
-        ));
+                : Enumerable.Empty<ActiveRoundMatchDto>();
+
+            // Calculate outcome summary for in-progress rounds
+            OutcomeSummaryDto? outcomeSummary = null;
+            if (status == RoundStatus.InProgress && r.HasUserPredicted && roundMatches != null)
+            {
+                outcomeSummary = new OutcomeSummaryDto(
+                    ExactScoreCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.ExactScore),
+                    CorrectResultCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.CorrectResult),
+                    IncorrectCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.Incorrect));
+            }
+
+            return new ActiveRoundDto(
+                r.Id,
+                r.SeasonName,
+                r.RoundNumber,
+                r.DeadlineUtc,
+                r.HasUserPredicted,
+                status,
+                matches,
+                outcomeSummary);
+        });
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
