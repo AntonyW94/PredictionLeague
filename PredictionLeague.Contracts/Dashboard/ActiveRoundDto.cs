@@ -14,11 +14,3 @@ public record ActiveRoundDto(
     RoundStatus Status,
     IEnumerable<ActiveRoundMatchDto> Matches,
     OutcomeSummaryDto? OutcomeSummary);
-
-/// <summary>
-/// Summary of prediction outcomes for in-progress rounds.
-/// </summary>
-public record OutcomeSummaryDto(
-    int ExactScoreCount,
-    int CorrectResultCount,
-    int IncorrectCount);
