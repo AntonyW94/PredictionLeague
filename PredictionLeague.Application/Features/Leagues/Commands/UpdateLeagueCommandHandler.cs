@@ -20,7 +20,10 @@ public class UpdateLeagueCommandHandler : IRequestHandler<UpdateLeagueCommand>
     {
         var league = await _leagueRepository.GetByIdAsync(request.Id, cancellationToken);
         Guard.Against.EntityNotFound(request.Id, league, "League");
-        
+
+        if (league.AdministratorUserId != request.UserId)
+            throw new UnauthorizedAccessException("Only the league administrator can update the league.");
+
         if (league.EntryDeadlineUtc < DateTime.UtcNow)
             throw new InvalidOperationException("This league cannot be edited because its entry deadline has passed.");
       
