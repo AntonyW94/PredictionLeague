@@ -1,0 +1,328 @@
+/* Flexbox Utilities - Complete set */
+
+/* ============================================
+   DISPLAY FLEX
+   ============================================ */
+
+.flex {
+    display: flex !important;
+}
+
+.inline-flex {
+    display: inline-flex !important;
+}
+
+/* ============================================
+   FLEX DIRECTION
+   ============================================ */
+
+.flex-row {
+    flex-direction: row !important;
+}
+
+.flex-row-reverse {
+    flex-direction: row-reverse !important;
+}
+
+.flex-col {
+    flex-direction: column !important;
+}
+
+.flex-col-reverse {
+    flex-direction: column-reverse !important;
+}
+
+/* ============================================
+   FLEX WRAP
+   ============================================ */
+
+.flex-wrap {
+    flex-wrap: wrap !important;
+}
+
+.flex-nowrap {
+    flex-wrap: nowrap !important;
+}
+
+.flex-wrap-reverse {
+    flex-wrap: wrap-reverse !important;
+}
+
+/* ============================================
+   JUSTIFY CONTENT
+   ============================================ */
+
+.justify-start {
+    justify-content: flex-start !important;
+}
+
+.justify-end {
+    justify-content: flex-end !important;
+}
+
+.justify-center {
+    justify-content: center !important;
+}
+
+.justify-between {
+    justify-content: space-between !important;
+}
+
+.justify-around {
+    justify-content: space-around !important;
+}
+
+.justify-evenly {
+    justify-content: space-evenly !important;
+}
+
+/* Legacy alias - kept for backwards compatibility */
+.space-between {
+    justify-content: space-between !important;
+}
+
+/* ============================================
+   ALIGN ITEMS
+   ============================================ */
+
+.items-start {
+    align-items: flex-start !important;
+}
+
+.items-end {
+    align-items: flex-end !important;
+}
+
+.items-center {
+    align-items: center !important;
+}
+
+.items-baseline {
+    align-items: baseline !important;
+}
+
+.items-stretch {
+    align-items: stretch !important;
+}
+
+/* ============================================
+   ALIGN CONTENT
+   ============================================ */
+
+.content-start {
+    align-content: flex-start !important;
+}
+
+.content-end {
+    align-content: flex-end !important;
+}
+
+.content-center {
+    align-content: center !important;
+}
+
+.content-between {
+    align-content: space-between !important;
+}
+
+.content-around {
+    align-content: space-around !important;
+}
+
+.content-stretch {
+    align-content: stretch !important;
+}
+
+/* ============================================
+   ALIGN SELF
+   ============================================ */
+
+.self-auto {
+    align-self: auto !important;
+}
+
+.self-start {
+    align-self: flex-start !important;
+}
+
+.self-end {
+    align-self: flex-end !important;
+}
+
+.self-center {
+    align-self: center !important;
+}
+
+.self-stretch {
+    align-self: stretch !important;
+}
+
+.self-baseline {
+    align-self: baseline !important;
+}
+
+/* ============================================
+   FLEX GROW & SHRINK
+   ============================================ */
+
+.flex-grow-0 {
+    flex-grow: 0 !important;
+}
+
+.flex-grow-1 {
+    flex-grow: 1 !important;
+}
+
+.flex-shrink-0 {
+    flex-shrink: 0 !important;
+}
+
+.flex-shrink-1 {
+    flex-shrink: 1 !important;
+}
+
+/* ============================================
+   FLEX BASIS
+   ============================================ */
+
+.basis-auto {
+    flex-basis: auto !important;
+}
+
+.basis-0 {
+    flex-basis: 0 !important;
+}
+
+.basis-full {
+    flex-basis: 100% !important;
+}
+
+/* ============================================
+   FLEX SHORTHAND
+   ============================================ */
+
+.flex-1 {
+    flex: 1 1 0% !important;
+}
+
+.flex-auto {
+    flex: 1 1 auto !important;
+}
+
+.flex-initial {
+    flex: 0 1 auto !important;
+}
+
+.flex-none {
+    flex: none !important;
+}
+
+/* ============================================
+   GAP
+   ============================================ */
+
+.gap-0 {
+    gap: 0 !important;
+}
+
+.gap-1 {
+    gap: 0.25rem !important;
+}
+
+.gap-2 {
+    gap: 0.5rem !important;
+}
+
+.gap-3 {
+    gap: 0.75rem !important;
+}
+
+.gap-4 {
+    gap: 1rem !important;
+}
+
+.gap-5 {
+    gap: 1.25rem !important;
+}
+
+.gap-6 {
+    gap: 1.5rem !important;
+}
+
+.gap-8 {
+    gap: 2rem !important;
+}
+
+.gap-10 {
+    gap: 2.5rem !important;
+}
+
+.gap-12 {
+    gap: 3rem !important;
+}
+
+/* Row gap */
+.gap-x-0 {
+    column-gap: 0 !important;
+}
+
+.gap-x-1 {
+    column-gap: 0.25rem !important;
+}
+
+.gap-x-2 {
+    column-gap: 0.5rem !important;
+}
+
+.gap-x-3 {
+    column-gap: 0.75rem !important;
+}
+
+.gap-x-4 {
+    column-gap: 1rem !important;
+}
+
+/* Column gap */
+.gap-y-0 {
+    row-gap: 0 !important;
+}
+
+.gap-y-1 {
+    row-gap: 0.25rem !important;
+}
+
+.gap-y-2 {
+    row-gap: 0.5rem !important;
+}
+
+.gap-y-3 {
+    row-gap: 0.75rem !important;
+}
+
+.gap-y-4 {
+    row-gap: 1rem !important;
+}
+
+/* ============================================
+   CONVENIENCE COMBINATIONS
+   ============================================ */
+
+/* Legacy - kept for backwards compatibility */
+.flex-center {
+    display: flex;
+    align-items: center !important;
+}
+
+/* Center both axes */
+.flex-center-all {
+    display: flex;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+/* Column centered */
+.flex-col-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center !important;
+}

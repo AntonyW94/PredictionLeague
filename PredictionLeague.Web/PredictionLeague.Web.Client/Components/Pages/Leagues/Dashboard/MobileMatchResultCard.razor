@@ -4,8 +4,8 @@
 @using PredictionLeague.Contracts.Admin.Rounds
 @using PredictionLeague.Web.Client.Components.Pages.Boosts
 
-<div class="leaderboard-card">
-    <div class="card-header mobile-match-header">
+<div class="card slide">
+    <div class="header mobile-match-header">
         <div class="d-flex align-items-center">
             <img src="@Match.HomeTeamLogoUrl" class="match-logo-small" alt="@Match.HomeTeamName Logo" />
             <span class="mx-2 fs-5 fw-bold">@Match.HomeTeamAbbreviation vs @Match.AwayTeamAbbreviation</span>
@@ -18,9 +18,9 @@
                           AwayScore="Match.ActualAwayTeamScore" />
     </div>
 
-    <div class="card-body">
+    <div class="body leaderboard-body">
         <div class="table-responsive rounded flex-grow-1">
-            <table class="leaderboard-table light text-white">
+            <table class="leaderboard-table table-striped-purple light text-white">
                 <thead>
                 <tr>
                     <th class="text-start fw-bold">Player</th>
@@ -47,7 +47,7 @@
                                 {
                                     @if (!player.HasPredicted && DeadlineUtc < DateTime.UtcNow)
                                     {
-                                        <span class="not-predicted-icon text-pl-red bi bi-x-circle-fill" title="No predictions submitted"></span>
+                                        <span class="not-predicted-icon text-red bi bi-x-circle-fill" title="No predictions submitted"></span>
                                     }
                                     else
                                     {

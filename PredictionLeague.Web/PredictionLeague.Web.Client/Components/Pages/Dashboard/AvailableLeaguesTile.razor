@@ -6,52 +6,58 @@
 @using PredictionLeague.Web.Client.Services.Dashboard
 @using System.Globalization
 
-<div class="card h-100 d-flex flex-column">
+<div class="section h-100">
     <h3 class="text-white text-center fw-bold mb-4">Available Leagues</h3>
 
     <ApiError Message="@DashboardState.AvailableLeaguesErrorMessage" />
 
     @if (DashboardState.IsAvailableLeaguesLoading)
     {
-        <p class="text-center text-white"><em>Loading leagues...</em></p>
+        <div class="d-flex justify-content-center align-items-center flex-grow-1">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading leagues...</span>
+            </div>
+        </div>
     }
     else if (DashboardState.AvailableLeagues.Any())
     {
         <div class="card-grid">
             @foreach (var league in DashboardState.AvailableLeagues)
             {
-                <div class="action-card light">
-                    <div class="card-header">
+                <div class="card">
+                    <div class="header">
                         <h5 class="fw-bold text-white">@league.Name</h5>
-                        <small class="text-white-50">@league.SeasonName</small>
+                        <small class="text-white-50 fw-bold">@league.SeasonName</small>
                     </div>
 
-                    <div class="action-card-body">
-                        <div class="action-card-row action-card-row--centered">
+                    <div class="body">
+                        <div class="detail-list">
+                            <div class="detail-row centered">
                             <div class="badge-group badge-group--red">
                                 <span class="badge-icon"><i class="bi bi-alarm"></i></span>
                                 <LocalTime UtcDate="@league.EntryDeadlineUtc"/>
                             </div>
                         </div>
 
-                        <div class="action-card-row">
-                            <div class="badge-group badge-group--blue">
-                                <span class="badge-icon">
-                                    <i class="bi bi-people-fill"></i>
-                                </span>
-                                <span>@league.MemberCount</span>
-                            </div>
+                            <div class="detail-row">
+                                <div class="badge-group badge-group--blue">
+                                    <span class="badge-icon">
+                                        <i class="bi bi-people-fill"></i>
+                                    </span>
+                                    <span>@league.MemberCount</span>
+                                </div>
 
-                            <div class="badge-group badge-group--green">
-                                <span class="badge-icon">
-                                    <i class="bi bi-cash-stack"></i>
-                                </span>
-                                <span>@(league.Price > 0 ? league.Price.ToString("C", new CultureInfo("en-GB")) : "Free Entry")</span>
+                                <div class="badge-group badge-group--green">
+                                    <span class="badge-icon">
+                                        <i class="bi bi-cash-stack"></i>
+                                    </span>
+                                    <span>@(league.Price > 0 ? league.Price.ToString("C", new CultureInfo("en-GB")) : "Free Entry")</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="action-card-footer">
+                    <div class="footer">
                         <button class="btn btn-sm purple-accent-button w-100"
                                 @onclick="() => HandleJoinLeagueAsync(league.Id)"
                                 disabled="@_isBusy">

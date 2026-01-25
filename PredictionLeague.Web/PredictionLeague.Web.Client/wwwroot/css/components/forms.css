@@ -1,178 +1,140 @@
-﻿.form-container {
-    background-color: var(--pl-purple-1000);
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+
+.form-container {
+    background-color: var(--purple-1000);
     padding: 2.5rem;
     border-radius: var(--bs-border-radius);
     width: 100%;
     max-width: 600px;
 }
 
-    .form-container.wide {
-        max-width: 900px;
-    }
-
-    .form-container.extra-wide {
-        max-width: 1200px;
-    }
-
-.match-logo {
-    height: 25px;
+.form-container.wide {
+    max-width: 900px;
 }
 
-.logo-wrapper {
-    background-color: transparent;
-    border-radius: 50%;
-    width: 38px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s ease-in-out;
+.form-container.extra-wide {
+    max-width: 1200px;
 }
-
-    .logo-wrapper.visible {
-        background-color: white;
-    }
-
-.swal2-select {
-    background-color: white !important;
-    color: var(--pl-purple-800) !important;
-    border-radius: var(--bs-border-radius);
-    padding: 0.5rem;
-}
-
-.swal2-radio-container {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: 1rem;
-}
-
-    .swal2-radio-container label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
 
 .form-check-input {
-    background-color: var(--pl-red);
-    border-color: var(--pl-red);
+    background-color: var(--red);
+    border-color: var(--red);
 }
 
-    .form-check-input:checked {
-        background-color: var(--pl-green);
-        border-color: var(--pl-green);
-    }
+.form-check-input:checked {
+    background-color: var(--green-600);
+    border-color: var(--green-600);
+}
 
 .form-sub-header {
-    color: var(--pl-grey-100);
+    color: var(--grey-100);
     font-weight: 500;
 }
 
 .input-group-text.prize-label {
-    background-color: var(--pl-purple-900);
-    border-color: var(--pl-purple-900);
-    color: white;
+    background-color: var(--purple-900);
+    border-color: var(--purple-900);
+    color: var(--white);
     font-weight: 500;
 }
 
-.prize-summary .league-card-row {
-    border-bottom: 1px solid var(--pl-purple-800);
-}
-
-    .prize-summary .league-card-row:last-child {
-        border-bottom: none;
-    }
-
 .message-box-solid {
-    color: white;
+    color: var(--white);
     border-radius: var(--bs-border-radius);
     padding: 0.4rem 0.8rem;
-    font-size: 0.85em;
+    font-size: 0.85rem;
     font-weight: 700;
     display: flex;
     align-items: center;
+    text-align: center;
     margin-bottom: 0.5rem;
     margin-top: 0.5rem;
 }
 
-    .message-box-solid::before {
-        display: inline-block;
-        font-family: bootstrap-icons !important;
-        font-style: normal;
-        font-weight: normal !important;
-        font-variant: normal;
-        text-transform: none;
-        line-height: 1;
-        vertical-align: -.125em;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        margin-right: 0.5em;
-        font-size: 1.1em;
-    }
+.message-box-solid::before {
+    display: inline-block;
+    font-family: bootstrap-icons !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    vertical-align: -0.125rem;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+}
 
-    .message-box-solid.error {
-        background-color: var(--pl-red);
-    }
+.message-box-solid.error {
+    background-color: var(--red);
+}
 
-        .message-box-solid.error::before {
-            content: "\F333";
-        }
+.message-box-solid.error::before {
+    content: "\F333";
+}
 
-    .message-box-solid.warning {
-        background-color: var(--pl-yellow);
-        color: var(--pl-purple-900);
-        font-weight: bold;
-    }
+.message-box-solid.warning {
+    background-color: var(--yellow);
+    color: var(--purple-900);
+    font-weight: bold;
+}
 
-        .message-box-solid.warning::before {
-            content: "\F33B";
-            color: var(--pl-purple-900);
-        }
+.message-box-solid.warning::before {
+    content: "\F33B";
+    color: var(--purple-900);
+}
 
-    .message-box-solid.success {
-        background-color: var(--pl-green);
-    }
+.message-box-solid.success {
+    background-color: var(--green-600);
+}
 
-        .message-box-solid.success::before {
-            content: "\F26B";
-        }
+.message-box-solid.success::before {
+    content: "\F26B";
+}
 
 .form-control {
     height: 48px;
     width: 100%;
     border-radius: 28px;
     padding: 0 18px;
-    background: var(--pl-purple-1000);
-    border: 1px solid var(--pl-white);
-    color: var(--pl-white);
+    background: var(--purple-1000);
+    border: 1px solid var(--white);
+    color: var(--white);
     font-size: 1rem;
     transition: all 0.18s ease;
 }
 
-    .form-control::placeholder {
-        color: var(--pl-white);
-    }
+.form-control::placeholder {
+    color: var(--white);
+}
 
-    .form-control:focus {
-        background: var(--pl-purple-800);
-        color: var(--pl-white);
-        border-color: var(--pl-white);
-        box-shadow: none;
-        outline: none;
-    }
+.form-control:focus {
+    background: var(--purple-800);
+    color: var(--white);
+    border-color: var(--white);
+    box-shadow: none;
+    outline: none;
+}
+
+/* Match form input height for buttons */
+.input-height {
+    height: 48px;
+}
 
 .input-group .form-control:focus {
     z-index: auto;
 }
 
 .input-group:focus-within .password-toggle-btn {
-    background-color: var(--pl-purple-800);
-    color: var(--pl-white);
-    z-index: 2
+    background-color: var(--purple-800);
+    color: var(--white);
+    z-index: 2;
 }
 
-@media(max-width: 768px) {
+/* Tablet and up (--breakpoint-tablet: 768px) */
+@media (min-width: 768px) {
     .message-box-solid {
-        text-align: center;
+        text-align: left;
     }
 }

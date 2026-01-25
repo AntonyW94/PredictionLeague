@@ -1,0 +1,109 @@
+﻿/* --- Dashboard Card Layout (use with .glass-panel) --- */
+.hero-rank-container {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.secondary-rank-box {
+    padding: 0.75rem 0.5rem;
+    height: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* --- Shield Icon System --- */
+.rank-shield-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4.5rem;
+}
+
+    .rank-shield-container.small {
+        width: 2.8rem;
+        height: 3.2rem;
+    }
+
+.rank-shield-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    /* Note: filter is applied as inline style to work with SVG defs and <base href> */
+    stroke-width: 0.1875rem;
+    stroke-linejoin: round;
+    paint-order: stroke fill;
+    vector-effect: non-scaling-stroke;
+}
+
+.rank-shield-text {
+    position: relative;
+    z-index: 2;
+    font-weight: 800;
+    font-size: 1.6rem;
+    margin-top: 0.1875rem;
+    color: var(--white);
+    text-shadow: 0 1px 2px var(--black-alpha-60);
+}
+
+.rank-shield-container.small .rank-shield-text {
+    font-size: 1.1rem;
+    margin-top: 0.1875rem;
+}
+
+/*
+ * Shield gradient colours are applied via inline SVG attributes (fill, stroke)
+ * to work around the <base href> issue where url(#id) references in CSS
+ * resolve relative to the base URL rather than the current document.
+ * See MyLeaguesTile.razor for the gradient definitions and usage.
+ */
+
+/* Rank arrow text shadows for readability */
+.hero-rank-container .text-green-600,
+.hero-rank-container .text-red,
+.secondary-rank-box .text-green-600,
+.secondary-rank-box .text-red {
+    text-shadow: 0 1px 1px var(--black-alpha-50);
+}
+
+.current-user-highlight .text-green-600 {
+    color: var(--white) !important;
+    text-shadow: 0 1px 1px var(--black-alpha-50);
+}
+
+/* --- Financial Row Styles (use with .glass-panel) --- */
+.financial-row {
+    display: flex;
+    border-radius: 0.5rem; /* Override glass-panel's 12px */
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.financial-col {
+    flex: 1;
+    padding: 0.75rem 0.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+    .financial-col:first-child::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        width: 0.125rem;
+        background-color: var(--white-alpha-10);
+        top: 15%;
+        bottom: 15%;
+    }

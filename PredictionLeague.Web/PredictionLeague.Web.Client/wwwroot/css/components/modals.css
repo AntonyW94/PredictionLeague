@@ -1,0 +1,21 @@
+/* SweetAlert Modal Overrides */
+
+.swal2-select {
+    background-color: var(--white) !important;
+    color: var(--purple-800) !important;
+    border-radius: var(--bs-border-radius);
+    padding: 0.5rem;
+}
+
+.swal2-radio-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+    .swal2-radio-container label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }

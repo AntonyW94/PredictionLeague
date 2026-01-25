@@ -5,5 +5,5 @@ namespace PredictionLeague.Application.FootballApi.DTOs;
 public class Status
 {
     [JsonPropertyName("short")]
-    public string Short { get; set; }
+    public string Short { get; set; } = null!;
 }

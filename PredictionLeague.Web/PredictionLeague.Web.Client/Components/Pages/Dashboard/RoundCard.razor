@@ -1,16 +1,23 @@
-﻿@using PredictionLeague.Contracts.Dashboard
+@using PredictionLeague.Contracts.Dashboard
+@using PredictionLeague.Domain.Common.Enumerations
 
-
-<div class="action-card light">
-    <div class="card-header">
+<div class="card slide">
+    <div class="header">
         <h5 class="fw-bold text-white">@Round.SeasonName</h5>
-        <small class="text-white-50">Round @Round.RoundNumber</small>
+        <small class="text-white-50 fw-bold">Round @Round.RoundNumber</small>
     </div>
 
-    <div class="action-card-body">
-        <dl class="mb-0">
-            <div class="action-card-row action-card-row--centered">
-                @if ((Round.DeadlineUtc - DateTime.UtcNow).TotalHours < 24)
+    <div class="body">
+        <dl class="mb-0 detail-list">
+            <div class="detail-row centered">
+                @if (IsInProgress)
+                {
+                    <div class="badge-group badge-group--blue pulsing-blue">
+                        <span class="badge-icon" title="In Progress"><i class="bi bi-play-fill"></i></span>
+                        <span>In Progress</span>
+                    </div>
+                }
+                else if ((Round.DeadlineUtc - DateTime.UtcNow).TotalHours < 24)
                 {
                     <CountdownTimer DeadlineUtc="Round.DeadlineUtc" />
                 }
@@ -23,9 +30,52 @@
                 }
             </div>
         </dl>
+
+        @if (Round.Matches.Any())
+        {
+            <div class="match-preview-grid">
+                @foreach (var match in Round.Matches)
+                {
+                    <div class="match-preview-row @GetMatchBackgroundClass(match) @GetMatchPulsingClass(match)">
+                        <img src="@(match.HomeTeamLogoUrl ?? "images/team-placeholder.svg")"
+                             class="match-preview-logo"
+                             alt="Home"
+                             loading="lazy"
+                             onerror="this.onerror=null; this.src='images/team-placeholder.svg';" />
+                        <span class="match-preview-score">@(match.PredictedHomeScore?.ToString() ?? "-")</span>
+                        <span class="match-preview-vs">v</span>
+                        <span class="match-preview-score">@(match.PredictedAwayScore?.ToString() ?? "-")</span>
+                        <img src="@(match.AwayTeamLogoUrl ?? "images/team-placeholder.svg")"
+                             class="match-preview-logo"
+                             alt="Away"
+                             loading="lazy"
+                             onerror="this.onerror=null; this.src='images/team-placeholder.svg';" />
+                    </div>
+                }
+            </div>
+        }
     </div>
-    <div class="action-card-footer">
-        @if (Round.DeadlineUtc > DateTime.UtcNow)
+    <div class="footer">
+        @if (IsInProgress && Round.OutcomeSummary != null)
+        {
+            <div class="outcome-summary">
+                <span class="outcome-item">
+                    <span>🎯</span>
+                    <span>@Round.OutcomeSummary.ExactScoreCount</span>
+                </span>
+                <span class="outcome-separator">·</span>
+                <span class="outcome-item">
+                    <span>✅</span>
+                    <span>@Round.OutcomeSummary.CorrectResultCount</span>
+                </span>
+                <span class="outcome-separator">·</span>
+                <span class="outcome-item">
+                    <span>❌</span>
+                    <span>@Round.OutcomeSummary.IncorrectCount</span>
+                </span>
+            </div>
+        }
+        else if (!IsInProgress && Round.DeadlineUtc > DateTime.UtcNow)
         {
             <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
                 @if (Round.HasUserPredicted)
@@ -45,5 +95,32 @@
 
 @code {
     [Parameter, EditorRequired]
-    public UpcomingRoundDto Round { get; set; } = null!;
+    public ActiveRoundDto Round { get; set; } = null!;
+
+    private bool IsInProgress => Round.Status == RoundStatus.InProgress;
+
+    private string GetMatchBackgroundClass(ActiveRoundMatchDto match)
+    {
+        return match.Outcome switch
+        {
+            PredictionOutcome.ExactScore => "match-outcome-exact",
+            PredictionOutcome.CorrectResult => "match-outcome-correct-result",
+            PredictionOutcome.Incorrect => "match-outcome-incorrect",
+            _ => "" // Pending or null - use default background
+        };
+    }
+
+    private string GetMatchPulsingClass(ActiveRoundMatchDto match)
+    {
+        if (match.Status != MatchStatus.InProgress)
+            return "";
+
+        return match.Outcome switch
+        {
+            PredictionOutcome.ExactScore => "pulsing-green",
+            PredictionOutcome.CorrectResult => "pulsing",
+            PredictionOutcome.Incorrect => "pulsing-red",
+            _ => "" // Pending - no pulsing
+        };
+    }
 }

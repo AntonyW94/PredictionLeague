@@ -5,5 +5,5 @@ namespace PredictionLeague.Application.FootballApi.DTOs;
 public class LeagueDetailsResponseWrapper
 {
     [JsonPropertyName("response")]
-    public LeagueDetailsResponse[] Response { get; set; }
+    public LeagueDetailsResponse[] Response { get; set; } = null!;
 }

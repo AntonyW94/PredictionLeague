@@ -3,4 +3,5 @@
 public interface IBrowserService
 {
     Task<bool> IsDesktop();
+    Task<bool> IsTabletOrAbove();
 }

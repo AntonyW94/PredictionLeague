@@ -20,11 +20,11 @@ public class DashboardController : ApiControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet("upcoming-rounds")]
-    [ProducesResponseType(typeof(IEnumerable<UpcomingRoundDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<UpcomingRoundDto>>> GetUpcomingRoundsAsync(CancellationToken cancellationToken)
+    [HttpGet("active-rounds")]
+    [ProducesResponseType(typeof(IEnumerable<ActiveRoundDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<ActiveRoundDto>>> GetActiveRoundsAsync(CancellationToken cancellationToken)
     {
-        var query = new GetUpcomingRoundsQuery(CurrentUserId);
+        var query = new GetActiveRoundsQuery(CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 

@@ -8,11 +8,11 @@ public class Fixture
     public int Id { get; set; }
   
     [JsonPropertyName("timezone")]
-    public string TimeZone { get; set; }
-  
+    public string TimeZone { get; set; } = null!;
+
     [JsonPropertyName("date")]
     public DateTimeOffset Date { get; set; }
-  
+
     [JsonPropertyName("status")]
-    public Status Status { get; set; }
+    public Status Status { get; set; } = null!;
 }

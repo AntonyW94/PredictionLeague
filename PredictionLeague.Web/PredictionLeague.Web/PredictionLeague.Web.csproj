@@ -1,26 +1,102 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <!-- Only include English satellite assemblies - excludes de, fr, es, zh-Hans, etc. -->
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\PredictionLeague.API\PredictionLeague.API.csproj" />
-    <ProjectReference Include="..\..\PredictionLeague.Application\PredictionLeague.Application.csproj" />
-    <ProjectReference Include="..\..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
-    <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
-    <ProjectReference Include="..\PredictionLeague.Web.Client\PredictionLeague.Web.Client.csproj" />
-    <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
-    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.17" />
-    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
-    <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-    <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.5.6" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.7.1" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\PredictionLeague.API\PredictionLeague.API.csproj" />
+        <ProjectReference Include="..\..\PredictionLeague.Application\PredictionLeague.Application.csproj" />
+        <ProjectReference Include="..\..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
+        <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
+        <ProjectReference Include="..\PredictionLeague.Web.Client\PredictionLeague.Web.Client.csproj" />
+        <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
+        <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.17" />
+        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+        <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+        <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.5.6" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.7.1" />
+    </ItemGroup>
 
+    <!--
+    CSS Bundling and Cache Busting for Production
+
+    Development (dotnet run): Uses separate CSS files with @imports for easy debugging
+    Production (dotnet publish): Bundles all CSS into one minified file with cache busting
+
+    The Web.Client project creates app.min.css via BuildBundlerMinifier during Release builds.
+    This target then:
+    1. Replaces app.css with the bundled/minified version
+    2. Prepends Google Fonts import
+    3. Deletes individual CSS files
+    4. Adds cache busting version to index.html
+    -->
+    <Target Name="BundleCssAndAddCacheBusting" AfterTargets="Publish">
+        <PropertyGroup>
+            <CssVersion>$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</CssVersion>
+            <PublishWwwRoot>$(PublishDir)wwwroot\</PublishWwwRoot>
+            <PublishCssDir>$(PublishWwwRoot)css\</PublishCssDir>
+            <TargetCss>$(PublishCssDir)app.css</TargetCss>
+            <IndexHtmlPath>$(PublishWwwRoot)index.html</IndexHtmlPath>
+            <!-- Source location where BuildBundlerMinifier creates the bundle (in Web.Client project) -->
+            <SourceBundledCss>$(MSBuildThisFileDirectory)..\PredictionLeague.Web.Client\wwwroot\css\app.min.css</SourceBundledCss>
+        </PropertyGroup>
+
+        <Message Importance="high" Text="Processing CSS bundle..." />
+
+        <!-- Check if bundled CSS exists in source location (Release build creates it) -->
+        <!-- Note: We check the SOURCE location because app.min.css is excluded from static web assets
+             (to avoid build errors on fresh clones), so it won't be in the publish directory -->
+        <PropertyGroup>
+            <BundleExists>false</BundleExists>
+            <BundleExists Condition="Exists('$(SourceBundledCss)')">true</BundleExists>
+        </PropertyGroup>
+
+        <Message Importance="high" Text="Bundle exists: $(BundleExists)" />
+
+        <!-- If bundle exists: Prepend Google Fonts import to bundled CSS, then replace app.css -->
+        <!-- Note: We use PowerShell instead of WriteLinesToFile because WriteLinesToFile
+             treats semicolons as item separators, which breaks the Google Fonts URL
+             (wght@300;400;500;700 gets split into separate lines) -->
+        <Exec
+            Command="powershell -NoProfile -Command &quot;$googleFonts = '@import url(''https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;display=swap'');'; $bundled = Get-Content -Raw '$(SourceBundledCss)'; Set-Content -Path '$(TargetCss)' -Value ($googleFonts + [Environment]::NewLine + $bundled) -NoNewline&quot;"
+            Condition="$(BundleExists)" />
+
+        <Delete Files="$(SourceBundledCss)" Condition="$(BundleExists)" />
+
+        <!-- Delete individual CSS files that are now bundled -->
+        <ItemGroup Condition="$(BundleExists)">
+            <CssFilesToDelete Include="$(PublishCssDir)**\*.css" Exclude="$(TargetCss)" />
+        </ItemGroup>
+        <Delete Files="@(CssFilesToDelete)" Condition="$(BundleExists)" />
+
+        <!-- Remove empty CSS directories -->
+        <RemoveDir Directories="$(PublishCssDir)utilities" Condition="$(BundleExists) And Exists('$(PublishCssDir)utilities')" />
+        <RemoveDir Directories="$(PublishCssDir)layout" Condition="$(BundleExists) And Exists('$(PublishCssDir)layout')" />
+        <RemoveDir Directories="$(PublishCssDir)components\cards" Condition="$(BundleExists) And Exists('$(PublishCssDir)components\cards')" />
+        <RemoveDir Directories="$(PublishCssDir)components" Condition="$(BundleExists) And Exists('$(PublishCssDir)components')" />
+        <RemoveDir Directories="$(PublishCssDir)pages" Condition="$(BundleExists) And Exists('$(PublishCssDir)pages')" />
+
+        <Message Importance="high" Text="CSS bundled and minified successfully!" Condition="$(BundleExists)" />
+
+        <!-- If no bundle (Debug build): Just add cache busting to @imports -->
+        <Exec
+            Command="powershell -NoProfile -Command &quot;(Get-Content '$(TargetCss)') -replace '@import url\(\x27((?!https?://)[^)]+)\x27\)', '@import url(''$$1?v=$(CssVersion)'')' | Set-Content '$(TargetCss)'&quot;"
+            Condition="!$(BundleExists)" />
+
+        <Message Importance="high" Text="CSS imports versioned (Debug mode)." Condition="!$(BundleExists)" />
+
+        <!-- Add cache busting version to index.html -->
+        <Message Importance="high" Text="Adding CSS cache busting version: $(CssVersion)" />
+        <Exec Command="powershell -NoProfile -Command &quot;(Get-Content '$(IndexHtmlPath)') -replace 'href=\&quot;css/app\.css\&quot;', 'href=\&quot;css/app.css?v=$(CssVersion)\&quot;' | Set-Content '$(IndexHtmlPath)'&quot;" />
+
+        <Message Importance="high" Text="CSS processing complete. Cache version: $(CssVersion)" />
+    </Target>
 </Project>

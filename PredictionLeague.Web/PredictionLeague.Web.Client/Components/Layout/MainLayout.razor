@@ -16,7 +16,7 @@
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
+    <a href="">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
 
@@ -43,7 +43,7 @@
         var isAuthenticationPage = relativePath.StartsWith("authentication/");
 
         _navLayoutClass = isHomePage ? "navbar-overlay" : "";
-        _backgroundClass = isAuthenticationPage ? "purple-gradient" : isHomePage ? "light-grey" : "";
+        _backgroundClass = isAuthenticationPage ? "bg-purple-gradient" : isHomePage ? "bg-grey-100" : "";
     }
 
     public void Dispose()

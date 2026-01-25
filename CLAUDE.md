@@ -41,6 +41,13 @@ PredictionLeague.Validators       → FluentValidation validators
 
 **Dependency Direction:** Presentation → Application → Domain (never reverse)
 
+### Project-Specific Guidelines
+
+Some projects have additional guidelines in their own CLAUDE.md files:
+
+- [`PredictionLeague.API/CLAUDE.md`](PredictionLeague.API/CLAUDE.md) - API controllers, authentication, error handling
+- [`PredictionLeague.Web.Client/CLAUDE.md`](PredictionLeague.Web.Client/CLAUDE.md) - Blazor state management, CSS architecture
+
 ### Key Patterns
 
 1. **CQRS** - Commands modify state, Queries fetch data via MediatR
@@ -84,6 +91,27 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
 
 ## Code Conventions
 
+### Language and Spelling
+
+**Use UK English spelling throughout the codebase:**
+
+| US English | UK English (Use This) |
+|------------|----------------------|
+| color | colour |
+| center | centre |
+| organize | organise |
+| favorite | favourite |
+| license (verb) | licence |
+| analyze | analyse |
+| canceled | cancelled |
+
+This applies to:
+- File names (e.g., `colours.css` not `colors.css`)
+- CSS class names (where practical)
+- Comments and documentation
+- Variable names and string literals
+- Error messages and UI text
+
 ### Naming
 
 | Element | Convention | Example |
@@ -96,6 +124,46 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
 | Queries | Query suffix | `GetMyLeaguesQuery` |
 | Handlers | Handler suffix | `CreateLeagueCommandHandler` |
 | DTOs | Dto suffix | `LeagueDto` |
+
+### File Organisation
+
+**One public class or interface per file** - Each public class, record, or interface must be in its own file. Never define multiple public types in a single file.
+
+```csharp
+// CORRECT - Each type in its own file
+// LeagueDto.cs
+public record LeagueDto(int Id, string Name);
+
+// LeagueMemberDto.cs
+public record LeagueMemberDto(int Id, string UserId);
+
+// WRONG - Multiple public types in one file
+// LeagueDtos.cs
+public record LeagueDto(int Id, string Name);
+public record LeagueMemberDto(int Id, string UserId); // Should be in separate file
+```
+
+This applies to:
+- Classes and records
+- Interfaces
+- All projects in the solution
+
+### Code Formatting
+
+**Always put statements on a new line after `if`** - Never put `return`, `continue`, `break`, or other statements on the same line as an `if`:
+
+```csharp
+// CORRECT
+if (!userRow)
+    return;
+
+if (condition)
+    continue;
+
+// WRONG
+if (!userRow) return;
+if (condition) continue;
+```
 
 ### DateTime Handling
 
@@ -194,56 +262,13 @@ Four prize strategies:
 - `OverallPrizeStrategy` - Season-end winners
 - `MostExactScoresPrizeStrategy` - Most exact predictions
 
-## API Structure
-
-### Controller Organization
-
-```
-/api/auth           → Authentication (login, register, refresh)
-/api/account        → User profile
-/api/dashboard      → Dashboard data
-/api/leagues        → League CRUD and membership
-/api/predictions    → Prediction submission
-/api/rounds         → Round queries
-/api/admin/rounds   → Admin round management
-/api/admin/seasons  → Admin season management
-/api/tasks          → Background job triggers (API key protected)
-```
-
-### Authentication
-
-- JWT Bearer tokens with 60-minute expiry
-- Refresh tokens stored in HTTP-only cookies (7-day expiry)
-- Google OAuth for social login
-- API key authentication for scheduled tasks (`X-Api-Key` header)
-
-## Client-Side (Blazor)
-
-### State Management
-
-Services hold state and notify components via events:
-
-```csharp
-public class DashboardStateService
-{
-    public event Action? OnStateChange;
-
-    public async Task LoadMyLeaguesAsync()
-    {
-        // Load data...
-        OnStateChange?.Invoke();
-    }
-}
-```
-
-### Authentication Flow
-
-1. `ApiAuthenticationStateProvider` checks localStorage for `accessToken`
-2. Validates JWT expiration
-3. Auto-refreshes expired tokens via `/api/auth/refresh-token`
-4. Sets `Authorization: Bearer {token}` header on HttpClient
-
 ## Database
+
+### Schema Reference
+
+**Full database schema documentation:** [`/docs/database-schema.md`](docs/database-schema.md)
+
+This file contains all tables, columns, types, constraints, relationships, and common query examples.
 
 ### Key Tables
 
@@ -264,20 +289,6 @@ public class DashboardStateService
 - Column names: `[PascalCase]` with brackets
 - All queries use parameterized commands via Dapper
 - Complex aggregations use CTEs
-
-## Error Handling
-
-### ErrorHandlingMiddleware
-
-Maps exceptions to HTTP status codes:
-
-| Exception Type | Status Code |
-|---------------|-------------|
-| `KeyNotFoundException`, `EntityNotFoundException` | 404 |
-| `ArgumentException`, `InvalidOperationException` | 400 |
-| `ValidationException` (FluentValidation) | 400 |
-| `UnauthorizedAccessException` | 401 |
-| Other exceptions | 500 |
 
 ## Configuration
 
@@ -317,6 +328,31 @@ All scheduled endpoints are protected by API key (`X-Api-Key` header).
 - **No fallback data** - App relies entirely on API availability
 - **Future consideration:** Add caching/fallback for API outages
 
+### CSS Cache Busting
+
+CSS files are automatically versioned during `dotnet publish` to prevent browser caching issues.
+
+**How it works:**
+1. An MSBuild target runs after Publish
+2. Generates a timestamp version (e.g., `20260120153045`)
+3. Updates `index.html`: `app.css` → `app.css?v=VERSION`
+4. Updates `app.css`: All `@import url('file.css')` → `@import url('file.css?v=VERSION')`
+5. External URLs (https://) are NOT versioned
+
+**Location:** `PredictionLeague.Web.Client.csproj` - Target `AddCssCacheBusting`
+
+**Result after publish:**
+```html
+<!-- index.html -->
+<link rel="stylesheet" href="css/app.css?v=20260120153045" />
+```
+```css
+/* app.css */
+@import url('variables.css?v=20260120153045');
+@import url('utilities/colours.css?v=20260120153045');
+/* etc. */
+```
+
 ## Boosts System
 
 ### Current Implementation
@@ -350,25 +386,21 @@ All scheduled endpoints are protected by API key (`X-Api-Key` header).
 4. **No unit tests yet** - Planned for future implementation
 5. **Manual FTP deployment** - Hosting limitation, automated CI/CD desired for future
 
+## Feature Planning
+
+**Feature plans location:** [`/docs/features/`](docs/features/)
+
+Detailed implementation plans for new features are stored here. Each feature has:
+- `README.md` - Overview, acceptance criteria, and task list
+- Numbered task files (`01-xxx.md`, `02-xxx.md`) - Step-by-step implementation details
+
+To work on a planned feature, read the feature's README.md first, then work through tasks in order.
+
+**Templates:** [`/docs/features/_template/`](docs/features/_template/) contains templates for creating new feature plans.
+
 ## Future Roadmap
 
-### High Priority
-- **UI Overhaul** - Main pages are styled, admin pages are broken by CSS changes
-- **Code consistency audit** - Ensure all code follows same patterns and standards
-- **Dashboard predictions** - Show predicted scores in upcoming rounds tile
-
-### Medium Priority
-- **Historic leaderboard snapshots** - Show leaderboards as they were at end of each round
-- **Additional boost types** - Need icon generation solution
-- **Trophy cabinet** - Achievement system (e.g., "75% correct in one round")
-- **Detailed stats pages** - Performance graphs and analytics
-
-### Lower Priority (Future)
-- **Tournament seasons** - Different format for FIFA World Cup 2026 (March/April 2026)
-- **Subscription payments** - Yearly sign-up fees
-- **WhatsApp reminders** - Requires business registration (Sole Trader/Limited Company)
-- **Mobile apps** - Google Play Store, iOS App Store, Apple Sign-In
-- **Automated deployments** - CI/CD within Fasthosts limitations
+**Full roadmap:** [`/docs/future-roadmap.md`](docs/future-roadmap.md)
 
 ## Things to Avoid
 

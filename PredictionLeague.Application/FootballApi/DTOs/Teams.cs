@@ -5,7 +5,7 @@ namespace PredictionLeague.Application.FootballApi.DTOs;
 public class Teams
 {
     [JsonPropertyName("home")]
-    public ApiTeam Home { get; set; }
+    public ApiTeam Home { get; set; } = null!;
     [JsonPropertyName("away")]
-    public ApiTeam Away { get; set; }
+    public ApiTeam Away { get; set; } = null!;
 }

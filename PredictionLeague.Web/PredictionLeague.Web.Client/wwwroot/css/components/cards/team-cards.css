@@ -1,0 +1,42 @@
+/* Team Selection Cards */
+/* Note: .team-card has been replaced by .card.thumbnail in card-base.css */
+
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Hover effect for team cards */
+.card.thumbnail:hover .team-card-logo-bg {
+    background-color: var(--green-600);
+}
+
+.team-card-logo-bg {
+    background-color: var(--grey-100);
+    padding: 1.5rem;
+    height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.team-card-logo {
+    height: 80px;
+    max-width: 100%;
+}
+
+.team-card-body {
+    padding: 1rem;
+}
+
+.team-card-name {
+    color: var(--white);
+    font-weight: 500;
+    margin-bottom: 1rem;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

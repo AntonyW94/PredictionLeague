@@ -1,0 +1,32 @@
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+
+/* Member List Cards */
+/* Note: .member-card has been replaced by .card.row in card-base.css */
+
+.member-status-column {
+    background-color: var(--purple-800);
+    border-radius: var(--bs-border-radius);
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.member-status-column h4 {
+    text-align: center;
+}
+
+.column-placeholder {
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* Tablet and up (--breakpoint-tablet: 768px) */
+@media (min-width: 768px) {
+    .member-status-column h4 {
+        text-align: left;
+    }
+}

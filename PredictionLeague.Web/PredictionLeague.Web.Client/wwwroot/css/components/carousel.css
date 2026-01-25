@@ -1,3 +1,5 @@
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+
 .carousel-wrapper {
     display: flex;
     flex-direction: column;
@@ -23,19 +25,19 @@
 .carousel-track {
     display: flex;
     height: 100%;
-    max-width:100%;
+    max-width: 100%;
     transition: transform 0.3s ease-in-out;
 }
 
 .carousel-item-wrapper {
     flex: 0 0 100%;
     width: 100%;
-    padding: 0 5px;
-    min-width: 0; 
+    padding: 0;
+    min-width: 0;
 }
 
 .carousel-item-content {
-    padding: 0 0.5rem;
+    padding: 0;
     height: 100%;
     display: flex;
     justify-content: center;
@@ -45,14 +47,14 @@
 .carousel-btn {
     background: transparent;
     border: none;
-    color: white;
+    color: var(--white);
     font-size: 2rem;
     padding: 0 1rem;
 }
 
-    .carousel-btn:disabled {
-        opacity: 0.3;
-    }
+.carousel-btn:disabled {
+    opacity: 0.3;
+}
 
 .carousel-dots {
     text-align: center;
@@ -62,21 +64,31 @@
 
 .carousel-dot {
     cursor: pointer;
-    height: 12px;
-    width: 12px;
-    margin: 0 5px;
-    background-color: var(--pl-purple-800);
+    height: 0.75rem;
+    width: 0.75rem;
+    margin: 0 0.3125rem;
+    background-color: var(--purple-800);
     border-radius: 50%;
     display: inline-block;
     transition: background-color 0.3s ease;
 }
 
-    .carousel-dot.active, .carousel-dot:hover {
-        background-color: var(--pl-green);
+.carousel-dot.active,
+.carousel-dot:hover {
+    background-color: var(--green-600);
+}
+
+/* Tablet and up (--breakpoint-tablet: 768px) */
+@media (min-width: 768px) {
+    .carousel-item-wrapper {
+        padding: 0 0.3125rem;
     }
 
-@media (min-width: 992px) {
-    .carousel--desktop-multi-item .carousel-item-wrapper {
+    .carousel-item-content {
+        padding: 0 0.5rem;
+    }
+
+    .carousel--multi-item .carousel-item-wrapper {
         flex: 0 0 50%;
     }
 
@@ -84,11 +96,3 @@
         aspect-ratio: auto;
     }
 }
-
-@media (max-width: 768px) {
-    .carousel-item-wrapper,
-    .carousel-item-content {
-        padding: 0;
-    }
-}
-

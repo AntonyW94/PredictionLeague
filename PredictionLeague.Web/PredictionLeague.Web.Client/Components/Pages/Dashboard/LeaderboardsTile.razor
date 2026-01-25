@@ -1,4 +1,6 @@
 ﻿@inject IDashboardStateService DashboardState
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
 @implements IDisposable
 
@@ -6,14 +8,18 @@
 
 @using PredictionLeague.Web.Client.Services.Dashboard
 
-<div class="card h-100">
+<div class="section h-100">
     <h3 class="text-white text-center fw-bold mb-4">Leaderboards</h3>
 
     <ApiError Message="@DashboardState.LeaderboardsErrorMessage" />
 
     @if (DashboardState.IsLeaderboardsLoading)
     {
-        <p class="text-center text-white"><em>Loading...</em></p>
+        <div class="d-flex justify-content-center align-items-center flex-grow-1">
+            <div class="spinner-border text-white" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
     }
     else if (!DashboardState.Leaderboards.Any())
     {
@@ -28,14 +34,14 @@
                     {
                         <div class="carousel-item-wrapper">
                             <div class="carousel-item-content">
-                                <div class="leaderboard-card">
-                                    <div class="card-header w-100">
-                                        <h5 class="card-title text-white fw-bold centre">@leaderboard.LeagueName</h5>
-                                        <small class="text-white-50 centre">@leaderboard.SeasonName</small>
+                                <div class="card slide">
+                                    <div class="header w-100">
+                                        <h5 class="text-white fw-bold text-center">@leaderboard.LeagueName</h5>
+                                        <small class="text-white-50 text-center fw-bold">@leaderboard.SeasonName</small>
                                     </div>
-                                    <div class="league-card-body justify-start w-100">
-                                        <div class="table-responsive rounded w-100">
-                                            <table class="leaderboard-table light text-white">
+                                    <div class="body leaderboard-body justify-start w-100">
+                                        <div id="leaderboard-scroll-@leaderboard.LeagueId" class="leaderboard-scroll-container">
+                                            <table class="leaderboard-table leaderboard-table--dashboard table-striped-purple light text-white">
                                                 <thead>
                                                     <tr>
                                                         @if (leaderboard.Entries.First().IsRoundInProgress)
@@ -68,6 +74,11 @@
                                             </table>
                                         </div>
                                     </div>
+                                    <div class="footer">
+                                        <button class="btn purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(leaderboard.LeagueId)">
+                                            View Dashboard
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -99,6 +110,17 @@
         await base.OnInitializedAsync();
         DashboardState.OnStateChange += StateHasChanged;
         await DashboardState.LoadLeaderboardsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && DashboardState.Leaderboards.Any())
+        {
+            foreach (var leaderboard in DashboardState.Leaderboards)
+            {
+                await JS.InvokeVoidAsync("blazorInterop.scrollToUserRow", $"leaderboard-scroll-{leaderboard.LeagueId}");
+            }
+        }
     }
 
     private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;
@@ -145,6 +167,11 @@
     private void UpdateTrackStyle()
     {
         _trackStyle = $"transform: translateX(-{_currentIndex * 100}%);";
+    }
+
+    private void ViewLeagueDashboard(int leagueId)
+    {
+        NavigationManager.NavigateTo($"/leagues/{leagueId}/dashboard");
     }
 
     public void Dispose()

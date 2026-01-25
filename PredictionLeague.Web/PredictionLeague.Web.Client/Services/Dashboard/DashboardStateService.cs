@@ -1,4 +1,4 @@
-﻿using PredictionLeague.Contracts.Dashboard;
+using PredictionLeague.Contracts.Dashboard;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Web.Client.Services.Leagues;
@@ -10,21 +10,21 @@ public class DashboardStateService : IDashboardStateService
     public List<MyLeagueDto> MyLeagues { get; private set; } = new();
     public List<AvailableLeagueDto> AvailableLeagues { get; private set; } = new();
     public List<LeagueLeaderboardDto> Leaderboards { get; private set; } = new();
-    public List<UpcomingRoundDto> UpcomingRounds { get; private set; } = new();
+    public List<ActiveRoundDto> ActiveRounds { get; private set; } = new();
     public List<LeagueRequestDto> PendingRequests { get; private set; } = new();
 
     public bool HasAvailablePrivateLeagues { get; private set; }
     public bool IsMyLeaguesLoading { get; private set; }
     public bool IsAvailableLeaguesLoading { get; private set; }
     public bool IsLeaderboardsLoading { get; private set; }
-    public bool IsUpcomingRoundsLoading { get; private set; }
+    public bool IsActiveRoundsLoading { get; private set; }
     public bool IsPendingRequestsLoading { get; private set; }
 
     public string? AvailableLeaguesErrorMessage { get; private set; }
     public string? MyLeaguesErrorMessage { get; private set; }
     public string? LeaderboardsErrorMessage { get; private set; }
-    public string? UpcomingRoundsErrorMessage { get; private set; }
-    public string? UpcomingRoundsSuccessMessage { get; private set; }
+    public string? ActiveRoundsErrorMessage { get; private set; }
+    public string? ActiveRoundsSuccessMessage { get; private set; }
     public string? PendingRequestsErrorMessage { get; private set; }
 
     public event Action? OnStateChange;
@@ -110,25 +110,25 @@ public class DashboardStateService : IDashboardStateService
         }
     }
 
-    public async Task LoadUpcomingRoundsAsync()
+    public async Task LoadActiveRoundsAsync()
     {
-        IsUpcomingRoundsLoading = true;
-        UpcomingRoundsErrorMessage = null;
-        UpcomingRoundsSuccessMessage = null;
+        IsActiveRoundsLoading = true;
+        ActiveRoundsErrorMessage = null;
+        ActiveRoundsSuccessMessage = null;
 
         NotifyStateChanged();
 
         try
         {
-            UpcomingRounds = await _leagueService.GetUpcomingRoundsAsync();
+            ActiveRounds = await _leagueService.GetActiveRoundsAsync();
         }
         catch
         {
-            UpcomingRoundsErrorMessage = "Could not load upcoming rounds";
+            ActiveRoundsErrorMessage = "Could not load active rounds";
         }
         finally
         {
-            IsUpcomingRoundsLoading = false;
+            IsActiveRoundsLoading = false;
             NotifyStateChanged();
         }
     }

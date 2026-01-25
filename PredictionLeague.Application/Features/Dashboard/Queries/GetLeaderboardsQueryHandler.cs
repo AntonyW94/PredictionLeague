@@ -22,6 +22,7 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                 SELECT
                     l.[Id] AS [LeagueId],
                     l.[Name] AS [LeagueName],
+                    l.[Price] AS [LeaguePrice],
                     s.[Name] AS [SeasonName],
                     u.[Id] AS [UserId],
                     u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
@@ -29,34 +30,35 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                     RANK() OVER (PARTITION BY l.[Id] ORDER BY SUM(ISNULL(lrr.[BoostedPoints], 0)) DESC) AS [Rank],
                     stats.[SnapshotOverallRank] AS [SnapshotRank],
                     ar.[IsInProgress] AS [IsRoundInProgress]
-                FROM 
+                FROM
                     [LeagueMembers] lm
-                JOIN 
+                JOIN
                     [AspNetUsers] u ON lm.[UserId] = u.[Id]
 	            JOIN
                     [Leagues] l ON lm.[LeagueId] = l.[Id]
-                JOIN 
+                JOIN
                     [Seasons] s ON l.[SeasonId] = s.[Id]
                 CROSS APPLY (
                     SELECT CASE WHEN EXISTS (
-                        SELECT 1 
-                        FROM [Rounds] r 
+                        SELECT 1
+                        FROM [Rounds] r
                         WHERE r.[SeasonId] = l.[SeasonId] AND r.[Status] = @InProgressStatus
                     ) THEN 1 ELSE 0 END AS IsInProgress
                 ) ar
-                LEFT JOIN 
+                LEFT JOIN
                     [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = l.[Id]
                 LEFT JOIN
                     [LeagueMemberStats] stats ON lm.[LeagueId] = stats.[LeagueId] AND lm.[UserId] = stats.[UserId]
                 WHERE
                     lm.[Status] = @ApprovedStatus
-                GROUP BY 
-                    l.[Id], 
-                    l.[Name], 
+                GROUP BY
+                    l.[Id],
+                    l.[Name],
+                    l.[Price],
                     s.[Name],
                     l.[SeasonId],
                     u.[Id],
-                    u.[FirstName], 
+                    u.[FirstName],
                     u.[LastName],
                     stats.[SnapshotOverallRank],
                     ar.[IsInProgress]
@@ -64,6 +66,7 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
             SELECT
                 alr.[LeagueId],
                 alr.[LeagueName],
+                alr.[LeaguePrice],
                 alr.[SeasonName],
                 alr.[Rank],
                 alr.[PlayerName],
@@ -71,15 +74,16 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
                 alr.[UserId],
                 alr.[SnapshotRank],
                 alr.[IsRoundInProgress]
-            FROM 
+            FROM
                 [AllLeagueRanks] alr
-            WHERE 
+            WHERE
                 alr.[LeagueId] IN (
                     SELECT [LeagueId] FROM [LeagueMembers] WHERE [UserId] = @UserId AND [Status] = @ApprovedStatus
                 )
-            ORDER BY 
-                alr.[LeagueName], 
-                alr.[Rank], 
+            ORDER BY
+                alr.[LeaguePrice] DESC,
+                alr.[LeagueName],
+                alr.[Rank],
                 alr.[PlayerName];";
 
         var flatResults = await _connection.QueryAsync<FlatLeaderboardEntry>(
@@ -94,22 +98,29 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
         );
 
         var result = flatResults
-            .GroupBy(x => new { x.LeagueId, x.LeagueName, x.SeasonName })
-            .Select(g => new LeagueLeaderboardDto
+            .GroupBy(x => new { x.LeagueId, x.LeagueName, x.LeaguePrice, x.SeasonName })
+            .Select(g => new
             {
-                LeagueId = g.Key.LeagueId,
-                LeagueName = g.Key.LeagueName,
-                SeasonName = g.Key.SeasonName,
-                Entries = g.Select(entry => new LeaderboardEntryDto
+                g.Key.LeaguePrice,
+                Dto = new LeagueLeaderboardDto
                 {
-                    Rank = entry.Rank,
-                    PlayerName = entry.PlayerName,
-                    TotalPoints = entry.TotalPoints,
-                    UserId = entry.UserId,
-                    SnapshotRank = entry.SnapshotRank,
-                    IsRoundInProgress = entry.IsRoundInProgress == 1
-                }).ToList()
-            }).OrderByDescending(l => l.Entries.Count());
+                    LeagueId = g.Key.LeagueId,
+                    LeagueName = g.Key.LeagueName,
+                    SeasonName = g.Key.SeasonName,
+                    Entries = g.Select(entry => new LeaderboardEntryDto
+                    {
+                        Rank = entry.Rank,
+                        PlayerName = entry.PlayerName,
+                        TotalPoints = entry.TotalPoints,
+                        UserId = entry.UserId,
+                        SnapshotRank = entry.SnapshotRank,
+                        IsRoundInProgress = entry.IsRoundInProgress == 1
+                    }).ToList()
+                }
+            })
+            .OrderByDescending(x => x.LeaguePrice)
+            .ThenBy(x => x.Dto.LeagueName)
+            .Select(x => x.Dto);
 
         return result;
     }
@@ -121,6 +132,7 @@ public class GetLeaderboardsQueryHandler : IRequestHandler<GetLeaderboardsQuery,
     {
         public int LeagueId { get; init; }
         public string LeagueName { get; init; } = null!;
+        public decimal LeaguePrice { get; init; }
         public string SeasonName { get; init; } = null!;
         public long Rank { get; init; }
         public string PlayerName { get; init; } = null!;

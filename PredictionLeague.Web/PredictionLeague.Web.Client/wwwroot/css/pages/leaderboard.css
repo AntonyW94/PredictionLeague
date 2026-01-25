@@ -1,102 +1,117 @@
-﻿.leaderboard-card {
-    background-color: var(--pl-purple-800);
-    border-radius: var(--bs-border-radius);
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
 
 .leaderboard-table {
     border-collapse: collapse;
     width: 100%;
-    color: white;
-    font-size: 0.9em;
+    color: var(--white);
+    font-size: 0.9rem;
+    table-layout: fixed;
 }
 
-    .leaderboard-table th,
-    .leaderboard-table td {
-        padding: 0.75rem;
-        text-align: center;
-        border-bottom: 1px solid var(--pl-purple-800);
-        white-space: nowrap;
-    }
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: 0.75rem;
+    text-align: center;
+    border-bottom: 1px solid var(--purple-800);
+    white-space: nowrap;
+}
 
-    .leaderboard-table th {
-        background-color: var(--pl-purple-900);
-        font-weight: bold;
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
+.leaderboard-table th {
+    background-color: var(--purple-900);
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
 
-    .leaderboard-table td {
-        background: var(--pl-purple-800);
-    }
+.leaderboard-table td {
+    background: var(--purple-700);
+}
 
-    .leaderboard-table.light td {
-        background: var(--pl-purple-600);
-    }
+/* Striping now handled by .table-striped-purple utility */
 
-    .leaderboard-table tbody tr:nth-child(even) td {
-        background-color: var(--pl-purple-700);
-    }
+.leaderboard-table .rank-col {
+    width: 15%;
+    text-align: left;
+}
 
-    .leaderboard-table .rank-col {
-        width: 15%;
-        text-align: left;
-    }
+.leaderboard-table .rank-change-col {
+    width: 5%;
+    padding-right: 0;
+}
 
-    .leaderboard-table .rank-change-col {
-        width: 5%;
-        padding-right: 0;
-    }
+.leaderboard-table .player-name-col {
+    white-space: normal;
+    word-wrap: break-word;
+    text-align: left;
+}
 
-    .leaderboard-table .player-name-col {
-        white-space: normal;
-        word-wrap: break-word;
-        text-align: left;
-    }
+.leaderboard-table .points-col {
+    width: 30%;
+    text-align: right;
+}
 
-    .leaderboard-table .points-col {
-        width: 30%;
-        text-align: right;
-    }
+.leaderboard-table tbody tr.current-user-highlight td {
+    background-color: var(--green-600) !important;
+    color: var(--white) !important;
+}
 
-.leaderboard-card .league-card-body,
-.leaderboard-card .card-body {
-    padding: 1.5em;
-    flex-grow: 1;
+.leaderboard-table tbody tr.overall-round-winner,
+.leaderboard-table tbody tr.overall-round-winner td,
+.leaderboard-table tbody tr.overall-round-winner.current-user-highlight td {
+    background-color: var(--gold) !important;
+    color: var(--white) !important;
+    border: none;
+}
+
+/* Carousel card sizing */
+.carousel-item-content .card {
+    width: 100%;
+    min-width: 0;
+}
+
+/* Dashboard leaderboard - scrollable container */
+.leaderboard-scroll-container {
+    max-height: 20rem;
     overflow-y: auto;
+    border-radius: var(--bs-border-radius);
+    width: 100%;
 }
 
-    .carousel-item-content .leaderboard-card {
-        width: 100%;
-        min-width: 0;
+/* Custom scrollbar styling for webkit browsers */
+.leaderboard-scroll-container::-webkit-scrollbar {
+    width: 0.5rem;
+}
+
+.leaderboard-scroll-container::-webkit-scrollbar-track {
+    background: var(--purple-900);
+    border-radius: 0.25rem;
+}
+
+.leaderboard-scroll-container::-webkit-scrollbar-thumb {
+    background: var(--purple-300);
+    border-radius: 0.25rem;
+}
+
+.leaderboard-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: var(--purple-200);
+}
+
+/* Mobile/tablet padding for leaderboard body */
+.body.leaderboard-body {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    padding-left: 3rem;
+    padding-right: 3rem;
+}
+
+/* Desktop and up (--breakpoint-desktop: 992px) */
+@media (min-width: 992px) {
+    .body.leaderboard-body {
+        padding: 1.5rem;
     }
 
-    .leaderboard-table {
-        table-layout: fixed;
-    }
-
-        .leaderboard-table tbody tr.current-user-highlight td {
-            background-color: var(--pl-green) !important;
-            color: white !important;
-        }
-
-        .leaderboard-table tbody tr.overall-round-winner,
-        .leaderboard-table tbody tr.overall-round-winner td,
-        .leaderboard-table tbody tr.overall-round-winner.current-user-highlight td {
-            background-color: var(--pl-gold) !important;
-            color: var(--pl-white) !important;
-            border: none;
-        }
-
-
-@media (max-width: 991.98px) {
-    .leaderboard-table .league-card-body.inner-card {
-        padding-top: 1.5em;
-        padding-bottom: 1.5em;
-        padding-left: 3em;
-        padding-right: 3em;
+    .leaderboard-scroll-container {
+        max-height: none;
     }
 }

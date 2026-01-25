@@ -32,12 +32,12 @@
                         {
                             @foreach (var member in _leagueData.Members.Where(m => m.Status == LeagueMemberStatus.Pending))
                             {
-                                <div class="action-card">
-                                    <div class="card-header">
+                                <div class="card">
+                                    <div class="header">
                                         <h5 class="fw-bold text-white">@member.FullName</h5>
-                                        <small class="text-white-50">Joined: @member.JoinedAtUtc.ToString("dd MMM yyyy")</small>
+                                        <small class="text-white-50 fw-bold">Joined: @member.JoinedAtUtc.ToString("dd MMM yyyy")</small>
                                     </div>
-                                    <div class="action-card-footer">
+                                    <div class="footer">
                                         <button class="btn btn-sm red-button" @onclick="() => RejectMemberAsync(member.UserId)"><i class="bi bi-x-circle me-2 fw-bold"></i>Reject</button>
                                         <button class="btn btn-sm green-button" @onclick="() => ApproveMemberAsync(member.UserId)"><i class="bi bi-check-circle me-2 fw-bold"></i>Approve</button>
                                     </div>
@@ -58,12 +58,12 @@
                         {
                             @foreach (var member in _leagueData.Members.Where(m => m.Status == LeagueMemberStatus.Approved))
                             {
-                                <div class="member-card">
+                                <div class="card row">
                                     <div>
                                         <div class="fw-bold text-center">@member.FullName</div>
                                         <div class="small text-white-50 text-center">Joined: @member.JoinedAtUtc.ToString("dd MMM yyyy")</div>
                                     </div>
-                                    <span class="badge bg-pl-green">Approved</span>
+                                    <span class="badge bg-green-600">Approved</span>
                                 </div>
                             }
                         }
@@ -81,12 +81,12 @@
                         {
                             @foreach (var member in _leagueData.Members.Where(m => m.Status == LeagueMemberStatus.Rejected))
                             {
-                                <div class="member-card">
+                                <div class="card row">
                                     <div>
                                         <div class="fw-bold text-center">@member.FullName</div>
                                         <div class="small text-white-50 text-center">Joined: @member.JoinedAtUtc.ToString("dd MMM yyyy")</div>
                                     </div>
-                                    <span class="badge bg-pl-red">Rejected</span>
+                                    <span class="badge bg-red">Rejected</span>
                                 </div>
                             }
                         }

@@ -1,30 +1,34 @@
-﻿@inject IDashboardStateService DashboardState
+@inject IDashboardStateService DashboardState
 @inject IBrowserService BrowserService
 
 @using PredictionLeague.Web.Client.Services.Browser
 @using PredictionLeague.Web.Client.Services.Dashboard
 
-<div class="card h-100">
-    <h3 class="text-white text-center fw-bold mb-4">Upcoming Rounds</h3>
+<div class="section h-100">
+    <h3 class="text-white text-center fw-bold mb-4">Active Rounds</h3>
 
-    <ApiError Message="@DashboardState.UpcomingRoundsErrorMessage" />
-    <ApiSuccess Message="@DashboardState.UpcomingRoundsSuccessMessage" />
+    <ApiError Message="@DashboardState.ActiveRoundsErrorMessage" />
+    <ApiSuccess Message="@DashboardState.ActiveRoundsSuccessMessage" />
 
-    @if (DashboardState.IsUpcomingRoundsLoading)
+    @if (DashboardState.IsActiveRoundsLoading)
     {
-        <p class="text-center text-white"><em>Loading rounds...</em></p>
+        <div class="d-flex justify-content-center align-items-center flex-grow-1">
+            <div class="spinner-border text-white" role="status">
+                <span class="visually-hidden">Loading rounds...</span>
+            </div>
+        </div>
     }
-    else if (!DashboardState.UpcomingRounds.Any())
+    else if (!DashboardState.ActiveRounds.Any())
     {
         <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
-            <p class="text-white fw-bold text-center">There are currently no upcoming rounds available for you to predict.</p>
+            <p class="text-white fw-bold text-center">No active rounds available.</p>
         </div>
     }
     else
     {
-        <div class="carousel-wrapper carousel--desktop-multi-item">
+        <div class="carousel-wrapper carousel--multi-item">
             <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
-                @if (_isDesktop && DashboardState.UpcomingRounds.Count > 2)
+                @if (_showTwoItems && DashboardState.ActiveRounds.Count > 2)
                 {
                     <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentIndex == 0)">
                         <span class="bi bi-chevron-left"></span>
@@ -33,7 +37,7 @@
 
                 <div class="carousel-track-wrapper">
                     <div class="carousel-track" style="@_trackStyle">
-                        @foreach (var round in DashboardState.UpcomingRounds)
+                        @foreach (var round in DashboardState.ActiveRounds)
                         {
                             <div class="carousel-item-wrapper">
                                 <div class="carousel-item-content">
@@ -44,7 +48,7 @@
                     </div>
                 </div>
 
-                @if (_isDesktop && DashboardState.UpcomingRounds.Count > 2)
+                @if (_showTwoItems && DashboardState.ActiveRounds.Count > 2)
                 {
                     <button class="carousel-btn" @onclick="ShowNext" disabled="@IsAtEnd()">
                         <span class="bi bi-chevron-right"></span>
@@ -70,30 +74,30 @@
     private int _currentIndex;
     private double _touchStartX;
     private string _trackStyle = "transform: translateX(0%);";
-    private bool _isDesktop;
+    private bool _showTwoItems;
 
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
-        _isDesktop = await BrowserService.IsDesktop();
+        _showTwoItems = await BrowserService.IsTabletOrAbove();
 
-        if (!DashboardState.UpcomingRounds.Any())
-            await DashboardState.LoadUpcomingRoundsAsync();
+        if (!DashboardState.ActiveRounds.Any())
+            await DashboardState.LoadActiveRoundsAsync();
     }
 
     private int NumberOfDots
     {
         get
         {
-            if (!DashboardState.UpcomingRounds.Any())
+            if (!DashboardState.ActiveRounds.Any())
                 return 0;
 
-            var roundsPerPage = _isDesktop ? 2 : 1;
+            var roundsPerPage = _showTwoItems ? 2 : 1;
 
-            if (DashboardState.UpcomingRounds.Count <= roundsPerPage) 
+            if (DashboardState.ActiveRounds.Count <= roundsPerPage)
                 return 0;
 
-            return DashboardState.UpcomingRounds.Count - roundsPerPage + 1;
+            return DashboardState.ActiveRounds.Count - roundsPerPage + 1;
         }
     }
 
@@ -123,7 +127,7 @@
 
     private void GoToSlide(int index)
     {
-        if (index < 0 || index >= NumberOfDots) 
+        if (index < 0 || index >= NumberOfDots)
             return;
 
         _currentIndex = index;
@@ -132,7 +136,7 @@
 
     private void ShowPrevious()
     {
-        if (_currentIndex <= 0) 
+        if (_currentIndex <= 0)
             return;
 
         _currentIndex--;
@@ -141,7 +145,7 @@
 
     private void ShowNext()
     {
-        if (IsAtEnd()) 
+        if (IsAtEnd())
             return;
 
         _currentIndex++;
@@ -150,13 +154,13 @@
 
     private void UpdateTrackStyle()
     {
-        var percentageToMove = _isDesktop ? 50 : 100;
+        var percentageToMove = _showTwoItems ? 50 : 100;
         _trackStyle = $"transform: translateX(-{_currentIndex * percentageToMove}%);";
     }
 
     private bool IsAtEnd()
     {
-        var roundsPerPage = _isDesktop ? 2 : 1;
-        return _currentIndex >= DashboardState.UpcomingRounds.Count - roundsPerPage;
+        var roundsPerPage = _showTwoItems ? 2 : 1;
+        return _currentIndex >= DashboardState.ActiveRounds.Count - roundsPerPage;
     }
 }

@@ -1,17 +1,18 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
-
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <!--<NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
-        <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>-->
+        <!-- Disable CSS bundling during Debug builds -->
+        <BundleOnBuild Condition="'$(Configuration)' == 'Debug'">false</BundleOnBuild>
+        <BundleOnBuild Condition="'$(Configuration)' != 'Debug'">true</BundleOnBuild>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Blazored.FluentValidation" Version="2.2.0" />
         <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+        <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
         <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.17" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.17" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="8.0.17" />
@@ -36,4 +37,25 @@
       </Content>
     </ItemGroup>
 
+    <!--
+    CSS Bundling for Production
+
+    BuildBundlerMinifier creates app.min.css during Release builds.
+    The actual bundling/cleanup happens in PredictionLeague.Web.csproj
+    after publish (since that's the project that gets published).
+
+    Development (dotnet run): Uses separate CSS files with @imports
+    Production (dotnet publish): See Web.csproj for bundling target
+    -->
+
+    <!--
+    Exclude app.min.css from static web assets.
+    BuildBundlerMinifier creates this file during Release builds, but the static web
+    assets system checks for its existence before the bundler runs. Since the file
+    is gitignored (it's a build artifact), it won't exist on fresh clones.
+    The bundler still creates it, and the post-publish target in Web.csproj processes it.
+    -->
+    <ItemGroup>
+        <Content Remove="wwwroot\css\app.min.css" />
+    </ItemGroup>
 </Project>

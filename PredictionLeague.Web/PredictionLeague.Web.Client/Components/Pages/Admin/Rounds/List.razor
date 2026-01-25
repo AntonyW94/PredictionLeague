@@ -39,35 +39,35 @@
             <div class="card-grid">
                 @foreach (var round in _rounds)
                 {
-                    <div class="action-card light">
-                        <div class="card-header">
+                    <div class="card">
+                        <div class="header">
                             <h5 class="fw-bold text-white mb-0">Round @round.RoundNumber</h5>
                         </div>
-                        <div class="action-card-body">
-                            <dl class="mb-0">
-                                <div class="action-card-row">
+                        <div class="body">
+                            <dl class="mb-0 detail-list">
+                                <div class="detail-row">
                                     <dt>Start Date</dt>
                                     <dd>@round.StartDateUtc.ToString("dd MMM yyyy")</dd>
                                 </div>
 
-                                <div class="action-card-row">
+                                <div class="detail-row">
                                     <dt>Deadline</dt>
                                     <dd><LocalTime UtcDate="@round.DeadlineUtc" Format="dd MMM, HH:mm" /></dd>
                                 </div>
 
-                                <div class="action-card-row">
+                                <div class="detail-row">
                                     <dt>Status</dt>
                                     <dd>@round.Status.GetDescription()</dd>
                                 </div>
 
-                                <div class="action-card-row">
+                                <div class="detail-row">
                                     <dt>Matches</dt>
                                     <dd>@round.MatchCount</dd>
                                 </div>
                             </dl>
                         </div>
 
-                        <div class="action-card-footer">
+                        <div class="footer">
                             <button class="btn green-button flex-grow-1" @onclick="() => EditRound(round.Id)">
                                 <span class="bi bi-pencil-fill me-2"></span>Edit
                             </button>

@@ -1,0 +1,197 @@
+/* Border Utilities - Complete set using design tokens */
+
+/* ============================================
+   BORDER COLOURS
+   ============================================ */
+
+/* White/Black */
+.border-white {
+    border-color: var(--white);
+}
+
+.border-black {
+    border-color: var(--black);
+}
+
+/* Purples */
+.border-purple-200 {
+    border-color: var(--purple-200);
+}
+
+.border-purple-300 {
+    border-color: var(--purple-300);
+}
+
+.border-purple-600 {
+    border-color: var(--purple-600);
+}
+
+.border-purple-700 {
+    border-color: var(--purple-700);
+}
+
+.border-purple-800 {
+    border-color: var(--purple-800);
+}
+
+.border-purple-900 {
+    border-color: var(--purple-900);
+}
+
+.border-purple-1000 {
+    border-color: var(--purple-1000);
+}
+
+/* Blues */
+.border-blue-500 {
+    border-color: var(--blue-500);
+}
+
+.border-blue-700 {
+    border-color: var(--blue-700);
+}
+
+/* Greens */
+.border-green-300 {
+    border-color: var(--green-300);
+}
+
+.border-green-600 {
+    border-color: var(--green-600);
+}
+
+/* Other colours */
+.border-red {
+    border-color: var(--red);
+}
+
+.border-yellow {
+    border-color: var(--yellow);
+}
+
+.border-orange {
+    border-color: var(--orange);
+}
+
+/* Greys */
+.border-grey-100 {
+    border-color: var(--grey-100);
+}
+
+.border-grey-200 {
+    border-color: var(--grey-200);
+}
+
+.border-grey-300 {
+    border-color: var(--grey-300);
+}
+
+.border-grey-500 {
+    border-color: var(--grey-500);
+}
+
+/* Transparent */
+.border-transparent {
+    border-color: transparent;
+}
+
+/* ============================================
+   BORDER WIDTHS
+   ============================================ */
+
+.border-0 {
+    border-width: 0;
+}
+
+.border-1 {
+    border-width: 1px;
+}
+
+.border-2 {
+    border-width: 2px;
+}
+
+.border-3 {
+    border-width: 3px;
+}
+
+.border-4 {
+    border-width: 4px;
+}
+
+/* ============================================
+   BORDER STYLES
+   ============================================ */
+
+.border-solid {
+    border-style: solid;
+}
+
+.border-dashed {
+    border-style: dashed;
+}
+
+.border-dotted {
+    border-style: dotted;
+}
+
+.border-none {
+    border-style: none;
+}
+
+/* ============================================
+   BORDER RADIUS
+   ============================================ */
+
+.rounded-none {
+    border-radius: 0;
+}
+
+.rounded-sm {
+    border-radius: 4px;
+}
+
+.rounded {
+    border-radius: 8px;
+}
+
+.rounded-md {
+    border-radius: 12px;
+}
+
+.rounded-lg {
+    border-radius: 16px;
+}
+
+.rounded-xl {
+    border-radius: 20px;
+}
+
+.rounded-2xl {
+    border-radius: 24px;
+}
+
+.rounded-full {
+    border-radius: 9999px;
+}
+
+/* Individual corner radiuses */
+.rounded-t {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.rounded-b {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.rounded-l {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.rounded-r {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}

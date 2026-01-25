@@ -1,0 +1,25 @@
+/* Match and Round Cards */
+
+.match-editor-row {
+    margin-bottom: 1.5rem;
+}
+
+/* Match logo styling for admin forms */
+.match-logo {
+    height: 25px;
+}
+
+.logo-wrapper {
+    background-color: transparent;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease-in-out;
+}
+
+    .logo-wrapper.visible {
+        background-color: var(--white);
+    }
