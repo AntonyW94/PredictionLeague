@@ -37,4 +37,28 @@ public class LeagueMembershipService : ILeagueMembershipService
         if (!isMember)
             throw new UnauthorizedAccessException("You must be a member of this league to access this resource.");
     }
+
+    public async Task<bool> IsLeagueAdministratorAsync(int leagueId, string userId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT COUNT(*)
+            FROM [Leagues]
+            WHERE [Id] = @LeagueId
+              AND [AdministratorUserId] = @UserId;";
+
+        var count = await _dbConnection.QuerySingleOrDefaultAsync<int>(
+            sql,
+            cancellationToken,
+            new { LeagueId = leagueId, UserId = userId });
+
+        return count > 0;
+    }
+
+    public async Task EnsureLeagueAdministratorAsync(int leagueId, string userId, CancellationToken cancellationToken)
+    {
+        var isAdmin = await IsLeagueAdministratorAsync(leagueId, userId, cancellationToken);
+
+        if (!isAdmin)
+            throw new UnauthorizedAccessException("Only the league administrator can access this resource.");
+    }
 }

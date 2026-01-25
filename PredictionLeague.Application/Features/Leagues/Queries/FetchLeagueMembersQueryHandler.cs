@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Data;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
@@ -9,28 +10,19 @@ namespace PredictionLeague.Application.Features.Leagues.Queries;
 public class FetchLeagueMembersQueryHandler : IRequestHandler<FetchLeagueMembersQuery, LeagueMembersPageDto?>
 {
     private readonly IApplicationReadDbConnection _dbConnection;
+    private readonly ILeagueMembershipService _membershipService;
 
-    public FetchLeagueMembersQueryHandler(IApplicationReadDbConnection dbConnection)
+    public FetchLeagueMembersQueryHandler(
+        IApplicationReadDbConnection dbConnection,
+        ILeagueMembershipService membershipService)
     {
         _dbConnection = dbConnection;
+        _membershipService = membershipService;
     }
 
     public async Task<LeagueMembersPageDto?> Handle(FetchLeagueMembersQuery request, CancellationToken cancellationToken)
     {
-        // Verify user is the league administrator
-        const string adminCheckSql = @"
-            SELECT COUNT(*)
-            FROM [Leagues]
-            WHERE [Id] = @LeagueId
-              AND [AdministratorUserId] = @CurrentUserId;";
-
-        var isAdmin = await _dbConnection.QuerySingleOrDefaultAsync<int>(
-            adminCheckSql,
-            cancellationToken,
-            new { request.LeagueId, request.CurrentUserId });
-
-        if (isAdmin == 0)
-            throw new UnauthorizedAccessException("Only the league administrator can view the members list.");
+        await _membershipService.EnsureLeagueAdministratorAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
         const string sql = @"
             SELECT
