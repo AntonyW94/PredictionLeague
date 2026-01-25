@@ -29,6 +29,7 @@
 @import url('components/cards/team-cards.css');
 @import url('components/cards/match-cards.css');
 @import url('components/cards/member-cards.css');
+@import url('components/cards/round-cards.css');
 
 /* Component styles - Other */
 @import url('components/badges.css');
