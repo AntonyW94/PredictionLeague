@@ -23,6 +23,7 @@
       "wwwroot/css/components/cards/team-cards.css",
       "wwwroot/css/components/cards/match-cards.css",
       "wwwroot/css/components/cards/member-cards.css",
+      "wwwroot/css/components/cards/round-cards.css",
       "wwwroot/css/components/badges.css",
       "wwwroot/css/components/boosts.css",
       "wwwroot/css/components/detail-list.css",
