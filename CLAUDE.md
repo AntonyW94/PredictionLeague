@@ -172,6 +172,23 @@ if (condition) continue;
 - Always use `DateTime.UtcNow`, never `DateTime.Now`
 - Custom `DapperUtcDateTimeHandler` ensures UTC kind on deserialization
 
+### Logging
+
+**Entity ID format in log messages:** When referencing entities with IDs in log messages, use the format `EntityName (ID: {EntityNameId})`:
+
+```csharp
+// CORRECT
+_logger.LogInformation("Processing Round (ID: {RoundId})", round.Id);
+_logger.LogInformation("User (ID: {UserId}) joined League (ID: {LeagueId})", userId, leagueId);
+_logger.LogWarning("Match (ID: {MatchId}) not found", matchId);
+
+// WRONG
+_logger.LogInformation("Processing Round {RoundId}", round.Id);
+_logger.LogInformation("User {UserId} joined League {LeagueId}", userId, leagueId);
+```
+
+This format provides clear, consistent log messages that are easy to search and parse.
+
 ### Domain Model Construction
 
 Domain entities have two construction paths:

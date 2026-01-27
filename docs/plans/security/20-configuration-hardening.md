@@ -10,6 +10,8 @@
 | CWE | CWE-16: Configuration |
 | OWASP | A05:2021 Security Misconfiguration |
 
+> **Note:** This project already uses Azure Key Vault for secrets management. Sensitive configuration values use the `${Secret-Name}` substitution syntax in appsettings.
+
 ---
 
 ## Vulnerabilities Addressed
@@ -160,7 +162,7 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 
 ### Data Protection Keys (Production)
 
-If using Azure, consider Key Vault for data protection:
+Since Azure Key Vault is already in use for secrets management, consider extending it for data protection:
 
 ```csharp
 builder.Services.AddDataProtection()

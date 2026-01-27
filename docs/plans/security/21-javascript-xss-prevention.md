@@ -46,37 +46,45 @@ The `NameValidator` in `PredictionLeague.Validators` restricts user names to saf
 
 ## Fix Implementation
 
-### Option 1: Use textContent for Safe Text Insertion (Recommended)
-
 **File:** `PredictionLeague.Web.Client/wwwroot/js/interop.js`
 
-**Replace template literal HTML with DOM manipulation:**
+### Step 1: Add Reusable Helper Function
+
+Add this helper function at the top of the `window.blazorInterop` object to safely escape HTML in strings:
 
 ```javascript
-// showReassignLeagueConfirm function
+window.blazorInterop = {
+    // Reusable helper function to escape HTML entities
+    // Use this whenever inserting user-provided text into HTML templates
+    escapeHtml: function(unsafe) {
+        if (typeof unsafe !== 'string') return '';
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    },
+
+    // ... existing functions
+};
+```
+
+### Step 2: Update showReassignLeagueConfirm Function
+
+Use the `escapeHtml` helper when building the select options:
+
+```javascript
 showReassignLeagueConfirm: function (message, userList, userToDeleteId) {
     return new Promise((resolve) => {
-        // Create select element safely
-        const selectContainer = document.createElement('div');
-        const select = document.createElement('select');
-        select.id = 'swal-reassign-select';
-        select.className = 'swal2-select';
-
-        // Add options safely using textContent (no HTML injection possible)
-        userList
+        const optionsHtml = userList
             .filter(user => user.id !== userToDeleteId)
-            .forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.id;
-                option.textContent = user.fullName;  // SAFE: textContent escapes HTML
-                select.appendChild(option);
-            });
-
-        selectContainer.appendChild(select);
+            .map(user => `<option value="${this.escapeHtml(user.id)}">${this.escapeHtml(user.fullName)}</option>`)
+            .join('');
 
         Swal.fire({
-            title: message,  // Already safe - comes from C# string literal
-            html: selectContainer,  // Now safe - built with DOM methods
+            title: message,  // Safe - comes from C# string literal
+            html: `<select id="swal-reassign-select" class="swal2-select">${optionsHtml}</select>`,
             showCancelButton: true,
             confirmButtonText: 'Reassign & Delete',
             cancelButtonText: 'Cancel',
@@ -92,17 +100,18 @@ showReassignLeagueConfirm: function (message, userList, userToDeleteId) {
         });
     });
 },
+```
 
-// showRoleChangeConfirm function
+### Step 3: Update showRoleChangeConfirm Function
+
+Use the `escapeHtml` helper for the user name in the title:
+
+```javascript
 showRoleChangeConfirm: function (userName, currentRole) {
     return new Promise((resolve) => {
-        // Create title element safely
-        const titleElement = document.createElement('span');
-        titleElement.textContent = `Change role for ${userName}`;  // SAFE
-
         Swal.fire({
-            title: titleElement,  // Pass DOM element instead of string
-            text: `Current role: ${currentRole}`,
+            title: `Change role for ${this.escapeHtml(userName)}`,
+            text: `Current role: ${currentRole}`,  // Safe - comes from enum
             input: 'select',
             inputOptions: {
                 'Player': 'Player',
@@ -123,85 +132,17 @@ showRoleChangeConfirm: function (userName, currentRole) {
 }
 ```
 
----
+### Usage Guidelines
 
-### Option 2: Use a Sanitisation Function
+The `escapeHtml` function should be used whenever:
+- User-provided data is inserted into HTML template literals
+- Dynamic values from the database are displayed in SweetAlert dialogs
+- Any untrusted string is used within HTML content
 
-If template literals must be used, add a sanitisation helper:
-
-```javascript
-// Add at top of interop.js
-const blazorInterop = {
-    // Helper function to escape HTML entities
-    escapeHtml: function(unsafe) {
-        if (typeof unsafe !== 'string') return '';
-        return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    },
-
-    showReassignLeagueConfirm: function (message, userList, userToDeleteId) {
-        return new Promise((resolve) => {
-            const optionsHtml = userList
-                .filter(user => user.id !== userToDeleteId)
-                .map(user => `<option value="${this.escapeHtml(user.id)}">${this.escapeHtml(user.fullName)}</option>`)
-                .join('');
-
-            Swal.fire({
-                title: this.escapeHtml(message),
-                html: `<select id="swal-reassign-select" class="swal2-select">${optionsHtml}</select>`,
-                // ... rest of config
-            });
-        });
-    },
-
-    showRoleChangeConfirm: function (userName, currentRole) {
-        return new Promise((resolve) => {
-            Swal.fire({
-                title: `Change role for ${this.escapeHtml(userName)}`,
-                text: `Current role: ${this.escapeHtml(currentRole)}`,
-                // ... rest of config
-            });
-        });
-    }
-};
-```
-
----
-
-### Option 3: Use DOMPurify Library
-
-For comprehensive HTML sanitisation, add DOMPurify:
-
-**File:** `PredictionLeague.Web.Client/wwwroot/index.html`
-
-```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
-```
-
-**File:** `interop.js`
-
-```javascript
-showReassignLeagueConfirm: function (message, userList, userToDeleteId) {
-    const optionsHtml = userList
-        .filter(user => user.id !== userToDeleteId)
-        .map(user => `<option value="${DOMPurify.sanitize(user.id)}">${DOMPurify.sanitize(user.fullName)}</option>`)
-        .join('');
-
-    const safeHtml = DOMPurify.sanitize(
-        `<select id="swal-reassign-select" class="swal2-select">${optionsHtml}</select>`
-    );
-
-    Swal.fire({
-        title: DOMPurify.sanitize(message),
-        html: safeHtml,
-        // ...
-    });
-}
-```
+It does NOT need to be used for:
+- Values passed to `text` properties (SweetAlert escapes these automatically)
+- Values that come from C# string literals (these are trusted)
+- Enum values or other controlled vocabularies
 
 ---
 
@@ -245,15 +186,16 @@ All four layers should be in place for comprehensive XSS protection.
 
 ## Rollback Plan
 
-If the DOM manipulation approach causes issues:
-1. Revert to template literals with `escapeHtml` function
-2. Ensure `escapeHtml` is called on all user data
+If the escapeHtml approach causes display issues:
+1. Review the escape patterns to ensure all necessary characters are handled
+2. Ensure `escapeHtml` is called consistently on all user data
+3. Consider using DOM manipulation with `textContent` as an alternative for specific functions
 
 ---
 
 ## Notes
 
-- Option 1 (DOM manipulation) is recommended as it's the safest approach
-- Option 2 (escapeHtml) is simpler but requires discipline to call consistently
-- Option 3 (DOMPurify) is most comprehensive but adds external dependency
+- The `escapeHtml` helper function provides a reusable, consistent approach to XSS prevention
+- This approach requires discipline to call the function consistently on all user-provided data
 - The existing NameValidator significantly reduces actual risk, but output encoding is still best practice
+- The helper function is defined once and can be used throughout the interop file

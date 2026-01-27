@@ -1,7 +1,5 @@
 # Fix Plan: Sensitive Data Logging
 
-> **SKIP FOR NOW**: This plan involves changes to token logging in the authentication system (RefreshTokenCommandHandler, ApiAuthenticationStateProvider). It has been deferred until the login system is ready to be modified.
-
 ## Overview
 
 | Attribute | Value |
@@ -112,10 +110,10 @@ _logger.LogInformation("Successfully generated new tokens for user: {Email}", us
 **To:**
 ```csharp
 // Line 55 - Use user ID instead of email
-_logger.LogInformation("Successfully found user: {UserId}", user.Id);
+_logger.LogInformation("Successfully found User (ID: {UserId})", user.Id);
 
 // Line 61 - Use user ID instead of email
-_logger.LogInformation("Successfully generated new tokens for user: {UserId}", user.Id);
+_logger.LogInformation("Successfully generated new tokens for User (ID: {UserId})", user.Id);
 ```
 
 ---
@@ -129,7 +127,7 @@ _logger.LogInformation("Sending Email Reminders: Sent {Email} Chase Notification
 
 **To:**
 ```csharp
-_logger.LogInformation("Sent chase notification for Round {RoundId} to user {UserId}", nextRound.Id, user.UserId);
+_logger.LogInformation("Sent chase notification for Round (ID: {RoundId}) to User (ID: {UserId})", nextRound.Id, user.UserId);
 ```
 
 ---
