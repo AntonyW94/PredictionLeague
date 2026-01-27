@@ -21,7 +21,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Authentic
     {
         var userExists = await _userManager.FindByEmailAsync(request.Email);
         if (userExists != null)
-            return new FailedAuthenticationResponse("User with this email already exists.");
+            return new FailedAuthenticationResponse("Registration could not be completed. If you already have an account, please try logging in.");
 
         var newUser = ApplicationUser.Create(
             request.FirstName,

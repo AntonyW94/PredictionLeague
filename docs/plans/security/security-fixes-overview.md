@@ -13,14 +13,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 26 | Fixes implemented and verified |
+| Completed | 28 | Fixes implemented and verified |
 | Deferred | 4 | Require login system changes or architectural decisions |
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
-| P1 - High | 2 | Fix this sprint - significant security impact |
+| P1 - High | 0 | Fix this sprint - significant security impact |
 | P2 - Medium | 3 | Fix soon - defence in depth |
 | Low | 4 | Minor improvements and housekeeping |
 
-**Total Findings:** 39 (26 completed, 4 deferred, 9 outstanding)
+**Total Findings:** 39 (28 completed, 4 deferred, 7 outstanding)
 
 ---
 
@@ -58,6 +58,8 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] Season Name Character Validation (added SafeNameValidationExtensions)
 - [x] Rate Limiting Middleware Enabled - [22-rate-limiting-middleware.md](./completed/22-rate-limiting-middleware.md)
 - [x] Outdated Packages Updated (.NET 10, JWT 8.15.0, framework packages 10.0.2) - [25-outdated-packages.md](./completed/25-outdated-packages.md)
+- [x] IDOR: Round Results Access - [23-idor-round-results.md](./completed/23-idor-round-results.md)
+- [x] Email Enumeration via Registration - [24-email-enumeration.md](./completed/24-email-enumeration.md)
 
 ## Intentionally Deferred
 
@@ -81,19 +83,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 ## P1 - High
 
-### 1. IDOR in League Dashboard Round Results
-- **File:** `PredictionLeague.Application/Features/Leagues/Queries/GetLeagueDashboardRoundResultsQueryHandler.cs`
-- **Issue:** Query returns predictions for any league/round without validating the requesting user is a member of the league.
-- **Impact:** Any authenticated user can view predictions for leagues they don't belong to, gaining competitive intelligence.
-- **Exploitation:** `GET /api/leagues/{anyLeagueId}/rounds/{roundId}/results` returns all player predictions.
-- **Plan:** [23-idor-round-results.md](./23-idor-round-results.md)
-
-### 2. User Enumeration via Registration
-- **File:** `PredictionLeague.Application/Features/Authentication/Commands/Register/RegisterCommandHandler.cs` (line 24)
-- **Issue:** Registration endpoint returns "User with this email already exists" for existing emails, enabling email enumeration.
-- **Impact:** Attackers can build a list of valid user email addresses for targeted attacks.
-- **Exploitation:** Iterate through email addresses and observe error message differences.
-- **Plan:** [24-email-enumeration.md](./24-email-enumeration.md)
+*No outstanding P1 issues.*
 
 ---
 
@@ -156,8 +146,8 @@ The following issues have been deferred due to mobile browser cookie compatibili
 - [x] Add `app.UseRateLimiter()` to middleware pipeline
 
 ### Phase 2: High Priority (This Sprint)
-- [ ] Add membership validation to GetLeagueDashboardRoundResultsQuery
-- [ ] Return generic error message for registration
+- [x] Add membership validation to GetLeagueDashboardRoundResultsQuery
+- [x] Return generic error message for registration
 - [x] Upgrade outdated NuGet packages (.NET 10, JWT 8.15.0)
 
 ### Phase 3: Medium Priority (Next Sprint)
