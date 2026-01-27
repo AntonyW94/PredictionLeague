@@ -13,14 +13,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 29 | Fixes implemented and verified |
+| Completed | 30 | Fixes implemented and verified |
 | Deferred | 4 | Require login system changes or architectural decisions |
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
 | P1 - High | 0 | Fix this sprint - significant security impact |
-| P2 - Medium | 2 | Fix soon - defence in depth |
+| P2 - Medium | 1 | Fix soon - defence in depth |
 | Low | 4 | Minor improvements and housekeeping |
 
-**Total Findings:** 39 (29 completed, 4 deferred, 6 outstanding)
+**Total Findings:** 39 (30 completed, 4 deferred, 5 outstanding)
 
 ---
 
@@ -61,6 +61,7 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] IDOR: Round Results Access - [23-idor-round-results.md](./completed/23-idor-round-results.md)
 - [x] Email Enumeration via Registration - [24-email-enumeration.md](./completed/24-email-enumeration.md)
 - [x] Entry Code Character Validation - [27-entry-code-validation.md](./completed/27-entry-code-validation.md)
+- [x] Football API Response Handling - [28-football-api-handling.md](./completed/28-football-api-handling.md)
 
 ## Intentionally Deferred
 
@@ -99,14 +100,6 @@ The following issues have been deferred due to mobile browser cookie compatibili
   - Domain model guards (Ardalis.GuardClauses)
   - Database constraints
 - **Plan:** [26-server-validation-gap.md](./26-server-validation-gap.md)
-
-### 2. Football API Response Handling
-- **Files:**
-  - `PredictionLeague.Infrastructure/Services/FootballDataService.cs`
-  - `PredictionLeague.Application/Features/Admin/Seasons/Commands/SyncSeasonWithApiCommandHandler.cs`
-- **Issue:** API responses deserialized without explicit validation; potential null reference issues.
-- **Impact:** Service disruption if API changes response structure or returns unexpected data.
-- **Plan:** [28-football-api-handling.md](./28-football-api-handling.md)
 
 ---
 
@@ -148,7 +141,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 ### Phase 3: Medium Priority (Next Sprint)
 - [ ] Align validators with Commands/Queries OR add ASP.NET Core auto-validation
 - [x] Add alphanumeric validation to entry codes
-- [ ] Add Football API response validation
+- [x] Add Football API response validation
 
 ### Phase 4: Ongoing
 Remaining ongoing activities:
