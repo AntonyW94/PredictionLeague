@@ -13,12 +13,13 @@ This document outlines the security vulnerabilities identified in the Prediction
 | Priority | Count | Description |
 |----------|-------|-------------|
 | Completed | 4 | Fixes implemented and verified |
-| P0 - Critical | 4 | Fix immediately - active exploitation risk |
-| P1 - High | 6 | Fix this sprint - significant security impact |
-| P2 - Medium | 6 | Fix soon - defense in depth |
+| Deferred | 2 | Require login system changes |
+| P0 - Critical | 2 | Fix immediately - active exploitation risk |
+| P1 - High | 5 | Fix this sprint - significant security impact |
+| P2 - Medium | 5 | Fix soon - defense in depth |
 | Low | 4 | Minor improvements |
 
-**Total Findings:** 24 (4 completed)
+**Total Findings:** 22 (4 completed, 2 deferred)
 
 ---
 
@@ -36,9 +37,13 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 ## Intentionally Deferred
 
-The following issues have been deferred due to mobile browser cookie compatibility constraints:
+**Deferred plans moved to:** [`./later/`](./later/)
+
+The following issues have been deferred due to mobile browser cookie compatibility constraints or require login system changes:
 - Refresh tokens in URLs (ExternalAuthController)
 - Access tokens in localStorage (Blazor WASM architectural decision)
+- Open Redirect Vulnerability - [02-open-redirect.md](./later/02-open-redirect.md)
+- JWT Security Hardening - [12-jwt-security-hardening.md](./later/12-jwt-security-hardening.md)
 
 ---
 
@@ -47,10 +52,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 | # | Issue | Status | Plan |
 |---|-------|--------|------|
 | 1 | IDOR: Unauthorized League Update | Open | [01-idor-league-update.md](./01-idor-league-update.md) |
-| 11 | Boost System Race Condition (Double Boost) | **NEW** | [11-boost-race-condition.md](./11-boost-race-condition.md) |
-| 12 | JWT SameSite=None Cookie | **NEW** | [12-jwt-security-hardening.md](./12-jwt-security-hardening.md) |
-| - | Access Tokens in localStorage | Deferred | Documented trade-off |
-| - | Refresh Token in URL | Deferred | Mobile compatibility |
+| 11 | Boost System Race Condition (Double Boost) | Open | [11-boost-race-condition.md](./11-boost-race-condition.md) |
 
 ---
 
@@ -58,7 +60,6 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 | # | Issue | Status | Plan |
 |---|-------|--------|------|
-| 2 | Open Redirect Vulnerability | Deferred | [02-open-redirect.md](./02-open-redirect.md) |
 | 4 | Password Hash in DTO | Open | [04-password-hash-disclosure.md](./04-password-hash-disclosure.md) |
 | 5 | IDOR: League Members Access | Open | [05-idor-league-members.md](./05-idor-league-members.md) |
 | 6 | IDOR: Leaderboard Access | Open | [06-idor-leaderboards.md](./06-idor-leaderboards.md) |
@@ -72,7 +73,6 @@ The following issues have been deferred due to mobile browser cookie compatibili
 | # | Issue | Status | Plan |
 |---|-------|--------|------|
 | 9 | Missing Validators | Partial | [09-missing-validators.md](./09-missing-validators.md) |
-| 12b | JWT ClockSkew/ValidateAlgorithm | Deferred | [12-jwt-security-hardening.md](./12-jwt-security-hardening.md) |
 | 17 | Boost Deadline Enforcement | Open | [17-boost-deadline-enforcement.md](./17-boost-deadline-enforcement.md) |
 | 19 | Admin Command Validators | Open | [19-admin-command-validators.md](./19-admin-command-validators.md) |
 | 20 | Configuration Hardening (HSTS, AllowedHosts) | Open | [20-configuration-hardening.md](./20-configuration-hardening.md) |
@@ -101,23 +101,23 @@ For full details on all findings, see:
 ## Implementation Order
 
 ### Phase 1: Critical (Immediate)
-1. **Boost Race Condition** - Add database UNIQUE constraint
-2. **JWT Security** - Fix SameSite, add ClockSkew/ValidateAlgorithm
-3. **Sensitive Data Logging** - Remove token/email logging
+1. **IDOR: League Update** - Add ownership check
+2. **Boost Race Condition** - Add database UNIQUE constraint
 
 ### Phase 2: High Priority (This Sprint)
-4. **IDOR Fixes** - All 5 new league data endpoints
-5. **Password Policy** - Configure ASP.NET Identity options
-6. **CORS Hardening** - Restrict methods/headers
+3. **Password Hash in DTO** - Remove from ApplicationUserDto
+4. **IDOR Fixes** - League members, leaderboards, league data endpoints
+5. **Sensitive Data Logging** - Remove token/email logging
 
 ### Phase 3: Medium Priority (Next Sprint)
+6. **Missing Validators** - Complete remaining validators
 7. **Boost Deadline Enforcement**
 8. **Admin Command Validators**
 9. **Configuration Hardening** (HSTS, AllowedHosts)
 10. **JavaScript XSS Prevention**
 
 ### Phase 4: Ongoing
-11. Validation gaps
+11. Low priority items
 12. Dependency updates
 13. Security monitoring
 
