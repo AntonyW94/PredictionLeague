@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Data;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
@@ -10,14 +11,20 @@ namespace PredictionLeague.Application.Features.Leagues.Queries;
 public class GetMonthsForLeagueQueryHandler : IRequestHandler<GetMonthsForLeagueQuery, IEnumerable<MonthDto>>
 {
     private readonly IApplicationReadDbConnection _dbConnection;
+    private readonly ILeagueMembershipService _membershipService;
 
-    public GetMonthsForLeagueQueryHandler(IApplicationReadDbConnection dbConnection)
+    public GetMonthsForLeagueQueryHandler(
+        IApplicationReadDbConnection dbConnection,
+        ILeagueMembershipService membershipService)
     {
         _dbConnection = dbConnection;
+        _membershipService = membershipService;
     }
 
     public async Task<IEnumerable<MonthDto>> Handle(GetMonthsForLeagueQuery request, CancellationToken cancellationToken)
     {
+        await _membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
+
         const string sql = @"
             WITH SeasonInfo AS (
                 SELECT

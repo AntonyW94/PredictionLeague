@@ -3,4 +3,4 @@ using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;
 
-public record GetMonthsForLeagueQuery(int LeagueId) : IRequest<IEnumerable<MonthDto>>;
+public record GetMonthsForLeagueQuery(int LeagueId, string CurrentUserId) : IRequest<IEnumerable<MonthDto>>;

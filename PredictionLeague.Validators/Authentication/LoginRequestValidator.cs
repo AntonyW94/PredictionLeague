@@ -16,6 +16,7 @@ public class LoginRequestValidator : AbstractValidator<LoginRequest>
             .EmailAddress().WithMessage("Please enter a valid email address.").When(x => !string.IsNullOrEmpty(x.Email));
         
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Please enter your password.");
+            .NotEmpty().WithMessage("Please enter your password.")
+            .MaximumLength(100).WithMessage("Password cannot exceed 100 characters.");
     }
 }

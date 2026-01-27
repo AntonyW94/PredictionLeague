@@ -402,6 +402,7 @@ Tracks when users have used boosts.
 
 **Constraints:**
 - PK: `Id`
+- UNIQUE: `UserId, LeagueId, RoundId, BoostDefinitionId` (prevents duplicate boost applications)
 - FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
 - FK: `LeagueId` → `Leagues.Id` (CASCADE DELETE)
 - FK: `SeasonId` → `Seasons.Id`

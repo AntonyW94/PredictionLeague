@@ -45,9 +45,10 @@ public class UsersController : ApiControllerBase
 
     [HttpPost("{userId}/role")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> UpdateRoleAsync(string userId, [FromBody] string newRole, CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateRoleAsync(string userId, [FromBody] UpdateUserRoleRequest request, CancellationToken cancellationToken)
     {
-        var command = new UpdateUserRoleCommand(userId, newRole);
+        var command = new UpdateUserRoleCommand(userId, request.NewRole);
         await _mediator.Send(command, cancellationToken);
         return NoContent();
     }

@@ -23,6 +23,15 @@ public class SecurityHeadersMiddleware
         // Control referrer information
         context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
 
+        // HSTS - Force HTTPS for 1 year, including subdomains
+        // Only add for HTTPS requests to avoid issues during development
+        if (context.Request.IsHttps)
+        {
+            context.Response.Headers.Append(
+                "Strict-Transport-Security",
+                "max-age=31536000; includeSubDomains");
+        }
+
         // Restrict browser features the application doesn't need
         context.Response.Headers.Append("Permissions-Policy",
             "accelerometer=(), " +

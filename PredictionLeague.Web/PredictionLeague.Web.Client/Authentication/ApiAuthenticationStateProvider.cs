@@ -92,7 +92,7 @@ public class ApiAuthenticationStateProvider : AuthenticationStateProvider
         }
 
         var tokenModel = new RefreshTokenRequest { Token = refreshToken.Replace(' ', '+') };
-        _logger.LogInformation("Sending refresh token to API: {Token}", tokenModel.Token);
+        _logger.LogDebug("Sending refresh token request to API");
 
         var response = await _httpClient.PostAsJsonAsync("api/auth/refresh-token", tokenModel);
 

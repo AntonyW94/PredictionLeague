@@ -41,8 +41,8 @@ builder.Services.AddCors(options =>
         policy =>
         {
             policy.WithOrigins(builder.Configuration["ApiBaseUrl"] ?? string.Empty)
-                .AllowAnyHeader()
-                .AllowAnyMethod()
+                .WithHeaders("Content-Type", "Authorization", "Accept", "X-Api-Key", "X-Requested-With")
+                .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .AllowCredentials();
         });
 });

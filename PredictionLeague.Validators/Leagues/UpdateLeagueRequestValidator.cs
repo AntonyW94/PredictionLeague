@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Validators.Common;
 using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Validators.Leagues;
@@ -11,7 +12,8 @@ public class UpdateLeagueRequestValidator : AbstractValidator<UpdateLeagueReques
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("League name cannot be empty.")
-            .Length(3, 100).WithMessage("League name must be between 3 and 100 characters.");
+            .Length(3, 100).WithMessage("League name must be between 3 and 100 characters.")
+            .MustBeASafeLeagueName();
 
         RuleFor(x => x.Price)
             .GreaterThanOrEqualTo(0).WithMessage("Price must be 0 or greater.")

@@ -36,13 +36,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
         }
 
         var correctedToken = request.RefreshToken.Replace(' ', '+');
-        _logger.LogInformation("Corrected token by replacing spaces with '+': {CorrectedToken}", correctedToken);
+        _logger.LogDebug("Token format corrected (space replacement applied)");
 
         var storedToken = await _refreshTokenRepository.GetByTokenAsync(correctedToken, cancellationToken);
         if (storedToken is not { IsActive: true })
         {
-            _logger.LogWarning("GetByTokenAsync returned null or the token is not active. Token provided: {CorrectedToken}", correctedToken);
-            return new FailedAuthenticationResponse($"Invalid or expired refresh token. ({correctedToken})");
+            _logger.LogWarning("Refresh token validation failed - token not found or inactive");
+            return new FailedAuthenticationResponse("Invalid or expired refresh token.");
         }
         _logger.LogInformation("Successfully found active token in the database for user ID: {UserId}", storedToken.UserId);
 
@@ -52,13 +52,13 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
             _logger.LogError("User not found for UserId: {UserId} associated with the refresh token.", storedToken.UserId);
             return new FailedAuthenticationResponse("User not found.");
         }
-        _logger.LogInformation("Successfully found user: {Email}", user.Email);
+        _logger.LogInformation("Successfully found User (ID: {UserId})", user.Id);
 
         storedToken.Revoke();
         await _refreshTokenRepository.UpdateAsync(storedToken, cancellationToken);
 
         var (accessToken, newRefreshToken, expiresAt) = await _tokenService.GenerateTokensAsync(user, cancellationToken);
-        _logger.LogInformation("Successfully generated new tokens for user: {Email}", user.Email);
+        _logger.LogInformation("Successfully generated new tokens for User (ID: {UserId})", user.Id);
 
         return new SuccessfulAuthenticationResponse(accessToken, expiresAt, newRefreshToken);
     }

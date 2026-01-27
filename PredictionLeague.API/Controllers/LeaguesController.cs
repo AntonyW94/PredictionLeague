@@ -62,7 +62,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<LeagueDto>> GetLeagueByIdAsync(int leagueId, CancellationToken cancellationToken)
     {
-        var query = new GetLeagueByIdQuery(leagueId);
+        var query = new GetLeagueByIdQuery(leagueId, CurrentUserId);
         var result = await _mediator.Send(query, cancellationToken);
 
         if (result == null)
@@ -98,7 +98,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<LeaguePrizesPageDto>> GetLeaguePrizesPageAsync(int leagueId, CancellationToken cancellationToken)
     {
-        var query = new GetLeaguePrizesPageQuery(leagueId);
+        var query = new GetLeaguePrizesPageQuery(leagueId, CurrentUserId);
         var result = await _mediator.Send(query, cancellationToken);
 
         if (result == null)
@@ -125,7 +125,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(typeof(IEnumerable<RoundDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<RoundDto>>> GetLeagueRoundsForDashboardAsync(int leagueId, CancellationToken cancellationToken)
     {
-        var query = new GetLeagueRoundsForDashboardQuery(leagueId);
+        var query = new GetLeagueRoundsForDashboardQuery(leagueId, CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 
@@ -150,7 +150,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(typeof(IEnumerable<MonthDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<MonthDto>>> GetMonthsForLeagueAsync(int leagueId, CancellationToken cancellationToken)
     {
-        var query = new GetMonthsForLeagueQuery(leagueId);
+        var query = new GetMonthsForLeagueQuery(leagueId, CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 
@@ -188,7 +188,7 @@ public class LeaguesController : ApiControllerBase
     [ProducesResponseType(typeof(WinningsDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<WinningsDto>> GetWinningsAsync(int leagueId, CancellationToken cancellationToken)
     {
-        var query = new GetWinningsQuery(leagueId);
+        var query = new GetWinningsQuery(leagueId, CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 

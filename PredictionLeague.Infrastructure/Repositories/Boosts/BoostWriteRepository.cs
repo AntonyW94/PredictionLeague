@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.Data.SqlClient;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
 using System.Data;
@@ -40,9 +41,19 @@ public class BoostWriteRepository(IDbConnectionFactory connectionFactory) : IBoo
         };
 
         var insertCommand = new CommandDefinition(insertSql, insertParams, cancellationToken: cancellationToken);
-        await Connection.ExecuteAsync(insertCommand);
 
-        return (true, null);
+        try
+        {
+            await Connection.ExecuteAsync(insertCommand);
+            return (true, null);
+        }
+        catch (SqlException ex) when (ex.Number == 2627 || ex.Number == 2601)
+        {
+            // Unique constraint violation - boost already applied
+            // Error 2627: UNIQUE CONSTRAINT violation
+            // Error 2601: UNIQUE INDEX violation
+            return (false, "Boost has already been applied to this round");
+        }
     }
 
     public async Task<bool> DeleteUserBoostUsageAsync(string userId, int leagueId, int roundId, CancellationToken cancellationToken)

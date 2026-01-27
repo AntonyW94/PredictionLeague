@@ -77,7 +77,7 @@ public class SendScheduledRemindersCommandHandler : IRequestHandler<SendSchedule
             };
             await _emailService.SendTemplatedEmailAsync(user.Email, templateId.Value, parameters);
 
-            _logger.LogInformation("Sending Email Reminders: Sent {Email} Chase Notification for Round (ID: {RoundId})", user.Email, nextRound.Id);
+            _logger.LogInformation("Sent chase notification for Round (ID: {RoundId}) to User (ID: {UserId})", nextRound.Id, user.UserId);
         }
 
         nextRound.UpdateLastReminderSent();

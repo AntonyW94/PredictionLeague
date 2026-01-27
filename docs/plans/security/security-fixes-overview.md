@@ -12,14 +12,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 9 | Fixes implemented and verified |
-| Deferred | 2 | Require login system changes |
-| P0 - Critical | 1 | Fix immediately - active exploitation risk |
-| P1 - High | 2 | Fix this sprint - significant security impact |
-| P2 - Medium | 4 | Fix soon - defense in depth |
-| Low | 4 | Minor improvements |
+| Completed | 24 | Fixes implemented and verified |
+| Deferred | 4 | Require login system changes or architectural decisions |
+| P0 - Critical | 0 | Fix immediately - active exploitation risk |
+| P1 - High | 0 | Fix this sprint - significant security impact |
+| P2 - Medium | 0 | Fix soon - defense in depth |
+| Low | 0 | Minor improvements |
 
-**Total Findings:** 22 (9 completed, 2 deferred)
+**Total Findings:** 28 (24 completed, 4 deferred)
 
 ---
 
@@ -39,14 +39,32 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] IDOR: League Members Access - [05-idor-league-members.md](./completed/05-idor-league-members.md)
 - [x] IDOR: Leaderboard Access - [06-idor-leaderboards.md](./completed/06-idor-leaderboards.md)
 - [x] Missing Validators - [09-missing-validators.md](./completed/09-missing-validators.md)
+- [x] Boost System Race Condition - [11-boost-race-condition.md](./completed/11-boost-race-condition.md)
+- [x] IDOR: League Data Endpoints - [13-idor-league-data-endpoints.md](./completed/13-idor-league-data-endpoints.md)
+- [x] Sensitive Data Logging - [14-sensitive-data-logging.md](./completed/14-sensitive-data-logging.md)
+- [x] Boost Deadline Enforcement - [17-boost-deadline-enforcement.md](./completed/17-boost-deadline-enforcement.md)
+- [x] Admin Command Validators - [19-admin-command-validators.md](./completed/19-admin-command-validators.md)
+- [x] Configuration Hardening - [20-configuration-hardening.md](./completed/20-configuration-hardening.md)
+- [x] JavaScript XSS Prevention - [21-javascript-xss-prevention.md](./completed/21-javascript-xss-prevention.md)
+- [x] Login Password MaxLength (added to LoginRequestValidator)
+- [x] League Name Character Validation (added LeagueNameValidationExtensions)
+- [x] Access Token Expiry reduced from 60 to 15 minutes
+- [x] brevo_csharp package verified at latest version (1.1.1)
+- [x] Password Policy Configuration (ASP.NET Identity options in DependencyInjection.cs)
+- [x] CORS Hardening (restricted methods and headers in Program.cs)
+- [x] Lock Scoring Configuration (secured by design - scoring values immutable after creation)
+- [x] ShortName Validation (added to BaseTeamRequestValidator)
+- [x] Season Name Character Validation (added SafeNameValidationExtensions)
 
 ## Intentionally Deferred
 
 **Deferred plans moved to:** [`./later/`](./later/)
 
-The following issues have been deferred due to mobile browser cookie compatibility constraints or require login system changes:
-- Refresh tokens in URLs (ExternalAuthController)
-- Access tokens in localStorage (Blazor WASM architectural decision)
+The following issues have been deferred due to mobile browser cookie compatibility constraints, architectural decisions, or require login system changes:
+- Refresh tokens in URLs (ExternalAuthController) - mobile browser compatibility
+- Access tokens in localStorage (Blazor WASM architectural decision) - XSS risk mitigated by CSP
+- SameSite=None on Refresh Token Cookies - required for cross-site authentication flow
+- JWT ClockSkew and Algorithm Whitelist - requires careful testing with production auth flows
 - Open Redirect Vulnerability - [02-open-redirect.md](./later/02-open-redirect.md)
 - JWT Security Hardening - [12-jwt-security-hardening.md](./later/12-jwt-security-hardening.md)
 
@@ -54,69 +72,45 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 ## P0 - Critical
 
-| # | Issue | Status | Plan |
-|---|-------|--------|------|
-| 11 | Boost System Race Condition (Double Boost) | Open | [11-boost-race-condition.md](./11-boost-race-condition.md) |
+*No remaining P0 issues.*
 
 ---
 
 ## P1 - High
 
-| # | Issue | Status | Plan |
-|---|-------|--------|------|
-| 13 | IDOR: League Data (5 endpoints) | Open | [13-idor-league-data-endpoints.md](./13-idor-league-data-endpoints.md) |
-| 14 | Sensitive Data Logging (Tokens/Emails) | Open | [14-sensitive-data-logging.md](./14-sensitive-data-logging.md) |
+*No remaining P1 issues.*
 
 ---
 
 ## P2 - Medium
 
-| # | Issue | Status | Plan |
-|---|-------|--------|------|
-| 17 | Boost Deadline Enforcement | Open | [17-boost-deadline-enforcement.md](./17-boost-deadline-enforcement.md) |
-| 19 | Admin Command Validators | Open | [19-admin-command-validators.md](./19-admin-command-validators.md) |
-| 20 | Configuration Hardening (HSTS, AllowedHosts) | Open | [20-configuration-hardening.md](./20-configuration-hardening.md) |
-| 21 | JavaScript XSS Prevention | Open | [21-javascript-xss-prevention.md](./21-javascript-xss-prevention.md) |
+*No remaining P2 issues.*
 
 ---
 
 ## Low Priority
 
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| - | Vulnerable NuGet Package (brevo_csharp) | Open | Monitor for updates |
-| - | Login Password MaxLength | Open | Add to validators |
-| - | League Name Character Validation | Open | Add to validators |
-| - | Access Token Expiry (60 min) | Open | Consider reducing |
-
----
-
-## Comprehensive Audit Report
-
-For full details on all findings, see:
-**[security-audit-report-2026-01-25.md](./security-audit-report-2026-01-25.md)**
+*No remaining low priority issues.*
 
 ---
 
 ## Implementation Order
 
 ### Phase 1: Critical (Immediate)
-1. **Boost Race Condition** - Add database UNIQUE constraint
+*Completed*
 
 ### Phase 2: High Priority (This Sprint)
-2. **IDOR: League Data** - Fix 5 remaining endpoints
-3. **Sensitive Data Logging** - Remove token/email logging
+*Completed*
 
 ### Phase 3: Medium Priority (Next Sprint)
-4. **Boost Deadline Enforcement**
-5. **Admin Command Validators**
-6. **Configuration Hardening** (HSTS, AllowedHosts)
-7. **JavaScript XSS Prevention**
+*Completed*
 
 ### Phase 4: Ongoing
-8. Low priority items
-9. Dependency updates
-10. Security monitoring
+*Low priority items completed*
+
+Remaining ongoing activities:
+1. Dependency updates (monitor for new versions)
+2. Security monitoring
 
 ---
 
@@ -126,14 +120,17 @@ The following are properly implemented:
 
 - SQL Injection Prevention (parameterised Dapper queries)
 - Rate Limiting (tiered policies)
-- Security Headers (CSP, X-Frame-Options, etc.)
+- Security Headers (CSP, X-Frame-Options, HSTS, etc.)
 - API Key Protection (constant-time comparison)
 - Role-Based Authorization (admin endpoints)
 - Password Hashing (ASP.NET Identity)
+- Password Policy (8+ chars, uppercase, lowercase, digit, lockout after 5 attempts)
 - Refresh Token Rotation
 - HttpOnly Refresh Cookies
 - Error Handling (stack traces hidden in production)
 - Secrets Management (Azure Key Vault)
+- CORS Hardening (restricted methods and headers)
+- Input Validation (FluentValidation with safe character patterns)
 
 ---
 

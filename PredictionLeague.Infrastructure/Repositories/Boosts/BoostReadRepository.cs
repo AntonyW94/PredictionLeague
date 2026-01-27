@@ -17,10 +17,10 @@ public sealed class BoostReadRepository : IBoostReadRepository
         _dbConnection = dbConnection;
     }
 
-    public async Task<(int SeasonId, int RoundNumber)> GetRoundInfoAsync(int roundId, CancellationToken cancellationToken)
+    public async Task<(int SeasonId, int RoundNumber, DateTime DeadlineUtc)> GetRoundInfoAsync(int roundId, CancellationToken cancellationToken)
     {
         const string sql = @"
-                SELECT r.[SeasonId], r.[RoundNumber]
+                SELECT r.[SeasonId], r.[RoundNumber], r.[DeadlineUtc]
                 FROM [Rounds] r
                 WHERE r.[Id] = @RoundId;";
 
@@ -31,7 +31,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
 
         var row = rows.Single();
 
-        return (row.SeasonId, row.RoundNumber);
+        return (row.SeasonId, row.RoundNumber, row.DeadlineUtc);
     }
 
     public async Task<int?> GetLeagueSeasonIdAsync(int leagueId, CancellationToken cancellationToken)
@@ -137,7 +137,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
 
     public async Task<BoostUsageSnapshot> GetUserBoostUsageSnapshotAsync(string userId, int leagueId, int seasonId, int roundId, string boostCode, CancellationToken cancellationToken)
     {
-        var (_, roundNumber) = await GetRoundInfoAsync(roundId, cancellationToken);
+        var (_, roundNumber, _) = await GetRoundInfoAsync(roundId, cancellationToken);
 
         const string seasonUsesSql = @"
                 SELECT COUNT(*) AS Count
@@ -255,6 +255,7 @@ public sealed class BoostReadRepository : IBoostReadRepository
     {
         public int SeasonId { get; init; }
         public int RoundNumber { get; init; }
+        public DateTime DeadlineUtc { get; init; }
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
