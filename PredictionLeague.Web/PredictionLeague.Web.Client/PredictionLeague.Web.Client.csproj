@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <!-- Disable CSS bundling during Debug builds -->
@@ -13,10 +13,10 @@
         <PackageReference Include="Blazored.FluentValidation" Version="2.2.0" />
         <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
         <PackageReference Include="BuildBundlerMinifier" Version="3.2.449" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="8.0.17" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.17" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.2" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.23" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.9" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
