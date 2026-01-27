@@ -10,9 +10,6 @@
         <!-- ReSharper disable once VulnerablePackage -->
         <PackageReference Include="brevo_csharp" Version="1.1.1" />
         <PackageReference Include="Dapper" Version="2.1.66" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.2">
-          <TreatAsUsed>true</TreatAsUsed>
-        </PackageReference>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.2">
           <TreatAsUsed>true</TreatAsUsed>
