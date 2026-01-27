@@ -1,5 +1,7 @@
 # Fix Plan: JWT Security Hardening
 
+> **SKIP FOR NOW**: This plan involves changes to the login system and cookies. It has been deferred until the login system is ready to be modified.
+
 ## Overview
 
 | Attribute | Value |

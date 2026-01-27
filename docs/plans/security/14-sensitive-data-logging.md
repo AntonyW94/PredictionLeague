@@ -1,5 +1,7 @@
 # Fix Plan: Sensitive Data Logging
 
+> **SKIP FOR NOW**: This plan involves changes to token logging in the authentication system (RefreshTokenCommandHandler, ApiAuthenticationStateProvider). It has been deferred until the login system is ready to be modified.
+
 ## Overview
 
 | Attribute | Value |

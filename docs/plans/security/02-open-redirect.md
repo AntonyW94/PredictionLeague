@@ -1,5 +1,7 @@
 # Fix 02: Open Redirect Vulnerability
 
+> **SKIP FOR NOW**: This plan involves changes to the Google OAuth login flow (ExternalAuthController). It has been deferred until the login system is ready to be modified.
+
 > **Parent Plan**: [Security Fixes Overview](./security-fixes-overview.md)
 
 ## Priority

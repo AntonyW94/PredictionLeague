@@ -1,5 +1,7 @@
 # Fix Plan: Boost System Race Condition
 
+> **MANUAL SQL STEP REQUIRED**: This plan contains database schema changes that must be run manually. When implementing this fix, stop at Step 1 and provide the SQL to execute before proceeding with code changes.
+
 ## Overview
 
 | Attribute | Value |
