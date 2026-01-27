@@ -12,24 +12,27 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
+| Completed | 4 | Fixes implemented and verified |
 | P0 - Critical | 4 | Fix immediately - active exploitation risk |
-| P1 - High | 9 | Fix this sprint - significant security impact |
-| P2 - Medium | 11 | Fix soon - defense in depth |
+| P1 - High | 6 | Fix this sprint - significant security impact |
+| P2 - Medium | 6 | Fix soon - defense in depth |
 | Low | 4 | Minor improvements |
 
-**Total Findings:** 28
+**Total Findings:** 24 (4 completed)
 
 ---
 
 ## Already Fixed
 
+**Completed plans moved to:** [`./completed/`](./completed/)
+
 - [x] TasksController `[AllowAnonymous]` bypass
 - [x] ErrorHandlingMiddleware not registered
 - [x] XSS via user names (NameValidator added)
-- [x] API Key Timing Attack (constant-time comparison implemented)
-- [x] Rate Limiting (implemented with tiered policies)
-- [x] Security Headers (CSP, X-Frame-Options, etc.)
-- [x] Handler Authorization (defense-in-depth checks added)
+- [x] API Key Timing Attack - [03-api-key-timing-attack.md](./completed/03-api-key-timing-attack.md)
+- [x] Rate Limiting - [07-rate-limiting.md](./completed/07-rate-limiting.md)
+- [x] Security Headers - [08-security-headers.md](./completed/08-security-headers.md)
+- [x] Handler Authorization - [10-handler-authorization.md](./completed/10-handler-authorization.md)
 
 ## Intentionally Deferred
 
@@ -55,15 +58,12 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 | # | Issue | Status | Plan |
 |---|-------|--------|------|
-| 2 | Open Redirect Vulnerability | Open | [02-open-redirect.md](./02-open-redirect.md) |
-| 3 | API Key Timing Attack | **Fixed** | [03-api-key-timing-attack.md](./03-api-key-timing-attack.md) |
+| 2 | Open Redirect Vulnerability | Deferred | [02-open-redirect.md](./02-open-redirect.md) |
 | 4 | Password Hash in DTO | Open | [04-password-hash-disclosure.md](./04-password-hash-disclosure.md) |
 | 5 | IDOR: League Members Access | Open | [05-idor-league-members.md](./05-idor-league-members.md) |
 | 6 | IDOR: Leaderboard Access | Open | [06-idor-leaderboards.md](./06-idor-leaderboards.md) |
-| 13 | IDOR: League Data (5 endpoints) | **NEW** | [13-idor-league-data-endpoints.md](./13-idor-league-data-endpoints.md) |
-| 14 | Sensitive Data Logging (Tokens/Emails) | **NEW** | [14-sensitive-data-logging.md](./14-sensitive-data-logging.md) |
-| 15 | Insufficient Password Policy | **NEW** | [15-password-policy.md](./15-password-policy.md) |
-| 16 | CORS AllowAnyMethod/AllowAnyHeader | **NEW** | [16-cors-hardening.md](./16-cors-hardening.md) |
+| 13 | IDOR: League Data (5 endpoints) | Open | [13-idor-league-data-endpoints.md](./13-idor-league-data-endpoints.md) |
+| 14 | Sensitive Data Logging (Tokens/Emails) | Open | [14-sensitive-data-logging.md](./14-sensitive-data-logging.md) |
 
 ---
 
@@ -71,17 +71,12 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 | # | Issue | Status | Plan |
 |---|-------|--------|------|
-| 7 | No Rate Limiting | **Fixed** | [07-rate-limiting.md](./07-rate-limiting.md) |
-| 8 | Missing Security Headers | **Fixed** | [08-security-headers.md](./08-security-headers.md) |
 | 9 | Missing Validators | Partial | [09-missing-validators.md](./09-missing-validators.md) |
-| 10 | Handler Authorization Improvements | **Fixed** | [10-handler-authorization.md](./10-handler-authorization.md) |
-| 12b | JWT ClockSkew/ValidateAlgorithm | **NEW** | [12-jwt-security-hardening.md](./12-jwt-security-hardening.md) |
-| 17 | Boost Deadline Enforcement | **NEW** | [17-boost-deadline-enforcement.md](./17-boost-deadline-enforcement.md) |
-| 18 | Lock Scoring Configuration | **NEW** | [18-lock-scoring-configuration.md](./18-lock-scoring-configuration.md) |
-| 19 | Admin Command Validators | **NEW** | [19-admin-command-validators.md](./19-admin-command-validators.md) |
-| 20 | Configuration Hardening (HSTS, AllowedHosts) | **NEW** | [20-configuration-hardening.md](./20-configuration-hardening.md) |
-| 21 | JavaScript XSS Prevention | **NEW** | [21-javascript-xss-prevention.md](./21-javascript-xss-prevention.md) |
-| 22 | Validation Gaps | **NEW** | [22-validation-gaps.md](./22-validation-gaps.md) |
+| 12b | JWT ClockSkew/ValidateAlgorithm | Deferred | [12-jwt-security-hardening.md](./12-jwt-security-hardening.md) |
+| 17 | Boost Deadline Enforcement | Open | [17-boost-deadline-enforcement.md](./17-boost-deadline-enforcement.md) |
+| 19 | Admin Command Validators | Open | [19-admin-command-validators.md](./19-admin-command-validators.md) |
+| 20 | Configuration Hardening (HSTS, AllowedHosts) | Open | [20-configuration-hardening.md](./20-configuration-hardening.md) |
+| 21 | JavaScript XSS Prevention | Open | [21-javascript-xss-prevention.md](./21-javascript-xss-prevention.md) |
 
 ---
 
@@ -89,10 +84,10 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 23 | Vulnerable NuGet Package (brevo_csharp) | **NEW** | [23-dependency-security.md](./23-dependency-security.md) |
-| - | Login Password MaxLength | **NEW** | Add to validators |
-| - | League Name Character Validation | **NEW** | Add to validators |
-| - | Access Token Expiry (60 min) | **NEW** | Consider reducing |
+| - | Vulnerable NuGet Package (brevo_csharp) | Open | Monitor for updates |
+| - | Login Password MaxLength | Open | Add to validators |
+| - | League Name Character Validation | Open | Add to validators |
+| - | Access Token Expiry (60 min) | Open | Consider reducing |
 
 ---
 
