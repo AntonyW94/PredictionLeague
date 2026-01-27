@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net10.0</TargetFramework>
@@ -11,7 +11,6 @@
         <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
         <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.2" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.9" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.2" />
@@ -20,7 +19,9 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
-      <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
+      <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj">
+        <TreatAsUsed>true</TreatAsUsed>
+      </ProjectReference>
     </ItemGroup>
 
     <ItemGroup>
