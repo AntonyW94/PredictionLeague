@@ -12,14 +12,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 5 | Fixes implemented and verified |
+| Completed | 9 | Fixes implemented and verified |
 | Deferred | 2 | Require login system changes |
 | P0 - Critical | 1 | Fix immediately - active exploitation risk |
-| P1 - High | 5 | Fix this sprint - significant security impact |
-| P2 - Medium | 5 | Fix soon - defense in depth |
+| P1 - High | 2 | Fix this sprint - significant security impact |
+| P2 - Medium | 4 | Fix soon - defense in depth |
 | Low | 4 | Minor improvements |
 
-**Total Findings:** 22 (5 completed, 2 deferred)
+**Total Findings:** 22 (9 completed, 2 deferred)
 
 ---
 
@@ -35,6 +35,10 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] Security Headers - [08-security-headers.md](./completed/08-security-headers.md)
 - [x] Handler Authorization - [10-handler-authorization.md](./completed/10-handler-authorization.md)
 - [x] IDOR: Unauthorized League Update - [01-idor-league-update.md](./completed/01-idor-league-update.md)
+- [x] Password Hash in DTO - [04-password-hash-disclosure.md](./completed/04-password-hash-disclosure.md)
+- [x] IDOR: League Members Access - [05-idor-league-members.md](./completed/05-idor-league-members.md)
+- [x] IDOR: Leaderboard Access - [06-idor-leaderboards.md](./completed/06-idor-leaderboards.md)
+- [x] Missing Validators - [09-missing-validators.md](./completed/09-missing-validators.md)
 
 ## Intentionally Deferred
 
@@ -60,9 +64,6 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 | # | Issue | Status | Plan |
 |---|-------|--------|------|
-| 4 | Password Hash in DTO | Open | [04-password-hash-disclosure.md](./04-password-hash-disclosure.md) |
-| 5 | IDOR: League Members Access | Open | [05-idor-league-members.md](./05-idor-league-members.md) |
-| 6 | IDOR: Leaderboard Access | Open | [06-idor-leaderboards.md](./06-idor-leaderboards.md) |
 | 13 | IDOR: League Data (5 endpoints) | Open | [13-idor-league-data-endpoints.md](./13-idor-league-data-endpoints.md) |
 | 14 | Sensitive Data Logging (Tokens/Emails) | Open | [14-sensitive-data-logging.md](./14-sensitive-data-logging.md) |
 
@@ -72,7 +73,6 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 | # | Issue | Status | Plan |
 |---|-------|--------|------|
-| 9 | Missing Validators | Partial | [09-missing-validators.md](./09-missing-validators.md) |
 | 17 | Boost Deadline Enforcement | Open | [17-boost-deadline-enforcement.md](./17-boost-deadline-enforcement.md) |
 | 19 | Admin Command Validators | Open | [19-admin-command-validators.md](./19-admin-command-validators.md) |
 | 20 | Configuration Hardening (HSTS, AllowedHosts) | Open | [20-configuration-hardening.md](./20-configuration-hardening.md) |
@@ -104,21 +104,19 @@ For full details on all findings, see:
 1. **Boost Race Condition** - Add database UNIQUE constraint
 
 ### Phase 2: High Priority (This Sprint)
-2. **Password Hash in DTO** - Remove from ApplicationUserDto
-3. **IDOR Fixes** - League members, leaderboards, league data endpoints
-4. **Sensitive Data Logging** - Remove token/email logging
+2. **IDOR: League Data** - Fix 5 remaining endpoints
+3. **Sensitive Data Logging** - Remove token/email logging
 
 ### Phase 3: Medium Priority (Next Sprint)
-5. **Missing Validators** - Complete remaining validators
-6. **Boost Deadline Enforcement**
-7. **Admin Command Validators**
-8. **Configuration Hardening** (HSTS, AllowedHosts)
-9. **JavaScript XSS Prevention**
+4. **Boost Deadline Enforcement**
+5. **Admin Command Validators**
+6. **Configuration Hardening** (HSTS, AllowedHosts)
+7. **JavaScript XSS Prevention**
 
 ### Phase 4: Ongoing
-10. Low priority items
-11. Dependency updates
-12. Security monitoring
+8. Low priority items
+9. Dependency updates
+10. Security monitoring
 
 ---
 
