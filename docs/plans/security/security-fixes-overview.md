@@ -2,11 +2,12 @@
 
 ## Overview
 
-This document outlines the security vulnerabilities identified in the PredictionLeague application. The original audit was conducted January 24, 2026, with a comprehensive follow-up audit on January 25, 2026.
+This document outlines the security vulnerabilities identified in the PredictionLeague application. The original audit was conducted January 24, 2026, with comprehensive follow-up audits on January 25 and January 27, 2026.
 
 ## Audit Dates
 - **Initial Audit:** January 24, 2026
 - **Comprehensive Follow-up:** January 25, 2026
+- **Third Audit:** January 27, 2026
 
 ## Summary
 
@@ -14,12 +15,12 @@ This document outlines the security vulnerabilities identified in the Prediction
 |----------|-------|-------------|
 | Completed | 24 | Fixes implemented and verified |
 | Deferred | 4 | Require login system changes or architectural decisions |
-| P0 - Critical | 0 | Fix immediately - active exploitation risk |
-| P1 - High | 0 | Fix this sprint - significant security impact |
-| P2 - Medium | 0 | Fix soon - defense in depth |
-| Low | 0 | Minor improvements |
+| P0 - Critical | 1 | Fix immediately - active exploitation risk |
+| P1 - High | 3 | Fix this sprint - significant security impact |
+| P2 - Medium | 3 | Fix soon - defence in depth |
+| Low | 3 | Minor improvements |
 
-**Total Findings:** 28 (24 completed, 4 deferred)
+**Total Findings:** 38 (24 completed, 4 deferred, 10 new from Jan 27 audit)
 
 ---
 
@@ -72,45 +73,109 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 ## P0 - Critical
 
-*No remaining P0 issues.*
+### 1. Rate Limiting Middleware Not Enabled
+- **File:** `PredictionLeague.Web/PredictionLeague.Web/Program.cs`
+- **Issue:** Rate limiting is configured in `DependencyInjection.cs` with well-defined policies (100/min global, 10/5min for auth, 60/min for API), but `app.UseRateLimiter()` is **never called** in the middleware pipeline.
+- **Impact:** All authentication endpoints are vulnerable to brute-force attacks. The `[EnableRateLimiting("auth")]` attributes on controllers have no effect.
+- **Exploitation:** Unlimited login attempts, credential stuffing, account enumeration attacks.
+- **Plan:** [22-rate-limiting-middleware.md](./22-rate-limiting-middleware.md)
 
 ---
 
 ## P1 - High
 
-*No remaining P1 issues.*
+### 1. IDOR in League Dashboard Round Results
+- **File:** `PredictionLeague.Application/Features/Leagues/Queries/GetLeagueDashboardRoundResultsQueryHandler.cs`
+- **Issue:** Query returns predictions for any league/round without validating the requesting user is a member of the league.
+- **Impact:** Any authenticated user can view predictions for leagues they don't belong to, gaining competitive intelligence.
+- **Exploitation:** `GET /api/leagues/{anyLeagueId}/rounds/{roundId}/results` returns all player predictions.
+- **Plan:** [23-idor-round-results.md](./23-idor-round-results.md)
+
+### 2. User Enumeration via Registration
+- **File:** `PredictionLeague.Application/Features/Authentication/Commands/Register/RegisterCommandHandler.cs` (line 24)
+- **Issue:** Registration endpoint returns "User with this email already exists" for existing emails, enabling email enumeration.
+- **Impact:** Attackers can build a list of valid user email addresses for targeted attacks.
+- **Exploitation:** Iterate through email addresses and observe error message differences.
+- **Plan:** [24-email-enumeration.md](./24-email-enumeration.md)
+
+### 3. Outdated Security-Critical Packages
+- **Files:** Multiple `.csproj` files
+- **Issue:** Critical packages are severely outdated:
+  - `Microsoft.AspNetCore.Identity` 2.3.1 (from .NET Core 2.1 era, ~2018)
+  - `Microsoft.AspNetCore.Authentication.Abstractions` 2.3.0 (from .NET Core 2.1)
+  - `System.IdentityModel.Tokens.Jwt` 7.5.0/7.7.1 (should be 8.0+)
+- **Impact:** Missing years of security patches for authentication/identity components.
+- **Plan:** [25-outdated-packages.md](./25-outdated-packages.md)
 
 ---
 
 ## P2 - Medium
 
-*No remaining P2 issues.*
+### 1. Server-Side Validation Gap
+- **Files:** `PredictionLeague.API/DependencyInjection.cs`, `PredictionLeague.Validators/`
+- **Issue:** FluentValidation validators are defined for Request DTOs (e.g., `LoginRequest`), but MediatR's `ValidationBehaviour` looks for validators matching Command/Query types (e.g., `LoginCommand`). No validators exist for Commands/Queries.
+- **Impact:** Server-side validation is bypassed for direct API calls. Client-side (Blazor) validation still works but can be bypassed by attackers.
+- **Mitigation:** Already mitigated by:
+  - Client-side FluentValidation in Blazor forms
+  - Domain model guards (Ardalis.GuardClauses)
+  - Database constraints
+- **Plan:** [26-server-validation-gap.md](./26-server-validation-gap.md)
+
+### 2. Entry Code Character Validation Missing
+- **File:** `PredictionLeague.Validators/Leagues/JoinLeagueRequestValidator.cs` (lines 12-14)
+- **Issue:** Entry codes only validate length (6 characters), not that they are alphanumeric.
+- **Impact:** Allows special characters, unicode, or injection attempts in entry codes.
+- **Plan:** [27-entry-code-validation.md](./27-entry-code-validation.md)
+
+### 3. Football API Response Handling
+- **Files:**
+  - `PredictionLeague.Infrastructure/Services/FootballDataService.cs`
+  - `PredictionLeague.Application/Features/Admin/Seasons/Commands/SyncSeasonWithApiCommandHandler.cs`
+- **Issue:** API responses deserialized without explicit validation; potential null reference issues.
+- **Impact:** Service disruption if API changes response structure or returns unexpected data.
+- **Plan:** [28-football-api-handling.md](./28-football-api-handling.md)
 
 ---
 
 ## Low Priority
 
-*No remaining low priority issues.*
+### 1. Exception Messages Reveal Implementation Details
+- **File:** `PredictionLeague.API/Middleware/ErrorHandlingMiddleware.cs`
+- **Issue:** Raw exception messages are returned for `KeyNotFoundException`, `ArgumentException`, `InvalidOperationException`.
+- **Impact:** Information disclosure about business logic and system state.
+
+### 2. User IDs Exposed in Public DTOs
+- **Files:** Multiple DTOs in `PredictionLeague.Contracts/`
+- **Issue:** Internal user IDs (GUIDs) exposed in leaderboard and prediction response DTOs.
+- **Impact:** Enables user enumeration and potential targeting of specific users.
+
+### 3. Deprecated X-XSS-Protection Header
+- **File:** `PredictionLeague.API/Middleware/SecurityHeadersMiddleware.cs`
+- **Issue:** `X-XSS-Protection` header included for backwards compatibility but deprecated in modern browsers.
+- **Impact:** None (included for older browser support).
 
 ---
 
 ## Implementation Order
 
 ### Phase 1: Critical (Immediate)
-*Completed*
+- [ ] Add `app.UseRateLimiter()` to middleware pipeline
 
 ### Phase 2: High Priority (This Sprint)
-*Completed*
+- [ ] Add membership validation to GetLeagueDashboardRoundResultsQuery
+- [ ] Return generic error message for registration
+- [ ] Upgrade outdated NuGet packages
 
 ### Phase 3: Medium Priority (Next Sprint)
-*Completed*
+- [ ] Align validators with Commands/Queries OR add ASP.NET Core auto-validation
+- [ ] Add alphanumeric validation to entry codes
+- [ ] Add Football API response validation
 
 ### Phase 4: Ongoing
-*Low priority items completed*
-
 Remaining ongoing activities:
 1. Dependency updates (monitor for new versions)
 2. Security monitoring
+3. Address low priority items
 
 ---
 
@@ -119,7 +184,7 @@ Remaining ongoing activities:
 The following are properly implemented:
 
 - SQL Injection Prevention (parameterised Dapper queries)
-- Rate Limiting (tiered policies)
+- Rate Limiting Configuration (tiered policies configured - **needs middleware enabled**)
 - Security Headers (CSP, X-Frame-Options, HSTS, etc.)
 - API Key Protection (constant-time comparison)
 - Role-Based Authorization (admin endpoints)
@@ -130,7 +195,10 @@ The following are properly implemented:
 - Error Handling (stack traces hidden in production)
 - Secrets Management (Azure Key Vault)
 - CORS Hardening (restricted methods and headers)
-- Input Validation (FluentValidation with safe character patterns)
+- Input Validation (FluentValidation with safe character patterns - client-side)
+- XSS Prevention (escapeHtml in JavaScript, Blazor auto-encoding, NameValidator sanitisation)
+- Boost Race Condition Protection (database unique constraint)
+- Deadline Enforcement (server-side UTC checks)
 
 ---
 
