@@ -7,19 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
-        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-        <PackageReference Include="MediatR" Version="14.0.0" />
+        <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0">
+          <TreatAsUsed>true</TreatAsUsed>
+        </PackageReference>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.2" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
-        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
-        <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.6.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="10.1.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.1.0" />
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.0" />
@@ -28,7 +22,9 @@
     <ItemGroup>
         <ProjectReference Include="..\PredictionLeague.Application\PredictionLeague.Application.csproj" />
         <ProjectReference Include="..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
-        <ProjectReference Include="..\PredictionLeague.Hosting.Shared\PredictionLeague.Hosting.Shared.csproj" />
+        <ProjectReference Include="..\PredictionLeague.Hosting.Shared\PredictionLeague.Hosting.Shared.csproj">
+          <TreatAsUsed>true</TreatAsUsed>
+        </ProjectReference>
         <ProjectReference Include="..\PredictionLeague.Infrastructure\PredictionLeague.Infrastructure.csproj" />
         <ProjectReference Include="..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
     </ItemGroup>
