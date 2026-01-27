@@ -13,14 +13,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 31 | Fixes implemented and verified |
+| Completed | 32 | Fixes implemented and verified |
 | Deferred | 4 | Require login system changes or architectural decisions |
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
 | P1 - High | 0 | Fix this sprint - significant security impact |
 | P2 - Medium | 0 | Fix soon - defence in depth |
-| Low | 4 | Minor improvements and housekeeping |
+| Low | 3 | Minor improvements and housekeeping |
 
-**Total Findings:** 39 (31 completed, 4 deferred, 4 outstanding)
+**Total Findings:** 39 (32 completed, 4 deferred, 3 outstanding)
 
 ---
 
@@ -63,6 +63,7 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] Entry Code Character Validation - [27-entry-code-validation.md](./completed/27-entry-code-validation.md)
 - [x] Football API Response Handling - [28-football-api-handling.md](./completed/28-football-api-handling.md)
 - [x] Server-Side Validation Gap - [26-server-validation-gap.md](./completed/26-server-validation-gap.md)
+- [x] X-XSS-Protection Header (kept for backwards compatibility - no action needed)
 
 ## Intentionally Deferred
 
@@ -108,12 +109,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 - **Issue:** Internal user IDs (GUIDs) exposed in leaderboard and prediction response DTOs.
 - **Impact:** Enables user enumeration and potential targeting of specific users.
 
-### 3. Deprecated X-XSS-Protection Header
-- **File:** `PredictionLeague.API/Middleware/SecurityHeadersMiddleware.cs`
-- **Issue:** `X-XSS-Protection` header included for backwards compatibility but deprecated in modern browsers.
-- **Impact:** None (included for older browser support).
-
-### 4. Remove Legacy Package References (Housekeeping)
+### 3. Remove Legacy Package References (Housekeeping)
 - **Files:** `Web.Client.csproj`, `Application.csproj`
 - **Issue:** Legacy `Microsoft.AspNetCore.Identity` and `Authentication.Abstractions` packages (2.3.9) remain but are provided by .NET 10 shared framework.
 - **Impact:** None (at latest version, functionality duplicated by framework).
