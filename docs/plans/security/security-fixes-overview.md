@@ -12,14 +12,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 4 | Fixes implemented and verified |
+| Completed | 5 | Fixes implemented and verified |
 | Deferred | 2 | Require login system changes |
-| P0 - Critical | 2 | Fix immediately - active exploitation risk |
+| P0 - Critical | 1 | Fix immediately - active exploitation risk |
 | P1 - High | 5 | Fix this sprint - significant security impact |
 | P2 - Medium | 5 | Fix soon - defense in depth |
 | Low | 4 | Minor improvements |
 
-**Total Findings:** 22 (4 completed, 2 deferred)
+**Total Findings:** 22 (5 completed, 2 deferred)
 
 ---
 
@@ -34,6 +34,7 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] Rate Limiting - [07-rate-limiting.md](./completed/07-rate-limiting.md)
 - [x] Security Headers - [08-security-headers.md](./completed/08-security-headers.md)
 - [x] Handler Authorization - [10-handler-authorization.md](./completed/10-handler-authorization.md)
+- [x] IDOR: Unauthorized League Update - [01-idor-league-update.md](./completed/01-idor-league-update.md)
 
 ## Intentionally Deferred
 
@@ -51,7 +52,6 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 | # | Issue | Status | Plan |
 |---|-------|--------|------|
-| 1 | IDOR: Unauthorized League Update | Open | [01-idor-league-update.md](./01-idor-league-update.md) |
 | 11 | Boost System Race Condition (Double Boost) | Open | [11-boost-race-condition.md](./11-boost-race-condition.md) |
 
 ---
@@ -101,25 +101,24 @@ For full details on all findings, see:
 ## Implementation Order
 
 ### Phase 1: Critical (Immediate)
-1. **IDOR: League Update** - Add ownership check
-2. **Boost Race Condition** - Add database UNIQUE constraint
+1. **Boost Race Condition** - Add database UNIQUE constraint
 
 ### Phase 2: High Priority (This Sprint)
-3. **Password Hash in DTO** - Remove from ApplicationUserDto
-4. **IDOR Fixes** - League members, leaderboards, league data endpoints
-5. **Sensitive Data Logging** - Remove token/email logging
+2. **Password Hash in DTO** - Remove from ApplicationUserDto
+3. **IDOR Fixes** - League members, leaderboards, league data endpoints
+4. **Sensitive Data Logging** - Remove token/email logging
 
 ### Phase 3: Medium Priority (Next Sprint)
-6. **Missing Validators** - Complete remaining validators
-7. **Boost Deadline Enforcement**
-8. **Admin Command Validators**
-9. **Configuration Hardening** (HSTS, AllowedHosts)
-10. **JavaScript XSS Prevention**
+5. **Missing Validators** - Complete remaining validators
+6. **Boost Deadline Enforcement**
+7. **Admin Command Validators**
+8. **Configuration Hardening** (HSTS, AllowedHosts)
+9. **JavaScript XSS Prevention**
 
 ### Phase 4: Ongoing
-11. Low priority items
-12. Dependency updates
-13. Security monitoring
+10. Low priority items
+11. Dependency updates
+12. Security monitoring
 
 ---
 
