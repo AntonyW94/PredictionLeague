@@ -17,12 +17,14 @@
         <PackageReference Include="Azure.Extensions.AspNetCore.Configuration.Secrets" Version="1.4.0" />
         <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.17" />
-        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
         <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
-        <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-        <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.5.6" />
-        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.7.1" />
+        <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+        <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.6.0" />
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
+        <PackageReference Include="System.Net.Http" Version="4.3.4" />
+        <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
     </ItemGroup>
 
     <!--
@@ -65,9 +67,7 @@
         <!-- Note: We use PowerShell instead of WriteLinesToFile because WriteLinesToFile
              treats semicolons as item separators, which breaks the Google Fonts URL
              (wght@300;400;500;700 gets split into separate lines) -->
-        <Exec
-            Command="powershell -NoProfile -Command &quot;$googleFonts = '@import url(''https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;display=swap'');'; $bundled = Get-Content -Raw '$(SourceBundledCss)'; Set-Content -Path '$(TargetCss)' -Value ($googleFonts + [Environment]::NewLine + $bundled) -NoNewline&quot;"
-            Condition="$(BundleExists)" />
+        <Exec Command="powershell -NoProfile -Command &quot;$googleFonts = '@import url(''https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;display=swap'');'; $bundled = Get-Content -Raw '$(SourceBundledCss)'; Set-Content -Path '$(TargetCss)' -Value ($googleFonts + [Environment]::NewLine + $bundled) -NoNewline&quot;" Condition="$(BundleExists)" />
 
         <Delete Files="$(SourceBundledCss)" Condition="$(BundleExists)" />
 
@@ -87,9 +87,7 @@
         <Message Importance="high" Text="CSS bundled and minified successfully!" Condition="$(BundleExists)" />
 
         <!-- If no bundle (Debug build): Just add cache busting to @imports -->
-        <Exec
-            Command="powershell -NoProfile -Command &quot;(Get-Content '$(TargetCss)') -replace '@import url\(\x27((?!https?://)[^)]+)\x27\)', '@import url(''$$1?v=$(CssVersion)'')' | Set-Content '$(TargetCss)'&quot;"
-            Condition="!$(BundleExists)" />
+        <Exec Command="powershell -NoProfile -Command &quot;(Get-Content '$(TargetCss)') -replace '@import url\(\x27((?!https?://)[^)]+)\x27\)', '@import url(''$$1?v=$(CssVersion)'')' | Set-Content '$(TargetCss)'&quot;" Condition="!$(BundleExists)" />
 
         <Message Importance="high" Text="CSS imports versioned (Debug mode)." Condition="!$(BundleExists)" />
 
