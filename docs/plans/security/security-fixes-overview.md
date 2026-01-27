@@ -13,14 +13,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 28 | Fixes implemented and verified |
+| Completed | 29 | Fixes implemented and verified |
 | Deferred | 4 | Require login system changes or architectural decisions |
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
 | P1 - High | 0 | Fix this sprint - significant security impact |
-| P2 - Medium | 3 | Fix soon - defence in depth |
+| P2 - Medium | 2 | Fix soon - defence in depth |
 | Low | 4 | Minor improvements and housekeeping |
 
-**Total Findings:** 39 (28 completed, 4 deferred, 7 outstanding)
+**Total Findings:** 39 (29 completed, 4 deferred, 6 outstanding)
 
 ---
 
@@ -60,6 +60,7 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] Outdated Packages Updated (.NET 10, JWT 8.15.0, framework packages 10.0.2) - [25-outdated-packages.md](./completed/25-outdated-packages.md)
 - [x] IDOR: Round Results Access - [23-idor-round-results.md](./completed/23-idor-round-results.md)
 - [x] Email Enumeration via Registration - [24-email-enumeration.md](./completed/24-email-enumeration.md)
+- [x] Entry Code Character Validation - [27-entry-code-validation.md](./completed/27-entry-code-validation.md)
 
 ## Intentionally Deferred
 
@@ -99,13 +100,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
   - Database constraints
 - **Plan:** [26-server-validation-gap.md](./26-server-validation-gap.md)
 
-### 2. Entry Code Character Validation Missing
-- **File:** `PredictionLeague.Validators/Leagues/JoinLeagueRequestValidator.cs` (lines 12-14)
-- **Issue:** Entry codes only validate length (6 characters), not that they are alphanumeric.
-- **Impact:** Allows special characters, unicode, or injection attempts in entry codes.
-- **Plan:** [27-entry-code-validation.md](./27-entry-code-validation.md)
-
-### 3. Football API Response Handling
+### 2. Football API Response Handling
 - **Files:**
   - `PredictionLeague.Infrastructure/Services/FootballDataService.cs`
   - `PredictionLeague.Application/Features/Admin/Seasons/Commands/SyncSeasonWithApiCommandHandler.cs`
@@ -152,7 +147,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 ### Phase 3: Medium Priority (Next Sprint)
 - [ ] Align validators with Commands/Queries OR add ASP.NET Core auto-validation
-- [ ] Add alphanumeric validation to entry codes
+- [x] Add alphanumeric validation to entry codes
 - [ ] Add Football API response validation
 
 ### Phase 4: Ongoing

@@ -1,5 +1,12 @@
 # P2: Entry Code Character Validation Missing
 
+## Status: COMPLETED
+
+**Completed:** January 27, 2026
+**Resolution:** Added regex validation `^[A-Z0-9]{6}$` with `RegexOptions.IgnoreCase` to accept case-insensitive input while enforcing alphanumeric-only characters.
+
+---
+
 ## Summary
 
 **Severity:** P2 - Medium
