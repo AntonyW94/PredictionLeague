@@ -155,14 +155,12 @@ public async Task<IActionResult> UpdateMatchResultsAsync(
 ```csharp
 using FluentValidation;
 using PredictionLeague.Contracts.Admin.Users;
-using PredictionLeague.Domain.Common.Constants;
+using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Validators.Admin.Users;
 
 public class UpdateUserRoleRequestValidator : AbstractValidator<UpdateUserRoleRequest>
 {
-    private static readonly string[] ValidRoles = { RoleNames.Administrator, "Player" };
-
     public UpdateUserRoleRequestValidator()
     {
         RuleFor(x => x.UserId)
@@ -172,8 +170,8 @@ public class UpdateUserRoleRequestValidator : AbstractValidator<UpdateUserRoleRe
         RuleFor(x => x.NewRole)
             .NotEmpty()
             .WithMessage("Role is required.")
-            .Must(role => ValidRoles.Contains(role))
-            .WithMessage($"Role must be one of: {string.Join(", ", ValidRoles)}");
+            .Must(role => Enum.TryParse<ApplicationUserRole>(role, ignoreCase: true, out _))
+            .WithMessage($"Role must be one of: {string.Join(", ", Enum.GetNames<ApplicationUserRole>())}");
     }
 }
 ```
