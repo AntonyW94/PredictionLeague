@@ -94,13 +94,6 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 ---
 
-## Comprehensive Audit Report
-
-For full details on all findings, see:
-**[security-audit-report-2026-01-25.md](./security-audit-report-2026-01-25.md)**
-
----
-
 ## Implementation Order
 
 ### Phase 1: Critical (Immediate)
