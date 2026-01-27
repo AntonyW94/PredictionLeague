@@ -18,9 +18,9 @@ This document outlines the security vulnerabilities identified in the Prediction
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
 | P1 - High | 2 | Fix this sprint - significant security impact |
 | P2 - Medium | 3 | Fix soon - defence in depth |
-| Low | 3 | Minor improvements |
+| Low | 4 | Minor improvements and housekeeping |
 
-**Total Findings:** 38 (26 completed, 4 deferred, 8 outstanding)
+**Total Findings:** 39 (26 completed, 4 deferred, 9 outstanding)
 
 ---
 
@@ -141,6 +141,12 @@ The following issues have been deferred due to mobile browser cookie compatibili
 - **File:** `PredictionLeague.API/Middleware/SecurityHeadersMiddleware.cs`
 - **Issue:** `X-XSS-Protection` header included for backwards compatibility but deprecated in modern browsers.
 - **Impact:** None (included for older browser support).
+
+### 4. Remove Legacy Package References (Housekeeping)
+- **Files:** `Web.Client.csproj`, `Application.csproj`
+- **Issue:** Legacy `Microsoft.AspNetCore.Identity` and `Authentication.Abstractions` packages (2.3.9) remain but are provided by .NET 10 shared framework.
+- **Impact:** None (at latest version, functionality duplicated by framework).
+- **Plan:** [29-remove-legacy-package-references.md](./29-remove-legacy-package-references.md)
 
 ---
 
