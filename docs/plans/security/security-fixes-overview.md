@@ -12,14 +12,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 16 | Fixes implemented and verified |
+| Completed | 20 | Fixes implemented and verified |
 | Deferred | 2 | Require login system changes |
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
 | P1 - High | 0 | Fix this sprint - significant security impact |
 | P2 - Medium | 0 | Fix soon - defense in depth |
-| Low | 4 | Minor improvements |
+| Low | 0 | Minor improvements |
 
-**Total Findings:** 22 (16 completed, 2 deferred)
+**Total Findings:** 22 (20 completed, 2 deferred)
 
 ---
 
@@ -46,6 +46,10 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] Admin Command Validators - [19-admin-command-validators.md](./completed/19-admin-command-validators.md)
 - [x] Configuration Hardening - [20-configuration-hardening.md](./completed/20-configuration-hardening.md)
 - [x] JavaScript XSS Prevention - [21-javascript-xss-prevention.md](./completed/21-javascript-xss-prevention.md)
+- [x] Login Password MaxLength (added to LoginRequestValidator)
+- [x] League Name Character Validation (added LeagueNameValidationExtensions)
+- [x] Access Token Expiry reduced from 60 to 15 minutes
+- [x] brevo_csharp package verified at latest version (1.1.1)
 
 ## Intentionally Deferred
 
@@ -79,12 +83,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 ## Low Priority
 
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| - | Vulnerable NuGet Package (brevo_csharp) | Open | Monitor for updates |
-| - | Login Password MaxLength | Open | Add to validators |
-| - | League Name Character Validation | Open | Add to validators |
-| - | Access Token Expiry (60 min) | Open | Consider reducing |
+*No remaining low priority issues.*
 
 ---
 
@@ -107,9 +106,11 @@ For full details on all findings, see:
 *Completed*
 
 ### Phase 4: Ongoing
-1. Low priority items
-2. Dependency updates
-3. Security monitoring
+*Low priority items completed*
+
+Remaining ongoing activities:
+1. Dependency updates (monitor for new versions)
+2. Security monitoring
 
 ---
 

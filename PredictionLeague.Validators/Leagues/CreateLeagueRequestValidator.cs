@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Validators.Common;
 using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Validators.Leagues;
@@ -11,7 +12,8 @@ public class CreateLeagueRequestValidator : AbstractValidator<CreateLeagueReques
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Please enter a name for your league.")
-            .Length(3, 100).WithMessage("The league name must be between 3 and 100 characters.");
+            .Length(3, 100).WithMessage("The league name must be between 3 and 100 characters.")
+            .MustBeASafeLeagueName();
 
         RuleFor(x => x.SeasonId)
             .GreaterThan(0).WithMessage("You must select a valid season for the league.");
