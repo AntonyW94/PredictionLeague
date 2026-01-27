@@ -3,4 +3,4 @@ using PredictionLeague.Contracts.Leagues;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;
 
-public record GetLeaguePrizesPageQuery(int LeagueId) : IRequest<LeaguePrizesPageDto?>;
+public record GetLeaguePrizesPageQuery(int LeagueId, string CurrentUserId) : IRequest<LeaguePrizesPageDto?>;

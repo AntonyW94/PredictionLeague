@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using PredictionLeague.Application.Data;
+using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
@@ -9,14 +10,20 @@ namespace PredictionLeague.Application.Features.Leagues.Queries;
 public class GetLeaguePrizesPageQueryHandler : IRequestHandler<GetLeaguePrizesPageQuery, LeaguePrizesPageDto?>
 {
     private readonly IApplicationReadDbConnection _dbConnection;
+    private readonly ILeagueMembershipService _membershipService;
 
-    public GetLeaguePrizesPageQueryHandler(IApplicationReadDbConnection dbConnection)
+    public GetLeaguePrizesPageQueryHandler(
+        IApplicationReadDbConnection dbConnection,
+        ILeagueMembershipService membershipService)
     {
         _dbConnection = dbConnection;
+        _membershipService = membershipService;
     }
 
     public async Task<LeaguePrizesPageDto?> Handle(GetLeaguePrizesPageQuery request, CancellationToken cancellationToken)
     {
+        await _membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
+
         const string sql = @"
             SELECT
                 l.[Name] AS LeagueName,

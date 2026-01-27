@@ -89,7 +89,7 @@ public class AuthController : AuthControllerBase
             return BadRequest(new { message = "Refresh token is missing." });
         }
 
-        _logger.LogInformation("Processing refresh token from {TokenSource}. Token (first 10 chars): {TokenStart}", tokenSource, refreshToken.Length > 10 ? refreshToken[..10] : refreshToken);
+        _logger.LogInformation("Processing refresh token from {TokenSource}", tokenSource);
 
         var command = new RefreshTokenCommand(refreshToken);
         var result = await _mediator.Send(command, cancellationToken);

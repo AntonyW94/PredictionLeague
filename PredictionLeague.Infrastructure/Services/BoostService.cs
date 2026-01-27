@@ -25,7 +25,24 @@ public sealed class BoostService : IBoostService
         string boostCode,
         CancellationToken cancellationToken)
     {
-        var (seasonId, roundNumber) = await _boostReadRepository.GetRoundInfoAsync(roundId, cancellationToken);
+        var (seasonId, roundNumber, deadlineUtc) = await _boostReadRepository.GetRoundInfoAsync(roundId, cancellationToken);
+
+        // Check deadline first - cannot apply boost after round deadline has passed
+        if (deadlineUtc < DateTime.UtcNow)
+        {
+            return new BoostEligibilityDto
+            {
+                BoostCode = boostCode,
+                LeagueId = leagueId,
+                RoundId = roundId,
+                CanUse = false,
+                Reason = "Cannot apply boost after round deadline has passed.",
+                RemainingSeasonUses = 0,
+                RemainingWindowUses = 0,
+                AlreadyUsedThisRound = false
+            };
+        }
+
         var leagueSeasonId = await _boostReadRepository.GetLeagueSeasonIdAsync(leagueId, cancellationToken);
         var isRoundInLeagueSeason = leagueSeasonId == seasonId;
         var isUserMember = await _boostReadRepository.IsUserMemberOfLeagueAsync(userId, leagueId, cancellationToken);
@@ -91,7 +108,7 @@ public sealed class BoostService : IBoostService
             };
         }
 
-        var (seasonId, _) = await _boostReadRepository.GetRoundInfoAsync(roundId, cancellationToken);
+        var (seasonId, _, _) = await _boostReadRepository.GetRoundInfoAsync(roundId, cancellationToken);
 
         var (inserted, error) = await _boostWriteRepository.InsertUserBoostUsageAsync(
             userId,

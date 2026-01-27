@@ -1,6 +1,17 @@
 ﻿const countdownTimers = {};
 
 window.blazorInterop = {
+    // Reusable helper function to escape HTML entities
+    // Use this whenever inserting user-provided text into HTML templates
+    escapeHtml: function(unsafe) {
+        if (typeof unsafe !== 'string') return '';
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    },
     getTimezoneOffset: function (dateString) {
         if (dateString) {
             return new Date(dateString).getTimezoneOffset();
@@ -46,9 +57,10 @@ window.blazorInterop = {
         }
     },
     showReassignLeagueConfirm: function (title, userList, userToDeleteId) {
+        const self = this;
         const optionsHtml = userList
             .filter(user => user.id !== userToDeleteId)
-            .map(user => `<option value="${user.id}">${user.fullName}</option>`)
+            .map(user => `<option value="${self.escapeHtml(user.id)}">${self.escapeHtml(user.fullName)}</option>`)
             .join('');
 
         return new Promise((resolve) => {
@@ -88,9 +100,10 @@ window.blazorInterop = {
         });
     },
     showRoleChangeConfirm: function (userName, currentRole) {
+        const self = this;
         return new Promise((resolve) => {
             Swal.fire({
-                title: `Change role for ${userName}`,
+                title: `Change role for ${self.escapeHtml(userName)}`,
                 html: `
                     <div class="swal2-radio-container">
                         <label>

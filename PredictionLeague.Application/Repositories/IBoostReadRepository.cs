@@ -6,7 +6,7 @@ namespace PredictionLeague.Application.Repositories;
 
 public interface IBoostReadRepository
 {
-    Task<(int SeasonId, int RoundNumber)> GetRoundInfoAsync(int roundId, CancellationToken cancellationToken);
+    Task<(int SeasonId, int RoundNumber, DateTime DeadlineUtc)> GetRoundInfoAsync(int roundId, CancellationToken cancellationToken);
     Task<int?> GetLeagueSeasonIdAsync(int leagueId, CancellationToken cancellationToken);
     Task<IEnumerable<BoostDefinition>> GetBoostDefinitionsForLeagueAsync(int leagueId, CancellationToken cancellationToken);
     Task<bool> IsUserMemberOfLeagueAsync(string userId, int leagueId, CancellationToken cancellationToken);
