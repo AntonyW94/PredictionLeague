@@ -12,14 +12,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 20 | Fixes implemented and verified |
-| Deferred | 2 | Require login system changes |
+| Completed | 24 | Fixes implemented and verified |
+| Deferred | 4 | Require login system changes or architectural decisions |
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
 | P1 - High | 0 | Fix this sprint - significant security impact |
 | P2 - Medium | 0 | Fix soon - defense in depth |
 | Low | 0 | Minor improvements |
 
-**Total Findings:** 22 (20 completed, 2 deferred)
+**Total Findings:** 28 (24 completed, 4 deferred)
 
 ---
 
@@ -50,14 +50,21 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] League Name Character Validation (added LeagueNameValidationExtensions)
 - [x] Access Token Expiry reduced from 60 to 15 minutes
 - [x] brevo_csharp package verified at latest version (1.1.1)
+- [x] Password Policy Configuration (ASP.NET Identity options in DependencyInjection.cs)
+- [x] CORS Hardening (restricted methods and headers in Program.cs)
+- [x] Lock Scoring Configuration (secured by design - scoring values immutable after creation)
+- [x] ShortName Validation (added to BaseTeamRequestValidator)
+- [x] Season Name Character Validation (added SafeNameValidationExtensions)
 
 ## Intentionally Deferred
 
 **Deferred plans moved to:** [`./later/`](./later/)
 
-The following issues have been deferred due to mobile browser cookie compatibility constraints or require login system changes:
-- Refresh tokens in URLs (ExternalAuthController)
-- Access tokens in localStorage (Blazor WASM architectural decision)
+The following issues have been deferred due to mobile browser cookie compatibility constraints, architectural decisions, or require login system changes:
+- Refresh tokens in URLs (ExternalAuthController) - mobile browser compatibility
+- Access tokens in localStorage (Blazor WASM architectural decision) - XSS risk mitigated by CSP
+- SameSite=None on Refresh Token Cookies - required for cross-site authentication flow
+- JWT ClockSkew and Algorithm Whitelist - requires careful testing with production auth flows
 - Open Redirect Vulnerability - [02-open-redirect.md](./later/02-open-redirect.md)
 - JWT Security Hardening - [12-jwt-security-hardening.md](./later/12-jwt-security-hardening.md)
 
@@ -120,14 +127,17 @@ The following are properly implemented:
 
 - SQL Injection Prevention (parameterised Dapper queries)
 - Rate Limiting (tiered policies)
-- Security Headers (CSP, X-Frame-Options, etc.)
+- Security Headers (CSP, X-Frame-Options, HSTS, etc.)
 - API Key Protection (constant-time comparison)
 - Role-Based Authorization (admin endpoints)
 - Password Hashing (ASP.NET Identity)
+- Password Policy (8+ chars, uppercase, lowercase, digit, lockout after 5 attempts)
 - Refresh Token Rotation
 - HttpOnly Refresh Cookies
 - Error Handling (stack traces hidden in production)
 - Secrets Management (Azure Key Vault)
+- CORS Hardening (restricted methods and headers)
+- Input Validation (FluentValidation with safe character patterns)
 
 ---
 

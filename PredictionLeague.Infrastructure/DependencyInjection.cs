@@ -25,7 +25,24 @@ public static class DependencyInjection
         services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
         services.AddScoped<IApplicationReadDbConnection, DapperReadDbConnection>();
 
-        services.AddIdentity<ApplicationUser, IdentityRole>()
+        services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                // Password policy
+                options.Password.RequiredLength = 8;
+                options.Password.RequireDigit = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequiredUniqueChars = 4;
+
+                // Lockout settings
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.AllowedForNewUsers = true;
+
+                // User settings
+                options.User.RequireUniqueEmail = true;
+            })
             .AddUserStore<DapperUserStore>()
             .AddRoleStore<DapperRoleStore>()
             .AddSignInManager<SignInManager<ApplicationUser>>()
