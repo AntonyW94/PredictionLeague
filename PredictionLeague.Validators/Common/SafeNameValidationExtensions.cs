@@ -15,8 +15,7 @@ public static partial class SafeNameValidationExtensions
     /// Allowed: letters (any language), numbers, spaces, hyphens, periods, commas,
     /// exclamation marks, question marks, ampersands, parentheses, colons, semicolons.
     /// </summary>
-    public static IRuleBuilderOptions<T, string> MustBeASafeName<T>(
-        this IRuleBuilder<T, string> ruleBuilder, string fieldDescription = "Name")
+    public static IRuleBuilderOptions<T, string> MustBeASafeName<T>(this IRuleBuilder<T, string> ruleBuilder, string fieldDescription = "Name")
     {
         return ruleBuilder
             .Must(name => string.IsNullOrEmpty(name) || SafeNameRegex().IsMatch(name))
