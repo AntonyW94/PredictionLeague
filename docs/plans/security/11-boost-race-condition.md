@@ -43,9 +43,9 @@ Result: User has 2 boost records, achieving 4x points instead of 2x
 
 ## Fix Implementation
 
-### Step 1: Add Database Unique Constraint
+### Step 1: Add Database Unique Constraint (MANUAL)
 
-**Migration SQL:**
+**Run this SQL manually:**
 ```sql
 -- Add unique constraint to prevent duplicate boost applications
 ALTER TABLE [UserBoostUsages]
@@ -109,66 +109,10 @@ public async Task<(bool Inserted, string? Error)> InsertUserBoostUsageAsync(
     catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 2627 || ex.Number == 2601)
     {
         // Unique constraint violation - boost already applied
+        // Error 2627: UNIQUE CONSTRAINT violation
+        // Error 2601: UNIQUE INDEX violation
         return (false, "Boost has already been applied to this round");
     }
-}
-```
-
-### Step 3: Alternative - Use MERGE for Atomic Operation
-
-**File:** `PredictionLeague.Infrastructure/Repositories/Boosts/BoostWriteRepository.cs`
-
-```csharp
-public async Task<(bool Inserted, string? Error)> InsertUserBoostUsageAsync(
-    string boostCode,
-    string userId,
-    int leagueId,
-    int roundId,
-    int seasonId,
-    CancellationToken cancellationToken)
-{
-    const string mergeSql = """
-        MERGE INTO [UserBoostUsages] WITH (HOLDLOCK) AS target
-        USING (
-            SELECT
-                @UserId AS UserId,
-                bd.[Id] AS BoostDefinitionId,
-                @LeagueId AS LeagueId,
-                @RoundId AS RoundId,
-                @SeasonId AS SeasonId,
-                @AppliedAtUtc AS AppliedAtUtc
-            FROM [BoostDefinitions] bd
-            WHERE bd.[Code] = @BoostCode
-        ) AS source
-        ON target.[UserId] = source.UserId
-           AND target.[LeagueId] = source.LeagueId
-           AND target.[RoundId] = source.RoundId
-           AND target.[BoostDefinitionId] = source.BoostDefinitionId
-        WHEN NOT MATCHED THEN
-            INSERT ([UserId], [BoostDefinitionId], [LeagueId], [RoundId], [SeasonId], [AppliedAtUtc])
-            VALUES (source.UserId, source.BoostDefinitionId, source.LeagueId, source.RoundId, source.SeasonId, source.AppliedAtUtc)
-        OUTPUT $action AS MergeAction;
-        """;
-
-    var command = new CommandDefinition(
-        mergeSql,
-        new
-        {
-            UserId = userId,
-            BoostCode = boostCode,
-            LeagueId = leagueId,
-            RoundId = roundId,
-            SeasonId = seasonId,
-            AppliedAtUtc = DateTime.UtcNow
-        },
-        cancellationToken: cancellationToken);
-
-    var result = await Connection.QuerySingleOrDefaultAsync<string>(command);
-
-    if (result == "INSERT")
-        return (true, null);
-
-    return (false, "Boost has already been applied to this round");
 }
 ```
 
@@ -208,6 +152,6 @@ DROP CONSTRAINT UK_UserBoostUsages_UserLeagueRoundBoost;
 
 ## Notes
 
-- The MERGE approach with HOLDLOCK provides the strongest guarantee against race conditions
-- The unique constraint approach is simpler but relies on catching the exception
-- Both approaches should be considered together - constraint for database-level protection, MERGE/exception handling for clean error responses
+- The unique constraint provides database-level protection regardless of application code
+- The try/catch handles the constraint violation gracefully and returns a user-friendly error
+- Error 2627 is for UNIQUE CONSTRAINT violations, 2601 is for UNIQUE INDEX violations - we catch both defensively
