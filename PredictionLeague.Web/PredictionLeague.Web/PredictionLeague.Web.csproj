@@ -15,6 +15,7 @@
         <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
         <ProjectReference Include="..\PredictionLeague.Web.Client\PredictionLeague.Web.Client.csproj" />
         <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
+        <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.6.0" />
     </ItemGroup>
 
     <!--
