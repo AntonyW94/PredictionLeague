@@ -72,12 +72,11 @@ This document outlines the security vulnerabilities identified in the Prediction
 **Deferred plans moved to:** [`./later/`](./later/)
 
 The following issues have been deferred due to mobile browser cookie compatibility constraints, architectural decisions, or require login system changes:
-- Refresh tokens in URLs (ExternalAuthController) - mobile browser compatibility
-- Access tokens in localStorage (Blazor WASM architectural decision) - XSS risk mitigated by CSP
-- SameSite=None on Refresh Token Cookies - required for cross-site authentication flow
-- JWT ClockSkew and Algorithm Whitelist - requires careful testing with production auth flows
+
+- Refresh tokens in URLs (ExternalAuthController) - [15-refresh-tokens-in-urls.md](./later/15-refresh-tokens-in-urls.md)
+- Access tokens in localStorage (Blazor WASM) - [16-localstorage-tokens.md](./later/16-localstorage-tokens.md)
 - Open Redirect Vulnerability - [02-open-redirect.md](./later/02-open-redirect.md)
-- JWT Security Hardening - [12-jwt-security-hardening.md](./later/12-jwt-security-hardening.md)
+- JWT Security Hardening (SameSite cookies, ClockSkew, Algorithm whitelist) - [12-jwt-security-hardening.md](./later/12-jwt-security-hardening.md)
 
 ---
 
