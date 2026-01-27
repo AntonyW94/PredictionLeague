@@ -68,7 +68,7 @@ var app = builder.Build();
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-    KnownNetworks = { new IPNetwork(System.Net.IPAddress.Parse("10.44.44.0"), 24) }
+    KnownIPNetworks = { new System.Net.IPNetwork(System.Net.IPAddress.Parse("10.44.44.0"), 24) }
 });
 
 if (app.Environment.IsDevelopment())

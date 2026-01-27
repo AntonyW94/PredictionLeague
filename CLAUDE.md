@@ -345,30 +345,33 @@ All scheduled endpoints are protected by API key (`X-Api-Key` header).
 - **No fallback data** - App relies entirely on API availability
 - **Future consideration:** Add caching/fallback for API outages
 
-### CSS Cache Busting
+### CSS Bundling and Cache Busting
 
-CSS files are automatically versioned during `dotnet publish` to prevent browser caching issues.
+CSS files are bundled and versioned during `dotnet publish` to optimise production performance.
 
-**How it works:**
-1. An MSBuild target runs after Publish
-2. Generates a timestamp version (e.g., `20260120153045`)
-3. Updates `index.html`: `app.css` → `app.css?v=VERSION`
-4. Updates `app.css`: All `@import url('file.css')` → `@import url('file.css?v=VERSION')`
-5. External URLs (https://) are NOT versioned
+**Development:** Uses separate CSS files with `@import` statements in `app.css` for easy debugging.
 
-**Location:** `PredictionLeague.Web.Client.csproj` - Target `AddCssCacheBusting`
+**Production:** An MSBuild target in `PredictionLeague.Web.csproj` runs after Publish and:
+1. Concatenates all CSS files into a single `app.css` (in specified order)
+2. Prepends Google Fonts import
+3. Deletes individual CSS files and subdirectories
+4. Adds cache busting version to `index.html`: `app.css?v=TIMESTAMP`
 
-**Result after publish:**
-```html
-<!-- index.html -->
-<link rel="stylesheet" href="css/app.css?v=20260120153045" />
+**Location:** `PredictionLeague.Web.csproj` - Target `BundleCssAndAddCacheBusting`
+
+**Adding new CSS files:**
+When adding a new CSS file, you must update TWO places:
+1. `PredictionLeague.Web.Client/wwwroot/css/app.css` - Add `@import` for development
+2. `PredictionLeague.Web.csproj` - Add to `<CssFilesToBundle>` ItemGroup (in correct load order)
+
+**Verifying the bundle:**
+```bash
+dotnet publish PredictionLeague.Web/PredictionLeague.Web -c Release -o ./publish-test
 ```
-```css
-/* app.css */
-@import url('variables.css?v=20260120153045');
-@import url('utilities/colours.css?v=20260120153045');
-/* etc. */
-```
+Check that:
+- `./publish-test/wwwroot/css/app.css` contains all CSS concatenated
+- `./publish-test/wwwroot/css/` has no subdirectories
+- `./publish-test/wwwroot/index.html` has `app.css?v=TIMESTAMP`
 
 ## Boosts System
 

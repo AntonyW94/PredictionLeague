@@ -23,19 +23,16 @@
         <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
         <PackageReference Include="Serilog.Sinks.Datadog.Logs" Version="0.6.0" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
-        <PackageReference Include="System.Net.Http" Version="4.3.4" />
-        <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
     </ItemGroup>
 
     <!--
     CSS Bundling and Cache Busting for Production
 
     Development (dotnet run): Uses separate CSS files with @imports for easy debugging
-    Production (dotnet publish): Bundles all CSS into one minified file with cache busting
+    Production (dotnet publish): Bundles all CSS into one file with cache busting
 
-    The Web.Client project creates app.min.css via BuildBundlerMinifier during Release builds.
-    This target then:
-    1. Replaces app.css with the bundled/minified version
+    This target:
+    1. Concatenates all CSS files in correct order
     2. Prepends Google Fonts import
     3. Deletes individual CSS files
     4. Adds cache busting version to index.html
@@ -47,49 +44,70 @@
             <PublishCssDir>$(PublishWwwRoot)css\</PublishCssDir>
             <TargetCss>$(PublishCssDir)app.css</TargetCss>
             <IndexHtmlPath>$(PublishWwwRoot)index.html</IndexHtmlPath>
-            <!-- Source location where BuildBundlerMinifier creates the bundle (in Web.Client project) -->
-            <SourceBundledCss>$(MSBuildThisFileDirectory)..\PredictionLeague.Web.Client\wwwroot\css\app.min.css</SourceBundledCss>
         </PropertyGroup>
 
-        <Message Importance="high" Text="Processing CSS bundle..." />
+        <Message Importance="high" Text="Bundling CSS files..." />
 
-        <!-- Check if bundled CSS exists in source location (Release build creates it) -->
-        <!-- Note: We check the SOURCE location because app.min.css is excluded from static web assets
-             (to avoid build errors on fresh clones), so it won't be in the publish directory -->
-        <PropertyGroup>
-            <BundleExists>false</BundleExists>
-            <BundleExists Condition="Exists('$(SourceBundledCss)')">true</BundleExists>
-        </PropertyGroup>
-
-        <Message Importance="high" Text="Bundle exists: $(BundleExists)" />
-
-        <!-- If bundle exists: Prepend Google Fonts import to bundled CSS, then replace app.css -->
-        <!-- Note: We use PowerShell instead of WriteLinesToFile because WriteLinesToFile
-             treats semicolons as item separators, which breaks the Google Fonts URL
-             (wght@300;400;500;700 gets split into separate lines) -->
-        <Exec Command="powershell -NoProfile -Command &quot;$googleFonts = '@import url(''https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;display=swap'');'; $bundled = Get-Content -Raw '$(SourceBundledCss)'; Set-Content -Path '$(TargetCss)' -Value ($googleFonts + [Environment]::NewLine + $bundled) -NoNewline&quot;" Condition="$(BundleExists)" />
-
-        <Delete Files="$(SourceBundledCss)" Condition="$(BundleExists)" />
-
-        <!-- Delete individual CSS files that are now bundled -->
-        <ItemGroup Condition="$(BundleExists)">
-            <CssFilesToDelete Include="$(PublishCssDir)**\*.css" Exclude="$(TargetCss)" />
+        <!-- Define CSS files in bundle order (matching previous bundleconfig.json) -->
+        <ItemGroup>
+            <CssFilesToBundle Include="$(PublishCssDir)variables.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\typography.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\colours.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\borders.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\sizing.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\spacing.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\flex.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\display.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\position.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\overflow.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\cursor.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\animations.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)utilities\effects.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)layout\layout.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)layout\loading.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)layout\navbar.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)layout\section.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\cards\card-base.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\cards\team-cards.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\cards\match-cards.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\cards\member-cards.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\cards\round-cards.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\badges.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\boosts.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\detail-list.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\buttons.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\carousel.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\forms.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\modals.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\rank-display.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)pages\dashboard.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)pages\home.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)pages\leaderboard.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)pages\predictions.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)pages\prizes.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)pages\results-grid.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)app-base.css" />
         </ItemGroup>
-        <Delete Files="@(CssFilesToDelete)" Condition="$(BundleExists)" />
+
+        <!-- Concatenate all CSS files with Google Fonts import at the top -->
+        <Exec Command="powershell -NoProfile -Command &quot;$googleFonts = '@import url(''https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;display=swap'');'; $files = @('@(CssFilesToBundle)'.Split(';')); $content = $files | ForEach-Object { if (Test-Path $_) { Get-Content -Raw $_ } } | Out-String; Set-Content -Path '$(TargetCss)' -Value ($googleFonts + [Environment]::NewLine + $content) -NoNewline&quot;" />
+
+        <!-- Delete individual CSS files and their compressed versions -->
+        <ItemGroup>
+            <CompressedCssToDelete Include="$(PublishCssDir)**\*.css.br" Exclude="$(TargetCss).br" />
+            <CompressedCssToDelete Include="$(PublishCssDir)**\*.css.gz" Exclude="$(TargetCss).gz" />
+        </ItemGroup>
+        <Delete Files="@(CssFilesToBundle)" />
+        <Delete Files="@(CompressedCssToDelete)" />
 
         <!-- Remove empty CSS directories -->
-        <RemoveDir Directories="$(PublishCssDir)utilities" Condition="$(BundleExists) And Exists('$(PublishCssDir)utilities')" />
-        <RemoveDir Directories="$(PublishCssDir)layout" Condition="$(BundleExists) And Exists('$(PublishCssDir)layout')" />
-        <RemoveDir Directories="$(PublishCssDir)components\cards" Condition="$(BundleExists) And Exists('$(PublishCssDir)components\cards')" />
-        <RemoveDir Directories="$(PublishCssDir)components" Condition="$(BundleExists) And Exists('$(PublishCssDir)components')" />
-        <RemoveDir Directories="$(PublishCssDir)pages" Condition="$(BundleExists) And Exists('$(PublishCssDir)pages')" />
+        <RemoveDir Directories="$(PublishCssDir)utilities" Condition="Exists('$(PublishCssDir)utilities')" />
+        <RemoveDir Directories="$(PublishCssDir)layout" Condition="Exists('$(PublishCssDir)layout')" />
+        <RemoveDir Directories="$(PublishCssDir)components\cards" Condition="Exists('$(PublishCssDir)components\cards')" />
+        <RemoveDir Directories="$(PublishCssDir)components" Condition="Exists('$(PublishCssDir)components')" />
+        <RemoveDir Directories="$(PublishCssDir)pages" Condition="Exists('$(PublishCssDir)pages')" />
 
-        <Message Importance="high" Text="CSS bundled and minified successfully!" Condition="$(BundleExists)" />
-
-        <!-- If no bundle (Debug build): Just add cache busting to @imports -->
-        <Exec Command="powershell -NoProfile -Command &quot;(Get-Content '$(TargetCss)') -replace '@import url\(\x27((?!https?://)[^)]+)\x27\)', '@import url(''$$1?v=$(CssVersion)'')' | Set-Content '$(TargetCss)'&quot;" Condition="!$(BundleExists)" />
-
-        <Message Importance="high" Text="CSS imports versioned (Debug mode)." Condition="!$(BundleExists)" />
+        <Message Importance="high" Text="CSS bundled successfully!" />
 
         <!-- Add cache busting version to index.html -->
         <Message Importance="high" Text="Adding CSS cache busting version: $(CssVersion)" />
