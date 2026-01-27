@@ -40,7 +40,7 @@
                                                         <i class="bi bi-@month.RoundsRemaining-circle-fill"></i>
                                                     </span>
 
-                                                    @((month.RoundsRemaining == 1) ? "round remaining" : "rounds remaining")
+                                                    @(month.RoundsRemaining == 1 ? "round remaining" : "rounds remaining")
                                                 </div>
                                             </div>
                                         }
@@ -128,7 +128,7 @@
     [Parameter, EditorRequired]
     public int LeagueId { get; set; }
 
-    private List<MonthDto> _months = new();
+    private List<MonthDto> _months = [];
     private readonly Dictionary<int, LeaderboardData> _leaderboards = new();
     private bool _isLoadingMonths = true;
     private string? _errorMessage;
@@ -227,7 +227,7 @@
         _trackStyle = $"transform: translateX(-{_currentIndex * 100}%);";
     }
 
-    private string GetRoundsRemainingCss(int roundsRemaining)
+    private static string GetRoundsRemainingCss(int roundsRemaining)
     {
         if (roundsRemaining <= 0)
             return "d-none";
@@ -243,6 +243,6 @@
     private class LeaderboardData
     {
         public bool IsLoading { get; set; }
-        public List<LeaderboardEntryDto> Entries { get; set; } = new();
+        public List<LeaderboardEntryDto> Entries { get; set; } = [];
     }
 }

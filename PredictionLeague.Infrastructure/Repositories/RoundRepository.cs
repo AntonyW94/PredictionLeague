@@ -79,29 +79,41 @@ public class RoundRepository : IRoundRepository
 
         var newRoundId = await Connection.ExecuteScalarAsync<int>(command);
 
-        if (round.Matches.Any())
+        if (!round.Matches.Any())
         {
-            var matchesToInsert = round.Matches.Select(m => new
-            {
-                RoundId = newRoundId,
-                m.HomeTeamId,
-                m.AwayTeamId,
-                m.MatchDateTimeUtc,
-                m.CustomLockTimeUtc,
-                Status = m.Status.ToString(),
-                m.ExternalId,
-                m.PlaceholderHomeName,
-                m.PlaceholderAwayName
-            }).ToList();
-
-            var insertMatchesCommand = new CommandDefinition(
-                commandText: AddMatchSql,
-                parameters: matchesToInsert,
-                cancellationToken: cancellationToken
+            return new Round(
+                id: newRoundId,
+                seasonId: round.SeasonId,
+                roundNumber: round.RoundNumber,
+                startDateUtc: round.StartDateUtc,
+                deadlineUtc: round.DeadlineUtc,
+                status: round.Status,
+                apiRoundName: round.ApiRoundName,
+                lastReminderSentUtc: round.LastReminderSentUtc,
+                matches: round.Matches
             );
-
-            await Connection.ExecuteAsync(insertMatchesCommand);
         }
+
+        var matchesToInsert = round.Matches.Select(m => new
+        {
+            RoundId = newRoundId,
+            m.HomeTeamId,
+            m.AwayTeamId,
+            m.MatchDateTimeUtc,
+            m.CustomLockTimeUtc,
+            Status = m.Status.ToString(),
+            m.ExternalId,
+            m.PlaceholderHomeName,
+            m.PlaceholderAwayName
+        }).ToList();
+
+        var insertMatchesCommand = new CommandDefinition(
+            commandText: AddMatchSql,
+            parameters: matchesToInsert,
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(insertMatchesCommand);
 
         return new Round(
             id: newRoundId,

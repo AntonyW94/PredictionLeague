@@ -5,14 +5,14 @@ using System.Net.Http.Json;
 
 namespace PredictionLeague.Web.Client.Services.Leagues;
 
-public class LeagueDashboardStateService
+public class LeagueDashboardStateService(HttpClient httpClient)
 {
     public event Action? OnStateChange;
 
     public string? LeagueName { get; private set; }
-    public List<RoundDto> ViewableRounds { get; private set; } = new();
-    public List<PredictionResultDto> CurrentRoundResults { get; private set; } = new();
-    public List<MatchInRoundDto> CurrentRoundMatches { get; private set; } = new();
+    public List<RoundDto> ViewableRounds { get; private set; } = [];
+    public List<PredictionResultDto> CurrentRoundResults { get; private set; } = [];
+    public List<MatchInRoundDto> CurrentRoundMatches { get; private set; } = [];
 
     public int? SelectedRoundId { get; set; }
 
@@ -21,13 +21,6 @@ public class LeagueDashboardStateService
 
     public string? DashboardLoadError { get; private set; }
     public string? RoundResultsError { get; private set; }
-    
-    private readonly HttpClient _httpClient;
-
-    public LeagueDashboardStateService(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
 
     public async Task LoadDashboardData(int leagueId)
     {
@@ -38,7 +31,7 @@ public class LeagueDashboardStateService
 
         try
         {
-            var data = await _httpClient.GetFromJsonAsync<LeagueDashboardDto>($"api/leagues/{leagueId}/dashboard-data");
+            var data = await httpClient.GetFromJsonAsync<LeagueDashboardDto>($"api/leagues/{leagueId}/dashboard-data");
             if (data != null)
             {
                 LeagueName = data.LeagueName;
@@ -76,13 +69,13 @@ public class LeagueDashboardStateService
 
         try
         {
-            var resultsTask = _httpClient.GetFromJsonAsync<List<PredictionResultDto>>($"api/leagues/{leagueId}/rounds/{roundId}/results");
-            var matchesTask = _httpClient.GetFromJsonAsync<List<MatchInRoundDto>>($"api/rounds/{roundId}/matches-data");
+            var resultsTask = httpClient.GetFromJsonAsync<List<PredictionResultDto>>($"api/leagues/{leagueId}/rounds/{roundId}/results");
+            var matchesTask = httpClient.GetFromJsonAsync<List<MatchInRoundDto>>($"api/rounds/{roundId}/matches-data");
 
             await Task.WhenAll(resultsTask, matchesTask);
 
-            CurrentRoundResults = resultsTask.Result ?? new List<PredictionResultDto>();
-            CurrentRoundMatches = matchesTask.Result ?? new List<MatchInRoundDto>();
+            CurrentRoundResults = resultsTask.Result ?? [];
+            CurrentRoundMatches = matchesTask.Result ?? [];
         }
         catch
         {

@@ -373,7 +373,7 @@
                 return "bronze";
         }
 
-        if (memberCount > 4 && rank > (memberCount.Value * 0.75))
+        if (memberCount > 4 && rank > memberCount.Value * 0.75)
             return "red";
 
         return "blue";

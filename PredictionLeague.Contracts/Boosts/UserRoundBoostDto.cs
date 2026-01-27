@@ -2,7 +2,6 @@
 
 public record UserRoundBoostDto(
     int LeagueId,
-    int RoundId,
     string UserId,
     string BoostCode
 );

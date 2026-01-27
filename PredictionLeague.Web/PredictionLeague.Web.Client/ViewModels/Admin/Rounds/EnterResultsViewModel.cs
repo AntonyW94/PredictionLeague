@@ -5,9 +5,9 @@ using System.Net.Http.Json;
 
 namespace PredictionLeague.Web.Client.ViewModels.Admin.Rounds;
 
-public class EnterResultsViewModel
+public class EnterResultsViewModel(HttpClient http, NavigationManager navigationManager)
 {
-    public List<MatchViewModel> Matches { get; private set; } = new();
+    public List<MatchViewModel> Matches { get; private set; } = [];
     public int RoundNumber { get; private set; }
     public bool IsLoading { get; private set; } = true;
     public bool IsBusy { get; private set; }
@@ -15,14 +15,6 @@ public class EnterResultsViewModel
     public string? SuccessMessage { get; private set; }
 
     private int _seasonId;
-    private readonly HttpClient _http;
-    private readonly NavigationManager _navigationManager;
-
-    public EnterResultsViewModel(HttpClient http, NavigationManager navigationManager)
-    {
-        _http = http;
-        _navigationManager = navigationManager;
-    }
 
     public async Task LoadRoundDetails(int roundId)
     {
@@ -30,7 +22,7 @@ public class EnterResultsViewModel
         ErrorMessage = null;
         try
         {
-            var roundDetails = await _http.GetFromJsonAsync<RoundDetailsDto>($"api/admin/rounds/{roundId}");
+            var roundDetails = await http.GetFromJsonAsync<RoundDetailsDto>($"api/admin/rounds/{roundId}");
             if (roundDetails != null)
             {
                 _seasonId = roundDetails.Round.SeasonId;
@@ -61,12 +53,12 @@ public class EnterResultsViewModel
             m.Status
         )).ToList();
 
-        var response = await _http.PutAsJsonAsync($"api/admin/rounds/{roundId}/results", resultsToUpdate);
+        var response = await http.PutAsJsonAsync($"api/admin/rounds/{roundId}/results", resultsToUpdate);
         if (response.IsSuccessStatusCode)
         {
             SuccessMessage = "Results saved and points calculated successfully!";
             await Task.Delay(1500);
-            _navigationManager.NavigateTo("/dashboard", forceLoad: true);
+            navigationManager.NavigateTo("/dashboard", forceLoad: true);
         }
         else
         {
@@ -78,6 +70,6 @@ public class EnterResultsViewModel
 
     public void BackToRounds()
     {
-        _navigationManager.NavigateTo($"/admin/seasons/{_seasonId}/rounds");
+        navigationManager.NavigateTo($"/admin/seasons/{_seasonId}/rounds");
     }
 }

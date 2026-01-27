@@ -73,7 +73,6 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
         const string matchesSql = @"
             SELECT
                 m.[RoundId],
-                m.[Id] AS MatchId,
                 ht.[LogoUrl] AS HomeTeamLogoUrl,
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 up.[PredictedHomeScore],
@@ -101,10 +100,8 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
         return rounds.Select(r =>
         {
             var status = Enum.Parse<RoundStatus>(r.Status);
-            var matches = matchesByRound.TryGetValue(r.Id, out var roundMatches)
-                ? roundMatches.Select(m => new ActiveRoundMatchDto(
-                    m.MatchId,
-                    m.HomeTeamLogoUrl,
+            var activeRoundMatchDtos = matchesByRound.TryGetValue(r.Id, out var roundMatches)
+                ? roundMatches.Select(m => new ActiveRoundMatchDto(m.HomeTeamLogoUrl,
                     m.AwayTeamLogoUrl,
                     m.PredictedHomeScore,
                     m.PredictedAwayScore,
@@ -129,7 +126,7 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
                 r.DeadlineUtc,
                 r.HasUserPredicted,
                 status,
-                matches,
+                activeRoundMatchDtos,
                 outcomeSummary);
         });
     }
@@ -146,7 +143,6 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record ActiveRoundMatchQueryResult(
         int RoundId,
-        int MatchId,
         string? HomeTeamLogoUrl,
         string? AwayTeamLogoUrl,
         int? PredictedHomeScore,

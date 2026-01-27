@@ -8,7 +8,7 @@ public sealed class BoostEligibilityResult
     public int RemainingWindowUses { get; }
     public bool AlreadyUsedThisRound { get; }
 
-    public BoostEligibilityResult(
+    private BoostEligibilityResult(
         bool canUse,
         string? reason,
         int remainingSeasonUses,

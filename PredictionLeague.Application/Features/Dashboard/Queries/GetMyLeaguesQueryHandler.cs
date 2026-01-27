@@ -98,8 +98,7 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
 
             lc.[UserWinnings] AS PrizeMoneyWon,
             (COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) - lc.[TotalPaidOut]) AS PrizeMoneyRemaining,
-            COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) AS TotalPrizeFund,
-            l.[Price] AS EntryFee 
+            COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) AS TotalPrizeFund 
 
         FROM [MyLeagues] l
         LEFT JOIN [LeagueMemberStats] stats ON l.[LeagueId] = stats.[LeagueId] AND l.[UserId] = stats.[UserId]  

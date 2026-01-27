@@ -66,8 +66,8 @@ public class SecurityHeadersMiddleware
 
 public static class SecurityHeadersMiddlewareExtensions
 {
-    public static IApplicationBuilder UseSecurityHeaders(this IApplicationBuilder builder)
+    public static void UseSecurityHeaders(this IApplicationBuilder builder)
     {
-        return builder.UseMiddleware<SecurityHeadersMiddleware>();
+        builder.UseMiddleware<SecurityHeadersMiddleware>();
     }
 }

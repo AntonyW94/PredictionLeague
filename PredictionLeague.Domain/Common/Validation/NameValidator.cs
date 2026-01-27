@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace PredictionLeague.Domain.Common.Validation;
 
 /// <summary>
-/// Validates and sanitizes user names to prevent XSS attacks and ensure data quality.
+/// Validates and sanitizes users names to prevent XSS attacks and ensure data quality.
 /// </summary>
 public static partial class NameValidator
 {
@@ -14,10 +14,7 @@ public static partial class NameValidator
     /// </summary>
     public static bool IsValid(string? name)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            return true; // Let other validation rules handle empty/null
-
-        return SafeNamePattern().IsMatch(name);
+        return string.IsNullOrWhiteSpace(name) || SafeNamePattern().IsMatch(name);
     }
 
     /// <summary>
@@ -26,10 +23,7 @@ public static partial class NameValidator
     /// </summary>
     public static string Sanitize(string? name)
     {
-        if (string.IsNullOrWhiteSpace(name))
-            return string.Empty;
-
-        return UnsafeCharactersPattern().Replace(name, "").Trim();
+        return string.IsNullOrWhiteSpace(name) ? string.Empty : UnsafeCharactersPattern().Replace(name, "").Trim();
     }
 
     // Allowed characters:

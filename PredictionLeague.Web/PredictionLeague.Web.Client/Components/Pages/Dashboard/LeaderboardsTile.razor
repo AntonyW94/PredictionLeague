@@ -1,6 +1,6 @@
 ﻿@inject IDashboardStateService DashboardState
+@inject IJSRuntime JsRuntime
 @inject NavigationManager NavigationManager
-@inject IJSRuntime JS
 
 @implements IDisposable
 
@@ -118,7 +118,7 @@
         {
             foreach (var leaderboard in DashboardState.Leaderboards)
             {
-                await JS.InvokeVoidAsync("blazorInterop.scrollToUserRow", $"leaderboard-scroll-{leaderboard.LeagueId}");
+                await JsRuntime.InvokeVoidAsync("blazorInterop.scrollToUserRow", $"leaderboard-scroll-{leaderboard.LeagueId}");
             }
         }
     }

@@ -13,11 +13,11 @@ public class CurrentUserService : ICurrentUserService
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+    public string? UserId => _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-    public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
+    public bool IsAuthenticated => _httpContextAccessor.HttpContext?.User.Identity?.IsAuthenticated ?? false;
 
-    public bool IsAdministrator => _httpContextAccessor.HttpContext?.User?.IsInRole(RoleNames.Administrator) ?? false;
+    public bool IsAdministrator => _httpContextAccessor.HttpContext?.User.IsInRole(RoleNames.Administrator) ?? false;
 
     public void EnsureAdministrator()
     {

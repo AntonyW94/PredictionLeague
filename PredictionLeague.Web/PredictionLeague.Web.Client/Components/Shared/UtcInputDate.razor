@@ -47,13 +47,13 @@
 
     protected override void OnParametersSet()
     {
-        if (_initialized && Value != default)
-        {
-            var calculatedLocal = Value.AddMinutes(-_timezoneOffsetMinutes);
+        if (!_initialized || Value == default) 
+            return;
 
-            if (Math.Abs((calculatedLocal - _localDateTime).TotalMinutes) > 1)
-                _localDateTime = calculatedLocal;
-        }
+        var calculatedLocal = Value.AddMinutes(-_timezoneOffsetMinutes);
+
+        if (Math.Abs((calculatedLocal - _localDateTime).TotalMinutes) > 1)
+            _localDateTime = calculatedLocal;
     }
 
     private async Task OnInputChange(ChangeEventArgs e)

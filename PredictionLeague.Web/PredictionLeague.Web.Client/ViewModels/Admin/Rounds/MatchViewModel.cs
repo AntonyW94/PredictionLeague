@@ -3,30 +3,17 @@ using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Web.Client.ViewModels.Admin.Rounds;
 
-public class MatchViewModel
+public class MatchViewModel(MatchInRoundDto match)
 {
-    public int MatchId { get; }
-    public DateTime MatchDateTimeUtc { get; }
-    public string HomeTeamName { get; }
-    public string? HomeTeamLogoUrl { get; }
-    public string AwayTeamName { get; }
-    public string? AwayTeamLogoUrl { get; }
-    public int HomeScore { get; private set; }
-    public int AwayScore { get; private set; }
-    public MatchStatus Status { get; set; }
-
-    public MatchViewModel(MatchInRoundDto match)
-    {
-        MatchId = match.Id;
-        MatchDateTimeUtc = match.MatchDateTimeUtc;
-        HomeTeamName = match.HomeTeamName;
-        HomeTeamLogoUrl = match.HomeTeamLogoUrl;
-        AwayTeamName = match.AwayTeamName;
-        AwayTeamLogoUrl = match.AwayTeamLogoUrl;
-        HomeScore = match.ActualHomeTeamScore ?? 0;
-        AwayScore = match.ActualAwayTeamScore ?? 0;
-        Status = match.Status;
-    }
+    public int MatchId { get; } = match.Id;
+    public DateTime MatchDateTimeUtc { get; } = match.MatchDateTimeUtc;
+    public string HomeTeamName { get; } = match.HomeTeamName;
+    public string? HomeTeamLogoUrl { get; } = match.HomeTeamLogoUrl;
+    public string AwayTeamName { get; } = match.AwayTeamName;
+    public string? AwayTeamLogoUrl { get; } = match.AwayTeamLogoUrl;
+    public int HomeScore { get; private set; } = match.ActualHomeTeamScore ?? 0;
+    public int AwayScore { get; private set; } = match.ActualAwayTeamScore ?? 0;
+    public MatchStatus Status { get; set; } = match.Status;
 
     public void UpdateScore(bool isHomeTeam, int delta)
     {

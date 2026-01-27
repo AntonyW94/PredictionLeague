@@ -124,10 +124,7 @@ public class ExternalAuthController : AuthControllerBase
             url = "/" + url;
 
         // Validate the path
-        if (!IsValidLocalPath(url))
-            return fallback;
-
-        return url;
+        return !IsValidLocalPath(url) ? fallback : url;
     }
 
     /// <summary>
@@ -140,9 +137,6 @@ public class ExternalAuthController : AuthControllerBase
             return false;
 
         // Block URLs with backslash (/\evil.com in some browsers)
-        if (path.Contains('\\'))
-            return false;
-
-        return true;
+        return !path.Contains('\\');
     }
 }

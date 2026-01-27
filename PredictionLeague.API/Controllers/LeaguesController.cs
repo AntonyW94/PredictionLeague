@@ -3,11 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Leagues.Commands;
 using PredictionLeague.Application.Features.Leagues.Queries;
-using PredictionLeague.Contracts;
-using PredictionLeague.Domain.Common.Constants;
 using PredictionLeague.Contracts.Admin.Rounds;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Common.Constants;
 using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.API.Controllers;
@@ -181,7 +180,7 @@ public class LeaguesController : ApiControllerBase
     }
 
     #endregion
-   
+
     #region Winnings
 
     [HttpGet("{leagueId:int}/winnings")]
@@ -265,7 +264,7 @@ public class LeaguesController : ApiControllerBase
 
     [HttpDelete("{leagueId:int}/join-request")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)] 
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CancelJoinRequest(int leagueId, CancellationToken cancellationToken)
     {

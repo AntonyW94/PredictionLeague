@@ -1,7 +1,11 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace PredictionLeague.Application.FootballApi.DTOs;
 
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
 public class ApiLeague
 {
     [JsonPropertyName("id")]

@@ -51,8 +51,8 @@ public class GetPredictionPageDataQueryHandler : IRequestHandler<GetPredictionPa
             cancellationToken,
             new
             {
-                request.RoundId, 
-                request.UserId
+                request.UserId,
+                request.RoundId
             }
         );
 

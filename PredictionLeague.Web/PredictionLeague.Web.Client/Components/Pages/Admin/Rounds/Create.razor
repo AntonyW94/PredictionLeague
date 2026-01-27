@@ -163,7 +163,7 @@
     public int SeasonId { get; set; }
 
     private CreateRoundRequest? _model;
-    private List<TeamDto> _teams = new();
+    private List<TeamDto> _teams = [];
     private string? _errorMessage;
 
     protected override async Task OnInitializedAsync()
@@ -179,7 +179,7 @@
                 SeasonId = SeasonId,
                 StartDateUtc = nowUtc.Date,
                 DeadlineUtc = nowUtc,
-                Matches = new List<CreateMatchRequest>()
+                Matches = []
             };
 
             for (var i = 0; i < 10; i++)
@@ -187,7 +187,7 @@
                 _model.Matches.Add(new CreateMatchRequest { MatchDateTimeUtc = nowUtc });
             }
 
-            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/admin/teams") ?? new List<TeamDto>();
+            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/admin/teams") ?? [];
         }
         catch (Exception)
         {

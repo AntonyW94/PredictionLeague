@@ -5,28 +5,18 @@ using System.Text.Json;
 
 namespace PredictionLeague.Web.Client.Authentication;
 
-public class AuthenticationService : IAuthenticationService
+public class AuthenticationService(HttpClient httpClient, AuthenticationStateProvider authenticationStateProvider) : IAuthenticationService
 {
-    private readonly HttpClient _httpClient;
-    private readonly AuthenticationStateProvider _authenticationStateProvider;
-
-    public AuthenticationService(HttpClient httpClient,
-        AuthenticationStateProvider authenticationStateProvider)
-    {
-        _httpClient = httpClient;
-        _authenticationStateProvider = authenticationStateProvider;
-    }
-    
     public async Task<AuthenticationResponse> RegisterAsync(RegisterRequest registerRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/register", registerRequest);
+        var response = await httpClient.PostAsJsonAsync("api/auth/register", registerRequest);
         if (response.IsSuccessStatusCode)
         {
             var successResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
             if (successResponse == null) 
                 return new FailedAuthenticationResponse("Failed to process server response.");
           
-            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticatedAsync(successResponse.AccessToken);
+            await ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsAuthenticatedAsync(successResponse.AccessToken);
             return successResponse;
         }
        
@@ -57,14 +47,14 @@ public class AuthenticationService : IAuthenticationService
     
     public async Task<AuthenticationResponse> LoginAsync(LoginRequest loginRequest)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginRequest);
+        var response = await httpClient.PostAsJsonAsync("api/auth/login", loginRequest);
         if (response.IsSuccessStatusCode)
         {
             var successResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
             if (successResponse == null) 
                 return new FailedAuthenticationResponse("Failed to process server response.");
          
-            await ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsAuthenticatedAsync(successResponse.AccessToken);
+            await ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsAuthenticatedAsync(successResponse.AccessToken);
             return successResponse;
         }
 
@@ -74,12 +64,12 @@ public class AuthenticationService : IAuthenticationService
     
     public async Task LogoutAsync()
     {
-        await _httpClient.PostAsync("api/auth/logout", null);
-        await ((ApiAuthenticationStateProvider)_authenticationStateProvider).MarkUserAsLoggedOutAsync();
+        await httpClient.PostAsync("api/auth/logout", null);
+        await ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsLoggedOutAsync();
     }
 
     private class IdentityErrorResponse
     {
-        public List<string> Errors { get; init; } = new();
+        public List<string> Errors { get; init; } = [];
     }
 }

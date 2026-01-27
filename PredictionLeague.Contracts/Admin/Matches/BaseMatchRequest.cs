@@ -1,5 +1,8 @@
-﻿namespace PredictionLeague.Contracts.Admin.Matches;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace PredictionLeague.Contracts.Admin.Matches;
+
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class BaseMatchRequest
 {
     public int HomeTeamId { get; set; }

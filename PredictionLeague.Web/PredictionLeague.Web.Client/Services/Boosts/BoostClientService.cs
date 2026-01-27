@@ -3,21 +3,14 @@ using System.Net.Http.Json;
 
 namespace PredictionLeague.Web.Client.Services.Boosts;
 
-public class BoostClientService
+public class BoostClientService(HttpClient http)
 {
-    private readonly HttpClient _http;
-
-    public BoostClientService(HttpClient http)
-    {
-        _http = http;
-    }
-
     public async Task<List<BoostOptionDto>?> GetAvailableBoostsAsync(int leagueId, int roundId, CancellationToken cancellationToken)
     {
         var url = $"api/boosts/available?leagueId={leagueId}&roundId={roundId}";
         try
         {
-            return await _http.GetFromJsonAsync< List<BoostOptionDto>>(url, cancellationToken);
+            return await http.GetFromJsonAsync< List<BoostOptionDto>>(url, cancellationToken);
         }
         catch (OperationCanceledException) { throw; }
         catch
@@ -31,7 +24,7 @@ public class BoostClientService
         var request = new { LeagueId = leagueId, RoundId = roundId, BoostCode = boostCode };
         try
         {
-            var result = await _http.PostAsJsonAsync("api/boosts/apply", request, cancellationToken);
+            var result = await http.PostAsJsonAsync("api/boosts/apply", request, cancellationToken);
             if (result.IsSuccessStatusCode)
                 return await result.Content.ReadFromJsonAsync<ApplyBoostResultDto>(cancellationToken);
                 
@@ -47,7 +40,7 @@ public class BoostClientService
 
     public async Task<bool> DeleteUserBoostUsageAsync(int leagueId, int roundId, CancellationToken cancellationToken)
     {
-        var response = await _http.DeleteAsync($"api/boosts/user/usage?leagueId={leagueId}&roundId={roundId}", cancellationToken);
+        var response = await http.DeleteAsync($"api/boosts/user/usage?leagueId={leagueId}&roundId={roundId}", cancellationToken);
         return response.IsSuccessStatusCode;
     }
 }

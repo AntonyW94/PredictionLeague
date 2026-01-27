@@ -1,7 +1,10 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 namespace PredictionLeague.Application.FootballApi.DTOs;
 
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class FixtureResponse
 {
     [JsonPropertyName("fixture")]

@@ -1,5 +1,8 @@
-﻿namespace PredictionLeague.Contracts.Boosts;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace PredictionLeague.Contracts.Boosts;
+
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class BoostEligibilityDto
 {
     public string BoostCode { get; init; } = string.Empty;

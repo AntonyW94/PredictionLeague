@@ -57,6 +57,6 @@ public class FootballDataService : IFootballDataService
         var endpoint = $"leagues?id={apiLeagueId}&season={seasonYear}";
         var wrapper = await _httpClient.GetFromJsonAsync<LeagueDetailsResponseWrapper>(endpoint, cancellationToken);
 
-        return wrapper?.Response?.FirstOrDefault()?.Seasons?.FirstOrDefault() ?? new ApiSeason();
+        return wrapper?.Response.FirstOrDefault()?.Seasons.FirstOrDefault() ?? new ApiSeason();
     }
 }

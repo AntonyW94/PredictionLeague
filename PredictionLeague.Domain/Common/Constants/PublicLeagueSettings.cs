@@ -1,8 +1,7 @@
-﻿namespace PredictionLeague.Domain.Common.Constants
+﻿namespace PredictionLeague.Domain.Common.Constants;
+
+public static class PublicLeagueSettings
 {
-    public static class PublicLeagueSettings
-    {
-        public const int PointsForExactScore = 5;
-        public const int PointsForCorrectResult = 3;
-    }
+    public const int PointsForExactScore = 5;
+    public const int PointsForCorrectResult = 3;
 }

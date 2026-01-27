@@ -15,10 +15,9 @@ public static partial class LeagueNameValidationExtensions
     /// Allowed: letters (any language), numbers, spaces, hyphens, periods, commas,
     /// exclamation marks, question marks, ampersands, parentheses, colons, semicolons.
     /// </summary>
-    public static IRuleBuilderOptions<T, string> MustBeASafeLeagueName<T>(
-        this IRuleBuilder<T, string> ruleBuilder)
+    public static void MustBeASafeLeagueName<T>(this IRuleBuilder<T, string> ruleBuilder)
     {
-        return ruleBuilder
+        ruleBuilder
             .Must(name => string.IsNullOrEmpty(name) || SafeLeagueNameRegex().IsMatch(name))
             .WithMessage("League name can only contain letters, numbers, spaces, and common punctuation (- . , ! ? & ( ) : ;).");
     }

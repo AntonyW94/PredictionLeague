@@ -3,9 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Admin.Users.Commands;
 using PredictionLeague.Application.Features.Admin.Users.Queries;
-using PredictionLeague.Contracts;
-using PredictionLeague.Domain.Common.Constants;
 using PredictionLeague.Contracts.Admin.Users;
+using PredictionLeague.Domain.Common.Constants;
 
 namespace PredictionLeague.API.Controllers.Admin;
 
@@ -63,12 +62,9 @@ public class UsersController : ApiControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeleteAsync(string userId, [FromBody] DeleteUserRequest request, CancellationToken cancellationToken)
     {
-        var isDeletingUserAdmin = User.IsInRole(RoleNames.Administrator);
-
         var command = new DeleteUserCommand(
             userId,
             CurrentUserId,
-            isDeletingUserAdmin,
             request.NewAdministratorId
         );
 

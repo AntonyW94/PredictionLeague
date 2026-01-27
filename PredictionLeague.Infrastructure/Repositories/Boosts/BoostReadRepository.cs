@@ -52,7 +52,6 @@ public sealed class BoostReadRepository : IBoostReadRepository
     {
         const string sql = @"
             SELECT
-                bd.[Id] AS BoostDefinitionId,
                 bd.[Code] AS BoostCode,
                 bd.[Name],
                 bd.[Tooltip],
@@ -191,11 +190,19 @@ public sealed class BoostReadRepository : IBoostReadRepository
 
         var windowUses = 0;
 
-        if (activeWindowRows.Any())
+        if (!activeWindowRows.Any())
         {
-            var windowRows = activeWindowRows.ToList();
+            return new BoostUsageSnapshot
+            {
+                SeasonUses = seasonUses,
+                WindowUses = windowUses,
+                HasUsedThisRound = usedThisRound
+            };
+        }
 
-            const string windowCountSql = @"
+        var windowRows = activeWindowRows.ToList();
+
+        const string windowCountSql = @"
                     SELECT COUNT(*) AS CountInWindow
                     FROM [UserBoostUsages] ubu
                     INNER JOIN [BoostDefinitions] bd ON ubu.[BoostDefinitionId] = bd.[Id]
@@ -206,22 +213,21 @@ public sealed class BoostReadRepository : IBoostReadRepository
                       AND bd.[Code] = @BoostCode
                       AND r.[RoundNumber] BETWEEN @StartRound AND @EndRound;";
 
-            var maxWindowUses = 0;
+        var maxWindowUses = 0;
 
-            foreach (var w in windowRows)
-            {
-                var rows = await _dbConnection.QueryAsync<CountRow>(
-                    windowCountSql,
-                    cancellationToken,
-                    new { UserId = userId, LeagueId = leagueId, SeasonId = seasonId, BoostCode = boostCode, StartRound = w.StartRoundNumber, EndRound = w.EndRoundNumber });
+        foreach (var w in windowRows)
+        {
+            var rows = await _dbConnection.QueryAsync<CountRow>(
+                windowCountSql,
+                cancellationToken,
+                new { UserId = userId, LeagueId = leagueId, SeasonId = seasonId, BoostCode = boostCode, StartRound = w.StartRoundNumber, EndRound = w.EndRoundNumber });
 
-                var count = rows.SingleOrDefault()?.Count ?? 0;
-                if (count > maxWindowUses)
-                    maxWindowUses = count;
-            }
-
-            windowUses = maxWindowUses;
+            var count = rows.SingleOrDefault()?.Count ?? 0;
+            if (count > maxWindowUses)
+                maxWindowUses = count;
         }
+
+        windowUses = maxWindowUses;
 
         return new BoostUsageSnapshot
         {
@@ -236,7 +242,6 @@ public sealed class BoostReadRepository : IBoostReadRepository
         const string sql = @"
             SELECT
                 ubu.[LeagueId],
-                ubu.[RoundId],
                 ubu.[UserId],
                 bd.[Code] AS [BoostCode]
             FROM 

@@ -7,7 +7,6 @@ namespace PredictionLeague.Contracts.Dashboard;
 /// Contains only the data needed for the compact match preview (logos, scores, and outcome).
 /// </summary>
 public record ActiveRoundMatchDto(
-    int MatchId,
     string? HomeTeamLogoUrl,
     string? AwayTeamLogoUrl,
     int? PredictedHomeScore,

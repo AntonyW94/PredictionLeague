@@ -172,14 +172,11 @@ public sealed class BoostService : IBoostService
             if (!boostLookup.TryGetValue((result.LeagueId, result.UserId), out var boostCode))
                 continue;
 
-            result.BoostedPoints = result.BasePoints;
-
-            switch (boostCode)
+            result.BoostedPoints = boostCode switch
             {
-                case "DoubleUp":
-                    result.BoostedPoints = result.BasePoints * 2;
-                    break;
-            }
+                "DoubleUp" => result.BasePoints * 2,
+                _ => result.BasePoints
+            };
 
             updates.Add(new LeagueRoundBoostUpdate(
                 result.LeagueId,

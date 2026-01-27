@@ -36,6 +36,6 @@ public class PublishUpcomingRoundsCommandHandler : IRequestHandler<PublishUpcomi
             _logger.LogInformation("Published Round {RoundNumber} (ID: {RoundId})", round.RoundNumber, round.Id);
         }
 
-        _logger.LogInformation("Successfully published {Count} rounds.", roundsToPublish.Count());
+        _logger.LogInformation("Successfully published {Count} rounds.", roundsToPublish.Count);
     }
 }

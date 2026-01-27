@@ -22,6 +22,5 @@ public record MyLeagueDto(
 
     decimal PrizeMoneyWon,
     decimal PrizeMoneyRemaining,
-    decimal TotalPrizeFund,
-    decimal EntryFee
+    decimal TotalPrizeFund
 );

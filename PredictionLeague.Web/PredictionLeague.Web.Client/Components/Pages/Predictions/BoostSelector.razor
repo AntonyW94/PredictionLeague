@@ -42,7 +42,7 @@
     [Parameter, EditorRequired] public int LeagueId { get; set; }
     [Parameter, EditorRequired] public int RoundId { get; set; }
 
-    [Parameter] public List<BoostOptionDto> Options { get; set; } = new();
+    [Parameter] public List<BoostOptionDto> Options { get; set; } = [];
 
     [Parameter] public string SelectedCode { get; set; } = "None";
     [Parameter] public EventCallback<string> SelectedCodeChanged { get; set; }
@@ -51,11 +51,7 @@
 
     private async Task OnCardToggled(string code, bool isSelected)
     {
-        if (!isSelected)
-            SelectedCode = "None";
-        else
-            SelectedCode = code;
-
+        SelectedCode = !isSelected ? "None" : code;
         await SelectedCodeChanged.InvokeAsync(SelectedCode);
     }
 }

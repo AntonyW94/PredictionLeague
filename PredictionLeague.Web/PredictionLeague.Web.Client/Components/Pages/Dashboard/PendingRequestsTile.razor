@@ -101,35 +101,47 @@
                         </div>
 
                         <div class="footer px-3">
-                            @if (request.Status == LeagueMemberStatus.Pending)
+                            @switch (request.Status)
                             {
-                                <button class="btn btn-sm w-100 red-outline-button"
-                                        @onclick="() => CancelRequest(request.LeagueId)"
-                                        disabled="@_processingIds.Contains(request.LeagueId)">
-                                    @if (_processingIds.Contains(request.LeagueId))
-                                    {
-                                        <span><i class="spinner-border spinner-border-sm me-1"></i> Cancelling...</span>
-                                    }
-                                    else
-                                    {
-                                        <span>Cancel Request</span>
-                                    }
-                                </button>
-                            }
-                            else if (request.Status == LeagueMemberStatus.Rejected)
-                            {
-                                <button class="btn btn-sm w-100 red-button"
-                                        @onclick="() => DismissAlert(request.LeagueId)"
-                                        disabled="@_processingIds.Contains(request.LeagueId)">
-                                    @if (_processingIds.Contains(request.LeagueId))
-                                    {
-                                        <span><i class="spinner-border spinner-border-sm me-1"></i> Removing...</span>
-                                    }
-                                    else
-                                    {
-                                        <span>Remove Notification</span>
-                                    }
-                                </button>
+                                case LeagueMemberStatus.Pending:
+                                {
+                                    <button class="btn btn-sm w-100 red-outline-button"
+                                            @onclick="() => CancelRequest(request.LeagueId)"
+                                            disabled="@_processingIds.Contains(request.LeagueId)">
+                                        @if (_processingIds.Contains(request.LeagueId))
+                                        {
+                                            <span><i class="spinner-border spinner-border-sm me-1"></i> Cancelling...</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Cancel Request</span>
+                                        }
+                                    </button>
+                                    break;
+                                }
+
+                                case LeagueMemberStatus.Rejected:
+                                {
+                                    <button class="btn btn-sm w-100 red-button"
+                                            @onclick="() => DismissAlert(request.LeagueId)"
+                                            disabled="@_processingIds.Contains(request.LeagueId)">
+                                        @if (_processingIds.Contains(request.LeagueId))
+                                        {
+                                            <span><i class="spinner-border spinner-border-sm me-1"></i> Removing...</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Remove Notification</span>
+                                        }
+                                    </button>
+                                    break;
+                                }
+
+                                case LeagueMemberStatus.Approved:
+                                    break;
+
+                                default:
+                                    throw new ArgumentOutOfRangeException();
                             }
                         </div>
                     </div>
@@ -140,7 +152,7 @@
 }
 
 @code {
-    private readonly HashSet<int> _processingIds = new();
+    private readonly HashSet<int> _processingIds = [];
 
     protected override void OnInitialized()
     {

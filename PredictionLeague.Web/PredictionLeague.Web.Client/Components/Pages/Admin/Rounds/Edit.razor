@@ -179,7 +179,7 @@
     public int RoundId { get; set; }
 
     private UpdateRoundRequest? _model;
-    private List<TeamDto> _teams = new();
+    private List<TeamDto> _teams = [];
     private int _seasonId;
     private string? _errorMessage;
 
@@ -209,7 +209,7 @@
                 };
             }
 
-            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/admin/teams") ?? new List<TeamDto>();
+            _teams = await Http.GetFromJsonAsync<List<TeamDto>>("api/admin/teams") ?? [];
         }
         catch (Exception)
         {

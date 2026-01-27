@@ -83,7 +83,7 @@ public class GetMonthlyLeaderboardQueryHandler : IRequestHandler<GetMonthlyLeade
                 request.LeagueId,
                 request.Month,
                 ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                InProgressStatus = nameof(RoundStatus.InProgress),
+                InProgressStatus = nameof(RoundStatus.InProgress)
             }
         );
     }

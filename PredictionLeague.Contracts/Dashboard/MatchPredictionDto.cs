@@ -1,5 +1,8 @@
-﻿namespace PredictionLeague.Contracts.Dashboard;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace PredictionLeague.Contracts.Dashboard;
+
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class MatchPredictionDto
 {
     public int MatchId { get; init; }

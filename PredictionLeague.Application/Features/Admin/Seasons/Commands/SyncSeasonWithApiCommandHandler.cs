@@ -87,22 +87,22 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
                 var fixtureDateUtc = rescheduledMatch.Fixture.Date.UtcDateTime;
 
-                if (IsMatchInRoundTimespan(fixtureDateUtc, round))
+                if (!IsMatchInRoundTimespan(fixtureDateUtc, round))
+                    continue;
+
+                var homeTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Home.Id, cancellationToken);
+                var awayTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Away.Id, cancellationToken);
+
+                if (homeTeam != null && awayTeam != null)
                 {
-                    var homeTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Home.Id, cancellationToken);
-                    var awayTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Away.Id, cancellationToken);
-
-                    if (homeTeam != null && awayTeam != null)
+                    if (!round.Matches.Any(m => m.HomeTeamId == homeTeam.Id && m.AwayTeamId == awayTeam.Id))
                     {
-                        if (!round.Matches.Any(m => m.HomeTeamId == homeTeam.Id && m.AwayTeamId == awayTeam.Id))
-                        {
-                            round.AddMatch(homeTeam.Id, awayTeam.Id, fixtureDateUtc, rescheduledMatch.Fixture.Id);
-                            hasChanges = true;
-                        }
+                        round.AddMatch(homeTeam.Id, awayTeam.Id, fixtureDateUtc, rescheduledMatch.Fixture.Id);
+                        hasChanges = true;
                     }
-
-                    matchesPlacedFromList.Add(rescheduledMatch);
                 }
+
+                matchesPlacedFromList.Add(rescheduledMatch);
             }
 
             rescheduledMatchesToCheck.RemoveAll(m => matchesPlacedFromList.Contains(m));
@@ -118,11 +118,11 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
                 if (existingMatches.TryGetValue(fixture.Fixture.Id, out var localMatch))
                 {
-                    if (localMatch.MatchDateTimeUtc != fixtureDateUtc)
-                    {
-                        localMatch.UpdateDate(fixtureDateUtc);
-                        hasChanges = true;
-                    }
+                    if (localMatch.MatchDateTimeUtc == fixtureDateUtc) 
+                        continue;
+
+                    localMatch.UpdateDate(fixtureDateUtc);
+                    hasChanges = true;
                 }
                 else
                 {
@@ -131,11 +131,11 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
                         var homeTeam = await _teamRepository.GetByApiIdAsync(fixture.Teams.Home.Id, cancellationToken);
                         var awayTeam = await _teamRepository.GetByApiIdAsync(fixture.Teams.Away.Id, cancellationToken);
 
-                        if (homeTeam != null && awayTeam != null)
-                        {
-                            round.AddMatch(homeTeam.Id, awayTeam.Id, fixtureDateUtc, fixture.Fixture.Id);
-                            hasChanges = true;
-                        }
+                        if (homeTeam == null || awayTeam == null) 
+                            continue;
+
+                        round.AddMatch(homeTeam.Id, awayTeam.Id, fixtureDateUtc, fixture.Fixture.Id);
+                        hasChanges = true;
                     }
                     else
                     {

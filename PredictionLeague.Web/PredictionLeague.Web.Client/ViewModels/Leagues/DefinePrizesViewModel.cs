@@ -6,7 +6,7 @@ namespace PredictionLeague.Web.Client.ViewModels.Leagues;
 
 public class DefinePrizesViewModel
 {
-    public List<DefinePrizeSettingDto> PrizeSettings { get; } = new();
+    public List<DefinePrizeSettingDto> PrizeSettings { get; } = [];
     public decimal PrizePot { get; }
     public int NumberOfRounds { get; }
     public int NumberOfMonths { get; }

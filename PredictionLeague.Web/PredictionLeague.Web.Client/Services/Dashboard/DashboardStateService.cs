@@ -5,13 +5,13 @@ using PredictionLeague.Web.Client.Services.Leagues;
 
 namespace PredictionLeague.Web.Client.Services.Dashboard;
 
-public class DashboardStateService : IDashboardStateService
+public class DashboardStateService(ILeagueService leagueService) : IDashboardStateService
 {
-    public List<MyLeagueDto> MyLeagues { get; private set; } = new();
-    public List<AvailableLeagueDto> AvailableLeagues { get; private set; } = new();
-    public List<LeagueLeaderboardDto> Leaderboards { get; private set; } = new();
-    public List<ActiveRoundDto> ActiveRounds { get; private set; } = new();
-    public List<LeagueRequestDto> PendingRequests { get; private set; } = new();
+    public List<MyLeagueDto> MyLeagues { get; private set; } = [];
+    public List<AvailableLeagueDto> AvailableLeagues { get; private set; } = [];
+    public List<LeagueLeaderboardDto> Leaderboards { get; private set; } = [];
+    public List<ActiveRoundDto> ActiveRounds { get; private set; } = [];
+    public List<LeagueRequestDto> PendingRequests { get; private set; } = [];
 
     public bool HasAvailablePrivateLeagues { get; private set; }
     public bool IsMyLeaguesLoading { get; private set; }
@@ -29,13 +29,6 @@ public class DashboardStateService : IDashboardStateService
 
     public event Action? OnStateChange;
 
-    private readonly ILeagueService _leagueService;
-
-    public DashboardStateService(ILeagueService leagueService)
-    {
-        _leagueService = leagueService;
-    }
-
     public async Task LoadMyLeaguesAsync()
     {
         IsMyLeaguesLoading = true;
@@ -45,7 +38,7 @@ public class DashboardStateService : IDashboardStateService
 
         try
         {
-            MyLeagues = await _leagueService.GetMyLeaguesAsync();
+            MyLeagues = await leagueService.GetMyLeaguesAsync();
         }
         catch
         {
@@ -67,8 +60,8 @@ public class DashboardStateService : IDashboardStateService
 
         try
         {
-            var publicLeaguesTask = _leagueService.GetAvailableLeaguesAsync();
-            var privateLeaguesTask = _leagueService.CheckForAvailablePrivateLeaguesAsync();
+            var publicLeaguesTask = leagueService.GetAvailableLeaguesAsync();
+            var privateLeaguesTask = leagueService.CheckForAvailablePrivateLeaguesAsync();
 
             await Task.WhenAll(publicLeaguesTask, privateLeaguesTask);
 
@@ -78,7 +71,7 @@ public class DashboardStateService : IDashboardStateService
         catch
         {
             AvailableLeaguesErrorMessage = "Could not load available leagues.";
-            AvailableLeagues = new List<AvailableLeagueDto>();
+            AvailableLeagues = [];
             HasAvailablePrivateLeagues = false;
         }
         finally
@@ -97,7 +90,7 @@ public class DashboardStateService : IDashboardStateService
 
         try
         {
-            Leaderboards = await _leagueService.GetLeaderboardsAsync();
+            Leaderboards = await leagueService.GetLeaderboardsAsync();
         }
         catch
         {
@@ -120,7 +113,7 @@ public class DashboardStateService : IDashboardStateService
 
         try
         {
-            ActiveRounds = await _leagueService.GetActiveRoundsAsync();
+            ActiveRounds = await leagueService.GetActiveRoundsAsync();
         }
         catch
         {
@@ -141,7 +134,7 @@ public class DashboardStateService : IDashboardStateService
 
         try
         {
-             PendingRequests = await _leagueService.GetPendingRequestsAsync();
+             PendingRequests = await leagueService.GetPendingRequestsAsync();
         }
         catch
         {
@@ -160,7 +153,7 @@ public class DashboardStateService : IDashboardStateService
 
         NotifyStateChanged();
 
-        var (success, errorMessage) = await _leagueService.JoinPublicLeagueAsync(leagueId);
+        var (success, errorMessage) = await leagueService.JoinPublicLeagueAsync(leagueId);
         if (success)
         {
             await Task.WhenAll(LoadMyLeaguesAsync(), LoadAvailableLeaguesAsync());
@@ -177,7 +170,7 @@ public class DashboardStateService : IDashboardStateService
         PendingRequestsErrorMessage = null;
         NotifyStateChanged();
 
-        var (success, errorMessage) = await _leagueService.CancelJoinRequestAsync(leagueId);
+        var (success, errorMessage) = await leagueService.CancelJoinRequestAsync(leagueId);
         if (success)
         {
             await LoadPendingRequestsAsync();
@@ -195,7 +188,7 @@ public class DashboardStateService : IDashboardStateService
         PendingRequestsErrorMessage = null;
         NotifyStateChanged();
 
-        var (success, errorMessage) = await _leagueService.DismissAlertAsync(leagueId);
+        var (success, errorMessage) = await leagueService.DismissAlertAsync(leagueId);
         if (success)
         {
             await LoadPendingRequestsAsync();

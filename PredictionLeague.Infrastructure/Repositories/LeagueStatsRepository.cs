@@ -4,15 +4,15 @@ using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Common.Enumerations;
 using System.Data;
 
-namespace PredictionLeague.Infrastructure.Repositories
-{
-    public class LeagueStatsRepository(IDbConnectionFactory connectionFactory) : ILeagueStatsRepository
-    {
-        private IDbConnection Connection => connectionFactory.CreateConnection();
+namespace PredictionLeague.Infrastructure.Repositories;
 
-        public async Task SnapshotRanksForRoundStartAsync(int roundId, CancellationToken cancellationToken)
-        {
-            const string sql = @"
+public class LeagueStatsRepository(IDbConnectionFactory connectionFactory) : ILeagueStatsRepository
+{
+    private IDbConnection Connection => connectionFactory.CreateConnection();
+
+    public async Task SnapshotRanksForRoundStartAsync(int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
             UPDATE lms
             SET 
                 lms.[SnapshotOverallRank] = lms.[OverallRank],
@@ -26,12 +26,12 @@ namespace PredictionLeague.Infrastructure.Repositories
             JOIN [Rounds] r ON l.[SeasonId] = r.[SeasonId]
             WHERE r.[Id] = @RoundId";
 
-            await Connection.ExecuteAsync(new CommandDefinition(sql, new { RoundId = roundId }, cancellationToken: cancellationToken));
-        }
+        await Connection.ExecuteAsync(new CommandDefinition(sql, new { RoundId = roundId }, cancellationToken: cancellationToken));
+    }
 
-        public async Task UpdateLiveStatsAsync(int roundId, CancellationToken cancellationToken)
-        {
-            const string sql = @"
+    public async Task UpdateLiveStatsAsync(int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
             
             UPDATE lms
             SET lms.[LiveRoundPoints] = lrr.[BoostedPoints]
@@ -67,12 +67,12 @@ namespace PredictionLeague.Infrastructure.Repositories
             FROM [LeagueMemberStats] lms
             JOIN [NewRanks] nr ON lms.[LeagueId] = nr.[LeagueId] AND lms.[UserId] = nr.[UserId];";
 
-            await Connection.ExecuteAsync(new CommandDefinition(sql, new { RoundId = roundId }, cancellationToken: cancellationToken));
-        }
+        await Connection.ExecuteAsync(new CommandDefinition(sql, new { RoundId = roundId }, cancellationToken: cancellationToken));
+    }
 
-        public async Task UpdateStableStatsAsync(int roundId, CancellationToken cancellationToken)
-        {
-            const string sql = @"
+    public async Task UpdateStableStatsAsync(int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
             WITH StableCalc AS (
                 SELECT 
                     lm.[LeagueId], 
@@ -121,13 +121,12 @@ namespace PredictionLeague.Infrastructure.Repositories
             FROM [LeagueMemberStats] stats
             INNER JOIN [RankedStable] rs ON stats.[LeagueId] = rs.[LeagueId] AND stats.[UserId] = rs.[UserId];";
 
-            await Connection.ExecuteAsync(new CommandDefinition(sql, new
-            {
-                RoundId = roundId,
-                CompletedStatus = nameof(MatchStatus.Completed),
-                PredictionOutcome.ExactScore,
-                PredictionOutcome.CorrectResult
-            }, cancellationToken: cancellationToken));
-        }
+        await Connection.ExecuteAsync(new CommandDefinition(sql, new
+        {
+            RoundId = roundId,
+            CompletedStatus = nameof(MatchStatus.Completed),
+            PredictionOutcome.ExactScore,
+            PredictionOutcome.CorrectResult
+        }, cancellationToken: cancellationToken));
     }
 }
