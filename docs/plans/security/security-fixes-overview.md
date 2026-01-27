@@ -13,14 +13,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 25 | Fixes implemented and verified |
+| Completed | 26 | Fixes implemented and verified |
 | Deferred | 4 | Require login system changes or architectural decisions |
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
-| P1 - High | 3 | Fix this sprint - significant security impact |
+| P1 - High | 2 | Fix this sprint - significant security impact |
 | P2 - Medium | 3 | Fix soon - defence in depth |
 | Low | 3 | Minor improvements |
 
-**Total Findings:** 38 (25 completed, 4 deferred, 9 outstanding)
+**Total Findings:** 38 (26 completed, 4 deferred, 8 outstanding)
 
 ---
 
@@ -57,6 +57,7 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] ShortName Validation (added to BaseTeamRequestValidator)
 - [x] Season Name Character Validation (added SafeNameValidationExtensions)
 - [x] Rate Limiting Middleware Enabled - [22-rate-limiting-middleware.md](./completed/22-rate-limiting-middleware.md)
+- [x] Outdated Packages Updated (.NET 10, JWT 8.15.0, framework packages 10.0.2) - [25-outdated-packages.md](./completed/25-outdated-packages.md)
 
 ## Intentionally Deferred
 
@@ -93,15 +94,6 @@ The following issues have been deferred due to mobile browser cookie compatibili
 - **Impact:** Attackers can build a list of valid user email addresses for targeted attacks.
 - **Exploitation:** Iterate through email addresses and observe error message differences.
 - **Plan:** [24-email-enumeration.md](./24-email-enumeration.md)
-
-### 3. Outdated Security-Critical Packages
-- **Files:** Multiple `.csproj` files
-- **Issue:** Critical packages are severely outdated:
-  - `Microsoft.AspNetCore.Identity` 2.3.1 (from .NET Core 2.1 era, ~2018)
-  - `Microsoft.AspNetCore.Authentication.Abstractions` 2.3.0 (from .NET Core 2.1)
-  - `System.IdentityModel.Tokens.Jwt` 7.5.0/7.7.1 (should be 8.0+)
-- **Impact:** Missing years of security patches for authentication/identity components.
-- **Plan:** [25-outdated-packages.md](./25-outdated-packages.md)
 
 ---
 
@@ -160,7 +152,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 ### Phase 2: High Priority (This Sprint)
 - [ ] Add membership validation to GetLeagueDashboardRoundResultsQuery
 - [ ] Return generic error message for registration
-- [ ] Upgrade outdated NuGet packages
+- [x] Upgrade outdated NuGet packages (.NET 10, JWT 8.15.0)
 
 ### Phase 3: Medium Priority (Next Sprint)
 - [ ] Align validators with Commands/Queries OR add ASP.NET Core auto-validation
