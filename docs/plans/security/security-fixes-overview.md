@@ -13,14 +13,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 24 | Fixes implemented and verified |
+| Completed | 25 | Fixes implemented and verified |
 | Deferred | 4 | Require login system changes or architectural decisions |
-| P0 - Critical | 1 | Fix immediately - active exploitation risk |
+| P0 - Critical | 0 | Fix immediately - active exploitation risk |
 | P1 - High | 3 | Fix this sprint - significant security impact |
 | P2 - Medium | 3 | Fix soon - defence in depth |
 | Low | 3 | Minor improvements |
 
-**Total Findings:** 38 (24 completed, 4 deferred, 10 new from Jan 27 audit)
+**Total Findings:** 38 (25 completed, 4 deferred, 9 outstanding)
 
 ---
 
@@ -56,6 +56,7 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] Lock Scoring Configuration (secured by design - scoring values immutable after creation)
 - [x] ShortName Validation (added to BaseTeamRequestValidator)
 - [x] Season Name Character Validation (added SafeNameValidationExtensions)
+- [x] Rate Limiting Middleware Enabled - [22-rate-limiting-middleware.md](./completed/22-rate-limiting-middleware.md)
 
 ## Intentionally Deferred
 
@@ -73,12 +74,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 ## P0 - Critical
 
-### 1. Rate Limiting Middleware Not Enabled
-- **File:** `PredictionLeague.Web/PredictionLeague.Web/Program.cs`
-- **Issue:** Rate limiting is configured in `DependencyInjection.cs` with well-defined policies (100/min global, 10/5min for auth, 60/min for API), but `app.UseRateLimiter()` is **never called** in the middleware pipeline.
-- **Impact:** All authentication endpoints are vulnerable to brute-force attacks. The `[EnableRateLimiting("auth")]` attributes on controllers have no effect.
-- **Exploitation:** Unlimited login attempts, credential stuffing, account enumeration attacks.
-- **Plan:** [22-rate-limiting-middleware.md](./22-rate-limiting-middleware.md)
+*No outstanding P0 issues.*
 
 ---
 
@@ -159,7 +155,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 ## Implementation Order
 
 ### Phase 1: Critical (Immediate)
-- [ ] Add `app.UseRateLimiter()` to middleware pipeline
+- [x] Add `app.UseRateLimiter()` to middleware pipeline
 
 ### Phase 2: High Priority (This Sprint)
 - [ ] Add membership validation to GetLeagueDashboardRoundResultsQuery
@@ -184,7 +180,7 @@ Remaining ongoing activities:
 The following are properly implemented:
 
 - SQL Injection Prevention (parameterised Dapper queries)
-- Rate Limiting Configuration (tiered policies configured - **needs middleware enabled**)
+- Rate Limiting (tiered policies: 100/min global, 10/5min auth, 60/min API)
 - Security Headers (CSP, X-Frame-Options, HSTS, etc.)
 - API Key Protection (constant-time comparison)
 - Role-Based Authorization (admin endpoints)
