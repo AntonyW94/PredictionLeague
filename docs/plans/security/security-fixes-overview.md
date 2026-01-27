@@ -13,14 +13,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 32 | Fixes implemented and verified |
+| Completed | 34 | Fixes implemented and verified |
 | Deferred | 4 | Require login system changes or architectural decisions |
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
 | P1 - High | 0 | Fix this sprint - significant security impact |
 | P2 - Medium | 0 | Fix soon - defence in depth |
-| Low | 3 | Minor improvements and housekeeping |
+| Low | 1 | Minor improvements and housekeeping |
 
-**Total Findings:** 39 (32 completed, 4 deferred, 3 outstanding)
+**Total Findings:** 39 (34 completed, 4 deferred, 1 outstanding)
 
 ---
 
@@ -64,6 +64,8 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] Football API Response Handling - [28-football-api-handling.md](./completed/28-football-api-handling.md)
 - [x] Server-Side Validation Gap - [26-server-validation-gap.md](./completed/26-server-validation-gap.md)
 - [x] X-XSS-Protection Header (kept for backwards compatibility - no action needed)
+- [x] Exception Messages (accepted - detailed messages aid UX and support, all logged to Datadog) - see [accepted-risks.md](./accepted-risks.md)
+- [x] User IDs in DTOs (accepted - GUIDs non-sequential, required for Blazor state management) - see [accepted-risks.md](./accepted-risks.md)
 
 ## Intentionally Deferred
 
@@ -99,17 +101,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 ## Low Priority
 
-### 1. Exception Messages Reveal Implementation Details
-- **File:** `PredictionLeague.API/Middleware/ErrorHandlingMiddleware.cs`
-- **Issue:** Raw exception messages are returned for `KeyNotFoundException`, `ArgumentException`, `InvalidOperationException`.
-- **Impact:** Information disclosure about business logic and system state.
-
-### 2. User IDs Exposed in Public DTOs
-- **Files:** Multiple DTOs in `PredictionLeague.Contracts/`
-- **Issue:** Internal user IDs (GUIDs) exposed in leaderboard and prediction response DTOs.
-- **Impact:** Enables user enumeration and potential targeting of specific users.
-
-### 3. Remove Legacy Package References (Housekeeping)
+### 1. Remove Legacy Package References (Housekeeping)
 - **Files:** `Web.Client.csproj`, `Application.csproj`
 - **Issue:** Legacy `Microsoft.AspNetCore.Identity` and `Authentication.Abstractions` packages (2.3.9) remain but are provided by .NET 10 shared framework.
 - **Impact:** None (at latest version, functionality duplicated by framework).
