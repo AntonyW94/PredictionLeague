@@ -1,5 +1,15 @@
 # P2: Server-Side Validation Gap
 
+## Status: COMPLETED
+
+**Completed:** January 27, 2026
+**Resolution:**
+- Added FluentValidation.AspNetCore package to API project
+- Added `services.AddFluentValidationAutoValidation()` in DependencyInjection.cs
+- Request DTOs are now validated at ASP.NET Core level before reaching controllers
+
+---
+
 ## Summary
 
 **Severity:** P2 - Medium

@@ -82,7 +82,7 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
             foreach (var rescheduledMatch in rescheduledMatchesToCheck)
             {
-                if (rescheduledMatch.Fixture == null || rescheduledMatch.Teams == null)
+                if (rescheduledMatch.Fixture == null || rescheduledMatch.Teams?.Home == null || rescheduledMatch.Teams?.Away == null)
                     continue;
 
                 var fixtureDateUtc = rescheduledMatch.Fixture.Date.UtcDateTime;
@@ -111,7 +111,7 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
             foreach (var fixture in currentRoundFixtures)
             {
-                if (fixture.Fixture == null || fixture.Teams == null)
+                if (fixture.Fixture == null || fixture.Teams?.Home == null || fixture.Teams?.Away == null)
                     continue;
 
                 var fixtureDateUtc = fixture.Fixture.Date.UtcDateTime;

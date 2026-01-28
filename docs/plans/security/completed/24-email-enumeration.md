@@ -1,5 +1,12 @@
 # P1: User Enumeration via Registration
 
+## Status: COMPLETED
+
+**Completed:** January 27, 2026
+**Resolution:** Changed error message to generic: "Registration could not be completed. If you already have an account, please try logging in."
+
+---
+
 ## Summary
 
 **Severity:** P1 - High

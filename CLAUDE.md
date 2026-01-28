@@ -406,6 +406,24 @@ Check that:
 4. **No unit tests yet** - Planned for future implementation
 5. **Manual FTP deployment** - Hosting limitation, automated CI/CD desired for future
 
+## Security
+
+### Security Documentation
+
+Security audit findings and plans are maintained in [`/docs/plans/security/`](docs/plans/security/):
+
+- [`security-fixes-overview.md`](docs/plans/security/security-fixes-overview.md) - Main tracking document for all security findings
+- [`accepted-risks.md`](docs/plans/security/accepted-risks.md) - **Important:** Intentional design decisions and accepted trade-offs that future audits should reference
+- `completed/` - Resolved security issues with implementation details
+- `later/` - Deferred items requiring architectural changes
+
+### Running Security Audits
+
+When conducting a security audit:
+1. Review `accepted-risks.md` first to understand known trade-offs
+2. Check findings against existing documentation before reporting
+3. Add new findings to `security-fixes-overview.md` for triage
+
 ## Feature Planning
 
 **Feature plans location:** [`/docs/features/`](docs/features/)

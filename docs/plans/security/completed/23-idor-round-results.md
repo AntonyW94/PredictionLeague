@@ -1,5 +1,12 @@
 # P1: IDOR in League Dashboard Round Results
 
+## Status: COMPLETED
+
+**Completed:** January 27, 2026
+**Resolution:** Added `ILeagueMembershipService.EnsureApprovedMemberAsync()` validation at the start of the handler.
+
+---
+
 ## Summary
 
 **Severity:** P1 - High
