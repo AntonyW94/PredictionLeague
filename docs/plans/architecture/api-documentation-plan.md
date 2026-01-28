@@ -4,67 +4,137 @@
 
 | Attribute | Value |
 |-----------|-------|
-| **Goal** | Industry-leading Swagger/OpenAPI documentation |
+| **Goal** | Industry-leading Swagger/OpenAPI documentation using attributes |
+| **Approach** | Swashbuckle.AspNetCore.Annotations (no XML comments) |
 | **Current State** | Basic auto-generated Swagger with no descriptions |
 | **Endpoints** | 65 total across 14 controllers |
 | **Estimated Effort** | 4-6 hours |
 
 ---
 
-## Tasks
+## Execution Instructions
 
-### Task 1: Enable XML Documentation Generation
+> **IMPORTANT:** When executing this plan, confirm each endpoint with the user before moving to the next one. Present the proposed attributes and wait for approval or corrections before implementing. This ensures descriptions accurately reflect the business logic.
 
-**File:** `PredictionLeague.API/PredictionLeague.API.csproj`
-
-Add to the `<PropertyGroup>`:
-
-```xml
-<GenerateDocumentationFile>true</GenerateDocumentationFile>
-<NoWarn>$(NoWarn);1591</NoWarn>
-```
-
-The `1591` warning suppression prevents build warnings for missing XML comments (we'll add them incrementally).
-
-**Also add to these projects** (for DTO documentation):
-- `PredictionLeague.Contracts/PredictionLeague.Contracts.csproj`
+**Workflow for each endpoint:**
+1. Show the current endpoint signature
+2. Present the proposed Swagger attributes
+3. Wait for user confirmation or corrections
+4. Implement the approved attributes
+5. Move to the next endpoint
 
 ---
 
-### Task 2: Configure Swagger with Security Schemes and API Info
+## Tasks
+
+### Task 1: Install Swashbuckle.AspNetCore.Annotations Package
+
+**File:** `PredictionLeague.API/PredictionLeague.API.csproj`
+
+Add package reference:
+```xml
+<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="7.2.0" />
+```
+
+---
+
+### Task 2: Configure Swagger with Security Schemes and Annotations
 
 **File:** `PredictionLeague.API/DependencyInjection.cs`
 
-Replace `services.AddSwaggerGen();` with:
+**Required usings:**
+```csharp
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+```
+
+Replace `services.AddSwaggerGen();` with the full configuration below:
 
 ```csharp
 services.AddSwaggerGen(options =>
 {
-    // API Information
+    // ===========================================
+    // API INFORMATION
+    // ===========================================
+    // This appears at the top of Swagger UI and in the OpenAPI spec
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Version = "v1",
         Title = "PredictionLeague API",
-        Description = "API for the PredictionLeague football prediction platform. Allows users to create leagues, submit predictions, and track leaderboards.",
+        Description = @"
+## Overview
+API for the PredictionLeague football prediction platform. Allows users to create leagues,
+submit match predictions, track leaderboards, and manage prizes.
+
+## Authentication
+Most endpoints require JWT Bearer authentication. Include the token in the Authorization header:
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+```
+
+To obtain a token, use the `/api/auth/login` or `/api/auth/register` endpoints.
+
+## Scheduled Tasks
+Endpoints under `/api/tasks/` require API Key authentication via the `X-Api-Key` header.
+These are intended for scheduled jobs (cron) and should not be called directly by users.
+
+## Rate Limiting
+- **Global:** 100 requests per minute per IP
+- **Auth endpoints:** 10 requests per 5 minutes per IP
+- **API endpoints:** 60 requests per minute per IP
+",
         Contact = new OpenApiContact
         {
             Name = "PredictionLeague Support",
             Email = "support@thepredictions.co.uk",
             Url = new Uri("https://www.thepredictions.co.uk")
+        },
+        License = new OpenApiLicense
+        {
+            Name = "Proprietary",
+            Url = new Uri("https://www.thepredictions.co.uk/terms")
         }
     });
 
-    // JWT Bearer Authentication
+    // ===========================================
+    // ENABLE ANNOTATIONS
+    // ===========================================
+    // This enables [SwaggerOperation], [SwaggerResponse], [SwaggerParameter] attributes
+    options.EnableAnnotations();
+
+    // ===========================================
+    // JWT BEARER AUTHENTICATION
+    // ===========================================
+    // This adds the "Authorize" button to Swagger UI for JWT tokens
+    //
+    // How it works:
+    // 1. User clicks "Authorize" button in Swagger UI
+    // 2. User enters their JWT token (without "Bearer " prefix)
+    // 3. Swagger automatically adds "Authorization: Bearer {token}" header to all requests
+    // 4. Protected endpoints can now be tested directly in Swagger UI
+    //
+    // The SecuritySchemeType.Http with "bearer" scheme handles the "Bearer " prefix automatically
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
+        Description = @"JWT Bearer token authentication.
+
+**How to authenticate:**
+1. Call `/api/auth/login` with your credentials
+2. Copy the `accessToken` from the response
+3. Click 'Authorize' and paste the token (without 'Bearer ' prefix)
+4. Click 'Authorize' to apply
+
+Token expires after 15 minutes. Use `/api/auth/refresh-token` to obtain a new token.",
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter your JWT token. Example: eyJhbGciOiJIUzI1NiIs..."
+        In = ParameterLocation.Header
     });
 
+    // Apply JWT authentication requirement globally
+    // This makes all endpoints show the padlock icon by default
+    // Individual endpoints can override this with [AllowAnonymous] or custom requirements
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -80,813 +150,1131 @@ services.AddSwaggerGen(options =>
         }
     });
 
-    // API Key Authentication (for scheduled tasks)
+    // ===========================================
+    // API KEY AUTHENTICATION (for scheduled tasks)
+    // ===========================================
+    // This adds a second authentication option for API key-protected endpoints
+    //
+    // How it works:
+    // 1. Scheduled task endpoints (TasksController) use [ApiKeyAuthorise] attribute
+    // 2. These endpoints expect "X-Api-Key" header with a valid API key
+    // 3. In Swagger UI, user clicks "Authorize" and enters the API key
+    // 4. Swagger adds "X-Api-Key: {key}" header to requests
+    //
+    // Note: API key endpoints don't require JWT - they use a separate auth mechanism
     options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
     {
         Name = "X-Api-Key",
+        Description = @"API Key authentication for scheduled task endpoints.
+
+**Usage:**
+This is used by cron jobs to trigger scheduled tasks like:
+- Score updates from football API
+- Email reminders
+- Data synchronization
+
+Regular users should not need to use these endpoints.",
         Type = SecuritySchemeType.ApiKey,
         In = ParameterLocation.Header,
-        Description = "API key for scheduled task endpoints"
+        Scheme = "ApiKeyScheme"
     });
 
-    // Include XML comments from API project
-    var apiXmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var apiXmlPath = Path.Combine(AppContext.BaseDirectory, apiXmlFile);
-    if (File.Exists(apiXmlPath))
-        options.IncludeXmlComments(apiXmlPath);
+    // ===========================================
+    // OPERATION FILTERS (Optional enhancements)
+    // ===========================================
+    // Tag endpoints by controller for better organization in Swagger UI
+    options.TagActionsBy(api =>
+    {
+        if (api.GroupName != null)
+            return new[] { api.GroupName };
 
-    // Include XML comments from Contracts project (DTOs)
-    var contractsXmlPath = Path.Combine(AppContext.BaseDirectory, "PredictionLeague.Contracts.xml");
-    if (File.Exists(contractsXmlPath))
-        options.IncludeXmlComments(contractsXmlPath);
+        var controllerName = api.ActionDescriptor.RouteValues["controller"];
+
+        // Group admin controllers under "Admin" prefix
+        if (api.RelativePath?.StartsWith("api/admin/") == true)
+            return new[] { $"Admin - {controllerName}" };
+
+        return new[] { controllerName ?? "Default" };
+    });
+
+    // Sort tags alphabetically
+    options.OrderActionsBy(api => api.RelativePath);
 });
 ```
 
-**Required usings:**
+---
+
+### Task 3: Add Controller-Level Tags
+
+Add `[SwaggerTag]` to each controller to provide category descriptions in Swagger UI.
+
+**Required using in each controller:**
 ```csharp
-using Microsoft.OpenApi.Models;
-using System.Reflection;
+using Swashbuckle.AspNetCore.Annotations;
+```
+
+**Controller tags:**
+
+```csharp
+// AuthController.cs
+[SwaggerTag("Authentication - Register, login, logout, and token refresh")]
+
+// ExternalAuthController.cs
+[SwaggerTag("Authentication - OAuth login with Google")]
+
+// AccountController.cs
+[SwaggerTag("Account - Manage user profile and settings")]
+
+// DashboardController.cs
+[SwaggerTag("Dashboard - Aggregated data for the main dashboard view")]
+
+// LeaguesController.cs
+[SwaggerTag("Leagues - Create, join, and manage prediction leagues")]
+
+// PredictionsController.cs
+[SwaggerTag("Predictions - Submit and view match predictions")]
+
+// RoundsController.cs
+[SwaggerTag("Rounds - View round and match information")]
+
+// BoostsController.cs
+[SwaggerTag("Boosts - Apply prediction boosts like Double Up")]
+
+// TasksController.cs
+[SwaggerTag("Scheduled Tasks - Background job endpoints (API Key required)")]
+
+// Admin/SeasonsController.cs
+[SwaggerTag("Admin - Seasons - Manage football seasons")]
+
+// Admin/RoundsController.cs
+[SwaggerTag("Admin - Rounds - Manage gameweeks and matches")]
+
+// Admin/TeamsController.cs
+[SwaggerTag("Admin - Teams - Manage football teams")]
+
+// Admin/UsersController.cs
+[SwaggerTag("Admin - Users - User administration")]
 ```
 
 ---
 
-### Task 3: Add XML Documentation to Controllers
+### Task 4: Add Endpoint Attributes
 
-Each endpoint needs:
-- `<summary>` - Brief description of what the endpoint does
-- `<param>` - Description for each parameter
-- `<returns>` - Description of successful response
+Each endpoint needs the following attributes:
 
-**Note:** `[ProducesResponseType]` attributes already exist on most endpoints, so `<response>` tags are optional.
+| Attribute | Purpose | Required |
+|-----------|---------|----------|
+| `[SwaggerOperation]` | Summary and detailed description | Yes |
+| `[SwaggerResponse]` | Document each possible HTTP status code | Yes (all codes) |
+| `[SwaggerParameter]` | Describe route/query parameters | Yes (if has params) |
+
+**Standard response codes by endpoint type:**
+
+| Endpoint Type | Response Codes |
+|--------------|----------------|
+| GET (single item) | 200, 401, 403, 404 |
+| GET (list) | 200, 401, 403 |
+| POST (create) | 201, 400, 401, 403 |
+| POST (action) | 200, 400, 401, 403, 404 |
+| PUT (update) | 200, 400, 401, 403, 404 |
+| DELETE | 200, 401, 403, 404 |
+| Anonymous | Omit 401 |
+| Admin only | Add 403 with "Admin access required" |
 
 ---
 
-#### 3.1 AuthController (4 endpoints)
+#### 4.1 AuthController (4 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/AuthController.cs`
 
 ```csharp
-/// <summary>
-/// Registers a new user account
-/// </summary>
-/// <param name="request">Registration details including email, password, and name</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Authentication tokens and user details on success</returns>
 [HttpPost("register")]
+[AllowAnonymous]
+[SwaggerOperation(
+    Summary = "Register a new user account",
+    Description = "Creates a new user account with email and password. Returns authentication tokens on success. The user is automatically logged in after registration.")]
+[SwaggerResponse(200, "Registration successful - returns access token, refresh token, and user details", typeof(AuthenticationResponse))]
+[SwaggerResponse(400, "Validation failed - email already exists, password too weak, or invalid input")]
+public async Task<IActionResult> RegisterAsync(
+    [FromBody, SwaggerParameter("Registration details including email, password, first name, and last name", Required = true)] RegisterRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Authenticates a user with email and password
-/// </summary>
-/// <param name="request">Login credentials</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Authentication tokens and user details on success</returns>
+```csharp
 [HttpPost("login")]
+[AllowAnonymous]
+[SwaggerOperation(
+    Summary = "Authenticate with email and password",
+    Description = "Validates credentials and returns authentication tokens. Access token expires in 15 minutes. Refresh token is set as HTTP-only cookie and also returned in response body.")]
+[SwaggerResponse(200, "Login successful - returns access token, refresh token, and user details", typeof(AuthenticationResponse))]
+[SwaggerResponse(400, "Invalid credentials or account locked")]
+public async Task<IActionResult> LoginAsync(
+    [FromBody, SwaggerParameter("Login credentials", Required = true)] LoginRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Refreshes an expired access token using the refresh token cookie
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>New authentication tokens</returns>
-/// <remarks>Requires valid refresh token in HTTP-only cookie</remarks>
+```csharp
 [HttpPost("refresh-token")]
+[AllowAnonymous]
+[SwaggerOperation(
+    Summary = "Refresh an expired access token",
+    Description = "Uses the refresh token (from HTTP-only cookie or request body) to obtain a new access token. The old refresh token is invalidated and a new one is issued (token rotation).")]
+[SwaggerResponse(200, "Token refresh successful - returns new access token and refresh token", typeof(AuthenticationResponse))]
+[SwaggerResponse(400, "Invalid or expired refresh token")]
+public async Task<IActionResult> RefreshTokenAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Logs out the current user by invalidating their refresh token
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Success confirmation</returns>
+```csharp
 [HttpPost("logout")]
+[SwaggerOperation(
+    Summary = "Log out the current user",
+    Description = "Invalidates the current refresh token and clears the refresh token cookie. The access token remains valid until expiry but should be discarded by the client.")]
+[SwaggerResponse(200, "Logout successful")]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> LogoutAsync(CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.2 ExternalAuthController (2 endpoints)
+#### 4.2 ExternalAuthController (2 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/ExternalAuthController.cs`
 
 ```csharp
-/// <summary>
-/// Initiates Google OAuth login flow
-/// </summary>
-/// <param name="returnUrl">URL to redirect to after authentication</param>
-/// <returns>Redirect to Google authentication</returns>
 [HttpGet("google-login")]
+[AllowAnonymous]
+[SwaggerOperation(
+    Summary = "Initiate Google OAuth login",
+    Description = "Redirects to Google's OAuth consent screen. After authentication, Google redirects back to the callback endpoint which then redirects to the client application with tokens.")]
+[SwaggerResponse(302, "Redirect to Google OAuth")]
+public IActionResult GoogleLogin(
+    [FromQuery, SwaggerParameter("URL to redirect to after authentication completes")] string? returnUrl)
+```
 
-/// <summary>
-/// Callback endpoint for Google OAuth (internal use)
-/// </summary>
-/// <returns>Redirect to client with authentication tokens</returns>
+```csharp
 [HttpGet("signin-google")]
+[AllowAnonymous]
+[SwaggerOperation(
+    Summary = "Google OAuth callback (internal)",
+    Description = "Callback endpoint for Google OAuth. Processes the authentication response, creates/updates user account, generates tokens, and redirects to the client application. Not intended to be called directly.")]
+[SwaggerResponse(302, "Redirect to client application with tokens")]
+[SwaggerResponse(400, "OAuth authentication failed")]
+public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.3 AccountController (2 endpoints)
+#### 4.3 AccountController (2 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/AccountController.cs`
 
 ```csharp
-/// <summary>
-/// Gets the current user's account details
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>User profile information</returns>
 [HttpGet("details")]
+[SwaggerOperation(
+    Summary = "Get current user's account details",
+    Description = "Returns the authenticated user's profile information including name, email, and account settings.")]
+[SwaggerResponse(200, "User details retrieved successfully", typeof(UserDetailsDto))]
+[SwaggerResponse(401, "Not authenticated - valid JWT required")]
+public async Task<IActionResult> GetDetailsAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Updates the current user's account details
-/// </summary>
-/// <param name="request">Updated profile information</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Updated user details</returns>
+```csharp
 [HttpPut("details")]
+[SwaggerOperation(
+    Summary = "Update current user's account details",
+    Description = "Updates the authenticated user's profile information. Only provided fields are updated.")]
+[SwaggerResponse(200, "User details updated successfully", typeof(UserDetailsDto))]
+[SwaggerResponse(400, "Validation failed - check error details")]
+[SwaggerResponse(401, "Not authenticated - valid JWT required")]
+public async Task<IActionResult> UpdateDetailsAsync(
+    [FromBody, SwaggerParameter("Updated profile information", Required = true)] UpdateUserDetailsRequest request,
+    CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.4 DashboardController (6 endpoints)
+#### 4.4 DashboardController (6 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/DashboardController.cs`
 
 ```csharp
-/// <summary>
-/// Gets active rounds (upcoming and in-progress) for the dashboard
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of active rounds with match counts and deadlines</returns>
 [HttpGet("active-rounds")]
+[SwaggerOperation(
+    Summary = "Get active rounds for dashboard",
+    Description = "Returns upcoming and in-progress rounds with match counts, deadlines, and prediction status. Used to populate the main dashboard tiles.")]
+[SwaggerResponse(200, "Active rounds retrieved successfully", typeof(IEnumerable<ActiveRoundDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> GetActiveRoundsAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets leagues the current user is a member of
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of user's leagues with membership status</returns>
+```csharp
 [HttpGet("my-leagues")]
+[SwaggerOperation(
+    Summary = "Get user's leagues",
+    Description = "Returns all leagues the current user is a member of, including pending join requests. Shows league name, member count, and user's current standing.")]
+[SwaggerResponse(200, "User's leagues retrieved successfully", typeof(IEnumerable<MyLeagueDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> GetMyLeaguesAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets public leagues available to join
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of joinable public leagues</returns>
+```csharp
 [HttpGet("available-leagues")]
+[SwaggerOperation(
+    Summary = "Get public leagues available to join",
+    Description = "Returns public leagues for the current season that the user is not already a member of.")]
+[SwaggerResponse(200, "Available leagues retrieved successfully", typeof(IEnumerable<AvailableLeagueDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> GetAvailableLeaguesAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Checks if any private leagues are available for the current season
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Boolean indicating private league availability</returns>
+```csharp
 [HttpGet("private-leagues-available")]
+[SwaggerOperation(
+    Summary = "Check if private leagues exist",
+    Description = "Returns whether any private leagues are available for the current season. Used to show/hide the 'Join Private League' option.")]
+[SwaggerResponse(200, "Returns boolean indicating private league availability", typeof(bool))]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> GetPrivateLeaguesAvailableAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets leaderboard summaries across user's leagues
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Aggregated leaderboard data</returns>
+```csharp
 [HttpGet("leaderboards")]
+[SwaggerOperation(
+    Summary = "Get leaderboard summaries",
+    Description = "Returns the user's position and points across all their leagues. Used for the dashboard leaderboard summary widget.")]
+[SwaggerResponse(200, "Leaderboard summaries retrieved successfully", typeof(IEnumerable<LeaderboardSummaryDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> GetLeaderboardsAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets pending join requests for leagues the user administers
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of pending membership requests</returns>
+```csharp
 [HttpGet("pending-requests")]
+[SwaggerOperation(
+    Summary = "Get pending join requests",
+    Description = "Returns pending membership requests for leagues the current user administers. Used to show notification badges.")]
+[SwaggerResponse(200, "Pending requests retrieved successfully", typeof(IEnumerable<PendingRequestDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> GetPendingRequestsAsync(CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.5 LeaguesController (22 endpoints)
+#### 4.5 LeaguesController (22 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/LeaguesController.cs`
 
 ```csharp
-/// <summary>
-/// Creates a new prediction league
-/// </summary>
-/// <param name="request">League configuration including name, visibility, and scoring rules</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>The created league with generated entry code</returns>
 [HttpPost("create")]
+[SwaggerOperation(
+    Summary = "Create a new prediction league",
+    Description = "Creates a new league with the specified settings. The creating user automatically becomes the league administrator and an approved member. Returns the league details including the generated 6-character entry code.")]
+[SwaggerResponse(201, "League created successfully", typeof(LeagueDto))]
+[SwaggerResponse(400, "Validation failed - invalid name, scoring settings, or season")]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> CreateLeagueAsync(
+    [FromBody, SwaggerParameter("League configuration including name, visibility, and scoring rules", Required = true)] CreateLeagueRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets all leagues the current user is a member of
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of user's leagues</returns>
+```csharp
 [HttpGet]
+[SwaggerOperation(
+    Summary = "Get user's leagues",
+    Description = "Returns all leagues where the current user is an approved member.")]
+[SwaggerResponse(200, "Leagues retrieved successfully", typeof(IEnumerable<LeagueDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> GetLeaguesAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets detailed information about a specific league
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>League details including settings and user's membership status</returns>
+```csharp
 [HttpGet("{leagueId:int}")]
+[SwaggerOperation(
+    Summary = "Get league details",
+    Description = "Returns detailed information about a specific league including settings, scoring rules, and the current user's membership status.")]
+[SwaggerResponse(200, "League details retrieved successfully", typeof(LeagueDto))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> GetLeagueByIdAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets all members of a league
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of league members with their status</returns>
+```csharp
 [HttpGet("{leagueId:int}/members")]
+[SwaggerOperation(
+    Summary = "Get league members",
+    Description = "Returns all members of the league including their status (approved, pending, rejected) and join date. Only approved members can view this.")]
+[SwaggerResponse(200, "Members retrieved successfully", typeof(IEnumerable<LeagueMemberDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> GetLeagueMembersAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets data required for the league creation form
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Available seasons and configuration options</returns>
+```csharp
 [HttpGet("create-data")]
+[SwaggerOperation(
+    Summary = "Get league creation form data",
+    Description = "Returns data needed to populate the league creation form including available seasons and default scoring values.")]
+[SwaggerResponse(200, "Form data retrieved successfully", typeof(CreateLeagueDataDto))]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> GetCreateLeagueDataAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets prize settings for a league
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Prize distribution configuration</returns>
+```csharp
 [HttpGet("{leagueId:int}/prizes")]
+[SwaggerOperation(
+    Summary = "Get league prize settings",
+    Description = "Returns the prize distribution configuration for the league including round prizes, monthly prizes, overall prizes, and most exact scores prizes.")]
+[SwaggerResponse(200, "Prize settings retrieved successfully", typeof(LeaguePrizeSettingsDto))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> GetLeaguePrizesAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets round results for a specific league and round
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="roundId">The round identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Member scores and predictions for the round</returns>
+```csharp
 [HttpGet("{leagueId:int}/rounds/{roundId:int}/results")]
+[SwaggerOperation(
+    Summary = "Get round results for league",
+    Description = "Returns detailed results for a specific round including each member's predictions, points scored, and ranking. Shows actual match scores and individual prediction breakdowns.")]
+[SwaggerResponse(200, "Round results retrieved successfully", typeof(LeagueRoundResultsDto))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League or round not found")]
+public async Task<IActionResult> GetLeagueRoundResultsAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    [SwaggerParameter("The unique identifier of the round", Required = true)] int roundId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets rounds data for the league dashboard
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Round summaries for dashboard display</returns>
+```csharp
 [HttpGet("{leagueId:int}/rounds-for-dashboard")]
+[SwaggerOperation(
+    Summary = "Get rounds for league dashboard",
+    Description = "Returns a summary of rounds for the league dashboard including completed, in-progress, and upcoming rounds with basic stats.")]
+[SwaggerResponse(200, "Rounds retrieved successfully", typeof(IEnumerable<LeagueRoundSummaryDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> GetLeagueRoundsForDashboardAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets comprehensive dashboard data for a league
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>League stats, recent results, and standings</returns>
+```csharp
 [HttpGet("{leagueId:int}/dashboard-data")]
+[SwaggerOperation(
+    Summary = "Get comprehensive league dashboard data",
+    Description = "Returns all data needed for the league dashboard page including recent results, standings, upcoming fixtures, and user's prediction status.")]
+[SwaggerResponse(200, "Dashboard data retrieved successfully", typeof(LeagueDashboardDataDto))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> GetLeagueDashboardDataAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets months with completed rounds for a league
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of months for monthly leaderboard filtering</returns>
+```csharp
 [HttpGet("{leagueId:int}/months")]
+[SwaggerOperation(
+    Summary = "Get months with completed rounds",
+    Description = "Returns a list of months that have completed rounds for monthly leaderboard filtering. Only months with at least one completed round are included.")]
+[SwaggerResponse(200, "Months retrieved successfully", typeof(IEnumerable<MonthDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> GetLeagueMonthsAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets the overall season leaderboard for a league
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Ranked list of members by total points</returns>
+```csharp
 [HttpGet("{leagueId:int}/leaderboard/overall")]
+[SwaggerOperation(
+    Summary = "Get overall season leaderboard",
+    Description = "Returns the league leaderboard ranked by total points accumulated across all completed rounds in the season.")]
+[SwaggerResponse(200, "Leaderboard retrieved successfully", typeof(IEnumerable<LeaderboardEntryDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> GetOverallLeaderboardAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets the monthly leaderboard for a league
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="month">Month number (1-12)</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Ranked list of members by points for the specified month</returns>
+```csharp
 [HttpGet("{leagueId:int}/leaderboard/monthly/{month:int}")]
+[SwaggerOperation(
+    Summary = "Get monthly leaderboard",
+    Description = "Returns the league leaderboard for a specific month, ranked by points accumulated in rounds completed during that month.")]
+[SwaggerResponse(200, "Monthly leaderboard retrieved successfully", typeof(IEnumerable<LeaderboardEntryDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League not found or no data for specified month")]
+public async Task<IActionResult> GetMonthlyLeaderboardAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    [SwaggerParameter("Month number (1-12)", Required = true)] int month,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets the exact scores leaderboard for a league
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Ranked list of members by number of exact score predictions</returns>
+```csharp
 [HttpGet("{leagueId:int}/leaderboard/exact-scores")]
+[SwaggerOperation(
+    Summary = "Get exact scores leaderboard",
+    Description = "Returns the league leaderboard ranked by number of exact score predictions (where predicted score exactly matched actual score).")]
+[SwaggerResponse(200, "Exact scores leaderboard retrieved successfully", typeof(IEnumerable<ExactScoresLeaderboardEntryDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> GetExactScoresLeaderboardAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets winnings/prizes awarded in a league
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of prize payouts to members</returns>
+```csharp
 [HttpGet("{leagueId:int}/winnings")]
+[SwaggerOperation(
+    Summary = "Get league winnings",
+    Description = "Returns all prize payouts that have been awarded in this league, including round winners, monthly winners, and special prizes.")]
+[SwaggerResponse(200, "Winnings retrieved successfully", typeof(IEnumerable<WinningsDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> GetLeagueWinningsAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Updates league settings (admin only)
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="request">Updated league settings</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Updated league details</returns>
+```csharp
 [HttpPut("{leagueId:int}/update")]
+[SwaggerOperation(
+    Summary = "Update league settings",
+    Description = "Updates league configuration. Only the league administrator can perform this action. Scoring rules cannot be changed after predictions have been submitted.")]
+[SwaggerResponse(200, "League updated successfully", typeof(LeagueDto))]
+[SwaggerResponse(400, "Validation failed or scoring rules locked")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not the league administrator")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> UpdateLeagueAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    [FromBody, SwaggerParameter("Updated league settings", Required = true)] UpdateLeagueRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Requests to join a league using an entry code
-/// </summary>
-/// <param name="request">Entry code for the league</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Join request status</returns>
+```csharp
 [HttpPost("join")]
+[SwaggerOperation(
+    Summary = "Join league with entry code",
+    Description = "Submits a request to join a private league using a 6-character entry code. For public leagues, membership is instant. For private leagues, the request is pending until approved by an administrator.")]
+[SwaggerResponse(200, "Join request submitted successfully", typeof(JoinLeagueResultDto))]
+[SwaggerResponse(400, "Invalid entry code or already a member")]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> JoinLeagueAsync(
+    [FromBody, SwaggerParameter("Entry code for the league", Required = true)] JoinLeagueRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Requests to join a specific league (for public leagues)
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Join request status</returns>
+```csharp
 [HttpPost("{leagueId:int}/join")]
+[SwaggerOperation(
+    Summary = "Join public league directly",
+    Description = "Joins a public league directly without an entry code. Only works for public leagues.")]
+[SwaggerResponse(200, "Joined league successfully", typeof(JoinLeagueResultDto))]
+[SwaggerResponse(400, "League is private or already a member")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> JoinPublicLeagueAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Updates a member's status (approve/reject/remove) - admin only
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="memberId">The member identifier</param>
-/// <param name="request">New membership status</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Updated member status</returns>
+```csharp
 [HttpPost("{leagueId:int}/members/{memberId}/status")]
+[SwaggerOperation(
+    Summary = "Update member status",
+    Description = "Approves, rejects, or removes a league member. Only the league administrator can perform this action.")]
+[SwaggerResponse(200, "Member status updated successfully")]
+[SwaggerResponse(400, "Invalid status transition")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not the league administrator")]
+[SwaggerResponse(404, "League or member not found")]
+public async Task<IActionResult> UpdateMemberStatusAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    [SwaggerParameter("The unique identifier of the member", Required = true)] int memberId,
+    [FromBody, SwaggerParameter("New membership status", Required = true)] UpdateMemberStatusRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Updates prize settings for a league (admin only)
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="request">Prize configuration</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Updated prize settings</returns>
+```csharp
 [HttpPost("{leagueId:int}/prizes")]
+[SwaggerOperation(
+    Summary = "Update league prize settings",
+    Description = "Configures prize distribution for the league. Only the league administrator can perform this action.")]
+[SwaggerResponse(200, "Prize settings updated successfully", typeof(LeaguePrizeSettingsDto))]
+[SwaggerResponse(400, "Invalid prize configuration")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not the league administrator")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> UpdateLeaguePrizesAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    [FromBody, SwaggerParameter("Prize distribution configuration", Required = true)] UpdateLeaguePrizesRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Withdraws a pending join request
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Confirmation of withdrawal</returns>
+```csharp
 [HttpDelete("{leagueId:int}/join-request")]
+[SwaggerOperation(
+    Summary = "Withdraw join request",
+    Description = "Cancels a pending request to join a league. Only the user who submitted the request can withdraw it.")]
+[SwaggerResponse(200, "Join request withdrawn successfully")]
+[SwaggerResponse(400, "No pending request found")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> WithdrawJoinRequestAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Dismisses an alert/notification for a league
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="request">Alert dismissal details</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Confirmation of dismissal</returns>
+```csharp
 [HttpPut("{leagueId:int}/dismiss-alert")]
+[SwaggerOperation(
+    Summary = "Dismiss league alert",
+    Description = "Marks an alert or notification for the league as dismissed for the current user.")]
+[SwaggerResponse(200, "Alert dismissed successfully")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not a member of this league")]
+[SwaggerResponse(404, "League or alert not found")]
+public async Task<IActionResult> DismissAlertAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    [FromBody, SwaggerParameter("Alert details to dismiss", Required = true)] DismissAlertRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Deletes a league (admin only, if no other members)
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Confirmation of deletion</returns>
+```csharp
 [HttpDelete("{leagueId:int}")]
+[SwaggerOperation(
+    Summary = "Delete league",
+    Description = "Permanently deletes a league. Only the league administrator can perform this action, and only if they are the sole member.")]
+[SwaggerResponse(200, "League deleted successfully")]
+[SwaggerResponse(400, "Cannot delete - league has other members")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Not the league administrator")]
+[SwaggerResponse(404, "League not found")]
+public async Task<IActionResult> DeleteLeagueAsync(
+    [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.6 PredictionsController (2 endpoints)
+#### 4.6 PredictionsController (2 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/PredictionsController.cs`
 
 ```csharp
-/// <summary>
-/// Gets the user's predictions for a specific round
-/// </summary>
-/// <param name="roundId">The round identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>User's predictions for all matches in the round</returns>
 [HttpGet("{roundId:int}")]
+[SwaggerOperation(
+    Summary = "Get user's predictions for a round",
+    Description = "Returns the current user's predictions for all matches in the specified round. Includes match details and any applied boosts.")]
+[SwaggerResponse(200, "Predictions retrieved successfully", typeof(UserPredictionsDto))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(404, "Round not found")]
+public async Task<IActionResult> GetPredictionsAsync(
+    [SwaggerParameter("The unique identifier of the round", Required = true)] int roundId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Submits or updates predictions for a round
-/// </summary>
-/// <param name="request">Predictions for matches in the round</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Confirmation of submitted predictions</returns>
-/// <remarks>Predictions can be updated until the round deadline</remarks>
+```csharp
 [HttpPost("submit")]
+[SwaggerOperation(
+    Summary = "Submit or update predictions",
+    Description = "Submits predictions for matches in a round. Can be called multiple times to update predictions until the round deadline. After the deadline, predictions are locked.")]
+[SwaggerResponse(200, "Predictions submitted successfully", typeof(SubmitPredictionsResultDto))]
+[SwaggerResponse(400, "Validation failed or deadline passed")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(404, "Round or match not found")]
+public async Task<IActionResult> SubmitPredictionsAsync(
+    [FromBody, SwaggerParameter("Predictions for matches in the round", Required = true)] SubmitPredictionsRequest request,
+    CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.7 RoundsController (1 endpoint)
+#### 4.7 RoundsController (1 endpoint)
 
 **File:** `PredictionLeague.API/Controllers/RoundsController.cs`
 
 ```csharp
-/// <summary>
-/// Gets match data for a round including teams and kick-off times
-/// </summary>
-/// <param name="roundId">The round identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Matches with team details and scheduling information</returns>
 [HttpGet("{roundId:int}/matches-data")]
+[SwaggerOperation(
+    Summary = "Get matches for a round",
+    Description = "Returns all matches in the round with team details, kick-off times, and current scores (if available). Used for the predictions form.")]
+[SwaggerResponse(200, "Match data retrieved successfully", typeof(RoundMatchesDataDto))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(404, "Round not found")]
+public async Task<IActionResult> GetMatchesDataAsync(
+    [SwaggerParameter("The unique identifier of the round", Required = true)] int roundId,
+    CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.8 BoostsController (3 endpoints)
+#### 4.8 BoostsController (3 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/BoostsController.cs`
 
 ```csharp
-/// <summary>
-/// Gets available boosts for the current user
-/// </summary>
-/// <param name="leagueId">The league identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of boosts with eligibility and usage information</returns>
 [HttpGet("available")]
+[SwaggerOperation(
+    Summary = "Get available boosts",
+    Description = "Returns boosts available to the user for a specific league and round, including remaining uses and eligibility status. Boosts like 'Double Up' multiply points for a round.")]
+[SwaggerResponse(200, "Available boosts retrieved successfully", typeof(AvailableBoostsDto))]
+[SwaggerResponse(401, "Not authenticated")]
+public async Task<IActionResult> GetAvailableBoostsAsync(
+    [FromQuery, SwaggerParameter("The league to check boost availability for", Required = true)] int leagueId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Applies a boost to the user's predictions for a round
-/// </summary>
-/// <param name="request">Boost application details including league, round, and boost type</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Confirmation of boost application</returns>
-/// <remarks>Boosts must be applied before the round deadline</remarks>
+```csharp
 [HttpPost("apply")]
+[SwaggerOperation(
+    Summary = "Apply a boost to predictions",
+    Description = "Applies a boost (e.g., Double Up) to the user's predictions for a specific round in a league. Must be applied before the round deadline. Boost effects are calculated when the round completes.")]
+[SwaggerResponse(200, "Boost applied successfully", typeof(ApplyBoostResultDto))]
+[SwaggerResponse(400, "Validation failed - boost not available, already used, or deadline passed")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(404, "League, round, or boost not found")]
+public async Task<IActionResult> ApplyBoostAsync(
+    [FromBody, SwaggerParameter("Boost application details", Required = true)] ApplyBoostRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Removes an applied boost from a round (before deadline only)
-/// </summary>
-/// <param name="request">Boost removal details</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Confirmation of boost removal</returns>
+```csharp
 [HttpDelete("user/usage")]
+[SwaggerOperation(
+    Summary = "Remove an applied boost",
+    Description = "Removes a previously applied boost from a round. Only possible before the round deadline.")]
+[SwaggerResponse(200, "Boost removed successfully")]
+[SwaggerResponse(400, "Deadline passed or boost not applied")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(404, "Boost usage not found")]
+public async Task<IActionResult> RemoveBoostAsync(
+    [FromBody, SwaggerParameter("Boost removal details", Required = true)] RemoveBoostRequest request,
+    CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.9 TasksController (5 endpoints)
+#### 4.9 TasksController (5 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/TasksController.cs`
 
-**Note:** These endpoints use API Key authentication via `[ApiKeyAuthorise]` attribute.
+**Note:** These endpoints use API Key authentication. Add this attribute to the class:
 
 ```csharp
-/// <summary>
-/// Updates live match scores from the football API
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Summary of updated matches</returns>
-/// <remarks>Called by scheduled job every minute during matches. Requires API key.</remarks>
+[ApiController]
+[Route("api/[controller]")]
+[SwaggerTag("Scheduled Tasks - Background job endpoints (API Key required)")]
+public class TasksController : ApiControllerBase
+```
+
+Each endpoint should indicate API Key requirement:
+
+```csharp
 [HttpPost("score-update")]
+[ApiKeyAuthorise]
+[SwaggerOperation(
+    Summary = "Update live match scores",
+    Description = "Fetches latest match scores from the football API and updates the database. Triggers score recalculation for affected predictions. Called by cron job every minute during match days.",
+    Tags = new[] { "Scheduled Tasks" })]
+[SwaggerResponse(200, "Scores updated successfully - returns count of updated matches")]
+[SwaggerResponse(401, "API key missing or invalid")]
+public async Task<IActionResult> ScoreUpdateAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Syncs season data (teams, fixtures) from the football API
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Sync operation result</returns>
-/// <remarks>Called by scheduled job daily. Requires API key.</remarks>
+```csharp
 [HttpPost("sync")]
+[ApiKeyAuthorise]
+[SwaggerOperation(
+    Summary = "Sync season data",
+    Description = "Synchronises teams and fixtures from the football API for the active season. Updates match times, adds new fixtures, and updates team information. Called by cron job daily.",
+    Tags = new[] { "Scheduled Tasks" })]
+[SwaggerResponse(200, "Sync completed successfully - returns sync summary")]
+[SwaggerResponse(401, "API key missing or invalid")]
+public async Task<IActionResult> SyncAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Sends prediction reminder emails for upcoming deadlines
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Count of reminders sent</returns>
-/// <remarks>Called by scheduled job every 30 minutes. Requires API key.</remarks>
+```csharp
 [HttpPost("send-reminders")]
+[ApiKeyAuthorise]
+[SwaggerOperation(
+    Summary = "Send prediction reminder emails",
+    Description = "Sends email reminders to users who haven't submitted predictions for upcoming rounds. Only sends if deadline is within reminder window. Called by cron job every 30 minutes.",
+    Tags = new[] { "Scheduled Tasks" })]
+[SwaggerResponse(200, "Reminders sent successfully - returns count of emails sent")]
+[SwaggerResponse(401, "API key missing or invalid")]
+public async Task<IActionResult> SendRemindersAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Publishes rounds that are ready to accept predictions
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of published rounds</returns>
-/// <remarks>Called by scheduled job daily. Requires API key.</remarks>
+```csharp
 [HttpPost("publish-upcoming-rounds")]
+[ApiKeyAuthorise]
+[SwaggerOperation(
+    Summary = "Publish upcoming rounds",
+    Description = "Publishes draft rounds that are ready for predictions (fixtures confirmed, within publish window). Makes rounds visible to users. Called by cron job daily.",
+    Tags = new[] { "Scheduled Tasks" })]
+[SwaggerResponse(200, "Rounds published successfully - returns list of published round IDs")]
+[SwaggerResponse(401, "API key missing or invalid")]
+public async Task<IActionResult> PublishUpcomingRoundsAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Recalculates all statistics for a season (admin recovery tool)
-/// </summary>
-/// <param name="seasonId">The season identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Recalculation summary</returns>
-/// <remarks>Use with caution - intensive operation. Requires API key.</remarks>
+```csharp
 [HttpPost("recalculate-season-stats/{seasonId:int}")]
+[ApiKeyAuthorise]
+[SwaggerOperation(
+    Summary = "Recalculate season statistics",
+    Description = "Recalculates all points, rankings, and statistics for a season. Use as a recovery tool if data becomes inconsistent. Intensive operation - use with caution.",
+    Tags = new[] { "Scheduled Tasks" })]
+[SwaggerResponse(200, "Recalculation completed successfully - returns summary")]
+[SwaggerResponse(401, "API key missing or invalid")]
+[SwaggerResponse(404, "Season not found")]
+public async Task<IActionResult> RecalculateSeasonStatsAsync(
+    [SwaggerParameter("The unique identifier of the season to recalculate", Required = true)] int seasonId,
+    CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.10 Admin/SeasonsController (5 endpoints)
+#### 4.10 Admin/SeasonsController (5 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/Admin/SeasonsController.cs`
 
 ```csharp
-/// <summary>
-/// Creates a new season
-/// </summary>
-/// <param name="request">Season configuration</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>The created season</returns>
 [HttpPost("create")]
+[SwaggerOperation(
+    Summary = "Create a new season",
+    Description = "Creates a new football season with the specified configuration. Only administrators can perform this action.")]
+[SwaggerResponse(201, "Season created successfully", typeof(SeasonDto))]
+[SwaggerResponse(400, "Validation failed - invalid dates or configuration")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+public async Task<IActionResult> CreateSeasonAsync(
+    [FromBody, SwaggerParameter("Season configuration", Required = true)] CreateSeasonRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets all seasons
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of all seasons</returns>
+```csharp
 [HttpGet]
+[SwaggerOperation(
+    Summary = "Get all seasons",
+    Description = "Returns all seasons in the system. Only administrators can access this endpoint.")]
+[SwaggerResponse(200, "Seasons retrieved successfully", typeof(IEnumerable<SeasonDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+public async Task<IActionResult> GetSeasonsAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets a specific season by ID
-/// </summary>
-/// <param name="seasonId">The season identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Season details</returns>
+```csharp
 [HttpGet("{seasonId:int}")]
+[SwaggerOperation(
+    Summary = "Get season by ID",
+    Description = "Returns detailed information about a specific season including status and configuration.")]
+[SwaggerResponse(200, "Season retrieved successfully", typeof(SeasonDto))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "Season not found")]
+public async Task<IActionResult> GetSeasonByIdAsync(
+    [SwaggerParameter("The unique identifier of the season", Required = true)] int seasonId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Updates season details
-/// </summary>
-/// <param name="seasonId">The season identifier</param>
-/// <param name="request">Updated season data</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Updated season</returns>
+```csharp
 [HttpPut("{seasonId:int}/update")]
+[SwaggerOperation(
+    Summary = "Update season details",
+    Description = "Updates season configuration. Some fields may be locked after the season has started.")]
+[SwaggerResponse(200, "Season updated successfully", typeof(SeasonDto))]
+[SwaggerResponse(400, "Validation failed or field locked")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "Season not found")]
+public async Task<IActionResult> UpdateSeasonAsync(
+    [SwaggerParameter("The unique identifier of the season", Required = true)] int seasonId,
+    [FromBody, SwaggerParameter("Updated season data", Required = true)] UpdateSeasonRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Updates season status (draft, active, completed)
-/// </summary>
-/// <param name="seasonId">The season identifier</param>
-/// <param name="request">New status</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Updated season</returns>
+```csharp
 [HttpPut("{seasonId:int}/status")]
+[SwaggerOperation(
+    Summary = "Update season status",
+    Description = "Changes the season status (Draft, Active, Completed). Activating a season makes it available for leagues.")]
+[SwaggerResponse(200, "Season status updated successfully", typeof(SeasonDto))]
+[SwaggerResponse(400, "Invalid status transition")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "Season not found")]
+public async Task<IActionResult> UpdateSeasonStatusAsync(
+    [SwaggerParameter("The unique identifier of the season", Required = true)] int seasonId,
+    [FromBody, SwaggerParameter("New status", Required = true)] UpdateSeasonStatusRequest request,
+    CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.11 Admin/RoundsController (5 endpoints)
+#### 4.11 Admin/RoundsController (5 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/Admin/RoundsController.cs`
 
 ```csharp
-/// <summary>
-/// Creates a new round for a season
-/// </summary>
-/// <param name="request">Round configuration including matches</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>The created round</returns>
 [HttpPost("create")]
+[SwaggerOperation(
+    Summary = "Create a new round",
+    Description = "Creates a new gameweek round with matches. Rounds start in Draft status and must be published to accept predictions.")]
+[SwaggerResponse(201, "Round created successfully", typeof(RoundDto))]
+[SwaggerResponse(400, "Validation failed - invalid matches or dates")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+public async Task<IActionResult> CreateRoundAsync(
+    [FromBody, SwaggerParameter("Round configuration including matches", Required = true)] CreateRoundRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets all rounds for a season
-/// </summary>
-/// <param name="seasonId">The season identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of rounds</returns>
+```csharp
 [HttpGet("by-season/{seasonId:int}")]
+[SwaggerOperation(
+    Summary = "Get rounds for a season",
+    Description = "Returns all rounds for the specified season, ordered by round number.")]
+[SwaggerResponse(200, "Rounds retrieved successfully", typeof(IEnumerable<RoundDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "Season not found")]
+public async Task<IActionResult> GetRoundsBySeasonAsync(
+    [SwaggerParameter("The unique identifier of the season", Required = true)] int seasonId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets a specific round by ID
-/// </summary>
-/// <param name="roundId">The round identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Round details with matches</returns>
+```csharp
 [HttpGet("{roundId:int}")]
+[SwaggerOperation(
+    Summary = "Get round by ID",
+    Description = "Returns detailed round information including all matches with team details and scores.")]
+[SwaggerResponse(200, "Round retrieved successfully", typeof(RoundDto))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "Round not found")]
+public async Task<IActionResult> GetRoundByIdAsync(
+    [SwaggerParameter("The unique identifier of the round", Required = true)] int roundId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Updates round details
-/// </summary>
-/// <param name="roundId">The round identifier</param>
-/// <param name="request">Updated round data</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Updated round</returns>
+```csharp
 [HttpPut("{roundId:int}/update")]
+[SwaggerOperation(
+    Summary = "Update round details",
+    Description = "Updates round configuration including deadline and matches. Some fields may be locked after publication.")]
+[SwaggerResponse(200, "Round updated successfully", typeof(RoundDto))]
+[SwaggerResponse(400, "Validation failed or field locked")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "Round not found")]
+public async Task<IActionResult> UpdateRoundAsync(
+    [SwaggerParameter("The unique identifier of the round", Required = true)] int roundId,
+    [FromBody, SwaggerParameter("Updated round data", Required = true)] UpdateRoundRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Updates match results for a round
-/// </summary>
-/// <param name="roundId">The round identifier</param>
-/// <param name="request">Match results</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Updated round with recalculated scores</returns>
-/// <remarks>Triggers score recalculation for all predictions</remarks>
+```csharp
 [HttpPut("{roundId:int}/results")]
+[SwaggerOperation(
+    Summary = "Update match results",
+    Description = "Records final scores for matches in the round. Triggers automatic recalculation of all predictions and leaderboards.")]
+[SwaggerResponse(200, "Results updated successfully", typeof(RoundDto))]
+[SwaggerResponse(400, "Validation failed - invalid scores")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "Round not found")]
+public async Task<IActionResult> UpdateRoundResultsAsync(
+    [SwaggerParameter("The unique identifier of the round", Required = true)] int roundId,
+    [FromBody, SwaggerParameter("Match results", Required = true)] UpdateRoundResultsRequest request,
+    CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.12 Admin/TeamsController (4 endpoints)
+#### 4.12 Admin/TeamsController (4 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/Admin/TeamsController.cs`
 
 ```csharp
-/// <summary>
-/// Creates a new team
-/// </summary>
-/// <param name="request">Team details</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>The created team</returns>
 [HttpPost("create")]
+[SwaggerOperation(
+    Summary = "Create a new team",
+    Description = "Creates a new football team that can be used in matches.")]
+[SwaggerResponse(201, "Team created successfully", typeof(TeamDto))]
+[SwaggerResponse(400, "Validation failed - invalid name or duplicate")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+public async Task<IActionResult> CreateTeamAsync(
+    [FromBody, SwaggerParameter("Team details", Required = true)] CreateTeamRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets all teams
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of all teams</returns>
+```csharp
 [HttpGet]
+[SwaggerOperation(
+    Summary = "Get all teams",
+    Description = "Returns all teams in the system, ordered alphabetically by name.")]
+[SwaggerResponse(200, "Teams retrieved successfully", typeof(IEnumerable<TeamDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+public async Task<IActionResult> GetTeamsAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Gets a specific team by ID
-/// </summary>
-/// <param name="teamId">The team identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Team details</returns>
+```csharp
 [HttpGet("{teamId:int}")]
+[SwaggerOperation(
+    Summary = "Get team by ID",
+    Description = "Returns details for a specific team.")]
+[SwaggerResponse(200, "Team retrieved successfully", typeof(TeamDto))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "Team not found")]
+public async Task<IActionResult> GetTeamByIdAsync(
+    [SwaggerParameter("The unique identifier of the team", Required = true)] int teamId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Updates team details
-/// </summary>
-/// <param name="teamId">The team identifier</param>
-/// <param name="request">Updated team data</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Updated team</returns>
+```csharp
 [HttpPut("{teamId:int}/update")]
+[SwaggerOperation(
+    Summary = "Update team details",
+    Description = "Updates team information such as name and short name.")]
+[SwaggerResponse(200, "Team updated successfully", typeof(TeamDto))]
+[SwaggerResponse(400, "Validation failed")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "Team not found")]
+public async Task<IActionResult> UpdateTeamAsync(
+    [SwaggerParameter("The unique identifier of the team", Required = true)] int teamId,
+    [FromBody, SwaggerParameter("Updated team data", Required = true)] UpdateTeamRequest request,
+    CancellationToken cancellationToken)
 ```
 
 ---
 
-#### 3.13 Admin/UsersController (4 endpoints)
+#### 4.13 Admin/UsersController (4 endpoints)
 
 **File:** `PredictionLeague.API/Controllers/Admin/UsersController.cs`
 
 ```csharp
-/// <summary>
-/// Gets all users (admin only)
-/// </summary>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>List of all registered users</returns>
 [HttpGet]
+[SwaggerOperation(
+    Summary = "Get all users",
+    Description = "Returns all registered users in the system with their roles and status.")]
+[SwaggerResponse(200, "Users retrieved successfully", typeof(IEnumerable<AdminUserDto>))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+public async Task<IActionResult> GetUsersAsync(CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Checks if a user owns any leagues
-/// </summary>
-/// <param name="userId">The user identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Boolean indicating league ownership</returns>
+```csharp
 [HttpGet("{userId}/owns-leagues")]
+[SwaggerOperation(
+    Summary = "Check if user owns leagues",
+    Description = "Returns whether the specified user is an administrator of any leagues. Used before user deletion.")]
+[SwaggerResponse(200, "Returns boolean indicating league ownership", typeof(bool))]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "User not found")]
+public async Task<IActionResult> UserOwnsLeaguesAsync(
+    [SwaggerParameter("The unique identifier of the user", Required = true)] string userId,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Updates a user's role
-/// </summary>
-/// <param name="userId">The user identifier</param>
-/// <param name="request">New role assignment</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Updated user details</returns>
+```csharp
 [HttpPost("{userId}/role")]
+[SwaggerOperation(
+    Summary = "Update user role",
+    Description = "Changes the role of a user (e.g., User, Admin). Administrators cannot demote themselves.")]
+[SwaggerResponse(200, "Role updated successfully", typeof(AdminUserDto))]
+[SwaggerResponse(400, "Invalid role or self-demotion attempt")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "User not found")]
+public async Task<IActionResult> UpdateUserRoleAsync(
+    [SwaggerParameter("The unique identifier of the user", Required = true)] string userId,
+    [FromBody, SwaggerParameter("New role assignment", Required = true)] UpdateUserRoleRequest request,
+    CancellationToken cancellationToken)
+```
 
-/// <summary>
-/// Deletes a user account
-/// </summary>
-/// <param name="userId">The user identifier</param>
-/// <param name="cancellationToken">Cancellation token</param>
-/// <returns>Confirmation of deletion</returns>
-/// <remarks>Fails if user owns any leagues</remarks>
+```csharp
 [HttpPost("{userId}/delete")]
+[SwaggerOperation(
+    Summary = "Delete user account",
+    Description = "Permanently deletes a user account. Fails if the user owns any leagues (must transfer ownership first).")]
+[SwaggerResponse(200, "User deleted successfully")]
+[SwaggerResponse(400, "Cannot delete - user owns leagues")]
+[SwaggerResponse(401, "Not authenticated")]
+[SwaggerResponse(403, "Admin access required")]
+[SwaggerResponse(404, "User not found")]
+public async Task<IActionResult> DeleteUserAsync(
+    [SwaggerParameter("The unique identifier of the user", Required = true)] string userId,
+    CancellationToken cancellationToken)
 ```
-
----
-
-### Task 4: Add Controller-Level Documentation
-
-Add class-level XML comments to each controller:
-
-```csharp
-/// <summary>
-/// Manages prediction leagues including creation, membership, and leaderboards
-/// </summary>
-[ApiController]
-[Route("api/[controller]")]
-public class LeaguesController : ApiControllerBase
-```
-
-**Apply to all controllers:**
-- `AuthController` - "Handles user authentication including registration, login, and token refresh"
-- `ExternalAuthController` - "Handles OAuth authentication with external providers (Google)"
-- `AccountController` - "Manages user account settings and profile information"
-- `DashboardController` - "Provides aggregated data for the main dashboard view"
-- `LeaguesController` - "Manages prediction leagues including creation, membership, and leaderboards"
-- `PredictionsController` - "Handles user match predictions"
-- `RoundsController` - "Provides round and match information"
-- `BoostsController` - "Manages prediction boosts (Double Up, etc.)"
-- `TasksController` - "Scheduled task endpoints for background jobs (API key required)"
-- `Admin/SeasonsController` - "Admin endpoints for season management"
-- `Admin/RoundsController` - "Admin endpoints for round and match management"
-- `Admin/TeamsController` - "Admin endpoints for team management"
-- `Admin/UsersController` - "Admin endpoints for user management"
-
----
-
-### Task 5: Configure API Grouping (Optional Enhancement)
-
-Group endpoints logically in Swagger UI by adding tags:
-
-```csharp
-// In DependencyInjection.cs SwaggerGen options
-options.TagActionsBy(api =>
-{
-    if (api.GroupName != null)
-        return new[] { api.GroupName };
-
-    if (api.ActionDescriptor is ControllerActionDescriptor controllerActionDescriptor)
-        return new[] { controllerActionDescriptor.ControllerName };
-
-    throw new InvalidOperationException("Unable to determine tag for endpoint.");
-});
-
-options.DocInclusionPredicate((name, api) => true);
-```
-
-Or use `[Tags("Category")]` attribute on controllers:
-```csharp
-[Tags("Authentication")]
-public class AuthController : AuthControllerBase
-
-[Tags("Admin - Seasons")]
-public class SeasonsController : ApiControllerBase
-```
-
----
-
-### Task 6: Verify Swagger UI in Development
-
-After implementing changes:
-
-1. Run the API: `dotnet run --project PredictionLeague.API`
-2. Navigate to: `https://localhost:xxxx/swagger`
-3. Verify:
-   - [ ] API title and description appear at top
-   - [ ] "Authorize" button is visible (JWT Bearer)
-   - [ ] All endpoints have descriptions
-   - [ ] Parameters have descriptions
-   - [ ] Response types are documented
-   - [ ] Can authenticate and test protected endpoints
-
----
-
-### Task 7: Enable Swagger in Production (Optional)
-
-Currently Swagger UI is only available in Development. To enable in Production:
-
-**File:** `PredictionLeague.API/Program.cs`
-
-Change:
-```csharp
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-```
-
-To:
-```csharp
-app.UseSwagger();
-app.UseSwaggerUI(options =>
-{
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "PredictionLeague API v1");
-
-    // Optional: Require authentication to view Swagger in production
-    // options.OAuthClientId("swagger-ui");
-});
-```
-
-**Security consideration:** If exposed in production, consider adding authentication to the Swagger endpoint or restricting by IP.
 
 ---
 
 ## Checklist
 
 ### Configuration
-- [ ] Enable XML documentation in API .csproj
-- [ ] Enable XML documentation in Contracts .csproj
-- [ ] Configure Swagger with API info
-- [ ] Configure JWT Bearer security scheme
-- [ ] Configure API Key security scheme
-- [ ] Include XML comment files in Swagger
+- [ ] Install Swashbuckle.AspNetCore.Annotations package
+- [ ] Update DependencyInjection.cs with full Swagger configuration
+- [ ] Verify Swagger UI loads with API info and authentication options
 
-### Controllers (65 endpoints total)
-- [ ] AuthController (4 endpoints)
-- [ ] ExternalAuthController (2 endpoints)
-- [ ] AccountController (2 endpoints)
-- [ ] DashboardController (6 endpoints)
-- [ ] LeaguesController (22 endpoints)
-- [ ] PredictionsController (2 endpoints)
-- [ ] RoundsController (1 endpoint)
-- [ ] BoostsController (3 endpoints)
-- [ ] TasksController (5 endpoints)
-- [ ] Admin/SeasonsController (5 endpoints)
-- [ ] Admin/RoundsController (5 endpoints)
-- [ ] Admin/TeamsController (4 endpoints)
-- [ ] Admin/UsersController (4 endpoints)
+### Controller Tags (14 controllers)
+- [ ] AuthController
+- [ ] ExternalAuthController
+- [ ] AccountController
+- [ ] DashboardController
+- [ ] LeaguesController
+- [ ] PredictionsController
+- [ ] RoundsController
+- [ ] BoostsController
+- [ ] TasksController
+- [ ] Admin/SeasonsController
+- [ ] Admin/RoundsController
+- [ ] Admin/TeamsController
+- [ ] Admin/UsersController
+
+### Endpoint Attributes (65 endpoints)
+- [ ] AuthController (4 endpoints) - **Confirm each with user**
+- [ ] ExternalAuthController (2 endpoints) - **Confirm each with user**
+- [ ] AccountController (2 endpoints) - **Confirm each with user**
+- [ ] DashboardController (6 endpoints) - **Confirm each with user**
+- [ ] LeaguesController (22 endpoints) - **Confirm each with user**
+- [ ] PredictionsController (2 endpoints) - **Confirm each with user**
+- [ ] RoundsController (1 endpoint) - **Confirm each with user**
+- [ ] BoostsController (3 endpoints) - **Confirm each with user**
+- [ ] TasksController (5 endpoints) - **Confirm each with user**
+- [ ] Admin/SeasonsController (5 endpoints) - **Confirm each with user**
+- [ ] Admin/RoundsController (5 endpoints) - **Confirm each with user**
+- [ ] Admin/TeamsController (4 endpoints) - **Confirm each with user**
+- [ ] Admin/UsersController (4 endpoints) - **Confirm each with user**
 
 ### Verification
-- [ ] Swagger UI displays all descriptions
-- [ ] Can authenticate via Swagger UI
-- [ ] Can test endpoints via Swagger UI
-- [ ] No build warnings for missing XML comments (suppressed)
+- [ ] Swagger UI displays all summaries and descriptions
+- [ ] JWT authentication works in Swagger UI (can login and test protected endpoints)
+- [ ] API Key authentication documented for Tasks endpoints
+- [ ] All response codes documented for each endpoint
+- [ ] No endpoints missing attributes
 
 ---
 
@@ -894,7 +1282,18 @@ app.UseSwaggerUI(options =>
 
 | File | Changes |
 |------|---------|
-| `PredictionLeague.API/PredictionLeague.API.csproj` | Enable XML doc generation |
-| `PredictionLeague.Contracts/PredictionLeague.Contracts.csproj` | Enable XML doc generation |
-| `PredictionLeague.API/DependencyInjection.cs` | Configure Swagger |
-| `PredictionLeague.API/Controllers/*.cs` | Add XML comments (14 files) |
+| `PredictionLeague.API/PredictionLeague.API.csproj` | Add Annotations package |
+| `PredictionLeague.API/DependencyInjection.cs` | Full Swagger configuration |
+| `PredictionLeague.API/Controllers/AuthController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/ExternalAuthController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/AccountController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/DashboardController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/LeaguesController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/PredictionsController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/RoundsController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/BoostsController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/TasksController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/Admin/SeasonsController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/Admin/RoundsController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/Admin/TeamsController.cs` | Add Swagger attributes |
+| `PredictionLeague.API/Controllers/Admin/UsersController.cs` | Add Swagger attributes |
