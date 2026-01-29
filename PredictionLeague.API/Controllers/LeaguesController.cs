@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Leagues.Commands;
@@ -77,7 +77,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
     public async Task<ActionResult<LeagueDto>> GetLeagueByIdAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var query = new GetLeagueByIdQuery(leagueId, CurrentUserId);
@@ -98,7 +98,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
     public async Task<ActionResult<LeagueMembersPageDto>> FetchLeagueMembersAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var query = new FetchLeagueMembersQuery(leagueId, CurrentUserId);
@@ -131,7 +131,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
     public async Task<ActionResult<LeaguePrizesPageDto>> GetLeaguePrizesPageAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var query = new GetLeaguePrizesPageQuery(leagueId, CurrentUserId);
@@ -152,8 +152,8 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League or round not found")]
     public async Task<ActionResult<IEnumerable<PredictionResultDto>>> GetLeagueDashboardRoundResultsAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
-        [SwaggerParameter("The unique identifier of the round", Required = true)] int roundId,
+        [SwaggerParameter("League identifier")] int leagueId,
+        [SwaggerParameter("Round identifier")] int roundId,
         CancellationToken cancellationToken)
     {
         var query = new GetLeagueDashboardRoundResultsQuery(leagueId, roundId, CurrentUserId);
@@ -174,7 +174,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
     public async Task<ActionResult<IEnumerable<RoundDto>>> GetLeagueRoundsForDashboardAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var query = new GetLeagueRoundsForDashboardQuery(leagueId, CurrentUserId);
@@ -190,7 +190,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
     public async Task<ActionResult<LeagueDashboardDto>> GetLeagueDashboardAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var isAdmin = User.IsInRole(RoleNames.Administrator);
@@ -214,7 +214,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
     public async Task<ActionResult<IEnumerable<MonthDto>>> GetMonthsForLeagueAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var query = new GetMonthsForLeagueQuery(leagueId, CurrentUserId);
@@ -230,7 +230,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
     public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboard(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var query = new GetOverallLeaderboardQuery(leagueId, CurrentUserId);
@@ -248,8 +248,8 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found or no data for specified month")]
     public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetMonthlyLeaderboardAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
-        [SwaggerParameter("Month number (1-12)", Required = true)] int month,
+        [SwaggerParameter("League identifier")] int leagueId,
+        [SwaggerParameter("Month number (1-12)")] int month,
         CancellationToken cancellationToken)
     {
         var query = new GetMonthlyLeaderboardQuery(leagueId, month, CurrentUserId);
@@ -265,7 +265,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
     public async Task<ActionResult<ExactScoresLeaderboardDto>> GetExactScoresLeaderboard(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var query = new GetExactScoresLeaderboardQuery(leagueId, CurrentUserId);
@@ -285,7 +285,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
     public async Task<ActionResult<WinningsDto>> GetWinningsAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var query = new GetWinningsQuery(leagueId, CurrentUserId);
@@ -308,7 +308,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not the league administrator")]
     [SwaggerResponse(404, "League not found")]
     public async Task<IActionResult> UpdateLeagueAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         [FromBody, SwaggerParameter("Updated league settings", Required = true)] UpdateLeagueRequest request,
         CancellationToken cancellationToken)
     {
@@ -350,7 +350,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(404, "League not found")]
     public async Task<IActionResult> JoinPublicLeagueAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, leagueId, null);
@@ -369,8 +369,8 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not the league administrator")]
     [SwaggerResponse(404, "League or member not found")]
     public async Task<IActionResult> UpdateLeagueMemberStatusAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
-        [SwaggerParameter("The unique identifier of the member", Required = true)] string memberId,
+        [SwaggerParameter("League identifier")] int leagueId,
+        [SwaggerParameter("Member identifier")] string memberId,
         [FromBody, SwaggerParameter("New membership status", Required = true)] LeagueMemberStatus newStatus,
         CancellationToken cancellationToken)
     {
@@ -390,7 +390,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not the league administrator")]
     [SwaggerResponse(404, "League not found")]
     public async Task<IActionResult> DefinePrizeStructureAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         [FromBody, SwaggerParameter("Prize distribution configuration", Required = true)] DefinePrizeStructureRequest request,
         CancellationToken cancellationToken)
     {
@@ -409,7 +409,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(404, "League not found")]
     public async Task<IActionResult> CancelJoinRequest(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var command = new CancelLeagueRequestCommand(leagueId, CurrentUserId);
@@ -427,7 +427,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League or alert not found")]
     public async Task<IActionResult> DismissAlert(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var command = new DismissRejectedNotificationCommand(leagueId, CurrentUserId);
@@ -441,7 +441,6 @@ public class LeaguesController : ApiControllerBase
     #region Delete
 
     [HttpDelete("{leagueId:int}")]
-    [Authorize]
     [SwaggerOperation(
         Summary = "Delete league",
         Description = "Permanently deletes a league. Only the league administrator can perform this action, and only if they are the sole member.")]
@@ -451,7 +450,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(403, "Not the league administrator")]
     [SwaggerResponse(404, "League not found")]
     public async Task<IActionResult> DeleteLeagueAsync(
-        [SwaggerParameter("The unique identifier of the league", Required = true)] int leagueId,
+        [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var isAdmin = User.IsInRole(RoleNames.Administrator);
