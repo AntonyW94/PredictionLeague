@@ -5,12 +5,12 @@ using PredictionLeague.Application.Features.Admin.Rounds.Commands;
 using PredictionLeague.Application.Features.Admin.Rounds.Queries;
 using PredictionLeague.Contracts.Admin.Results;
 using PredictionLeague.Contracts.Admin.Rounds;
-using PredictionLeague.Domain.Common.Constants;
+using PredictionLeague.Domain.Common.Enumerations;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace PredictionLeague.API.Controllers.Admin;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 [ApiController]
 [Route("api/admin/[controller]")]
 [SwaggerTag("Admin: Rounds - Manage gameweeks and matches (Admin only)")]

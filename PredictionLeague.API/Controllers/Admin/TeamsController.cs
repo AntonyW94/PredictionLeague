@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Admin.Teams.Commands;
 using PredictionLeague.Application.Features.Admin.Teams.Queries;
 using PredictionLeague.Contracts.Admin.Teams;
-using PredictionLeague.Domain.Common.Constants;
+using PredictionLeague.Domain.Common.Enumerations;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace PredictionLeague.API.Controllers.Admin;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 [ApiController]
 [Route("api/admin/[controller]")]
 [SwaggerTag("Admin: Teams - Manage football teams (Admin only)")]
