@@ -28,7 +28,7 @@ public class TasksController : ApiControllerBase
         Description = "Fetches latest scores from the external football API and updates in-progress matches. Called every minute by cron job.")]
     [SwaggerResponse(204, "Scores updated successfully")]
     [SwaggerResponse(401, "Invalid or missing API key")]
-    public async Task<IActionResult> TriggerLiveScoreUpdate(CancellationToken cancellationToken)
+    public async Task<IActionResult> TriggerLiveScoreUpdateAsync(CancellationToken cancellationToken)
     {
         var command = new UpdateAllLiveScoresCommand();
         await _mediator.Send(command, cancellationToken);
@@ -56,7 +56,7 @@ public class TasksController : ApiControllerBase
         Description = "Sends email reminders to users who haven't submitted predictions for upcoming round deadlines. Called every 30 minutes.")]
     [SwaggerResponse(204, "Reminders sent successfully")]
     [SwaggerResponse(401, "Invalid or missing API key")]
-    public async Task<IActionResult> SendScheduledReminders(CancellationToken cancellationToken)
+    public async Task<IActionResult> SendScheduledRemindersAsync(CancellationToken cancellationToken)
     {
         var command = new SendScheduledRemindersCommand();
         await _mediator.Send(command, cancellationToken);
@@ -84,7 +84,7 @@ public class TasksController : ApiControllerBase
         Description = "Recalculates all leaderboards, points, and statistics for the specified season. Use after manual score corrections.")]
     [SwaggerResponse(204, "Statistics recalculated successfully")]
     [SwaggerResponse(401, "Invalid or missing API key")]
-    public async Task<IActionResult> RecalculateSeasonStats(
+    public async Task<IActionResult> RecalculateSeasonStatsAsync(
         [SwaggerParameter("Season identifier")] int seasonId,
         CancellationToken cancellationToken)
     {

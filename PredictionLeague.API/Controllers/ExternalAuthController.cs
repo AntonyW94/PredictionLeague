@@ -42,7 +42,7 @@ public class ExternalAuthController : AuthControllerBase
         var safeReturnUrl = GetSafeLocalPath(returnUrl, "/");
         var safeSource = GetSafeLocalPath(source, "/login");
 
-        var callbackUrl = Url.Action("GoogleCallback");
+        var callbackUrl = Url.Action("GoogleCallbackAsync");
         var properties = new AuthenticationProperties
         {
             RedirectUri = callbackUrl,
@@ -63,7 +63,7 @@ public class ExternalAuthController : AuthControllerBase
         Description = "Callback endpoint for Google OAuth. Processes the authentication response, creates/updates user account, generates tokens, and redirects to the client application. Not intended to be called directly.")]
     [SwaggerResponse(302, "Redirect to client application with tokens")]
     [SwaggerResponse(400, "OAuth authentication failed")]
-    public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
+    public async Task<IActionResult> GoogleCallbackAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Called signin-google");
 
