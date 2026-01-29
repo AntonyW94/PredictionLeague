@@ -28,8 +28,6 @@ public class LeaguesController : ApiControllerBase
     #region Create
 
     [HttpPost("create")]
-    [ProducesResponseType(typeof(LeagueDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Create a new prediction league",
         Description = "Creates a new league with the specified settings. The creating user automatically becomes the league administrator and an approved member. Returns the league details including the generated 6-character entry code.")]
@@ -57,7 +55,6 @@ public class LeaguesController : ApiControllerBase
     #region Read
 
     [HttpGet]
-    [ProducesResponseType(typeof(ManageLeaguesDto), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get user's leagues for management",
         Description = "Returns all leagues where the current user is an approved member, with management details.")]
@@ -72,8 +69,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}")]
-    [ProducesResponseType(typeof(LeagueDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Get league details",
         Description = "Returns detailed information about a specific league including settings, scoring rules, and the current user's membership status.")]
@@ -95,8 +90,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}/members")]
-    [ProducesResponseType(typeof(LeagueMembersPageDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Get league members",
         Description = "Returns all members of the league including their status (approved, pending, rejected) and join date. Only approved members can view this.")]
@@ -118,7 +111,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("create-data")]
-    [ProducesResponseType(typeof(CreateLeaguePageData), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get league creation form data",
         Description = "Returns data needed to populate the league creation form including available seasons and default scoring values.")]
@@ -131,8 +123,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}/prizes")]
-    [ProducesResponseType(typeof(LeaguePrizesPageDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Get league prize settings",
         Description = "Returns the prize distribution configuration for the league including round prizes, monthly prizes, overall prizes, and most exact scores prizes.")]
@@ -154,8 +144,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}/rounds/{roundId:int}/results")]
-    [ProducesResponseType(typeof(IEnumerable<PredictionResultDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Get round results for league",
         Description = "Returns detailed results for a specific round including each member's predictions, points scored, and ranking. Shows actual match scores and individual prediction breakdowns.")]
@@ -178,7 +166,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}/rounds-for-dashboard")]
-    [ProducesResponseType(typeof(IEnumerable<RoundDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get rounds for league dashboard",
         Description = "Returns a summary of rounds for the league dashboard including completed, in-progress, and upcoming rounds with basic stats.")]
@@ -195,8 +182,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}/dashboard-data")]
-    [ProducesResponseType(typeof(LeagueDashboardDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Get comprehensive league dashboard data",
         Description = "Returns all data needed for the league dashboard page including recent results, standings, upcoming fixtures, and user's prediction status.")]
@@ -221,7 +206,6 @@ public class LeaguesController : ApiControllerBase
     #region Dashboard
 
     [HttpGet("{leagueId:int}/months")]
-    [ProducesResponseType(typeof(IEnumerable<MonthDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get months with completed rounds",
         Description = "Returns a list of months that have completed rounds for monthly leaderboard filtering. Only months with at least one completed round are included.")]
@@ -238,7 +222,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}/leaderboard/overall")]
-    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get overall season leaderboard",
         Description = "Returns the league leaderboard ranked by total points accumulated across all completed rounds in the season.")]
@@ -257,7 +240,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}/leaderboard/monthly/{month:int}")]
-    [ProducesResponseType(typeof(IEnumerable<LeaderboardEntryDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get monthly leaderboard",
         Description = "Returns the league leaderboard for a specific month, ranked by points accumulated in rounds completed during that month.")]
@@ -275,7 +257,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpGet("{leagueId:int}/leaderboard/exact-scores")]
-    [ProducesResponseType(typeof(ExactScoresLeaderboardDto), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get exact scores leaderboard",
         Description = "Returns the league leaderboard ranked by number of exact score predictions (where predicted score exactly matched actual score).")]
@@ -296,7 +277,6 @@ public class LeaguesController : ApiControllerBase
     #region Winnings
 
     [HttpGet("{leagueId:int}/winnings")]
-    [ProducesResponseType(typeof(WinningsDto), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get league winnings",
         Description = "Returns all prize payouts that have been awarded in this league, including round winners, monthly winners, and special prizes.")]
@@ -319,9 +299,6 @@ public class LeaguesController : ApiControllerBase
     #region Update
 
     [HttpPut("{leagueId:int}/update")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Update league settings",
         Description = "Updates league configuration. Only the league administrator can perform this action. Scoring rules cannot be changed after predictions have been submitted.")]
@@ -348,9 +325,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpPost("join")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Join league with entry code",
         Description = "Submits a request to join a private league using a 6-character entry code. For public leagues, membership is instant. For private leagues, the request is pending until approved by an administrator.")]
@@ -368,8 +342,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpPost("{leagueId:int}/join")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Join public league directly",
         Description = "Joins a public league directly without an entry code. Only works for public leagues.")]
@@ -388,9 +360,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpPost("{leagueId:int}/members/{memberId}/status")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Update member status",
         Description = "Approves, rejects, or removes a league member. Only the league administrator can perform this action.")]
@@ -412,9 +381,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpPost("{leagueId:int}/prizes")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Update league prize settings",
         Description = "Configures prize distribution for the league. Only the league administrator can perform this action.")]
@@ -435,9 +401,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpDelete("{leagueId:int}/join-request")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Withdraw join request",
         Description = "Cancels a pending request to join a league. Only the user who submitted the request can withdraw it.")]
@@ -456,9 +419,6 @@ public class LeaguesController : ApiControllerBase
     }
 
     [HttpPut("{leagueId:int}/dismiss-alert")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Dismiss league alert",
         Description = "Marks an alert or notification for the league as dismissed for the current user.")]

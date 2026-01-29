@@ -30,8 +30,6 @@ public class AuthController : AuthControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Register a new user account",
         Description = "Creates a new user account with email and password. Returns authentication tokens on success. The user is automatically logged in after registration.")]
@@ -54,13 +52,11 @@ public class AuthController : AuthControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status401Unauthorized)]
     [SwaggerOperation(
         Summary = "Authenticate with email and password",
         Description = "Validates credentials and returns authentication tokens. Access token expires in 15 minutes. Refresh token is set as HTTP-only cookie and also returned in response body.")]
     [SwaggerResponse(200, "Login successful - returns access token, refresh token, and user details", typeof(AuthenticationResponse))]
-    [SwaggerResponse(400, "Invalid credentials or account locked")]
+    [SwaggerResponse(401, "Invalid credentials or account locked")]
     public async Task<IActionResult> LoginAsync(
         [FromBody, SwaggerParameter("Login credentials", Required = true)] LoginRequest request,
         CancellationToken cancellationToken)
@@ -75,11 +71,9 @@ public class AuthController : AuthControllerBase
         return Ok(result);
 
     }
-    
+
     [HttpPost("refresh-token")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(AuthenticationResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Refresh an expired access token",
         Description = "Uses the refresh token (from HTTP-only cookie or request body) to obtain a new access token. The old refresh token is invalidated and a new one is issued (token rotation).")]
@@ -124,18 +118,17 @@ public class AuthController : AuthControllerBase
         }
 
         _logger.LogInformation("Refresh Token Command was successful. Setting new refresh token cookie for user.");
-       
+
         SetTokenCookie(success.RefreshTokenForCookie);
         return Ok(success);
     }
 
     [HttpPost("logout")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [SwaggerOperation(
         Summary = "Log out the current user",
         Description = "Invalidates the current refresh token and clears the refresh token cookie. The access token remains valid until expiry but should be discarded by the client.")]
-    [SwaggerResponse(200, "Logout successful")]
+    [SwaggerResponse(204, "Logout successful")]
     [SwaggerResponse(401, "Not authenticated")]
     public async Task<IActionResult> LogoutAsync(CancellationToken cancellationToken)
     {

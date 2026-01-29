@@ -25,7 +25,6 @@ public class BoostsController : ControllerBase
 
     [HttpGet("available")]
     [Authorize]
-    [ProducesResponseType(typeof(IEnumerable<AvailableBoostDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get available boosts",
         Description = "Returns boosts available to the user for the specified league and round. Includes remaining usage counts and eligibility status.")]
@@ -49,8 +48,6 @@ public class BoostsController : ControllerBase
 
     [HttpPost("apply")]
     [Authorize]
-    [ProducesResponseType(typeof(ApplyBoostResultDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Apply a boost to predictions",
         Description = "Applies a boost (e.g., Double Up) to the user's predictions for a specific league and round. The boost multiplies points earned.")]
@@ -75,7 +72,6 @@ public class BoostsController : ControllerBase
 
     [HttpDelete("user/usage")]
     [Authorize]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [SwaggerOperation(
         Summary = "Remove a boost from predictions",
         Description = "Removes a previously applied boost from the user's predictions for a specific league and round. The boost usage is restored.")]

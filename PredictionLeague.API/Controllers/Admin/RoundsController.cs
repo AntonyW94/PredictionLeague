@@ -26,8 +26,6 @@ public class RoundsController : ApiControllerBase
     #region Create
 
     [HttpPost("create")]
-    [ProducesResponseType(typeof(RoundDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Create a new round",
         Description = "Creates a new gameweek/round with matches. Rounds start in Draft status and must be published to become visible.")]
@@ -58,7 +56,6 @@ public class RoundsController : ApiControllerBase
     #region Read
 
     [HttpGet("by-season/{seasonId:int}")]
-    [ProducesResponseType(typeof(IEnumerable<RoundDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get rounds for a season",
         Description = "Returns all rounds/gameweeks for the specified season, ordered by round number.")]
@@ -74,8 +71,6 @@ public class RoundsController : ApiControllerBase
     }
 
     [HttpGet("{roundId:int}")]
-    [ProducesResponseType(typeof(RoundDetailsDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Get round by ID",
         Description = "Returns detailed information about a round including all matches with teams and scores.")]
@@ -101,9 +96,6 @@ public class RoundsController : ApiControllerBase
     #region Update
 
     [HttpPut("{roundId:int}/update")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Update round details",
         Description = "Updates a round's configuration including deadline, status, and match list. Can change status from Draft to Published.")]
@@ -132,9 +124,6 @@ public class RoundsController : ApiControllerBase
     }
 
     [HttpPut("{roundId:int}/results")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Submit match results",
         Description = "Updates final scores for matches in a round. Triggers recalculation of predictions and leaderboards.")]

@@ -21,7 +21,6 @@ public class RoundsController : ApiControllerBase
     }
 
     [HttpGet("{roundId:int}/matches-data")]
-    [ProducesResponseType(typeof(IEnumerable<MatchInRoundDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get matches for a round",
         Description = "Returns all matches in the specified round with team details, kick-off times, and current scores.")]

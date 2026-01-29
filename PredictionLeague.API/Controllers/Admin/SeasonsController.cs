@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Admin.Seasons.Commands;
 using PredictionLeague.Application.Features.Admin.Seasons.Queries;
 using PredictionLeague.Contracts.Admin.Seasons;
-using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Enumerations;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -26,8 +25,6 @@ public class SeasonsController : ApiControllerBase
     #region Create
 
     [HttpPost("create")]
-    [ProducesResponseType(typeof(SeasonDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Create a new season",
         Description = "Creates a new competition season with the specified configuration. Links to external football API for fixture data.")]
@@ -59,7 +56,6 @@ public class SeasonsController : ApiControllerBase
     #region Read
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<SeasonDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get all seasons",
         Description = "Returns all seasons in the system, both active and inactive.")]
@@ -73,8 +69,6 @@ public class SeasonsController : ApiControllerBase
     }
 
     [HttpGet("{seasonId:int}")]
-    [ProducesResponseType(typeof(LeagueDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Get season by ID",
         Description = "Returns details of a specific season including configuration and linked API league.")]
@@ -100,9 +94,6 @@ public class SeasonsController : ApiControllerBase
     #region Update
 
     [HttpPut("{seasonId:int}/update")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Update season details",
         Description = "Updates an existing season's configuration including name, dates, and API linkage.")]
@@ -131,8 +122,6 @@ public class SeasonsController : ApiControllerBase
     }
 
     [HttpPut("{seasonId:int}/status")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Update season active status",
         Description = "Activates or deactivates a season. Inactive seasons are hidden from users.")]

@@ -25,7 +25,6 @@ public class UsersController : ApiControllerBase
     #region Read
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get all users",
         Description = "Returns all registered users with their profile information and roles.")]
@@ -39,7 +38,6 @@ public class UsersController : ApiControllerBase
     }
 
     [HttpGet("{userId}/owns-leagues")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Check if user owns leagues",
         Description = "Returns whether the user is an administrator of any leagues. Used to determine if league ownership must be transferred before account deletion.")]
@@ -59,8 +57,6 @@ public class UsersController : ApiControllerBase
     #region Update
 
     [HttpPost("{userId}/role")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Update user role",
         Description = "Changes a user's role (e.g., promote to Administrator or demote to User).")]
@@ -83,9 +79,6 @@ public class UsersController : ApiControllerBase
     #region Delete
 
     [HttpPost("{userId}/delete")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Delete user account",
         Description = "Permanently deletes a user account. If the user owns leagues, a new administrator must be specified to take over ownership.")]

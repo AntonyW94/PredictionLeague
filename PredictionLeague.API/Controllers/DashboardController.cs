@@ -23,7 +23,6 @@ public class DashboardController : ApiControllerBase
     }
 
     [HttpGet("active-rounds")]
-    [ProducesResponseType(typeof(IEnumerable<ActiveRoundDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get active rounds for dashboard",
         Description = "Returns upcoming and in-progress rounds with match counts, deadlines, and prediction status. Used to populate the main dashboard tiles.")]
@@ -36,7 +35,6 @@ public class DashboardController : ApiControllerBase
     }
 
     [HttpGet("my-leagues")]
-    [ProducesResponseType(typeof(IEnumerable<MyLeagueDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get user's leagues",
         Description = "Returns all leagues the current user is a member of, including pending join requests. Shows league name, member count, and user's current standing.")]
@@ -49,7 +47,6 @@ public class DashboardController : ApiControllerBase
     }
 
     [HttpGet("available-leagues")]
-    [ProducesResponseType(typeof(IEnumerable<AvailableLeagueDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get public leagues available to join",
         Description = "Returns public leagues for the current season that the user is not already a member of.")]
@@ -62,7 +59,6 @@ public class DashboardController : ApiControllerBase
     }
 
     [HttpGet("private-leagues-available")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Check if private leagues exist",
         Description = "Returns whether any private leagues are available for the current season. Used to show/hide the 'Join Private League' option.")]
@@ -75,7 +71,6 @@ public class DashboardController : ApiControllerBase
     }
 
     [HttpGet("leaderboards")]
-    [ProducesResponseType(typeof(IEnumerable<LeagueLeaderboardDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get leaderboard summaries",
         Description = "Returns the user's position and points across all their leagues. Used for the dashboard leaderboard summary widget.")]
@@ -88,7 +83,6 @@ public class DashboardController : ApiControllerBase
     }
 
     [HttpGet("pending-requests")]
-    [ProducesResponseType(typeof(IEnumerable<LeagueRequestDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get pending join requests",
         Description = "Returns pending membership requests for leagues the current user administers. Used to show notification badges.")]

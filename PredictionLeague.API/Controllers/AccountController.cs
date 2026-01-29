@@ -22,8 +22,6 @@ public class AccountController : ApiControllerBase
     }
 
     [HttpGet("details")]
-    [ProducesResponseType(typeof(UserDetails), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Get current user's account details",
         Description = "Returns the authenticated user's profile information including name, email, and account settings.")]
@@ -42,8 +40,6 @@ public class AccountController : ApiControllerBase
     }
 
     [HttpPut("details")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Update current user's account details",
         Description = "Updates the authenticated user's profile information. Only provided fields are updated.")]

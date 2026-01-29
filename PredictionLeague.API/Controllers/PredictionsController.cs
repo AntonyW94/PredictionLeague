@@ -22,7 +22,6 @@ public class PredictionsController : ApiControllerBase
     }
 
     [HttpGet("{roundId:int}")]
-    [ProducesResponseType(typeof(IEnumerable<PredictionPageDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get prediction page data for a round",
         Description = "Returns all matches in the round with the current user's predictions (if any). Includes match details, deadlines, and current scores for in-progress matches.")]
@@ -37,9 +36,6 @@ public class PredictionsController : ApiControllerBase
     }
 
     [HttpPost("submit")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Submit predictions for a round",
         Description = "Submits or updates the current user's score predictions for matches in a round. Predictions can be updated until the round deadline.")]

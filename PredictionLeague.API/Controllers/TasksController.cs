@@ -23,9 +23,6 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPost("score-update")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Trigger live score update",
         Description = "Fetches latest scores from the external football API and updates in-progress matches. Called every minute by cron job.")]
@@ -40,9 +37,6 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPost("sync")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Sync season data",
         Description = "Synchronises all active seasons with the external football API. Updates match schedules, team data, and round information. Called daily.")]
@@ -57,8 +51,6 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPost("send-reminders")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [SwaggerOperation(
         Summary = "Send prediction reminders",
         Description = "Sends email reminders to users who haven't submitted predictions for upcoming round deadlines. Called every 30 minutes.")]
@@ -73,8 +65,6 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPost("publish-upcoming-rounds")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [SwaggerOperation(
         Summary = "Publish upcoming rounds",
         Description = "Automatically publishes draft rounds that are ready to be made visible to users. Called daily.")]
@@ -89,8 +79,6 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPost("recalculate-season-stats/{seasonId:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [SwaggerOperation(
         Summary = "Recalculate season statistics",
         Description = "Recalculates all leaderboards, points, and statistics for the specified season. Use after manual score corrections.")]

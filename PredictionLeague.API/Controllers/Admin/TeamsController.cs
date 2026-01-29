@@ -25,8 +25,6 @@ public class TeamsController : ApiControllerBase
     #region Create
 
     [HttpPost("create")]
-    [ProducesResponseType(typeof(TeamDto), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerOperation(
         Summary = "Create a new team",
         Description = "Creates a new football team with name, logo, and external API linkage.")]
@@ -56,7 +54,6 @@ public class TeamsController : ApiControllerBase
     #region Read
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<TeamDto>), StatusCodes.Status200OK)]
     [SwaggerOperation(
         Summary = "Get all teams",
         Description = "Returns all football teams in the system.")]
@@ -70,8 +67,6 @@ public class TeamsController : ApiControllerBase
     }
 
     [HttpGet("{teamId:int}")]
-    [ProducesResponseType(typeof(TeamDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Get team by ID",
         Description = "Returns details of a specific team including logo URL and API linkage.")]
@@ -97,9 +92,6 @@ public class TeamsController : ApiControllerBase
     #region Update
 
     [HttpPut("{teamId:int}/update")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerOperation(
         Summary = "Update team details",
         Description = "Updates an existing team's information including name, logo, and abbreviation.")]
