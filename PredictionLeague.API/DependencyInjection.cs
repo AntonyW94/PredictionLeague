@@ -1,6 +1,5 @@
 ﻿using System.Threading.RateLimiting;
 using FluentValidation;
-using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -71,7 +70,6 @@ public static class DependencyInjection
         private void AddApplicationServices(IConfiguration configuration)
         {
             services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
-            services.AddFluentValidationAutoValidation();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
 

@@ -13,14 +13,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 34 | Fixes implemented and verified |
-| Deferred | 4 | Require login system changes or architectural decisions |
+| Completed | 33 | Fixes implemented and verified |
+| Deferred | 5 | Require login system changes or architectural decisions |
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
 | P1 - High | 0 | Fix this sprint - significant security impact |
 | P2 - Medium | 0 | Fix soon - defence in depth |
 | Low | 1 | Minor improvements and housekeeping |
 
-**Total Findings:** 39 (34 completed, 4 deferred, 1 outstanding)
+**Total Findings:** 39 (33 completed, 5 deferred, 1 outstanding)
 
 ---
 
@@ -62,7 +62,6 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] Email Enumeration via Registration - [24-email-enumeration.md](./completed/24-email-enumeration.md)
 - [x] Entry Code Character Validation - [27-entry-code-validation.md](./completed/27-entry-code-validation.md)
 - [x] Football API Response Handling - [28-football-api-handling.md](./completed/28-football-api-handling.md)
-- [x] Server-Side Validation Gap - [26-server-validation-gap.md](./completed/26-server-validation-gap.md)
 - [x] X-XSS-Protection Header (kept for backwards compatibility - no action needed)
 - [x] Exception Messages (accepted - detailed messages aid UX and support, all logged to Datadog) - see [accepted-risks.md](./accepted-risks.md)
 - [x] User IDs in DTOs (accepted - GUIDs non-sequential, required for Blazor state management) - see [accepted-risks.md](./accepted-risks.md)
@@ -77,6 +76,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 - Access tokens in localStorage (Blazor WASM) - [16-localstorage-tokens.md](./later/16-localstorage-tokens.md)
 - Open Redirect Vulnerability - [02-open-redirect.md](./later/02-open-redirect.md)
 - JWT Security Hardening (SameSite cookies, ClockSkew, Algorithm whitelist) - [12-jwt-security-hardening.md](./later/12-jwt-security-hardening.md)
+- Server-Side Validation Gap (FluentValidation.AspNetCore deprecated) - [26-server-validation-gap.md](./later/26-server-validation-gap.md)
 
 ---
 
@@ -119,7 +119,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 - [x] Upgrade outdated NuGet packages (.NET 10, JWT 8.15.0)
 
 ### Phase 3: Medium Priority (Next Sprint)
-- [x] Align validators with Commands/Queries OR add ASP.NET Core auto-validation
+- [ ] ~~Align validators with Commands/Queries OR add ASP.NET Core auto-validation~~ (Deferred - FluentValidation.AspNetCore deprecated)
 - [x] Add alphanumeric validation to entry codes
 - [x] Add Football API response validation
 
