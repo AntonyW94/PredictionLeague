@@ -13,14 +13,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 33 | Fixes implemented and verified |
+| Completed | 34 | Fixes implemented and verified |
 | Deferred | 5 | Require login system changes or architectural decisions |
 | P0 - Critical | 0 | Fix immediately - active exploitation risk |
 | P1 - High | 0 | Fix this sprint - significant security impact |
 | P2 - Medium | 0 | Fix soon - defence in depth |
-| Low | 1 | Minor improvements and housekeeping |
+| Low | 0 | Minor improvements and housekeeping |
 
-**Total Findings:** 39 (33 completed, 5 deferred, 1 outstanding)
+**Total Findings:** 39 (34 completed, 5 deferred, 0 outstanding)
 
 ---
 
@@ -65,6 +65,7 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] X-XSS-Protection Header (kept for backwards compatibility - no action needed)
 - [x] Exception Messages (accepted - detailed messages aid UX and support, all logged to Datadog) - see [accepted-risks.md](./accepted-risks.md)
 - [x] User IDs in DTOs (accepted - GUIDs non-sequential, required for Blazor state management) - see [accepted-risks.md](./accepted-risks.md)
+- [x] Legacy Package References Removed - [29-remove-legacy-package-references.md](./completed/29-remove-legacy-package-references.md)
 
 ## Intentionally Deferred
 
@@ -100,11 +101,7 @@ The following issues have been deferred due to mobile browser cookie compatibili
 
 ## Low Priority
 
-### 1. Remove Legacy Package References (Housekeeping)
-- **Files:** `Web.Client.csproj`, `Application.csproj`
-- **Issue:** Legacy `Microsoft.AspNetCore.Identity` and `Authentication.Abstractions` packages (2.3.9) remain but are provided by .NET 10 shared framework.
-- **Impact:** None (at latest version, functionality duplicated by framework).
-- **Plan:** [29-remove-legacy-package-references.md](./29-remove-legacy-package-references.md)
+*No outstanding Low priority issues.*
 
 ---
 
@@ -127,7 +124,6 @@ The following issues have been deferred due to mobile browser cookie compatibili
 Remaining ongoing activities:
 1. Dependency updates (monitor for new versions)
 2. Security monitoring
-3. Address low priority items
 
 ---
 
