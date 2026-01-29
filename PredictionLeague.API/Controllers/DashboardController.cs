@@ -64,7 +64,7 @@ public class DashboardController : ApiControllerBase
         Description = "Returns whether any private leagues are available for the current season. Used to show/hide the 'Join Private League' option.")]
     [SwaggerResponse(200, "Returns boolean indicating private league availability", typeof(bool))]
     [SwaggerResponse(401, "Not authenticated")]
-    public async Task<IActionResult> CheckForAvailablePrivateLeagues(CancellationToken cancellationToken)
+    public async Task<IActionResult> CheckForAvailablePrivateLeaguesAsync(CancellationToken cancellationToken)
     {
         var query = new CheckForAvailablePrivateLeaguesQuery(CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
@@ -76,7 +76,7 @@ public class DashboardController : ApiControllerBase
         Description = "Returns the user's position and points across all their leagues. Used for the dashboard leaderboard summary widget.")]
     [SwaggerResponse(200, "Leaderboard summaries retrieved successfully", typeof(IEnumerable<LeagueLeaderboardDto>))]
     [SwaggerResponse(401, "Not authenticated")]
-    public async Task<IActionResult> GetLeaderboards(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetLeaderboardsAsync(CancellationToken cancellationToken)
     {
         var query = new GetLeaderboardsQuery(CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
@@ -88,7 +88,7 @@ public class DashboardController : ApiControllerBase
         Description = "Returns pending membership requests for leagues the current user administers. Used to show notification badges.")]
     [SwaggerResponse(200, "Pending requests retrieved successfully", typeof(IEnumerable<LeagueRequestDto>))]
     [SwaggerResponse(401, "Not authenticated")]
-    public async Task<ActionResult<IEnumerable<LeagueRequestDto>>> GetPendingRequests(CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<LeagueRequestDto>>> GetPendingRequestsAsync(CancellationToken cancellationToken)
     {
         var query = new GetPendingRequestsQuery(CurrentUserId);
         var result = await _mediator.Send(query, cancellationToken);

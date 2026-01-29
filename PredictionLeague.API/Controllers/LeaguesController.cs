@@ -6,7 +6,6 @@ using PredictionLeague.Application.Features.Leagues.Queries;
 using PredictionLeague.Contracts.Admin.Rounds;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
-using PredictionLeague.Domain.Common.Constants;
 using PredictionLeague.Domain.Common.Enumerations;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -62,7 +61,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(401, "Not authenticated")]
     public async Task<ActionResult<ManageLeaguesDto>> GetManageLeaguesAsync(CancellationToken cancellationToken)
     {
-        var isAdmin = User.IsInRole(RoleNames.Administrator);
+        var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
         var query = new GetManageLeaguesQuery(CurrentUserId, isAdmin);
 
         return Ok(await _mediator.Send(query, cancellationToken));
@@ -193,7 +192,7 @@ public class LeaguesController : ApiControllerBase
         [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
-        var isAdmin = User.IsInRole(RoleNames.Administrator);
+        var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
         var query = new GetLeagueDashboardQuery(leagueId, CurrentUserId, isAdmin);
         var result = await _mediator.Send(query, cancellationToken);
 
@@ -229,7 +228,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
-    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboard(
+    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetOverallLeaderboardAsync(
         [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
@@ -264,7 +263,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League not found")]
-    public async Task<ActionResult<ExactScoresLeaderboardDto>> GetExactScoresLeaderboard(
+    public async Task<ActionResult<ExactScoresLeaderboardDto>> GetExactScoresLeaderboardAsync(
         [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
@@ -408,7 +407,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(400, "No pending request found")]
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(404, "League not found")]
-    public async Task<IActionResult> CancelJoinRequest(
+    public async Task<IActionResult> CancelJoinRequestAsync(
         [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
@@ -426,7 +425,7 @@ public class LeaguesController : ApiControllerBase
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(403, "Not a member of this league")]
     [SwaggerResponse(404, "League or alert not found")]
-    public async Task<IActionResult> DismissAlert(
+    public async Task<IActionResult> DismissAlertAsync(
         [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
@@ -453,7 +452,7 @@ public class LeaguesController : ApiControllerBase
         [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
-        var isAdmin = User.IsInRole(RoleNames.Administrator);
+        var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
 
         var command = new DeleteLeagueCommand(leagueId, CurrentUserId, isAdmin);
         await _mediator.Send(command, cancellationToken);

@@ -29,7 +29,7 @@ public class BoostsController : ApiControllerBase
         Description = "Returns boosts available to the user for the specified league and round. Includes remaining usage counts and eligibility status.")]
     [SwaggerResponse(200, "Available boosts retrieved successfully", typeof(IEnumerable<AvailableBoostDto>))]
     [SwaggerResponse(401, "Not authenticated")]
-    public async Task<IActionResult> GetAvailable(
+    public async Task<IActionResult> GetAvailableAsync(
         [FromQuery, SwaggerParameter("League identifier", Required = true)] int leagueId,
         [FromQuery, SwaggerParameter("Round identifier", Required = true)] int roundId,
         CancellationToken cancellationToken)
@@ -47,7 +47,7 @@ public class BoostsController : ApiControllerBase
     [SwaggerResponse(200, "Boost applied successfully", typeof(ApplyBoostResultDto))]
     [SwaggerResponse(400, "Boost not available or already used")]
     [SwaggerResponse(401, "Not authenticated")]
-    public async Task<ActionResult<ApplyBoostResultDto>> Apply(
+    public async Task<ActionResult<ApplyBoostResultDto>> ApplyAsync(
         [FromBody, SwaggerParameter("Boost application details", Required = true)] ApplyBoostRequest req,
         CancellationToken cancellationToken)
     {
@@ -64,7 +64,7 @@ public class BoostsController : ApiControllerBase
         Description = "Removes a previously applied boost from the user's predictions for a specific league and round. The boost usage is restored.")]
     [SwaggerResponse(204, "Boost removed successfully")]
     [SwaggerResponse(401, "Not authenticated")]
-    public async Task<IActionResult> DeleteUserBoostUsage(
+    public async Task<IActionResult> DeleteUserBoostUsageAsync(
         [FromQuery, SwaggerParameter("League identifier", Required = true)] int leagueId,
         [FromQuery, SwaggerParameter("Round identifier", Required = true)] int roundId,
         CancellationToken cancellationToken)
