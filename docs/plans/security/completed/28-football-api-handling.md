@@ -1,5 +1,14 @@
 # P2: Football API Response Handling
 
+## Status: COMPLETED
+
+**Completed:** January 27, 2026
+**Resolution:**
+- Added ILogger to FootballDataService with warning logs for null/empty API responses
+- Added null safety checks for Teams.Home and Teams.Away in SyncSeasonWithApiCommandHandler
+
+---
+
 ## Summary
 
 **Severity:** P2 - Medium

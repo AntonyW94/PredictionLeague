@@ -13,14 +13,14 @@ This document outlines the security vulnerabilities identified in the Prediction
 
 | Priority | Count | Description |
 |----------|-------|-------------|
-| Completed | 24 | Fixes implemented and verified |
-| Deferred | 4 | Require login system changes or architectural decisions |
-| P0 - Critical | 1 | Fix immediately - active exploitation risk |
-| P1 - High | 3 | Fix this sprint - significant security impact |
-| P2 - Medium | 3 | Fix soon - defence in depth |
-| Low | 3 | Minor improvements |
+| Completed | 33 | Fixes implemented and verified |
+| Deferred | 5 | Require login system changes or architectural decisions |
+| P0 - Critical | 0 | Fix immediately - active exploitation risk |
+| P1 - High | 0 | Fix this sprint - significant security impact |
+| P2 - Medium | 0 | Fix soon - defence in depth |
+| Low | 1 | Minor improvements and housekeeping |
 
-**Total Findings:** 38 (24 completed, 4 deferred, 10 new from Jan 27 audit)
+**Total Findings:** 39 (33 completed, 5 deferred, 1 outstanding)
 
 ---
 
@@ -56,120 +56,72 @@ This document outlines the security vulnerabilities identified in the Prediction
 - [x] Lock Scoring Configuration (secured by design - scoring values immutable after creation)
 - [x] ShortName Validation (added to BaseTeamRequestValidator)
 - [x] Season Name Character Validation (added SafeNameValidationExtensions)
+- [x] Rate Limiting Middleware Enabled - [22-rate-limiting-middleware.md](./completed/22-rate-limiting-middleware.md)
+- [x] Outdated Packages Updated (.NET 10, JWT 8.15.0, framework packages 10.0.2) - [25-outdated-packages.md](./completed/25-outdated-packages.md)
+- [x] IDOR: Round Results Access - [23-idor-round-results.md](./completed/23-idor-round-results.md)
+- [x] Email Enumeration via Registration - [24-email-enumeration.md](./completed/24-email-enumeration.md)
+- [x] Entry Code Character Validation - [27-entry-code-validation.md](./completed/27-entry-code-validation.md)
+- [x] Football API Response Handling - [28-football-api-handling.md](./completed/28-football-api-handling.md)
+- [x] X-XSS-Protection Header (kept for backwards compatibility - no action needed)
+- [x] Exception Messages (accepted - detailed messages aid UX and support, all logged to Datadog) - see [accepted-risks.md](./accepted-risks.md)
+- [x] User IDs in DTOs (accepted - GUIDs non-sequential, required for Blazor state management) - see [accepted-risks.md](./accepted-risks.md)
 
 ## Intentionally Deferred
 
 **Deferred plans moved to:** [`./later/`](./later/)
 
 The following issues have been deferred due to mobile browser cookie compatibility constraints, architectural decisions, or require login system changes:
-- Refresh tokens in URLs (ExternalAuthController) - mobile browser compatibility
-- Access tokens in localStorage (Blazor WASM architectural decision) - XSS risk mitigated by CSP
-- SameSite=None on Refresh Token Cookies - required for cross-site authentication flow
-- JWT ClockSkew and Algorithm Whitelist - requires careful testing with production auth flows
+
+- Refresh tokens in URLs (ExternalAuthController) - [15-refresh-tokens-in-urls.md](./later/15-refresh-tokens-in-urls.md)
+- Access tokens in localStorage (Blazor WASM) - [16-localstorage-tokens.md](./later/16-localstorage-tokens.md)
 - Open Redirect Vulnerability - [02-open-redirect.md](./later/02-open-redirect.md)
-- JWT Security Hardening - [12-jwt-security-hardening.md](./later/12-jwt-security-hardening.md)
+- JWT Security Hardening (SameSite cookies, ClockSkew, Algorithm whitelist) - [12-jwt-security-hardening.md](./later/12-jwt-security-hardening.md)
+- Server-Side Validation Gap (FluentValidation.AspNetCore deprecated) - [26-server-validation-gap.md](./later/26-server-validation-gap.md)
 
 ---
 
 ## P0 - Critical
 
-### 1. Rate Limiting Middleware Not Enabled
-- **File:** `PredictionLeague.Web/PredictionLeague.Web/Program.cs`
-- **Issue:** Rate limiting is configured in `DependencyInjection.cs` with well-defined policies (100/min global, 10/5min for auth, 60/min for API), but `app.UseRateLimiter()` is **never called** in the middleware pipeline.
-- **Impact:** All authentication endpoints are vulnerable to brute-force attacks. The `[EnableRateLimiting("auth")]` attributes on controllers have no effect.
-- **Exploitation:** Unlimited login attempts, credential stuffing, account enumeration attacks.
-- **Plan:** [22-rate-limiting-middleware.md](./22-rate-limiting-middleware.md)
+*No outstanding P0 issues.*
 
 ---
 
 ## P1 - High
 
-### 1. IDOR in League Dashboard Round Results
-- **File:** `PredictionLeague.Application/Features/Leagues/Queries/GetLeagueDashboardRoundResultsQueryHandler.cs`
-- **Issue:** Query returns predictions for any league/round without validating the requesting user is a member of the league.
-- **Impact:** Any authenticated user can view predictions for leagues they don't belong to, gaining competitive intelligence.
-- **Exploitation:** `GET /api/leagues/{anyLeagueId}/rounds/{roundId}/results` returns all player predictions.
-- **Plan:** [23-idor-round-results.md](./23-idor-round-results.md)
-
-### 2. User Enumeration via Registration
-- **File:** `PredictionLeague.Application/Features/Authentication/Commands/Register/RegisterCommandHandler.cs` (line 24)
-- **Issue:** Registration endpoint returns "User with this email already exists" for existing emails, enabling email enumeration.
-- **Impact:** Attackers can build a list of valid user email addresses for targeted attacks.
-- **Exploitation:** Iterate through email addresses and observe error message differences.
-- **Plan:** [24-email-enumeration.md](./24-email-enumeration.md)
-
-### 3. Outdated Security-Critical Packages
-- **Files:** Multiple `.csproj` files
-- **Issue:** Critical packages are severely outdated:
-  - `Microsoft.AspNetCore.Identity` 2.3.1 (from .NET Core 2.1 era, ~2018)
-  - `Microsoft.AspNetCore.Authentication.Abstractions` 2.3.0 (from .NET Core 2.1)
-  - `System.IdentityModel.Tokens.Jwt` 7.5.0/7.7.1 (should be 8.0+)
-- **Impact:** Missing years of security patches for authentication/identity components.
-- **Plan:** [25-outdated-packages.md](./25-outdated-packages.md)
+*No outstanding P1 issues.*
 
 ---
 
 ## P2 - Medium
 
-### 1. Server-Side Validation Gap
-- **Files:** `PredictionLeague.API/DependencyInjection.cs`, `PredictionLeague.Validators/`
-- **Issue:** FluentValidation validators are defined for Request DTOs (e.g., `LoginRequest`), but MediatR's `ValidationBehaviour` looks for validators matching Command/Query types (e.g., `LoginCommand`). No validators exist for Commands/Queries.
-- **Impact:** Server-side validation is bypassed for direct API calls. Client-side (Blazor) validation still works but can be bypassed by attackers.
-- **Mitigation:** Already mitigated by:
-  - Client-side FluentValidation in Blazor forms
-  - Domain model guards (Ardalis.GuardClauses)
-  - Database constraints
-- **Plan:** [26-server-validation-gap.md](./26-server-validation-gap.md)
-
-### 2. Entry Code Character Validation Missing
-- **File:** `PredictionLeague.Validators/Leagues/JoinLeagueRequestValidator.cs` (lines 12-14)
-- **Issue:** Entry codes only validate length (6 characters), not that they are alphanumeric.
-- **Impact:** Allows special characters, unicode, or injection attempts in entry codes.
-- **Plan:** [27-entry-code-validation.md](./27-entry-code-validation.md)
-
-### 3. Football API Response Handling
-- **Files:**
-  - `PredictionLeague.Infrastructure/Services/FootballDataService.cs`
-  - `PredictionLeague.Application/Features/Admin/Seasons/Commands/SyncSeasonWithApiCommandHandler.cs`
-- **Issue:** API responses deserialized without explicit validation; potential null reference issues.
-- **Impact:** Service disruption if API changes response structure or returns unexpected data.
-- **Plan:** [28-football-api-handling.md](./28-football-api-handling.md)
+*No outstanding P2 issues.*
 
 ---
 
 ## Low Priority
 
-### 1. Exception Messages Reveal Implementation Details
-- **File:** `PredictionLeague.API/Middleware/ErrorHandlingMiddleware.cs`
-- **Issue:** Raw exception messages are returned for `KeyNotFoundException`, `ArgumentException`, `InvalidOperationException`.
-- **Impact:** Information disclosure about business logic and system state.
-
-### 2. User IDs Exposed in Public DTOs
-- **Files:** Multiple DTOs in `PredictionLeague.Contracts/`
-- **Issue:** Internal user IDs (GUIDs) exposed in leaderboard and prediction response DTOs.
-- **Impact:** Enables user enumeration and potential targeting of specific users.
-
-### 3. Deprecated X-XSS-Protection Header
-- **File:** `PredictionLeague.API/Middleware/SecurityHeadersMiddleware.cs`
-- **Issue:** `X-XSS-Protection` header included for backwards compatibility but deprecated in modern browsers.
-- **Impact:** None (included for older browser support).
+### 1. Remove Legacy Package References (Housekeeping)
+- **Files:** `Web.Client.csproj`, `Application.csproj`
+- **Issue:** Legacy `Microsoft.AspNetCore.Identity` and `Authentication.Abstractions` packages (2.3.9) remain but are provided by .NET 10 shared framework.
+- **Impact:** None (at latest version, functionality duplicated by framework).
+- **Plan:** [29-remove-legacy-package-references.md](./29-remove-legacy-package-references.md)
 
 ---
 
 ## Implementation Order
 
 ### Phase 1: Critical (Immediate)
-- [ ] Add `app.UseRateLimiter()` to middleware pipeline
+- [x] Add `app.UseRateLimiter()` to middleware pipeline
 
 ### Phase 2: High Priority (This Sprint)
-- [ ] Add membership validation to GetLeagueDashboardRoundResultsQuery
-- [ ] Return generic error message for registration
-- [ ] Upgrade outdated NuGet packages
+- [x] Add membership validation to GetLeagueDashboardRoundResultsQuery
+- [x] Return generic error message for registration
+- [x] Upgrade outdated NuGet packages (.NET 10, JWT 8.15.0)
 
 ### Phase 3: Medium Priority (Next Sprint)
-- [ ] Align validators with Commands/Queries OR add ASP.NET Core auto-validation
-- [ ] Add alphanumeric validation to entry codes
-- [ ] Add Football API response validation
+- [ ] ~~Align validators with Commands/Queries OR add ASP.NET Core auto-validation~~ (Deferred - FluentValidation.AspNetCore deprecated)
+- [x] Add alphanumeric validation to entry codes
+- [x] Add Football API response validation
 
 ### Phase 4: Ongoing
 Remaining ongoing activities:
@@ -184,7 +136,7 @@ Remaining ongoing activities:
 The following are properly implemented:
 
 - SQL Injection Prevention (parameterised Dapper queries)
-- Rate Limiting Configuration (tiered policies configured - **needs middleware enabled**)
+- Rate Limiting (tiered policies: 100/min global, 10/5min auth, 60/min API)
 - Security Headers (CSP, X-Frame-Options, HSTS, etc.)
 - API Key Protection (constant-time comparison)
 - Role-Based Authorization (admin endpoints)
