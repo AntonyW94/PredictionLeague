@@ -23,20 +23,24 @@ public class FetchAllLeaguesQueryHandler : IRequestHandler<FetchAllLeaguesQuery,
                 COUNT(lm.[UserId]) AS MemberCount,
                 l.[Price],
                 ISNULL(l.[EntryCode], 'Public') AS EntryCode,
-                l.[EntryDeadlineUtc]
-            FROM 
+                l.[EntryDeadlineUtc],
+                l.[PointsForExactScore],
+                l.[PointsForCorrectResult]
+            FROM
                 [Leagues] l
-            JOIN 
+            JOIN
                 [Seasons] s ON l.[SeasonId] = s.[Id]
-            LEFT JOIN 
+            LEFT JOIN
                 [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
             GROUP BY
                 l.[Id],
                 l.[Name],
                 s.[Name],
-                l.[Price],  
+                l.[Price],
                 ISNULL(l.[EntryCode], 'Public'),
                 l.[EntryDeadlineUtc],
+                l.[PointsForExactScore],
+                l.[PointsForCorrectResult],
                 s.[StartDateUtc]
             ORDER BY
                 s.[StartDateUtc] DESC,
