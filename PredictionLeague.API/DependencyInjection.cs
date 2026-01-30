@@ -32,28 +32,28 @@ public static class DependencyInjection
                 {
                     Version = "v1",
                     Title = "PredictionLeague API",
-                    Description = @"
-                                    ## Overview
-                                    API for the PredictionLeague football prediction platform. Allows users to create leagues,
-                                    submit match predictions, track leaderboards, and manage prizes.
+                    Description = """
+                        ## Overview
+                        API for the PredictionLeague football prediction platform. Allows users to create leagues,
+                        submit match predictions, track leaderboards, and manage prizes.
 
-                                    ## Authentication
-                                    Most endpoints require JWT Bearer authentication. Include the token in the Authorization header:
-                                    ```
-                                    Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
-                                    ```
+                        ## Authentication
+                        Most endpoints require JWT Bearer authentication. Include the token in the Authorization header:
+                        ```
+                        Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+                        ```
 
-                                    To obtain a token, use the `/api/auth/login` or `/api/auth/register` endpoints.
+                        To obtain a token, use the `/api/auth/login` or `/api/auth/register` endpoints.
 
-                                    ## Scheduled Tasks
-                                    Endpoints under `/api/tasks/` require API Key authentication via the `X-Api-Key` header.
-                                    These are intended for scheduled jobs (cron) and should not be called directly by users.
+                        ## Scheduled Tasks
+                        Endpoints under `/api/tasks/` require API Key authentication via the `X-Api-Key` header.
+                        These are intended for scheduled jobs (cron) and should not be called directly by users.
 
-                                    ## Rate Limiting
-                                    - **Global:** 100 requests per minute per IP
-                                    - **Auth endpoints:** 10 requests per 5 minutes per IP
-                                    - **API endpoints:** 60 requests per minute per IP
-                                    ",
+                        ## Rate Limiting
+                        - **Global:** 100 requests per minute per IP
+                        - **Auth endpoints:** 10 requests per 5 minutes per IP
+                        - **API endpoints:** 60 requests per minute per IP
+                        """,
                     Contact = new OpenApiContact
                     {
                         Name = "PredictionLeague Support",
@@ -88,15 +88,17 @@ public static class DependencyInjection
                 options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
-                    Description = @"JWT Bearer token authentication.
+                    Description = """
+                        JWT Bearer token authentication.
 
-                                    **How to authenticate:**
-                                    1. Call `/api/auth/login` with your credentials
-                                    2. Copy the `accessToken` from the response
-                                    3. Click 'Authorize' and paste the token (without 'Bearer ' prefix)
-                                    4. Click 'Authorize' to apply
+                        **How to authenticate:**
+                        1. Call `/api/auth/login` with your credentials
+                        2. Copy the `accessToken` from the response
+                        3. Click 'Authorize' and paste the token (without 'Bearer ' prefix)
+                        4. Click 'Authorize' to apply
 
-                                    Token expires after 15 minutes. Use `/api/auth/refresh-token` to obtain a new token.",
+                        Token expires after 15 minutes. Use `/api/auth/refresh-token` to obtain a new token.
+                        """,
                     Type = SecuritySchemeType.Http,
                     Scheme = "bearer",
                     BearerFormat = "JWT",
@@ -121,15 +123,17 @@ public static class DependencyInjection
                 options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
                 {
                     Name = "X-Api-Key",
-                    Description = @"API Key authentication for scheduled task endpoints.
+                    Description = """
+                        API Key authentication for scheduled task endpoints.
 
-                                    **Usage:**
-                                    This is used by cron jobs to trigger scheduled tasks like:
-                                    - Score updates from football API
-                                    - Email reminders
-                                    - Data synchronization
+                        **Usage:**
+                        This is used by cron jobs to trigger scheduled tasks like:
+                        - Score updates from football API
+                        - Email reminders
+                        - Data synchronisation
 
-                                    Regular users should not need to use these endpoints.",
+                        Regular users should not need to use these endpoints.
+                        """,
                     Type = SecuritySchemeType.ApiKey,
                     In = ParameterLocation.Header,
                     Scheme = "ApiKeyScheme"
