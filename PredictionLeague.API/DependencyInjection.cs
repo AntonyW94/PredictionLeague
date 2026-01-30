@@ -113,7 +113,7 @@ Token expires after 15 minutes. Use `/api/auth/refresh-token` to obtain a new to
                         {
                             Reference = new OpenApiReference
                             {
-                                Type = ReferenceType.SecurityScheme,
+                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
                                 Id = "Bearer"
                             }
                         },
