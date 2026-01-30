@@ -7,12 +7,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using PredictionLeague.Application.Features.Authentication.Commands.LoginWithGoogle;
 using PredictionLeague.Contracts.Authentication;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Net;
 
 namespace PredictionLeague.API.Controllers;
 
 [Route("external-auth")]
 [EnableRateLimiting("auth")]
+[SwaggerTag("Authentication - OAuth login with Google")]
 public class ExternalAuthController : AuthControllerBase
 {
     private readonly ILogger<ExternalAuthController> _logger;
@@ -26,7 +28,13 @@ public class ExternalAuthController : AuthControllerBase
 
     [HttpGet("google-login")]
     [AllowAnonymous]
-    public IActionResult GoogleLogin([FromQuery] string returnUrl, [FromQuery] string source)
+    [SwaggerOperation(
+        Summary = "Initiate Google OAuth login",
+        Description = "Redirects to Google's OAuth consent screen. After authentication, Google redirects back to the callback endpoint which then redirects to the client application with tokens.")]
+    [SwaggerResponse(302, "Redirect to Google OAuth")]
+    public IActionResult GoogleLogin(
+        [FromQuery, SwaggerParameter("URL to redirect to after authentication completes")] string returnUrl,
+        [FromQuery, SwaggerParameter("Source page for error redirects")] string source)
     {
         _logger.LogInformation("Called google-login");
 
@@ -50,7 +58,12 @@ public class ExternalAuthController : AuthControllerBase
 
     [HttpGet("signin-google")]
     [AllowAnonymous]
-    public async Task<IActionResult> GoogleCallback(CancellationToken cancellationToken)
+    [SwaggerOperation(
+        Summary = "Google OAuth callback (internal)",
+        Description = "Callback endpoint for Google OAuth. Processes the authentication response, creates/updates user account, generates tokens, and redirects to the client application. Not intended to be called directly.")]
+    [SwaggerResponse(302, "Redirect to client application with tokens")]
+    [SwaggerResponse(400, "OAuth authentication failed")]
+    public async Task<IActionResult> GoogleCallbackAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Called signin-google");
 

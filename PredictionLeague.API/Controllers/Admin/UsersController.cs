@@ -4,13 +4,15 @@ using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Admin.Users.Commands;
 using PredictionLeague.Application.Features.Admin.Users.Queries;
 using PredictionLeague.Contracts.Admin.Users;
-using PredictionLeague.Domain.Common.Constants;
+using PredictionLeague.Domain.Common.Enumerations;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace PredictionLeague.API.Controllers.Admin;
 
-[Authorize(Roles = RoleNames.Administrator)]
+[Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
 [ApiController]
 [Route("api/admin/[controller]")]
+[SwaggerTag("Admin: Users - Manage user accounts and roles (Admin only)")]
 public class UsersController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -23,7 +25,12 @@ public class UsersController : ApiControllerBase
     #region Read
 
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<UserDto>), StatusCodes.Status200OK)]
+    [SwaggerOperation(
+        Summary = "Get all users",
+        Description = "Returns all registered users with their profile information and roles.")]
+    [SwaggerResponse(200, "Users retrieved successfully", typeof(IEnumerable<UserDto>))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetAllAsync(CancellationToken cancellationToken)
     {
         var query = new GetAllUsersQuery();
@@ -31,8 +38,15 @@ public class UsersController : ApiControllerBase
     }
 
     [HttpGet("{userId}/owns-leagues")]
-    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
-    public async Task<ActionResult<bool>> UserOwnsLeaguesAsync(string userId, CancellationToken cancellationToken)
+    [SwaggerOperation(
+        Summary = "Check if user owns leagues",
+        Description = "Returns whether the user is an administrator of any leagues. Used to determine if league ownership must be transferred before account deletion.")]
+    [SwaggerResponse(200, "Returns boolean indicating league ownership", typeof(bool))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    public async Task<ActionResult<bool>> UserOwnsLeaguesAsync(
+        [SwaggerParameter("User identifier")] string userId,
+        CancellationToken cancellationToken)
     {
         var query = new UserOwnsLeaguesQuery(userId);
         return Ok(await _mediator.Send(query, cancellationToken));
@@ -43,9 +57,17 @@ public class UsersController : ApiControllerBase
     #region Update
 
     [HttpPost("{userId}/role")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateRoleAsync(string userId, [FromBody] UpdateUserRoleRequest request, CancellationToken cancellationToken)
+    [SwaggerOperation(
+        Summary = "Update user role",
+        Description = "Changes a user's role (e.g., promote to Administrator or demote to User).")]
+    [SwaggerResponse(204, "Role updated successfully")]
+    [SwaggerResponse(400, "Invalid role specified")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    public async Task<IActionResult> UpdateRoleAsync(
+        [SwaggerParameter("User identifier")] string userId,
+        [FromBody, SwaggerParameter("New role assignment", Required = true)] UpdateUserRoleRequest request,
+        CancellationToken cancellationToken)
     {
         var command = new UpdateUserRoleCommand(userId, request.NewRole);
         await _mediator.Send(command, cancellationToken);
@@ -57,10 +79,18 @@ public class UsersController : ApiControllerBase
     #region Delete
 
     [HttpPost("{userId}/delete")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> DeleteAsync(string userId, [FromBody] DeleteUserRequest request, CancellationToken cancellationToken)
+    [SwaggerOperation(
+        Summary = "Delete user account",
+        Description = "Permanently deletes a user account. If the user owns leagues, a new administrator must be specified to take over ownership.")]
+    [SwaggerResponse(204, "User deleted successfully")]
+    [SwaggerResponse(400, "User owns leagues and no new administrator specified")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    [SwaggerResponse(404, "User not found")]
+    public async Task<IActionResult> DeleteAsync(
+        [SwaggerParameter("User identifier")] string userId,
+        [FromBody, SwaggerParameter("Deletion options including optional new league administrator", Required = true)] DeleteUserRequest request,
+        CancellationToken cancellationToken)
     {
         var command = new DeleteUserCommand(
             userId,

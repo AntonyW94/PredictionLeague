@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using PredictionLeague.API.Filters;
 using PredictionLeague.Application.Features.Admin.Rounds.Commands;
 using PredictionLeague.Application.Features.Admin.Seasons.Commands;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace PredictionLeague.API.Controllers;
 
@@ -11,6 +12,7 @@ namespace PredictionLeague.API.Controllers;
 [ApiController]
 [ApiKeyAuthorise]
 [DisableRateLimiting]
+[SwaggerTag("Scheduled Tasks - Automated background jobs (API key required)")]
 public class TasksController : ApiControllerBase
 {
     private readonly IMediator _mediator;
@@ -21,10 +23,12 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPost("score-update")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> TriggerLiveScoreUpdate(CancellationToken cancellationToken)
+    [SwaggerOperation(
+        Summary = "Trigger live score update",
+        Description = "Fetches latest scores from the external football API and updates in-progress matches. Called every minute by cron job.")]
+    [SwaggerResponse(204, "Scores updated successfully")]
+    [SwaggerResponse(401, "Invalid or missing API key")]
+    public async Task<IActionResult> TriggerLiveScoreUpdateAsync(CancellationToken cancellationToken)
     {
         var command = new UpdateAllLiveScoresCommand();
         await _mediator.Send(command, cancellationToken);
@@ -33,9 +37,11 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPost("sync")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [SwaggerOperation(
+        Summary = "Sync season data",
+        Description = "Synchronises all active seasons with the external football API. Updates match schedules, team data, and round information. Called daily.")]
+    [SwaggerResponse(204, "Season data synced successfully")]
+    [SwaggerResponse(401, "Invalid or missing API key")]
     public async Task<IActionResult> SyncSeasonsAsync(CancellationToken cancellationToken)
     {
         var command = new SyncAllActiveSeasonsCommand();
@@ -45,19 +51,25 @@ public class TasksController : ApiControllerBase
     }
 
     [HttpPost("send-reminders")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> SendScheduledReminders(CancellationToken cancellationToken)
+    [SwaggerOperation(
+        Summary = "Send prediction reminders",
+        Description = "Sends email reminders to users who haven't submitted predictions for upcoming round deadlines. Called every 30 minutes.")]
+    [SwaggerResponse(204, "Reminders sent successfully")]
+    [SwaggerResponse(401, "Invalid or missing API key")]
+    public async Task<IActionResult> SendScheduledRemindersAsync(CancellationToken cancellationToken)
     {
         var command = new SendScheduledRemindersCommand();
         await _mediator.Send(command, cancellationToken);
-            
+
         return NoContent();
     }
 
     [HttpPost("publish-upcoming-rounds")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [SwaggerOperation(
+        Summary = "Publish upcoming rounds",
+        Description = "Automatically publishes draft rounds that are ready to be made visible to users. Called daily.")]
+    [SwaggerResponse(204, "Rounds published successfully")]
+    [SwaggerResponse(401, "Invalid or missing API key")]
     public async Task<IActionResult> PublishUpcomingRoundsAsync(CancellationToken cancellationToken)
     {
         var command = new PublishUpcomingRoundsCommand();
@@ -65,11 +77,16 @@ public class TasksController : ApiControllerBase
 
         return NoContent();
     }
-    
+
     [HttpPost("recalculate-season-stats/{seasonId:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RecalculateSeasonStats(int seasonId, CancellationToken cancellationToken)
+    [SwaggerOperation(
+        Summary = "Recalculate season statistics",
+        Description = "Recalculates all leaderboards, points, and statistics for the specified season. Use after manual score corrections.")]
+    [SwaggerResponse(204, "Statistics recalculated successfully")]
+    [SwaggerResponse(401, "Invalid or missing API key")]
+    public async Task<IActionResult> RecalculateSeasonStatsAsync(
+        [SwaggerParameter("Season identifier")] int seasonId,
+        CancellationToken cancellationToken)
     {
         var command = new RecalculateSeasonStatsCommand(seasonId);
         await _mediator.Send(command, cancellationToken);
