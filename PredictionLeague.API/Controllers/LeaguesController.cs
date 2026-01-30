@@ -318,6 +318,8 @@ public class LeaguesController : ApiControllerBase
             request.Name,
             request.Price,
             request.EntryDeadlineUtc,
+            request.PointsForExactScore,
+            request.PointsForCorrectResult,
             CurrentUserId);
 
         await _mediator.Send(command, cancellationToken);

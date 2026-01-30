@@ -48,7 +48,9 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
             1,
             createdLeague.Price,
             createdLeague.EntryCode ?? "Public",
-            createdLeague.EntryDeadlineUtc
+            createdLeague.EntryDeadlineUtc,
+            createdLeague.PointsForExactScore,
+            createdLeague.PointsForCorrectResult
         );
     }
 }
