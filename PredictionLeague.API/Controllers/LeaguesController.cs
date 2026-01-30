@@ -42,7 +42,9 @@ public class LeaguesController : ApiControllerBase
             request.SeasonId,
             request.Price,
             CurrentUserId,
-            request.EntryDeadlineUtc);
+            request.EntryDeadlineUtc,
+            request.PointsForExactScore,
+            request.PointsForCorrectResult);
 
         var newLeague = await _mediator.Send(command, cancellationToken);
 

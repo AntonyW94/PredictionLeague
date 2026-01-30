@@ -2,6 +2,7 @@
 using PredictionLeague.Application.Data;
 using PredictionLeague.Contracts.Admin.Seasons;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Common.Constants;
 
 namespace PredictionLeague.Application.Features.Leagues.Queries;
 
@@ -29,7 +30,9 @@ public class GetCreateLeaguePageDataQueryHandler : IRequestHandler<GetCreateLeag
 
         return new CreateLeaguePageData
         {
-            Seasons = seasons.ToList()
+            Seasons = seasons.ToList(),
+            DefaultPointsForExactScore = PublicLeagueSettings.PointsForExactScore,
+            DefaultPointsForCorrectResult = PublicLeagueSettings.PointsForCorrectResult
         };
     }
 }
