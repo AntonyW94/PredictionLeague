@@ -261,17 +261,19 @@ public class LeagueRepository : ILeagueRepository
     public async Task UpdateAsync(League league, CancellationToken cancellationToken)
     {
         const string updateLeagueSql = @"
-            UPDATE 
+            UPDATE
                 [Leagues]
-            SET 
+            SET
                 [Name] = @Name,
                 [Price] = @Price,
                 [EntryCode] = @EntryCode,
                 [EntryDeadlineUtc] = @EntryDeadlineUtc,
+                [PointsForExactScore] = @PointsForExactScore,
+                [PointsForCorrectResult] = @PointsForCorrectResult,
                 [IsFree] = @IsFree,
                 [HasPrizes] = @HasPrizes,
                 [PrizeFundOverride] = @PrizeFundOverride
-            WHERE 
+            WHERE
                 [Id] = @Id;";
 
         var leagueCommand = new CommandDefinition(
