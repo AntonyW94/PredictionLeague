@@ -42,7 +42,7 @@ public class ExternalAuthController : AuthControllerBase
         var safeReturnUrl = GetSafeLocalPath(returnUrl, "/");
         var safeSource = GetSafeLocalPath(source, "/login");
 
-        var callbackUrl = Url.Action("GoogleCallbackAsync");
+        var callbackUrl = Url.Action("GoogleCallback");
         var properties = new AuthenticationProperties
         {
             RedirectUri = callbackUrl,
