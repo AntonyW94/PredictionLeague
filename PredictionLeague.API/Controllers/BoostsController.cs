@@ -27,7 +27,7 @@ public class BoostsController : ApiControllerBase
     [SwaggerOperation(
         Summary = "Get available boosts",
         Description = "Returns boosts available to the user for the specified league and round. Includes remaining usage counts and eligibility status.")]
-    [SwaggerResponse(200, "Available boosts retrieved successfully", typeof(IEnumerable<AvailableBoostDto>))]
+    [SwaggerResponse(200, "Available boosts retrieved successfully", typeof(List<BoostOptionDto>))]
     [SwaggerResponse(401, "Not authenticated")]
     public async Task<IActionResult> GetAvailableAsync(
         [FromQuery, SwaggerParameter("League identifier", Required = true)] int leagueId,
