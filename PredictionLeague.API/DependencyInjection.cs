@@ -31,10 +31,10 @@ public static class DependencyInjection
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Version = "v1",
-                    Title = "PredictionLeague API",
+                    Title = "The Predictions API",
                     Description = """
                         ## Overview
-                        API for the PredictionLeague football prediction platform. Allows users to create leagues,
+                        API for The Predictions football prediction platform. Allows users to create leagues,
                         submit match predictions, track leaderboards, and manage prizes.
 
                         ## Authentication
@@ -56,7 +56,7 @@ public static class DependencyInjection
                         """,
                     Contact = new OpenApiContact
                     {
-                        Name = "PredictionLeague Support",
+                        Name = "The Predictions Support",
                         Email = "support@thepredictions.co.uk",
                         Url = new Uri("https://www.thepredictions.co.uk")
                     },
