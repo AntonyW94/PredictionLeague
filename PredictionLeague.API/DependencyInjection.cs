@@ -103,23 +103,8 @@ Token expires after 15 minutes. Use `/api/auth/refresh-token` to obtain a new to
                     In = ParameterLocation.Header
                 });
 
-                // Apply JWT authentication requirement globally
-                // This makes all endpoints show the padlock icon by default
-                // Individual endpoints can override this with [AllowAnonymous] or custom requirements
-                options.AddSecurityRequirement(new OpenApiSecurityRequirement
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        Array.Empty<string>()
-                    }
-                });
+                // Note: No AddSecurityRequirement needed - Swashbuckle automatically detects
+                // [Authorize] attributes and shows padlock icons on protected endpoints
 
                 // ===========================================
                 // API KEY AUTHENTICATION (for scheduled tasks)
