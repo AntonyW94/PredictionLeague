@@ -7,6 +7,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
         <!-- ReSharper disable once VulnerablePackage -->
         <PackageReference Include="brevo_csharp" Version="1.1.1" />
         <PackageReference Include="Dapper" Version="2.1.66" />
