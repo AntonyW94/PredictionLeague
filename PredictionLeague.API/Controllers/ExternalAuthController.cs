@@ -120,9 +120,10 @@ public class ExternalAuthController : AuthControllerBase
         // Handle full URLs - extract path if host matches
         if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
         {
-            // Check if the URL's host matches our host
-            var requestHost = Request.Host.Host;
-            if (!string.Equals(uri.Host, requestHost, StringComparison.OrdinalIgnoreCase))
+            // Check if the URL's host matches our host (normalise to handle www/non-www mismatch)
+            var requestHost = NormaliseHost(Request.Host.Host);
+            var urlHost = NormaliseHost(uri.Host);
+            if (!string.Equals(urlHost, requestHost, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogWarning("Rejected external redirect URL: {Url}", url);
                 return fallback;
@@ -151,5 +152,15 @@ public class ExternalAuthController : AuthControllerBase
 
         // Block URLs with backslash (/\evil.com in some browsers)
         return !path.Contains('\\');
+    }
+
+    /// <summary>
+    /// Normalises a host by stripping the www. prefix to handle www/non-www mismatches.
+    /// </summary>
+    private static string NormaliseHost(string host)
+    {
+        return host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)
+            ? host[4..]
+            : host;
     }
 }
