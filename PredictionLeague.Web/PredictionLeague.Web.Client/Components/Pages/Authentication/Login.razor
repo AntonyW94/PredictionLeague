@@ -133,7 +133,8 @@
         _errorMessage = null;
 
         var apiBaseUrl = Configuration["ApiBaseUrl"];
-        var returnUrl = NavigationManager.BaseUri + "authentication/external-login-callback";
+        // Use relative path to avoid www/non-www host mismatch issues in URL validation
+        var returnUrl = "/authentication/external-login-callback";
         var googleLoginUrl = $"{apiBaseUrl}/external-auth/google-login?returnUrl={Uri.EscapeDataString(returnUrl)}&source=login";
      
         NavigationManager.NavigateTo(googleLoginUrl, forceLoad: true);
