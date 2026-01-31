@@ -1,6 +1,6 @@
 # PredictionLeague Test Suite Plan
 
-This document outlines the comprehensive testing strategy for the PredictionLeague application.
+This document outlines the comprehensive testing strategy for the PredictionLeague application, including CI/CD integration with GitHub Actions.
 
 ## Table of Contents
 
@@ -13,9 +13,11 @@ This document outlines the comprehensive testing strategy for the PredictionLeag
 7. [WebApplicationFactory for API Testing](#7-webapplicationfactory-for-api-testing)
 8. [Playwright for End-to-End Testing](#8-playwright-for-end-to-end-testing)
 9. [Catching SQL and Dapper Mapping Errors](#9-catching-sql-and-dapper-mapping-errors)
-10. [Test Project Structure](#10-test-project-structure)
-11. [Implementation Priority](#11-implementation-priority)
-12. [Package References](#12-package-references)
+10. [Development Database Strategy](#10-development-database-strategy)
+11. [GitHub Actions Integration](#11-github-actions-integration)
+12. [Test Project Structure](#12-test-project-structure)
+13. [Implementation Priority](#13-implementation-priority)
+14. [Package References](#14-package-references)
 
 ---
 
@@ -32,8 +34,16 @@ The codebase is **well-structured for testing**. The Clean Architecture with CQR
 | Query Handler Integration Tests | ✅ Good | SQLite in-memory database |
 | Repository Integration Tests | ✅ Good | SQLite in-memory database |
 | API Integration Tests | ✅ Good | WebApplicationFactory with SQLite |
-| Blazor Component Tests | ⚠️ Moderate | bUnit library |
-| End-to-End Tests | ⚠️ Complex | Playwright (optional) |
+| E2E Tests | ✅ Good | Playwright on GitHub Actions |
+| Blazor Component Tests | ⚠️ Moderate | bUnit library (optional) |
+
+### Cost Summary
+
+All testing infrastructure runs on **GitHub Actions free tier**:
+- 2,000 minutes/month for private repositories
+- Estimated usage: ~1,200-1,400 minutes/month
+- No Docker required
+- No additional infrastructure costs
 
 ---
 
@@ -44,9 +54,10 @@ The codebase is **well-structured for testing**. The Clean Architecture with CQR
 | Test Framework | xUnit.v3 | 3.x |
 | Assertions | FluentAssertions | 7.x |
 | Mocking | NSubstitute | 5.x |
-| Integration DB | SQLite In-Memory | via Microsoft.Data.Sqlite |
-| API Testing | WebApplicationFactory | Built into ASP.NET Core |
-| E2E Testing | Playwright | Optional |
+| Integration DB | SQLite In-Memory | Microsoft.Data.Sqlite 8.x |
+| API Testing | WebApplicationFactory | Built into ASP.NET Core 8.x |
+| E2E Testing | Playwright | 1.x |
+| Test Data Generation | Bogus | 35.x |
 
 ---
 
@@ -268,7 +279,7 @@ SQLite is **not 100% compatible** with SQL Server. Here are the key differences 
 
 #### MERGE Statements (Not Supported in SQLite)
 
-Your codebase uses MERGE in 4 repositories:
+The codebase uses MERGE in 4 repositories:
 - `LeagueRepository.UpdateLeagueRoundResultsAsync()`
 - `LeagueRepository.UpdateLeagueRoundBoostsAsync()`
 - `UserPredictionRepository.UpsertBatchAsync()`
@@ -344,11 +355,8 @@ public class SqliteTestFixture : IDisposable
 
     public SqliteTestFixture()
     {
-        // Create in-memory database
         Connection = new SqliteConnection("DataSource=:memory:");
         Connection.Open();
-
-        // Create schema
         InitialiseSchema();
     }
 
@@ -432,54 +440,16 @@ public class SqliteTestFixture : IDisposable
 }
 ```
 
-### 6.5 Using the Fixture in Tests
-
-```csharp
-public class GetLeagueDashboardQueryHandlerTests : IClassFixture<SqliteTestFixture>
-{
-    private readonly SqliteTestFixture _fixture;
-    private readonly GetLeagueDashboardQueryHandler _handler;
-
-    public GetLeagueDashboardQueryHandlerTests(SqliteTestFixture fixture)
-    {
-        _fixture = fixture;
-        var dbConnection = new SqliteApplicationReadDbConnection(_fixture.Connection);
-        _handler = new GetLeagueDashboardQueryHandler(dbConnection);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReturnDashboard_WhenUserIsMember()
-    {
-        // Arrange - insert test data
-        await InsertTestLeague();
-        await InsertTestMember();
-
-        var query = new GetLeagueDashboardQuery
-        {
-            LeagueId = 1,
-            UserId = "user-123"
-        };
-
-        // Act
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.LeagueName.Should().Be("Test League");
-    }
-}
-```
-
-### 6.6 Recommendation for MERGE Statements
+### 6.5 Recommendation for MERGE Statements
 
 Given the complexity of abstracting SQL dialects, consider this pragmatic approach:
 
 1. **Unit test domain logic** - No database needed
 2. **Unit test command handlers** - Mock repositories
-3. **Integration test queries** - Use SQLite for read-only queries (most of your query handlers)
-4. **Integration test MERGE operations** - Use LocalDB on Windows or Testcontainers if you need full SQL Server compatibility
+3. **Integration test queries** - Use SQLite for read-only queries (most query handlers)
+4. **Integration test MERGE operations** - Test at API level or use the dev SQL Server database
 
-Most of your **query handlers** use standard SELECT statements that work perfectly with SQLite. The MERGE statements are only in 4 repository methods used by **command handlers**, which can be unit tested with mocked repositories.
+Most **query handlers** use standard SELECT statements that work perfectly with SQLite. The MERGE statements are only in 4 repository methods used by **command handlers**, which can be unit tested with mocked repositories.
 
 ---
 
@@ -490,21 +460,21 @@ Most of your **query handlers** use standard SELECT statements that work perfect
 `WebApplicationFactory<TEntryPoint>` is built into ASP.NET Core and creates an **in-process test server**:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Test Process                         │
-│  ┌─────────────┐        ┌─────────────────────────────┐ │
-│  │   Test      │  HTTP  │  WebApplicationFactory      │ │
-│  │   Code      │───────▶│  ┌─────────────────────┐    │ │
-│  │             │        │  │   Your API          │    │ │
-│  │             │◀───────│  │   (Full Pipeline)   │    │ │
-│  └─────────────┘        │  │   - Middleware      │    │ │
-│                         │  │   - Controllers     │    │ │
-│                         │  │   - MediatR         │    │ │
-│                         │  │   - Validation      │    │ │
-│                         │  │   - Auth            │    │ │
-│                         │  └─────────────────────┘    │ │
-│                         └─────────────────────────────┘ │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    Test Process                                  │
+│  ┌─────────────┐        ┌─────────────────────────────────┐     │
+│  │   Test      │  HTTP  │  WebApplicationFactory          │     │
+│  │   Code      │───────▶│  ┌─────────────────────┐        │     │
+│  │             │        │  │   Your API          │        │     │
+│  │             │◀───────│  │   (Full Pipeline)   │        │     │
+│  └─────────────┘        │  │   - Middleware      │        │     │
+│                         │  │   - Controllers     │        │     │
+│                         │  │   - MediatR         │        │     │
+│                         │  │   - Validation      │        │     │
+│                         │  │   - Auth            │        │     │
+│                         │  └─────────────────────┘        │     │
+│                         └─────────────────────────────────┘     │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 **Key Points:**
@@ -537,20 +507,14 @@ public class PredictionLeagueApiFactory : WebApplicationFactory<Program>
             if (descriptor != null)
                 services.Remove(descriptor);
 
-            // Create SQLite in-memory connection (shared for all requests)
+            // Create SQLite in-memory connection
             _connection = new SqliteConnection("DataSource=:memory:");
             _connection.Open();
 
-            // Initialise schema
             InitialiseDatabase(_connection);
 
-            // Register test connection factory
             services.AddSingleton<IDbConnectionFactory>(
                 new SqliteConnectionFactory(_connection));
-
-            // Optionally override other services
-            // services.AddSingleton<IEmailService, FakeEmailService>();
-            // services.AddSingleton<IFootballDataService, FakeFootballDataService>();
         });
 
         builder.UseEnvironment("Testing");
@@ -594,20 +558,14 @@ public class LeaguesApiTests : IClassFixture<PredictionLeagueApiFactory>
     [Fact]
     public async Task GetLeague_ShouldReturnNotFound_WhenLeagueDoesNotExist()
     {
-        // Arrange
         await AuthenticateAsync();
-
-        // Act
         var response = await _client.GetAsync("/api/leagues/99999");
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task CreateLeague_ShouldReturnCreated_WhenRequestIsValid()
     {
-        // Arrange
         await AuthenticateAsync();
         var request = new CreateLeagueRequest
         {
@@ -616,108 +574,18 @@ public class LeaguesApiTests : IClassFixture<PredictionLeagueApiFactory>
             Price = 10.00m
         };
 
-        // Act
         var response = await _client.PostAsJsonAsync("/api/leagues", request);
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         response.Headers.Location.Should().NotBeNull();
     }
 
-    [Fact]
-    public async Task CreateLeague_ShouldReturnBadRequest_WhenNameIsEmpty()
-    {
-        // Arrange
-        await AuthenticateAsync();
-        var request = new CreateLeagueRequest
-        {
-            Name = "",
-            SeasonId = 1
-        };
-
-        // Act
-        var response = await _client.PostAsJsonAsync("/api/leagues", request);
-
-        // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
     private async Task AuthenticateAsync()
     {
-        // Option 1: Call login endpoint and use returned token
-        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new
-        {
-            Email = "test@example.com",
-            Password = "TestPassword123!"
-        });
-        var token = await loginResponse.Content.ReadFromJsonAsync<TokenResponse>();
+        // Generate test JWT token or call login endpoint
+        var token = GenerateTestJwtToken("user-123", "User");
         _client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token.AccessToken);
-
-        // Option 2: Generate a test token directly (faster)
-        // var token = GenerateTestJwtToken("user-123", "Admin");
-        // _client.DefaultRequestHeaders.Authorization =
-        //     new AuthenticationHeaderValue("Bearer", token);
-    }
-}
-```
-
-### 7.4 Testing Authentication and Authorisation
-
-```csharp
-[Fact]
-public async Task GetLeague_ShouldReturnUnauthorised_WhenNoToken()
-{
-    // Act (no auth header set)
-    var response = await _client.GetAsync("/api/leagues/1");
-
-    // Assert
-    response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-}
-
-[Fact]
-public async Task AdminEndpoint_ShouldReturnForbidden_WhenUserIsNotAdmin()
-{
-    // Arrange - authenticate as regular user
-    await AuthenticateAsRegularUserAsync();
-
-    // Act
-    var response = await _client.PostAsJsonAsync("/api/admin/rounds", new { });
-
-    // Assert
-    response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
-}
-```
-
-### 7.5 Seeding Test Data
-
-```csharp
-public class LeaguesApiTests : IClassFixture<PredictionLeagueApiFactory>
-{
-    private readonly HttpClient _client;
-    private readonly PredictionLeagueApiFactory _factory;
-
-    public LeaguesApiTests(PredictionLeagueApiFactory factory)
-    {
-        _factory = factory;
-        _client = factory.CreateClient();
-
-        // Seed data before tests
-        SeedTestData();
-    }
-
-    private void SeedTestData()
-    {
-        // Access services to seed data
-        using var scope = _factory.Services.CreateScope();
-        var connection = scope.ServiceProvider.GetRequiredService<IDbConnectionFactory>()
-            .CreateConnection();
-
-        // Insert test data
-        connection.Execute(@"
-            INSERT INTO [Seasons] ([Id], [Name], ...) VALUES (1, 'Test Season', ...);
-            INSERT INTO [Users] ([Id], [Email], ...) VALUES ('user-123', 'test@example.com', ...);
-        ");
+            new AuthenticationHeaderValue("Bearer", token);
     }
 }
 ```
@@ -733,83 +601,46 @@ Playwright is a browser automation framework that:
 - Simulates real user interactions
 - Tests the full stack including Blazor UI
 - Can take screenshots and videos on failure
+- Runs on GitHub Actions for free
 
-### 8.2 How It Works
+### 8.2 How It Works on GitHub Actions
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Test Machine                              │
-│  ┌─────────────┐     ┌─────────────┐     ┌─────────────────────┐│
-│  │  Playwright │────▶│   Browser   │────▶│   Your Blazor App   ││
-│  │  Test Code  │     │  (Chrome)   │     │   (localhost:5000)  ││
-│  │             │◀────│             │◀────│                     ││
-│  └─────────────┘     └─────────────┘     └─────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Playwright E2E Tests on GitHub Actions                    │
+│                                                                              │
+│  Step 1: Build application                                         (~2 min) │
+│  Step 2: Create SQLite test database + seed data                   (~1 min) │
+│  Step 3: Install Playwright browsers (cached)                      (~1 min) │
+│  Step 4: Start app on localhost:5000                              (~30 sec) │
+│  Step 5: Run Playwright tests against localhost                  (~5-8 min) │
+│  Step 6: Upload screenshots/videos if tests fail                  (~30 sec) │
+│                                                                              │
+│  Total: ~10-12 minutes                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 8.3 Visual Studio Integration
-
-Playwright tests run in Visual Studio Test Explorer just like unit tests:
-
-1. Install the `Microsoft.Playwright` and `Microsoft.Playwright.NUnit` (or xUnit adapter) packages
-2. Run `playwright install` to download browsers
-3. Tests appear in Test Explorer
-4. Run/debug tests normally
-
-**Important:** Playwright needs a running instance of your application. You can:
-- Start the app manually before running tests
-- Use a fixture that starts/stops the app automatically
-- Use WebApplicationFactory to host the API and serve static Blazor files
-
-### 8.4 Azure DevOps Integration
-
-Playwright works well with Azure DevOps:
-
-```yaml
-# azure-pipelines.yml
-trigger:
-  - main
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-steps:
-  - task: UseDotNet@2
-    inputs:
-      version: '8.0.x'
-
-  - script: dotnet build
-    displayName: 'Build'
-
-  - script: dotnet tool install --global Microsoft.Playwright.CLI
-    displayName: 'Install Playwright CLI'
-
-  - script: playwright install --with-deps chromium
-    displayName: 'Install Browsers'
-
-  - script: dotnet test tests/PredictionLeague.E2E.Tests
-    displayName: 'Run E2E Tests'
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: $(Build.SourcesDirectory)/browsers
-```
-
-### 8.5 Example Playwright Test
+### 8.3 Example Playwright Test
 
 ```csharp
-using Microsoft.Playwright;
-
-public class LoginTests : IAsyncLifetime
+public class LoginAndNavigationTests : IAsyncLifetime
 {
     private IPlaywright _playwright = null!;
     private IBrowser _browser = null!;
     private IPage _page = null!;
+    private readonly E2ETestSettings _settings;
+
+    public LoginAndNavigationTests()
+    {
+        _settings = TestConfiguration.GetSettings();
+    }
 
     public async Task InitializeAsync()
     {
         _playwright = await Playwright.CreateAsync();
         _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
-            Headless = true  // Set to false to see the browser
+            Headless = true
         });
         _page = await _browser.NewPageAsync();
     }
@@ -817,36 +648,28 @@ public class LoginTests : IAsyncLifetime
     [Fact]
     public async Task Login_ShouldRedirectToDashboard_WhenCredentialsAreValid()
     {
-        // Navigate to login page
-        await _page.GotoAsync("https://localhost:5001/login");
+        await _page.GotoAsync($"{_settings.BaseUrl}/login");
 
-        // Fill in credentials
-        await _page.FillAsync("[data-testid='email-input']", "test@example.com");
-        await _page.FillAsync("[data-testid='password-input']", "TestPassword123!");
+        await _page.FillAsync("input[type='email']", _settings.TestUser.Email);
+        await _page.FillAsync("input[type='password']", _settings.TestUser.Password);
+        await _page.ClickAsync("button[type='submit']");
 
-        // Click login button
-        await _page.ClickAsync("[data-testid='login-button']");
-
-        // Wait for navigation
         await _page.WaitForURLAsync("**/dashboard");
-
-        // Assert we're on the dashboard
-        var heading = await _page.TextContentAsync("h1");
-        heading.Should().Contain("Dashboard");
+        await Expect(_page.Locator("h1")).ToContainTextAsync("Dashboard");
     }
 
     [Fact]
-    public async Task Login_ShouldShowError_WhenCredentialsAreInvalid()
+    public async Task Predictions_ShouldSubmitSuccessfully_WhenValidScoresEntered()
     {
-        await _page.GotoAsync("https://localhost:5001/login");
+        await LoginAsTestUserAsync();
+        await _page.GotoAsync($"{_settings.BaseUrl}/leagues/1/predictions");
 
-        await _page.FillAsync("[data-testid='email-input']", "wrong@example.com");
-        await _page.FillAsync("[data-testid='password-input']", "wrongpassword");
-        await _page.ClickAsync("[data-testid='login-button']");
+        await _page.FillAsync("[data-testid='home-score-1']", "2");
+        await _page.FillAsync("[data-testid='away-score-1']", "1");
+        await _page.ClickAsync("[data-testid='submit-predictions']");
 
-        // Wait for error message
-        var errorMessage = await _page.TextContentAsync(".error-message");
-        errorMessage.Should().Contain("Invalid credentials");
+        await Expect(_page.Locator(".success-message"))
+            .ToContainTextAsync("Predictions saved");
     }
 
     public async Task DisposeAsync()
@@ -857,24 +680,41 @@ public class LoginTests : IAsyncLifetime
 }
 ```
 
-### 8.6 Playwright Recommendation
+### 8.4 Test Configuration
 
-**Consider Playwright optional** for this project because:
-- API integration tests catch most bugs
-- Blazor component tests (with bUnit) can test UI logic
-- E2E tests are slower and more brittle
-- Higher maintenance cost
-
-**Use Playwright for:**
-- Critical user journeys (login, submit predictions, view leaderboard)
-- Smoke tests before deployment
-- Visual regression testing (if needed)
+```csharp
+public static class TestConfiguration
+{
+    public static E2ETestSettings GetSettings()
+    {
+        return new E2ETestSettings
+        {
+            BaseUrl = Environment.GetEnvironmentVariable("E2E_BASE_URL")
+                ?? "http://localhost:5000",
+            TestUser = new TestUserCredentials
+            {
+                Email = Environment.GetEnvironmentVariable("E2E_TEST_USER_EMAIL")
+                    ?? "testplayer@dev.local",
+                Password = Environment.GetEnvironmentVariable("E2E_TEST_USER_PASSWORD")
+                    ?? "TestPassword123!"
+            },
+            AdminUser = new TestUserCredentials
+            {
+                Email = Environment.GetEnvironmentVariable("E2E_ADMIN_EMAIL")
+                    ?? "testadmin@dev.local",
+                Password = Environment.GetEnvironmentVariable("E2E_ADMIN_PASSWORD")
+                    ?? "TestPassword123!"
+            }
+        };
+    }
+}
+```
 
 ---
 
 ## 9. Catching SQL and Dapper Mapping Errors
 
-This section addresses your main pain points:
+This section addresses common pain points:
 - Parameter order not matching the model
 - Columns missing from SELECT breaking constructors
 
@@ -889,7 +729,7 @@ Common failures:
 // This query will FAIL at runtime if [ExactScoreCount] is missing
 const string sql = "SELECT [LeagueId], [RoundId], [UserId] FROM [LeagueRoundResults]";
 var results = await connection.QueryAsync<LeagueRoundResult>(sql);
-// Error: No matching constructor found (needs ExactScoreCount parameter)
+// Error: No matching constructor found
 
 // This will FAIL if parameters are in wrong order
 const string sql = "INSERT INTO [Leagues] ([Name], [SeasonId]) VALUES (@SeasonId, @Name)";
@@ -907,148 +747,7 @@ const string sql = "INSERT INTO [Leagues] ([Name], [SeasonId]) VALUES (@SeasonId
 
 **You need integration tests** to catch these errors. Unit tests with mocked repositories won't help because they never execute real SQL.
 
-### 9.3 Repository Integration Tests with SQLite
-
-These tests execute real SQL against a real (SQLite) database:
-
-```csharp
-public class LeagueRepositoryTests : IClassFixture<SqliteTestFixture>
-{
-    private readonly SqliteTestFixture _fixture;
-    private readonly LeagueRepository _repository;
-
-    public LeagueRepositoryTests(SqliteTestFixture fixture)
-    {
-        _fixture = fixture;
-        _repository = new LeagueRepository(new SqliteConnectionFactory(fixture.Connection));
-    }
-
-    [Fact]
-    public async Task GetByIdAsync_ShouldMapAllColumns_WhenLeagueExists()
-    {
-        // Arrange - insert a league with ALL columns populated
-        await InsertLeague(new
-        {
-            Id = 1,
-            Name = "Test League",
-            SeasonId = 1,
-            Price = 10.00m,
-            AdministratorUserId = "user-123",
-            EntryCode = "ABC123",
-            CreatedAtUtc = DateTime.UtcNow,
-            EntryDeadlineUtc = DateTime.UtcNow.AddDays(30),
-            PointsForExactScore = 3,
-            PointsForCorrectResult = 1,
-            IsFree = false,
-            HasPrizes = true,
-            PrizeFundOverride = (decimal?)null
-        });
-
-        // Act - this will FAIL if any column is missing from the SELECT
-        var result = await _repository.GetByIdAsync(1, CancellationToken.None);
-
-        // Assert - verify ALL properties are mapped correctly
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(1);
-        result.Name.Should().Be("Test League");
-        result.SeasonId.Should().Be(1);
-        result.Price.Should().Be(10.00m);
-        result.AdministratorUserId.Should().Be("user-123");
-        result.EntryCode.Should().Be("ABC123");
-        result.PointsForExactScore.Should().Be(3);
-        result.PointsForCorrectResult.Should().Be(1);
-        result.IsFree.Should().BeFalse();
-        result.HasPrizes.Should().BeTrue();
-        result.PrizeFundOverride.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task CreateAsync_ShouldInsertCorrectValues_WhenLeagueIsValid()
-    {
-        // Arrange
-        var league = League.Create(
-            seasonId: 1,
-            name: "New League",
-            // ... all parameters
-        );
-
-        // Act
-        var result = await _repository.CreateAsync(league, CancellationToken.None);
-
-        // Assert - verify the data was inserted correctly
-        var inserted = await GetLeagueDirectly(result.Id);
-        inserted.Name.Should().Be("New League");
-        inserted.SeasonId.Should().Be(1);
-        // Verify ALL columns to catch parameter order bugs
-    }
-
-    private async Task<dynamic> GetLeagueDirectly(int id)
-    {
-        const string sql = "SELECT * FROM [Leagues] WHERE [Id] = @Id";
-        return await _fixture.Connection.QuerySingleAsync(sql, new { Id = id });
-    }
-}
-```
-
-### 9.4 Query Handler Integration Tests
-
-These catch missing columns in SELECT statements:
-
-```csharp
-public class GetLeagueDashboardQueryHandlerTests : IClassFixture<SqliteTestFixture>
-{
-    private readonly SqliteTestFixture _fixture;
-    private readonly GetLeagueDashboardQueryHandler _handler;
-
-    public GetLeagueDashboardQueryHandlerTests(SqliteTestFixture fixture)
-    {
-        _fixture = fixture;
-        var dbConnection = new SqliteApplicationReadDbConnection(fixture.Connection);
-        _handler = new GetLeagueDashboardQueryHandler(dbConnection);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldMapAllRoundProperties_WhenRoundsExist()
-    {
-        // Arrange
-        await SeedLeagueAndRounds();
-
-        var query = new GetLeagueDashboardQuery
-        {
-            LeagueId = 1,
-            UserId = "user-123",
-            IsAdmin = false
-        };
-
-        // Act - this will FAIL if RoundDto properties don't match SELECT columns
-        var result = await _handler.Handle(query, CancellationToken.None);
-
-        // Assert - verify mapping
-        result.Should().NotBeNull();
-        result!.ViewableRounds.Should().NotBeEmpty();
-
-        var round = result.ViewableRounds.First();
-        round.Id.Should().BeGreaterThan(0);
-        round.RoundNumber.Should().BeGreaterThan(0);
-        round.Status.Should().NotBeNullOrEmpty();
-        round.MatchCount.Should().BeGreaterThanOrEqualTo(0);
-    }
-}
-```
-
-### 9.5 Compile-Time Safety with Source Generators (Advanced)
-
-For additional safety, consider using Dapper's AOT source generator (preview) which provides compile-time checking:
-
-```csharp
-// With Dapper.AOT, this would give a compile-time error if parameters don't match
-[Command(@"INSERT INTO [Leagues] ([Name], [SeasonId]) VALUES (@Name, @SeasonId)")]
-public partial Task<int> CreateLeagueAsync(string name, int seasonId);
-```
-
-This is a newer feature and may not be production-ready yet.
-
-### 9.6 Recommended Testing Strategy for SQL/Dapper Errors
+### 9.3 Recommended Testing Strategy
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -1057,9 +756,9 @@ This is a newer feature and may not be production-ready yet.
 │                                                                  │
 │  Priority 1: Query Handler Integration Tests                     │
 │  ─────────────────────────────────────────────                   │
-│  • Test all 67 query handlers with SQLite                        │
+│  • Test all query handlers with SQLite                           │
 │  • Catches: missing columns, wrong column names, type mismatches │
-│  • These are your most common bugs                               │
+│  • These are the most common bugs                                │
 │                                                                  │
 │  Priority 2: Repository Integration Tests                        │
 │  ─────────────────────────────────────────                       │
@@ -1078,7 +777,131 @@ This is a newer feature and may not be production-ready yet.
 
 ---
 
-## 10. Test Project Structure
+## 10. Development Database Strategy
+
+### 10.1 Database Purposes
+
+| Purpose | Database Type | Location |
+|---------|---------------|----------|
+| **Production** | SQL Server | Fasthosts |
+| **Development** | SQL Server | Fasthosts (separate DB) |
+| **Automated Tests (CI)** | SQLite In-Memory | GitHub Actions runner |
+| **E2E Tests** | SQLite File | GitHub Actions runner |
+
+### 10.2 Dev Database Refresh Strategy
+
+Since Fasthosts shared hosting doesn't support traditional backup/restore, use an **application-level data copy tool**:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     Weekly Refresh Process (GitHub Actions)                  │
+│                                                                              │
+│  1. Connect to Production DB (read-only)                                     │
+│  2. Read all tables in dependency order                                      │
+│  3. Anonymise PII in memory (emails, names, league names)                    │
+│  4. Truncate Dev DB tables                                                   │
+│  5. Insert anonymised data to Dev DB                                         │
+│  6. Add known test accounts (testplayer@dev.local, testadmin@dev.local)      │
+│  7. Verify no real PII remains                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 10.3 Data Anonymisation
+
+The refresh tool anonymises:
+
+| Data Type | Original | Anonymised |
+|-----------|----------|------------|
+| Emails | john.smith@gmail.com | user123@testmail.com |
+| Names | John Smith | TestUser47 Player |
+| League names | Smith Family League | Manchester Predictions |
+| Entry codes | ABC123 | XYZ789 (regenerated) |
+| Passwords | (hashed) | INVALIDATED |
+| Refresh tokens | (deleted) | (deleted) |
+
+### 10.4 Test Accounts
+
+Fixed test accounts with known credentials:
+
+| Account | Email | Password | Role |
+|---------|-------|----------|------|
+| Test Player | testplayer@dev.local | TestPassword123! | User |
+| Test Admin | testadmin@dev.local | TestPassword123! | Admin |
+
+These accounts are:
+- Added to the first league automatically
+- Available immediately after DB refresh
+- Used by Playwright E2E tests
+- Used for manual testing
+
+---
+
+## 11. GitHub Actions Integration
+
+All testing and deployment runs on GitHub Actions free tier.
+
+### 11.1 Workflow Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        GitHub Actions Workflows                              │
+│                                                                              │
+│  ci.yml (On every push/PR)                                                   │
+│  ├── Build solution                                                          │
+│  ├── Run unit tests (Domain, Validators, Application)                        │
+│  ├── Run integration tests (Infrastructure, API)                             │
+│  └── ~8-12 minutes                                                           │
+│                                                                              │
+│  deploy.yml (Manual trigger)                                                 │
+│  ├── Build and run tests                                                     │
+│  ├── Publish application                                                     │
+│  ├── Deploy to Fasthosts via FTP                                             │
+│  └── ~5-8 minutes                                                            │
+│                                                                              │
+│  refresh-dev-db.yml (Weekly Monday 6am + manual)                             │
+│  ├── Copy data from prod to dev                                              │
+│  ├── Anonymise PII                                                           │
+│  ├── Add test accounts                                                       │
+│  └── ~5 minutes                                                              │
+│                                                                              │
+│  e2e.yml (After CI success on main + manual)                                 │
+│  ├── Build application                                                       │
+│  ├── Setup SQLite test database                                              │
+│  ├── Install Playwright                                                      │
+│  ├── Start application                                                       │
+│  ├── Run Playwright tests                                                    │
+│  └── ~10-12 minutes                                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 11.2 Time Budget
+
+| Workflow | Duration | Frequency | Monthly Minutes |
+|----------|----------|-----------|-----------------|
+| CI (build + all tests) | ~10 mins | 5/day × 22 days | ~1,100 mins |
+| Deploy to FTP | ~6 mins | 4/month | ~24 mins |
+| DB Refresh | ~5 mins | 4/month | ~20 mins |
+| E2E Tests | ~12 mins | 8/month | ~96 mins |
+| **Total** | | | **~1,240 mins** |
+
+**Free tier: 2,000 mins/month** - Well within limits.
+
+### 11.3 Required GitHub Secrets
+
+Configure in: Repository → Settings → Secrets and variables → Actions
+
+| Secret Name | Description |
+|-------------|-------------|
+| `PROD_CONNECTION_STRING` | Fasthosts production SQL connection string |
+| `DEV_CONNECTION_STRING` | Fasthosts dev SQL connection string |
+| `TEST_ACCOUNT_PASSWORD` | Password for test accounts |
+| `FTP_SERVER` | Fasthosts FTP server address |
+| `FTP_USERNAME` | Fasthosts FTP username |
+| `FTP_PASSWORD` | Fasthosts FTP password |
+
+---
+
+## 12. Test Project Structure
 
 ```
 PredictionLeague.sln
@@ -1091,66 +914,75 @@ PredictionLeague.sln
 │   ├── PredictionLeague.Contracts/
 │   └── PredictionLeague.Web.Client/
 │
-└── tests/
-    ├── PredictionLeague.Domain.Tests/
-    │   ├── Models/
-    │   │   ├── LeagueTests.cs
-    │   │   ├── RoundTests.cs
-    │   │   └── UserPredictionTests.cs
-    │   └── Services/
-    │       ├── BoostEligibilityEvaluatorTests.cs
-    │       └── PredictionDomainServiceTests.cs
+├── tests/
+│   ├── PredictionLeague.Domain.Tests/
+│   │   ├── Models/
+│   │   │   ├── LeagueTests.cs
+│   │   │   ├── RoundTests.cs
+│   │   │   └── UserPredictionTests.cs
+│   │   └── Services/
+│   │       ├── BoostEligibilityEvaluatorTests.cs
+│   │       └── PredictionDomainServiceTests.cs
+│   │
+│   ├── PredictionLeague.Application.Tests/
+│   │   └── Features/
+│   │       ├── Leagues/Commands/
+│   │       │   ├── CreateLeagueCommandHandlerTests.cs
+│   │       │   └── JoinLeagueCommandHandlerTests.cs
+│   │       └── Predictions/Commands/
+│   │           └── SubmitPredictionsCommandHandlerTests.cs
+│   │
+│   ├── PredictionLeague.Validators.Tests/
+│   │   ├── CreateLeagueRequestValidatorTests.cs
+│   │   ├── SubmitPredictionsRequestValidatorTests.cs
+│   │   └── ...
+│   │
+│   ├── PredictionLeague.Infrastructure.Tests/
+│   │   ├── Repositories/
+│   │   │   ├── LeagueRepositoryTests.cs
+│   │   │   └── UserPredictionRepositoryTests.cs
+│   │   ├── Queries/
+│   │   │   ├── GetLeagueDashboardQueryHandlerTests.cs
+│   │   │   └── GetLeaderboardQueryHandlerTests.cs
+│   │   └── Services/
+│   │       └── BoostServiceTests.cs
+│   │
+│   ├── PredictionLeague.API.Tests/
+│   │   ├── Controllers/
+│   │   │   ├── LeaguesControllerTests.cs
+│   │   │   ├── PredictionsControllerTests.cs
+│   │   │   └── AuthControllerTests.cs
+│   │   └── PredictionLeagueApiFactory.cs
+│   │
+│   ├── PredictionLeague.E2E.Tests/
+│   │   ├── LoginTests.cs
+│   │   ├── PredictionFlowTests.cs
+│   │   ├── LeaderboardTests.cs
+│   │   └── TestConfiguration.cs
+│   │
+│   └── PredictionLeague.Tests.Shared/
+│       ├── Fixtures/
+│       │   ├── SqliteTestFixture.cs
+│       │   └── SqliteConnectionFactory.cs
+│       ├── Builders/
+│       │   ├── LeagueBuilder.cs
+│       │   └── RoundBuilder.cs
+│       └── Extensions/
+│           └── TestDataExtensions.cs
+│
+└── tools/
+    ├── PredictionLeague.DevDbRefresh/
+    │   ├── Program.cs
+    │   └── PredictionLeague.DevDbRefresh.csproj
     │
-    ├── PredictionLeague.Application.Tests/
-    │   └── Features/
-    │       ├── Leagues/
-    │       │   └── Commands/
-    │       │       ├── CreateLeagueCommandHandlerTests.cs
-    │       │       └── JoinLeagueCommandHandlerTests.cs
-    │       └── Predictions/
-    │           └── Commands/
-    │               └── SubmitPredictionsCommandHandlerTests.cs
-    │
-    ├── PredictionLeague.Validators.Tests/
-    │   ├── CreateLeagueRequestValidatorTests.cs
-    │   ├── SubmitPredictionsRequestValidatorTests.cs
-    │   └── ...
-    │
-    ├── PredictionLeague.Infrastructure.Tests/
-    │   ├── Repositories/
-    │   │   ├── LeagueRepositoryTests.cs
-    │   │   └── UserPredictionRepositoryTests.cs
-    │   ├── Queries/
-    │   │   ├── GetLeagueDashboardQueryHandlerTests.cs
-    │   │   └── GetLeaderboardQueryHandlerTests.cs
-    │   └── Services/
-    │       └── BoostServiceTests.cs
-    │
-    ├── PredictionLeague.API.Tests/
-    │   ├── Controllers/
-    │   │   ├── LeaguesControllerTests.cs
-    │   │   ├── PredictionsControllerTests.cs
-    │   │   └── AuthControllerTests.cs
-    │   └── PredictionLeagueApiFactory.cs
-    │
-    ├── PredictionLeague.E2E.Tests/ (Optional)
-    │   ├── LoginTests.cs
-    │   └── PredictionFlowTests.cs
-    │
-    └── PredictionLeague.Tests.Shared/
-        ├── Fixtures/
-        │   ├── SqliteTestFixture.cs
-        │   └── SqliteConnectionFactory.cs
-        ├── Builders/
-        │   ├── LeagueBuilder.cs
-        │   └── RoundBuilder.cs
-        └── Extensions/
-            └── TestDataExtensions.cs
+    └── PredictionLeague.TestDbSeeder/
+        ├── Program.cs
+        └── PredictionLeague.TestDbSeeder.csproj
 ```
 
 ---
 
-## 11. Implementation Priority
+## 13. Implementation Priority
 
 ### Phase 1: Domain Unit Tests (Start Here)
 **Effort: Low | Value: High | Catches SQL bugs: No**
@@ -1170,7 +1002,7 @@ All 28 validators - straightforward, fast to write.
 ### Phase 3: Query Handler Integration Tests ⭐
 **Effort: Medium | Value: High | Catches SQL bugs: Yes**
 
-This is where you'll catch your main pain points (missing columns, wrong mappings).
+This is where you'll catch most SQL mapping bugs.
 
 1. `GetLeagueDashboardQueryHandler`
 2. `GetLeaderboardQueryHandler`
@@ -1193,14 +1025,19 @@ Test business logic orchestration with mocked repositories.
 
 Full HTTP pipeline testing.
 
-### Phase 7: E2E Tests (Optional)
-**Effort: High | Value: Medium**
+### Phase 7: E2E Tests with Playwright
+**Effort: High | Value: Medium-High**
 
-Only if you want browser-based testing.
+Critical user journeys only.
+
+### Phase 8: CI/CD Setup
+**Effort: Medium | Value: High**
+
+GitHub Actions workflows for automated testing and deployment.
 
 ---
 
-## 12. Package References
+## 14. Package References
 
 ### PredictionLeague.Domain.Tests.csproj
 
@@ -1305,7 +1142,7 @@ Only if you want browser-based testing.
 </Project>
 ```
 
-### PredictionLeague.E2E.Tests.csproj (Optional)
+### PredictionLeague.E2E.Tests.csproj
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1326,16 +1163,40 @@ Only if you want browser-based testing.
 </Project>
 ```
 
+### PredictionLeague.DevDbRefresh.csproj (Tool)
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bogus" Version="35.6.1" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+  </ItemGroup>
+</Project>
+```
+
 ---
 
 ## Summary
 
-| Question | Answer |
-|----------|--------|
-| **SQLite without Docker?** | Yes - runs entirely in Visual Studio, no containers |
-| **MERGE statement compatibility?** | Not supported - use SQL dialect abstraction or test at API level |
-| **WebApplicationFactory?** | In-process test server, full HTTP pipeline, no external processes |
-| **Playwright in VS/Azure DevOps?** | Yes to both - runs in Test Explorer, works in pipelines |
-| **Tests for SQL mapping bugs?** | Query handler and repository integration tests with SQLite |
+| Aspect | Decision |
+|--------|----------|
+| **Test Framework** | xUnit.v3 |
+| **Assertions** | FluentAssertions |
+| **Mocking** | NSubstitute |
+| **Integration DB** | SQLite In-Memory |
+| **API Testing** | WebApplicationFactory |
+| **E2E Testing** | Playwright |
+| **CI/CD** | GitHub Actions (free tier) |
+| **Dev DB Refresh** | Weekly automated via GitHub Actions |
+| **Test Naming** | `{Method}_Should{Behaviour}_When{Conditions}` |
 
-**Key Takeaway:** Your main pain points (SQL parameter order, missing columns) require **integration tests** with a real database. Unit tests with mocked repositories won't catch these issues. Start with query handler integration tests using SQLite - this gives the highest return for catching your specific bugs.
+**All testing infrastructure is free and runs without Docker.**
