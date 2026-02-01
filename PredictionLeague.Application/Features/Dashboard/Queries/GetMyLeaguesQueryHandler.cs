@@ -60,33 +60,68 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
         ),
         
         LeagueContext AS (
-            SELECT 
+            SELECT
                 l.[Id] AS LeagueId,
                 (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) AS MemberCount,
                 (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w JOIN [LeaguePrizeSettings] s ON w.[LeaguePrizeSettingId] = s.[Id] WHERE s.[LeagueId] = l.[Id]) AS TotalPaidOut,
                 (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w JOIN [LeaguePrizeSettings] s ON w.[LeaguePrizeSettingId] = s.[Id] WHERE s.[LeagueId] = l.[Id] AND [UserId] = @UserId) AS UserWinnings
-            FROM [Leagues] l 
+            FROM [Leagues] l
             WHERE l.[Id] IN (SELECT [LeagueId] FROM [MyLeagues])
+        ),
+
+        ActiveRoundMonthlyRanks AS (
+            SELECT
+                lm.[LeagueId],
+                lm.[UserId],
+                CAST(RANK() OVER (
+                    PARTITION BY lm.[LeagueId]
+                    ORDER BY ISNULL(SUM(CASE WHEN r.[Id] IS NOT NULL THEN lrr.[BoostedPoints] ELSE 0 END), 0) DESC
+                ) AS INT) AS ActiveMonthRank,
+                CASE
+                    WHEN NOT EXISTS (
+                        SELECT 1 FROM [Rounds] r2
+                        WHERE r2.[SeasonId] = lg.[SeasonId]
+                        AND MONTH(r2.[StartDateUtc]) = MONTH(ar.[StartDateUtc])
+                        AND YEAR(r2.[StartDateUtc]) = YEAR(ar.[StartDateUtc])
+                        AND r2.[Id] <> ar.[RoundId]
+                        AND r2.[Status] IN (@InProgressStatus, @CompletedStatus)
+                    )
+                    THEN NULL
+                    ELSE CAST(RANK() OVER (
+                        PARTITION BY lm.[LeagueId]
+                        ORDER BY ISNULL(SUM(CASE WHEN r.[Id] <> ar.[RoundId] THEN lrr.[BoostedPoints] ELSE 0 END), 0) DESC
+                    ) AS INT)
+                END AS PreRoundMonthRank
+            FROM [LeagueMembers] lm
+            JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
+            JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
+            LEFT JOIN [LeagueRoundResults] lrr ON lm.[LeagueId] = lrr.[LeagueId] AND lm.[UserId] = lrr.[UserId]
+            LEFT JOIN [Rounds] r ON lrr.[RoundId] = r.[Id]
+                AND MONTH(r.[StartDateUtc]) = MONTH(ar.[StartDateUtc])
+                AND YEAR(r.[StartDateUtc]) = YEAR(ar.[StartDateUtc])
+            WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
+                AND lm.[Status] = @ApprovedStatus
+            GROUP BY lm.[LeagueId], lm.[UserId], ar.[RoundId], lg.[SeasonId], ar.[StartDateUtc]
         )
-       
-        SELECT 
+
+        SELECT
             l.[LeagueId] AS Id,
             l.[LeagueName] AS Name,
             l.[SeasonName],
-            
+
             CASE WHEN ar.[RoundId] IS NOT NULL THEN 'Round ' + CAST(ar.[RoundNumber] AS VARCHAR(10)) ELSE NULL END AS CurrentRound,
             CASE WHEN ar.[RoundId] IS NOT NULL THEN DATENAME(MONTH, ar.[StartDateUtc]) ELSE NULL END AS CurrentMonth,
             ISNULL(lc.[MemberCount], 0) AS MemberCount,
 
             stats.[OverallRank] AS Rank,
-            stats.[MonthRank] AS MonthRank,
+            armr.[ActiveMonthRank] AS MonthRank,
             CASE 
                 WHEN ar.[Status] = @PublishedStatus THEN 1                    
                 ELSE stats.[LiveRoundRank]
             END AS RoundRank,
 
             stats.[SnapshotOverallRank] AS PreRoundOverallRank,
-            stats.[SnapshotMonthRank] AS PreRoundMonthRank,
+            armr.[PreRoundMonthRank] AS PreRoundMonthRank,
             CASE 
                 WHEN ar.[Status] = @PublishedStatus THEN 1                    
                 ELSE stats.[StableRoundRank]
@@ -101,9 +136,10 @@ public class GetMyLeaguesQueryHandler : IRequestHandler<GetMyLeaguesQuery, IEnum
             COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) AS TotalPrizeFund 
 
         FROM [MyLeagues] l
-        LEFT JOIN [LeagueMemberStats] stats ON l.[LeagueId] = stats.[LeagueId] AND l.[UserId] = stats.[UserId]  
+        LEFT JOIN [LeagueMemberStats] stats ON l.[LeagueId] = stats.[LeagueId] AND l.[UserId] = stats.[UserId]
         LEFT JOIN [ActiveRounds] ar ON l.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
         LEFT JOIN [LeagueContext] lc ON l.[LeagueId] = lc.[LeagueId]
+        LEFT JOIN [ActiveRoundMonthlyRanks] armr ON l.[LeagueId] = armr.[LeagueId] AND l.[UserId] = armr.[UserId]
 
         ORDER BY 
             CASE WHEN ar.[Status] = @InProgressStatus THEN 0 ELSE 1 END ASC,
