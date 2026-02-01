@@ -162,7 +162,7 @@ As a Google sign-in user who tries to reset my password, I want to receive a hel
 | # | Task | Description | Status |
 |---|------|-------------|--------|
 | 0 | [Manual Setup](./00-manual-setup.md) | Database table, Brevo templates, configuration | Not Started |
-| 1 | [Domain & Infrastructure](./01-domain-infrastructure.md) | Create PasswordResetToken entity, repository, and IUserManager methods | Not Started |
+| 1 | [Domain & Infrastructure](./01-domain-infrastructure.md) | Entity, repository, contracts, validators, and IUserManager methods | Not Started |
 | 2 | [Request Password Reset Command](./02-request-password-reset-command.md) | Create command to handle reset requests and store tokens | Not Started |
 | 3 | [Reset Password Command](./03-reset-password-command.md) | Create command to validate token and reset password | Not Started |
 | 4 | [API Endpoints](./04-api-endpoints.md) | Add endpoints to AuthController | Not Started |
@@ -170,6 +170,7 @@ As a Google sign-in user who tries to reset my password, I want to receive a hel
 | 6 | [Forgot Password Page](./06-forgot-password-page.md) | Create Blazor forgot password page | Not Started |
 | 7 | [Reset Password Page](./07-reset-password-page.md) | Create Blazor reset password page | Not Started |
 | 8 | [Cleanup Endpoint](./08-cleanup-endpoint.md) | Add scheduled cleanup task for expired tokens | Not Started |
+| 9 | [Login Page Link](./09-login-page-link.md) | Add "Forgot password?" link to login page | Not Started |
 
 ## Dependencies
 

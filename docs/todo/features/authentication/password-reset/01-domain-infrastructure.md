@@ -8,7 +8,7 @@
 
 ## Goal
 
-Create the `PasswordResetToken` entity and repository for storing password reset tokens in the database. Also add the `HasPasswordAsync` method to `IUserManager` for checking if users have a password set.
+Create the `PasswordResetToken` entity and repository for storing password reset tokens in the database. Also add the `HasPasswordAsync` method to `IUserManager` for checking if users have a password set. Create the API contracts (request/response DTOs) and their validators.
 
 ## Files to Create
 
@@ -17,6 +17,13 @@ Create the `PasswordResetToken` entity and repository for storing password reset
 | `PredictionLeague.Domain/Models/PasswordResetToken.cs` | Create | Domain entity for reset tokens |
 | `PredictionLeague.Application/Repositories/IPasswordResetTokenRepository.cs` | Create | Repository interface |
 | `PredictionLeague.Infrastructure/Repositories/PasswordResetTokenRepository.cs` | Create | Repository implementation |
+| `PredictionLeague.Contracts/Authentication/RequestPasswordResetRequest.cs` | Create | Request DTO for forgot password |
+| `PredictionLeague.Contracts/Authentication/ResetPasswordRequest.cs` | Create | Request DTO for password reset |
+| `PredictionLeague.Contracts/Authentication/ResetPasswordResponse.cs` | Create | Base response type |
+| `PredictionLeague.Contracts/Authentication/SuccessfulResetPasswordResponse.cs` | Create | Success response with tokens |
+| `PredictionLeague.Contracts/Authentication/FailedResetPasswordResponse.cs` | Create | Failure response with message |
+| `PredictionLeague.Validators/Authentication/RequestPasswordResetRequestValidator.cs` | Create | Validator for forgot password |
+| `PredictionLeague.Validators/Authentication/ResetPasswordRequestValidator.cs` | Create | Validator for password reset |
 
 ## Files to Modify
 
@@ -288,6 +295,116 @@ public class TemplateSettings
 }
 ```
 
+### Step 9: Create Request Contracts
+
+```csharp
+// RequestPasswordResetRequest.cs
+
+namespace PredictionLeague.Contracts.Authentication;
+
+public class RequestPasswordResetRequest
+{
+    public string Email { get; set; } = string.Empty;
+}
+```
+
+```csharp
+// ResetPasswordRequest.cs
+
+namespace PredictionLeague.Contracts.Authentication;
+
+public class ResetPasswordRequest
+{
+    public string Token { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+    public string ConfirmPassword { get; set; } = string.Empty;
+}
+```
+
+### Step 10: Create Response Contracts
+
+```csharp
+// ResetPasswordResponse.cs
+
+namespace PredictionLeague.Contracts.Authentication;
+
+public abstract record ResetPasswordResponse(bool IsSuccess);
+```
+
+```csharp
+// SuccessfulResetPasswordResponse.cs
+
+namespace PredictionLeague.Contracts.Authentication;
+
+public record SuccessfulResetPasswordResponse(
+    string AccessToken,
+    DateTime ExpiresAtUtc,
+    string RefreshTokenForCookie
+) : ResetPasswordResponse(true);
+```
+
+```csharp
+// FailedResetPasswordResponse.cs
+
+namespace PredictionLeague.Contracts.Authentication;
+
+public record FailedResetPasswordResponse(string Message) : ResetPasswordResponse(false);
+```
+
+### Step 11: Create Validators
+
+```csharp
+// RequestPasswordResetRequestValidator.cs
+
+using FluentValidation;
+using PredictionLeague.Contracts.Authentication;
+using System.Diagnostics.CodeAnalysis;
+
+namespace PredictionLeague.Validators.Authentication;
+
+[SuppressMessage("ReSharper", "UnusedType.Global")]
+public class RequestPasswordResetRequestValidator : AbstractValidator<RequestPasswordResetRequest>
+{
+    public RequestPasswordResetRequestValidator()
+    {
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Please enter your email address.");
+
+        RuleFor(x => x.Email)
+            .EmailAddress().WithMessage("Please enter a valid email address.")
+            .When(x => !string.IsNullOrEmpty(x.Email));
+    }
+}
+```
+
+```csharp
+// ResetPasswordRequestValidator.cs
+
+using FluentValidation;
+using PredictionLeague.Contracts.Authentication;
+using System.Diagnostics.CodeAnalysis;
+
+namespace PredictionLeague.Validators.Authentication;
+
+[SuppressMessage("ReSharper", "UnusedType.Global")]
+public class ResetPasswordRequestValidator : AbstractValidator<ResetPasswordRequest>
+{
+    public ResetPasswordRequestValidator()
+    {
+        RuleFor(x => x.Token)
+            .NotEmpty().WithMessage("Reset token is required.");
+
+        RuleFor(x => x.NewPassword)
+            .NotEmpty().WithMessage("Please enter a new password.")
+            .MinimumLength(8).WithMessage("Your password must be at least 8 characters long.");
+
+        RuleFor(x => x.ConfirmPassword)
+            .NotEmpty().WithMessage("Please confirm your password.")
+            .Equal(x => x.NewPassword).WithMessage("Passwords do not match.");
+    }
+}
+```
+
 ## Code Patterns to Follow
 
 ### Entity Factory Method Pattern
@@ -336,6 +453,11 @@ public async Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken =
 - [ ] `IUserManager` has `HasPasswordAsync` method
 - [ ] `UserManagerService` implements `HasPasswordAsync`
 - [ ] `TemplateSettings` has two new email template ID properties
+- [ ] `RequestPasswordResetRequest` contract created
+- [ ] `ResetPasswordRequest` contract created (with Token, NewPassword, ConfirmPassword)
+- [ ] `ResetPasswordResponse` base record and success/failure variants created
+- [ ] `RequestPasswordResetRequestValidator` validates email format
+- [ ] `ResetPasswordRequestValidator` validates token, password length, and confirmation match
 - [ ] Database migration script created
 - [ ] Solution builds without errors
 
