@@ -169,6 +169,7 @@ As a Google sign-in user who tries to reset my password, I want to receive a hel
 | 5 | [Email Templates](./05-email-templates.md) | Document Brevo email templates to create | Not Started |
 | 6 | [Forgot Password Page](./06-forgot-password-page.md) | Create Blazor forgot password page | Not Started |
 | 7 | [Reset Password Page](./07-reset-password-page.md) | Create Blazor reset password page | Not Started |
+| 8 | [Cleanup Endpoint](./08-cleanup-endpoint.md) | Add scheduled cleanup task for expired tokens | Not Started |
 
 ## Dependencies
 
