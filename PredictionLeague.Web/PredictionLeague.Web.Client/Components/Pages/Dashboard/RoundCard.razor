@@ -120,7 +120,7 @@
         return match.Outcome switch
         {
             PredictionOutcome.ExactScore => "pulsing-green",
-            PredictionOutcome.CorrectResult => "pulsing",
+            PredictionOutcome.CorrectResult => "pulsing-yellow",
             PredictionOutcome.Incorrect => "pulsing-red",
             _ => ""
         };

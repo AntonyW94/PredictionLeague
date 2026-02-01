@@ -44,7 +44,7 @@
     private string GetPulsingClass() => Outcome switch
     {
         PredictionOutcome.Incorrect => "pulsing-red",
-        PredictionOutcome.CorrectResult => "pulsing",
+        PredictionOutcome.CorrectResult => "pulsing-yellow",
         PredictionOutcome.ExactScore => "pulsing-green",
         _ => "pulsing-blue"
     };

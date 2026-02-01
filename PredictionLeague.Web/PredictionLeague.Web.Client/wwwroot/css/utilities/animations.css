@@ -1,7 +1,7 @@
 /* Animation Utilities - Consolidated animations */
 
-/* Pulse glow effect (for badges) - default yellow */
-.pulsing {
+/* Pulse glow effect (for badges) - yellow variant */
+.pulsing-yellow {
     animation: pulse-yellow 2s infinite;
 }
 
