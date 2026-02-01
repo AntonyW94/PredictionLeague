@@ -28,7 +28,7 @@
     [Parameter]
     public int? AwayScore { get; set; }
 
-    private string BadgeClass => $"badge-group badge-group--blue{(Status == MatchStatus.InProgress ? " pulsing" : "")}";
+    private string BadgeClass => $"badge-group badge-group--blue{(Status == MatchStatus.InProgress ? " pulsing-blue" : "")}";
 
     private string IconClass => Status switch
     {
