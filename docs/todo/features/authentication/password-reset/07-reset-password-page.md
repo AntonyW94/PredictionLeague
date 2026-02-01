@@ -25,18 +25,19 @@ Create a Blazor page where users can enter their new password after clicking the
 
 ```csharp
 // In IAuthenticationService.cs
-Task<ResetPasswordResponse> ResetPasswordAsync(string email, string token, string newPassword, string confirmPassword);
+Task<ResetPasswordResponse> ResetPasswordAsync(string token, string newPassword, string confirmPassword);
 ```
+
+**Note:** No email parameter - the user is looked up from the token on the server.
 
 ### Step 2: Implement in AuthenticationService
 
 ```csharp
 // In AuthenticationService.cs
-public async Task<ResetPasswordResponse> ResetPasswordAsync(string email, string token, string newPassword, string confirmPassword)
+public async Task<ResetPasswordResponse> ResetPasswordAsync(string token, string newPassword, string confirmPassword)
 {
     var request = new ResetPasswordRequest
     {
-        Email = email,
         Token = token,
         NewPassword = newPassword,
         ConfirmPassword = confirmPassword
@@ -96,9 +97,9 @@ public async Task<ResetPasswordResponse> ResetPasswordAsync(string email, string
                     </NavLink>
                 </div>
             }
-            else if (_isMissingParams)
+            else if (_isMissingToken)
             {
-                @* Missing Parameters State *@
+                @* Missing Token State *@
                 <h3 class="text-center fw-bold text-white">Invalid Link</h3>
                 <p class="text-center text-white mb-4">
                     This link appears to be incomplete. Please check your email and try clicking the link again.
@@ -118,7 +119,7 @@ public async Task<ResetPasswordResponse> ResetPasswordAsync(string email, string
             }
         </div>
 
-        @if (!_isTokenInvalid && !_isMissingParams)
+        @if (!_isTokenInvalid && !_isMissingToken)
         {
             <EditForm Model="_model" OnValidSubmit="HandleSubmitAsync" FormName="resetPasswordForm">
                 <DataAnnotationsValidator />
@@ -185,9 +186,8 @@ public async Task<ResetPasswordResponse> ResetPasswordAsync(string email, string
     private bool _showPassword;
     private bool _showConfirmPassword;
     private bool _isTokenInvalid;
-    private bool _isMissingParams;
+    private bool _isMissingToken;
 
-    private string? _email;
     private string? _token;
 
     protected override void OnInitialized()
@@ -195,16 +195,13 @@ public async Task<ResetPasswordResponse> ResetPasswordAsync(string email, string
         var uri = new Uri(NavigationManager.Uri);
         var query = QueryHelpers.ParseQuery(uri.Query);
 
-        if (query.TryGetValue("email", out var email))
-            _email = email;
-
         if (query.TryGetValue("token", out var token))
             _token = token;
 
-        // Check if required parameters are present
-        if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_token))
+        // Check if token is present
+        if (string.IsNullOrWhiteSpace(_token))
         {
-            _isMissingParams = true;
+            _isMissingToken = true;
         }
     }
 
@@ -224,7 +221,6 @@ public async Task<ResetPasswordResponse> ResetPasswordAsync(string email, string
         _errorMessage = null;
 
         var result = await AuthenticationService.ResetPasswordAsync(
-            _email!,
             _token!,
             _model.NewPassword,
             _model.ConfirmPassword
@@ -239,7 +235,8 @@ public async Task<ResetPasswordResponse> ResetPasswordAsync(string email, string
 
             case FailedResetPasswordResponse failure:
                 // Check if it's a token error
-                if (failure.Message.Contains("invalid") || failure.Message.Contains("expired"))
+                if (failure.Message.Contains("invalid", StringComparison.OrdinalIgnoreCase) ||
+                    failure.Message.Contains("expired", StringComparison.OrdinalIgnoreCase))
                 {
                     _isTokenInvalid = true;
                 }
@@ -283,9 +280,11 @@ Use `QueryHelpers.ParseQuery` from `Microsoft.AspNetCore.WebUtilities`:
 var uri = new Uri(NavigationManager.Uri);
 var query = QueryHelpers.ParseQuery(uri.Query);
 
-if (query.TryGetValue("paramName", out var value))
-    _paramValue = value;
+if (query.TryGetValue("token", out var token))
+    _token = token;
 ```
+
+**Note:** Only the `token` parameter is needed - no email in the URL.
 
 ### Multiple UI States
 
@@ -293,7 +292,7 @@ Handle different states with boolean flags:
 
 ```csharp
 private bool _isTokenInvalid;    // Token expired/invalid
-private bool _isMissingParams;   // URL missing required params
+private bool _isMissingToken;    // URL missing token param
 // Default state: show form
 ```
 
@@ -319,8 +318,9 @@ NavigationManager.NavigateTo("/", forceLoad: true);
 
 ## Verification
 
-- [ ] Page accessible at `/authentication/reset-password?token=xxx&email=xxx`
-- [ ] Missing parameters shows "Invalid Link" state
+- [ ] Page accessible at `/authentication/reset-password?token=xxx`
+- [ ] URL does NOT require email parameter (token-only)
+- [ ] Missing token shows "Invalid Link" state
 - [ ] Invalid/expired token shows "Link Expired" state
 - [ ] Password visibility toggles work for both fields
 - [ ] Validation enforces password requirements
@@ -334,21 +334,22 @@ NavigationManager.NavigateTo("/", forceLoad: true);
 
 ## Edge Cases to Consider
 
-- **Missing email parameter** → Show "Invalid Link" state
 - **Missing token parameter** → Show "Invalid Link" state
 - **Expired token** → API returns error, show "Link Expired" state
 - **Already-used token** → API returns error, show "Link Expired" state
+- **Token not found in database** → API returns error, show "Link Expired" state
 - **Password too weak** → Validation error shown
 - **Passwords don't match** → Validation error shown
 - **Network error** → Generic error message
-- **Token contains special characters** → URL encoding handles this
 
 ## Notes
 
-- The page reads `token` and `email` from query parameters (set by the email link)
-- Token is URL-decoded automatically by the query parser
+- The page reads only `token` from query parameters (no email for security)
+- The user is looked up server-side from the token stored in the database
+- Token is URL-safe Base64, so no additional decoding needed
 - Using `forceLoad: true` on redirect ensures the authentication state is fully refreshed
 - Password hint text reminds users of requirements before they type
 - Two separate password visibility toggles for better UX
 - The `Compare` attribute handles password matching validation
 - Regex validation provides client-side feedback before hitting the API
+- Using `StringComparison.OrdinalIgnoreCase` for error message matching to handle case variations

@@ -8,7 +8,7 @@
 
 ## Goal
 
-Create a command and handler that processes password reset requests. The handler looks up the user, determines if they have a password or use Google sign-in, and sends the appropriate email. Always returns success to prevent email enumeration.
+Create a command and handler that processes password reset requests. The handler looks up the user, checks rate limits, determines if they have a password or use Google sign-in, stores a token in the database, and sends the appropriate email. Always returns success to prevent email enumeration.
 
 ## Files to Create
 
@@ -76,25 +76,31 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PredictionLeague.Application.Configuration;
+using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
-using System.Web;
+using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Authentication.Commands.RequestPasswordReset;
 
 public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswordResetCommand, Unit>
 {
+    private const int MaxRequestsPerHour = 3;
+
     private readonly IUserManager _userManager;
+    private readonly IPasswordResetTokenRepository _tokenRepository;
     private readonly IEmailService _emailService;
     private readonly BrevoSettings _brevoSettings;
     private readonly ILogger<RequestPasswordResetCommandHandler> _logger;
 
     public RequestPasswordResetCommandHandler(
         IUserManager userManager,
+        IPasswordResetTokenRepository tokenRepository,
         IEmailService emailService,
         IOptions<BrevoSettings> brevoSettings,
         ILogger<RequestPasswordResetCommandHandler> logger)
     {
         _userManager = userManager;
+        _tokenRepository = tokenRepository;
         _emailService = emailService;
         _brevoSettings = brevoSettings.Value;
         _logger = logger;
@@ -111,27 +117,44 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
             return Unit.Value;
         }
 
+        // Check rate limit (3 requests per hour per user)
+        var recentRequestCount = await _tokenRepository.CountByUserIdSinceAsync(
+            user.Id,
+            DateTime.UtcNow.AddHours(-1),
+            cancellationToken);
+
+        if (recentRequestCount >= MaxRequestsPerHour)
+        {
+            // Rate limited - still return success to prevent enumeration
+            _logger.LogWarning("Password reset rate limit exceeded for User (ID: {UserId})", user.Id);
+            return Unit.Value;
+        }
+
         var hasPassword = await _userManager.HasPasswordAsync(user);
 
         if (hasPassword)
         {
-            await SendPasswordResetEmailAsync(user, request.ResetUrlBase);
+            await SendPasswordResetEmailAsync(user, request.ResetUrlBase, cancellationToken);
         }
         else
         {
-            await SendGoogleUserEmailAsync(user, request.ResetUrlBase);
+            await SendGoogleUserEmailAsync(user, request.ResetUrlBase, cancellationToken);
         }
 
         return Unit.Value;
     }
 
-    private async Task SendPasswordResetEmailAsync(Domain.Models.ApplicationUser user, string resetUrlBase)
+    private async Task SendPasswordResetEmailAsync(
+        ApplicationUser user,
+        string resetUrlBase,
+        CancellationToken cancellationToken)
     {
-        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var encodedToken = HttpUtility.UrlEncode(token);
-        var encodedEmail = HttpUtility.UrlEncode(user.Email);
+        // Create and store the token
+        var resetToken = PasswordResetToken.Create(user.Id);
+        await _tokenRepository.CreateAsync(resetToken, cancellationToken);
 
-        var resetLink = $"{resetUrlBase}?token={encodedToken}&email={encodedEmail}";
+        // Build the reset link (no email in URL for security)
+        var resetLink = $"{resetUrlBase}?token={resetToken.Token}";
 
         var templateId = _brevoSettings.Templates?.PasswordReset
             ?? throw new InvalidOperationException("PasswordReset email template ID is not configured");
@@ -148,7 +171,10 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
         _logger.LogInformation("Password reset email sent to User (ID: {UserId})", user.Id);
     }
 
-    private async Task SendGoogleUserEmailAsync(Domain.Models.ApplicationUser user, string resetUrlBase)
+    private async Task SendGoogleUserEmailAsync(
+        ApplicationUser user,
+        string resetUrlBase,
+        CancellationToken cancellationToken)
     {
         // Extract base URL (remove the reset-password path)
         var baseUrl = resetUrlBase.Replace("/authentication/reset-password", "");
@@ -195,7 +221,7 @@ await _emailService.SendTemplatedEmailAsync(
 
 ### Security: No Email Enumeration
 
-Always return success (`Unit.Value`) regardless of whether the email exists:
+Always return success (`Unit.Value`) regardless of outcome:
 
 ```csharp
 if (user == null)
@@ -205,29 +231,51 @@ if (user == null)
 }
 ```
 
+### Rate Limiting Pattern
+
+Check and enforce rate limits before creating tokens:
+
+```csharp
+var recentRequestCount = await _tokenRepository.CountByUserIdSinceAsync(
+    user.Id,
+    DateTime.UtcNow.AddHours(-1),
+    cancellationToken);
+
+if (recentRequestCount >= MaxRequestsPerHour)
+{
+    _logger.LogWarning("Password reset rate limit exceeded for User (ID: {UserId})", user.Id);
+    return Unit.Value;  // Still return success
+}
+```
+
 ## Verification
 
 - [ ] Command compiles and follows `IRequest<Unit>` pattern
-- [ ] Handler injects all required dependencies
+- [ ] Handler injects `IPasswordResetTokenRepository`
 - [ ] Handler returns `Unit.Value` even when user not found (security)
-- [ ] Password users receive reset email with valid token
+- [ ] Handler returns `Unit.Value` when rate limited (security)
+- [ ] Rate limiting checks tokens created in last hour
+- [ ] Token is stored in database before sending email
+- [ ] Reset link does NOT contain email (only token)
+- [ ] Password users receive reset email with token link
 - [ ] Google-only users receive "use Google sign-in" email
-- [ ] Token is URL-encoded in the reset link
-- [ ] Email is URL-encoded in the reset link
 - [ ] Logging follows `(ID: {UserId})` pattern
 - [ ] Validator rejects empty and invalid emails
 
 ## Edge Cases to Consider
 
 - **Email not found** → Log and return success (no email sent)
+- **Rate limit exceeded** → Log warning and return success (no email sent)
 - **User has both password AND Google** → Has password, so send reset email
 - **Email service throws** → Let exception bubble up (will be caught by global handler)
 - **Template ID not configured** → Throw `InvalidOperationException` with clear message
-- **Email with special characters** → URL encoding handles this
+- **Token already exists for user** → New tokens are created alongside old ones (old ones expire naturally)
 
 ## Notes
 
 - The `ResetUrlBase` is passed from the API controller, which knows the client's base URL
-- The token generated by Identity can be quite long; URL encoding ensures it's safe
-- Rate limiting is handled at the API layer, not in this handler
+- The token is URL-safe Base64 (no encoding needed)
+- Rate limiting is per-user, not per-IP (more secure)
+- Old tokens for the same user remain valid until they expire or are used
+- No cleanup of old tokens during creation (handled during validation or by background job)
 - MediatR automatically registers this handler via assembly scanning

@@ -57,7 +57,7 @@ Add this method to `AuthController.cs`:
 [SwaggerOperation(
     Summary = "Reset password using token from email",
     Description = "Validates the reset token and updates the password. On success, returns authentication tokens (auto-login). Tokens expire after 1 hour.")]
-[SwaggerResponse(200, "Password reset successful - returns authentication tokens", typeof(ResetPasswordResponse))]
+[SwaggerResponse(200, "Password reset successful - returns authentication tokens", typeof(SuccessfulResetPasswordResponse))]
 [SwaggerResponse(400, "Validation failed or token invalid/expired")]
 [SwaggerResponse(429, "Too many requests - rate limit exceeded")]
 public async Task<IActionResult> ResetPasswordAsync(
@@ -65,7 +65,6 @@ public async Task<IActionResult> ResetPasswordAsync(
     CancellationToken cancellationToken)
 {
     var command = new ResetPasswordCommand(
-        request.Email,
         request.Token,
         request.NewPassword
     );
@@ -80,6 +79,8 @@ public async Task<IActionResult> ResetPasswordAsync(
 }
 ```
 
+**Note:** The command only takes `Token` and `NewPassword` - no email parameter. The user is looked up from the token in the database.
+
 ### Step 3: Add Required Using Statements
 
 Ensure these using statements are at the top of `AuthController.cs`:
@@ -87,6 +88,7 @@ Ensure these using statements are at the top of `AuthController.cs`:
 ```csharp
 using PredictionLeague.Application.Features.Authentication.Commands.RequestPasswordReset;
 using PredictionLeague.Application.Features.Authentication.Commands.ResetPassword;
+using PredictionLeague.Contracts.Authentication;
 ```
 
 ## Code Patterns to Follow
@@ -160,6 +162,7 @@ The endpoints section should look like this:
 - [ ] Reset password returns 200 with tokens on success
 - [ ] Reset password returns 400 on invalid token
 - [ ] Reset password sets refresh token cookie on success
+- [ ] Reset password request has no email field (token-only)
 - [ ] Swagger documentation displays correctly
 - [ ] Solution compiles without errors
 
@@ -173,7 +176,8 @@ The endpoints section should look like this:
 ## Notes
 
 - The `auth` rate limiting policy (10 requests per 5 minutes per IP) is applied at the controller level
-- For stricter per-email rate limiting, implement in the command handler with a cache
+- Additional per-user rate limiting (3 per hour) is handled in the command handler
 - The `SetTokenCookie` method is inherited from `AuthControllerBase`
 - No changes needed to `AuthControllerBase` - it already has the cookie method
 - The Swagger attributes provide good API documentation for frontend developers
+- The reset endpoint does NOT require email - this is a security improvement to avoid exposing email in URLs

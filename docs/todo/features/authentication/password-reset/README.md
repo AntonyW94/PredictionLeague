@@ -113,18 +113,19 @@ As a Google sign-in user who tries to reset my password, I want to receive a hel
 4. **Always** show success message: "If an account exists with that email, you'll receive a password reset link shortly."
 5. Behind the scenes:
    - **No account exists** → Do nothing (security: don't reveal email existence)
-   - **Account exists WITH password** → Send password reset email with unique token
+   - **Account exists WITH password** → Generate token, store in database with user ID, send email
    - **Account exists WITHOUT password (Google-only)** → Send email explaining to use Google sign-in
 
 ### Reset Flow
 
-1. User clicks link in email: `/authentication/reset-password?token={token}&email={email}`
-2. Page validates token:
+1. User clicks link in email: `/authentication/reset-password?token={token}`
+2. Page calls API to validate token and retrieve user
+3. Token validation:
    - **Valid** → Show password reset form
    - **Invalid/Expired** → Show "Link Expired" message with option to request new link
-3. User enters new password and confirms it
-4. User clicks "Reset Password"
-5. On success → Auto-login and redirect to dashboard
+4. User enters new password and confirms it
+5. User clicks "Reset Password"
+6. On success → Token deleted, auto-login and redirect to dashboard
 
 ### Security Measures
 
@@ -132,9 +133,10 @@ As a Google sign-in user who tries to reset my password, I want to receive a hel
 |---------|----------------|
 | Token expiry | 1 hour |
 | Rate limiting | 3 requests per email per hour |
-| Token format | ASP.NET Identity token (cryptographically secure) |
-| Single use | Token invalidated after successful reset |
+| Token format | Cryptographically secure random string (64 bytes, Base64 URL-safe) |
+| Single use | Token deleted from database after successful reset |
 | No email enumeration | Same response whether email exists or not |
+| No email in URL | User lookup via token stored in database (prevents email exposure) |
 
 ## Acceptance Criteria
 
@@ -145,10 +147,12 @@ As a Google sign-in user who tries to reset my password, I want to receive a hel
 - [ ] Password reset email sent to users with passwords
 - [ ] Google-only users receive "use Google sign-in" email instead
 - [ ] Reset link expires after 1 hour
+- [ ] Reset link does NOT contain email address (security)
 - [ ] Reset page validates token before showing form
 - [ ] Expired/invalid tokens show friendly error with link to request new one
 - [ ] New password must meet existing requirements (8+ chars, upper, lower, digit, 4 unique)
 - [ ] Password confirmation must match
+- [ ] Token deleted after successful password reset
 - [ ] Successful reset auto-logs user in and redirects to dashboard
 - [ ] Rate limited to 3 requests per email per hour
 - [ ] All pages match existing auth page styling
@@ -157,9 +161,9 @@ As a Google sign-in user who tries to reset my password, I want to receive a hel
 
 | # | Task | Description | Status |
 |---|------|-------------|--------|
-| 1 | [Domain & Infrastructure](./01-domain-infrastructure.md) | Add password reset methods to IUserManager | Not Started |
-| 2 | [Request Password Reset Command](./02-request-password-reset-command.md) | Create command to handle reset requests | Not Started |
-| 3 | [Reset Password Command](./03-reset-password-command.md) | Create command to handle password reset | Not Started |
+| 1 | [Domain & Infrastructure](./01-domain-infrastructure.md) | Create PasswordResetToken entity, repository, and IUserManager methods | Not Started |
+| 2 | [Request Password Reset Command](./02-request-password-reset-command.md) | Create command to handle reset requests and store tokens | Not Started |
+| 3 | [Reset Password Command](./03-reset-password-command.md) | Create command to validate token and reset password | Not Started |
 | 4 | [API Endpoints](./04-api-endpoints.md) | Add endpoints to AuthController | Not Started |
 | 5 | [Email Templates](./05-email-templates.md) | Document Brevo email templates to create | Not Started |
 | 6 | [Forgot Password Page](./06-forgot-password-page.md) | Create Blazor forgot password page | Not Started |
@@ -172,39 +176,56 @@ As a Google sign-in user who tries to reset my password, I want to receive a hel
 - [x] JWT authentication already in place
 - [x] User entity has `PasswordHash` field (from IdentityUser)
 - [x] Existing auth page styles available
+- [ ] **Need to create:** `PasswordResetToken` entity and table
+- [ ] **Need to create:** `IPasswordResetTokenRepository` and implementation
 - [ ] **Need to create:** Two new Brevo email templates (see Task 5)
 - [ ] **Need to add:** Two new template IDs to `TemplateSettings`
 
 ## Technical Notes
 
-### ASP.NET Identity Password Reset Tokens
+### Token Storage Approach (Security Improvement)
 
-ASP.NET Identity provides built-in token generation for password reset:
+Instead of passing the email in the reset URL (which exposes user email in browser history and logs), we store tokens in a database table:
 
-```csharp
-// Generate token (valid for configured duration)
-var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-// Reset password with token
-var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+```
+PasswordResetTokens
+├── Token (PK) - Cryptographically secure random string
+├── UserId (FK) - Links to the user
+├── CreatedAtUtc - When token was generated
+└── ExpiresAtUtc - When token expires (CreatedAtUtc + 1 hour)
 ```
 
-The token is:
-- Cryptographically secure (HMACSHA256)
-- URL-safe when encoded
-- Automatically invalidated after use
-- Tied to user's `SecurityStamp` (changes when password changes)
+**Benefits:**
+- Email not exposed in URL, browser history, or server logs
+- Token can be invalidated server-side at any time
+- Easy to implement rate limiting per user
+- Easy to clean up expired tokens
 
-### Token Expiry Configuration
+### Why Not ASP.NET Identity Tokens?
 
-Add to Identity configuration in `DependencyInjection.cs`:
+ASP.NET Identity's built-in `GeneratePasswordResetTokenAsync` requires the email to validate the token (it's tied to the user's SecurityStamp). By using our own token storage:
+1. We avoid exposing the email in URLs
+2. We have full control over token lifecycle
+3. We can easily query tokens for rate limiting
+
+### Token Generation
 
 ```csharp
-services.Configure<DataProtectionTokenProviderOptions>(options =>
-{
-    options.TokenLifespan = TimeSpan.FromHours(1);
-});
+// Generate a cryptographically secure token (64 bytes = 512 bits)
+var tokenBytes = RandomNumberGenerator.GetBytes(64);
+var token = Convert.ToBase64String(tokenBytes)
+    .Replace("+", "-")
+    .Replace("/", "_")
+    .TrimEnd('=');  // URL-safe Base64
 ```
+
+### Reset URL Format
+
+```
+https://thepredictions.co.uk/authentication/reset-password?token=abc123...
+```
+
+**Note:** No email parameter - the user is looked up from the token in the database.
 
 ### Checking for Password-Based Users
 
@@ -215,7 +236,21 @@ bool hasPassword = await _userManager.HasPasswordAsync(user);
 
 ### Rate Limiting
 
-Use the existing `auth` rate limiting policy which limits to 10 requests per 5 minutes per IP. For additional per-email limiting, track requests in memory or database.
+Use the existing `auth` rate limiting policy which limits to 10 requests per 5 minutes per IP. For additional per-email limiting, check the token count in the database:
+
+```csharp
+// Check if user has requested too many resets
+var recentTokenCount = await _tokenRepository.CountByUserIdSinceAsync(
+    userId,
+    DateTime.UtcNow.AddHours(-1)
+);
+
+if (recentTokenCount >= 3)
+{
+    // Rate limited - but still return success to prevent enumeration
+    return Unit.Value;
+}
+```
 
 ### Email Template Parameters
 
@@ -223,7 +258,7 @@ Use the existing `auth` rate limiting policy which limits to 10 requests per 5 m
 ```json
 {
   "firstName": "John",
-  "resetLink": "https://thepredictions.co.uk/authentication/reset-password?token=xxx&email=xxx"
+  "resetLink": "https://thepredictions.co.uk/authentication/reset-password?token=abc123..."
 }
 ```
 
@@ -235,6 +270,17 @@ Use the existing `auth` rate limiting policy which limits to 10 requests per 5 m
 }
 ```
 
+### Cleanup Strategy
+
+Expired tokens should be cleaned up. The simplest approach is on-demand cleanup:
+- When validating a token, delete all expired tokens for that user
+- This keeps the table clean without needing a background job
+
+```csharp
+// During token validation
+await _tokenRepository.DeleteExpiredTokensAsync(DateTime.UtcNow);
+```
+
 ## Open Questions
 
 - [x] Token expiry time? → **1 hour**
@@ -243,3 +289,4 @@ Use the existing `auth` rate limiting policy which limits to 10 requests per 5 m
 - [x] Password requirements? → **Use existing (8+ chars, upper, lower, digit, 4 unique)**
 - [x] After successful reset? → **Auto-login and redirect to dashboard**
 - [x] Email templates? → **User to create in Brevo, documented in Task 5**
+- [x] Email in URL? → **No - store token→user mapping in database for security**
