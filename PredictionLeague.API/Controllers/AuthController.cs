@@ -7,6 +7,8 @@ using PredictionLeague.Application.Features.Authentication.Commands.Login;
 using PredictionLeague.Application.Features.Authentication.Commands.Logout;
 using PredictionLeague.Application.Features.Authentication.Commands.RefreshToken;
 using PredictionLeague.Application.Features.Authentication.Commands.Register;
+using PredictionLeague.Application.Features.Authentication.Commands.RequestPasswordReset;
+using PredictionLeague.Application.Features.Authentication.Commands.ResetPassword;
 using PredictionLeague.Contracts.Authentication;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -138,5 +140,54 @@ public class AuthController : AuthControllerBase
         Response.Cookies.Delete("refreshToken");
 
         return NoContent();
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [SwaggerOperation(
+        Summary = "Request a password reset email",
+        Description = "Sends a password reset email if the account exists. For security, always returns success regardless of whether the email exists. Rate limited to prevent abuse.")]
+    [SwaggerResponse(200, "Request processed - check email if account exists")]
+    [SwaggerResponse(400, "Validation failed - invalid email format")]
+    [SwaggerResponse(429, "Too many requests - rate limit exceeded")]
+    public async Task<IActionResult> ForgotPasswordAsync(
+        [FromBody, SwaggerParameter("Email address for password reset", Required = true)] RequestPasswordResetRequest request,
+        CancellationToken cancellationToken)
+    {
+        // Build the reset URL base from the request
+        // This allows the client URL to be determined dynamically
+        var resetUrlBase = $"{Request.Headers["Origin"]}/authentication/reset-password";
+
+        var command = new RequestPasswordResetCommand(request.Email, resetUrlBase);
+        await _mediator.Send(command, cancellationToken);
+
+        // Always return OK to prevent email enumeration
+        return Ok(new { message = "If an account exists with that email, you'll receive a password reset link shortly." });
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [SwaggerOperation(
+        Summary = "Reset password using token from email",
+        Description = "Validates the reset token and updates the password. On success, returns authentication tokens (auto-login). Tokens expire after 1 hour.")]
+    [SwaggerResponse(200, "Password reset successful - returns authentication tokens", typeof(SuccessfulResetPasswordResponse))]
+    [SwaggerResponse(400, "Validation failed or token invalid/expired")]
+    [SwaggerResponse(429, "Too many requests - rate limit exceeded")]
+    public async Task<IActionResult> ResetPasswordAsync(
+        [FromBody, SwaggerParameter("Reset password details including token and new password", Required = true)] ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new ResetPasswordCommand(
+            request.Token,
+            request.NewPassword
+        );
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result is not SuccessfulResetPasswordResponse success)
+            return BadRequest(result);
+
+        SetTokenCookie(success.RefreshTokenForCookie);
+        return Ok(success);
     }
 }

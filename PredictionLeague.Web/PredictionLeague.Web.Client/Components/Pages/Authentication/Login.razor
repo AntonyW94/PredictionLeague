@@ -67,6 +67,12 @@
                 <StyledValidationMessage For="@(() => _model.Password)" />
             </div>
 
+            <div class="text-end mb-3">
+                <NavLink href="/authentication/forgot-password" class="text-white-50 small text-decoration-none">
+                    Forgot password?
+                </NavLink>
+            </div>
+
             <div class="d-grid mt-4">
                 <button type="submit" class="btn green-button text-purple-1000 input-height" disabled="@_isBusy">
                     @if (_isBusy)

@@ -62,6 +62,11 @@ public class UserManagerService : IUserManager
         return await _userManager.IsInRoleAsync(user, roleName);
     }
 
+    public async Task<bool> HasPasswordAsync(ApplicationUser user)
+    {
+        return await _userManager.HasPasswordAsync(user);
+    }
+
     #endregion
 
     #region Update
@@ -82,6 +87,19 @@ public class UserManagerService : IUserManager
     {
         var result = await _userManager.AddToRoleAsync(user, role);
         return result.Succeeded ? UserManagerResult.Success() : UserManagerResult.Failure(result.Errors.Select(e => e.Description));
+    }
+
+    public async Task<UserManagerResult> ResetPasswordDirectAsync(ApplicationUser user, string newPassword)
+    {
+        // Remove existing password (if any) and add new one
+        var removeResult = await _userManager.RemovePasswordAsync(user);
+        if (!removeResult.Succeeded)
+            return UserManagerResult.Failure(removeResult.Errors.Select(e => e.Description));
+
+        var addResult = await _userManager.AddPasswordAsync(user, newPassword);
+        return addResult.Succeeded
+            ? UserManagerResult.Success()
+            : UserManagerResult.Failure(addResult.Errors.Select(e => e.Description));
     }
 
     #endregion
