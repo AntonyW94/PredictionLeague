@@ -148,13 +148,21 @@ public class League
         }
     }
 
-    public void UpdateDetails(string newName, decimal newPrice, DateTime newEntryDeadlineUtc, Season season)
+    public void UpdateDetails(
+        string newName,
+        decimal newPrice,
+        DateTime newEntryDeadlineUtc,
+        int newPointsForExactScore,
+        int newPointsForCorrectResult,
+        Season season)
     {
         Validate(newName, newEntryDeadlineUtc, season);
 
         Name = newName;
         Price = newPrice;
         EntryDeadlineUtc = newEntryDeadlineUtc;
+        PointsForExactScore = newPointsForExactScore;
+        PointsForCorrectResult = newPointsForCorrectResult;
     }
 
     public void AddMember(string userId)

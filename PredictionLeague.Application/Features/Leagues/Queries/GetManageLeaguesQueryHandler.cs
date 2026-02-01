@@ -25,19 +25,21 @@ public class GetManageLeaguesQueryHandler : IRequestHandler<GetManageLeaguesQuer
                 l.[Price],
                 ISNULL(l.[EntryCode], 'Public') AS EntryCode,
                 l.[EntryDeadlineUtc],
+                l.[PointsForExactScore],
+                l.[PointsForCorrectResult],
                 CASE
                     WHEN l.[EntryCode] IS NULL THEN 'Public'
                     WHEN l.[AdministratorUserId] = @UserId THEN 'MyPrivate'
                     ELSE 'OtherPrivate'
                 END AS LeagueCategory
-            FROM 
+            FROM
                 [Leagues] l
-            JOIN 
+            JOIN
                 [Seasons] s ON l.[SeasonId] = s.[Id]
-            LEFT JOIN 
+            LEFT JOIN
                 [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
             GROUP BY
-                l.[Id], l.[Name], s.[Name], l.[Price], l.[EntryCode], l.[EntryDeadlineUtc], s.[StartDateUtc], l.[AdministratorUserId]
+                l.[Id], l.[Name], s.[Name], l.[Price], l.[EntryCode], l.[EntryDeadlineUtc], l.[PointsForExactScore], l.[PointsForCorrectResult], s.[StartDateUtc], l.[AdministratorUserId]
             ORDER BY
                 s.[StartDateUtc] DESC, l.[Name] ASC;";
 
@@ -82,8 +84,10 @@ public class GetManageLeaguesQueryHandler : IRequestHandler<GetManageLeaguesQuer
         decimal Price,
         string EntryCode,
         DateTime EntryDeadlineUtc,
+        int PointsForExactScore,
+        int PointsForCorrectResult,
         string LeagueCategory)
     {
-        public LeagueDto ToLeagueDto() => new(Id, Name, SeasonName, MemberCount, Price, EntryCode, EntryDeadlineUtc);
+        public LeagueDto ToLeagueDto() => new(Id, Name, SeasonName, MemberCount, Price, EntryCode, EntryDeadlineUtc, PointsForExactScore, PointsForCorrectResult);
     }
 }

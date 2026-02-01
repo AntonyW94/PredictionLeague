@@ -55,16 +55,32 @@
                             <div class="form-text text-white-50">Enter 0 for a free-to-play league.</div>
                             <StyledValidationMessage For="@(() => _model.Price)" />
                         </div>
-                      
+
                         <div class="col-md-6 mb-3">
                             <label for="entryDeadline" class="form-label text-white">Entry Deadline</label>
-                            <UtcInputDate id="entryDeadline" 
-                                          @bind-Value="_model.EntryDeadlineUtc" 
-                                          Class="form-control" 
-                                          Max="@MaxDate" 
+                            <UtcInputDate id="entryDeadline"
+                                          @bind-Value="_model.EntryDeadlineUtc"
+                                          Class="form-control"
+                                          Max="@MaxDate"
                                           Disabled="@ShouldDisableFields" />
                             <div class="form-text text-white-50">Deadline must be before the season starts.</div>
                             <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="pointsForExactScore" class="form-label text-white">Points for Exact Score</label>
+                            <InputNumber id="pointsForExactScore" class="form-control" @bind-Value="_model.PointsForExactScore" disabled="@ShouldDisableFields" />
+                            <div class="form-text text-white-50">Points awarded for predicting the exact score.</div>
+                            <StyledValidationMessage For="@(() => _model.PointsForExactScore)" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="pointsForCorrectResult" class="form-label text-white">Points for Correct Result</label>
+                            <InputNumber id="pointsForCorrectResult" class="form-control" @bind-Value="_model.PointsForCorrectResult" disabled="@ShouldDisableFields" />
+                            <div class="form-text text-white-50">Points awarded for predicting the winner/draw.</div>
+                            <StyledValidationMessage For="@(() => _model.PointsForCorrectResult)" />
                         </div>
                     </div>
                 </ChildContent>
@@ -83,13 +99,19 @@
     protected override async Task OnInitializedAsync()
     {
         _pageData = await Http.GetFromJsonAsync<CreateLeaguePageData>("api/leagues/create-data");
-       
-        if (_pageData?.Seasons.Count == 1)
-        {
-            var singleSeason = _pageData.Seasons.First();
-            _model.SeasonId = singleSeason.Id;
 
-            UpdateDeadlineAndMaxDate(singleSeason.StartDateUtc);
+        if (_pageData != null)
+        {
+            _model.PointsForExactScore = _pageData.DefaultPointsForExactScore;
+            _model.PointsForCorrectResult = _pageData.DefaultPointsForCorrectResult;
+
+            if (_pageData.Seasons.Count == 1)
+            {
+                var singleSeason = _pageData.Seasons.First();
+                _model.SeasonId = singleSeason.Id;
+
+                UpdateDeadlineAndMaxDate(singleSeason.StartDateUtc);
+            }
         }
     }
 

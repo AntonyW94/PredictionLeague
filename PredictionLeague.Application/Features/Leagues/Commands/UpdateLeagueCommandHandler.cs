@@ -37,6 +37,8 @@ public class UpdateLeagueCommandHandler : IRequestHandler<UpdateLeagueCommand>
             request.Name,
             request.Price,
             request.EntryDeadlineUtc,
+            request.PointsForExactScore,
+            request.PointsForCorrectResult,
             season
         );
         

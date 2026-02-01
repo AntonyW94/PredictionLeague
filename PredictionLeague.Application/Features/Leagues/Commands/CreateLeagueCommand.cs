@@ -9,5 +9,7 @@ public record CreateLeagueCommand(
     int SeasonId,
     decimal Price,
     string CreatingUserId,
-    DateTime EntryDeadlineUtc
+    DateTime EntryDeadlineUtc,
+    int PointsForExactScore,
+    int PointsForCorrectResult
 ) : IRequest<LeagueDto>, ITransactionalRequest;

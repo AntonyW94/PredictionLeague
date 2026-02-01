@@ -62,11 +62,33 @@
 
                     <div class="mb-3">
                         <label for="entryDeadline" class="form-label text-white">Entry Deadline</label>
-                        <UtcInputDate id="entryDeadline" 
-                                      @bind-Value="_model.EntryDeadlineUtc" 
-                                      Class="form-control"  
+                        <UtcInputDate id="entryDeadline"
+                                      @bind-Value="_model.EntryDeadlineUtc"
+                                      Class="form-control"
                                       Disabled="@_isPastDeadline" />
                         <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="pointsForExactScore" class="form-label text-white">Points for Exact Score</label>
+                            <InputNumber id="pointsForExactScore" class="form-control" @bind-Value="_model.PointsForExactScore" disabled="@_isScoringLocked" />
+                            @if (_isScoringLocked)
+                            {
+                                <small class="form-text text-white-50">Cannot be changed after members have joined.</small>
+                            }
+                            <StyledValidationMessage For="@(() => _model.PointsForExactScore)" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="pointsForCorrectResult" class="form-label text-white">Points for Correct Result</label>
+                            <InputNumber id="pointsForCorrectResult" class="form-control" @bind-Value="_model.PointsForCorrectResult" disabled="@_isScoringLocked" />
+                            @if (_isScoringLocked)
+                            {
+                                <small class="form-text text-white-50">Cannot be changed after members have joined.</small>
+                            }
+                            <StyledValidationMessage For="@(() => _model.PointsForCorrectResult)" />
+                        </div>
                     </div>
 
                     @if (_isPastDeadline)
@@ -88,6 +110,7 @@
     private string? _seasonName;
     private bool _isPastDeadline;
     private bool _isPriceLocked;
+    private bool _isScoringLocked;
 
     protected override async Task OnInitializedAsync()
     {
@@ -98,12 +121,15 @@
             {
                 Name = league.Name,
                 Price = league.Price,
-                EntryDeadlineUtc = league.EntryDeadlineUtc
+                EntryDeadlineUtc = league.EntryDeadlineUtc,
+                PointsForExactScore = league.PointsForExactScore,
+                PointsForCorrectResult = league.PointsForCorrectResult
             };
             _entryCodeForDisplay = league.EntryCode;
-            _seasonName = league.SeasonName; 
+            _seasonName = league.SeasonName;
             _isPastDeadline = league.EntryDeadlineUtc < DateTime.UtcNow;
             _isPriceLocked = league.MemberCount > 1;
+            _isScoringLocked = league.MemberCount > 1;
         }
     }
 

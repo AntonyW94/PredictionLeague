@@ -21,5 +21,11 @@ public class UpdateLeagueRequestValidator : AbstractValidator<UpdateLeagueReques
 
         RuleFor(x => x.EntryDeadlineUtc)
             .GreaterThan(DateTime.UtcNow).WithMessage("Entry deadline must be in the future.");
+
+        RuleFor(x => x.PointsForExactScore)
+            .InclusiveBetween(1, 100).WithMessage("Points for exact score must be between 1 and 100.");
+
+        RuleFor(x => x.PointsForCorrectResult)
+            .InclusiveBetween(1, 100).WithMessage("Points for correct result must be between 1 and 100.");
     }
 }
