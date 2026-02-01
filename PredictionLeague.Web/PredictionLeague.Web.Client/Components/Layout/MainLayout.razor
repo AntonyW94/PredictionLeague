@@ -38,9 +38,11 @@
 
     private void SetLayoutClasses()
     {
-        var relativePath = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        var isHomePage = string.IsNullOrWhiteSpace(relativePath);
-        var isAuthenticationPage = relativePath.StartsWith("authentication/");
+        var uri = new Uri(NavigationManager.Uri);
+        var path = uri.AbsolutePath;
+
+        var isHomePage = path == "/" || path == "";
+        var isAuthenticationPage = path.StartsWith("/authentication/");
 
         _navLayoutClass = isHomePage ? "navbar-overlay" : "";
         _backgroundClass = isAuthenticationPage ? "bg-purple-gradient" : isHomePage ? "bg-grey-100" : "";
