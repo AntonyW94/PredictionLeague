@@ -161,6 +161,7 @@ As a Google sign-in user who tries to reset my password, I want to receive a hel
 
 | # | Task | Description | Status |
 |---|------|-------------|--------|
+| 0 | [Manual Setup](./00-manual-setup.md) | Database table, Brevo templates, configuration | Not Started |
 | 1 | [Domain & Infrastructure](./01-domain-infrastructure.md) | Create PasswordResetToken entity, repository, and IUserManager methods | Not Started |
 | 2 | [Request Password Reset Command](./02-request-password-reset-command.md) | Create command to handle reset requests and store tokens | Not Started |
 | 3 | [Reset Password Command](./03-reset-password-command.md) | Create command to validate token and reset password | Not Started |
