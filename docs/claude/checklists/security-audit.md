@@ -7,7 +7,6 @@ Use this checklist when reviewing code for security vulnerabilities or before de
 ### JWT Token Handling
 
 - [ ] Access tokens have short expiry (15-30 minutes)
-- [ ] Refresh tokens are stored securely (HttpOnly cookies or secure storage)
 - [ ] Refresh tokens are rotated on use
 - [ ] Token validation checks expiry, issuer, and audience
 - [ ] Logout invalidates refresh tokens server-side
@@ -30,6 +29,27 @@ services.AddAuthentication()
         };
     });
 ```
+
+### Blazor WebAssembly Token Storage
+
+**IMPORTANT:** This project uses Blazor WebAssembly. HttpOnly cookies do NOT work for Blazor WASM authentication because:
+
+1. Blazor WASM runs entirely in the browser (client-side)
+2. JavaScript must access the token to attach it to API requests via `Authorization` header
+3. HttpOnly cookies are inaccessible to JavaScript by design
+
+**This project's auth flow:**
+- Tokens stored in `localStorage`
+- Passed via `Authorization: Bearer {token}` header
+- `ApiAuthenticationStateProvider` manages token lifecycle
+
+```csharp
+// This project's pattern - tokens via Authorization header
+httpClient.DefaultRequestHeaders.Authorization =
+    new AuthenticationHeaderValue("Bearer", accessToken);
+```
+
+**DO NOT** attempt to "fix" this by moving tokens to HttpOnly cookies - it will break the authentication flow.
 
 ### Endpoint Authorisation
 
@@ -239,7 +259,15 @@ if (user is null || !ValidatePassword(user, password))
 
 ## Session Management
 
-### Cookie Security
+### Cookie Security (Server-Rendered Apps Only)
+
+> **NOT APPLICABLE TO THIS PROJECT**
+>
+> This project uses Blazor WebAssembly with JWT tokens stored in localStorage and passed via Authorization header. The cookie security section below is for reference only and does NOT apply to this project's authentication flow.
+>
+> See "Blazor WebAssembly Token Storage" section above for this project's auth pattern.
+
+For server-rendered applications (Blazor Server, MVC, Razor Pages) that use cookie authentication:
 
 - [ ] Authentication cookies are `HttpOnly`
 - [ ] Authentication cookies are `Secure` (HTTPS only)
@@ -247,6 +275,7 @@ if (user is null || !ValidatePassword(user, password))
 - [ ] Cookie expiry is reasonable
 
 ```csharp
+// FOR SERVER-RENDERED APPS ONLY - Not used in this project
 services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
