@@ -3,7 +3,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using PredictionLeague.API.Services;
 using PredictionLeague.Application.Common.Behaviours;
 using PredictionLeague.Application.Common.Interfaces;
@@ -16,11 +16,9 @@ namespace PredictionLeague.API;
 
 public static class DependencyInjection
 {
-    extension(IServiceCollection services)
+    public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
     {
-        public void AddApiServices(IConfiguration configuration)
-        {
-            services.AddControllers();
+        services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(options =>
             {
@@ -168,9 +166,11 @@ public static class DependencyInjection
             services.AddRateLimiting();
             services.AddAppAuthentication(configuration);
             services.AddApplicationServices(configuration);
+
+            return services;
         }
 
-        private void AddAppAuthentication(IConfiguration configuration)
+        private static IServiceCollection AddAppAuthentication(this IServiceCollection services, IConfiguration configuration)
         {
             var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()!;
             var googleSettings = configuration.GetSection(GoogleAuthSettings.SectionName).Get<GoogleAuthSettings>()!;
@@ -203,9 +203,11 @@ public static class DependencyInjection
                 });
 
             services.AddAuthorization();
+
+            return services;
         }
 
-        private void AddApplicationServices(IConfiguration configuration)
+        private static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
             services.AddHttpContextAccessor();
@@ -221,9 +223,11 @@ public static class DependencyInjection
                 if (!string.IsNullOrEmpty(mediatRKey))
                     cfg.LicenseKey = mediatRKey;
             });
+
+            return services;
         }
 
-        private void AddRateLimiting()
+        private static IServiceCollection AddRateLimiting(this IServiceCollection services)
         {
             services.AddRateLimiter(options =>
             {
@@ -272,8 +276,9 @@ public static class DependencyInjection
                     await context.HttpContext.Response.WriteAsync("Too many requests. Please try again later.", cancellationToken);
                 };
             });
+
+            return services;
         }
-    }
 
     private static string GetClientIpAddress(HttpContext context)
     {
