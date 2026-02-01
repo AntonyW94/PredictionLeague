@@ -68,6 +68,44 @@ public class AuthenticationService(HttpClient httpClient, AuthenticationStatePro
         await ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsLoggedOutAsync();
     }
 
+    public async Task<bool> RequestPasswordResetAsync(string email)
+    {
+        try
+        {
+            var response = await httpClient.PostAsJsonAsync("api/auth/forgot-password", new { email });
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<ResetPasswordResponse> ResetPasswordAsync(string token, string newPassword, string confirmPassword)
+    {
+        var request = new ResetPasswordRequest
+        {
+            Token = token,
+            NewPassword = newPassword,
+            ConfirmPassword = confirmPassword
+        };
+
+        var response = await httpClient.PostAsJsonAsync("api/auth/reset-password", request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<SuccessfulResetPasswordResponse>();
+            if (result != null)
+            {
+                await ((ApiAuthenticationStateProvider)authenticationStateProvider).MarkUserAsAuthenticatedAsync(result.AccessToken);
+                return result;
+            }
+        }
+
+        var error = await response.Content.ReadFromJsonAsync<FailedResetPasswordResponse>();
+        return error ?? new FailedResetPasswordResponse("An error occurred. Please try again.");
+    }
+
     private class IdentityErrorResponse
     {
         public List<string> Errors { get; init; } = [];
