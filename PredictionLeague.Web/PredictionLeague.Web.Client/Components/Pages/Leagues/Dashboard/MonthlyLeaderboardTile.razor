@@ -143,8 +143,7 @@
             await base.OnInitializedAsync();
             _months = (await LeagueService.GetMonthsForLeagueAsync(LeagueId)).ToList();
 
-            var currentMonth = DateTime.UtcNow.Month;
-            var currentMonthDto = _months.FirstOrDefault(m => m.Month == currentMonth) ?? _months.FirstOrDefault();
+            var currentMonthDto = _months.FirstOrDefault(m => m.RoundsRemaining > 0) ?? _months.FirstOrDefault();
             if (currentMonthDto != null)
             {
                 _currentIndex = _months.IndexOf(currentMonthDto);
