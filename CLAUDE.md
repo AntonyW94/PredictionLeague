@@ -99,7 +99,11 @@ Use these when creating new features:
 |------|-----------|
 | Creating a new command | [`docs/claude/checklists/new-command.md`](docs/claude/checklists/new-command.md) |
 | Creating a new query | [`docs/claude/checklists/new-query.md`](docs/claude/checklists/new-query.md) |
+| Creating a new domain entity | [`docs/claude/checklists/new-entity.md`](docs/claude/checklists/new-entity.md) |
+| Adding a new API endpoint | [`docs/claude/checklists/new-api-endpoint.md`](docs/claude/checklists/new-api-endpoint.md) |
+| Creating a new Blazor component | [`docs/claude/checklists/new-blazor-component.md`](docs/claude/checklists/new-blazor-component.md) |
 | Adding a new CSS file | [`docs/claude/checklists/new-css-file.md`](docs/claude/checklists/new-css-file.md) |
+| Running a security audit | [`docs/claude/checklists/security-audit.md`](docs/claude/checklists/security-audit.md) |
 
 ## Things to NEVER Do
 
