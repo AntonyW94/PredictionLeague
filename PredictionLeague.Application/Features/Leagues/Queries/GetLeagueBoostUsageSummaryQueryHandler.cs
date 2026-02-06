@@ -32,8 +32,9 @@ public class GetLeagueBoostUsageSummaryQueryHandler
         var windowsTask = GetWindowsAsync(request.LeagueId, cancellationToken);
         var membersTask = GetMembersAsync(request.LeagueId, cancellationToken);
         var seasonInfoTask = GetSeasonInfoAsync(request.LeagueId, cancellationToken);
+        var inProgressRoundTask = GetInProgressRoundNumberAsync(request.LeagueId, cancellationToken);
 
-        await Task.WhenAll(boostRulesTask, windowsTask, membersTask, seasonInfoTask);
+        await Task.WhenAll(boostRulesTask, windowsTask, membersTask, seasonInfoTask, inProgressRoundTask);
 
         var boostRules = boostRulesTask.Result.ToList();
         if (boostRules.Count == 0)
@@ -42,6 +43,7 @@ public class GetLeagueBoostUsageSummaryQueryHandler
         var windows = windowsTask.Result.ToList();
         var members = membersTask.Result.ToList();
         var seasonInfo = seasonInfoTask.Result;
+        var inProgressRoundNumber = inProgressRoundTask.Result;
 
         if (seasonInfo == null)
             return [];
@@ -70,7 +72,8 @@ public class GetLeagueBoostUsageSummaryQueryHandler
                 var maxUses = rule.TotalUsesPerSeason;
 
                 var playerUsages = BuildPlayerUsages(
-                    members, boostUsages, null, null, maxUses, request.CurrentUserId);
+                    members, boostUsages, null, null, maxUses, request.CurrentUserId,
+                    inProgressRoundNumber);
 
                 windowDtos.Add(new WindowUsageSummaryDto
                 {
@@ -93,7 +96,8 @@ public class GetLeagueBoostUsageSummaryQueryHandler
                     var playerUsages = BuildPlayerUsages(
                         members, boostUsages,
                         window.StartRoundNumber, window.EndRoundNumber,
-                        window.MaxUsesInWindow, request.CurrentUserId);
+                        window.MaxUsesInWindow, request.CurrentUserId,
+                        inProgressRoundNumber);
 
                     windowDtos.Add(new WindowUsageSummaryDto
                     {
@@ -125,7 +129,8 @@ public class GetLeagueBoostUsageSummaryQueryHandler
         int? startRound,
         int? endRound,
         int maxUses,
-        string currentUserId)
+        string currentUserId,
+        int? inProgressRoundNumber)
     {
         return members.Select(member =>
         {
@@ -154,7 +159,9 @@ public class GetLeagueBoostUsageSummaryQueryHandler
                     .Select(u => new BoostUsageDetailDto
                     {
                         RoundNumber = u.RoundNumber,
-                        PointsGained = u.PointsGained
+                        PointsGained = u.PointsGained,
+                        IsInProgressRound = inProgressRoundNumber.HasValue
+                            && u.RoundNumber == inProgressRoundNumber.Value
                     })
                     .ToList()
             };
@@ -253,6 +260,21 @@ public class GetLeagueBoostUsageSummaryQueryHandler
         return await _dbConnection.QueryAsync<UsageRow>(
             sql, cancellationToken,
             new { LeagueId = leagueId, SeasonId = seasonId, CurrentUserId = currentUserId });
+    }
+
+    private async Task<int?> GetInProgressRoundNumberAsync(
+        int leagueId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP 1 r.[RoundNumber]
+            FROM [Rounds] r
+            INNER JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
+            WHERE l.[Id] = @LeagueId AND r.[Status] = @InProgressStatus
+            ORDER BY r.[RoundNumber];";
+
+        return await _dbConnection.QuerySingleOrDefaultAsync<int?>(
+            sql, cancellationToken,
+            new { LeagueId = leagueId, InProgressStatus = nameof(RoundStatus.InProgress) });
     }
 
     private async Task<RoundRangeRow?> GetRoundRangeAsync(

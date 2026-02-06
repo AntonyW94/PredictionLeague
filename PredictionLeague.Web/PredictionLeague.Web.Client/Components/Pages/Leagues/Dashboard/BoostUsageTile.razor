@@ -54,14 +54,14 @@ else if (_boosts.Any())
                                         {
                                             @if (usage.PointsGained.HasValue)
                                             {
-                                                <span class="badge-group badge-group--green boost-usage-pill"
+                                                <span class="badge-group badge-group--green boost-usage-pill @(usage.IsInProgressRound ? "pulsing-green" : "")"
                                                       title="Round @usage.RoundNumber">
                                                     +@usage.PointsGained pts
                                                 </span>
                                             }
                                             else
                                             {
-                                                <span class="badge-group badge-group--orange boost-usage-pill"
+                                                <span class="badge-group badge-group--blue boost-usage-pill pulsing-blue"
                                                       title="Round @usage.RoundNumber — awaiting result">
                                                     <i class="bi bi-hourglass-split"></i>
                                                     GW@usage.RoundNumber
