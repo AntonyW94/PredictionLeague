@@ -1,0 +1,122 @@
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+
+.boost-usage-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    justify-content: center;
+}
+
+.boost-usage-icon {
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
+}
+
+.boost-usage-window + .boost-usage-window {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--white-alpha-10);
+}
+
+.boost-usage-window-label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.boost-usage-player-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.boost-usage-player-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--bs-border-radius);
+    background: var(--white-alpha-05);
+}
+
+.boost-usage-player-row.current-user-highlight {
+    background: var(--white-alpha-15);
+}
+
+.boost-usage-player-name {
+    font-size: 0.8rem;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: var(--space-3);
+}
+
+/* Slots container: pills + empty circles */
+.boost-usage-slots {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+/* Used boost pill — fixed width so scored and pending pills align */
+.boost-usage-pill {
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    white-space: nowrap;
+    cursor: default;
+    min-width: 4.5rem;
+    justify-content: center;
+    text-align: center;
+}
+
+.boost-usage-pill .bi {
+    font-size: 0.6rem;
+    margin-right: 0.15rem;
+}
+
+/* Empty slot circle */
+.boost-usage-empty-slot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white-alpha-30);
+    font-size: 0.75rem;
+    cursor: default;
+}
+
+/* Tablet and up (--breakpoint-tablet: 768px) */
+@media (min-width: 768px) {
+    .boost-usage-header {
+        justify-content: flex-start;
+    }
+
+    .boost-usage-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .boost-usage-window-label {
+        text-align: left;
+        font-size: 0.85rem;
+    }
+
+    .boost-usage-player-name {
+        font-size: 0.85rem;
+    }
+
+    .boost-usage-pill {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+        min-width: 5rem;
+    }
+
+    .boost-usage-empty-slot {
+        font-size: 0.85rem;
+    }
+}

@@ -1,4 +1,5 @@
-﻿using PredictionLeague.Contracts.Dashboard;
+﻿using PredictionLeague.Contracts.Boosts;
+using PredictionLeague.Contracts.Dashboard;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 using System.Net.Http.Json;
@@ -51,6 +52,11 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
     public async Task<WinningsDto> GetWinningsAsync(int leagueId)
     {
         return await httpClient.GetFromJsonAsync<WinningsDto>($"api/leagues/{leagueId}/winnings") ?? new WinningsDto();
+    }
+
+    public async Task<List<BoostUsageSummaryDto>> GetBoostUsageSummaryAsync(int leagueId)
+    {
+        return await httpClient.GetFromJsonAsync<List<BoostUsageSummaryDto>>($"api/leagues/{leagueId}/boost-usage") ?? [];
     }
 
     public async Task<bool> CheckForAvailablePrivateLeaguesAsync()
