@@ -64,12 +64,15 @@
     justify-content: flex-end;
 }
 
-/* Used boost pill */
+/* Used boost pill — fixed width so scored and pending pills align */
 .boost-usage-pill {
     font-size: 0.65rem;
     padding: 0.15rem 0.5rem;
     white-space: nowrap;
     cursor: default;
+    min-width: 4.5rem;
+    justify-content: center;
+    text-align: center;
 }
 
 .boost-usage-pill .bi {
@@ -110,6 +113,7 @@
     .boost-usage-pill {
         font-size: 0.7rem;
         padding: 0.2rem 0.6rem;
+        min-width: 5rem;
     }
 
     .boost-usage-empty-slot {
