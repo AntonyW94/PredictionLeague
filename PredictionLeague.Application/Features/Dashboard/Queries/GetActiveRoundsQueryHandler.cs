@@ -62,7 +62,9 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
         var rounds = (await _dbConnection.QueryAsync<ActiveRoundQueryResult>(
             roundsSql,
             cancellationToken,
-            parameters)).ToList();
+            parameters))
+            .Where(r => r.DeadlineUtc > DateTime.UtcNow || r.HasUserPredicted)
+            .ToList();
 
         if (!rounds.Any())
             return Enumerable.Empty<ActiveRoundDto>();
