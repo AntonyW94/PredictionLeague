@@ -1,0 +1,127 @@
+@inject ILeagueService LeagueService
+
+@inherits BaseLeaderboardComponent
+
+@using PredictionLeague.Contracts.Boosts
+@using PredictionLeague.Web.Client.Services.Leagues
+
+@if (_isLoading)
+{
+    <div class="col-12 mb-4">
+        <div class="section">
+            <div class="d-flex justify-content-center align-items-center py-3">
+                <div class="spinner-border text-white" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (_boosts.Any())
+{
+    foreach (var boost in _boosts)
+    {
+        <div class="col-12 mb-4">
+            <div class="section">
+                <div class="boost-usage-header mb-3">
+                    @if (!string.IsNullOrEmpty(boost.ImageUrl))
+                    {
+                        <img src="@boost.ImageUrl"
+                             alt="@boost.Name"
+                             class="boost-usage-icon" />
+                    }
+                    <h5 class="text-white fw-bold mb-0">@boost.Name</h5>
+                </div>
+
+                @foreach (var window in boost.Windows)
+                {
+                    <div class="boost-usage-window">
+                        @if (!window.IsFullSeason)
+                        {
+                            <div class="boost-usage-window-label text-white-50 mb-2">
+                                Rounds @window.StartRoundNumber–@window.EndRoundNumber
+                            </div>
+                        }
+
+                        <div class="boost-usage-player-list">
+                            @foreach (var player in window.PlayerUsages)
+                            {
+                                <div class="boost-usage-player-row @(GetUserHighlightClass(player.UserId))">
+                                    <span class="boost-usage-player-name text-white fw-bold">@player.PlayerName</span>
+
+                                    <div class="boost-usage-badge-area">
+                                        @if (player.RoundsUsedIn.Any())
+                                        {
+                                            <span class="boost-usage-rounds-used text-white-50"
+                                                  title="@GetUsedRoundsTooltip(player.RoundsUsedIn)">
+                                                @GetUsedRoundsLabel(player.RoundsUsedIn)
+                                            </span>
+                                        }
+
+                                        <div class="@GetRemainingBadgeCss(player.Remaining)">
+                                            <span class="badge-icon large-font">
+                                                <i class="bi bi-@GetCircleIcon(player.Remaining)"></i>
+                                            </span>
+                                            remaining
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public int LeagueId { get; set; }
+
+    private List<BoostUsageSummaryDto> _boosts = [];
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await base.OnInitializedAsync();
+            _boosts = await LeagueService.GetBoostUsageSummaryAsync(LeagueId);
+        }
+        catch
+        {
+            _boosts = [];
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string GetRemainingBadgeCss(int remaining)
+    {
+        return remaining switch
+        {
+            0 => "badge-group badge-group--red",
+            _ => "badge-group badge-group--green"
+        };
+    }
+
+    private static string GetCircleIcon(int remaining)
+    {
+        var clamped = Math.Clamp(remaining, 0, 9);
+        return $"{clamped}-circle-fill";
+    }
+
+    private static string GetUsedRoundsTooltip(List<int> roundsUsedIn)
+    {
+        return "Used in: " + string.Join(", ", roundsUsedIn.Select(r => $"Round {r}"));
+    }
+
+    private static string GetUsedRoundsLabel(List<int> roundsUsedIn)
+    {
+        var roundLabels = string.Join(", ", roundsUsedIn.Select(r => $"GW{r}"));
+        return roundLabels;
+    }
+}

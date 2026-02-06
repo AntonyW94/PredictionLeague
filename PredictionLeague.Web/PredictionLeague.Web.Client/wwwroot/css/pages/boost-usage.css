@@ -1,0 +1,93 @@
+/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+
+.boost-usage-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    justify-content: center;
+}
+
+.boost-usage-icon {
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
+}
+
+.boost-usage-window + .boost-usage-window {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--white-alpha-10);
+}
+
+.boost-usage-window-label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.boost-usage-player-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.boost-usage-player-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--bs-border-radius);
+    background: var(--white-alpha-05);
+}
+
+.boost-usage-player-row.current-user-highlight {
+    background: var(--white-alpha-15);
+}
+
+.boost-usage-player-name {
+    font-size: 0.8rem;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.boost-usage-badge-area {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-shrink: 0;
+}
+
+.boost-usage-rounds-used {
+    font-size: 0.65rem;
+    white-space: nowrap;
+    display: none;
+}
+
+/* Tablet and up (--breakpoint-tablet: 768px) */
+@media (min-width: 768px) {
+    .boost-usage-header {
+        justify-content: flex-start;
+    }
+
+    .boost-usage-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    .boost-usage-window-label {
+        text-align: left;
+        font-size: 0.85rem;
+    }
+
+    .boost-usage-player-name {
+        font-size: 0.85rem;
+    }
+
+    .boost-usage-rounds-used {
+        display: inline;
+        font-size: 0.7rem;
+    }
+}
