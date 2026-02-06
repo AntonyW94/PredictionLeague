@@ -62,7 +62,9 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
         var rounds = (await _dbConnection.QueryAsync<ActiveRoundQueryResult>(
             roundsSql,
             cancellationToken,
-            parameters)).ToList();
+            parameters))
+            .Where(r => r.DeadlineUtc > DateTime.UtcNow || r.HasUserPredicted)
+            .ToList();
 
         if (!rounds.Any())
             return Enumerable.Empty<ActiveRoundDto>();
@@ -109,9 +111,9 @@ public class GetActiveRoundsQueryHandler : IRequestHandler<GetActiveRoundsQuery,
                     Enum.Parse<MatchStatus>(m.Status)))
                 : Enumerable.Empty<ActiveRoundMatchDto>();
 
-            // Calculate outcome summary for in-progress rounds
+            // Calculate outcome summary for rounds past their deadline
             OutcomeSummaryDto? outcomeSummary = null;
-            if (status == RoundStatus.InProgress && r.HasUserPredicted && roundMatches != null)
+            if (r.DeadlineUtc <= DateTime.UtcNow && r.HasUserPredicted && roundMatches != null)
             {
                 outcomeSummary = new OutcomeSummaryDto(
                     ExactScoreCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.ExactScore),
