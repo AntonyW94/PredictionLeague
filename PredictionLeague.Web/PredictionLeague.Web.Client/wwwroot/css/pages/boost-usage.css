@@ -51,19 +51,40 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    margin-right: var(--space-3);
 }
 
-.boost-usage-badge-area {
+/* Slots container: pills + empty circles */
+.boost-usage-slots {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
     flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
-.boost-usage-rounds-used {
+/* Used boost pill */
+.boost-usage-pill {
     font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
     white-space: nowrap;
-    display: none;
+    cursor: default;
+}
+
+.boost-usage-pill .bi {
+    font-size: 0.6rem;
+    margin-right: 0.15rem;
+}
+
+/* Empty slot circle */
+.boost-usage-empty-slot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white-alpha-30);
+    font-size: 0.75rem;
+    cursor: default;
 }
 
 /* Tablet and up (--breakpoint-tablet: 768px) */
@@ -86,8 +107,12 @@
         font-size: 0.85rem;
     }
 
-    .boost-usage-rounds-used {
-        display: inline;
+    .boost-usage-pill {
         font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+    }
+
+    .boost-usage-empty-slot {
+        font-size: 0.85rem;
     }
 }

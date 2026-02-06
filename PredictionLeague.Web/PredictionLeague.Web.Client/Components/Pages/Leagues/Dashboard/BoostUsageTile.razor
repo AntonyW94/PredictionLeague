@@ -49,21 +49,32 @@ else if (_boosts.Any())
                                 <div class="boost-usage-player-row @(GetUserHighlightClass(player.UserId))">
                                     <span class="boost-usage-player-name text-white fw-bold">@player.PlayerName</span>
 
-                                    <div class="boost-usage-badge-area">
-                                        @if (player.RoundsUsedIn.Any())
+                                    <div class="boost-usage-slots">
+                                        @foreach (var usage in player.Usages)
                                         {
-                                            <span class="boost-usage-rounds-used text-white-50"
-                                                  title="@GetUsedRoundsTooltip(player.RoundsUsedIn)">
-                                                @GetUsedRoundsLabel(player.RoundsUsedIn)
-                                            </span>
+                                            @if (usage.PointsGained.HasValue)
+                                            {
+                                                <span class="badge-group badge-group--green boost-usage-pill"
+                                                      title="Round @usage.RoundNumber">
+                                                    +@usage.PointsGained pts
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge-group badge-group--orange boost-usage-pill"
+                                                      title="Round @usage.RoundNumber — awaiting result">
+                                                    <i class="bi bi-hourglass-split"></i>
+                                                    GW@usage.RoundNumber
+                                                </span>
+                                            }
                                         }
 
-                                        <div class="@GetRemainingBadgeCss(player.Remaining)">
-                                            <span class="badge-icon large-font">
-                                                <i class="bi bi-@GetCircleIcon(player.Remaining)"></i>
+                                        @for (var i = 0; i < player.Remaining; i++)
+                                        {
+                                            <span class="boost-usage-empty-slot" title="Unused">
+                                                <i class="bi bi-circle"></i>
                                             </span>
-                                            remaining
-                                        </div>
+                                        }
                                     </div>
                                 </div>
                             }
@@ -97,31 +108,5 @@ else if (_boosts.Any())
         {
             _isLoading = false;
         }
-    }
-
-    private static string GetRemainingBadgeCss(int remaining)
-    {
-        return remaining switch
-        {
-            0 => "badge-group badge-group--red",
-            _ => "badge-group badge-group--green"
-        };
-    }
-
-    private static string GetCircleIcon(int remaining)
-    {
-        var clamped = Math.Clamp(remaining, 0, 9);
-        return $"{clamped}-circle-fill";
-    }
-
-    private static string GetUsedRoundsTooltip(List<int> roundsUsedIn)
-    {
-        return "Used in: " + string.Join(", ", roundsUsedIn.Select(r => $"Round {r}"));
-    }
-
-    private static string GetUsedRoundsLabel(List<int> roundsUsedIn)
-    {
-        var roundLabels = string.Join(", ", roundsUsedIn.Select(r => $"GW{r}"));
-        return roundLabels;
     }
 }

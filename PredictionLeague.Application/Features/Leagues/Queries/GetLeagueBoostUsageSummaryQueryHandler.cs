@@ -149,7 +149,14 @@ public class GetLeagueBoostUsageSummaryQueryHandler
                 Remaining = remaining,
                 MaxUses = maxUses,
                 IsCurrentUser = member.UserId == currentUserId,
-                RoundsUsedIn = usageList.Select(u => u.RoundNumber).OrderBy(r => r).ToList()
+                Usages = usageList
+                    .OrderBy(u => u.RoundNumber)
+                    .Select(u => new BoostUsageDetailDto
+                    {
+                        RoundNumber = u.RoundNumber,
+                        PointsGained = u.PointsGained
+                    })
+                    .ToList()
             };
         }).ToList();
     }
@@ -222,10 +229,19 @@ public class GetLeagueBoostUsageSummaryQueryHandler
             SELECT
                 ubu.[UserId],
                 bd.[Code] AS [BoostCode],
-                r.[RoundNumber]
+                r.[RoundNumber],
+                CASE
+                    WHEN lrr.[Id] IS NOT NULL AND lrr.[HasBoost] = 1
+                    THEN lrr.[BoostedPoints] - lrr.[BasePoints]
+                    ELSE NULL
+                END AS [PointsGained]
             FROM [UserBoostUsages] ubu
             INNER JOIN [BoostDefinitions] bd ON ubu.[BoostDefinitionId] = bd.[Id]
             INNER JOIN [Rounds] r ON ubu.[RoundId] = r.[Id]
+            LEFT JOIN [LeagueRoundResults] lrr
+                ON lrr.[LeagueId] = ubu.[LeagueId]
+                AND lrr.[RoundId] = ubu.[RoundId]
+                AND lrr.[UserId] = ubu.[UserId]
             WHERE ubu.[LeagueId] = @LeagueId
               AND ubu.[SeasonId] = @SeasonId
               AND (
@@ -297,6 +313,7 @@ public class GetLeagueBoostUsageSummaryQueryHandler
         public string UserId { get; init; } = string.Empty;
         public string BoostCode { get; init; } = string.Empty;
         public int RoundNumber { get; init; }
+        public int? PointsGained { get; init; }
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]

@@ -7,5 +7,5 @@ public sealed class PlayerWindowUsageDto
     public int Remaining { get; init; }
     public int MaxUses { get; init; }
     public bool IsCurrentUser { get; init; }
-    public List<int> RoundsUsedIn { get; init; } = [];
+    public List<BoostUsageDetailDto> Usages { get; init; } = [];
 }
