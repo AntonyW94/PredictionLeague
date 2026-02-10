@@ -82,6 +82,9 @@ public sealed class BoostService : IBoostService
             isUserMemberOfLeague: isUserMember,
             isRoundInLeagueSeason: isRoundInLeagueSeason);
 
+        var (isRoundInActiveWindow, nextWindowStartRound) =
+            ComputeWindowStatus(roundNumber, ruleSnapshot.Windows);
+
         return new BoostEligibilityDto
         {
             BoostCode = boostCode,
@@ -91,7 +94,9 @@ public sealed class BoostService : IBoostService
             Reason = result.Reason,
             RemainingSeasonUses = result.RemainingSeasonUses,
             RemainingWindowUses = result.RemainingWindowUses,
-            AlreadyUsedThisRound = result.AlreadyUsedThisRound
+            AlreadyUsedThisRound = result.AlreadyUsedThisRound,
+            IsRoundInActiveWindow = isRoundInActiveWindow,
+            NextWindowStartRound = nextWindowStartRound
         };
     }
 
@@ -150,6 +155,27 @@ public sealed class BoostService : IBoostService
     public async Task<bool> DeleteUserBoostUsageAsync(string userId, int leagueId, int roundId, CancellationToken cancellationToken)
     {
         return await _boostWriteRepository.DeleteUserBoostUsageAsync(userId, leagueId, roundId, cancellationToken);
+    }
+
+    private static (bool IsRoundInActiveWindow, int? NextWindowStartRound) ComputeWindowStatus(
+        int roundNumber, IReadOnlyList<BoostWindowSnapshot>? windows)
+    {
+        if (windows == null || windows.Count == 0)
+            return (true, null);
+
+        var isInWindow = windows.Any(w =>
+            roundNumber >= w.StartRoundNumber && roundNumber <= w.EndRoundNumber);
+
+        if (isInWindow)
+            return (true, null);
+
+        var nextStart = windows
+            .Where(w => roundNumber < w.StartRoundNumber)
+            .OrderBy(w => w.StartRoundNumber)
+            .Select(w => (int?)w.StartRoundNumber)
+            .FirstOrDefault();
+
+        return (false, nextStart);
     }
 
     public async Task ApplyRoundBoostsAsync(int roundId, CancellationToken cancellationToken)

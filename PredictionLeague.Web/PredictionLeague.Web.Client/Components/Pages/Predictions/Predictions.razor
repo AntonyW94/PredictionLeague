@@ -88,7 +88,7 @@
                     }
                 </div>
 
-                @if (!_pageData.IsPastDeadline)
+                @if (!_pageData.IsPastDeadline && _hasVisibleBoosts)
                 {
                     <div class="mb-3 mt-4">
                         <h3 class="text-white text-center mb-4">Boosts</h3>
@@ -108,20 +108,37 @@
                                 {
                                     var leagueId = league.LeagueId;
 
+                                    if (!_boostOptions.TryGetValue(leagueId, out var allOptions))
+                                    {
+                                        continue;
+                                    }
+
+                                    var selectedCode = GetSelectedCode(leagueId);
+                                    var actionableOptions = GetActionableOptions(allOptions, selectedCode);
+                                    var futureBoostMessages = GetFutureBoostMessages(allOptions, selectedCode);
+
+                                    if (actionableOptions.Count == 0 && futureBoostMessages.Count == 0)
+                                    {
+                                        continue;
+                                    }
+
                                     <div class="boost-league-row w-100">
                                         <h5 class="text-center text-white mb-2">@league.Name</h5>
 
-                                        @if (_boostOptions.TryGetValue(leagueId, out var boostOptions))
+                                        @if (actionableOptions.Count > 0)
                                         {
                                             <BoostSelector LeagueId="@leagueId"
                                                            RoundId="@_pageData.RoundId"
-                                                           Options="@boostOptions"
-                                                           SelectedCode="@GetSelectedCode(leagueId)"
+                                                           Options="@actionableOptions"
+                                                           SelectedCode="@selectedCode"
                                                            SelectedCodeChanged="@(async c => await SetSelectedCode(leagueId, c))" />
                                         }
-                                        else
+
+                                        @foreach (var message in futureBoostMessages)
                                         {
-                                            <div class="text-white text-center">No boosts available.</div>
+                                            <div class="text-white-50 text-center mt-2">
+                                                <i class="bi bi-clock me-1"></i>@message
+                                            </div>
                                         }
                                     </div>
                                 }
@@ -171,6 +188,7 @@
     private readonly Dictionary<int, string> _boostSelections = new();
     private readonly Dictionary<int, List<BoostOptionDto>> _boostOptions = new();
     private bool _loadingBoostEligibility = true;
+    private bool _hasVisibleBoosts;
     private List<PredictionLeagueDto> _leaguesWithBoosts = [];
 
     protected override async Task OnInitializedAsync()
@@ -222,6 +240,13 @@
                     _initialBoostSelections[leagueDto.LeagueId] = leagueDto.SelectedBoostCode ?? "None";
                     _boostSelections[leagueDto.LeagueId] = leagueDto.SelectedBoostCode ?? "None";
                 }
+
+                _hasVisibleBoosts = _boostOptions.Any(kvp =>
+                {
+                    var selected = _boostSelections.GetValueOrDefault(kvp.Key, "None");
+                    return GetActionableOptions(kvp.Value, selected).Count > 0
+                        || GetFutureBoostMessages(kvp.Value, selected).Count > 0;
+                });
             }
         }
         finally
@@ -233,6 +258,28 @@
 
     private string GetSelectedCode(int leagueId) => _boostSelections.GetValueOrDefault(leagueId, "None");
     private Task SetSelectedCode(int leagueId, string code) { _boostSelections[leagueId] = code; return Task.CompletedTask; }
+
+    private static List<BoostOptionDto> GetActionableOptions(List<BoostOptionDto> allOptions, string selectedCode)
+    {
+        var actionable = allOptions.Where(o =>
+            o.BoostCode == "None" ||
+            o.BoostCode == selectedCode ||
+            o.Eligibility?.CanUse == true ||
+            o.Eligibility?.AlreadyUsedThisRound == true).ToList();
+
+        return actionable.Count(o => o.BoostCode != "None") > 0 ? actionable : [];
+    }
+
+    private static List<string> GetFutureBoostMessages(List<BoostOptionDto> allOptions, string selectedCode)
+    {
+        return allOptions
+            .Where(o =>
+                o.BoostCode != "None" &&
+                o.BoostCode != selectedCode &&
+                o.Eligibility is { CanUse: false, AlreadyUsedThisRound: false, IsRoundInActiveWindow: false, NextWindowStartRound: not null, RemainingSeasonUses: > 0 })
+            .Select(o => $"{o.Name} available from Round {o.Eligibility!.NextWindowStartRound}")
+            .ToList();
+    }
 
     private static void UpdateScore(MatchPredictionDto match, bool isHomeTeam, int delta)
     {

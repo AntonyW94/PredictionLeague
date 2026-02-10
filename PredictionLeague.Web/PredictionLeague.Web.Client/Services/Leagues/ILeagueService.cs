@@ -1,4 +1,5 @@
-﻿using PredictionLeague.Contracts.Dashboard;
+﻿using PredictionLeague.Contracts.Boosts;
+using PredictionLeague.Contracts.Dashboard;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 
@@ -15,7 +16,8 @@ public interface ILeagueService
     Task<ExactScoresLeaderboardDto> GetExactScoresLeaderboardAsync(int leagueId);
     Task<List<LeagueRequestDto>> GetPendingRequestsAsync();
     Task<List<MonthDto>> GetMonthsForLeagueAsync(int leagueId);
-    Task<WinningsDto> GetWinningsAsync(int leagueId); 
+    Task<WinningsDto> GetWinningsAsync(int leagueId);
+    Task<List<BoostUsageSummaryDto>> GetBoostUsageSummaryAsync(int leagueId);
     Task<bool> CheckForAvailablePrivateLeaguesAsync();
 
     Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId);

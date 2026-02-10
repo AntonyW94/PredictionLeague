@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using PredictionLeague.Application.Features.Leagues.Commands;
 using PredictionLeague.Application.Features.Leagues.Queries;
 using PredictionLeague.Contracts.Admin.Rounds;
+using PredictionLeague.Contracts.Boosts;
 using PredictionLeague.Contracts.Leaderboards;
 using PredictionLeague.Contracts.Leagues;
 using PredictionLeague.Domain.Common.Enumerations;
@@ -219,6 +220,21 @@ public class LeaguesController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetMonthsForLeagueQuery(leagueId, CurrentUserId);
+        return Ok(await _mediator.Send(query, cancellationToken));
+    }
+
+    [HttpGet("{leagueId:int}/boost-usage")]
+    [SwaggerOperation(
+        Summary = "Get boost usage summary for league",
+        Description = "Returns boost usage data for all members showing remaining uses per boost window. Respects deadline visibility: other players' current-round boosts are hidden until the deadline passes.")]
+    [SwaggerResponse(200, "Boost usage summary retrieved successfully", typeof(List<BoostUsageSummaryDto>))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not a member of this league")]
+    public async Task<ActionResult<List<BoostUsageSummaryDto>>> GetBoostUsageSummaryAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetLeagueBoostUsageSummaryQuery(leagueId, CurrentUserId);
         return Ok(await _mediator.Send(query, cancellationToken));
     }
 
