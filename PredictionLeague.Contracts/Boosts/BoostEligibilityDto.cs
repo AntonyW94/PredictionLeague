@@ -13,4 +13,6 @@ public sealed class BoostEligibilityDto
     public int RemainingSeasonUses { get; init; }
     public int RemainingWindowUses { get; init; }
     public bool AlreadyUsedThisRound { get; init; }
+    public bool IsRoundInActiveWindow { get; init; }
+    public int? NextWindowStartRound { get; init; }
 }
