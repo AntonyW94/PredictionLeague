@@ -56,41 +56,39 @@
         }
     </div>
     <div class="footer">
-        @switch (IsInProgress)
+        @if (IsDeadlinePassed && Round.OutcomeSummary != null)
         {
-            case true when Round.OutcomeSummary != null:
-                <div class="outcome-summary">
-                    <span class="outcome-item">
-                        <span>🎯</span>
-                        <span>@Round.OutcomeSummary.ExactScoreCount</span>
-                    </span>
-                    <span class="outcome-separator">·</span>
-                    <span class="outcome-item">
-                        <span>✅</span>
-                        <span>@Round.OutcomeSummary.CorrectResultCount</span>
-                    </span>
-                    <span class="outcome-separator">·</span>
-                    <span class="outcome-item">
-                        <span>❌</span>
-                        <span>@Round.OutcomeSummary.IncorrectCount</span>
-                    </span>
-                </div>
-                break;
-
-            case false when Round.DeadlineUtc > DateTime.UtcNow:
-                <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
-                    @if (Round.HasUserPredicted)
-                    {
-                        <span class="bi bi-pencil-fill me-2"></span>
-                        <span>Edit Predictions</span>
-                    }
-                    else
-                    {
-                        <span class="bi bi-pencil me-2"></span>
-                        <span>Predict Now</span>
-                    }
-                </NavLink>
-                break;
+            <div class="outcome-summary">
+                <span class="outcome-item">
+                    <span>🎯</span>
+                    <span>@Round.OutcomeSummary.ExactScoreCount</span>
+                </span>
+                <span class="outcome-separator">·</span>
+                <span class="outcome-item">
+                    <span>✅</span>
+                    <span>@Round.OutcomeSummary.CorrectResultCount</span>
+                </span>
+                <span class="outcome-separator">·</span>
+                <span class="outcome-item">
+                    <span>❌</span>
+                    <span>@Round.OutcomeSummary.IncorrectCount</span>
+                </span>
+            </div>
+        }
+        else if (!IsDeadlinePassed)
+        {
+            <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
+                @if (Round.HasUserPredicted)
+                {
+                    <span class="bi bi-pencil-fill me-2"></span>
+                    <span>Edit Predictions</span>
+                }
+                else
+                {
+                    <span class="bi bi-pencil me-2"></span>
+                    <span>Predict Now</span>
+                }
+            </NavLink>
         }
     </div>
 </div>
@@ -100,6 +98,7 @@
     public ActiveRoundDto Round { get; set; } = null!;
 
     private bool IsInProgress => Round.Status == RoundStatus.InProgress;
+    private bool IsDeadlinePassed => Round.DeadlineUtc <= DateTime.UtcNow;
 
     private static string GetMatchBackgroundClass(ActiveRoundMatchDto match)
     {

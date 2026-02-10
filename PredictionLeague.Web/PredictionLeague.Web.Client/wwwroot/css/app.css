@@ -48,6 +48,7 @@
 @import url('pages/predictions.css');
 @import url('pages/prizes.css');
 @import url('pages/results-grid.css');
+@import url('pages/boost-usage.css');
 
 /* Base application styles */
 @import url('app-base.css');

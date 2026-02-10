@@ -85,6 +85,7 @@
             <CssFilesToBundle Include="$(PublishCssDir)pages\predictions.css" />
             <CssFilesToBundle Include="$(PublishCssDir)pages\prizes.css" />
             <CssFilesToBundle Include="$(PublishCssDir)pages\results-grid.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)pages\boost-usage.css" />
             <CssFilesToBundle Include="$(PublishCssDir)app-base.css" />
         </ItemGroup>
 
