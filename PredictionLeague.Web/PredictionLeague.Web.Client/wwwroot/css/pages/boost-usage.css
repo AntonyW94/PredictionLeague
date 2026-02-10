@@ -41,7 +41,7 @@
 }
 
 .boost-usage-player-row.current-user-highlight {
-    background: var(--white-alpha-15);
+    background-color: var(--green-600);
 }
 
 .boost-usage-player-name {
@@ -54,7 +54,7 @@
     margin-right: var(--space-3);
 }
 
-/* Slots container: pills + remaining label */
+/* Slots container: scored, pending, unused, and expired pills */
 .boost-usage-slots {
     display: flex;
     align-items: center;
@@ -80,11 +80,28 @@
     margin-right: 0.15rem;
 }
 
-/* Remaining label */
-.boost-usage-remaining {
-    font-size: 0.65rem;
+/* Unused pill — available slot */
+.boost-usage-pill--unused {
+    background: var(--white-alpha-10);
     color: var(--white-alpha-30);
-    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+}
+
+.boost-usage-pill--unused .bi {
+    margin-right: 0;
+}
+
+/* Expired pill — window passed, boost not used */
+.boost-usage-pill--expired {
+    background: var(--white-alpha-10);
+    color: var(--red);
+    display: inline-flex;
+    align-items: center;
+}
+
+.boost-usage-pill--expired .bi {
+    margin-right: 0;
 }
 
 /* Tablet and up (--breakpoint-tablet: 768px) */
@@ -111,10 +128,6 @@
         font-size: 0.7rem;
         padding: 0.2rem 0.6rem;
         min-width: 5rem;
-    }
-
-    .boost-usage-remaining {
-        font-size: 0.7rem;
     }
 }
 

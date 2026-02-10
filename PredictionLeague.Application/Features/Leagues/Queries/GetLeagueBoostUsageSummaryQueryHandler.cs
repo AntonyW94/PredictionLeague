@@ -33,8 +33,10 @@ public class GetLeagueBoostUsageSummaryQueryHandler
         var membersTask = GetMembersAsync(request.LeagueId, cancellationToken);
         var seasonInfoTask = GetSeasonInfoAsync(request.LeagueId, cancellationToken);
         var inProgressRoundTask = GetInProgressRoundNumberAsync(request.LeagueId, cancellationToken);
+        var lastCompletedRoundTask = GetLastCompletedRoundNumberAsync(request.LeagueId, cancellationToken);
 
-        await Task.WhenAll(boostRulesTask, windowsTask, membersTask, seasonInfoTask, inProgressRoundTask);
+        await Task.WhenAll(boostRulesTask, windowsTask, membersTask, seasonInfoTask,
+            inProgressRoundTask, lastCompletedRoundTask);
 
         var boostRules = boostRulesTask.Result.ToList();
         if (boostRules.Count == 0)
@@ -44,6 +46,7 @@ public class GetLeagueBoostUsageSummaryQueryHandler
         var members = membersTask.Result.ToList();
         var seasonInfo = seasonInfoTask.Result;
         var inProgressRoundNumber = inProgressRoundTask.Result;
+        var lastCompletedRoundNumber = lastCompletedRoundTask.Result;
 
         if (seasonInfo == null)
             return [];
@@ -70,6 +73,9 @@ public class GetLeagueBoostUsageSummaryQueryHandler
             {
                 var isFullSeason = true;
                 var maxUses = rule.TotalUsesPerSeason;
+                var endRound = roundRange?.MaxRoundNumber ?? 1;
+                var hasWindowPassed = HasWindowPassed(
+                    endRound, inProgressRoundNumber, lastCompletedRoundNumber);
 
                 var playerUsages = BuildPlayerUsages(
                     members, boostUsages, null, null, maxUses, request.CurrentUserId,
@@ -78,9 +84,10 @@ public class GetLeagueBoostUsageSummaryQueryHandler
                 windowDtos.Add(new WindowUsageSummaryDto
                 {
                     StartRoundNumber = roundRange?.MinRoundNumber ?? 1,
-                    EndRoundNumber = roundRange?.MaxRoundNumber ?? 1,
+                    EndRoundNumber = endRound,
                     MaxUsesInWindow = maxUses,
                     IsFullSeason = isFullSeason,
+                    HasWindowPassed = hasWindowPassed,
                     PlayerUsages = playerUsages
                 });
             }
@@ -93,6 +100,9 @@ public class GetLeagueBoostUsageSummaryQueryHandler
 
                 foreach (var window in ruleWindows)
                 {
+                    var hasWindowPassed = HasWindowPassed(
+                        window.EndRoundNumber, inProgressRoundNumber, lastCompletedRoundNumber);
+
                     var playerUsages = BuildPlayerUsages(
                         members, boostUsages,
                         window.StartRoundNumber, window.EndRoundNumber,
@@ -105,6 +115,7 @@ public class GetLeagueBoostUsageSummaryQueryHandler
                         EndRoundNumber = window.EndRoundNumber,
                         MaxUsesInWindow = window.MaxUsesInWindow,
                         IsFullSeason = isFullSeason,
+                        HasWindowPassed = hasWindowPassed,
                         PlayerUsages = playerUsages
                     });
                 }
@@ -121,6 +132,16 @@ public class GetLeagueBoostUsageSummaryQueryHandler
         }
 
         return result;
+    }
+
+    private static bool HasWindowPassed(
+        int windowEndRoundNumber, int? inProgressRoundNumber, int? lastCompletedRoundNumber)
+    {
+        if (inProgressRoundNumber.HasValue)
+            return windowEndRoundNumber < inProgressRoundNumber.Value;
+
+        return lastCompletedRoundNumber.HasValue
+            && windowEndRoundNumber <= lastCompletedRoundNumber.Value;
     }
 
     private static List<PlayerWindowUsageDto> BuildPlayerUsages(
@@ -165,7 +186,10 @@ public class GetLeagueBoostUsageSummaryQueryHandler
                     })
                     .ToList()
             };
-        }).ToList();
+        })
+        .OrderByDescending(p => p.Usages.Sum(u => u.PointsGained ?? 0))
+        .ThenBy(p => p.PlayerName)
+        .ToList();
     }
 
     private async Task<IEnumerable<BoostRuleRow>> GetEnabledBoostRulesAsync(
@@ -275,6 +299,21 @@ public class GetLeagueBoostUsageSummaryQueryHandler
         return await _dbConnection.QuerySingleOrDefaultAsync<int?>(
             sql, cancellationToken,
             new { LeagueId = leagueId, InProgressStatus = nameof(RoundStatus.InProgress) });
+    }
+
+    private async Task<int?> GetLastCompletedRoundNumberAsync(
+        int leagueId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP 1 r.[RoundNumber]
+            FROM [Rounds] r
+            INNER JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
+            WHERE l.[Id] = @LeagueId AND r.[Status] = @CompletedStatus
+            ORDER BY r.[RoundNumber] DESC;";
+
+        return await _dbConnection.QuerySingleOrDefaultAsync<int?>(
+            sql, cancellationToken,
+            new { LeagueId = leagueId, CompletedStatus = nameof(RoundStatus.Completed) });
     }
 
     private async Task<RoundRangeRow?> GetRoundRangeAsync(

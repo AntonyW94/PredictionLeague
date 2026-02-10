@@ -69,11 +69,22 @@ else if (_boosts.Any())
                                             }
                                         }
 
-                                        @if (player.Remaining > 0)
+                                        @for (var i = 0; i < player.Remaining; i++)
                                         {
-                                            <span class="boost-usage-remaining">
-                                                @player.Remaining remaining
-                                            </span>
+                                            @if (window.HasWindowPassed)
+                                            {
+                                                <span class="boost-usage-pill boost-usage-pill--expired"
+                                                      title="Unused — window passed">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="boost-usage-pill boost-usage-pill--unused"
+                                                      title="Available">
+                                                    <i class="bi bi-dash-lg"></i>
+                                                </span>
+                                            }
                                         }
                                     </div>
                                 </div>
