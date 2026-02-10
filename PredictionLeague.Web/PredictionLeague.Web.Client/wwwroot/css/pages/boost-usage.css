@@ -73,6 +73,7 @@
     min-width: 4.5rem;
     justify-content: center;
     text-align: center;
+    border-radius: 50rem;
 }
 
 .boost-usage-pill .bi {
@@ -134,8 +135,13 @@
 /* Desktop and up (--breakpoint-desktop: 992px) */
 @media (min-width: 992px) {
     .boost-usage-player-list {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: var(--space-2);
+        display: block;
+        column-count: 2;
+        column-gap: var(--space-2);
+    }
+
+    .boost-usage-player-row {
+        break-inside: avoid;
+        margin-bottom: var(--space-2);
     }
 }
