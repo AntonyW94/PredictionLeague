@@ -54,7 +54,7 @@
     margin-right: var(--space-3);
 }
 
-/* Slots container: pills + empty circles */
+/* Slots container: pills + remaining label */
 .boost-usage-slots {
     display: flex;
     align-items: center;
@@ -80,14 +80,11 @@
     margin-right: 0.15rem;
 }
 
-/* Empty slot circle */
-.boost-usage-empty-slot {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+/* Remaining label */
+.boost-usage-remaining {
+    font-size: 0.65rem;
     color: var(--white-alpha-30);
-    font-size: 0.75rem;
-    cursor: default;
+    white-space: nowrap;
 }
 
 /* Tablet and up (--breakpoint-tablet: 768px) */
@@ -116,7 +113,16 @@
         min-width: 5rem;
     }
 
-    .boost-usage-empty-slot {
-        font-size: 0.85rem;
+    .boost-usage-remaining {
+        font-size: 0.7rem;
+    }
+}
+
+/* Desktop and up (--breakpoint-desktop: 992px) */
+@media (min-width: 992px) {
+    .boost-usage-player-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-2);
     }
 }

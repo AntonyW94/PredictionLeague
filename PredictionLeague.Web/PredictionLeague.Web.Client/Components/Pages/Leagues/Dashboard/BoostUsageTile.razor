@@ -69,10 +69,10 @@ else if (_boosts.Any())
                                             }
                                         }
 
-                                        @for (var i = 0; i < player.Remaining; i++)
+                                        @if (player.Remaining > 0)
                                         {
-                                            <span class="boost-usage-empty-slot" title="Unused">
-                                                <i class="bi bi-circle"></i>
+                                            <span class="boost-usage-remaining">
+                                                @player.Remaining remaining
                                             </span>
                                         }
                                     </div>
