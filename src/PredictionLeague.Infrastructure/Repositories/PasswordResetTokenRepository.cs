@@ -1,12 +1,13 @@
 using Dapper;
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Models;
 using System.Data;
 
 namespace PredictionLeague.Infrastructure.Repositories;
 
-public class PasswordResetTokenRepository(IDbConnectionFactory connectionFactory) : IPasswordResetTokenRepository
+public class PasswordResetTokenRepository(IDbConnectionFactory connectionFactory, IDateTimeProvider dateTimeProvider) : IPasswordResetTokenRepository
 {
     private IDbConnection Connection => connectionFactory.CreateConnection();
 
@@ -80,7 +81,7 @@ public class PasswordResetTokenRepository(IDbConnectionFactory connectionFactory
             DELETE FROM [PasswordResetTokens]
             WHERE [ExpiresAtUtc] < @NowUtc";
 
-        await Connection.ExecuteAsync(sql, new { NowUtc = DateTime.UtcNow });
+        await Connection.ExecuteAsync(sql, new { NowUtc = dateTimeProvider.UtcNow });
     }
 
     public async Task<int> DeleteTokensOlderThanAsync(DateTime olderThanUtc, CancellationToken cancellationToken = default)

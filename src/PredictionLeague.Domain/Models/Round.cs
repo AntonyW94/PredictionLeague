@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Domain.Models;
@@ -62,19 +63,19 @@ public class Round
         ApiRoundName = apiRoundName;
     }
 
-    public void UpdateLastReminderSent()
+    public void UpdateLastReminderSent(IDateTimeProvider dateTimeProvider)
     {
-        LastReminderSentUtc = DateTime.UtcNow;
+        LastReminderSentUtc = dateTimeProvider.UtcNow;
     }
 
-    public void UpdateStatus(RoundStatus status)
+    public void UpdateStatus(RoundStatus status, IDateTimeProvider dateTimeProvider)
     {
         var originalStatus = Status;
 
         Status = status;
 
         if (originalStatus != RoundStatus.Completed && status == RoundStatus.Completed)
-            CompletedDateUtc = DateTime.UtcNow;
+            CompletedDateUtc = dateTimeProvider.UtcNow;
         else if (originalStatus == RoundStatus.Completed && status != RoundStatus.Completed)
             CompletedDateUtc = null;
     }

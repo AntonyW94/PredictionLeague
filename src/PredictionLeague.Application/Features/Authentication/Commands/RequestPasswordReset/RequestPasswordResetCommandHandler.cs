@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using PredictionLeague.Application.Configuration;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Authentication.Commands.RequestPasswordReset;
@@ -17,6 +18,7 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
     private readonly IPasswordResetTokenRepository _tokenRepository;
     private readonly IEmailService _emailService;
     private readonly BrevoSettings _brevoSettings;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<RequestPasswordResetCommandHandler> _logger;
 
     public RequestPasswordResetCommandHandler(
@@ -24,12 +26,14 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
         IPasswordResetTokenRepository tokenRepository,
         IEmailService emailService,
         IOptions<BrevoSettings> brevoSettings,
+        IDateTimeProvider dateTimeProvider,
         ILogger<RequestPasswordResetCommandHandler> logger)
     {
         _userManager = userManager;
         _tokenRepository = tokenRepository;
         _emailService = emailService;
         _brevoSettings = brevoSettings.Value;
+        _dateTimeProvider = dateTimeProvider;
         _logger = logger;
     }
 
@@ -47,7 +51,7 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
         // Check rate limit (3 requests per hour per user)
         var recentRequestCount = await _tokenRepository.CountByUserIdSinceAsync(
             user.Id,
-            DateTime.UtcNow.AddHours(-1),
+            _dateTimeProvider.UtcNow.AddHours(-1),
             cancellationToken);
 
         if (recentRequestCount >= MaxRequestsPerHour)
@@ -78,7 +82,7 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
     {
         // Create and store the token
         var tokenString = GenerateUrlSafeToken();
-        var resetToken = PasswordResetToken.Create(tokenString, user.Id);
+        var resetToken = PasswordResetToken.Create(tokenString, user.Id, _dateTimeProvider);
         await _tokenRepository.CreateAsync(resetToken, cancellationToken);
 
         // Build the reset link (no email in URL for security)

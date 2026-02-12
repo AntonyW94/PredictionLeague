@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using Ardalis.GuardClauses;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Constants;
 
 namespace PredictionLeague.Domain.Models;
@@ -80,14 +81,15 @@ public partial class League
         int pointsForExactScore,
         int pointsForCorrectResult,
         decimal price,
-        Season season)
+        Season season,
+        IDateTimeProvider dateTimeProvider)
     {
-        Validate(name, entryDeadlineUtc, season);
+        Validate(name, entryDeadlineUtc, season, dateTimeProvider);
         Guard.Against.NullOrWhiteSpace(administratorUserId);
         Guard.Against.NegativeOrZero(seasonId);
-        
+
         var isFree = price == 0;
-       
+
         return new League
         {
             SeasonId = seasonId,
@@ -96,7 +98,7 @@ public partial class League
             AdministratorUserId = administratorUserId,
             EntryCode = null,
             EntryDeadlineUtc = entryDeadlineUtc,
-            CreatedAtUtc = DateTime.UtcNow,
+            CreatedAtUtc = dateTimeProvider.UtcNow,
             PointsForExactScore = pointsForExactScore,
             PointsForCorrectResult = pointsForCorrectResult,
             IsFree = isFree,
@@ -105,17 +107,17 @@ public partial class League
         };
     }
 
-    private static void Validate(string name, DateTime entryDeadlineUtc, Season season)
+    private static void Validate(string name, DateTime entryDeadlineUtc, Season season, IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.NullOrWhiteSpace(name);
-        Guard.Against.Expression(d => d <= DateTime.UtcNow, entryDeadlineUtc, "Entry deadline must be in the future.");
+        Guard.Against.Expression(d => d <= dateTimeProvider.UtcNow, entryDeadlineUtc, "Entry deadline must be in the future.");
 
         if (entryDeadlineUtc.Date >= season.StartDateUtc.Date)
             throw new ArgumentException("Entry deadline must be at least one day before the season start date.", nameof(entryDeadlineUtc));
     }
 
 
-    public static League CreateOfficialPublicLeague(int seasonId, string seasonName, decimal price, string administratorUserId, DateTime entryDeadlineUtc, Season season)
+    public static League CreateOfficialPublicLeague(int seasonId, string seasonName, decimal price, string administratorUserId, DateTime entryDeadlineUtc, Season season, IDateTimeProvider dateTimeProvider)
     {
         var league = Create(
             seasonId,
@@ -125,7 +127,8 @@ public partial class League
             PublicLeagueSettings.PointsForExactScore,
             PublicLeagueSettings.PointsForCorrectResult,
             price,
-            season
+            season,
+            dateTimeProvider
         );
 
         return league;
@@ -154,9 +157,10 @@ public partial class League
         DateTime newEntryDeadlineUtc,
         int newPointsForExactScore,
         int newPointsForCorrectResult,
-        Season season)
+        Season season,
+        IDateTimeProvider dateTimeProvider)
     {
-        Validate(newName, newEntryDeadlineUtc, season);
+        Validate(newName, newEntryDeadlineUtc, season, dateTimeProvider);
 
         Name = newName;
         Price = newPrice;
@@ -165,17 +169,17 @@ public partial class League
         PointsForCorrectResult = newPointsForCorrectResult;
     }
 
-    public void AddMember(string userId)
+    public void AddMember(string userId, IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.NullOrWhiteSpace(userId);
 
         if (_members.Any(m => m.UserId == userId))
             throw new InvalidOperationException("This user is already a member of the league.");
 
-        if (EntryDeadlineUtc < DateTime.UtcNow)
+        if (EntryDeadlineUtc < dateTimeProvider.UtcNow)
             throw new InvalidOperationException("The entry deadline for this league has passed.");
 
-        var newMember = LeagueMember.Create(Id, userId);
+        var newMember = LeagueMember.Create(Id, userId, dateTimeProvider);
         _members.Add(newMember);
     }
 

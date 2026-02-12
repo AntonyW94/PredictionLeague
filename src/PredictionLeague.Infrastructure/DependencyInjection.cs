@@ -6,6 +6,7 @@ using PredictionLeague.Application.Formatters;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Application.Services.Boosts;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Infrastructure.Data;
 using PredictionLeague.Infrastructure.Formatters;
@@ -77,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IPrizeStrategy, OverallPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, MostExactScoresPrizeStrategy>();
 
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<PredictionDomainService>();
         services.AddSingleton<IEmailDateFormatter, UkEmailDateFormatter>();
         

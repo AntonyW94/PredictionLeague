@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using PredictionLeague.Domain.Common;
 using System.Diagnostics.CodeAnalysis;
 
 namespace PredictionLeague.Domain.Models;
@@ -15,7 +16,7 @@ public class Winning
 
     private Winning() { }
 
-    public static Winning Create(string userId, int leaguePrizeSettingId, decimal amount, int? roundNumber, int? month)
+    public static Winning Create(string userId, int leaguePrizeSettingId, decimal amount, int? roundNumber, int? month, IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.NullOrWhiteSpace(userId);
         Guard.Against.NegativeOrZero(leaguePrizeSettingId);
@@ -26,7 +27,7 @@ public class Winning
             UserId = userId,
             LeaguePrizeSettingId = leaguePrizeSettingId,
             Amount = amount,
-            AwardedDateUtc = DateTime.UtcNow,
+            AwardedDateUtc = dateTimeProvider.UtcNow,
             RoundNumber = roundNumber,
             Month = month
         };

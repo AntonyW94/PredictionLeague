@@ -2,6 +2,7 @@
 using PredictionLeague.Application.Data;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Boosts;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 using System.Data;
@@ -11,18 +12,20 @@ namespace PredictionLeague.Infrastructure.Repositories;
 public class LeagueRepository : ILeagueRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private IDbConnection Connection => _connectionFactory.CreateConnection();
 
     private const string GetLeaguesWithMembersSql = @"
-        SELECT 
-            l.*, 
+        SELECT
+            l.*,
             lm.*
         FROM [Leagues] l
         LEFT JOIN [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]";
 
-    public LeagueRepository(IDbConnectionFactory connectionFactory)
+    public LeagueRepository(IDbConnectionFactory connectionFactory, IDateTimeProvider dateTimeProvider)
     {
         _connectionFactory = connectionFactory;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     #region Create
@@ -70,8 +73,8 @@ public class LeagueRepository : ILeagueRepository
 
         var newLeagueId = await Connection.ExecuteScalarAsync<int>(command);
 
-        var adminMember = LeagueMember.Create(newLeagueId, league.AdministratorUserId);
-        adminMember.Approve();
+        var adminMember = LeagueMember.Create(newLeagueId, league.AdministratorUserId, _dateTimeProvider);
+        adminMember.Approve(_dateTimeProvider);
 
         await AddMemberAsync(adminMember, cancellationToken);
 

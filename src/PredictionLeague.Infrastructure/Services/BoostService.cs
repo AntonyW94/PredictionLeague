@@ -1,6 +1,7 @@
 ﻿using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services.Boosts;
 using PredictionLeague.Contracts.Boosts;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Services.Boosts;
 
 namespace PredictionLeague.Infrastructure.Services;
@@ -10,12 +11,14 @@ public sealed class BoostService : IBoostService
     private readonly IBoostReadRepository _boostReadRepository;
     private readonly IBoostWriteRepository _boostWriteRepository;
     private readonly ILeagueRepository _leagueRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public BoostService(IBoostReadRepository boostReadRepository, IBoostWriteRepository boostWriteRepository, ILeagueRepository leagueRepository)
+    public BoostService(IBoostReadRepository boostReadRepository, IBoostWriteRepository boostWriteRepository, ILeagueRepository leagueRepository, IDateTimeProvider dateTimeProvider)
     {
         _boostReadRepository = boostReadRepository;
         _boostWriteRepository = boostWriteRepository;
         _leagueRepository = leagueRepository;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<BoostEligibilityDto> GetEligibilityAsync(
@@ -28,7 +31,7 @@ public sealed class BoostService : IBoostService
         var (seasonId, roundNumber, deadlineUtc) = await _boostReadRepository.GetRoundInfoAsync(roundId, cancellationToken);
 
         // Check deadline first - cannot apply boost after round deadline has passed
-        if (deadlineUtc < DateTime.UtcNow)
+        if (deadlineUtc < _dateTimeProvider.UtcNow)
         {
             return new BoostEligibilityDto
             {

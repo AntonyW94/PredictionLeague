@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
+using PredictionLeague.Domain.Common;
 
 namespace PredictionLeague.Application.Features.Authentication.Commands.RefreshToken;
 
@@ -11,17 +12,20 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
     private readonly IUserManager _userManager;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IAuthenticationTokenService _tokenService;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
     public RefreshTokenCommandHandler(
         IUserManager userManager,
         IRefreshTokenRepository refreshTokenRepository,
         IAuthenticationTokenService tokenService,
+        IDateTimeProvider dateTimeProvider,
         ILogger<RefreshTokenCommandHandler> logger)
     {
         _userManager = userManager;
         _refreshTokenRepository = refreshTokenRepository;
         _tokenService = tokenService;
+        _dateTimeProvider = dateTimeProvider;
         _logger = logger;
     }
 
@@ -39,7 +43,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
         _logger.LogDebug("Token format corrected (space replacement applied)");
 
         var storedToken = await _refreshTokenRepository.GetByTokenAsync(correctedToken, cancellationToken);
-        if (storedToken is not { IsActive: true })
+        if (storedToken == null || !storedToken.IsActive(_dateTimeProvider))
         {
             _logger.LogWarning("Refresh token validation failed - token not found or inactive");
             return new FailedAuthenticationResponse("Invalid or expired refresh token.");
@@ -54,7 +58,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, A
         }
         _logger.LogInformation("Successfully found User (ID: {UserId})", user.Id);
 
-        storedToken.Revoke();
+        storedToken.Revoke(_dateTimeProvider);
         await _refreshTokenRepository.UpdateAsync(storedToken, cancellationToken);
 
         var (accessToken, newRefreshToken, expiresAt) = await _tokenService.GenerateTokensAsync(user, cancellationToken);

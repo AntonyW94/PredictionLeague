@@ -2,6 +2,7 @@
 using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Guards;
 using PredictionLeague.Domain.Models;
 
@@ -11,11 +12,13 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
 {
     private readonly ILeagueRepository _leagueRepository;
     private readonly ISeasonRepository _seasonRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository)
+    public CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IDateTimeProvider dateTimeProvider)
     {
         _leagueRepository = leagueRepository;
         _seasonRepository = seasonRepository;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<LeagueDto> Handle(CreateLeagueCommand request, CancellationToken cancellationToken)
@@ -31,7 +34,8 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
              request.PointsForExactScore,
              request.PointsForCorrectResult,
              request.Price,
-             season
+             season,
+             _dateTimeProvider
          );
 
         string entryCode;

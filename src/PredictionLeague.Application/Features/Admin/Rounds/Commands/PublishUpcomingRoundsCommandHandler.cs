@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
@@ -8,17 +9,19 @@ namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 public class PublishUpcomingRoundsCommandHandler : IRequestHandler<PublishUpcomingRoundsCommand>
 {
     private readonly IRoundRepository _roundRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<PublishUpcomingRoundsCommandHandler> _logger;
 
-    public PublishUpcomingRoundsCommandHandler(IRoundRepository roundRepository, ILogger<PublishUpcomingRoundsCommandHandler> logger)
+    public PublishUpcomingRoundsCommandHandler(IRoundRepository roundRepository, IDateTimeProvider dateTimeProvider, ILogger<PublishUpcomingRoundsCommandHandler> logger)
     {
         _roundRepository = roundRepository;
+        _dateTimeProvider = dateTimeProvider;
         _logger = logger;
     }
 
     public async Task Handle(PublishUpcomingRoundsCommand request, CancellationToken cancellationToken)
     {
-        var fourWeeksFromNowUtc = DateTime.UtcNow.AddDays(28);
+        var fourWeeksFromNowUtc = _dateTimeProvider.UtcNow.AddDays(28);
         var roundsToPublish = await _roundRepository.GetDraftRoundsStartingBeforeAsync(fourWeeksFromNowUtc, cancellationToken);
 
         if (!roundsToPublish.Any())
@@ -29,7 +32,7 @@ public class PublishUpcomingRoundsCommandHandler : IRequestHandler<PublishUpcomi
 
         foreach (var round in roundsToPublish.Values)
         {
-            round.UpdateStatus(RoundStatus.Published);
+            round.UpdateStatus(RoundStatus.Published, _dateTimeProvider);
 
             await _roundRepository.UpdateAsync(round, cancellationToken);
 

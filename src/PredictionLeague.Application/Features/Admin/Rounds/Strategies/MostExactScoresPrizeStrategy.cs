@@ -2,6 +2,7 @@
 using PredictionLeague.Application.Features.Admin.Rounds.Commands;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Common.Enumerations;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Strategies;
@@ -11,15 +12,18 @@ public class MostExactScoresPrizeStrategy : IPrizeStrategy
     private readonly IWinningsRepository _winningsRepository;
     private readonly IRoundRepository _roundRepository;
     private readonly ILeagueRepository _leagueRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
     public MostExactScoresPrizeStrategy(
         IWinningsRepository winningsRepository,
         IRoundRepository roundRepository,
-        ILeagueRepository leagueRepository)
+        ILeagueRepository leagueRepository,
+        IDateTimeProvider dateTimeProvider)
     {
         _winningsRepository = winningsRepository;
         _roundRepository = roundRepository;
         _leagueRepository = leagueRepository;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public PrizeType PrizeType => PrizeType.MostExactScores;
@@ -65,7 +69,8 @@ public class MostExactScoresPrizeStrategy : IPrizeStrategy
                     exactScoresPrize.Id,
                     prizeAmount,
                     null,
-                    null
+                    null,
+                    _dateTimeProvider
                 );
                 allNewWinnings.Add(newWinning);
             }

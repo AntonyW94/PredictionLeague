@@ -5,6 +5,7 @@ using PredictionLeague.Application.Configuration;
 using PredictionLeague.Application.Formatters;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
+using PredictionLeague.Domain.Common;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Commands;
 
@@ -15,14 +16,16 @@ public class SendScheduledRemindersCommandHandler : IRequestHandler<SendSchedule
     private readonly IReminderService _reminderService;
     private readonly IEmailDateFormatter _dateFormatter;
     private readonly BrevoSettings _brevoSettings;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<SendScheduledRemindersCommandHandler> _logger;
 
     public SendScheduledRemindersCommandHandler(
         IRoundRepository roundRepository,
         IEmailService emailService,
-        IReminderService reminderService, 
+        IReminderService reminderService,
         IEmailDateFormatter dateFormatter,
         IOptions<BrevoSettings> brevoSettings,
+        IDateTimeProvider dateTimeProvider,
         ILogger<SendScheduledRemindersCommandHandler> logger)
     {
         _roundRepository = roundRepository;
@@ -30,12 +33,13 @@ public class SendScheduledRemindersCommandHandler : IRequestHandler<SendSchedule
         _reminderService = reminderService;
         _dateFormatter = dateFormatter;
         _brevoSettings = brevoSettings.Value;
+        _dateTimeProvider = dateTimeProvider;
         _logger = logger;
     }
 
     public async Task Handle(SendScheduledRemindersCommand request, CancellationToken cancellationToken)
     {
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = _dateTimeProvider.UtcNow;
 
         var nextRound = await _roundRepository.GetNextRoundForReminderAsync(cancellationToken);
         if (nextRound == null)
@@ -80,7 +84,7 @@ public class SendScheduledRemindersCommandHandler : IRequestHandler<SendSchedule
             _logger.LogInformation("Sent chase notification for Round (ID: {RoundId}) to User (ID: {UserId})", nextRound.Id, user.UserId);
         }
 
-        nextRound.UpdateLastReminderSent();
+        nextRound.UpdateLastReminderSent(_dateTimeProvider);
         await _roundRepository.UpdateLastReminderSentAsync(nextRound, cancellationToken);
 
         _logger.LogInformation("Sending Email Reminders: Successfully Sent {Count} Reminders and Updated LastReminderSent for Round (ID: {RoundId})", usersToChase.Count, nextRound.Id);

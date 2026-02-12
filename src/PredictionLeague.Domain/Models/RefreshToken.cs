@@ -1,4 +1,6 @@
-﻿namespace PredictionLeague.Domain.Models;
+﻿using PredictionLeague.Domain.Common;
+
+namespace PredictionLeague.Domain.Models;
 
 public class RefreshToken
 {
@@ -6,10 +8,8 @@ public class RefreshToken
     public string UserId { get; init; } = string.Empty;
     public string Token { get; init; } = string.Empty;
     public DateTime Expires { get; init; }
-    public bool IsExpired => DateTime.UtcNow >= Expires;
     public DateTime Created { get; init; }
     public DateTime? Revoked { get; private set; }
-    public bool IsActive => Revoked == null && !IsExpired;
 
     public RefreshToken() { }
 
@@ -23,8 +23,12 @@ public class RefreshToken
         Revoked = revoked;
     }
 
-    public void Revoke()
+    public bool IsExpired(IDateTimeProvider dateTimeProvider) => dateTimeProvider.UtcNow >= Expires;
+
+    public bool IsActive(IDateTimeProvider dateTimeProvider) => Revoked == null && !IsExpired(dateTimeProvider);
+
+    public void Revoke(IDateTimeProvider dateTimeProvider)
     {
-        Revoked = DateTime.UtcNow;
+        Revoked = dateTimeProvider.UtcNow;
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Guards;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
@@ -9,11 +10,13 @@ public class UpdateLeagueCommandHandler : IRequestHandler<UpdateLeagueCommand>
 {
     private readonly ILeagueRepository _leagueRepository;
     private readonly ISeasonRepository _seasonRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository)
+    public UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IDateTimeProvider dateTimeProvider)
     {
         _leagueRepository = leagueRepository;
         _seasonRepository = seasonRepository;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task Handle(UpdateLeagueCommand request, CancellationToken cancellationToken)
@@ -24,7 +27,7 @@ public class UpdateLeagueCommandHandler : IRequestHandler<UpdateLeagueCommand>
         if (league.AdministratorUserId != request.UserId)
             throw new UnauthorizedAccessException("Only the league administrator can update the league.");
 
-        if (league.EntryDeadlineUtc < DateTime.UtcNow)
+        if (league.EntryDeadlineUtc < _dateTimeProvider.UtcNow)
             throw new InvalidOperationException("This league cannot be edited because its entry deadline has passed.");
       
         if (league.Price != request.Price && league.Members.Count > 1)
@@ -39,7 +42,8 @@ public class UpdateLeagueCommandHandler : IRequestHandler<UpdateLeagueCommand>
             request.EntryDeadlineUtc,
             request.PointsForExactScore,
             request.PointsForCorrectResult,
-            season
+            season,
+            _dateTimeProvider
         );
         
         await _leagueRepository.UpdateAsync(league, cancellationToken);
