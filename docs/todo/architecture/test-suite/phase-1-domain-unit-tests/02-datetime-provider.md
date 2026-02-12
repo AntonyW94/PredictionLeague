@@ -305,7 +305,7 @@ grep -rn "RefreshToken.*\.IsExpired\|RefreshToken.*\.IsActive\|\.Revoke(" src/ -
 
 ### Step 8: Create FakeDateTimeProvider for unit tests
 
-In the test project (requires task 00 completed first), create `tests/Unit/ThePredictions.Domain.Tests.Unit/Helpers/FakeDateTimeProvider.cs`:
+In the test project (requires task 01 completed first), create `tests/Unit/ThePredictions.Domain.Tests.Unit/Helpers/FakeDateTimeProvider.cs`:
 
 ```csharp
 using PredictionLeague.Domain.Common;
@@ -356,7 +356,7 @@ token.IsExpired(dateTimeProvider).Should().BeTrue();
 - [x] `PasswordResetToken.IsExpired` and `RefreshToken.IsExpired`/`IsActive` converted from properties to methods
 - [x] `PredictionDomainService` uses constructor injection
 - [x] All command handlers updated to inject and pass through `IDateTimeProvider`
-- [ ] `FakeDateTimeProvider` created in the test project helpers folder (requires task 00 — test project setup)
+- [ ] `FakeDateTimeProvider` created in the test project helpers folder (requires task 01 — test project setup)
 - [ ] `dotnet build` succeeds with no errors (requires dotnet SDK)
 
 ## Notes

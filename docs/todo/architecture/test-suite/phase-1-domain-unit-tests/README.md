@@ -23,22 +23,22 @@ Create comprehensive unit tests for all domain entities and services. This phase
 
 | # | Task | Description | Status |
 |---|------|-------------|--------|
-| 0 | [Project setup](./00-project-setup.md) | Create test project, packages, solution references | Not Started |
-| 0a | [Introduce IDateTimeProvider](./00a-datetime-provider.md) | Replace `DateTime.UtcNow` with injectable provider, create `FakeDateTimeProvider` | Complete |
-| 1 | [UserPrediction tests](./01-user-prediction-tests.md) | Core scoring algorithm (SetOutcome) and factory | Not Started |
-| 2 | [BoostEligibilityEvaluator tests](./02-boost-eligibility-evaluator-tests.md) | Most complex domain logic with 12+ conditional paths | Not Started |
-| 3 | [League winners and rankings tests](./03-league-winners-rankings-tests.md) | GetRoundWinners, GetPeriodWinners, GetOverallRankings, GetMostExactScoresWinners | Not Started |
-| 4 | [League management tests](./04-league-management-tests.md) | Create, UpdateDetails, AddMember, RemoveMember, prizes, entry codes | Not Started |
-| 5 | [Round tests](./05-round-tests.md) | Create, status transitions, match management | Not Started |
-| 6 | [Match and Team tests](./06-match-team-tests.md) | Match and Team factory methods and business logic | Not Started |
-| 7 | [Season tests](./07-season-tests.md) | Season factory, validation, duration constraints | Not Started |
-| 8 | [LeagueMember tests](./08-league-member-tests.md) | Status transitions (Approve, Reject, DismissAlert) | Not Started |
-| 9 | [Supporting entity tests](./09-supporting-entity-tests.md) | Winning, LeaguePrizeSetting, ApplicationUser, PasswordResetToken, RefreshToken, LeagueRoundResult | Not Started |
-| 10 | [Domain service and utility tests](./10-domain-service-utility-tests.md) | PredictionDomainService, NameValidator | Not Started |
+| 1 | [Project setup](./01-project-setup.md) | Create test project, packages, solution references | Not Started |
+| 2 | [Introduce IDateTimeProvider](./02-datetime-provider.md) | Replace `DateTime.UtcNow` with injectable provider, create `FakeDateTimeProvider` | Complete |
+| 3 | [UserPrediction tests](./03-user-prediction-tests.md) | Core scoring algorithm (SetOutcome) and factory | Not Started |
+| 4 | [BoostEligibilityEvaluator tests](./04-boost-eligibility-evaluator-tests.md) | Most complex domain logic with 12+ conditional paths | Not Started |
+| 5 | [League winners and rankings tests](./05-league-winners-rankings-tests.md) | GetRoundWinners, GetPeriodWinners, GetOverallRankings, GetMostExactScoresWinners | Not Started |
+| 6 | [League management tests](./06-league-management-tests.md) | Create, UpdateDetails, AddMember, RemoveMember, prizes, entry codes | Not Started |
+| 7 | [Round tests](./07-round-tests.md) | Create, status transitions, match management | Not Started |
+| 8 | [Match and Team tests](./08-match-team-tests.md) | Match and Team factory methods and business logic | Not Started |
+| 9 | [Season tests](./09-season-tests.md) | Season factory, validation, duration constraints | Not Started |
+| 10 | [LeagueMember tests](./10-league-member-tests.md) | Status transitions (Approve, Reject, DismissAlert) | Not Started |
+| 11 | [Supporting entity tests](./11-supporting-entity-tests.md) | Winning, LeaguePrizeSetting, ApplicationUser, PasswordResetToken, RefreshToken, LeagueRoundResult | Not Started |
+| 12 | [Domain service and utility tests](./12-domain-service-utility-tests.md) | PredictionDomainService, NameValidator | Not Started |
 
 ## Dependencies
 
-- Task 0a (`IDateTimeProvider`) must be completed before writing tests — factory methods and business logic methods require the provider as a parameter
+- Task 2 (`IDateTimeProvider`) must be completed before writing tests — factory methods and business logic methods require the provider as a parameter
 
 ## Technical Notes
 

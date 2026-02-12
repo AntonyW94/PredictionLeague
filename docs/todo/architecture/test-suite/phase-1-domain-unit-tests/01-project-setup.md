@@ -85,7 +85,7 @@ public class FakeDateTimeProvider : IDateTimeProvider
 
 This is a hand-rolled fake (not a mock) that all test classes will use. The settable `UtcNow` property allows tests to advance time mid-test.
 
-> **Prerequisite:** Task 0a (`IDateTimeProvider`) must be completed first so the interface exists.
+> **Prerequisite:** Task 2 (`IDateTimeProvider`) must be completed first so the interface exists.
 
 ### Step 5: Verify the project builds
 
@@ -104,5 +104,5 @@ dotnet build tests/Unit/ThePredictions.Domain.Tests.Unit/ThePredictions.Domain.T
 ## Notes
 
 - No mocking library needed — a hand-rolled `FakeDateTimeProvider` is used instead. NSubstitute is only needed in the Application.Tests.Unit project.
-- `FakeDateTimeProvider` requires task 0a (`IDateTimeProvider`) to be completed first.
+- `FakeDateTimeProvider` requires task 2 (`IDateTimeProvider`) to be completed first.
 - Check the latest stable package versions before installing — the versions listed above are from the test suite plan and may have newer releases.
