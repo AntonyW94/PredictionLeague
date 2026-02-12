@@ -8,7 +8,7 @@ public class Round
     public int Id { get; init; }
     public int SeasonId { get; private init; }
     public int RoundNumber { get; private set; }
-    public DateTime StartDateUtc { get; set; }
+    public DateTime StartDateUtc { get; private set; }
     public DateTime DeadlineUtc { get; private set; }
     public DateTime? CompletedDateUtc { get; private set; }
     public RoundStatus Status { get; private set; }

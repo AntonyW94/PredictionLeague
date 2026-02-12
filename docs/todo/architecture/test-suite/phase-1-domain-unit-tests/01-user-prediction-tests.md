@@ -125,7 +125,7 @@ public class UserPredictionTests
         var prediction = UserPrediction.Create("user-1", 1, 2, 1, _dateTimeProvider);
 
         // Act
-        prediction.SetOutcome(MatchStatus.Completed, 2, 1, 5, 3, _dateTimeProvider);
+        prediction.SetOutcome(MatchStatus.Completed, 2, 1, _dateTimeProvider);
 
         // Assert
         prediction.Outcome.Should().Be(PredictionOutcome.ExactScore);
@@ -140,7 +140,7 @@ public class UserPredictionTests
         _dateTimeProvider.UtcNow = laterTime;
 
         // Act
-        prediction.SetOutcome(MatchStatus.Completed, 2, 1, 5, 3, _dateTimeProvider);
+        prediction.SetOutcome(MatchStatus.Completed, 2, 1, _dateTimeProvider);
 
         // Assert
         prediction.UpdatedAtUtc.Should().Be(laterTime);
