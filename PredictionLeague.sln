@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Contracts"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Hosting.Shared", "src\PredictionLeague.Hosting.Shared\PredictionLeague.Hosting.Shared.csproj", "{DA1E0EDB-DD84-4A0F-8E88-44CA716BC9C1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThePredictions.DatabaseTools", "tools\ThePredictions.DatabaseTools\ThePredictions.DatabaseTools.csproj", "{B8F5E3A1-7C2D-4F9A-8E6B-1D3C5A7F9E2B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,6 +65,10 @@ Global
 		{DA1E0EDB-DD84-4A0F-8E88-44CA716BC9C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA1E0EDB-DD84-4A0F-8E88-44CA716BC9C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DA1E0EDB-DD84-4A0F-8E88-44CA716BC9C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8F5E3A1-7C2D-4F9A-8E6B-1D3C5A7F9E2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8F5E3A1-7C2D-4F9A-8E6B-1D3C5A7F9E2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8F5E3A1-7C2D-4F9A-8E6B-1D3C5A7F9E2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8F5E3A1-7C2D-4F9A-8E6B-1D3C5A7F9E2B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
