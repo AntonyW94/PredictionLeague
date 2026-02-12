@@ -1,3 +1,4 @@
+using System.Data;
 using Dapper;
 using Microsoft.Data.SqlClient;
 
@@ -195,61 +196,38 @@ public class DatabaseRefresher(
         var firstRow = (IDictionary<string, object?>)rows[0];
         var columns = firstRow.Keys.ToList();
 
-        var hasIdentity = await HasIdentityColumnAsync(connection, table);
+        var dataTable = new DataTable();
 
-        var columnList = string.Join(",\n    ", columns.Select(c => $"[{c}]"));
-        var paramList = string.Join(",\n    ", columns.Select(c => $"@{c}"));
-
-        var sql = $"""
-            INSERT INTO [{table}] (
-                {columnList}
-            )
-            VALUES (
-                {paramList}
-            )
-            """;
-
-        if (hasIdentity)
+        foreach (var column in columns)
         {
-            sql = $"SET IDENTITY_INSERT [{table}] ON;\n{sql};\nSET IDENTITY_INSERT [{table}] OFF;";
+            var value = firstRow[column];
+            var columnType = value?.GetType() ?? typeof(string);
+            dataTable.Columns.Add(column, columnType);
         }
 
-        const int batchSize = 500;
-
-        for (var i = 0; i < rows.Count; i += batchSize)
+        foreach (var row in rows)
         {
-            var batch = rows.Skip(i).Take(batchSize);
+            var dict = (IDictionary<string, object?>)row;
+            var dataRow = dataTable.NewRow();
 
-            foreach (var row in batch)
+            foreach (var column in columns)
             {
-                var parameters = new DynamicParameters();
-
-                foreach (var column in columns)
-                {
-                    var dict = (IDictionary<string, object?>)row;
-                    parameters.Add(column, dict[column]);
-                }
-
-                await connection.ExecuteAsync(sql, parameters);
+                dataRow[column] = dict[column] ?? DBNull.Value;
             }
+
+            dataTable.Rows.Add(dataRow);
         }
-    }
 
-    private static async Task<bool> HasIdentityColumnAsync(SqlConnection connection, string table)
-    {
-        var result = await connection.QueryFirstOrDefaultAsync<int>(
-            """
-            SELECT
-                COUNT(*)
-            FROM
-                sys.identity_columns ic
-            JOIN sys.tables t
-                ON ic.[object_id] = t.[object_id]
-            WHERE
-                t.[name] = @TableName
-            """,
-            new { TableName = table });
+        using var bulkCopy = new SqlBulkCopy(connection, SqlBulkCopyOptions.KeepIdentity, null);
+        bulkCopy.DestinationTableName = $"[{table}]";
+        bulkCopy.BatchSize = 1000;
+        bulkCopy.BulkCopyTimeout = 120;
 
-        return result > 0;
+        foreach (var column in columns)
+        {
+            bulkCopy.ColumnMappings.Add(column, column);
+        }
+
+        await bulkCopy.WriteToServerAsync(dataTable);
     }
 }

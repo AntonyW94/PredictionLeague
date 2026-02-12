@@ -104,7 +104,7 @@ public class TestAccountCreator(SqlConnection connection, string testPassword)
             WHERE
                 r.[NormalizedName] = @NormalizedName
             """,
-            new { NormalizedName = "ADMIN" });
+            new { NormalizedName = "ADMINISTRATOR" });
 
         if (adminRoleId is null)
         {
