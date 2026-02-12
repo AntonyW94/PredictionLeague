@@ -36,40 +36,58 @@ These test the guard conditions at the top of `Evaluate()`:
 |------|-----------|----------|
 | `Evaluate_ShouldReturnAlreadyUsed_WhenHasUsedThisRound` | `hasUsedThisRound: true` | CanUse = false, AlreadyUsedThisRound = true |
 | `Evaluate_ShouldReturnNotAllowed_WhenSeasonLimitReached` | `seasonUses: 3, totalUsesPerSeason: 3` | CanUse = false, reason contains "Season limit" |
-| `Evaluate_ShouldReturnNotAllowed_WhenSeasonUsesExceedLimit` | `seasonUses: 5, totalUsesPerSeason: 3` | CanUse = false |
+| `Evaluate_ShouldReturnNotAllowed_WhenSeasonUsesExceedLimit` | `seasonUses: 5, totalUsesPerSeason: 3` | CanUse = false, reason contains "Season limit" |
 
 ### Step 3: Create window-based rejection tests
 
 | Test | Parameters | Expected |
 |------|-----------|----------|
 | `Evaluate_ShouldReturnNotAllowed_WhenRoundNotInAnyWindow` | `roundNumber: 15`, windows: `[{1-5}, {10-12}]` | CanUse = false, reason contains "not available" |
-| `Evaluate_ShouldReturnNotAllowed_WhenWindowMaxUsesIsZero` | window `MaxUsesInWindow: 0` | CanUse = false |
+| `Evaluate_ShouldReturnNotAllowed_WhenWindowMaxUsesIsZero` | window `MaxUsesInWindow: 0` | CanUse = false, reason contains "cannot be used" |
+| `Evaluate_ShouldReturnNotAllowed_WhenWindowMaxUsesIsNegative` | window `MaxUsesInWindow: -1` | CanUse = false, reason contains "cannot be used" |
 | `Evaluate_ShouldReturnNotAllowed_WhenWindowLimitReached` | `windowUses: 2`, window `MaxUsesInWindow: 2` | CanUse = false, reason contains "Window limit" |
+| `Evaluate_ShouldReturnNotAllowed_WhenWindowUsesExceedLimit` | `windowUses: 5`, window `MaxUsesInWindow: 2` | CanUse = false, reason contains "Window limit" |
 
 ### Step 4: Create success (Allowed) tests
 
 | Test | Parameters | Expected |
 |------|-----------|----------|
-| `Evaluate_ShouldReturnAllowed_WhenNoWindowsDefined` | `windows: null`, valid base params | CanUse = true |
-| `Evaluate_ShouldReturnAllowed_WhenEmptyWindowsList` | `windows: []`, valid base params | CanUse = true |
+| `Evaluate_ShouldReturnAllowed_WhenNoWindowsDefined` | `windows: null`, valid base params | CanUse = true, Reason = null |
+| `Evaluate_ShouldReturnAllowed_WhenEmptyWindowsList` | `windows: []`, valid base params | CanUse = true, Reason = null |
 | `Evaluate_ShouldReturnAllowed_WhenRoundIsInWindowAndLimitsNotReached` | `roundNumber: 3`, window `{1-5, max: 2}`, `windowUses: 1` | CanUse = true |
 | `Evaluate_ShouldReturnAllowed_WhenRoundIsAtWindowBoundaryStart` | `roundNumber: 1`, window `{1-5}` | CanUse = true |
 | `Evaluate_ShouldReturnAllowed_WhenRoundIsAtWindowBoundaryEnd` | `roundNumber: 5`, window `{1-5}` | CanUse = true |
+| `Evaluate_ShouldReturnAllowed_WhenRoundIsInSecondWindow` | `roundNumber: 11`, windows: `[{1-5, max:2}, {10-15, max:3}]` | CanUse = true |
+| `Evaluate_ShouldReturnAllowed_WhenSeasonUsesLessThanLimit` | `seasonUses: 1, totalUsesPerSeason: 3` | CanUse = true |
 
 ### Step 5: Create remaining uses calculation tests
 
-| Test | Expected Remaining |
-|------|-------------------|
-| `Evaluate_ShouldCalculateSeasonRemaining_WhenNoWindows` | `RemainingSeasonUses = totalUsesPerSeason - seasonUses` |
-| `Evaluate_ShouldCalculateWindowRemaining_WhenWindowExists` | `RemainingWindowUses = maxUsesInWindow - windowUses` |
-| `Evaluate_ShouldSetWindowRemainingToSeasonRemaining_WhenNoWindows` | `RemainingWindowUses == RemainingSeasonUses` |
+| Test | Parameters | Expected Remaining |
+|------|-----------|-------------------|
+| `Evaluate_ShouldCalculateSeasonRemaining_WhenNoWindows` | `totalUsesPerSeason: 3, seasonUses: 1`, no windows | `RemainingSeasonUses = 2` |
+| `Evaluate_ShouldCalculateWindowRemaining_WhenWindowExists` | `maxUsesInWindow: 3, windowUses: 1` | `RemainingWindowUses = 2` |
+| `Evaluate_ShouldSetWindowRemainingToSeasonRemaining_WhenNoWindows` | `totalUsesPerSeason: 3, seasonUses: 1`, no windows | `RemainingWindowUses = 2 (same as season)` |
+| `Evaluate_ShouldCalculateSeasonRemainingAsZero_WhenAllUsesConsumedMinusOne` | `totalUsesPerSeason: 3, seasonUses: 2` | `RemainingSeasonUses = 1` |
+| `Evaluate_ShouldReturnCorrectRemaining_WhenWindowRemainingDiffersFromSeason` | `seasonUses: 0, windowUses: 1, maxWindow: 2, totalSeason: 5` | `RemainingSeasonUses = 5, RemainingWindowUses = 1` |
 
-### Step 6: Verify AlreadyUsedThisRound result properties
+### Step 6: Verify result object properties
 
-| Test | Expected |
-|------|----------|
-| `Evaluate_ShouldSetAlreadyUsedThisRoundTrue_WhenUsedThisRound` | `AlreadyUsedThisRound = true`, `CanUse = false` |
-| `Evaluate_ShouldSetAlreadyUsedThisRoundFalse_WhenNotUsedAndNotAllowed` | `AlreadyUsedThisRound = false` (for other NotAllowed reasons) |
+| Test | Scenario | Expected |
+|------|----------|----------|
+| `Evaluate_ShouldSetAlreadyUsedThisRoundTrue_WhenUsedThisRound` | `hasUsedThisRound: true` | `AlreadyUsedThisRound = true`, `CanUse = false` |
+| `Evaluate_ShouldSetAlreadyUsedThisRoundFalse_WhenNotUsedAndNotAllowed` | Other NotAllowed reason | `AlreadyUsedThisRound = false` |
+| `Evaluate_ShouldSetReasonToNull_WhenAllowed` | Valid allowed case | `Reason = null` |
+| `Evaluate_ShouldSetRemainingToZero_WhenNotAllowed` | Any NotAllowed case | `RemainingSeasonUses = 0, RemainingWindowUses = 0` |
+
+### Step 7: Verify guard evaluation order
+
+The guards are checked in sequence. Earlier guards should short-circuit later checks:
+
+| Test | Parameters | Expected |
+|------|-----------|----------|
+| `Evaluate_ShouldCheckRoundInSeasonFirst_WhenMultipleConditionsFail` | `isRoundInLeagueSeason: false, isEnabled: false` | Reason contains "season" (not "enabled") |
+| `Evaluate_ShouldCheckMembershipBeforeEnabled_WhenBothFail` | `isUserMemberOfLeague: false, isEnabled: false` | Reason contains "member" (not "enabled") |
+| `Evaluate_ShouldCheckEnabledBeforeUsesPerSeason_WhenBothFail` | `isEnabled: false, totalUsesPerSeason: 0` | Reason contains "not enabled" (not "cannot be used") |
 
 ## Code Patterns to Follow
 
@@ -120,16 +138,20 @@ public class BoostEligibilityEvaluatorTests
 
 ## Verification
 
-- [ ] All early-exit guard conditions tested
+- [ ] All early-exit guard conditions tested (round not in season, not a member, disabled, zero/negative uses)
 - [ ] AlreadyUsedThisRound distinct from other NotAllowed results
-- [ ] Window boundary conditions tested (start, end, outside)
-- [ ] Remaining use calculations verified
-- [ ] Multiple windows scenario tested
+- [ ] Window boundary conditions tested (start, end, outside, multiple windows)
+- [ ] Window limit tested at boundary (equal) and beyond (exceeds)
+- [ ] Remaining use calculations verified for both season and window
+- [ ] Multiple windows scenario: round in second window returns Allowed
+- [ ] Result properties verified (Reason null when Allowed, zero remaining when NotAllowed)
+- [ ] Guard evaluation order verified (earlier guards short-circuit later ones)
 - [ ] `dotnet test` passes
 
 ## Edge Cases to Consider
 
 - Order matters: guards are checked in sequence, test that earlier guards short-circuit
-- Multiple windows: only the matching window applies
+- Multiple windows: only the first matching window applies (`FirstOrDefault`)
 - `RemainingWindowUses` falls back to `RemainingSeasonUses` when no windows defined
-- Window with `MaxUsesInWindow: 0` is effectively disabled
+- Window with `MaxUsesInWindow: 0` or negative is effectively disabled
+- Season uses exceeding the limit (not just equal to it)
