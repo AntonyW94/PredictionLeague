@@ -97,18 +97,22 @@ private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025,
 
 ### Step 5: PasswordResetToken.Create tests
 
+Note: Token generation (URL-safe base64) now lives in the command handler, not the entity. The domain factory accepts the token string as a parameter and validates it.
+
 | Test | Scenario | Expected |
 |------|----------|----------|
-| `Create_ShouldGenerateToken_WhenValidUserIdProvided` | Valid userId | Token is not null or empty |
-| `Create_ShouldGenerateUrlSafeToken_WhenCreated` | Valid userId | Token contains no `+`, `/`, or `=` |
+| `Create_ShouldCreateToken_WhenValidParametersProvided` | Valid token and userId | Properties set correctly |
+| `Create_ShouldSetToken_WhenProvided` | `token: "test-token-123"` | `Token = "test-token-123"` |
 | `Create_ShouldSetUserId_WhenCreated` | `"user-1"` | `UserId = "user-1"` |
-| `Create_ShouldSetCreatedAtUtc_WhenCreated` | Valid userId | `CreatedAtUtc` matches `dateTimeProvider.UtcNow` exactly |
+| `Create_ShouldSetCreatedAtUtc_WhenCreated` | Valid params | `CreatedAtUtc` matches `dateTimeProvider.UtcNow` exactly |
 | `Create_ShouldSetExpiryToOneHour_WhenDefaultExpiryUsed` | Default param | `ExpiresAtUtc` equals `dateTimeProvider.UtcNow.AddHours(1)` exactly |
 | `Create_ShouldSetCustomExpiry_WhenExpiryHoursProvided` | `expiryHours: 24` | `ExpiresAtUtc` equals `dateTimeProvider.UtcNow.AddHours(24)` exactly |
-| `Create_ShouldThrowException_WhenUserIdIsNull` | `null` | `ArgumentNullException` |
-| `Create_ShouldThrowException_WhenUserIdIsEmpty` | `""` | `ArgumentException` |
-| `Create_ShouldThrowException_WhenUserIdIsWhitespace` | `" "` | `ArgumentException` |
-| `Create_ShouldGenerateUniqueTokens_WhenCalledMultipleTimes` | Two calls | Different tokens |
+| `Create_ShouldThrowException_WhenTokenIsNull` | `token: null` | `ArgumentNullException` |
+| `Create_ShouldThrowException_WhenTokenIsEmpty` | `token: ""` | `ArgumentException` |
+| `Create_ShouldThrowException_WhenTokenIsWhitespace` | `token: " "` | `ArgumentException` |
+| `Create_ShouldThrowException_WhenUserIdIsNull` | `userId: null` | `ArgumentNullException` |
+| `Create_ShouldThrowException_WhenUserIdIsEmpty` | `userId: ""` | `ArgumentException` |
+| `Create_ShouldThrowException_WhenUserIdIsWhitespace` | `userId: " "` | `ArgumentException` |
 
 ### Step 6: PasswordResetToken.IsExpired tests
 
@@ -148,24 +152,14 @@ public class PasswordResetTokenTests
     private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
 
     [Fact]
-    public void Create_ShouldGenerateUrlSafeToken_WhenCreated()
+    public void Create_ShouldCreateToken_WhenValidParametersProvided()
     {
         // Act
-        var token = PasswordResetToken.Create("user-1", _dateTimeProvider);
+        var token = PasswordResetToken.Create("test-token-abc", "user-1", _dateTimeProvider);
 
         // Assert
-        token.Token.Should().NotContain("+");
-        token.Token.Should().NotContain("/");
-        token.Token.Should().NotContain("=");
-    }
-
-    [Fact]
-    public void Create_ShouldSetExpiryToOneHour_WhenDefaultExpiryUsed()
-    {
-        // Act
-        var token = PasswordResetToken.Create("user-1", _dateTimeProvider);
-
-        // Assert
+        token.Token.Should().Be("test-token-abc");
+        token.UserId.Should().Be("user-1");
         token.CreatedAtUtc.Should().Be(_dateTimeProvider.UtcNow);
         token.ExpiresAtUtc.Should().Be(_dateTimeProvider.UtcNow.AddHours(1));
     }
@@ -174,7 +168,7 @@ public class PasswordResetTokenTests
     public void IsExpired_ShouldReturnFalse_WhenExactlyAtExpiry()
     {
         // Arrange
-        var token = PasswordResetToken.Create("user-1", _dateTimeProvider);
+        var token = PasswordResetToken.Create("test-token-abc", "user-1", _dateTimeProvider);
 
         // Advance time to exactly the expiry moment
         _dateTimeProvider.UtcNow = token.ExpiresAtUtc;
@@ -187,7 +181,7 @@ public class PasswordResetTokenTests
     public void IsExpired_ShouldReturnTrue_WhenExpiryIsInPast()
     {
         // Arrange
-        var token = PasswordResetToken.Create("user-1", _dateTimeProvider);
+        var token = PasswordResetToken.Create("test-token-abc", "user-1", _dateTimeProvider);
 
         // Advance time past expiry
         _dateTimeProvider.UtcNow = token.ExpiresAtUtc.AddSeconds(1);
@@ -251,9 +245,9 @@ public class RefreshTokenTests
 - [ ] LeaguePrizeSetting preserves PrizeType enum value
 - [ ] ApplicationUser.UserName always set to email
 - [ ] ApplicationUser.UpdateDetails does not change Email or UserName
-- [ ] PasswordResetToken generates URL-safe tokens (no +, /, =)
-- [ ] PasswordResetToken generates unique tokens on each call
-- [ ] PasswordResetToken stores UserId and CreatedAtUtc
+- [ ] PasswordResetToken.Create validates token (null, empty, whitespace)
+- [ ] PasswordResetToken.Create validates userId (null, empty, whitespace)
+- [ ] PasswordResetToken stores Token, UserId, and CreatedAtUtc
 - [ ] Token expiry computed properties work correctly for both token types
 - [ ] RefreshToken.IsActive combines revocation and expiry checks (all 4 combinations)
 - [ ] RefreshToken.Revoke sets Revoked timestamp and makes token inactive
@@ -261,6 +255,7 @@ public class RefreshTokenTests
 
 ## Edge Cases to Consider
 
+- PasswordResetToken.Create now accepts a token string — URL-safe generation is tested in the Application layer, not here
 - PasswordResetToken expiry boundary (exactly at ExpiresAtUtc — `>` means equal to boundary is NOT expired) — now deterministically testable with `FakeDateTimeProvider`
 - RefreshToken expiry boundary (uses `>=` — equal to boundary IS expired) — now deterministically testable with `FakeDateTimeProvider`
 - Winning with zero amount (valid — e.g., placeholder prizes)

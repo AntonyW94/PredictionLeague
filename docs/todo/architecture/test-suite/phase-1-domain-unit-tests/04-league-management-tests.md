@@ -77,19 +77,16 @@ private DateTime FutureDeadline => _dateTimeProvider.UtcNow.AddMonths(1);
 | `CreateOfficialPublicLeague_ShouldSetPriceCorrectly` | `price: 10m` | `Price = 10m` |
 | `CreateOfficialPublicLeague_ShouldThrowException_WhenDeadlineIsInThePast` | Past deadline | `ArgumentException` (validation inherited from Create) |
 
-### Step 4: GenerateRandomEntryCode and SetEntryCode tests
+### Step 4: SetEntryCode tests
 
 | Test | Scenario | Expected |
 |------|----------|----------|
-| `GenerateRandomEntryCode_ShouldReturnSixCharacterString` | Call method | `result.Length == 6` |
-| `GenerateRandomEntryCode_ShouldContainOnlyAlphanumericCharacters` | Call method | Matches `^[A-Z0-9]{6}$` |
-| `GenerateRandomEntryCode_ShouldGenerateDifferentCodes_WhenCalledMultipleTimes` | Call 10 times | Not all identical |
 | `SetEntryCode_ShouldSetEntryCode_WhenValidCodeProvided` | `"ABC123"` | `EntryCode = "ABC123"` |
 | `SetEntryCode_ShouldThrowException_WhenCodeIsNull` | `null` | `ArgumentNullException` |
 | `SetEntryCode_ShouldThrowException_WhenCodeIsEmpty` | `""` | `ArgumentException` |
 | `SetEntryCode_ShouldThrowException_WhenCodeIsWhitespace` | `" "` | `ArgumentException` |
 
-Note: The retry-until-unique loop now lives in the command handler, not the entity. No mocking required for these tests.
+Note: Entry code generation (`GenerateRandomEntryCode`) now lives in the command handler, not the entity. The domain only validates and stores the code via `SetEntryCode`.
 
 ### Step 5: AddMember tests
 
@@ -154,7 +151,6 @@ Note: For deadline tests, build the League using the public constructor with an 
 
 - [ ] All factory validation paths tested (null, empty, whitespace for all string params)
 - [ ] IsFree derived correctly from price (0m vs 0.01m boundary)
-- [ ] Entry code generation produces valid 6-char alphanumeric codes
 - [ ] SetEntryCode validates null, empty, whitespace
 - [ ] AddMember enforces deadline, duplicate, null/empty/whitespace userId checks
 - [ ] AddMember creates members with Pending status

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -76,7 +77,8 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
         CancellationToken cancellationToken)
     {
         // Create and store the token
-        var resetToken = PasswordResetToken.Create(user.Id);
+        var tokenString = GenerateUrlSafeToken();
+        var resetToken = PasswordResetToken.Create(tokenString, user.Id);
         await _tokenRepository.CreateAsync(resetToken, cancellationToken);
 
         // Build the reset link (no email in URL for security)
@@ -118,5 +120,14 @@ public class RequestPasswordResetCommandHandler : IRequestHandler<RequestPasswor
             });
 
         _logger.LogInformation("Google sign-in reminder email sent to User (ID: {UserId})", user.Id);
+    }
+
+    private static string GenerateUrlSafeToken()
+    {
+        var tokenBytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToBase64String(tokenBytes)
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .TrimEnd('=');
     }
 }

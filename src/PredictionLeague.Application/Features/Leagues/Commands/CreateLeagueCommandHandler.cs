@@ -37,7 +37,7 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
         string entryCode;
         do
         {
-            entryCode = League.GenerateRandomEntryCode();
+            entryCode = GenerateRandomEntryCode();
         } while (await _leagueRepository.GetByEntryCodeAsync(entryCode, cancellationToken) != null);
 
         league.SetEntryCode(entryCode);
@@ -55,5 +55,12 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
             createdLeague.PointsForExactScore,
             createdLeague.PointsForCorrectResult
         );
+    }
+
+    private static string GenerateRandomEntryCode()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, 6).Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }

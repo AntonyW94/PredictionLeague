@@ -26,7 +26,7 @@ Replace all direct `DateTime.UtcNow` calls in the domain layer with an injectabl
 | `src/PredictionLeague.Domain/Models/LeagueMember.cs` | Add `IDateTimeProvider` param to `Create` and `Approve` |
 | `src/PredictionLeague.Domain/Models/Round.cs` | Add `IDateTimeProvider` param to `UpdateStatus` and `UpdateLastReminderSent` |
 | `src/PredictionLeague.Domain/Models/Winning.cs` | Add `IDateTimeProvider` param to `Create` |
-| `src/PredictionLeague.Domain/Models/PasswordResetToken.cs` | Add `IDateTimeProvider` param to `Create`; convert `IsExpired` property to method |
+| `src/PredictionLeague.Domain/Models/PasswordResetToken.cs` | Add `IDateTimeProvider` param to `Create` (token string is already a parameter); convert `IsExpired` property to method |
 | `src/PredictionLeague.Domain/Models/RefreshToken.cs` | Convert `IsExpired` and `IsActive` properties to methods; add `IDateTimeProvider` param to `Revoke` |
 | `src/PredictionLeague.Domain/Services/PredictionDomainService.cs` | Inject `IDateTimeProvider` via constructor |
 | `src/PredictionLeague.Infrastructure/DependencyInjection.cs` | Register `IDateTimeProvider` as singleton |
@@ -184,8 +184,8 @@ These require converting properties to methods since `IsExpired` cannot accept p
 #### PasswordResetToken.cs
 
 ```csharp
-// Create — add parameter
-public static PasswordResetToken Create(string userId, IDateTimeProvider dateTimeProvider, int expiryHours = 1)
+// Create — add IDateTimeProvider parameter (token string is already accepted as a parameter)
+public static PasswordResetToken Create(string token, string userId, IDateTimeProvider dateTimeProvider, int expiryHours = 1)
 {
     var now = dateTimeProvider.UtcNow;  // was DateTime.UtcNow
     // ...
@@ -332,7 +332,7 @@ Advancing time within a test:
 ```csharp
 var dateTimeProvider = new FakeDateTimeProvider(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
 
-var token = PasswordResetToken.Create("user-1", dateTimeProvider);
+var token = PasswordResetToken.Create("test-token-abc", "user-1", dateTimeProvider);
 token.IsExpired(dateTimeProvider).Should().BeFalse();
 
 // Advance time past expiry

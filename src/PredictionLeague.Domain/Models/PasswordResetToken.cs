@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-
 namespace PredictionLeague.Domain.Models;
 
 public class PasswordResetToken
@@ -23,17 +21,13 @@ public class PasswordResetToken
     /// <summary>
     /// Factory method to create a new password reset token.
     /// </summary>
+    /// <param name="token">The generated token string (caller is responsible for generation).</param>
     /// <param name="userId">The ID of the user requesting the reset.</param>
     /// <param name="expiryHours">How long the token should be valid (default 1 hour).</param>
-    public static PasswordResetToken Create(string userId, int expiryHours = 1)
+    public static PasswordResetToken Create(string token, string userId, int expiryHours = 1)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(token);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-
-        var tokenBytes = RandomNumberGenerator.GetBytes(64);
-        var token = Convert.ToBase64String(tokenBytes)
-            .Replace("+", "-")
-            .Replace("/", "_")
-            .TrimEnd('=');
 
         var now = DateTime.UtcNow;
 
