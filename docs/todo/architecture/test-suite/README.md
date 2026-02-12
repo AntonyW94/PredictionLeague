@@ -802,11 +802,11 @@ Since Fasthosts shared hosting doesn't support traditional backup/restore, use a
 │                                                                              │
 │  1. Connect to Production DB (read-only)                                     │
 │  2. Read all tables in dependency order                                      │
-│  3. Anonymise PII in memory (emails, names, league names)                    │
+│  3. Anonymise personal data in memory (emails, names, league names)          │
 │  4. Truncate Dev DB tables                                                   │
 │  5. Insert anonymised data to Dev DB                                         │
 │  6. Add known test accounts (testplayer@dev.local, testadmin@dev.local)      │
-│  7. Verify no real PII remains                                               │
+│  7. Verify no real personal data remains                                     │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -864,7 +864,7 @@ All testing and deployment runs on GitHub Actions free tier.
 │                                                                              │
 │  refresh-dev-db.yml (Weekly Monday 6am + manual)                             │
 │  ├── Copy data from prod to dev                                              │
-│  ├── Anonymise PII                                                           │
+│  ├── Anonymise personal data                                                 │
 │  ├── Add test accounts                                                       │
 │  └── ~5 minutes                                                              │
 │                                                                              │
@@ -975,9 +975,9 @@ PredictionLeague.sln
 │           └── TestDataExtensions.cs
 │
 └── tools/
-    ├── PredictionLeague.DevDbRefresh/
+    ├── ThePredictions.DatabaseTools/
     │   ├── Program.cs
-    │   └── PredictionLeague.DevDbRefresh.csproj
+    │   └── ThePredictions.DatabaseTools.csproj
     │
     └── PredictionLeague.TestDbSeeder/
         ├── Program.cs
@@ -1167,7 +1167,7 @@ GitHub Actions workflows for automated testing and deployment.
 </Project>
 ```
 
-### PredictionLeague.DevDbRefresh.csproj (Tool)
+### ThePredictions.DatabaseTools.csproj (Tool)
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">

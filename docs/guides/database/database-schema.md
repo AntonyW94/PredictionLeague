@@ -75,7 +75,7 @@ Represents a gameweek within a season.
 | DeadlineUtc | datetime2 | NO | | Prediction deadline |
 | CompletedDateUtc | datetime2 | YES | | When round was completed |
 | LastReminderSentUtc | datetime2 | YES | | Last reminder email sent |
-| LastReminderSent | datetime2 | YES | | (Legacy column) |
+| CompletedDate | datetime2 | YES | | (Legacy column — use CompletedDateUtc instead) |
 
 **Constraints:**
 - PK: `Id`
@@ -221,9 +221,14 @@ Per-user, per-round, per-league results (includes boost effects).
 
 **Constraints:**
 - PK: `Id`
+- UNIQUE: `LeagueId, RoundId, UserId` (index: `UQ_LeagueRoundResults_League_Round_User`)
 - FK: `LeagueId` → `Leagues.Id` (CASCADE DELETE)
 - FK: `RoundId` → `Rounds.Id`
 - FK: `UserId` → `AspNetUsers.Id`
+
+**Indexes:**
+- `IX_LeagueRoundResults_League_Round` on `LeagueId, RoundId` (includes UserId, BoostedPoints, BasePoints)
+- `IX_LeagueRoundResults_League_User` on `LeagueId, UserId` (includes BoostedPoints, BasePoints)
 
 ---
 
@@ -410,6 +415,11 @@ Tracks when users have used boosts.
 - FK: `MatchId` → `Matches.Id`
 - FK: `BoostDefinitionId` → `BoostDefinitions.Id`
 
+**Indexes:**
+- `IX_UserBoostUsages_LeagueRound` on `LeagueId, RoundId`
+- `IX_UserBoostUsages_OneBoostPerLeagueRound` on `UserId, LeagueId, RoundId` (unique filtered: WHERE RoundId IS NOT NULL)
+- `IX_UserBoostUsages_UserLeagueSeasonBoost` on `UserId, LeagueId, SeasonId, BoostDefinitionId`
+
 ---
 
 ## Identity Tables (ASP.NET Core Identity)
@@ -473,6 +483,27 @@ User-role junction table.
 ### AspNetUserClaims / AspNetRoleClaims / AspNetUserLogins / AspNetUserTokens
 
 Standard ASP.NET Identity tables for claims, external logins, and tokens.
+
+---
+
+### PasswordResetTokens
+
+Password reset tokens for email-based password recovery.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Token | nvarchar(128) | NO | | PK - Reset token value |
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers |
+| CreatedAtUtc | datetime2 | NO | | When token was created |
+| ExpiresAtUtc | datetime2 | NO | | When token expires |
+
+**Constraints:**
+- PK: `Token`
+- FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
+
+**Indexes:**
+- `IX_PasswordResetTokens_ExpiresAtUtc` on `ExpiresAtUtc` (for cleanup queries)
+- `IX_PasswordResetTokens_UserId` on `UserId` (for user lookups)
 
 ---
 

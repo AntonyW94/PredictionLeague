@@ -208,13 +208,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore tool dependencies
-        run: dotnet restore tools/PredictionLeague.DevDbRefresh/PredictionLeague.DevDbRefresh.csproj
+        run: dotnet restore tools/ThePredictions.DatabaseTools/ThePredictions.DatabaseTools.csproj
 
       - name: Build refresh tool
-        run: dotnet build tools/PredictionLeague.DevDbRefresh/PredictionLeague.DevDbRefresh.csproj --configuration Release
+        run: dotnet build tools/ThePredictions.DatabaseTools/ThePredictions.DatabaseTools.csproj --configuration Release
 
       - name: Run Database Refresh
-        run: dotnet run --project tools/PredictionLeague.DevDbRefresh --configuration Release
+        run: dotnet run --project tools/ThePredictions.DatabaseTools --configuration Release
         env:
           PROD_CONNECTION_STRING: ${{ secrets.PROD_CONNECTION_STRING }}
           DEV_CONNECTION_STRING: ${{ secrets.DEV_CONNECTION_STRING }}
@@ -425,9 +425,9 @@ Ensure these tool projects exist:
 
 ```
 tools/
-├── PredictionLeague.DevDbRefresh/
+├── ThePredictions.DatabaseTools/
 │   ├── Program.cs
-│   └── PredictionLeague.DevDbRefresh.csproj
+│   └── ThePredictions.DatabaseTools.csproj
 │
 └── PredictionLeague.TestDbSeeder/
     ├── Program.cs
@@ -492,7 +492,7 @@ tools/
 │  │   Dev DB Refresh Workflow           │                                    │
 │  │   1. Connect to prod DB             │                                    │
 │  │   2. Copy all data                  │                                    │
-│  │   3. Anonymise PII                  │                                    │
+│  │   3. Anonymise personal data        │                                    │
 │  │   4. Insert to dev DB               │                                    │
 │  │   5. Add test accounts              │                                    │
 │  └─────────────────────────────────────┘                                    │
@@ -580,5 +580,5 @@ If you had started with the Azure DevOps plan:
 | `.github/workflows/deploy.yml` | Deployment workflow |
 | `.github/workflows/refresh-dev-db.yml` | Database refresh workflow |
 | `.github/workflows/e2e.yml` | E2E test workflow |
-| `tools/PredictionLeague.DevDbRefresh/` | Database refresh tool |
+| `tools/ThePredictions.DatabaseTools/` | Database tools (refresh/backup) |
 | `tools/PredictionLeague.TestDbSeeder/` | E2E test database seeder |

@@ -16,6 +16,10 @@ These rules are non-negotiable. Violating them will cause issues.
 | **`DateTime.UtcNow` only** | NEVER use `DateTime.Now` |
 | **DateTime properties use `Utc` suffix** | `CreatedAtUtc`, `DeadlineUtc` |
 
+### Database Schema Documentation
+
+Any database changes (new tables, new columns, modified constraints, new indexes) **must** be reflected in [`docs/guides/database/database-schema.md`](docs/guides/database/database-schema.md). This file is the single source of truth for the database schema.
+
 ### CQRS Data Access
 
 | Operation | Use | NEVER Use |
@@ -53,11 +57,27 @@ var league = League.Create(seasonId, name, userId);
 
 ### SQL Conventions
 
-```sql
--- CORRECT: Brackets, PascalCase, parameters
-SELECT [Id], [Name] FROM [Leagues] WHERE [SeasonId] = @SeasonId
+| Rule | Example |
+|------|---------|
+| **Brackets around table and column names** | `[Leagues]`, `[SeasonId]` |
+| **PascalCase** | `[CreatedAtUtc]` (NOT `[created_at_utc]`) |
+| **Always use table aliases** (no brackets on aliases) | `[Leagues] l` |
+| **One column per line** in SELECT, INSERT, UPDATE | See below |
+| **Each keyword on its own line**, next line indented | `SELECT`, `FROM`, `WHERE`, `AND`, `ORDER BY`, etc. |
+| **Parameterised queries** | `WHERE l.[Id] = @Id` |
 
--- WRONG: No brackets, wrong case
+```sql
+-- CORRECT
+SELECT
+    l.[Id],
+    l.[Name]
+FROM
+    [Leagues] l
+WHERE
+    l.[SeasonId] = @SeasonId
+    AND l.[Status] = @Status
+
+-- WRONG: No brackets, no alias, columns on one line, wrong case
 SELECT Id, name FROM Leagues WHERE season_id = @seasonId
 ```
 
@@ -114,6 +134,7 @@ Use these when creating new features:
 5. **NEVER commit secrets to appsettings.json** - Use KeyVault references
 6. **NEVER put multiple public types in one file**
 7. **NEVER use US English spelling** - Use UK English
+8. **NEVER make database changes without updating `docs/guides/database/database-schema.md`**
 
 ## Quick Reference
 

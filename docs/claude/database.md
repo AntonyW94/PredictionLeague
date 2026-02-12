@@ -4,18 +4,24 @@ This project uses SQL Server with Dapper for data access. Follow these conventio
 
 ## SQL Naming Conventions
 
-**ALWAYS use brackets around table and column names in PascalCase.**
+**ALWAYS use brackets around table and column names in PascalCase. ALWAYS use table aliases (without brackets). ALWAYS put one column per line in SELECT, INSERT and UPDATE statements. Each SQL keyword (SELECT, FROM, WHERE, AND, ORDER BY, GROUP BY, JOIN, SET, VALUES, etc.) goes on its own line, with the next line indented.**
 
 ```sql
--- CORRECT
-SELECT [Id], [Name], [CreatedAtUtc]
-FROM [Leagues]
-WHERE [SeasonId] = @SeasonId
+-- CORRECT: brackets, alias, one column per line, keywords on own lines
+SELECT
+    l.[Id],
+    l.[Name],
+    l.[CreatedAtUtc]
+FROM
+    [Leagues] l
+WHERE
+    l.[SeasonId] = @SeasonId
+    AND l.[Status] = @Status
+ORDER BY
+    l.[Name]
 
--- WRONG - no brackets, wrong casing
-SELECT Id, name, created_at_utc
-FROM Leagues
-WHERE season_id = @SeasonId
+-- WRONG - no brackets, no alias, columns on one line, wrong casing
+SELECT Id, name, created_at_utc FROM Leagues WHERE season_id = @SeasonId
 ```
 
 ## Parameterised Queries
@@ -24,7 +30,14 @@ WHERE season_id = @SeasonId
 
 ```csharp
 // CORRECT - parameterised
-const string sql = "SELECT * FROM [Leagues] WHERE [Id] = @Id";
+const string sql = @"
+    SELECT
+        l.[Id],
+        l.[Name]
+    FROM
+        [Leagues] l
+    WHERE
+        l.[Id] = @Id";
 await _connection.QueryAsync<League>(sql, new { Id = leagueId });
 
 // WRONG - SQL injection vulnerability
@@ -43,8 +56,14 @@ await _connection.QueryAsync<League>(sql);
 ```csharp
 // CORRECT
 const string sql = @"
-    INSERT INTO [Leagues] ([Name], [CreatedAtUtc])
-    VALUES (@Name, @CreatedAtUtc)";
+    INSERT INTO [Leagues] (
+        [Name],
+        [CreatedAtUtc]
+    )
+    VALUES (
+        @Name,
+        @CreatedAtUtc
+    )";
 
 await _connection.ExecuteAsync(sql, new
 {
@@ -68,9 +87,17 @@ await _connection.ExecuteAsync(sql, new
 public async Task<League?> GetByIdAsync(int id, CancellationToken ct)
 {
     const string sql = @"
-        SELECT [Id], [Name], [SeasonId], [AdministratorUserId], [EntryCode], [CreatedAtUtc]
-        FROM [Leagues]
-        WHERE [Id] = @Id";
+        SELECT
+            l.[Id],
+            l.[Name],
+            l.[SeasonId],
+            l.[AdministratorUserId],
+            l.[EntryCode],
+            l.[CreatedAtUtc]
+        FROM
+            [Leagues] l
+        WHERE
+            l.[Id] = @Id";
 
     return await _connection.QuerySingleOrDefaultAsync<League>(sql, new { Id = id }, ct);
 }
@@ -82,10 +109,16 @@ public async Task<League?> GetByIdAsync(int id, CancellationToken ct)
 public async Task<IEnumerable<LeagueDto>> GetBySeasonAsync(int seasonId, CancellationToken ct)
 {
     const string sql = @"
-        SELECT [Id], [Name], [CreatedAtUtc]
-        FROM [Leagues]
-        WHERE [SeasonId] = @SeasonId
-        ORDER BY [Name]";
+        SELECT
+            l.[Id],
+            l.[Name],
+            l.[CreatedAtUtc]
+        FROM
+            [Leagues] l
+        WHERE
+            l.[SeasonId] = @SeasonId
+        ORDER BY
+            l.[Name]";
 
     return await _connection.QueryAsync<LeagueDto>(sql, new { SeasonId = seasonId }, ct);
 }
@@ -99,20 +132,27 @@ Use CTEs for complex aggregations:
 const string sql = @"
     WITH [MemberCounts] AS (
         SELECT
-            [LeagueId],
+            lm.[LeagueId],
             COUNT(*) AS [MemberCount]
-        FROM [LeagueMembers]
-        WHERE [IsApproved] = 1
-        GROUP BY [LeagueId]
+        FROM
+            [LeagueMembers] lm
+        WHERE
+            lm.[IsApproved] = 1
+        GROUP BY
+            lm.[LeagueId]
     )
     SELECT
         l.[Id],
         l.[Name],
         COALESCE(mc.[MemberCount], 0) AS [MemberCount]
-    FROM [Leagues] l
-    LEFT JOIN [MemberCounts] mc ON l.[Id] = mc.[LeagueId]
-    WHERE l.[SeasonId] = @SeasonId
-    ORDER BY l.[Name]";
+    FROM
+        [Leagues] l
+    LEFT JOIN [MemberCounts] mc
+        ON l.[Id] = mc.[LeagueId]
+    WHERE
+        l.[SeasonId] = @SeasonId
+    ORDER BY
+        l.[Name]";
 ```
 
 ### Insert with OUTPUT
@@ -121,9 +161,17 @@ Get the generated ID immediately:
 
 ```csharp
 const string sql = @"
-    INSERT INTO [Leagues] ([Name], [SeasonId], [CreatedAtUtc])
+    INSERT INTO [Leagues] (
+        [Name],
+        [SeasonId],
+        [CreatedAtUtc]
+    )
     OUTPUT INSERTED.[Id]
-    VALUES (@Name, @SeasonId, @CreatedAtUtc)";
+    VALUES (
+        @Name,
+        @SeasonId,
+        @CreatedAtUtc
+    )";
 
 var newId = await _connection.ExecuteScalarAsync<int>(sql, parameters);
 ```
@@ -132,9 +180,15 @@ var newId = await _connection.ExecuteScalarAsync<int>(sql, parameters);
 
 ```csharp
 const string sql = @"
-    UPDATE [Rounds]
-    SET [Status] = @NewStatus, [UpdatedAtUtc] = @UpdatedAtUtc
-    WHERE [Id] = @Id AND [Status] = @ExpectedStatus";
+    UPDATE r
+    SET
+        r.[Status] = @NewStatus,
+        r.[UpdatedAtUtc] = @UpdatedAtUtc
+    FROM
+        [Rounds] r
+    WHERE
+        r.[Id] = @Id
+        AND r.[Status] = @ExpectedStatus";
 
 var rowsAffected = await _connection.ExecuteAsync(sql, new
 {
@@ -165,4 +219,4 @@ if (rowsAffected == 0)
 | `[Winnings]` | Prize payouts |
 | `[AspNetUsers]` | Identity users (extended with FirstName, LastName) |
 
-For the complete schema, see [`/docs/database-schema.md`](../database-schema.md).
+For the complete schema, see [`docs/guides/database/database-schema.md`](../guides/database/database-schema.md).
