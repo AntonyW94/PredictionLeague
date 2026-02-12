@@ -12,7 +12,6 @@ public class DataAnonymiser
     {
         var anonymised = new List<dynamic>();
         var counter = 1;
-        IDictionary<string, object?> result = new ExpandoObject();
 
         foreach (var user in users)
         {
@@ -24,6 +23,8 @@ public class DataAnonymiser
                 anonymised.Add(user);
                 continue;
             }
+
+            IDictionary<string, object?> result = new ExpandoObject();
 
             foreach (var kvp in dict)
             {
@@ -57,11 +58,10 @@ public class DataAnonymiser
         var anonymised = new List<dynamic>();
         var counter = 1;
 
-        IDictionary<string, object?> result = new ExpandoObject();
-
         foreach (var league in leagues)
         {
             var dict = (IDictionary<string, object?>)league;
+            IDictionary<string, object?> result = new ExpandoObject();
 
             foreach (var kvp in dict)
             {
