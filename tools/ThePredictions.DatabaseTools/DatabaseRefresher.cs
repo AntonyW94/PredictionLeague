@@ -218,12 +218,10 @@ public class DatabaseRefresher(
             dataTable.Rows.Add(dataRow);
         }
 
-        using var bulkCopy = new SqlBulkCopy(connection, SqlBulkCopyOptions.KeepIdentity, null)
-        {
-            DestinationTableName = $"[{table}]",
-            BatchSize = 1000,
-            BulkCopyTimeout = 120
-        };
+        using var bulkCopy = new SqlBulkCopy(connection, SqlBulkCopyOptions.KeepIdentity, null);
+        bulkCopy.DestinationTableName = $"[{table}]";
+        bulkCopy.BatchSize = 1000;
+        bulkCopy.BulkCopyTimeout = 120;
 
         foreach (var column in columns)
         {
