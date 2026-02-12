@@ -3,13 +3,12 @@ using Microsoft.Data.SqlClient;
 
 namespace ThePredictions.DatabaseTools;
 
-public class DatabaseRefresher
+public class DatabaseRefresher(
+    string sourceConnectionString,
+    string targetConnectionString,
+    string? testPassword,
+    bool anonymise)
 {
-    private readonly string _sourceConnectionString;
-    private readonly string _targetConnectionString;
-    private readonly string? _testPassword;
-    private readonly bool _anonymise;
-
     private static readonly string[] TablesToSkip =
     [
         "AspNetUserTokens",
@@ -47,39 +46,27 @@ public class DatabaseRefresher
         .Concat(TablesToSkip)
         .ToArray();
 
-    public DatabaseRefresher(
-        string sourceConnectionString,
-        string targetConnectionString,
-        string? testPassword,
-        bool anonymise)
-    {
-        _sourceConnectionString = sourceConnectionString;
-        _targetConnectionString = targetConnectionString;
-        _testPassword = testPassword;
-        _anonymise = anonymise;
-    }
-
     public async Task RunAsync()
     {
         Console.WriteLine("[INFO] Starting database refresh...");
-        Console.WriteLine($"[INFO] Anonymisation: {(_anonymise ? "enabled" : "disabled")}");
+        Console.WriteLine($"[INFO] Anonymisation: {(anonymise ? "enabled" : "disabled")}");
 
         var tableData = new Dictionary<string, IEnumerable<dynamic>>();
 
-        await using var sourceConnection = new SqlConnection(_sourceConnectionString);
+        await using var sourceConnection = new SqlConnection(sourceConnectionString);
         await sourceConnection.OpenAsync();
 
         foreach (var table in TableCopyOrder)
         {
             Console.WriteLine($"[INFO] Reading [{table}] from source...");
 
-            if (table == "AspNetUserLogins" && _anonymise)
+            if (table == "AspNetUserLogins" && anonymise)
             {
                 var preservedUserId = await GetPreservedUserIdAsync(sourceConnection);
 
                 if (preservedUserId is not null)
                 {
-                    var rows = await sourceConnection.QueryAsync(
+                    var rows = (await sourceConnection.QueryAsync(
                         $"""
                         SELECT
                             *
@@ -88,10 +75,10 @@ public class DatabaseRefresher
                         WHERE
                             l.[UserId] = @UserId
                         """,
-                        new { UserId = preservedUserId });
+                        new { UserId = preservedUserId })).ToList();
 
                     tableData[table] = rows;
-                    Console.WriteLine($"[INFO] Read {rows.Count()} rows from [{table}] (preserved account only)");
+                    Console.WriteLine($"[INFO] Read {rows.Count} rows from [{table}] (preserved account only)");
                 }
                 else
                 {
@@ -101,21 +88,20 @@ public class DatabaseRefresher
             }
             else
             {
-                var rows = await sourceConnection.QueryAsync($"SELECT * FROM [{table}]");
+                var rows = (await sourceConnection.QueryAsync($"SELECT * FROM [{table}]")).ToList();
                 tableData[table] = rows;
-                Console.WriteLine($"[INFO] Read {rows.Count()} rows from [{table}]");
+                Console.WriteLine($"[INFO] Read {rows.Count} rows from [{table}]");
             }
         }
 
-        if (_anonymise)
+        if (anonymise)
         {
             Console.WriteLine("[INFO] Anonymising personal data...");
-            var anonymiser = new DataAnonymiser();
-            tableData["AspNetUsers"] = anonymiser.AnonymiseUsers(tableData["AspNetUsers"]);
-            tableData["Leagues"] = anonymiser.AnonymiseLeagues(tableData["Leagues"]);
+            tableData["AspNetUsers"] = DataAnonymiser.AnonymiseUsers(tableData["AspNetUsers"]);
+            tableData["Leagues"] = DataAnonymiser.AnonymiseLeagues(tableData["Leagues"]);
         }
 
-        await using var targetConnection = new SqlConnection(_targetConnectionString);
+        await using var targetConnection = new SqlConnection(targetConnectionString);
         await targetConnection.OpenAsync();
 
         Console.WriteLine("[INFO] Disabling foreign key constraints on target...");
@@ -140,10 +126,10 @@ public class DatabaseRefresher
                 await InsertRowsAsync(targetConnection, table, rows);
             }
 
-            if (_anonymise && _testPassword is not null)
+            if (anonymise && testPassword is not null)
             {
                 Console.WriteLine("[INFO] Creating test accounts...");
-                var testAccountCreator = new TestAccountCreator(targetConnection, _testPassword);
+                var testAccountCreator = new TestAccountCreator(targetConnection, testPassword);
                 await testAccountCreator.CreateTestAccountsAsync();
             }
         }
@@ -153,7 +139,7 @@ public class DatabaseRefresher
             await EnableForeignKeyConstraintsAsync(targetConnection);
         }
 
-        if (_anonymise)
+        if (anonymise)
         {
             Console.WriteLine("[INFO] Verifying no personal data remains...");
             var verifier = new PersonalDataVerifier(targetConnection);

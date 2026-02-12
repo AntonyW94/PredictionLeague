@@ -4,21 +4,12 @@ using Microsoft.Data.SqlClient;
 
 namespace ThePredictions.DatabaseTools;
 
-public class TestAccountCreator
+public class TestAccountCreator(SqlConnection connection, string testPassword)
 {
-    private readonly SqlConnection _connection;
-    private readonly string _testPassword;
-
-    public TestAccountCreator(SqlConnection connection, string testPassword)
-    {
-        _connection = connection;
-        _testPassword = testPassword;
-    }
-
     public async Task CreateTestAccountsAsync()
     {
         var hasher = new PasswordHasher<object>();
-        var passwordHash = hasher.HashPassword(new object(), _testPassword);
+        var passwordHash = hasher.HashPassword(new object(), testPassword);
 
         var playerUserId = Guid.NewGuid().ToString();
         var adminUserId = Guid.NewGuid().ToString();
@@ -39,7 +30,7 @@ public class TestAccountCreator
 
     private async Task CreateUserAsync(string userId, string email, string firstName, string passwordHash)
     {
-        await _connection.ExecuteAsync(
+        await connection.ExecuteAsync(
             """
             INSERT INTO [AspNetUsers] (
                 [Id],
@@ -104,7 +95,7 @@ public class TestAccountCreator
 
     private async Task AssignAdminRoleAsync(string userId)
     {
-        var adminRoleId = await _connection.QueryFirstOrDefaultAsync<string>(
+        var adminRoleId = await connection.QueryFirstOrDefaultAsync<string>(
             """
             SELECT
                 r.[Id]
@@ -121,7 +112,7 @@ public class TestAccountCreator
             return;
         }
 
-        await _connection.ExecuteAsync(
+        await connection.ExecuteAsync(
             """
             INSERT INTO [AspNetUserRoles] (
                 [UserId],
@@ -137,7 +128,7 @@ public class TestAccountCreator
 
     private async Task AddToFirstLeagueAsync(string userId)
     {
-        var firstLeagueId = await _connection.QueryFirstOrDefaultAsync<int?>(
+        var firstLeagueId = await connection.QueryFirstOrDefaultAsync<int?>(
             """
             SELECT TOP 1
                 l.[Id]
@@ -153,7 +144,7 @@ public class TestAccountCreator
             return;
         }
 
-        await _connection.ExecuteAsync(
+        await connection.ExecuteAsync(
             """
             INSERT INTO [LeagueMembers] (
                 [LeagueId],

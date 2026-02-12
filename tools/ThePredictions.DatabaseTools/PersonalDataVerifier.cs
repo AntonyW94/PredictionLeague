@@ -3,15 +3,8 @@ using Microsoft.Data.SqlClient;
 
 namespace ThePredictions.DatabaseTools;
 
-public class PersonalDataVerifier
+public class PersonalDataVerifier(SqlConnection connection)
 {
-    private readonly SqlConnection _connection;
-
-    public PersonalDataVerifier(SqlConnection connection)
-    {
-        _connection = connection;
-    }
-
     public async Task VerifyAsync()
     {
         var failures = new List<string>();
@@ -30,8 +23,7 @@ public class PersonalDataVerifier
                 Console.WriteLine($"[ERROR] Verification failed: {failure}");
             }
 
-            throw new InvalidOperationException(
-                $"Personal data verification failed with {failures.Count} issue(s). See errors above.");
+            throw new InvalidOperationException($"Personal data verification failed with {failures.Count} issue(s). See errors above.");
         }
 
         Console.WriteLine("[INFO] Personal data verification passed - no real personal data found");
@@ -39,7 +31,7 @@ public class PersonalDataVerifier
 
     private async Task VerifyNoRealEmailsAsync(List<string> failures)
     {
-        var realEmails = await _connection.QueryAsync<string>(
+        var realEmails = await connection.QueryAsync<string>(
             """
             SELECT
                 u.[Email]
@@ -50,19 +42,16 @@ public class PersonalDataVerifier
                 AND u.[Email] NOT LIKE '%@dev.local'
                 AND u.[Email] <> @PreservedEmail
             """,
-            new { PreservedEmail = DataAnonymiser.PreservedEmail });
+            new { DataAnonymiser.PreservedEmail });
 
         var emailList = realEmails.ToList();
-
         if (emailList.Count > 0)
-        {
             failures.Add($"Found {emailList.Count} non-anonymised email(s): {string.Join(", ", emailList.Take(5))}");
-        }
     }
 
     private async Task VerifyPasswordHashesAsync(List<string> failures)
     {
-        var invalidHashes = await _connection.QueryFirstOrDefaultAsync<int>(
+        var invalidHashes = await connection.QueryFirstOrDefaultAsync<int>(
             """
             SELECT
                 COUNT(*)
@@ -73,39 +62,29 @@ public class PersonalDataVerifier
                 AND u.[Email] NOT LIKE '%@dev.local'
                 AND u.[Email] <> @PreservedEmail
             """,
-            new { PreservedEmail = DataAnonymiser.PreservedEmail });
+            new { DataAnonymiser.PreservedEmail });
 
         if (invalidHashes > 0)
-        {
             failures.Add($"Found {invalidHashes} user(s) with non-invalidated password hashes");
-        }
     }
 
     private async Task VerifyRefreshTokensEmptyAsync(List<string> failures)
     {
-        var count = await _connection.QueryFirstOrDefaultAsync<int>(
-            "SELECT COUNT(*) FROM [RefreshTokens]");
-
+        var count = await connection.QueryFirstOrDefaultAsync<int>("SELECT COUNT(*) FROM [RefreshTokens]");
         if (count > 0)
-        {
             failures.Add($"RefreshTokens table is not empty ({count} rows)");
-        }
     }
 
     private async Task VerifyPasswordResetTokensEmptyAsync(List<string> failures)
     {
-        var count = await _connection.QueryFirstOrDefaultAsync<int>(
-            "SELECT COUNT(*) FROM [PasswordResetTokens]");
-
+        var count = await connection.QueryFirstOrDefaultAsync<int>("SELECT COUNT(*) FROM [PasswordResetTokens]");
         if (count > 0)
-        {
             failures.Add($"PasswordResetTokens table is not empty ({count} rows)");
-        }
     }
 
     private async Task VerifyUserLoginsAsync(List<string> failures)
     {
-        var preservedUserId = await _connection.QueryFirstOrDefaultAsync<string>(
+        var preservedUserId = await connection.QueryFirstOrDefaultAsync<string>(
             """
             SELECT
                 u.[Id]
@@ -116,7 +95,7 @@ public class PersonalDataVerifier
             """,
             new { Email = DataAnonymiser.PreservedEmail });
 
-        var unauthorisedLogins = await _connection.QueryFirstOrDefaultAsync<int>(
+        var unauthorisedLogins = await connection.QueryFirstOrDefaultAsync<int>(
             """
             SELECT
                 COUNT(*)
@@ -128,19 +107,13 @@ public class PersonalDataVerifier
             new { PreservedUserId = preservedUserId ?? "" });
 
         if (unauthorisedLogins > 0)
-        {
             failures.Add($"AspNetUserLogins contains {unauthorisedLogins} row(s) not belonging to preserved account");
-        }
     }
 
     private async Task VerifyUserTokensEmptyAsync(List<string> failures)
     {
-        var count = await _connection.QueryFirstOrDefaultAsync<int>(
-            "SELECT COUNT(*) FROM [AspNetUserTokens]");
-
+        var count = await connection.QueryFirstOrDefaultAsync<int>("SELECT COUNT(*) FROM [AspNetUserTokens]");
         if (count > 0)
-        {
             failures.Add($"AspNetUserTokens table is not empty ({count} rows)");
-        }
     }
 }

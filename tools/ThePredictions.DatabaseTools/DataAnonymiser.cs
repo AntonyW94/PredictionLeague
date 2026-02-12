@@ -8,10 +8,11 @@ public class DataAnonymiser
 
     private static readonly Random Random = new();
 
-    public IEnumerable<dynamic> AnonymiseUsers(IEnumerable<dynamic> users)
+    public static IEnumerable<dynamic> AnonymiseUsers(IEnumerable<dynamic> users)
     {
         var anonymised = new List<dynamic>();
         var counter = 1;
+        IDictionary<string, object?> result = new ExpandoObject();
 
         foreach (var user in users)
         {
@@ -23,8 +24,6 @@ public class DataAnonymiser
                 anonymised.Add(user);
                 continue;
             }
-
-            var result = new ExpandoObject() as IDictionary<string, object?>;
 
             foreach (var kvp in dict)
             {
@@ -53,15 +52,16 @@ public class DataAnonymiser
         return anonymised;
     }
 
-    public IEnumerable<dynamic> AnonymiseLeagues(IEnumerable<dynamic> leagues)
+    public static IEnumerable<dynamic> AnonymiseLeagues(IEnumerable<dynamic> leagues)
     {
         var anonymised = new List<dynamic>();
         var counter = 1;
 
+        IDictionary<string, object?> result = new ExpandoObject();
+
         foreach (var league in leagues)
         {
             var dict = (IDictionary<string, object?>)league;
-            var result = new ExpandoObject() as IDictionary<string, object?>;
 
             foreach (var kvp in dict)
             {

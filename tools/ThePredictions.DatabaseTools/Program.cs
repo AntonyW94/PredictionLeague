@@ -24,6 +24,9 @@ try
             var backupRefresher = new DatabaseRefresher(prodConnectionString, backupConnectionString, testPassword: null, anonymise: false);
             await backupRefresher.RunAsync();
             break;
+
+        default:
+            throw new ArgumentOutOfRangeException();
     }
 
     Console.WriteLine("[SUCCESS] Operation completed successfully.");
@@ -38,9 +41,5 @@ catch (Exception ex)
 static string GetRequiredEnvironmentVariable(string name)
 {
     var value = Environment.GetEnvironmentVariable(name);
-
-    if (string.IsNullOrWhiteSpace(value))
-        throw new InvalidOperationException($"{name} environment variable is not set or is empty.");
-
-    return value;
+    return string.IsNullOrWhiteSpace(value) ? throw new InvalidOperationException($"{name} environment variable is not set or is empty.") : value;
 }
