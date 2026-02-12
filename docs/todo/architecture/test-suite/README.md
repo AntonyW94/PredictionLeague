@@ -991,6 +991,8 @@ PredictionLeague.sln
 ### Phase 1: Domain Unit Tests (Start Here)
 **Effort: Low | Value: High | Catches SQL bugs: No**
 
+**[Detailed task breakdown →](./phase-1-domain-unit-tests/README.md)** (11 tasks)
+
 1. `BoostEligibilityEvaluator` - Most complex logic
 2. `UserPrediction.SetOutcome()` - Core scoring algorithm
 3. `League.GetRoundWinners()` - Winner calculation
