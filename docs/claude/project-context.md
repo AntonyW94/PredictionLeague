@@ -29,13 +29,16 @@ This file provides background context for understanding the codebase. Unlike oth
 ## Solution Structure
 
 ```
-PredictionLeague.Domain           → Core business entities and logic
-PredictionLeague.Application      → CQRS commands/queries, interfaces
-PredictionLeague.Infrastructure   → Data access, external services
-PredictionLeague.API              → REST controllers
-PredictionLeague.Web.Client       → Blazor WebAssembly UI
-PredictionLeague.Contracts        → DTOs shared between layers
-PredictionLeague.Validators       → FluentValidation validators
+src/
+├── PredictionLeague.Domain           → Core business entities and logic
+├── PredictionLeague.Application      → CQRS commands/queries, interfaces
+├── PredictionLeague.Infrastructure   → Data access, external services
+├── PredictionLeague.API              → REST controllers
+├── PredictionLeague.Web              → Blazor server host
+├── PredictionLeague.Web.Client       → Blazor WebAssembly UI
+├── PredictionLeague.Contracts        → DTOs shared between layers
+└── PredictionLeague.Validators       → FluentValidation validators
+tests/                                → (planned)
 ```
 
 **Dependency Direction:** Presentation → Application → Domain (never reverse)
@@ -146,10 +149,10 @@ These are intentional trade-offs, not issues to fix:
 
 ```bash
 # Run the API
-dotnet run --project PredictionLeague.API
+dotnet run --project src/PredictionLeague.API
 
 # Run the Blazor client
-dotnet run --project PredictionLeague.Web
+dotnet run --project src/PredictionLeague.Web
 
 # Build all projects
 dotnet build PredictionLeague.sln

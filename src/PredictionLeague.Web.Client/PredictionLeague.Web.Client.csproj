@@ -17,8 +17,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
-      <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj">
+      <ProjectReference Include="..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
+      <ProjectReference Include="..\PredictionLeague.Validators\PredictionLeague.Validators.csproj">
         <TreatAsUsed>true</TreatAsUsed>
       </ProjectReference>
     </ItemGroup>

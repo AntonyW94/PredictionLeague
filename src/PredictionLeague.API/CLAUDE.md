@@ -1,6 +1,6 @@
 # API Project Guidelines
 
-Rules specific to the REST API project. For solution-wide patterns, see the root [`CLAUDE.md`](../CLAUDE.md).
+Rules specific to the REST API project. For solution-wide patterns, see the root [`CLAUDE.md`](../../CLAUDE.md).
 
 ## Controller Organisation
 

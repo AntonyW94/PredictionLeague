@@ -17,7 +17,7 @@ wwwroot/css/
 
 ## Step 2: Update Development Import
 
-Add `@import` to `PredictionLeague.Web.Client/wwwroot/css/app.css`:
+Add `@import` to `src/PredictionLeague.Web.Client/wwwroot/css/app.css`:
 
 ```css
 /* app.css - Add in correct load order */
@@ -32,7 +32,7 @@ Add `@import` to `PredictionLeague.Web.Client/wwwroot/css/app.css`:
 
 ## Step 3: Update Production Bundle
 
-Add to `<CssFilesToBundle>` in `PredictionLeague.Web.csproj`:
+Add to `<CssFilesToBundle>` in `src/PredictionLeague.Web/PredictionLeague.Web.csproj`:
 
 ```xml
 <ItemGroup Label="CSS files to bundle (in order)">
@@ -118,7 +118,7 @@ Your new CSS file must follow these rules:
 ## Step 5: Verify the Bundle
 
 ```bash
-dotnet publish PredictionLeague.Web -c Release -o ./publish-test
+dotnet publish src/PredictionLeague.Web -c Release -o ./publish-test
 ```
 
 Check:

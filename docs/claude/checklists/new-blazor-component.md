@@ -14,7 +14,7 @@ Use this checklist when adding a new Blazor component to the project.
 
 ### Page Component
 
-**Location:** `PredictionLeague.Web.Client/Pages/{Area}/{PageName}.razor`
+**Location:** `src/PredictionLeague.Web.Client/Pages/{Area}/{PageName}.razor`
 
 ```razor
 @page "/leagues/{LeagueId:int}"
@@ -67,7 +67,7 @@ else
 
 ### Shared Component
 
-**Location:** `PredictionLeague.Web.Client/Shared/{ComponentName}.razor`
+**Location:** `src/PredictionLeague.Web.Client/Shared/{ComponentName}.razor`
 
 ```razor
 <div class="league-card @CssClass">
@@ -126,7 +126,7 @@ else
 
 ## Step 3: Create Component CSS (if needed)
 
-**Location:** `PredictionLeague.Web.Client/wwwroot/css/components/{component-name}.css`
+**Location:** `src/PredictionLeague.Web.Client/wwwroot/css/components/{component-name}.css`
 
 ```css
 .league-card {
@@ -172,7 +172,7 @@ See [`new-css-file.md`](new-css-file.md) for full CSS checklist.
 
 ## Step 4: Create State Service (if needed)
 
-**Location:** `PredictionLeague.Web.Client/Services/{Area}StateService.cs`
+**Location:** `src/PredictionLeague.Web.Client/Services/{Area}StateService.cs`
 
 ```csharp
 public class LeagueStateService
@@ -238,7 +238,7 @@ public class LeagueStateService
 
 ## Step 5: Register State Service
 
-**Location:** `PredictionLeague.Web.Client/Program.cs`
+**Location:** `src/PredictionLeague.Web.Client/Program.cs`
 
 ```csharp
 builder.Services.AddScoped<LeagueStateService>();
@@ -246,7 +246,7 @@ builder.Services.AddScoped<LeagueStateService>();
 
 ## Step 6: Create API Client Methods (if needed)
 
-**Location:** `PredictionLeague.Web.Client/Services/ApiClients/I{Area}ApiClient.cs`
+**Location:** `src/PredictionLeague.Web.Client/Services/ApiClients/I{Area}ApiClient.cs`
 
 ```csharp
 public interface ILeagueApiClient

@@ -3,23 +3,23 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36804.6
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Infrastructure", "PredictionLeague.Infrastructure\PredictionLeague.Infrastructure.csproj", "{997E256A-0C05-4B54-87C1-CD9132841DCA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Infrastructure", "src\PredictionLeague.Infrastructure\PredictionLeague.Infrastructure.csproj", "{997E256A-0C05-4B54-87C1-CD9132841DCA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.API", "PredictionLeague.API\PredictionLeague.API.csproj", "{AD7516B5-9CC1-4781-9149-17053ABA35E7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.API", "src\PredictionLeague.API\PredictionLeague.API.csproj", "{AD7516B5-9CC1-4781-9149-17053ABA35E7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Web", "PredictionLeague.Web\PredictionLeague.Web\PredictionLeague.Web.csproj", "{F38F05AA-AFE0-4EBA-B284-417022D1FB17}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Web", "src\PredictionLeague.Web\PredictionLeague.Web.csproj", "{F38F05AA-AFE0-4EBA-B284-417022D1FB17}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Web.Client", "PredictionLeague.Web\PredictionLeague.Web.Client\PredictionLeague.Web.Client.csproj", "{9C7E46D0-F7DE-459E-A27B-BFC2D4B48ED8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Web.Client", "src\PredictionLeague.Web.Client\PredictionLeague.Web.Client.csproj", "{9C7E46D0-F7DE-459E-A27B-BFC2D4B48ED8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Domain", "PredictionLeague.Domain\PredictionLeague.Domain.csproj", "{6C402BFF-BDB4-4D3C-9344-84D217EFCF0D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Domain", "src\PredictionLeague.Domain\PredictionLeague.Domain.csproj", "{6C402BFF-BDB4-4D3C-9344-84D217EFCF0D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Application", "PredictionLeague.Application\PredictionLeague.Application.csproj", "{A2EF96AD-2C3D-4703-8D0D-4372B9C16195}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Application", "src\PredictionLeague.Application\PredictionLeague.Application.csproj", "{A2EF96AD-2C3D-4703-8D0D-4372B9C16195}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Validators", "PredictionLeague.Validators\PredictionLeague.Validators.csproj", "{E7A7E256-FDAB-43FF-BCCE-0D7A2DD0AB86}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Validators", "src\PredictionLeague.Validators\PredictionLeague.Validators.csproj", "{E7A7E256-FDAB-43FF-BCCE-0D7A2DD0AB86}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Contracts", "PredictionLeague.Contracts\PredictionLeague.Contracts.csproj", "{C43361B4-C21C-484E-BEA1-1CE632CF3798}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Contracts", "src\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj", "{C43361B4-C21C-484E-BEA1-1CE632CF3798}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Hosting.Shared", "PredictionLeague.Hosting.Shared\PredictionLeague.Hosting.Shared.csproj", "{DA1E0EDB-DD84-4A0F-8E88-44CA716BC9C1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PredictionLeague.Hosting.Shared", "src\PredictionLeague.Hosting.Shared\PredictionLeague.Hosting.Shared.csproj", "{DA1E0EDB-DD84-4A0F-8E88-44CA716BC9C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -9,10 +9,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\PredictionLeague.API\PredictionLeague.API.csproj" />
-        <ProjectReference Include="..\..\PredictionLeague.Application\PredictionLeague.Application.csproj" />
-        <ProjectReference Include="..\..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
-        <ProjectReference Include="..\..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
+        <ProjectReference Include="..\PredictionLeague.API\PredictionLeague.API.csproj" />
+        <ProjectReference Include="..\PredictionLeague.Application\PredictionLeague.Application.csproj" />
+        <ProjectReference Include="..\PredictionLeague.Contracts\PredictionLeague.Contracts.csproj" />
+        <ProjectReference Include="..\PredictionLeague.Validators\PredictionLeague.Validators.csproj" />
         <ProjectReference Include="..\PredictionLeague.Web.Client\PredictionLeague.Web.Client.csproj">
           <TreatAsUsed>true</TreatAsUsed>
         </ProjectReference>

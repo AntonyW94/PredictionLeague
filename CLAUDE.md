@@ -108,8 +108,8 @@ For comprehensive rules with examples, consult these files:
 
 | Project | File |
 |---------|------|
-| API controllers, authentication, error handling | [`PredictionLeague.API/CLAUDE.md`](PredictionLeague.API/CLAUDE.md) |
-| Blazor components, state management, CSS | [`PredictionLeague.Web.Client/CLAUDE.md`](PredictionLeague.Web.Client/CLAUDE.md) |
+| API controllers, authentication, error handling | [`src/PredictionLeague.API/CLAUDE.md`](src/PredictionLeague.API/CLAUDE.md) |
+| Blazor components, state management, CSS | [`src/PredictionLeague.Web.Client/CLAUDE.md`](src/PredictionLeague.Web.Client/CLAUDE.md) |
 
 ## Workflow Checklists
 
@@ -152,19 +152,22 @@ Use these when creating new features:
 ### Solution Structure
 
 ```
-PredictionLeague.Domain           → Core business entities
-PredictionLeague.Application      → CQRS commands/queries
-PredictionLeague.Infrastructure   → Data access, external services
-PredictionLeague.API              → REST controllers
-PredictionLeague.Web.Client       → Blazor WebAssembly UI
-PredictionLeague.Contracts        → DTOs
-PredictionLeague.Validators       → FluentValidation validators
+src/
+├── PredictionLeague.Domain           → Core business entities
+├── PredictionLeague.Application      → CQRS commands/queries
+├── PredictionLeague.Infrastructure   → Data access, external services
+├── PredictionLeague.API              → REST controllers
+├── PredictionLeague.Web              → Blazor server host
+├── PredictionLeague.Web.Client       → Blazor WebAssembly UI
+├── PredictionLeague.Contracts        → DTOs
+└── PredictionLeague.Validators       → FluentValidation validators
+tests/                                → (planned)
 ```
 
 ### Useful Commands
 
 ```bash
-dotnet run --project PredictionLeague.API      # Run API
-dotnet run --project PredictionLeague.Web      # Run Blazor client
-dotnet build PredictionLeague.sln              # Build all
+dotnet run --project src/PredictionLeague.API      # Run API
+dotnet run --project src/PredictionLeague.Web      # Run Blazor client
+dotnet build PredictionLeague.sln                  # Build all
 ```

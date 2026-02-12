@@ -1,6 +1,6 @@
 # Blazor Client Guidelines
 
-Rules specific to the Blazor WebAssembly client. For solution-wide patterns, see the root [`CLAUDE.md`](../CLAUDE.md).
+Rules specific to the Blazor WebAssembly client. For solution-wide patterns, see the root [`CLAUDE.md`](../../CLAUDE.md).
 
 ## State Management
 
@@ -68,7 +68,7 @@ else
 
 ## CSS Architecture
 
-**Full CSS reference:** [`/docs/css-reference.md`](../docs/css-reference.md)
+**Full CSS reference:** [`/docs/css-reference.md`](../../docs/css-reference.md)
 
 ### File Structure
 
@@ -219,9 +219,9 @@ Create proper component CSS files in `/components/`.
 When adding a new CSS file, update TWO places:
 
 1. **Development:** Add `@import` to `wwwroot/css/app.css`
-2. **Production:** Add to `<CssFilesToBundle>` in `PredictionLeague.Web.csproj`
+2. **Production:** Add to `<CssFilesToBundle>` in `src/PredictionLeague.Web/PredictionLeague.Web.csproj`
 
-See [`docs/claude/checklists/new-css-file.md`](../docs/claude/checklists/new-css-file.md) for the full checklist.
+See [`docs/claude/checklists/new-css-file.md`](../../docs/claude/checklists/new-css-file.md) for the full checklist.
 
 ## CSS Bundling (Production)
 
@@ -234,5 +234,5 @@ An MSBuild target bundles CSS during `dotnet publish`:
 
 Verify with:
 ```bash
-dotnet publish PredictionLeague.Web -c Release -o ./publish-test
+dotnet publish src/PredictionLeague.Web -c Release -o ./publish-test
 ```
