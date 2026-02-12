@@ -2,7 +2,7 @@
 
 ## Status
 
-Not Started | **In Progress** | Complete
+**Not Started** | In Progress | Complete
 
 ## Summary
 
@@ -20,69 +20,51 @@ Create a daily backup of the production database (`ThePredictions`) to a separat
 | Tool | `tools/ThePredictions.DatabaseTools/` (mode: `ProductionBackup`) |
 | Workflow | `.github/workflows/backup-prod-db.yml` |
 
-## Implementation Plan
+## Acceptance Criteria
 
-### Job 1: Manual Infrastructure Setup (Prerequisites)
+- [ ] `ThePredictionsBackup` database exists with matching schema
+- [ ] `BackupWriter` login has write access to backup database
+- [ ] `BACKUP_CONNECTION_STRING` GitHub secret is configured
+- [ ] GitHub Actions workflow runs daily at 2am UTC
+- [ ] Workflow can also be triggered manually via `workflow_dispatch`
+- [ ] Backup contains all data from `TableCopyOrder` tables (no anonymisation)
+- [ ] Token tables (`AspNetUserTokens`, `RefreshTokens`, `PasswordResetTokens`) are excluded
 
-These steps must be completed manually before the workflow can run.
+## Tasks
 
-#### 1. Create `ThePredictionsBackup` database in Fasthosts
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 0 | [Manual Setup](./00-manual-setup.md) | Create backup database, login, schema, and GitHub secret | Not Started |
+| 1 | [GitHub Actions Workflow](./01-github-actions-workflow.md) | Create the scheduled backup workflow | Not Started |
+| 2 | [Verify and Go Live](./02-verify-and-go-live.md) | Trigger manually, verify data, confirm schedule | Not Started |
 
-- Log in to the Fasthosts control panel
-- Create a new SQL Server database named `ThePredictionsBackup` on the same server as `ThePredictions`
+## Dependencies
 
-#### 2. Create `BackupWriter` login
+- [x] `ProductionBackup` mode already implemented in `DatabaseRefresher.cs`
+- [x] `PROD_CONNECTION_STRING` GitHub secret already exists
+- [x] Existing `refresh-dev-db.yml` workflow as a template
+- [ ] Fasthosts control panel access to create database and login
 
-- In Fasthosts, create a new SQL login named `BackupWriter`
-- Grant it read/write access to `ThePredictionsBackup` (it needs `db_datareader`, `db_datawriter`, and `db_ddladmin` to manage constraints)
+## Technical Notes
 
-#### 3. Apply schema to backup database
+### No Code Changes Required
 
-- Connect to `ThePredictionsBackup` using SSMS or Azure Data Studio
-- Run the same schema creation scripts used for production to create all tables, including:
-  - All tables in `TableCopyOrder`: `AspNetRoles`, `AspNetUsers`, `AspNetUserRoles`, `AspNetUserClaims`, `AspNetRoleClaims`, `AspNetUserLogins`, `Teams`, `Seasons`, `Rounds`, `Matches`, `BoostDefinitions`, `Leagues`, `LeagueMembers`, `LeagueMemberStats`, `LeagueBoostRules`, `LeagueBoostWindows`, `LeaguePrizeSettings`, `UserPredictions`, `RoundResults`, `LeagueRoundResults`, `UserBoostUsages`, `Winnings`
-  - All tables in `TablesToSkip`: `AspNetUserTokens`, `RefreshTokens`, `PasswordResetTokens`
-- All foreign key constraints must match production
+The `ProductionBackup` mode is already fully implemented in `tools/ThePredictions.DatabaseTools/`. It:
+- Reads all `TableCopyOrder` tables from production
+- Skips anonymisation, test account creation, and personal data verification
+- Writes to the target database using `SqlBulkCopy`
 
-#### 4. Add `BACKUP_CONNECTION_STRING` GitHub secret
+### Token Tables Excluded
 
-- Go to the GitHub repository Settings > Secrets and variables > Actions
-- Add a new secret named `BACKUP_CONNECTION_STRING`
-- Value: connection string using the `BackupWriter` login pointing at `ThePredictionsBackup`
+The `TablesToSkip` tables (`AspNetUserTokens`, `RefreshTokens`, `PasswordResetTokens`) are excluded from the backup. This is acceptable because:
+- `AspNetUserTokens` is always empty (the application uses custom token tables instead)
+- `RefreshTokens` and `PasswordResetTokens` contain short-lived tokens that regenerate on login
 
-#### Prerequisites checklist
+### Security
 
-- [ ] Create `ThePredictionsBackup` database in Fasthosts
-- [ ] Create `BackupWriter` login in Fasthosts
-- [ ] Apply schema to backup database
-- [ ] Add `BACKUP_CONNECTION_STRING` GitHub secret
-
-### Job 2: GitHub Actions Workflow
-
-**File:** `.github/workflows/backup-prod-db.yml`
-
-- Runs daily at 2am UTC via cron schedule
-- Also supports manual triggering via `workflow_dispatch`
-- Uses the existing `ProductionBackup` mode — no tool code changes needed
-- Requires `PROD_CONNECTION_STRING` and `BACKUP_CONNECTION_STRING` secrets
-
-### Job 3: Verify and Go Live
-
-- [ ] Trigger the workflow manually via `workflow_dispatch` to verify it works
-- [ ] Check the backup database contains all expected data
-- [ ] Confirm the daily cron schedule runs successfully
-- [ ] Mark this feature as Complete
-
-## Notes
-
-- This contains real personal data — treat the backup DB credentials with the same care as production
-- The existing `Refresh` login on prod is reused for reading
-- Uses the same `ThePredictions.DatabaseTools` project as the dev refresh, with `ProductionBackup` mode (skips anonymisation and test accounts)
-- Token tables (`AspNetUserTokens`, `RefreshTokens`, `PasswordResetTokens`) are excluded — they are either always empty or contain short-lived tokens that regenerate on login
-- GitHub's default email notifications will alert on workflow failures
+This backup contains real personal data. Treat the `BackupWriter` credentials and `BACKUP_CONNECTION_STRING` secret with the same care as production credentials.
 
 ## Related
 
-- [`tools/ThePredictions.DatabaseTools/`](../../../../tools/ThePredictions.DatabaseTools/) — the dev database refresh tool (shares the same project)
-- [`.github/workflows/backup-prod-db.yml`](../../../../.github/workflows/backup-prod-db.yml) — the backup workflow
+- [`tools/ThePredictions.DatabaseTools/`](../../../../tools/ThePredictions.DatabaseTools/) — the database tools project (shared with dev refresh)
 - [`.github/workflows/refresh-dev-db.yml`](../../../../.github/workflows/refresh-dev-db.yml) — the dev refresh workflow (similar pattern)
