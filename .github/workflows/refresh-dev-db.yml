@@ -1,0 +1,45 @@
+name: Refresh Dev Database
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "refresh" to confirm database refresh'
+        required: true
+        type: string
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'refresh'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore tool dependencies
+        run: dotnet restore tools/ThePredictions.DatabaseTools/ThePredictions.DatabaseTools.csproj
+
+      - name: Build refresh tool
+        run: dotnet build tools/ThePredictions.DatabaseTools/ThePredictions.DatabaseTools.csproj --configuration Release
+
+      - name: Run Database Refresh
+        run: dotnet run --project tools/ThePredictions.DatabaseTools --configuration Release -- DevelopmentRefresh
+        env:
+          PROD_CONNECTION_STRING: ${{ secrets.PROD_CONNECTION_STRING }}
+          DEV_CONNECTION_STRING: ${{ secrets.DEV_CONNECTION_STRING }}
+          TEST_ACCOUNT_PASSWORD: ${{ secrets.TEST_ACCOUNT_PASSWORD }}
+
+      - name: Report Success
+        if: success()
+        run: |
+          echo "Dev database refreshed successfully!"
+          echo ""
+          echo "Test accounts created:"
+          echo "  testplayer@dev.local / [password in secrets]"
+          echo "  testadmin@dev.local / [password in secrets]"

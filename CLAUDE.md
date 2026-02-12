@@ -20,6 +20,11 @@ These rules are non-negotiable. Violating them will cause issues.
 
 Any database changes (new tables, new columns, modified constraints, new indexes) **must** be reflected in [`docs/guides/database-schema.md`](docs/guides/database-schema.md). This file is the single source of truth for the database schema.
 
+Any new tables must also be added to the database refresh tool in [`tools/ThePredictions.DatabaseTools/`](tools/ThePredictions.DatabaseTools/):
+- Add the table to the correct position in the `TableCopyOrder` or `TablesToSkip` arrays in `DatabaseRefresher.cs` (respecting foreign key dependencies)
+- If the table contains personal data, add anonymisation rules to `DataAnonymiser.cs`
+- If the table contains sensitive tokens, add verification to `PersonalDataVerifier.cs`
+
 ### CQRS Data Access
 
 | Operation | Use | NEVER Use |
@@ -134,7 +139,7 @@ Use these when creating new features:
 5. **NEVER commit secrets to appsettings.json** - Use KeyVault references
 6. **NEVER put multiple public types in one file**
 7. **NEVER use US English spelling** - Use UK English
-8. **NEVER make database changes without updating `docs/guides/database-schema.md`**
+8. **NEVER make database changes without updating `docs/guides/database-schema.md`** and the refresh tool in `tools/ThePredictions.DatabaseTools/`
 
 ## Quick Reference
 
@@ -161,6 +166,8 @@ src/
 ├── PredictionLeague.Web.Client       → Blazor WebAssembly UI
 ├── PredictionLeague.Contracts        → DTOs
 └── PredictionLeague.Validators       → FluentValidation validators
+tools/
+└── ThePredictions.DatabaseTools      → Dev database refresh & prod backup tool
 tests/                                → (planned)
 ```
 
