@@ -1,10 +1,10 @@
-# PredictionLeague Test Suite Plan
+# ThePredictions Test Suite Plan
 
 ## Status
 
 **Not Started** | In Progress | Complete
 
-This document outlines the comprehensive testing strategy for the PredictionLeague application, including CI/CD integration with GitHub Actions.
+This document outlines the comprehensive testing strategy for the ThePredictions application, including CI/CD integration with GitHub Actions.
 
 ## Table of Contents
 
@@ -498,7 +498,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 
-public class PredictionLeagueApiFactory : WebApplicationFactory<Program>
+public class ThePredictionsApiFactory : WebApplicationFactory<Program>
 {
     private SqliteConnection? _connection;
 
@@ -549,12 +549,12 @@ public class PredictionLeagueApiFactory : WebApplicationFactory<Program>
 ### 7.3 Writing API Integration Tests
 
 ```csharp
-public class LeaguesApiTests : IClassFixture<PredictionLeagueApiFactory>
+public class LeaguesApiTests : IClassFixture<ThePredictionsApiFactory>
 {
     private readonly HttpClient _client;
-    private readonly PredictionLeagueApiFactory _factory;
+    private readonly ThePredictionsApiFactory _factory;
 
-    public LeaguesApiTests(PredictionLeagueApiFactory factory)
+    public LeaguesApiTests(ThePredictionsApiFactory factory)
     {
         _factory = factory;
         _client = factory.CreateClient();
@@ -908,81 +908,87 @@ Configure in: Repository → Settings → Secrets and variables → Actions
 
 ## 12. Test Project Structure
 
+Solution folders group test projects by type, enabling right-click "Run Tests" on a folder in Visual Studio.
+
 ```
-PredictionLeague.sln
+ThePredictions.sln
 ├── src/
-│   ├── PredictionLeague.Domain/
-│   ├── PredictionLeague.Application/
-│   ├── PredictionLeague.Infrastructure/
-│   ├── PredictionLeague.Validators/
-│   ├── PredictionLeague.API/
-│   ├── PredictionLeague.Contracts/
-│   └── PredictionLeague.Web.Client/
+│   ├── ThePredictions.Domain/
+│   ├── ThePredictions.Application/
+│   ├── ThePredictions.Infrastructure/
+│   ├── ThePredictions.Validators/
+│   ├── ThePredictions.API/
+│   ├── ThePredictions.Contracts/
+│   └── ThePredictions.Web.Client/
 │
 ├── tests/
-│   ├── PredictionLeague.Domain.Tests/
-│   │   ├── Models/
-│   │   │   ├── LeagueTests.cs
-│   │   │   ├── RoundTests.cs
-│   │   │   └── UserPredictionTests.cs
-│   │   └── Services/
-│   │       ├── BoostEligibilityEvaluatorTests.cs
-│   │       └── PredictionDomainServiceTests.cs
+│   ├── Unit/                                         ← Solution folder: Tests/Unit
+│   │   ├── ThePredictions.Domain.Tests.Unit/
+│   │   │   ├── Models/
+│   │   │   │   ├── LeagueManagementTests.cs
+│   │   │   │   ├── LeagueWinnersAndRankingsTests.cs
+│   │   │   │   ├── RoundTests.cs
+│   │   │   │   └── UserPredictionTests.cs
+│   │   │   └── Services/
+│   │   │       ├── Boosts/BoostEligibilityEvaluatorTests.cs
+│   │   │       └── PredictionDomainServiceTests.cs
+│   │   │
+│   │   ├── ThePredictions.Application.Tests.Unit/
+│   │   │   └── Features/
+│   │   │       ├── Leagues/Commands/
+│   │   │       │   ├── CreateLeagueCommandHandlerTests.cs
+│   │   │       │   └── JoinLeagueCommandHandlerTests.cs
+│   │   │       └── Predictions/Commands/
+│   │   │           └── SubmitPredictionsCommandHandlerTests.cs
+│   │   │
+│   │   └── ThePredictions.Validators.Tests.Unit/
+│   │       ├── CreateLeagueRequestValidatorTests.cs
+│   │       ├── SubmitPredictionsRequestValidatorTests.cs
+│   │       └── ...
 │   │
-│   ├── PredictionLeague.Application.Tests/
-│   │   └── Features/
-│   │       ├── Leagues/Commands/
-│   │       │   ├── CreateLeagueCommandHandlerTests.cs
-│   │       │   └── JoinLeagueCommandHandlerTests.cs
-│   │       └── Predictions/Commands/
-│   │           └── SubmitPredictionsCommandHandlerTests.cs
+│   ├── Integration/                                  ← Solution folder: Tests/Integration
+│   │   ├── ThePredictions.Infrastructure.Tests.Integration/
+│   │   │   ├── Repositories/
+│   │   │   │   ├── LeagueRepositoryTests.cs
+│   │   │   │   └── UserPredictionRepositoryTests.cs
+│   │   │   ├── Queries/
+│   │   │   │   ├── GetLeagueDashboardQueryHandlerTests.cs
+│   │   │   │   └── GetLeaderboardQueryHandlerTests.cs
+│   │   │   └── Services/
+│   │   │       └── BoostServiceTests.cs
+│   │   │
+│   │   ├── ThePredictions.API.Tests.Integration/
+│   │   │   ├── Controllers/
+│   │   │   │   ├── LeaguesControllerTests.cs
+│   │   │   │   ├── PredictionsControllerTests.cs
+│   │   │   │   └── AuthControllerTests.cs
+│   │   │   └── ThePredictionsApiFactory.cs
+│   │   │
+│   │   └── ThePredictions.Tests.Shared/
+│   │       ├── Fixtures/
+│   │       │   ├── SqliteTestFixture.cs
+│   │       │   └── SqliteConnectionFactory.cs
+│   │       ├── Builders/
+│   │       │   ├── LeagueBuilder.cs
+│   │       │   └── RoundBuilder.cs
+│   │       └── Extensions/
+│   │           └── TestDataExtensions.cs
 │   │
-│   ├── PredictionLeague.Validators.Tests/
-│   │   ├── CreateLeagueRequestValidatorTests.cs
-│   │   ├── SubmitPredictionsRequestValidatorTests.cs
-│   │   └── ...
-│   │
-│   ├── PredictionLeague.Infrastructure.Tests/
-│   │   ├── Repositories/
-│   │   │   ├── LeagueRepositoryTests.cs
-│   │   │   └── UserPredictionRepositoryTests.cs
-│   │   ├── Queries/
-│   │   │   ├── GetLeagueDashboardQueryHandlerTests.cs
-│   │   │   └── GetLeaderboardQueryHandlerTests.cs
-│   │   └── Services/
-│   │       └── BoostServiceTests.cs
-│   │
-│   ├── PredictionLeague.API.Tests/
-│   │   ├── Controllers/
-│   │   │   ├── LeaguesControllerTests.cs
-│   │   │   ├── PredictionsControllerTests.cs
-│   │   │   └── AuthControllerTests.cs
-│   │   └── PredictionLeagueApiFactory.cs
-│   │
-│   ├── PredictionLeague.E2E.Tests/
-│   │   ├── LoginTests.cs
-│   │   ├── PredictionFlowTests.cs
-│   │   ├── LeaderboardTests.cs
-│   │   └── TestConfiguration.cs
-│   │
-│   └── PredictionLeague.Tests.Shared/
-│       ├── Fixtures/
-│       │   ├── SqliteTestFixture.cs
-│       │   └── SqliteConnectionFactory.cs
-│       ├── Builders/
-│       │   ├── LeagueBuilder.cs
-│       │   └── RoundBuilder.cs
-│       └── Extensions/
-│           └── TestDataExtensions.cs
+│   └── E2E/                                          ← Solution folder: Tests/E2E
+│       └── ThePredictions.Web.E2E.Tests/
+│           ├── LoginTests.cs
+│           ├── PredictionFlowTests.cs
+│           ├── LeaderboardTests.cs
+│           └── TestConfiguration.cs
 │
 └── tools/
     ├── ThePredictions.DatabaseTools/
     │   ├── Program.cs
     │   └── ThePredictions.DatabaseTools.csproj
     │
-    └── PredictionLeague.TestDbSeeder/
+    └── ThePredictions.TestDbSeeder/
         ├── Program.cs
-        └── PredictionLeague.TestDbSeeder.csproj
+        └── ThePredictions.TestDbSeeder.csproj
 ```
 
 ---
@@ -1046,7 +1052,7 @@ GitHub Actions workflows for automated testing and deployment.
 
 ## 14. Package References
 
-### PredictionLeague.Domain.Tests.csproj
+### ThePredictions.Domain.Tests.Unit.csproj
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1065,12 +1071,12 @@ GitHub Actions workflows for automated testing and deployment.
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\PredictionLeague.Domain\PredictionLeague.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\ThePredictions.Domain\ThePredictions.Domain.csproj" />
   </ItemGroup>
 </Project>
 ```
 
-### PredictionLeague.Application.Tests.csproj
+### ThePredictions.Application.Tests.Unit.csproj
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1090,12 +1096,12 @@ GitHub Actions workflows for automated testing and deployment.
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\PredictionLeague.Application\PredictionLeague.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\ThePredictions.Application\ThePredictions.Application.csproj" />
   </ItemGroup>
 </Project>
 ```
 
-### PredictionLeague.Infrastructure.Tests.csproj
+### ThePredictions.Infrastructure.Tests.Integration.csproj
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1116,13 +1122,13 @@ GitHub Actions workflows for automated testing and deployment.
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\PredictionLeague.Infrastructure\PredictionLeague.Infrastructure.csproj" />
-    <ProjectReference Include="..\PredictionLeague.Tests.Shared\PredictionLeague.Tests.Shared.csproj" />
+    <ProjectReference Include="..\..\..\src\ThePredictions.Infrastructure\ThePredictions.Infrastructure.csproj" />
+    <ProjectReference Include="..\ThePredictions.Tests.Shared\ThePredictions.Tests.Shared.csproj" />
   </ItemGroup>
 </Project>
 ```
 
-### PredictionLeague.API.Tests.csproj
+### ThePredictions.API.Tests.Integration.csproj
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
@@ -1143,13 +1149,13 @@ GitHub Actions workflows for automated testing and deployment.
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\PredictionLeague.API\PredictionLeague.API.csproj" />
-    <ProjectReference Include="..\PredictionLeague.Tests.Shared\PredictionLeague.Tests.Shared.csproj" />
+    <ProjectReference Include="..\..\..\src\ThePredictions.API\ThePredictions.API.csproj" />
+    <ProjectReference Include="..\ThePredictions.Tests.Shared\ThePredictions.Tests.Shared.csproj" />
   </ItemGroup>
 </Project>
 ```
 
-### PredictionLeague.E2E.Tests.csproj
+### ThePredictions.Web.E2E.Tests.csproj
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">

@@ -14,7 +14,7 @@ Test the four winner/ranking calculation methods on the `League` entity: `GetRou
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/ThePredictions.Domain.Tests/Models/LeagueWinnersAndRankingsTests.cs` | Create | Winner and ranking calculation tests |
+| `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/LeagueWinnersAndRankingsTests.cs` | Create | Winner and ranking calculation tests |
 
 ## Implementation Steps
 

@@ -14,7 +14,7 @@ Test the `LeagueMember` entity factory method and status transition methods (`Ap
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/ThePredictions.Domain.Tests/Models/LeagueMemberTests.cs` | Create | All LeagueMember unit tests |
+| `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/LeagueMemberTests.cs` | Create | All LeagueMember unit tests |
 
 ## Implementation Steps
 

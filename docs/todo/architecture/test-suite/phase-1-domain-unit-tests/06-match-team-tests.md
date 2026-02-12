@@ -14,8 +14,8 @@ Test the `Match` and `Team` entity factory methods, validation, and business log
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/ThePredictions.Domain.Tests/Models/MatchTests.cs` | Create | All Match unit tests |
-| `tests/ThePredictions.Domain.Tests/Models/TeamTests.cs` | Create | All Team unit tests |
+| `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/MatchTests.cs` | Create | All Match unit tests |
+| `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/TeamTests.cs` | Create | All Team unit tests |
 
 ## Implementation Steps
 

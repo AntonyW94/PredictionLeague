@@ -14,7 +14,7 @@ Test the `Season` entity factory method, validation (including the custom `Inval
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/ThePredictions.Domain.Tests/Models/SeasonTests.cs` | Create | All Season unit tests |
+| `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/SeasonTests.cs` | Create | All Season unit tests |
 
 ## Implementation Steps
 

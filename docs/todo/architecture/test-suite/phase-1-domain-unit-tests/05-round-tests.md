@@ -14,7 +14,7 @@ Test the `Round` entity factory method, status transitions, match management, an
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/ThePredictions.Domain.Tests/Models/RoundTests.cs` | Create | All Round unit tests |
+| `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/RoundTests.cs` | Create | All Round unit tests |
 
 ## Implementation Steps
 

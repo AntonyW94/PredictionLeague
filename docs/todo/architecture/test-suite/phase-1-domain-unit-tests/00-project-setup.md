@@ -8,13 +8,13 @@
 
 ## Goal
 
-Create the `ThePredictions.Domain.Tests` project with all required package references and add it to the solution.
+Create the `ThePredictions.Domain.Tests.Unit` project with all required package references and add it to the solution.
 
 ## Files to Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/ThePredictions.Domain.Tests/ThePredictions.Domain.Tests.csproj` | Create | Test project file with package references |
+| `tests/Unit/ThePredictions.Domain.Tests.Unit/ThePredictions.Domain.Tests.Unit.csproj` | Create | Test project file with package references |
 | `ThePredictions.sln` | Modify | Add test project to solution |
 
 ## Implementation Steps
@@ -25,10 +25,11 @@ Create the folder structure:
 
 ```
 tests/
-└── ThePredictions.Domain.Tests/
-    ├── ThePredictions.Domain.Tests.csproj
-    ├── Models/
-    └── Services/
+└── Unit/
+    └── ThePredictions.Domain.Tests.Unit/
+        ├── ThePredictions.Domain.Tests.Unit.csproj
+        ├── Models/
+        └── Services/
 ```
 
 ### Step 2: Create the project file
@@ -50,7 +51,7 @@ tests/
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ThePredictions.Domain\ThePredictions.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\ThePredictions.Domain\ThePredictions.Domain.csproj" />
   </ItemGroup>
 </Project>
 ```
@@ -58,23 +59,23 @@ tests/
 ### Step 3: Add to solution
 
 ```bash
-dotnet sln ThePredictions.sln add tests/ThePredictions.Domain.Tests/ThePredictions.Domain.Tests.csproj
+dotnet sln ThePredictions.sln add tests/Unit/ThePredictions.Domain.Tests.Unit/ThePredictions.Domain.Tests.Unit.csproj --solution-folder Tests/Unit
 ```
 
 ### Step 4: Verify the project builds
 
 ```bash
-dotnet build tests/ThePredictions.Domain.Tests/ThePredictions.Domain.Tests.csproj
+dotnet build tests/Unit/ThePredictions.Domain.Tests.Unit/ThePredictions.Domain.Tests.Unit.csproj
 ```
 
 ## Verification
 
 - [ ] Project file created with correct package references
-- [ ] Project added to solution file
+- [ ] Project added to solution file under `Tests/Unit` solution folder
 - [ ] `dotnet build` succeeds with no errors
 - [ ] `dotnet test` runs (with 0 tests initially)
 
 ## Notes
 
-- No mocking library needed — all domain entity methods are pure. NSubstitute is only needed in the Application.Tests project.
+- No mocking library needed — all domain entity methods are pure. NSubstitute is only needed in the Application.Tests.Unit project.
 - Check the latest stable package versions before installing — the versions listed above are from the test suite plan and may have newer releases.
