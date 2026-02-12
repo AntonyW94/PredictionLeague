@@ -7,7 +7,6 @@ using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Application.Services.Boosts;
 using PredictionLeague.Domain.Models;
-using PredictionLeague.Domain.Services;
 using PredictionLeague.Infrastructure.Data;
 using PredictionLeague.Infrastructure.Formatters;
 using PredictionLeague.Infrastructure.Identity;
@@ -85,7 +84,6 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, BrevoEmailService>();
         services.AddScoped<IReminderService, ReminderService>();
         services.AddScoped<IBoostService, BoostService>();
-        services.AddScoped<IEntryCodeUniquenessChecker, EntryCodeUniquenessChecker>();
         services.AddScoped<IUserManager, UserManagerService>();
         services.AddHttpClient<IFootballDataService, FootballDataService>();
         services.AddScoped<ILeagueStatsService, LeagueStatsService>();

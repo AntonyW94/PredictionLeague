@@ -41,6 +41,6 @@ Create comprehensive unit tests for all domain entities and services. These are 
 ## Technical Notes
 
 - All tests use xUnit.v3 and FluentAssertions
-- No mocking required for domain tests (NSubstitute only needed for `IEntryCodeUniquenessChecker` in League.GenerateEntryCode)
+- No mocking required — all domain entity methods are pure (entry code uniqueness checking was moved to the command handler)
 - Follow test naming convention: `{Method}_Should{Behaviour}_When{Conditions}`
 - One test class per entity/service, mirroring the source folder structure

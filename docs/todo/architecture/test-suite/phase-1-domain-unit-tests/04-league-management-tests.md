@@ -52,13 +52,18 @@ private static Season CreateFutureSeason() =>
 | `CreateOfficialPublicLeague_ShouldSetNameWithOfficialPrefix` | `seasonName: "2025/26"` | `Name = "Official 2025/26 League"` |
 | `CreateOfficialPublicLeague_ShouldUsePublicLeagueSettings` | Any valid input | `PointsForExactScore` and `PointsForCorrectResult` from `PublicLeagueSettings` |
 
-### Step 4: GenerateEntryCode tests (requires NSubstitute)
+### Step 4: GenerateRandomEntryCode and SetEntryCode tests
 
 | Test | Scenario | Expected |
 |------|----------|----------|
-| `GenerateEntryCode_ShouldSetSixCharacterCode_WhenCodeIsUnique` | Mock returns `true` first time | `EntryCode.Length == 6` |
-| `GenerateEntryCode_ShouldContainOnlyAlphanumericCharacters` | Mock returns `true` | Matches `^[A-Z0-9]{6}$` |
-| `GenerateEntryCode_ShouldRetryUntilUnique_WhenFirstCodeIsNotUnique` | Mock returns `false` then `true` | `IsCodeUnique` called at least twice |
+| `GenerateRandomEntryCode_ShouldReturnSixCharacterString` | Call method | `result.Length == 6` |
+| `GenerateRandomEntryCode_ShouldContainOnlyAlphanumericCharacters` | Call method | Matches `^[A-Z0-9]{6}$` |
+| `GenerateRandomEntryCode_ShouldGenerateDifferentCodes_WhenCalledMultipleTimes` | Call 10 times | Not all identical |
+| `SetEntryCode_ShouldSetEntryCode_WhenValidCodeProvided` | `"ABC123"` | `EntryCode = "ABC123"` |
+| `SetEntryCode_ShouldThrowException_WhenCodeIsNull` | `null` | `ArgumentNullException` |
+| `SetEntryCode_ShouldThrowException_WhenCodeIsWhitespace` | `" "` | `ArgumentException` |
+
+Note: The retry-until-unique loop now lives in the command handler, not the entity. No mocking required for these tests.
 
 ### Step 5: AddMember tests
 
@@ -108,7 +113,7 @@ Note: For deadline tests, build the League using the public constructor with a p
 
 - [ ] All factory validation paths tested
 - [ ] IsFree derived correctly from price
-- [ ] Entry code generation retries on duplicates
+- [ ] Entry code generation produces valid codes and SetEntryCode validates input
 - [ ] AddMember enforces deadline and duplicate checks
 - [ ] Prize management toggles HasPrizes correctly
 - [ ] `dotnet test` passes
@@ -118,4 +123,4 @@ Note: For deadline tests, build the League using the public constructor with a p
 - Entry deadline exactly equal to season start date (should fail — must be "at least one day before")
 - Price of exactly 0m vs 0.01m for IsFree boundary
 - Adding member with whitespace userId (should fail)
-- GenerateEntryCode when uniqueness checker always returns false (infinite loop — document as known limitation)
+- SetEntryCode with an empty string (should fail)

@@ -46,7 +46,6 @@ tests/
     <PackageReference Include="xunit.v3" Version="3.0.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0" />
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
-    <PackageReference Include="NSubstitute" Version="5.3.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
   </ItemGroup>
 
@@ -55,8 +54,6 @@ tests/
   </ItemGroup>
 </Project>
 ```
-
-NSubstitute is included for `IEntryCodeUniquenessChecker` used by `League.GenerateEntryCode()`.
 
 ### Step 3: Add to solution
 
@@ -79,5 +76,5 @@ dotnet build tests/ThePredictions.Domain.Tests/ThePredictions.Domain.Tests.cspro
 
 ## Notes
 
-- NSubstitute is only needed for `League.GenerateEntryCode()` tests where `IEntryCodeUniquenessChecker` must be mocked. All other domain tests are pure unit tests.
+- No mocking library needed — all domain entity methods are pure. NSubstitute is only needed in the Application.Tests project.
 - Check the latest stable package versions before installing — the versions listed above are from the test suite plan and may have newer releases.

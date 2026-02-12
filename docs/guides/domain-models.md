@@ -35,15 +35,22 @@ public class League
             SeasonId = seasonId,
             Name = name.Trim(),
             AdministratorUserId = administratorUserId,
-            EntryCode = GenerateEntryCode(),
             CreatedAtUtc = DateTime.UtcNow
         };
     }
 
-    private static string GenerateEntryCode()
+    // Pure static method - generates a random code (uniqueness checked by command handler)
+    public static string GenerateRandomEntryCode()
     {
-        // 6-character alphanumeric
-        return Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, 6).Select(s => s[random.Next(s.Length)]).ToArray());
+    }
+
+    public void SetEntryCode(string entryCode)
+    {
+        Guard.Against.NullOrWhiteSpace(entryCode);
+        EntryCode = entryCode;
     }
 }
 ```

@@ -82,7 +82,7 @@ SetOutcome_ShouldReturnCorrectResult_WhenPredictionMatchesWinner()
 SetOutcome_ShouldReturnIncorrect_WhenPredictionDoesNotMatch()
 
 // Factory method tests
-Create_ShouldGenerateEntryCode_WhenValidParametersProvided()
+Create_ShouldSetEntryCodeToNull_WhenValidParametersProvided()
 Create_ShouldThrowArgumentException_WhenNameIsEmpty()
 Create_ShouldThrowArgumentException_WhenNameExceeds100Characters()
 
@@ -111,7 +111,8 @@ Pure unit tests with no mocks required:
 | Method | Test Scenarios |
 |--------|----------------|
 | `Create()` | Valid input, empty name, name too long, invalid season |
-| `GenerateEntryCode()` | Length is 6, alphanumeric only |
+| `GenerateRandomEntryCode()` | Length is 6, alphanumeric only |
+| `SetEntryCode()` | Valid code, null, whitespace |
 | `UpdateDetails()` | Valid update, invalid name |
 | `AddMember()` / `RemoveMember()` | Success, after deadline, duplicate member |
 | `GetRoundWinners()` | Single winner, tied winners, no results |
