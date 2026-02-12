@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using PredictionLeague.API.Filters;
 using PredictionLeague.Application.Features.Admin.Rounds.Commands;
 using PredictionLeague.Application.Features.Admin.Seasons.Commands;
+using PredictionLeague.Application.Features.Admin.Tasks.Commands;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace PredictionLeague.API.Controllers;
@@ -92,5 +93,19 @@ public class TasksController : ApiControllerBase
         await _mediator.Send(command, cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpPost("cleanup")]
+    [SwaggerOperation(
+        Summary = "Clean up expired data",
+        Description = "Deletes expired and old data including password reset tokens older than 30 days. Called daily.")]
+    [SwaggerResponse(200, "Cleanup completed", typeof(CleanupResult))]
+    [SwaggerResponse(401, "Invalid or missing API key")]
+    public async Task<IActionResult> CleanupExpiredDataAsync(CancellationToken cancellationToken)
+    {
+        var command = new CleanupExpiredDataCommand();
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return Ok(result);
     }
 }

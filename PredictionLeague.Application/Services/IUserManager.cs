@@ -13,21 +13,23 @@ public interface IUserManager
     #endregion
 
     #region Read
-       
+
     Task<ApplicationUser?> FindByEmailAsync(string email);
     Task<ApplicationUser?> FindByIdAsync(string userId);
     Task<ApplicationUser?> FindByLoginAsync(string provider, string providerKey);
     Task<IList<string>> GetRolesAsync(ApplicationUser user);
     Task<bool> CheckPasswordAsync(ApplicationUser user, string password);
     Task<bool> IsInRoleAsync(ApplicationUser user, string roleName);
+    Task<bool> HasPasswordAsync(ApplicationUser user);
 
     #endregion
 
     #region Update
-       
+
     Task<UserManagerResult> UpdateAsync(ApplicationUser user);
     Task<UserManagerResult> AddLoginAsync(ApplicationUser user, string provider, string providerKey);
     Task<UserManagerResult> AddToRoleAsync(ApplicationUser user, string role);
+    Task<UserManagerResult> ResetPasswordDirectAsync(ApplicationUser user, string newPassword);
 
     #endregion
 
