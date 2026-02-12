@@ -4,7 +4,7 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
 
 ## Goal
 
@@ -81,28 +81,34 @@ Add `IDateTimeProvider dateTimeProvider` as the **last parameter** to each facto
 public static League Create(
     int seasonId,
     string name,
-    decimal price,
-    DateTime entryDeadlineUtc,
     string administratorUserId,
+    DateTime entryDeadlineUtc,
+    int pointsForExactScore,
+    int pointsForCorrectResult,
+    decimal price,
+    Season season,
     IDateTimeProvider dateTimeProvider)  // NEW
 {
+    Validate(name, entryDeadlineUtc, season, dateTimeProvider);  // pass through
     // ...
     CreatedAtUtc = dateTimeProvider.UtcNow,  // was DateTime.UtcNow
     // ...
-    Validate(entryDeadlineUtc, dateTimeProvider);  // pass through
 }
 
-// CreateOfficialPublicLeague — same pattern, add parameter and pass to Validate
-public static League CreateOfficialPublicLeague(..., IDateTimeProvider dateTimeProvider)
+// CreateOfficialPublicLeague — same pattern, add parameter and pass to Create
+public static League CreateOfficialPublicLeague(..., Season season, IDateTimeProvider dateTimeProvider)
 
 // Validate (private) — add parameter
-private static void Validate(DateTime entryDeadlineUtc, IDateTimeProvider dateTimeProvider)
+private static void Validate(string name, DateTime entryDeadlineUtc, Season season, IDateTimeProvider dateTimeProvider)
 {
     Guard.Against.Expression(d => d <= dateTimeProvider.UtcNow, entryDeadlineUtc, ...);
 }
 
+// UpdateDetails — add parameter for validation
+public void UpdateDetails(..., Season season, IDateTimeProvider dateTimeProvider)
+
 // AddMember — add parameter for deadline check
-public LeagueMember AddMember(string userId, IDateTimeProvider dateTimeProvider)
+public void AddMember(string userId, IDateTimeProvider dateTimeProvider)
 {
     if (EntryDeadlineUtc < dateTimeProvider.UtcNow)  // was DateTime.UtcNow
         throw new InvalidOperationException(...);
@@ -342,16 +348,16 @@ token.IsExpired(dateTimeProvider).Should().BeTrue();
 
 ## Verification
 
-- [ ] No remaining `DateTime.UtcNow` calls in `src/PredictionLeague.Domain/`
-- [ ] `IDateTimeProvider` interface created in `Domain/Common/`
-- [ ] `DateTimeProvider` implementation created in `Infrastructure/`
-- [ ] Registered as singleton in `DependencyInjection.cs`
-- [ ] All entity factory methods accept `IDateTimeProvider` as last parameter
-- [ ] `PasswordResetToken.IsExpired` and `RefreshToken.IsExpired`/`IsActive` converted from properties to methods
-- [ ] `PredictionDomainService` uses constructor injection
-- [ ] All command handlers updated to inject and pass through `IDateTimeProvider`
-- [ ] `FakeDateTimeProvider` created in the test project helpers folder
-- [ ] `dotnet build` succeeds with no errors
+- [x] No remaining `DateTime.UtcNow` calls in `src/PredictionLeague.Domain/`
+- [x] `IDateTimeProvider` interface created in `Domain/Common/`
+- [x] `DateTimeProvider` implementation created in `Infrastructure/`
+- [x] Registered as singleton in `DependencyInjection.cs`
+- [x] All entity factory methods accept `IDateTimeProvider` as last parameter
+- [x] `PasswordResetToken.IsExpired` and `RefreshToken.IsExpired`/`IsActive` converted from properties to methods
+- [x] `PredictionDomainService` uses constructor injection
+- [x] All command handlers updated to inject and pass through `IDateTimeProvider`
+- [ ] `FakeDateTimeProvider` created in the test project helpers folder (requires task 00 — test project setup)
+- [ ] `dotnet build` succeeds with no errors (requires dotnet SDK)
 
 ## Notes
 

@@ -46,7 +46,7 @@ Test `UserPrediction.Create(userId, matchId, homeScore, awayScore, dateTimeProvi
 
 ### Step 2: Create SetOutcome tests — Pending scenarios
 
-Test `SetOutcome(MatchStatus status, int? actualHomeScore, int? actualAwayScore)`:
+Test `SetOutcome(MatchStatus status, int? actualHomeScore, int? actualAwayScore, IDateTimeProvider dateTimeProvider)`:
 
 | Test | Status | Actual Scores | Expected |
 |------|--------|---------------|----------|

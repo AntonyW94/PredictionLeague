@@ -8,7 +8,7 @@
 
 ## Goal
 
-Test the remaining entity factory methods and business logic for `Winning`, `LeaguePrizeSetting`, `ApplicationUser`, `PasswordResetToken`, and `RefreshToken`.
+Test the remaining entity factory methods and business logic for `Winning`, `LeaguePrizeSetting`, `ApplicationUser`, `PasswordResetToken`, `RefreshToken`, and `LeagueRoundResult`.
 
 ## Files to Modify
 
@@ -19,6 +19,7 @@ Test the remaining entity factory methods and business logic for `Winning`, `Lea
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/ApplicationUserTests.cs` | Create | ApplicationUser factory and update tests |
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/PasswordResetTokenTests.cs` | Create | Token generation and expiry tests |
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/RefreshTokenTests.cs` | Create | Revocation and computed property tests |
+| `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/LeagueRoundResultTests.cs` | Create | ApplyBoost business logic tests |
 
 ## Prerequisites
 
@@ -144,6 +145,56 @@ Note: `IsExpired` uses `>` (strictly greater than), meaning at the exact expiry 
 
 Note: `RefreshToken.IsExpired` uses `>=` (expired AT the exact moment), while `PasswordResetToken.IsExpired` uses `>` (NOT expired at the exact moment). With `FakeDateTimeProvider`, both boundary cases are now testable deterministically.
 
+### Step 8: LeagueRoundResult.ApplyBoost tests
+
+Note: `BoostedPoints` has a `private set` accessor — it can only be mutated via the `ApplyBoost` method or by using the full constructor. The `ApplyBoost` method encapsulates the boost calculation logic that was previously inline in `BoostService`.
+
+| Test | Scenario | Expected |
+|------|----------|----------|
+| `ApplyBoost_ShouldDoubleBasePoints_WhenBoostCodeIsDoubleUp` | `basePoints: 10`, `boostCode: "DoubleUp"` | `BoostedPoints = 20` |
+| `ApplyBoost_ShouldSetBoostedPointsToBasePoints_WhenBoostCodeIsUnrecognised` | `basePoints: 10`, `boostCode: "Unknown"` | `BoostedPoints = 10` |
+| `ApplyBoost_ShouldSetBoostedPointsToBasePoints_WhenBoostCodeIsEmpty` | `basePoints: 10`, `boostCode: ""` | `BoostedPoints = 10` |
+| `ApplyBoost_ShouldHandleZeroBasePoints_WhenDoubleUp` | `basePoints: 0`, `boostCode: "DoubleUp"` | `BoostedPoints = 0` |
+| `ApplyBoost_ShouldBeCaseSensitive_WhenBoostCodeHasWrongCase` | `basePoints: 10`, `boostCode: "doubleup"` | `BoostedPoints = 10` (falls through to default) |
+| `ApplyBoost_ShouldOverwritePreviousBoostedPoints_WhenCalledAgain` | Call twice with different codes | Second call overwrites first |
+
+```csharp
+public class LeagueRoundResultTests
+{
+    [Fact]
+    public void ApplyBoost_ShouldDoubleBasePoints_WhenBoostCodeIsDoubleUp()
+    {
+        // Arrange
+        var result = new LeagueRoundResult(
+            leagueId: 1, roundId: 1, userId: "user-1",
+            basePoints: 10, boostedPoints: 10,
+            hasBoost: true, appliedBoostCode: "DoubleUp", exactScoreCount: 0);
+
+        // Act
+        result.ApplyBoost("DoubleUp");
+
+        // Assert
+        result.BoostedPoints.Should().Be(20);
+    }
+
+    [Fact]
+    public void ApplyBoost_ShouldSetBoostedPointsToBasePoints_WhenBoostCodeIsUnrecognised()
+    {
+        // Arrange
+        var result = new LeagueRoundResult(
+            leagueId: 1, roundId: 1, userId: "user-1",
+            basePoints: 10, boostedPoints: 0,
+            hasBoost: true, appliedBoostCode: "Unknown", exactScoreCount: 0);
+
+        // Act
+        result.ApplyBoost("Unknown");
+
+        // Assert
+        result.BoostedPoints.Should().Be(10);
+    }
+}
+```
+
 ## Code Patterns to Follow
 
 ```csharp
@@ -251,6 +302,9 @@ public class RefreshTokenTests
 - [ ] Token expiry computed properties work correctly for both token types
 - [ ] RefreshToken.IsActive combines revocation and expiry checks (all 4 combinations)
 - [ ] RefreshToken.Revoke sets Revoked timestamp and makes token inactive
+- [ ] LeagueRoundResult.ApplyBoost doubles points for "DoubleUp" and defaults to base points for unrecognised codes
+- [ ] LeagueRoundResult.ApplyBoost is case-sensitive
+- [ ] LeagueRoundResult.ApplyBoost handles zero base points
 - [ ] `dotnet test` passes
 
 ## Edge Cases to Consider
@@ -261,3 +315,6 @@ public class RefreshTokenTests
 - Winning with zero amount (valid — e.g., placeholder prizes)
 - ApplicationUser inherits from IdentityUser — some properties come from the base class
 - Revoked + expired RefreshToken (both conditions false — still inactive)
+- LeagueRoundResult.ApplyBoost is case-sensitive — `"doubleup"` is NOT the same as `"DoubleUp"`
+- LeagueRoundResult.BoostedPoints has `private set` — can only be set via the constructor or `ApplyBoost`
+- Calling ApplyBoost multiple times overwrites the previous value

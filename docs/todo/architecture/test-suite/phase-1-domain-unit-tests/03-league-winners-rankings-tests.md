@@ -20,9 +20,13 @@ Test the four winner/ranking calculation methods on the `League` entity: `GetRou
 
 ### Step 1: Create test helper for building leagues with members and results
 
-All four methods depend on `League.Members` containing `LeagueMember` objects with `RoundResults`. Use the public constructor to build test data:
+All four methods depend on `League.Members` containing `LeagueMember` objects with `RoundResults`. Use the public constructors to build test data.
+
+Note: `BoostedPoints` has a `private set` accessor, so `LeagueRoundResult` must be constructed using the full constructor — object initialisers cannot set it.
 
 ```csharp
+private static readonly DateTime FixedDate = new(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc);
+
 private static League CreateLeagueWithMembers(params (string UserId, (int RoundId, int BoostedPoints, int ExactScoreCount)[] Results)[] members)
 {
     var leagueMembers = members.Select(m =>
@@ -31,28 +35,40 @@ private static League CreateLeagueWithMembers(params (string UserId, (int RoundI
             userId: m.UserId,
             status: LeagueMemberStatus.Approved,
             isAlertDismissed: false,
-            joinedAtUtc: DateTime.UtcNow,
-            approvedAtUtc: DateTime.UtcNow,
-            roundResults: m.Results.Select(r => new LeagueRoundResult
-            {
-                LeagueId = 1,
-                RoundId = r.RoundId,
-                UserId = m.UserId,
-                BoostedPoints = r.BoostedPoints,
-                ExactScoreCount = r.ExactScoreCount
-            }).ToList()
+            joinedAtUtc: FixedDate,
+            approvedAtUtc: FixedDate,
+            roundResults: m.Results.Select(r => new LeagueRoundResult(
+                leagueId: 1,
+                roundId: r.RoundId,
+                userId: m.UserId,
+                basePoints: r.BoostedPoints,
+                boostedPoints: r.BoostedPoints,
+                hasBoost: false,
+                appliedBoostCode: null,
+                exactScoreCount: r.ExactScoreCount
+            )).ToList()
         )).ToList();
 
     return new League(
         id: 1, name: "Test League", seasonId: 1,
         administratorUserId: "admin", entryCode: "ABC123",
-        createdAtUtc: DateTime.UtcNow,
-        entryDeadlineUtc: DateTime.UtcNow.AddDays(30),
+        createdAtUtc: FixedDate,
+        entryDeadlineUtc: FixedDate.AddDays(30),
         pointsForExactScore: 3, pointsForCorrectResult: 1,
         price: 0, isFree: true, hasPrizes: false,
         prizeFundOverride: null,
         members: leagueMembers, prizeSettings: null);
 }
+```
+
+For the `GetRoundWinners_ShouldUseBoostPoints_NotBasePoints` test, construct `LeagueRoundResult` directly with different `basePoints` and `boostedPoints` values:
+
+```csharp
+new LeagueRoundResult(
+    leagueId: 1, roundId: 1, userId: "user-a",
+    basePoints: 5,       // different from boosted
+    boostedPoints: 10,   // this is what GetRoundWinners uses
+    hasBoost: true, appliedBoostCode: "DoubleUp", exactScoreCount: 0)
 ```
 
 ### Step 2: GetRoundWinners tests

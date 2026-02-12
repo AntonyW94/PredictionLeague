@@ -28,6 +28,8 @@ Test the `Match` and `Team` entity factory methods, validation, and business log
 | `Create_ShouldSetScoresToNull_WhenCreated` | Valid input | `ActualHomeTeamScore = null, ActualAwayTeamScore = null` |
 | `Create_ShouldSetCustomLockTimeUtcToNull_WhenCreated` | Valid input | `CustomLockTimeUtc = null` |
 | `Create_ShouldSetPlaceholderNamesToNull_WhenCreated` | Valid input | Both `PlaceholderHomeName` and `PlaceholderAwayName` null |
+| `Create_ShouldThrowException_WhenRoundIdIsZero` | `roundId: 0` | `ArgumentException` |
+| `Create_ShouldThrowException_WhenRoundIdIsNegative` | `roundId: -1` | `ArgumentException` |
 | `Create_ShouldThrowException_WhenTeamPlaysItself` | `homeTeamId == awayTeamId` | `ArgumentException` |
 | `Create_ShouldThrowException_WhenTeamPlaysItselfWithZeroIds` | `homeTeamId: 0, awayTeamId: 0` | `ArgumentException` |
 | `Create_ShouldThrowException_WhenMatchDateIsDefault` | `default(DateTime)` | `ArgumentException` |
@@ -99,6 +101,7 @@ Test the `Match` and `Team` entity factory methods, validation, and business log
 
 ## Verification
 
+- [ ] Match.Create validates roundId (zero, negative)
 - [ ] Match self-play prevention works in Create and UpdateDetails
 - [ ] UpdateScore clears scores when status is Scheduled (ignores provided score values)
 - [ ] UpdateScore sets scores when status is Completed or InProgress
