@@ -6,11 +6,12 @@
 
 ## Summary
 
-Create comprehensive unit tests for all domain entities and services. These are pure unit tests with no mocks or database required, offering the highest ROI for the lowest effort.
+Create comprehensive unit tests for all domain entities and services. This phase includes introducing `IDateTimeProvider` to make the domain layer testable, then writing pure unit tests with a simple hand-rolled fake — no mocking framework or database required.
 
 ## Acceptance Criteria
 
 - [ ] Test project builds and all tests pass
+- [ ] `IDateTimeProvider` introduced and all `DateTime.UtcNow` calls replaced in the domain layer
 - [ ] Every entity factory method has validation tests
 - [ ] Every business logic method has happy-path and edge-case tests
 - [ ] BoostEligibilityEvaluator has full branch coverage
@@ -23,6 +24,7 @@ Create comprehensive unit tests for all domain entities and services. These are 
 | # | Task | Description | Status |
 |---|------|-------------|--------|
 | 0 | [Project setup](./00-project-setup.md) | Create test project, packages, solution references | Not Started |
+| 0a | [Introduce IDateTimeProvider](./00a-datetime-provider.md) | Replace `DateTime.UtcNow` with injectable provider, create `FakeDateTimeProvider` | Not Started |
 | 1 | [UserPrediction tests](./01-user-prediction-tests.md) | Core scoring algorithm (SetOutcome) and factory | Not Started |
 | 2 | [BoostEligibilityEvaluator tests](./02-boost-eligibility-evaluator-tests.md) | Most complex domain logic with 12+ conditional paths | Not Started |
 | 3 | [League winners and rankings tests](./03-league-winners-rankings-tests.md) | GetRoundWinners, GetPeriodWinners, GetOverallRankings, GetMostExactScoresWinners | Not Started |
@@ -36,11 +38,12 @@ Create comprehensive unit tests for all domain entities and services. These are 
 
 ## Dependencies
 
-- None — these are pure unit tests with no infrastructure dependencies
+- Task 0a (`IDateTimeProvider`) must be completed before writing tests — factory methods and business logic methods require the provider as a parameter
 
 ## Technical Notes
 
 - All tests use xUnit.v3 and FluentAssertions
-- No mocking required — all domain entity methods are pure (entry code uniqueness checking was moved to the command handler)
+- A hand-rolled `FakeDateTimeProvider` is used to control time in tests — no mocking framework needed for domain unit tests
+- `FakeDateTimeProvider` has a settable `UtcNow` property, allowing tests to advance time mid-test (useful for token expiry, deadline checks)
 - Follow test naming convention: `{Method}_Should{Behaviour}_When{Conditions}`
 - One test class per entity/service, mirroring the source folder structure

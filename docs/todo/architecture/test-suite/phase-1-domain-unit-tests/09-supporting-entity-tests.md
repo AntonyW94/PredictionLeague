@@ -20,6 +20,14 @@ Test the remaining entity factory methods and business logic for `Winning`, `Lea
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/PasswordResetTokenTests.cs` | Create | Token generation and expiry tests |
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/RefreshTokenTests.cs` | Create | Revocation and computed property tests |
 
+## Prerequisites
+
+`Winning.Create`, `PasswordResetToken.Create`, `PasswordResetToken.IsExpired`, `RefreshToken.IsExpired`/`IsActive`, and `RefreshToken.Revoke` all use `IDateTimeProvider`. Use a `FakeDateTimeProvider` for deterministic time control:
+
+```csharp
+private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+```
+
 ## Implementation Steps
 
 ### Step 1: Winning.Create tests
@@ -27,7 +35,7 @@ Test the remaining entity factory methods and business logic for `Winning`, `Lea
 | Test | Scenario | Expected |
 |------|----------|----------|
 | `Create_ShouldCreateWinning_WhenValidParametersProvided` | All valid | Properties set correctly |
-| `Create_ShouldSetAwardedDateUtc_WhenCreated` | Valid input | `AwardedDateUtc` is set (not default) |
+| `Create_ShouldSetAwardedDateUtc_WhenCreated` | Valid input | `AwardedDateUtc` matches `dateTimeProvider.UtcNow` exactly |
 | `Create_ShouldThrowException_WhenUserIdIsNull` | `null` | `ArgumentNullException` |
 | `Create_ShouldThrowException_WhenUserIdIsEmpty` | `""` | `ArgumentException` |
 | `Create_ShouldThrowException_WhenUserIdIsWhitespace` | `" "` | `ArgumentException` |
@@ -94,9 +102,9 @@ Test the remaining entity factory methods and business logic for `Winning`, `Lea
 | `Create_ShouldGenerateToken_WhenValidUserIdProvided` | Valid userId | Token is not null or empty |
 | `Create_ShouldGenerateUrlSafeToken_WhenCreated` | Valid userId | Token contains no `+`, `/`, or `=` |
 | `Create_ShouldSetUserId_WhenCreated` | `"user-1"` | `UserId = "user-1"` |
-| `Create_ShouldSetCreatedAtUtc_WhenCreated` | Valid userId | `CreatedAtUtc` is set (approximately now) |
-| `Create_ShouldSetExpiryToOneHour_WhenDefaultExpiryUsed` | Default param | `ExpiresAtUtc` ~1 hour from now |
-| `Create_ShouldSetCustomExpiry_WhenExpiryHoursProvided` | `expiryHours: 24` | `ExpiresAtUtc` ~24 hours from now |
+| `Create_ShouldSetCreatedAtUtc_WhenCreated` | Valid userId | `CreatedAtUtc` matches `dateTimeProvider.UtcNow` exactly |
+| `Create_ShouldSetExpiryToOneHour_WhenDefaultExpiryUsed` | Default param | `ExpiresAtUtc` equals `dateTimeProvider.UtcNow.AddHours(1)` exactly |
+| `Create_ShouldSetCustomExpiry_WhenExpiryHoursProvided` | `expiryHours: 24` | `ExpiresAtUtc` equals `dateTimeProvider.UtcNow.AddHours(24)` exactly |
 | `Create_ShouldThrowException_WhenUserIdIsNull` | `null` | `ArgumentNullException` |
 | `Create_ShouldThrowException_WhenUserIdIsEmpty` | `""` | `ArgumentException` |
 | `Create_ShouldThrowException_WhenUserIdIsWhitespace` | `" "` | `ArgumentException` |
@@ -104,40 +112,46 @@ Test the remaining entity factory methods and business logic for `Winning`, `Lea
 
 ### Step 6: PasswordResetToken.IsExpired tests
 
+`IsExpired` is now a method accepting `IDateTimeProvider`. Advance the fake time to test boundaries deterministically:
+
 | Test | Scenario | Expected |
 |------|----------|----------|
-| `IsExpired_ShouldReturnFalse_WhenExpiryIsInFuture` | ExpiresAtUtc in future | `false` |
-| `IsExpired_ShouldReturnTrue_WhenExpiryIsInPast` | ExpiresAtUtc in past | `true` |
+| `IsExpired_ShouldReturnFalse_WhenExpiryIsInFuture` | `dateTimeProvider.UtcNow` before `ExpiresAtUtc` | `false` |
+| `IsExpired_ShouldReturnTrue_WhenExpiryIsInPast` | `dateTimeProvider.UtcNow` after `ExpiresAtUtc` | `true` |
+| `IsExpired_ShouldReturnFalse_WhenExactlyAtExpiry` | `dateTimeProvider.UtcNow == ExpiresAtUtc` | `false` (uses `>`, not `>=`) |
 
-Note: The boundary — `IsExpired` uses `>` (strictly greater than), meaning at the exact expiry moment the token is NOT expired. This is documented but not easily testable due to timing.
-
-Use the public constructor to set up tokens with specific expiry times for IsExpired tests.
+Note: `IsExpired` uses `>` (strictly greater than), meaning at the exact expiry moment the token is NOT expired. With `FakeDateTimeProvider`, this boundary is now testable deterministically.
 
 ### Step 7: RefreshToken tests
 
+`IsExpired`, `IsActive`, and `Revoke` are now methods accepting `IDateTimeProvider`. Use the fake to control all time checks:
+
 | Test | Scenario | Expected |
 |------|----------|----------|
-| `Revoke_ShouldSetRevokedTimestamp_WhenCalled` | Active token | `Revoked` is not null |
-| `Revoke_ShouldMakeTokenInactive_WhenTokenWasActive` | Active token | `IsActive` becomes false |
-| `IsExpired_ShouldReturnFalse_WhenExpiresInFuture` | Future expiry | `false` |
-| `IsExpired_ShouldReturnTrue_WhenExpiresInPast` | Past expiry | `true` |
+| `Revoke_ShouldSetRevokedTimestamp_WhenCalled` | Active token | `Revoked` matches `dateTimeProvider.UtcNow` exactly |
+| `Revoke_ShouldMakeTokenInactive_WhenTokenWasActive` | Active token | `IsActive(dateTimeProvider)` returns false |
+| `IsExpired_ShouldReturnFalse_WhenExpiresInFuture` | `dateTimeProvider.UtcNow` before `Expires` | `false` |
+| `IsExpired_ShouldReturnTrue_WhenExpiresInPast` | `dateTimeProvider.UtcNow` after `Expires` | `true` |
+| `IsExpired_ShouldReturnTrue_WhenExactlyAtExpiry` | `dateTimeProvider.UtcNow == Expires` | `true` (uses `>=`, not `>`) |
 | `IsActive_ShouldReturnTrue_WhenNotRevokedAndNotExpired` | Valid, not revoked | `true` |
 | `IsActive_ShouldReturnFalse_WhenRevoked` | Revoked token | `false` |
 | `IsActive_ShouldReturnFalse_WhenExpired` | Past expiry, not revoked | `false` |
 | `IsActive_ShouldReturnFalse_WhenBothRevokedAndExpired` | Revoked + past expiry | `false` |
 
-Note: `RefreshToken.IsExpired` uses `>=` (expired AT the exact moment), while `PasswordResetToken.IsExpired` uses `>` (NOT expired at the exact moment). This difference is worth documenting in the tests.
+Note: `RefreshToken.IsExpired` uses `>=` (expired AT the exact moment), while `PasswordResetToken.IsExpired` uses `>` (NOT expired at the exact moment). With `FakeDateTimeProvider`, both boundary cases are now testable deterministically.
 
 ## Code Patterns to Follow
 
 ```csharp
 public class PasswordResetTokenTests
 {
+    private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+
     [Fact]
     public void Create_ShouldGenerateUrlSafeToken_WhenCreated()
     {
         // Act
-        var token = PasswordResetToken.Create("user-1");
+        var token = PasswordResetToken.Create("user-1", _dateTimeProvider);
 
         // Assert
         token.Token.Should().NotContain("+");
@@ -146,37 +160,84 @@ public class PasswordResetTokenTests
     }
 
     [Fact]
-    public void IsExpired_ShouldReturnTrue_WhenExpiryIsInPast()
+    public void Create_ShouldSetExpiryToOneHour_WhenDefaultExpiryUsed()
     {
-        // Arrange — use public constructor with past expiry
-        var token = new PasswordResetToken(
-            token: "test-token",
-            userId: "user-1",
-            createdAtUtc: DateTime.UtcNow.AddHours(-2),
-            expiresAtUtc: DateTime.UtcNow.AddHours(-1));
+        // Act
+        var token = PasswordResetToken.Create("user-1", _dateTimeProvider);
 
         // Assert
-        token.IsExpired.Should().BeTrue();
+        token.CreatedAtUtc.Should().Be(_dateTimeProvider.UtcNow);
+        token.ExpiresAtUtc.Should().Be(_dateTimeProvider.UtcNow.AddHours(1));
+    }
+
+    [Fact]
+    public void IsExpired_ShouldReturnFalse_WhenExactlyAtExpiry()
+    {
+        // Arrange
+        var token = PasswordResetToken.Create("user-1", _dateTimeProvider);
+
+        // Advance time to exactly the expiry moment
+        _dateTimeProvider.UtcNow = token.ExpiresAtUtc;
+
+        // Assert — uses > (strictly greater), so equal is NOT expired
+        token.IsExpired(_dateTimeProvider).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsExpired_ShouldReturnTrue_WhenExpiryIsInPast()
+    {
+        // Arrange
+        var token = PasswordResetToken.Create("user-1", _dateTimeProvider);
+
+        // Advance time past expiry
+        _dateTimeProvider.UtcNow = token.ExpiresAtUtc.AddSeconds(1);
+
+        // Assert
+        token.IsExpired(_dateTimeProvider).Should().BeTrue();
     }
 }
 
 public class RefreshTokenTests
 {
+    private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+
     [Fact]
-    public void IsActive_ShouldReturnFalse_WhenBothRevokedAndExpired()
+    public void IsExpired_ShouldReturnTrue_WhenExactlyAtExpiry()
     {
         // Arrange
         var token = new RefreshToken
         {
             UserId = "user-1",
             Token = "test-token",
-            Created = DateTime.UtcNow.AddDays(-7),
-            Expires = DateTime.UtcNow.AddDays(-1),
-            Revoked = DateTime.UtcNow.AddDays(-2)
+            Created = _dateTimeProvider.UtcNow,
+            Expires = _dateTimeProvider.UtcNow.AddDays(7)
         };
 
+        // Advance time to exactly the expiry moment
+        _dateTimeProvider.UtcNow = token.Expires;
+
+        // Assert — uses >= so equal IS expired (different from PasswordResetToken)
+        token.IsExpired(_dateTimeProvider).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Revoke_ShouldSetRevokedTimestamp_WhenCalled()
+    {
+        // Arrange
+        var token = new RefreshToken
+        {
+            UserId = "user-1",
+            Token = "test-token",
+            Created = _dateTimeProvider.UtcNow,
+            Expires = _dateTimeProvider.UtcNow.AddDays(7)
+        };
+
+        // Act
+        token.Revoke(_dateTimeProvider);
+
         // Assert
-        token.IsActive.Should().BeFalse();
+        token.Revoked.Should().Be(_dateTimeProvider.UtcNow);
+        token.IsActive(_dateTimeProvider).Should().BeFalse();
     }
 }
 ```
@@ -200,8 +261,8 @@ public class RefreshTokenTests
 
 ## Edge Cases to Consider
 
-- PasswordResetToken expiry boundary (exactly at ExpiresAtUtc — currently `>` means equal to boundary is not expired)
-- RefreshToken expiry boundary (uses `>=` — equal to boundary IS expired)
+- PasswordResetToken expiry boundary (exactly at ExpiresAtUtc — `>` means equal to boundary is NOT expired) — now deterministically testable with `FakeDateTimeProvider`
+- RefreshToken expiry boundary (uses `>=` — equal to boundary IS expired) — now deterministically testable with `FakeDateTimeProvider`
 - Winning with zero amount (valid — e.g., placeholder prizes)
 - ApplicationUser inherits from IdentityUser — some properties come from the base class
 - Revoked + expired RefreshToken (both conditions false — still inactive)

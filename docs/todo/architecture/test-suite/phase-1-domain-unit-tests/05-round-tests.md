@@ -16,6 +16,14 @@ Test the `Round` entity factory method, status transitions, match management, an
 |------|--------|---------|
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/RoundTests.cs` | Create | All Round unit tests |
 
+## Prerequisites
+
+`UpdateStatus` and `UpdateLastReminderSent` now accept `IDateTimeProvider`. Use a `FakeDateTimeProvider` to assert exact timestamps:
+
+```csharp
+private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+```
+
 ## Implementation Steps
 
 ### Step 1: Round.Create factory tests
@@ -46,9 +54,9 @@ Test all transition paths to/from `Completed`:
 
 | Test | Scenario | Expected |
 |------|----------|----------|
-| `UpdateStatus_ShouldSetCompletedDate_WhenTransitioningFromDraftToCompleted` | Draft → Completed | `CompletedDateUtc` is set |
-| `UpdateStatus_ShouldSetCompletedDate_WhenTransitioningFromPublishedToCompleted` | Published → Completed | `CompletedDateUtc` is set |
-| `UpdateStatus_ShouldSetCompletedDate_WhenTransitioningFromInProgressToCompleted` | InProgress → Completed | `CompletedDateUtc` is set |
+| `UpdateStatus_ShouldSetCompletedDate_WhenTransitioningFromDraftToCompleted` | Draft → Completed | `CompletedDateUtc` matches `dateTimeProvider.UtcNow` exactly |
+| `UpdateStatus_ShouldSetCompletedDate_WhenTransitioningFromPublishedToCompleted` | Published → Completed | `CompletedDateUtc` matches `dateTimeProvider.UtcNow` exactly |
+| `UpdateStatus_ShouldSetCompletedDate_WhenTransitioningFromInProgressToCompleted` | InProgress → Completed | `CompletedDateUtc` matches `dateTimeProvider.UtcNow` exactly |
 | `UpdateStatus_ShouldClearCompletedDate_WhenTransitioningFromCompletedToDraft` | Completed → Draft | `CompletedDateUtc = null` |
 | `UpdateStatus_ShouldClearCompletedDate_WhenTransitioningFromCompletedToPublished` | Completed → Published | `CompletedDateUtc = null` |
 | `UpdateStatus_ShouldClearCompletedDate_WhenTransitioningFromCompletedToInProgress` | Completed → InProgress | `CompletedDateUtc = null` |
@@ -93,8 +101,8 @@ Test all transition paths to/from `Completed`:
 
 | Test | Scenario | Expected |
 |------|----------|----------|
-| `UpdateLastReminderSent_ShouldSetTimestamp_WhenCalled` | Any round | `LastReminderSentUtc` is not null |
-| `UpdateLastReminderSent_ShouldUpdateTimestamp_WhenCalledAgain` | Call twice | `LastReminderSentUtc` updates |
+| `UpdateLastReminderSent_ShouldSetTimestamp_WhenCalled` | Any round | `LastReminderSentUtc` matches `dateTimeProvider.UtcNow` exactly |
+| `UpdateLastReminderSent_ShouldUpdateTimestamp_WhenCalledAgain` | Advance `FakeDateTimeProvider.UtcNow`, call twice | `LastReminderSentUtc` matches the advanced time |
 
 ## Verification
 
@@ -118,3 +126,4 @@ Test all transition paths to/from `Completed`:
 - RemoveMatch with ID 0 (should do nothing gracefully)
 - UpdateStatus from Completed to Completed (CompletedDateUtc should not be reset)
 - UpdateDetails does not change SeasonId
+- With `FakeDateTimeProvider`, `CompletedDateUtc` and `LastReminderSentUtc` can be asserted exactly

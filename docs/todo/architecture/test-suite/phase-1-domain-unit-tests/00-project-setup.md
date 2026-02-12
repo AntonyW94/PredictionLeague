@@ -28,6 +28,7 @@ tests/
 └── Unit/
     └── ThePredictions.Domain.Tests.Unit/
         ├── ThePredictions.Domain.Tests.Unit.csproj
+        ├── Helpers/
         ├── Models/
         └── Services/
 ```
@@ -62,7 +63,31 @@ tests/
 dotnet sln ThePredictions.sln add tests/Unit/ThePredictions.Domain.Tests.Unit/ThePredictions.Domain.Tests.Unit.csproj --solution-folder Tests/Unit
 ```
 
-### Step 4: Verify the project builds
+### Step 4: Create the FakeDateTimeProvider helper
+
+Create `tests/Unit/ThePredictions.Domain.Tests.Unit/Helpers/FakeDateTimeProvider.cs`:
+
+```csharp
+using PredictionLeague.Domain.Common;
+
+namespace ThePredictions.Domain.Tests.Unit.Helpers;
+
+public class FakeDateTimeProvider : IDateTimeProvider
+{
+    public FakeDateTimeProvider(DateTime utcNow)
+    {
+        UtcNow = utcNow;
+    }
+
+    public DateTime UtcNow { get; set; }
+}
+```
+
+This is a hand-rolled fake (not a mock) that all test classes will use. The settable `UtcNow` property allows tests to advance time mid-test.
+
+> **Prerequisite:** Task 0a (`IDateTimeProvider`) must be completed first so the interface exists.
+
+### Step 5: Verify the project builds
 
 ```bash
 dotnet build tests/Unit/ThePredictions.Domain.Tests.Unit/ThePredictions.Domain.Tests.Unit.csproj
@@ -72,10 +97,12 @@ dotnet build tests/Unit/ThePredictions.Domain.Tests.Unit/ThePredictions.Domain.T
 
 - [ ] Project file created with correct package references
 - [ ] Project added to solution file under `Tests/Unit` solution folder
+- [ ] `FakeDateTimeProvider` created in `Helpers/` folder
 - [ ] `dotnet build` succeeds with no errors
 - [ ] `dotnet test` runs (with 0 tests initially)
 
 ## Notes
 
-- No mocking library needed — all domain entity methods are pure. NSubstitute is only needed in the Application.Tests.Unit project.
+- No mocking library needed — a hand-rolled `FakeDateTimeProvider` is used instead. NSubstitute is only needed in the Application.Tests.Unit project.
+- `FakeDateTimeProvider` requires task 0a (`IDateTimeProvider`) to be completed first.
 - Check the latest stable package versions before installing — the versions listed above are from the test suite plan and may have newer releases.

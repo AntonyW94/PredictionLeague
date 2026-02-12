@@ -17,15 +17,29 @@ Test the `PredictionDomainService.SubmitPredictions` method and the `NameValidat
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Services/PredictionDomainServiceTests.cs` | Create | SubmitPredictions tests |
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Common/Validation/NameValidatorTests.cs` | Create | Name validation and sanitisation tests |
 
+## Prerequisites
+
+`PredictionDomainService` now accepts `IDateTimeProvider` via constructor injection. Instantiate it with a `FakeDateTimeProvider`:
+
+```csharp
+private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+private readonly PredictionDomainService _sut;
+
+public PredictionDomainServiceTests()
+{
+    _sut = new PredictionDomainService(_dateTimeProvider);
+}
+```
+
 ## Implementation Steps
 
 ### Step 1: PredictionDomainService.SubmitPredictions tests
 
-Create a Round with a future deadline for success-path tests and a past deadline for failure tests using the public constructor.
+Create a Round with a deadline relative to `dateTimeProvider.UtcNow`:
 
 | Test | Scenario | Expected |
 |------|----------|----------|
-| `SubmitPredictions_ShouldReturnPredictions_WhenDeadlineNotPassed` | Future deadline | Returns predictions matching input |
+| `SubmitPredictions_ShouldReturnPredictions_WhenDeadlineNotPassed` | Round deadline after `dateTimeProvider.UtcNow` | Returns predictions matching input |
 | `SubmitPredictions_ShouldCreateCorrectNumberOfPredictions_WhenMultipleScoresProvided` | 3 scores | 3 predictions returned |
 | `SubmitPredictions_ShouldSetUserIdOnAllPredictions_WhenCreated` | `userId: "user-1"` | All predictions have `UserId = "user-1"` |
 | `SubmitPredictions_ShouldSetCorrectMatchIds_WhenCreated` | 3 different matchIds | Each prediction has correct MatchId |
@@ -33,25 +47,25 @@ Create a Round with a future deadline for success-path tests and a past deadline
 | `SubmitPredictions_ShouldSetPendingOutcome_WhenCreated` | Any valid input | All predictions have `Outcome = Pending` |
 | `SubmitPredictions_ShouldReturnEmptyCollection_WhenEmptyPredictionsListProvided` | Empty list | Empty collection returned (no error) |
 | `SubmitPredictions_ShouldReturnSinglePrediction_WhenOnlyOneScoreProvided` | 1 score | 1 prediction returned |
-| `SubmitPredictions_ShouldThrowException_WhenDeadlineHasPassed` | Past deadline | `InvalidOperationException` |
+| `SubmitPredictions_ShouldThrowException_WhenDeadlineHasPassed` | Round deadline before `dateTimeProvider.UtcNow` | `InvalidOperationException` |
 | `SubmitPredictions_ShouldThrowException_WhenRoundIsNull` | `null` | `ArgumentNullException` |
 
 ```csharp
-// Helper to create Round with future deadline
-private static Round CreateRoundWithFutureDeadline() =>
+// Helper to create Round with future deadline (relative to fake time)
+private Round CreateRoundWithFutureDeadline() =>
     new(id: 1, seasonId: 1, roundNumber: 1,
-        startDateUtc: DateTime.UtcNow.AddDays(2),
-        deadlineUtc: DateTime.UtcNow.AddDays(1),
+        startDateUtc: _dateTimeProvider.UtcNow.AddDays(2),
+        deadlineUtc: _dateTimeProvider.UtcNow.AddDays(1),
         status: RoundStatus.Published,
         apiRoundName: null,
         lastReminderSentUtc: null,
         matches: null);
 
-// Helper to create Round with past deadline
-private static Round CreateRoundWithPastDeadline() =>
+// Helper to create Round with past deadline (relative to fake time)
+private Round CreateRoundWithPastDeadline() =>
     new(id: 1, seasonId: 1, roundNumber: 1,
-        startDateUtc: DateTime.UtcNow.AddDays(-1),
-        deadlineUtc: DateTime.UtcNow.AddDays(-2),
+        startDateUtc: _dateTimeProvider.UtcNow.AddDays(-1),
+        deadlineUtc: _dateTimeProvider.UtcNow.AddDays(-2),
         status: RoundStatus.InProgress,
         apiRoundName: null,
         lastReminderSentUtc: null,
@@ -176,3 +190,4 @@ public class NameValidatorTests
 - PredictionDomainService with empty predictions list (should return empty collection without error)
 - Names with combining diacritical marks (e.g., `e\u0301` for "é")
 - Sanitise result may have internal spaces where removed characters were (e.g., `"John 😀 Smith"` → `"John  Smith"`)
+- With `FakeDateTimeProvider`, deadline checks in PredictionDomainService are deterministic — no race conditions

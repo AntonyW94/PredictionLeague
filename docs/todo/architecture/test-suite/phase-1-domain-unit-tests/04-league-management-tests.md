@@ -16,17 +16,30 @@ Test League entity factory methods (`Create`, `CreateOfficialPublicLeague`), ent
 |------|--------|---------|
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/LeagueManagementTests.cs` | Create | Factory, member, prize, and update tests |
 
+## Prerequisites
+
+All tests that call `League.Create`, `League.CreateOfficialPublicLeague`, or `League.AddMember` require a `FakeDateTimeProvider`. Set it to a fixed time and create helper dates relative to it:
+
+```csharp
+private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+```
+
 ## Implementation Steps
 
 ### Step 1: Create a helper Season for validation
 
-Many League methods require a `Season` parameter for validation. Create a shared helper:
+Many League methods require a `Season` parameter for validation. Create a shared helper using dates relative to the fake time:
 
 ```csharp
-// Season with start date well in the future
-private static Season CreateFutureSeason() =>
-    new(id: 1, name: "2025/26", startDateUtc: DateTime.UtcNow.AddMonths(2),
-        endDateUtc: DateTime.UtcNow.AddMonths(8), isActive: true, numberOfRounds: 38, apiLeagueId: null);
+private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+
+// Season with start date well in the future (relative to fake time)
+private Season CreateFutureSeason() =>
+    new(id: 1, name: "2025/26", startDateUtc: _dateTimeProvider.UtcNow.AddMonths(2),
+        endDateUtc: _dateTimeProvider.UtcNow.AddMonths(8), isActive: true, numberOfRounds: 38, apiLeagueId: null);
+
+// Entry deadline in the future but before season start
+private DateTime FutureDeadline => _dateTimeProvider.UtcNow.AddMonths(1);
 ```
 
 ### Step 2: League.Create factory tests
@@ -37,7 +50,7 @@ private static Season CreateFutureSeason() =>
 | `Create_ShouldSetIsFreeTrue_WhenPriceIsZero` | `price: 0` | `IsFree = true` |
 | `Create_ShouldSetIsFreeFalse_WhenPriceIsPositive` | `price: 10` | `IsFree = false` |
 | `Create_ShouldSetIsFreeFalse_WhenPriceIsMinimalPositive` | `price: 0.01m` | `IsFree = false` |
-| `Create_ShouldSetCreatedAtUtc_WhenCreated` | Valid input | `CreatedAtUtc` is set |
+| `Create_ShouldSetCreatedAtUtc_WhenCreated` | Valid input | `CreatedAtUtc` matches `dateTimeProvider.UtcNow` exactly |
 | `Create_ShouldSetEntryCodeToNull_WhenCreated` | Valid input | `EntryCode = null` |
 | `Create_ShouldSetHasPrizesToFalse_WhenCreated` | Valid input | `HasPrizes = false` |
 | `Create_ShouldSetPrizeFundOverrideToNull_WhenCreated` | Valid input | `PrizeFundOverride = null` |
@@ -51,7 +64,7 @@ private static Season CreateFutureSeason() =>
 | `Create_ShouldThrowException_WhenAdministratorUserIdIsWhitespace` | `" "` | `ArgumentException` |
 | `Create_ShouldThrowException_WhenSeasonIdIsZero` | `seasonId: 0` | `ArgumentException` |
 | `Create_ShouldThrowException_WhenSeasonIdIsNegative` | `seasonId: -1` | `ArgumentException` |
-| `Create_ShouldThrowException_WhenEntryDeadlineIsInThePast` | Past deadline | `ArgumentException` |
+| `Create_ShouldThrowException_WhenEntryDeadlineIsInThePast` | Deadline before `dateTimeProvider.UtcNow` | `ArgumentException` |
 | `Create_ShouldThrowException_WhenEntryDeadlineIsAfterSeasonStart` | Deadline >= season start | `ArgumentException` |
 | `Create_ShouldThrowException_WhenEntryDeadlineEqualToSeasonStart` | Deadline same day as start | `ArgumentException` |
 
@@ -91,7 +104,7 @@ Note: The retry-until-unique loop now lives in the command handler, not the enti
 | `AddMember_ShouldThrowException_WhenUserIsAlreadyMember` | Add same userId twice | `InvalidOperationException` |
 | `AddMember_ShouldThrowException_WhenDeadlineHasPassed` | League with past deadline | `InvalidOperationException` |
 
-Note: For deadline tests, build the League using the public constructor with a past `EntryDeadlineUtc`.
+Note: For deadline tests, build the League using the public constructor with an `EntryDeadlineUtc` before `dateTimeProvider.UtcNow`. Pass `_dateTimeProvider` to `AddMember`.
 
 ### Step 6: RemoveMember tests
 
@@ -160,3 +173,4 @@ Note: For deadline tests, build the League using the public constructor with a p
 - Adding member with whitespace userId (should fail)
 - SetEntryCode with an empty string (should fail)
 - UpdateDetails should not modify immutable properties (Id, SeasonId, CreatedAtUtc, AdministratorUserId)
+- With `FakeDateTimeProvider`, `CreatedAtUtc` can be asserted exactly and deadline validation is deterministic

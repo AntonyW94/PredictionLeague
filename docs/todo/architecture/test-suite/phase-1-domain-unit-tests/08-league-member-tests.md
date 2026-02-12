@@ -16,6 +16,14 @@ Test the `LeagueMember` entity factory method and status transition methods (`Ap
 |------|--------|---------|
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/LeagueMemberTests.cs` | Create | All LeagueMember unit tests |
 
+## Prerequisites
+
+`LeagueMember.Create` and `Approve` now accept `IDateTimeProvider`. Use a `FakeDateTimeProvider` to assert exact timestamps:
+
+```csharp
+private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+```
+
 ## Implementation Steps
 
 ### Step 1: LeagueMember.Create factory tests
@@ -26,7 +34,7 @@ Test the `LeagueMember` entity factory method and status transition methods (`Ap
 | `Create_ShouldSetStatusToPending_WhenCreated` | Valid input | `Status = LeagueMemberStatus.Pending` |
 | `Create_ShouldSetIsAlertDismissedToFalse_WhenCreated` | Valid input | `IsAlertDismissed = false` |
 | `Create_ShouldSetApprovedAtUtcToNull_WhenCreated` | Valid input | `ApprovedAtUtc = null` |
-| `Create_ShouldSetJoinedAtUtc_WhenCreated` | Valid input | `JoinedAtUtc` is set (not default) |
+| `Create_ShouldSetJoinedAtUtc_WhenCreated` | Valid input | `JoinedAtUtc` matches `dateTimeProvider.UtcNow` exactly |
 | `Create_ShouldInitialiseEmptyRoundResultsCollection_WhenCreated` | Valid input | `RoundResults` is empty |
 | `Create_ShouldThrowException_WhenLeagueIdIsZero` | `leagueId: 0` | `ArgumentException` |
 | `Create_ShouldThrowException_WhenLeagueIdIsNegative` | `leagueId: -1` | `ArgumentException` |
@@ -39,7 +47,7 @@ Test the `LeagueMember` entity factory method and status transition methods (`Ap
 | Test | Scenario | Expected |
 |------|----------|----------|
 | `Approve_ShouldSetStatusToApproved_WhenPending` | Status = Pending | `Status = Approved` |
-| `Approve_ShouldSetApprovedAtUtc_WhenPending` | Status = Pending | `ApprovedAtUtc` is not null |
+| `Approve_ShouldSetApprovedAtUtc_WhenPending` | Status = Pending | `ApprovedAtUtc` matches `dateTimeProvider.UtcNow` exactly |
 | `Approve_ShouldThrowException_WhenAlreadyApproved` | Status = Approved | `InvalidOperationException` with "pending" |
 | `Approve_ShouldThrowException_WhenRejected` | Status = Rejected | `InvalidOperationException` with "pending" |
 
@@ -65,6 +73,33 @@ Test the `LeagueMember` entity factory method and status transition methods (`Ap
 ```csharp
 public class LeagueMemberTests
 {
+    private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+
+    [Fact]
+    public void Create_ShouldSetJoinedAtUtc_WhenCreated()
+    {
+        // Act
+        var member = LeagueMember.Create(1, "user-1", _dateTimeProvider);
+
+        // Assert
+        member.JoinedAtUtc.Should().Be(_dateTimeProvider.UtcNow);
+    }
+
+    [Fact]
+    public void Approve_ShouldSetApprovedAtUtc_WhenPending()
+    {
+        // Arrange
+        var member = LeagueMember.Create(1, "user-1", _dateTimeProvider);
+        var approvalTime = new DateTime(2025, 6, 16, 10, 0, 0, DateTimeKind.Utc);
+        _dateTimeProvider.UtcNow = approvalTime;
+
+        // Act
+        member.Approve(_dateTimeProvider);
+
+        // Assert
+        member.ApprovedAtUtc.Should().Be(approvalTime);
+    }
+
     [Fact]
     public void Approve_ShouldThrowException_WhenAlreadyApproved()
     {
@@ -73,12 +108,12 @@ public class LeagueMemberTests
             leagueId: 1, userId: "user-1",
             status: LeagueMemberStatus.Approved,
             isAlertDismissed: false,
-            joinedAtUtc: DateTime.UtcNow,
-            approvedAtUtc: DateTime.UtcNow,
+            joinedAtUtc: _dateTimeProvider.UtcNow,
+            approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: null);
 
         // Act
-        var act = () => member.Approve();
+        var act = () => member.Approve(_dateTimeProvider);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -93,7 +128,7 @@ public class LeagueMemberTests
             leagueId: 1, userId: "user-1",
             status: LeagueMemberStatus.Pending,
             isAlertDismissed: true,
-            joinedAtUtc: DateTime.UtcNow,
+            joinedAtUtc: _dateTimeProvider.UtcNow,
             approvedAtUtc: null,
             roundResults: null);
 
@@ -124,3 +159,4 @@ public class LeagueMemberTests
 - Calling DismissAlert when already dismissed (should be idempotent)
 - Approve/Reject from every non-Pending status (Approved, Rejected)
 - Reject resets IsAlertDismissed even if it was true (constructor allows setting it to true for test setup)
+- With `FakeDateTimeProvider`, `JoinedAtUtc` and `ApprovedAtUtc` can be asserted exactly

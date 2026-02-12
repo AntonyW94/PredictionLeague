@@ -16,16 +16,24 @@ Test the core scoring algorithm (`SetOutcome`) and factory method (`Create`) of 
 |------|--------|---------|
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/UserPredictionTests.cs` | Create | All UserPrediction unit tests |
 
+## Prerequisites
+
+All tests in this file require a `FakeDateTimeProvider` instance. Create one at a fixed point in time for deterministic results:
+
+```csharp
+private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+```
+
 ## Implementation Steps
 
 ### Step 1: Create factory method tests
 
-Test `UserPrediction.Create(userId, matchId, homeScore, awayScore)`:
+Test `UserPrediction.Create(userId, matchId, homeScore, awayScore, dateTimeProvider)`:
 
 | Test | Input | Expected |
 |------|-------|----------|
 | `Create_ShouldCreatePrediction_WhenValidParametersProvided` | `("user-1", 1, 2, 1)` | Properties set correctly, Outcome = Pending |
-| `Create_ShouldSetCreatedAtUtcAndUpdatedAtUtc_WhenCreated` | `("user-1", 1, 2, 1)` | Both timestamps set and approximately equal |
+| `Create_ShouldSetCreatedAtUtcAndUpdatedAtUtc_WhenCreated` | `("user-1", 1, 2, 1)` | Both timestamps match `dateTimeProvider.UtcNow` exactly |
 | `Create_ShouldThrowException_WhenUserIdIsNull` | `(null, 1, 2, 1)` | `ArgumentNullException` |
 | `Create_ShouldThrowException_WhenUserIdIsEmpty` | `("", 1, 2, 1)` | `ArgumentException` |
 | `Create_ShouldThrowException_WhenUserIdIsWhitespace` | `(" ", 1, 2, 1)` | `ArgumentException` |
@@ -85,18 +93,20 @@ The `Math.Sign` logic creates a 3×3 matrix of predicted vs actual outcomes. The
 
 | Test | Scenario | Expected |
 |------|----------|----------|
-| `SetOutcome_ShouldUpdateUpdatedAtUtc_WhenCalled` | Any valid call | `UpdatedAtUtc` changes |
+| `SetOutcome_ShouldUpdateUpdatedAtUtc_WhenCalled` | Advance `FakeDateTimeProvider.UtcNow` before calling | `UpdatedAtUtc` matches the advanced time exactly |
 
 ## Code Patterns to Follow
 
 ```csharp
 public class UserPredictionTests
 {
+    private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+
     [Fact]
     public void Create_ShouldCreatePrediction_WhenValidParametersProvided()
     {
         // Act
-        var prediction = UserPrediction.Create("user-1", 1, 2, 1);
+        var prediction = UserPrediction.Create("user-1", 1, 2, 1, _dateTimeProvider);
 
         // Assert
         prediction.UserId.Should().Be("user-1");
@@ -104,19 +114,36 @@ public class UserPredictionTests
         prediction.PredictedHomeScore.Should().Be(2);
         prediction.PredictedAwayScore.Should().Be(1);
         prediction.Outcome.Should().Be(PredictionOutcome.Pending);
+        prediction.CreatedAtUtc.Should().Be(_dateTimeProvider.UtcNow);
+        prediction.UpdatedAtUtc.Should().Be(_dateTimeProvider.UtcNow);
     }
 
     [Fact]
     public void SetOutcome_ShouldReturnExactScore_WhenPredictionMatchesExactly()
     {
         // Arrange
-        var prediction = UserPrediction.Create("user-1", 1, 2, 1);
+        var prediction = UserPrediction.Create("user-1", 1, 2, 1, _dateTimeProvider);
 
         // Act
-        prediction.SetOutcome(MatchStatus.Completed, 2, 1);
+        prediction.SetOutcome(MatchStatus.Completed, 2, 1, 5, 3, _dateTimeProvider);
 
         // Assert
         prediction.Outcome.Should().Be(PredictionOutcome.ExactScore);
+    }
+
+    [Fact]
+    public void SetOutcome_ShouldUpdateUpdatedAtUtc_WhenCalled()
+    {
+        // Arrange
+        var prediction = UserPrediction.Create("user-1", 1, 2, 1, _dateTimeProvider);
+        var laterTime = new DateTime(2025, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+        _dateTimeProvider.UtcNow = laterTime;
+
+        // Act
+        prediction.SetOutcome(MatchStatus.Completed, 2, 1, 5, 3, _dateTimeProvider);
+
+        // Assert
+        prediction.UpdatedAtUtc.Should().Be(laterTime);
     }
 }
 ```
@@ -137,3 +164,4 @@ public class UserPredictionTests
 - Zero scores are valid (0-0 is a common result)
 - Very high scores (e.g., 9-0) should still work correctly
 - `SetOutcome` always updates `UpdatedAtUtc`, even when outcome doesn't change
+- With `FakeDateTimeProvider`, timestamps can be asserted exactly — no "approximately now" needed
