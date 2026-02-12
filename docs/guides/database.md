@@ -219,4 +219,4 @@ if (rowsAffected == 0)
 | `[Winnings]` | Prize payouts |
 | `[AspNetUsers]` | Identity users (extended with FirstName, LastName) |
 
-For the complete schema, see [`docs/guides/database/database-schema.md`](../guides/database/database-schema.md).
+For the complete schema, see [`docs/guides/database-schema.md`](database-schema.md).

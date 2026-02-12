@@ -68,7 +68,7 @@ else
 
 ## CSS Architecture
 
-**Full CSS reference:** [`/docs/css-reference.md`](../../docs/css-reference.md)
+**Full CSS reference:** [`/docs/guides/css-reference.md`](../../docs/guides/css-reference.md)
 
 ### File Structure
 
@@ -221,7 +221,7 @@ When adding a new CSS file, update TWO places:
 1. **Development:** Add `@import` to `wwwroot/css/app.css`
 2. **Production:** Add to `<CssFilesToBundle>` in `src/PredictionLeague.Web/PredictionLeague.Web.csproj`
 
-See [`docs/claude/checklists/new-css-file.md`](../../docs/claude/checklists/new-css-file.md) for the full checklist.
+See [`docs/guides/checklists/new-css-file.md`](../../docs/guides/checklists/new-css-file.md) for the full checklist.
 
 ## CSS Bundling (Production)
 

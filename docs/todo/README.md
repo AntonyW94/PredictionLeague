@@ -29,4 +29,5 @@ The current status is shown in bold.
 
 ## Historical Reference
 
-- [security-audit-history.md](../security-audit-history.md) - Completed security fixes and accepted risks
+- [audit-history.md](../security/audit-history.md) - Completed security fixes
+- [accepted-risks.md](../security/accepted-risks.md) - Accepted risks and deferred items

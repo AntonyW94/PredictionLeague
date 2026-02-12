@@ -28,11 +28,15 @@ These items have been reviewed and deferred with documented mitigations:
 
 ## Completed Security Work
 
-See [security-audit-history.md](../../security-audit-history.md) for:
+See [audit-history.md](../../security/audit-history.md) for:
 - 34 completed security fixes
-- 3 accepted risks with documentation
 - Positive security controls in place
+
+See [accepted-risks.md](../../security/accepted-risks.md) for:
+- 3 accepted risks with documentation
+- Deferred architectural constraints
+- Scanner false positives
 
 ## Running a Security Audit
 
-See [checklists/security-audit.md](../../../claude/checklists/security-audit.md) for the security audit process.
+See [security-audit.md](../../guides/checklists/security-audit.md) for the security audit process.

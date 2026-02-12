@@ -26,15 +26,15 @@ Audit the codebase to ensure all code follows the same patterns and standards de
 
 | Area | Reference |
 |------|-----------|
-| Code style | `docs/claude/code-style.md` |
-| CQRS patterns | `docs/claude/cqrs-patterns.md` |
-| Domain models | `docs/claude/domain-models.md` |
-| Database/SQL | `docs/claude/database.md` |
-| Logging | `docs/claude/logging.md` |
+| Code style | `docs/guides/code-style.md` |
+| CQRS patterns | `docs/guides/cqrs-patterns.md` |
+| Domain models | `docs/guides/domain-models.md` |
+| Database/SQL | `docs/guides/database.md` |
+| Logging | `docs/guides/logging.md` |
 
 ## Checklist
 
-See `docs/claude/checklists/security-audit.md` for audit process.
+See `docs/guides/checklists/security-audit.md` for audit process.
 
 ## Technical Notes
 

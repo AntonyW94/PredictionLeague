@@ -18,12 +18,12 @@ This file provides background context for understanding the codebase. Unlike oth
 | Frontend | Blazor WebAssembly | 8.0 |
 | Database | SQL Server | - |
 | ORM | Dapper | 2.1.66 |
-| CQRS/Mediator | MediatR | 13.0.0 |
-| Validation | FluentValidation | 12.0.0 |
+| CQRS/Mediator | MediatR | 14.0.0 |
+| Validation | FluentValidation | 12.1.1 |
 | Guard Clauses | Ardalis.GuardClauses | 5.0.0 |
 | Authentication | JWT + Google OAuth + ASP.NET Identity | 8.0 |
 | Email | Brevo (Sendinblue) | 1.1.1 |
-| Logging | Serilog + Datadog | 9.0.0 |
+| Logging | Serilog + Datadog | 8.0.3 |
 | Secrets | Azure Key Vault | 1.4.0 |
 
 ## Solution Structure
@@ -139,11 +139,15 @@ These are intentional trade-offs, not issues to fix:
 
 | Topic | Location |
 |-------|----------|
-| Database schema | [`/docs/database-schema.md`](../database-schema.md) |
-| CSS reference | [`/docs/css-reference.md`](../css-reference.md) |
-| Security findings | [`/docs/plans/security/`](../plans/security/) |
-| Feature plans | [`/docs/features/`](../features/) |
-| Future roadmap | [`/docs/future-roadmap.md`](../future-roadmap.md) |
+| Coding guides | [`/docs/guides/`](.) |
+| Workflow checklists | [`/docs/guides/checklists/`](checklists/) |
+| Database schema | [`/docs/guides/database-schema.md`](database-schema.md) |
+| CSS reference | [`/docs/guides/css-reference.md`](css-reference.md) |
+| Security accepted risks | [`/docs/security/accepted-risks.md`](../security/accepted-risks.md) |
+| Security audit history | [`/docs/security/audit-history.md`](../security/audit-history.md) |
+| Feature plans | [`/docs/todo/features/`](../todo/features/) |
+| Architecture plans | [`/docs/todo/architecture/`](../todo/architecture/) |
+| Security plans | [`/docs/todo/security/`](../todo/security/) |
 
 ## Useful Commands
 

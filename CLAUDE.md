@@ -18,7 +18,7 @@ These rules are non-negotiable. Violating them will cause issues.
 
 ### Database Schema Documentation
 
-Any database changes (new tables, new columns, modified constraints, new indexes) **must** be reflected in [`docs/guides/database/database-schema.md`](docs/guides/database/database-schema.md). This file is the single source of truth for the database schema.
+Any database changes (new tables, new columns, modified constraints, new indexes) **must** be reflected in [`docs/guides/database-schema.md`](docs/guides/database-schema.md). This file is the single source of truth for the database schema.
 
 ### CQRS Data Access
 
@@ -97,12 +97,12 @@ For comprehensive rules with examples, consult these files:
 
 | Topic | File |
 |-------|------|
-| UK English, naming, formatting, DateTime | [`docs/claude/code-style.md`](docs/claude/code-style.md) |
-| Commands, queries, MediatR patterns | [`docs/claude/cqrs-patterns.md`](docs/claude/cqrs-patterns.md) |
-| Entity construction, repositories, immutability | [`docs/claude/domain-models.md`](docs/claude/domain-models.md) |
-| SQL conventions, Dapper patterns | [`docs/claude/database.md`](docs/claude/database.md) |
-| Log message formatting | [`docs/claude/logging.md`](docs/claude/logging.md) |
-| Domain concepts, tech stack, infrastructure | [`docs/claude/project-context.md`](docs/claude/project-context.md) |
+| UK English, naming, formatting, DateTime | [`docs/guides/code-style.md`](docs/guides/code-style.md) |
+| Commands, queries, MediatR patterns | [`docs/guides/cqrs-patterns.md`](docs/guides/cqrs-patterns.md) |
+| Entity construction, repositories, immutability | [`docs/guides/domain-models.md`](docs/guides/domain-models.md) |
+| SQL conventions, Dapper patterns | [`docs/guides/database.md`](docs/guides/database.md) |
+| Log message formatting | [`docs/guides/logging.md`](docs/guides/logging.md) |
+| Domain concepts, tech stack, infrastructure | [`docs/guides/project-context.md`](docs/guides/project-context.md) |
 
 ## Project-Specific Guidelines
 
@@ -117,13 +117,13 @@ Use these when creating new features:
 
 | Task | Checklist |
 |------|-----------|
-| Creating a new command | [`docs/claude/checklists/new-command.md`](docs/claude/checklists/new-command.md) |
-| Creating a new query | [`docs/claude/checklists/new-query.md`](docs/claude/checklists/new-query.md) |
-| Creating a new domain entity | [`docs/claude/checklists/new-entity.md`](docs/claude/checklists/new-entity.md) |
-| Adding a new API endpoint | [`docs/claude/checklists/new-api-endpoint.md`](docs/claude/checklists/new-api-endpoint.md) |
-| Creating a new Blazor component | [`docs/claude/checklists/new-blazor-component.md`](docs/claude/checklists/new-blazor-component.md) |
-| Adding a new CSS file | [`docs/claude/checklists/new-css-file.md`](docs/claude/checklists/new-css-file.md) |
-| Running a security audit | [`docs/claude/checklists/security-audit.md`](docs/claude/checklists/security-audit.md) |
+| Creating a new command | [`docs/guides/checklists/new-command.md`](docs/guides/checklists/new-command.md) |
+| Creating a new query | [`docs/guides/checklists/new-query.md`](docs/guides/checklists/new-query.md) |
+| Creating a new domain entity | [`docs/guides/checklists/new-entity.md`](docs/guides/checklists/new-entity.md) |
+| Adding a new API endpoint | [`docs/guides/checklists/new-api-endpoint.md`](docs/guides/checklists/new-api-endpoint.md) |
+| Creating a new Blazor component | [`docs/guides/checklists/new-blazor-component.md`](docs/guides/checklists/new-blazor-component.md) |
+| Adding a new CSS file | [`docs/guides/checklists/new-css-file.md`](docs/guides/checklists/new-css-file.md) |
+| Running a security audit | [`docs/guides/checklists/security-audit.md`](docs/guides/checklists/security-audit.md) |
 
 ## Things to NEVER Do
 
@@ -134,7 +134,7 @@ Use these when creating new features:
 5. **NEVER commit secrets to appsettings.json** - Use KeyVault references
 6. **NEVER put multiple public types in one file**
 7. **NEVER use US English spelling** - Use UK English
-8. **NEVER make database changes without updating `docs/guides/database/database-schema.md`**
+8. **NEVER make database changes without updating `docs/guides/database-schema.md`**
 
 ## Quick Reference
 
