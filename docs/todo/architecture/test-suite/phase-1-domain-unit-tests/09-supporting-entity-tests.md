@@ -14,11 +14,11 @@ Test the remaining entity factory methods and business logic for `Winning`, `Lea
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/PredictionLeague.Domain.Tests/Models/WinningTests.cs` | Create | Winning factory tests |
-| `tests/PredictionLeague.Domain.Tests/Models/LeaguePrizeSettingTests.cs` | Create | LeaguePrizeSetting factory tests |
-| `tests/PredictionLeague.Domain.Tests/Models/ApplicationUserTests.cs` | Create | ApplicationUser factory and update tests |
-| `tests/PredictionLeague.Domain.Tests/Models/PasswordResetTokenTests.cs` | Create | Token generation and expiry tests |
-| `tests/PredictionLeague.Domain.Tests/Models/RefreshTokenTests.cs` | Create | Revocation and computed property tests |
+| `tests/ThePredictions.Domain.Tests/Models/WinningTests.cs` | Create | Winning factory tests |
+| `tests/ThePredictions.Domain.Tests/Models/LeaguePrizeSettingTests.cs` | Create | LeaguePrizeSetting factory tests |
+| `tests/ThePredictions.Domain.Tests/Models/ApplicationUserTests.cs` | Create | ApplicationUser factory and update tests |
+| `tests/ThePredictions.Domain.Tests/Models/PasswordResetTokenTests.cs` | Create | Token generation and expiry tests |
+| `tests/ThePredictions.Domain.Tests/Models/RefreshTokenTests.cs` | Create | Revocation and computed property tests |
 
 ## Implementation Steps
 

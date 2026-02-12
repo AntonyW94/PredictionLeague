@@ -8,14 +8,14 @@
 
 ## Goal
 
-Create the `PredictionLeague.Domain.Tests` project with all required package references and add it to the solution.
+Create the `ThePredictions.Domain.Tests` project with all required package references and add it to the solution.
 
 ## Files to Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/PredictionLeague.Domain.Tests/PredictionLeague.Domain.Tests.csproj` | Create | Test project file with package references |
-| `PredictionLeague.sln` | Modify | Add test project to solution |
+| `tests/ThePredictions.Domain.Tests/ThePredictions.Domain.Tests.csproj` | Create | Test project file with package references |
+| `ThePredictions.sln` | Modify | Add test project to solution |
 
 ## Implementation Steps
 
@@ -25,8 +25,8 @@ Create the folder structure:
 
 ```
 tests/
-└── PredictionLeague.Domain.Tests/
-    ├── PredictionLeague.Domain.Tests.csproj
+└── ThePredictions.Domain.Tests/
+    ├── ThePredictions.Domain.Tests.csproj
     ├── Models/
     └── Services/
 ```
@@ -51,7 +51,7 @@ tests/
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\PredictionLeague.Domain\PredictionLeague.Domain.csproj" />
+    <ProjectReference Include="..\..\src\ThePredictions.Domain\ThePredictions.Domain.csproj" />
   </ItemGroup>
 </Project>
 ```
@@ -61,13 +61,13 @@ NSubstitute is included for `IEntryCodeUniquenessChecker` used by `League.Genera
 ### Step 3: Add to solution
 
 ```bash
-dotnet sln PredictionLeague.sln add tests/PredictionLeague.Domain.Tests/PredictionLeague.Domain.Tests.csproj
+dotnet sln ThePredictions.sln add tests/ThePredictions.Domain.Tests/ThePredictions.Domain.Tests.csproj
 ```
 
 ### Step 4: Verify the project builds
 
 ```bash
-dotnet build tests/PredictionLeague.Domain.Tests/PredictionLeague.Domain.Tests.csproj
+dotnet build tests/ThePredictions.Domain.Tests/ThePredictions.Domain.Tests.csproj
 ```
 
 ## Verification

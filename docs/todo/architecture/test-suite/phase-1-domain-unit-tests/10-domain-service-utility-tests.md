@@ -14,8 +14,8 @@ Test the `PredictionDomainService.SubmitPredictions` method and the `NameValidat
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/PredictionLeague.Domain.Tests/Services/PredictionDomainServiceTests.cs` | Create | SubmitPredictions tests |
-| `tests/PredictionLeague.Domain.Tests/Common/Validation/NameValidatorTests.cs` | Create | Name validation and sanitisation tests |
+| `tests/ThePredictions.Domain.Tests/Services/PredictionDomainServiceTests.cs` | Create | SubmitPredictions tests |
+| `tests/ThePredictions.Domain.Tests/Common/Validation/NameValidatorTests.cs` | Create | Name validation and sanitisation tests |
 
 ## Implementation Steps
 

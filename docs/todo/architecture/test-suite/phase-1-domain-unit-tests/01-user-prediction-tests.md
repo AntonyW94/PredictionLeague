@@ -14,7 +14,7 @@ Test the core scoring algorithm (`SetOutcome`) and factory method (`Create`) of 
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/PredictionLeague.Domain.Tests/Models/UserPredictionTests.cs` | Create | All UserPrediction unit tests |
+| `tests/ThePredictions.Domain.Tests/Models/UserPredictionTests.cs` | Create | All UserPrediction unit tests |
 
 ## Implementation Steps
 

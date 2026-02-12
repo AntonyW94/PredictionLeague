@@ -14,7 +14,7 @@ Test the `BoostEligibilityEvaluator.Evaluate()` static method — the most compl
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/PredictionLeague.Domain.Tests/Services/Boosts/BoostEligibilityEvaluatorTests.cs` | Create | All evaluator tests |
+| `tests/ThePredictions.Domain.Tests/Services/Boosts/BoostEligibilityEvaluatorTests.cs` | Create | All evaluator tests |
 
 ## Implementation Steps
 

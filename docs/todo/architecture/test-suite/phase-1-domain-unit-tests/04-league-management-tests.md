@@ -14,7 +14,7 @@ Test League entity factory methods (`Create`, `CreateOfficialPublicLeague`), ent
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `tests/PredictionLeague.Domain.Tests/Models/LeagueManagementTests.cs` | Create | Factory, member, prize, and update tests |
+| `tests/ThePredictions.Domain.Tests/Models/LeagueManagementTests.cs` | Create | Factory, member, prize, and update tests |
 
 ## Implementation Steps
 
