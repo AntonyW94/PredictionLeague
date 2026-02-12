@@ -1,9 +1,10 @@
-﻿using Ardalis.GuardClauses;
+﻿using System.Text.RegularExpressions;
+using Ardalis.GuardClauses;
 using PredictionLeague.Domain.Common.Constants;
 
 namespace PredictionLeague.Domain.Models;
 
-public class League
+public partial class League
 {
     public int Id { get; init; }
     public string Name { get; private set; } = string.Empty;
@@ -137,8 +138,15 @@ public class League
     public void SetEntryCode(string entryCode)
     {
         Guard.Against.NullOrWhiteSpace(entryCode);
+
+        if (!EntryCodePattern().IsMatch(entryCode))
+            throw new ArgumentException("Entry code must be exactly 6 uppercase alphanumeric characters.", nameof(entryCode));
+
         EntryCode = entryCode;
     }
+
+    [GeneratedRegex("^[A-Z0-9]{6}$")]
+    private static partial Regex EntryCodePattern();
 
     public void UpdateDetails(
         string newName,

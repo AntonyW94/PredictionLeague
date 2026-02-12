@@ -82,11 +82,18 @@ private DateTime FutureDeadline => _dateTimeProvider.UtcNow.AddMonths(1);
 | Test | Scenario | Expected |
 |------|----------|----------|
 | `SetEntryCode_ShouldSetEntryCode_WhenValidCodeProvided` | `"ABC123"` | `EntryCode = "ABC123"` |
+| `SetEntryCode_ShouldAcceptAllUppercaseLetters_WhenProvided` | `"ABCDEF"` | No exception |
+| `SetEntryCode_ShouldAcceptAllDigits_WhenProvided` | `"123456"` | No exception |
 | `SetEntryCode_ShouldThrowException_WhenCodeIsNull` | `null` | `ArgumentNullException` |
 | `SetEntryCode_ShouldThrowException_WhenCodeIsEmpty` | `""` | `ArgumentException` |
 | `SetEntryCode_ShouldThrowException_WhenCodeIsWhitespace` | `" "` | `ArgumentException` |
+| `SetEntryCode_ShouldThrowException_WhenCodeIsTooShort` | `"ABC12"` | `ArgumentException` |
+| `SetEntryCode_ShouldThrowException_WhenCodeIsTooLong` | `"ABC1234"` | `ArgumentException` |
+| `SetEntryCode_ShouldThrowException_WhenCodeContainsLowercase` | `"abc123"` | `ArgumentException` |
+| `SetEntryCode_ShouldThrowException_WhenCodeContainsSpecialCharacters` | `"ABC!@#"` | `ArgumentException` |
+| `SetEntryCode_ShouldThrowException_WhenCodeContainsSpaces` | `"ABC 12"` | `ArgumentException` |
 
-Note: Entry code generation (`GenerateRandomEntryCode`) now lives in the command handler, not the entity. The domain only validates and stores the code via `SetEntryCode`.
+Note: Entry code generation (`GenerateRandomEntryCode`) now lives in the command handler, not the entity. The domain owns the format contract (exactly 6 uppercase alphanumeric characters) and enforces it via `SetEntryCode`.
 
 ### Step 5: AddMember tests
 
@@ -151,7 +158,7 @@ Note: For deadline tests, build the League using the public constructor with an 
 
 - [ ] All factory validation paths tested (null, empty, whitespace for all string params)
 - [ ] IsFree derived correctly from price (0m vs 0.01m boundary)
-- [ ] SetEntryCode validates null, empty, whitespace
+- [ ] SetEntryCode validates null, empty, whitespace and enforces format (6 uppercase alphanumeric characters)
 - [ ] AddMember enforces deadline, duplicate, null/empty/whitespace userId checks
 - [ ] AddMember creates members with Pending status
 - [ ] RemoveMember is safe for non-existent members
@@ -168,5 +175,7 @@ Note: For deadline tests, build the League using the public constructor with an 
 - CreateOfficialPublicLeague inherits all validation from Create
 - Adding member with whitespace userId (should fail)
 - SetEntryCode with an empty string (should fail)
+- SetEntryCode with lowercase letters (should fail — format enforced by domain)
+- SetEntryCode with wrong length (5 or 7 chars — should fail)
 - UpdateDetails should not modify immutable properties (Id, SeasonId, CreatedAtUtc, AdministratorUserId)
 - With `FakeDateTimeProvider`, `CreatedAtUtc` can be asserted exactly and deadline validation is deterministic
