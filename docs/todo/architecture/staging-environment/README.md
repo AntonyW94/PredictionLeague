@@ -97,5 +97,4 @@ These secrets need to be added to the GitHub repository:
 ## Related Documentation
 
 - [CI/CD Plan](../ci-cd/README.md) - GitHub Actions workflow details
-- [Dev Database Refresh](../dev-database-refresh/README.md) - Database setup for staging
 - [Test Suite Plan](../test-suite/README.md) - E2E tests against staging

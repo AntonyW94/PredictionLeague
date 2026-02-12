@@ -36,4 +36,4 @@ Create a daily backup of the production database (`ThePredictions`) to a separat
 
 ## Related
 
-- [Dev Database Refresh](../dev-database-refresh/README.md) — similar tool with anonymisation
+- [`tools/ThePredictions.DatabaseTools/`](../../../../tools/ThePredictions.DatabaseTools/) — the dev database refresh tool (shares the same project)
