@@ -162,6 +162,59 @@ Each App Registration has the **Key Vault Secrets User** role on its respective 
 
 Secrets are referenced in `appsettings.json` using substitution syntax: `${Secret-Name}`. The `EnableSubstitutions()` call in `Program.cs` replaces these placeholders with actual Key Vault values at startup.
 
+### Database Server
+
+All databases are hosted on `mssql04.mssql.prositehosting.net` (Fasthosts SQL Server).
+
+| Database | Purpose | Logins |
+|----------|---------|--------|
+| `ThePredictions` | Production | `AntonyWillson` (app), `Refresh` (read for backups/refresh) |
+| `ThePredictionsDev` | Development | `AntonyWillsonDev` (app), `RefreshDev` (read for refresh) |
+| `ThePredictionsBackup` | Daily backup of production | `PredictionBackup` (write) |
+
+All database logins have database owner permissions (Fasthosts only supports owner or no access).
+
+### Publish Profiles
+
+The `PredictionLeague.Web` project has two publish profiles:
+
+| Profile | Environment | Output Folder | Notes |
+|---------|-------------|---------------|-------|
+| `Publish to Production` | `Production` | `bin\Release\net8.0\publish\` | Excludes dev config files |
+| `Publish to Development` | `Development` | `bin\Release\net8.0\publish-dev\` | Excludes prod config files |
+
+Each profile uses `CopyToPublishDirectory="Never"` to exclude the other environment's `appsettings` and secrets files. The `EnvironmentName` property in each `.pubxml` controls the `ASPNETCORE_ENVIRONMENT` value written into the published `web.config`.
+
+### Configuration Files
+
+| File | Used by | Purpose |
+|------|---------|---------|
+| `appsettings.json` | All environments | Shared base config with Key Vault substitution placeholders |
+| `appsettings.Local.json` | Local development | Localhost URLs, dev Key Vault URI |
+| `appsettings.Development.json` | Hosted dev site | Dev site URLs, dev Key Vault URI |
+| `appsettings.Production.json` | Live site | Production URLs, prod Key Vault URI |
+| `appsettings.Production.Secrets.json` | Live site | Azure service principal credentials (not in source control) |
+| `appsettings.Development.Secrets.json` | Hosted dev site | Azure service principal credentials (not in source control) |
+
+The `*.Secrets.json` files contain Azure AD service principal credentials (`TenantId`, `ClientId`, `ClientSecret`) used to authenticate to Key Vault. They are gitignored and must be manually placed on each Fasthosts site.
+
+`launchSettings.json` sets the environment to `Local` for Visual Studio debugging, which loads `appsettings.Local.json` and uses `DefaultAzureCredential` (Visual Studio sign-in) for Key Vault access.
+
+### Azure Key Vault
+
+Both Key Vaults use **RBAC (role-based access control)** for permissions.
+
+Each environment has its own Key Vault and Azure AD App Registration (service principal):
+
+| Environment | Key Vault | App Registration |
+|-------------|-----------|------------------|
+| Production | `the-predictions-prod` | `The Predictions (Prod)` |
+| Development | `the-predictions-dev` | `The Predictions (Dev)` |
+
+Each App Registration has the **Key Vault Secrets User** role on its respective Key Vault.
+
+Secrets are referenced in `appsettings.json` using substitution syntax: `${Secret-Name}`. The `EnableSubstitutions()` call in `Program.cs` replaces these placeholders with actual Key Vault values at startup.
+
 ### Scheduled Jobs (via cron-job.org)
 
 Production only. The development site does not have scheduled jobs.
