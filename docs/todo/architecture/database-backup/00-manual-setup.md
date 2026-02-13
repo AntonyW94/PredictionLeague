@@ -13,7 +13,7 @@ Complete all manual infrastructure setup before the backup workflow can run. Thi
 ## Checklist
 
 - [ ] Create `ThePredictionsBackup` database
-- [ ] Create `BackupWriter` login
+- [ ] Create `PredictionBackup` login
 - [ ] Apply schema to backup database
 - [ ] Add `BACKUP_CONNECTION_STRING` GitHub secret
 
@@ -26,9 +26,9 @@ Complete all manual infrastructure setup before the backup workflow can run. Thi
 
 ---
 
-## Step 2: Create `BackupWriter` Login
+## Step 2: Create `PredictionBackup` Login
 
-1. In Fasthosts, create a new SQL login named `BackupWriter`
+1. In Fasthosts, create a new SQL login named `PredictionBackup`
 2. Grant it the following roles on `ThePredictionsBackup`:
    - `db_datareader` — read data (for constraint checks)
    - `db_datawriter` — write data
@@ -110,12 +110,12 @@ Expected result: **25** tables (22 in `TableCopyOrder` + 3 in `TablesToSkip`).
 1. Go to the GitHub repository: Settings > Secrets and variables > Actions
 2. Click "New repository secret"
 3. Name: `BACKUP_CONNECTION_STRING`
-4. Value: the connection string using the `BackupWriter` login, pointing at `ThePredictionsBackup`
+4. Value: the connection string using the `PredictionBackup` login, pointing at `ThePredictionsBackup`
 
 Example format:
 
 ```
-Server=your-server;Database=ThePredictionsBackup;User Id=BackupWriter;Password=your-password;TrustServerCertificate=True
+Server=your-server;Database=ThePredictionsBackup;User Id=PredictionBackup;Password=your-password;TrustServerCertificate=True
 ```
 
 ---
@@ -132,7 +132,7 @@ Server=your-server;Database=ThePredictionsBackup;User Id=BackupWriter;Password=y
 
 ### Login Issues
 
-**Error: "Login failed for user 'BackupWriter'"**
+**Error: "Login failed for user 'PredictionBackup'"**
 - Check the login was created in Fasthosts and has access to `ThePredictionsBackup`
 - Verify the password in the connection string matches
 
