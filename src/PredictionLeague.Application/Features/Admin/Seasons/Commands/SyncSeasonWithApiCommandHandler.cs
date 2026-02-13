@@ -213,6 +213,87 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
             await _roundRepository.UpdateAsync(round, cancellationToken);
         }
+
+        await RelocateOutlierMatchesAsync(allSeasonRounds, cancellationToken);
+    }
+
+    private async Task RelocateOutlierMatchesAsync(
+        Dictionary<int, Round> allRounds,
+        CancellationToken cancellationToken)
+    {
+        var roundsToSave = new HashSet<int>();
+
+        foreach (var sourceRound in allRounds.Values.ToList())
+        {
+            var matches = sourceRound.Matches.OrderBy(m => m.MatchDateTimeUtc).ToList();
+            if (matches.Count < 3)
+                continue;
+
+            var outliers = FindOutlierMatches(matches);
+
+            foreach (var outlier in outliers)
+            {
+                var targetRound = allRounds.Values
+                    .Where(r => r.Id != sourceRound.Id)
+                    .FirstOrDefault(r => IsMatchInRoundTimespan(outlier.MatchDateTimeUtc, r));
+
+                if (targetRound == null)
+                    continue;
+
+                sourceRound.RemoveMatch(outlier.Id);
+                targetRound.AcceptMatch(outlier);
+
+                roundsToSave.Add(sourceRound.Id);
+                roundsToSave.Add(targetRound.Id);
+            }
+        }
+
+        foreach (var roundId in roundsToSave)
+        {
+            if (!allRounds.TryGetValue(roundId, out var round))
+                continue;
+
+            if (round.Matches.Any())
+            {
+                var earliestMatchDateUtc = round.Matches.Min(m => m.MatchDateTimeUtc);
+                if (earliestMatchDateUtc != round.StartDateUtc)
+                    round.UpdateDetails(round.RoundNumber, earliestMatchDateUtc, earliestMatchDateUtc.AddMinutes(-30), round.Status, round.ApiRoundName);
+            }
+
+            await _roundRepository.UpdateAsync(round, cancellationToken);
+        }
+    }
+
+    private static List<Match> FindOutlierMatches(List<Match> sortedMatches)
+    {
+        if (sortedMatches.Count < 3)
+            return [];
+
+        var largestGap = TimeSpan.Zero;
+        var largestGapIndex = -1;
+
+        for (var i = 1; i < sortedMatches.Count; i++)
+        {
+            var gap = sortedMatches[i].MatchDateTimeUtc - sortedMatches[i - 1].MatchDateTimeUtc;
+            if (gap > largestGap)
+            {
+                largestGap = gap;
+                largestGapIndex = i;
+            }
+        }
+
+        if (largestGap.TotalDays <= 7 || largestGapIndex < 0)
+            return [];
+
+        var earlyGroup = sortedMatches.Take(largestGapIndex).ToList();
+        var lateGroup = sortedMatches.Skip(largestGapIndex).ToList();
+
+        var smallerGroup = earlyGroup.Count <= lateGroup.Count ? earlyGroup : lateGroup;
+
+        if (smallerGroup.Count * 3 >= sortedMatches.Count)
+            return [];
+
+        return smallerGroup;
     }
 
     private static bool IsMatchInRoundTimespan(DateTime apiFixtureDate, Round round)
