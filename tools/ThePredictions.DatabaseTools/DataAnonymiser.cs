@@ -1,4 +1,5 @@
 using System.Dynamic;
+using Bogus;
 
 namespace ThePredictions.DatabaseTools;
 
@@ -6,10 +7,15 @@ public class DataAnonymiser
 {
     public const string PreservedEmail = "antony.willson@hotmail.com";
 
-    private static readonly Random Random = new();
+    private const int Seed = 12345;
 
     public static IEnumerable<dynamic> AnonymiseUsers(IEnumerable<dynamic> users)
     {
+        var faker = new Faker("en_GB")
+        {
+            Random = new Randomizer(Seed)
+        };
+
         var anonymised = new List<dynamic>();
         var counter = 1;
 
@@ -31,12 +37,16 @@ public class DataAnonymiser
                 result[kvp.Key] = kvp.Value;
             }
 
-            result["Email"] = $"user{counter}@testmail.com";
-            result["NormalizedEmail"] = $"USER{counter}@TESTMAIL.COM";
-            result["UserName"] = $"user{counter}@testmail.com";
-            result["NormalizedUserName"] = $"USER{counter}@TESTMAIL.COM";
-            result["FirstName"] = $"TestUser{counter}";
-            result["LastName"] = "Player";
+            var firstName = faker.Name.FirstName();
+            var lastName = faker.Name.LastName();
+            var fakeEmail = $"{firstName.ToLowerInvariant()}.{lastName.ToLowerInvariant()}{counter}@testmail.com";
+
+            result["Email"] = fakeEmail;
+            result["NormalizedEmail"] = fakeEmail.ToUpperInvariant();
+            result["UserName"] = fakeEmail;
+            result["NormalizedUserName"] = fakeEmail.ToUpperInvariant();
+            result["FirstName"] = firstName;
+            result["LastName"] = lastName;
             result["PasswordHash"] = "INVALIDATED";
             result["SecurityStamp"] = Guid.NewGuid().ToString();
             result["PhoneNumber"] = null;
@@ -55,6 +65,11 @@ public class DataAnonymiser
 
     public static IEnumerable<dynamic> AnonymiseLeagues(IEnumerable<dynamic> leagues)
     {
+        var faker = new Faker("en_GB")
+        {
+            Random = new Randomizer(Seed + 1)
+        };
+
         var anonymised = new List<dynamic>();
         var counter = 1;
 
@@ -68,8 +83,12 @@ public class DataAnonymiser
                 result[kvp.Key] = kvp.Value;
             }
 
-            result["Name"] = $"League {counter}";
-            result["EntryCode"] = GenerateRandomEntryCode();
+            var surname = faker.Name.LastName();
+            var price = Convert.ToDecimal(dict["Price"]);
+            var isFree = price == 0m;
+
+            result["Name"] = isFree ? $"{surname}'s Free League" : $"{surname}'s League";
+            result["EntryCode"] = GenerateRandomEntryCode(faker);
 
             anonymised.Add(result);
             counter++;
@@ -79,16 +98,10 @@ public class DataAnonymiser
         return anonymised;
     }
 
-    private static string GenerateRandomEntryCode()
+    private static string GenerateRandomEntryCode(Faker faker)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        var code = new char[6];
 
-        for (var i = 0; i < code.Length; i++)
-        {
-            code[i] = chars[Random.Next(chars.Length)];
-        }
-
-        return new string(code);
+        return new string(Enumerable.Range(0, 6).Select(_ => chars[faker.Random.Number(chars.Length - 1)]).ToArray());
     }
 }
