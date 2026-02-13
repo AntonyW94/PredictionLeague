@@ -92,4 +92,10 @@ public class Match
     {
         MatchDateTimeUtc = newDateUtc;
     }
+
+    public void MoveToRound(int newRoundId)
+    {
+        Guard.Against.NegativeOrZero(newRoundId);
+        RoundId = newRoundId;
+    }
 }

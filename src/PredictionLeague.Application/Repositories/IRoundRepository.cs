@@ -22,12 +22,14 @@ public interface IRoundRepository
     Task<IEnumerable<int>> GetRoundsIdsForMonthAsync(int month, int seasonId, CancellationToken cancellationToken);
     Task<Round?> GetNextRoundForReminderAsync(CancellationToken cancellationToken);
     Task<Dictionary<int, Round>> GetDraftRoundsStartingBeforeAsync(DateTime dateLimitUtc, CancellationToken cancellationToken);
+    Task<Dictionary<int, Round>> GetPublishedRoundsStartingAfterAsync(DateTime dateLimitUtc, CancellationToken cancellationToken);
 
     #endregion
 
     #region Update
 
     Task UpdateAsync(Round round, CancellationToken cancellationToken);
+    Task MoveMatchesToRoundAsync(IEnumerable<int> matchIds, int targetRoundId, CancellationToken cancellationToken);
     Task UpdateMatchScoresAsync(List<Match> matches, CancellationToken cancellationToken);
     Task UpdateRoundResultsAsync(int roundId, CancellationToken cancellationToken);
     Task UpdateLastReminderSentAsync(Round round, CancellationToken cancellationToken);

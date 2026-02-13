@@ -13,12 +13,18 @@ const string corsName = "ThePredictionsCors";
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (builder.Environment.IsEnvironment("Local"))
+{
+    builder.WebHost.UseStaticWebAssets();
+}
+
 var keyVaultUri = builder.Configuration["KeyVaultUri"];
 if (!string.IsNullOrEmpty(keyVaultUri))
 {
-    if (builder.Environment.IsProduction())
+    if (builder.Environment.IsProduction() || builder.Environment.IsDevelopment())
     {
-        builder.Configuration.AddJsonFile("appsettings.Production.Secrets.json", optional: false, reloadOnChange: true);
+        var secretsFile = $"appsettings.{builder.Environment.EnvironmentName}.Secrets.json";
+        builder.Configuration.AddJsonFile(secretsFile, optional: false, reloadOnChange: true);
 
         var tenantId = builder.Configuration["AzureCredentials:TenantId"];
         var clientId = builder.Configuration["AzureCredentials:ClientId"];
@@ -71,7 +77,8 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     KnownNetworks = { new IPNetwork(System.Net.IPAddress.Parse("10.44.44.0"), 24) }
 });
 
-if (app.Environment.IsDevelopment())
+var isLocalDev = app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local");
+if (isLocalDev)
 {
     app.UseWebAssemblyDebugging();
 }

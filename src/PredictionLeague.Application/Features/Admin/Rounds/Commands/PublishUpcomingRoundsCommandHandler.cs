@@ -22,23 +22,42 @@ public class PublishUpcomingRoundsCommandHandler : IRequestHandler<PublishUpcomi
     public async Task Handle(PublishUpcomingRoundsCommand request, CancellationToken cancellationToken)
     {
         var fourWeeksFromNowUtc = _dateTimeProvider.UtcNow.AddDays(28);
-        var roundsToPublish = await _roundRepository.GetDraftRoundsStartingBeforeAsync(fourWeeksFromNowUtc, cancellationToken);
+
+        await PublishDraftRoundsAsync(fourWeeksFromNowUtc, cancellationToken);
+        await UnpublishDistantRoundsAsync(fourWeeksFromNowUtc, cancellationToken);
+    }
+
+    private async Task PublishDraftRoundsAsync(DateTime cutoffUtc, CancellationToken cancellationToken)
+    {
+        var roundsToPublish = await _roundRepository.GetDraftRoundsStartingBeforeAsync(cutoffUtc, cancellationToken);
 
         if (!roundsToPublish.Any())
-        {
-            _logger.LogInformation("No draft rounds found starting before{FourWeeksFromNow} to publish.", fourWeeksFromNowUtc);
             return;
-        }
 
         foreach (var round in roundsToPublish.Values)
         {
             round.UpdateStatus(RoundStatus.Published, _dateTimeProvider);
-
             await _roundRepository.UpdateAsync(round, cancellationToken);
-
-            _logger.LogInformation("Published Round {RoundNumber} (ID: {RoundId})", round.RoundNumber, round.Id);
+            _logger.LogInformation("Published Round (Number: {RoundNumber}, ID: {RoundId})", round.RoundNumber, round.Id);
         }
 
-        _logger.LogInformation("Successfully published {Count} rounds.", roundsToPublish.Count);
+        _logger.LogInformation("Successfully published Rounds (Count: {Count})", roundsToPublish.Count);
+    }
+
+    private async Task UnpublishDistantRoundsAsync(DateTime cutoffUtc, CancellationToken cancellationToken)
+    {
+        var roundsToUnpublish = await _roundRepository.GetPublishedRoundsStartingAfterAsync(cutoffUtc, cancellationToken);
+
+        if (!roundsToUnpublish.Any())
+            return;
+
+        foreach (var round in roundsToUnpublish.Values)
+        {
+            round.UpdateStatus(RoundStatus.Draft);
+            await _roundRepository.UpdateAsync(round, cancellationToken);
+            _logger.LogInformation("Unpublished Round (Number: {RoundNumber}, ID: {RoundId}) — start date moved beyond 28-day window", round.RoundNumber, round.Id);
+        }
+
+        _logger.LogInformation("Successfully unpublished Rounds (Count: {Count})", roundsToUnpublish.Count);
     }
 }

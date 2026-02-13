@@ -14,6 +14,7 @@ public interface ITeamRepository
 
     Task<Team?> GetByIdAsync(int id, CancellationToken cancellationToken);
     Task<Team?> GetByApiIdAsync(int apiId, CancellationToken cancellationToken);
+    Task<Dictionary<int, Team>> GetByApiIdsAsync(IEnumerable<int> apiIds, CancellationToken cancellationToken);
 
     #endregion
 

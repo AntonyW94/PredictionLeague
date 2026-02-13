@@ -90,6 +90,15 @@ public class Round
         _matches.Add(Match.Create(Id, homeTeamId, awayTeamId, matchTimeUtc, externalId));
     }
 
+    public void AcceptMatch(Match match)
+    {
+        var matchExists = _matches.Any(m => m.Id == match.Id);
+        Guard.Against.Expression(m => m, matchExists, "This match already exists in the round.");
+
+        match.MoveToRound(Id);
+        _matches.Add(match);
+    }
+
     public void RemoveMatch(int matchId)
     {
         var matchToRemove = _matches.FirstOrDefault(m => m.Id == matchId);
