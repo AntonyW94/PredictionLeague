@@ -1,16 +1,18 @@
-# GitHub Actions CI/CD Pipeline Plan for PredictionLeague
+# GitHub Actions CI/CD Pipeline Plan for The Predictions
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
 
 ## Overview
 
 Complete CI/CD pipeline using GitHub Actions with four workflows:
 1. **CI** - Build and test on every push/PR
-2. **Deploy** - Manual deployment to production via FTP
-3. **Dev DB Refresh** - Weekly automated database refresh with anonymisation
+2. **Deploy** - Manual deployment to production and development via FTP
+3. **Dev DB Refresh** - Database refresh with anonymisation (already implemented: `refresh-dev-db.yml`)
 4. **E2E Tests** - Playwright end-to-end testing
+
+Additionally, the **Backup Production Database** workflow already exists (`backup-prod-db.yml`).
 
 All workflows run on the **free tier** (2,000 minutes/month for private repos).
 
@@ -33,14 +35,24 @@ All workflows run on the **free tier** (2,000 minutes/month for private repos).
 
 Configure in: **Repository → Settings → Secrets and variables → Actions → New repository secret**
 
-| Secret Name | Description | Example |
+### Already configured
+
+| Secret Name | Description | Used by |
 |-------------|-------------|---------|
-| `FTP_SERVER` | Fasthosts FTP server address | `ftp.fasthosts.co.uk` |
-| `FTP_USERNAME` | Fasthosts FTP username | `your-username` |
-| `FTP_PASSWORD` | Fasthosts FTP password | `your-password` |
-| `PROD_CONNECTION_STRING` | Production SQL Server connection string | `Server=sql.fasthosts.co.uk;Database=PredictionLeague;...` |
-| `DEV_CONNECTION_STRING` | Development SQL Server connection string | `Server=sql.fasthosts.co.uk;Database=PredictionLeague_Dev;...` |
-| `TEST_ACCOUNT_PASSWORD` | Password for test accounts | `TestPassword123!` |
+| `PROD_CONNECTION_STRING` | Production DB (read via `Refresh` login) | Dev refresh, Prod backup |
+| `DEV_CONNECTION_STRING` | Dev DB (write via `RefreshDev` login) | Dev refresh |
+| `BACKUP_CONNECTION_STRING` | Backup DB (write via `PredictionBackup` login) | Prod backup |
+| `TEST_ACCOUNT_PASSWORD` | Password for test accounts created after anonymisation | Dev refresh |
+
+### Still needed (for deploy and E2E workflows)
+
+| Secret Name | Description | Used by |
+|-------------|-------------|---------|
+| `FTP_SERVER` | `ftp.fasthosts.co.uk` | Deploy |
+| `PROD_FTP_USERNAME` | FTP username for production site (`thepredictions.co.uk`) | Deploy |
+| `PROD_FTP_PASSWORD` | FTP password for production site | Deploy |
+| `DEV_FTP_USERNAME` | FTP username for dev site (`dev.thepredictions.co.uk`) | Deploy |
+| `DEV_FTP_PASSWORD` | FTP password for dev site | Deploy |
 
 ---
 
@@ -107,17 +119,26 @@ jobs:
 
 ### 2. Deploy Workflow (`.github/workflows/deploy.yml`)
 
-Manual trigger with confirmation required.
+Manual trigger with environment selection and confirmation required. Supports deploying to both production and development sites.
+
+**Important:** The publish profile exclusions (which prevent production config appearing in dev output and vice versa) are handled by the `.pubxml` files. The deploy workflow must use the correct publish profile for each environment via the `-p:PublishProfile` argument.
 
 ```yaml
 # .github/workflows/deploy.yml
-name: Deploy to Production
+name: Deploy
 
 on:
   workflow_dispatch:
     inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - production
+          - development
       confirm:
-        description: 'Type "deploy" to confirm deployment to production'
+        description: 'Type "deploy" to confirm deployment'
         required: true
         type: string
 
@@ -154,29 +175,43 @@ jobs:
         run: dotnet test PredictionLeague.sln --no-build --configuration Release --verbosity normal
 
       - name: Publish Web application
-        run: dotnet publish src/PredictionLeague.Web/PredictionLeague.Web.csproj --configuration Release --output ./publish --no-build
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            dotnet publish src/PredictionLeague.Web/PredictionLeague.Web.csproj --configuration Release --output ./publish --no-build -p:PublishProfile="Publish to Production"
+          else
+            dotnet publish src/PredictionLeague.Web/PredictionLeague.Web.csproj --configuration Release --output ./publish --no-build -p:PublishProfile="Publish to Development"
+          fi
 
       - name: Deploy to Fasthosts via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
+          username: ${{ github.event.inputs.environment == 'production' && secrets.PROD_FTP_USERNAME || secrets.DEV_FTP_USERNAME }}
+          password: ${{ github.event.inputs.environment == 'production' && secrets.PROD_FTP_PASSWORD || secrets.DEV_FTP_PASSWORD }}
           local-dir: ./publish/
-          server-dir: /httpdocs/
+          server-dir: /htdocs/
           dangerous-clean-slate: false
 
       - name: Deployment complete
         run: |
-          echo "✅ Deployment to production complete!"
-          echo "Site: https://www.thepredictions.co.uk"
+          if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            echo "Deployment to production complete!"
+            echo "Site: https://www.thepredictions.co.uk"
+          else
+            echo "Deployment to development complete!"
+            echo "Site: https://dev.thepredictions.co.uk"
+          fi
 ```
+
+**Note:** The `*.Secrets.json` files are gitignored and not in the repository, so they won't be included in CI/CD deployments. These must be manually placed on each Fasthosts site via FTP.
 
 ---
 
-### 3. Dev Database Refresh Workflow (`.github/workflows/refresh-dev-db.yml`)
+### 3. Dev Database Refresh Workflow (`.github/workflows/refresh-dev-db.yml`) ✅ IMPLEMENTED
 
-Runs weekly on Monday at 6am UTC, or manually triggered.
+Already implemented and working. Manual trigger only (no schedule). See the actual file for the current implementation.
+
+The original plan below included a schedule trigger; the implemented version uses manual trigger only:
 
 ```yaml
 # .github/workflows/refresh-dev-db.yml
@@ -374,12 +409,13 @@ jobs:
 
 ## Workflow Triggers Summary
 
-| Workflow | Automatic Trigger | Manual Trigger | Schedule |
-|----------|-------------------|----------------|----------|
-| **CI** | Push/PR to main | - | - |
-| **Deploy** | - | ✅ (requires "deploy" confirmation) | - |
-| **DB Refresh** | - | ✅ (requires "refresh" confirmation) | Monday 6am UTC |
-| **E2E Tests** | After CI success on main | ✅ | - |
+| Workflow | Automatic Trigger | Manual Trigger | Schedule | Status |
+|----------|-------------------|----------------|----------|--------|
+| **CI** | Push/PR to main | - | - | Not started |
+| **Deploy** | - | ✅ (requires "deploy" confirmation + environment choice) | - | Not started |
+| **DB Refresh** | - | ✅ (requires "refresh" confirmation) | - | ✅ Implemented |
+| **Prod Backup** | - | ✅ | Daily 2am UTC | ✅ Implemented |
+| **E2E Tests** | After CI success on main | ✅ | - | Not started |
 
 ---
 
@@ -390,8 +426,9 @@ jobs:
 | CI | ~10 mins | 5/day × 22 days | ~1,100 mins |
 | Deploy | ~6 mins | 4/month | ~24 mins |
 | DB Refresh | ~5 mins | 4/month | ~20 mins |
+| Prod Backup | ~5 mins | 30/month (daily) | ~150 mins |
 | E2E Tests | ~12 mins | 8/month | ~96 mins |
-| **Total** | | | **~1,240 mins** |
+| **Total** | | | **~1,390 mins** |
 
 **Plenty of headroom within the 2,000 minute free tier.**
 
@@ -408,38 +445,38 @@ jobs:
 
 ### Step 2: Create Workflow Files
 
-Create the `.github/workflows/` directory and add the four workflow files:
+Create the remaining workflow files:
 
 ```
 .github/
 └── workflows/
-    ├── ci.yml
-    ├── deploy.yml
-    ├── refresh-dev-db.yml
-    └── e2e.yml
+    ├── backup-prod-db.yml   ← ✅ Already exists
+    ├── refresh-dev-db.yml   ← ✅ Already exists
+    ├── ci.yml               ← To create
+    ├── deploy.yml           ← To create
+    └── e2e.yml              ← To create
 ```
 
 ### Step 3: Create Required Tools
 
-Ensure these tool projects exist:
-
 ```
 tools/
-├── ThePredictions.DatabaseTools/
+├── ThePredictions.DatabaseTools/    ← ✅ Already exists (refresh + backup)
 │   ├── Program.cs
 │   └── ThePredictions.DatabaseTools.csproj
 │
-└── PredictionLeague.TestDbSeeder/
+└── PredictionLeague.TestDbSeeder/   ← To create (E2E test seeder)
     ├── Program.cs
     └── PredictionLeague.TestDbSeeder.csproj
 ```
 
 ### Step 4: Verify Setup
 
-1. **Test CI**: Push a commit or create a PR - verify build and tests run
-2. **Test Deploy**: Go to Actions → Deploy → Run workflow → Type "deploy"
-3. **Test DB Refresh**: Go to Actions → Refresh Dev Database → Run workflow
-4. **Test E2E**: Go to Actions → E2E Tests → Run workflow
+1. **Test CI**: Push a commit or create a PR — verify build and tests run
+2. **Test Deploy**: Go to Actions → Deploy → Run workflow → Select environment → Type "deploy"
+3. **Test DB Refresh**: ✅ Already verified and working
+4. **Test Prod Backup**: ✅ Already verified and working
+5. **Test E2E**: Go to Actions → E2E Tests → Run workflow
 
 ---
 
@@ -540,7 +577,7 @@ If you had started with the Azure DevOps plan:
 | Branch protection | Require CI to pass before merge | High |
 | Code coverage | Add coverlet and upload reports | Medium |
 | Slack/Teams notifications | Notify on deploy success/failure | Medium |
-| Staging environment | Deploy to staging before prod | Low |
+| Staging environment | Deploy to staging before prod | Low (dev site now exists) |
 | Dependabot | Automated dependency updates | Low |
 
 ---
@@ -556,7 +593,7 @@ If you had started with the Azure DevOps plan:
 
 - Verify FTP credentials in secrets
 - Check Fasthosts FTP is accessible
-- Verify server directory path (`/httpdocs/`)
+- Verify server directory path (`/htdocs/`)
 
 ### E2E tests fail
 
@@ -574,11 +611,12 @@ If you had started with the Azure DevOps plan:
 
 ## Files to Create
 
-| File | Description |
-|------|-------------|
-| `.github/workflows/ci.yml` | CI workflow |
-| `.github/workflows/deploy.yml` | Deployment workflow |
-| `.github/workflows/refresh-dev-db.yml` | Database refresh workflow |
-| `.github/workflows/e2e.yml` | E2E test workflow |
-| `tools/ThePredictions.DatabaseTools/` | Database tools (refresh/backup) |
-| `tools/PredictionLeague.TestDbSeeder/` | E2E test database seeder |
+| File | Description | Status |
+|------|-------------|--------|
+| `.github/workflows/ci.yml` | CI workflow | Not started |
+| `.github/workflows/deploy.yml` | Deployment workflow (prod + dev) | Not started |
+| `.github/workflows/refresh-dev-db.yml` | Database refresh workflow | ✅ Implemented |
+| `.github/workflows/backup-prod-db.yml` | Production backup workflow | ✅ Implemented |
+| `.github/workflows/e2e.yml` | E2E test workflow | Not started |
+| `tools/ThePredictions.DatabaseTools/` | Database tools (refresh/backup) | ✅ Implemented |
+| `tools/PredictionLeague.TestDbSeeder/` | E2E test database seeder | Not started |
