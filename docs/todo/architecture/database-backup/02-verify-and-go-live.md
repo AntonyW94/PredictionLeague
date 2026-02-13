@@ -39,7 +39,7 @@ Production database backed up successfully!
 
 Common issues:
 - **"BACKUP_CONNECTION_STRING environment variable is not set or is empty"** — Check the GitHub secret is configured correctly
-- **"Login failed for user 'BackupWriter'"** — Check the login credentials in the connection string
+- **"Login failed for user 'PredictionBackup'"** — Check the login credentials in the connection string
 - **"Invalid object name '[TableName]'"** — The schema hasn't been applied to the backup database (see [Task 0](./00-manual-setup.md))
 
 ---

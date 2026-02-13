@@ -14,7 +14,7 @@ Create a daily backup of the production database (`ThePredictions`) to a separat
 |-----------|-------|
 | Source Database | `ThePredictions` (read via `Refresh` login) |
 | Backup Database | `ThePredictionsBackup` |
-| Backup DB Login | `BackupWriter` (create in Fasthosts) |
+| Backup DB Login | `PredictionBackup` (create in Fasthosts) |
 | Schedule | Daily at 2am UTC + manual trigger |
 | Anonymisation | None — this is an exact copy |
 | Tool | `tools/ThePredictions.DatabaseTools/` (mode: `ProductionBackup`) |
@@ -23,7 +23,7 @@ Create a daily backup of the production database (`ThePredictions`) to a separat
 ## Acceptance Criteria
 
 - [ ] `ThePredictionsBackup` database exists with matching schema
-- [ ] `BackupWriter` login has write access to backup database
+- [ ] `PredictionBackup` login has write access to backup database
 - [ ] `BACKUP_CONNECTION_STRING` GitHub secret is configured
 - [ ] GitHub Actions workflow runs daily at 2am UTC
 - [ ] Workflow can also be triggered manually via `workflow_dispatch`
@@ -62,7 +62,7 @@ The `TablesToSkip` tables (`AspNetUserTokens`, `RefreshTokens`, `PasswordResetTo
 
 ### Security
 
-This backup contains real personal data. Treat the `BackupWriter` credentials and `BACKUP_CONNECTION_STRING` secret with the same care as production credentials.
+This backup contains real personal data. Treat the `PredictionBackup` credentials and `BACKUP_CONNECTION_STRING` secret with the same care as production credentials.
 
 ## Related
 
