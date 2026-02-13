@@ -344,9 +344,10 @@ public class RoundRepository : IRoundRepository
         if (matchesToUpdate.Any())
         {
             const string updateSql = @"
-                UPDATE 
+                UPDATE
                     [Matches]
                 SET
+                    [RoundId] = @RoundId,
                     [HomeTeamId] = @HomeTeamId,
                     [AwayTeamId] = @AwayTeamId,
                     [MatchDateTimeUtc] = @MatchDateTimeUtc,

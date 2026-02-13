@@ -37,15 +37,29 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
         var seasonYear = season.StartDateUtc.Year;
         var apiRoundNames = (await _footballDataService.GetRoundsForSeasonAsync(season.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
 
-        var rescheduledMatchesToCheck = new List<FootballApi.DTOs.FixtureResponse>();
         var currentSeasonFixtures = (await _footballDataService.GetAllFixturesForSeasonAsync(season.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
+
+        var allSeasonRounds = await _roundRepository.GetAllForSeasonAsync(season.Id, cancellationToken);
+
+        var matchesByExternalId = new Dictionary<int, (Round Round, Match Match)>();
+        foreach (var round in allSeasonRounds.Values)
+        {
+            foreach (var match in round.Matches)
+            {
+                if (match.ExternalId.HasValue)
+                    matchesByExternalId[match.ExternalId.Value] = (round, match);
+            }
+        }
+
+        var rescheduledMatchesToCheck = new List<FootballApi.DTOs.FixtureResponse>();
+        var roundsWithRemovedMatches = new HashSet<int>();
 
         foreach (var apiRoundName in apiRoundNames)
         {
             var hasChanges = false;
             var currentRoundFixtures = currentSeasonFixtures.Where(f => f.League?.RoundName == apiRoundName).ToList();
 
-            var round = await _roundRepository.GetByApiRoundNameAsync(season.Id, apiRoundName, cancellationToken);
+            var round = allSeasonRounds.Values.FirstOrDefault(r => r.ApiRoundName == apiRoundName);
             if (round == null)
             {
                 if (!currentRoundFixtures.Any())
@@ -67,9 +81,8 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
                         apiRoundName
                     );
 
-                    await _roundRepository.CreateAsync(newRound, cancellationToken);
-
-                    round = newRound;
+                    round = await _roundRepository.CreateAsync(newRound, cancellationToken);
+                    allSeasonRounds[round.Id] = round;
                     hasChanges = true;
                 }
                 else
@@ -90,15 +103,29 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
                 if (!IsMatchInRoundTimespan(fixtureDateUtc, round))
                     continue;
 
-                var homeTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Home.Id, cancellationToken);
-                var awayTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Away.Id, cancellationToken);
-
-                if (homeTeam != null && awayTeam != null)
+                if (matchesByExternalId.TryGetValue(rescheduledMatch.Fixture.Id, out var existing) && existing.Round.Id != round.Id)
                 {
-                    if (!round.Matches.Any(m => m.HomeTeamId == homeTeam.Id && m.AwayTeamId == awayTeam.Id))
+                    existing.Round.RemoveMatch(existing.Match.Id);
+                    roundsWithRemovedMatches.Add(existing.Round.Id);
+
+                    existing.Match.UpdateDate(fixtureDateUtc);
+                    round.AcceptMatch(existing.Match);
+
+                    matchesByExternalId[rescheduledMatch.Fixture.Id] = (round, existing.Match);
+                    hasChanges = true;
+                }
+                else if (!matchesByExternalId.ContainsKey(rescheduledMatch.Fixture.Id))
+                {
+                    var homeTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Home.Id, cancellationToken);
+                    var awayTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Away.Id, cancellationToken);
+
+                    if (homeTeam != null && awayTeam != null)
                     {
-                        round.AddMatch(homeTeam.Id, awayTeam.Id, fixtureDateUtc, rescheduledMatch.Fixture.Id);
-                        hasChanges = true;
+                        if (!round.Matches.Any(m => m.HomeTeamId == homeTeam.Id && m.AwayTeamId == awayTeam.Id))
+                        {
+                            round.AddMatch(homeTeam.Id, awayTeam.Id, fixtureDateUtc, rescheduledMatch.Fixture.Id);
+                            hasChanges = true;
+                        }
                     }
                 }
 
@@ -107,7 +134,7 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
             rescheduledMatchesToCheck.RemoveAll(m => matchesPlacedFromList.Contains(m));
 
-            var existingMatches = round.Matches.ToDictionary(m => m.ExternalId ?? 0);
+            var existingMatchesInRound = round.Matches.ToDictionary(m => m.ExternalId ?? 0);
 
             foreach (var fixture in currentRoundFixtures)
             {
@@ -116,12 +143,23 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
                 var fixtureDateUtc = fixture.Fixture.Date.UtcDateTime;
 
-                if (existingMatches.TryGetValue(fixture.Fixture.Id, out var localMatch))
+                if (existingMatchesInRound.TryGetValue(fixture.Fixture.Id, out var localMatch))
                 {
-                    if (localMatch.MatchDateTimeUtc == fixtureDateUtc) 
+                    if (localMatch.MatchDateTimeUtc == fixtureDateUtc)
                         continue;
 
                     localMatch.UpdateDate(fixtureDateUtc);
+                    hasChanges = true;
+                }
+                else if (matchesByExternalId.TryGetValue(fixture.Fixture.Id, out var existingInOtherRound) && existingInOtherRound.Round.Id != round.Id)
+                {
+                    existingInOtherRound.Round.RemoveMatch(existingInOtherRound.Match.Id);
+                    roundsWithRemovedMatches.Add(existingInOtherRound.Round.Id);
+
+                    existingInOtherRound.Match.UpdateDate(fixtureDateUtc);
+                    round.AcceptMatch(existingInOtherRound.Match);
+
+                    matchesByExternalId[fixture.Fixture.Id] = (round, existingInOtherRound.Match);
                     hasChanges = true;
                 }
                 else
@@ -131,7 +169,7 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
                         var homeTeam = await _teamRepository.GetByApiIdAsync(fixture.Teams.Home.Id, cancellationToken);
                         var awayTeam = await _teamRepository.GetByApiIdAsync(fixture.Teams.Away.Id, cancellationToken);
 
-                        if (homeTeam == null || awayTeam == null) 
+                        if (homeTeam == null || awayTeam == null)
                             continue;
 
                         round.AddMatch(homeTeam.Id, awayTeam.Id, fixtureDateUtc, fixture.Fixture.Id);
@@ -155,6 +193,15 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
             }
 
             if (hasChanges)
+            {
+                await _roundRepository.UpdateAsync(round, cancellationToken);
+                roundsWithRemovedMatches.Remove(round.Id);
+            }
+        }
+
+        foreach (var roundId in roundsWithRemovedMatches)
+        {
+            if (allSeasonRounds.TryGetValue(roundId, out var round))
                 await _roundRepository.UpdateAsync(round, cancellationToken);
         }
     }
