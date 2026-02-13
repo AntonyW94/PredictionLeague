@@ -16,9 +16,10 @@ var builder = WebApplication.CreateBuilder(args);
 var keyVaultUri = builder.Configuration["KeyVaultUri"];
 if (!string.IsNullOrEmpty(keyVaultUri))
 {
-    if (builder.Environment.IsProduction())
+    if (builder.Environment.IsProduction() || builder.Environment.IsDevelopment())
     {
-        builder.Configuration.AddJsonFile("appsettings.Production.Secrets.json", optional: false, reloadOnChange: true);
+        var secretsFile = $"appsettings.{builder.Environment.EnvironmentName}.Secrets.json";
+        builder.Configuration.AddJsonFile(secretsFile, optional: false, reloadOnChange: true);
 
         var tenantId = builder.Configuration["AzureCredentials:TenantId"];
         var clientId = builder.Configuration["AzureCredentials:ClientId"];
