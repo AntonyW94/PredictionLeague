@@ -283,6 +283,12 @@ public class RoundRepository : IRoundRepository
         return await QueryAndMapRoundsAsync(sql, cancellationToken, new { DraftStatus = nameof(RoundStatus.Draft), DateLimit = dateLimitUtc });
     }
 
+    public async Task<Dictionary<int, Round>> GetPublishedRoundsStartingAfterAsync(DateTime dateLimitUtc, CancellationToken cancellationToken)
+    {
+        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Status] = @PublishedStatus AND r.[StartDateUtc] > @DateLimit";
+        return await QueryAndMapRoundsAsync(sql, cancellationToken, new { PublishedStatus = nameof(RoundStatus.Published), DateLimit = dateLimitUtc });
+    }
+
     #endregion
 
     #region Update
@@ -361,10 +367,42 @@ public class RoundRepository : IRoundRepository
 
         if (matchIdsToDelete.Any())
         {
-            const string deleteSql = "DELETE FROM [Matches] WHERE [Id] IN @MatchIdsToDelete;";
+            const string deleteSql = @"
+                DELETE FROM [Matches]
+                WHERE
+                    [Id] IN @MatchIdsToDelete
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM [UserPredictions] up
+                        WHERE up.[MatchId] = [Matches].[Id]
+                    );";
+
             var deleteMatchesCommand = new CommandDefinition(deleteSql, new { MatchIdsToDelete = matchIdsToDelete }, cancellationToken: cancellationToken);
             await Connection.ExecuteAsync(deleteMatchesCommand);
         }
+    }
+
+    public async Task MoveMatchesToRoundAsync(IEnumerable<int> matchIds, int targetRoundId, CancellationToken cancellationToken)
+    {
+        var matchIdsList = matchIds.ToList();
+        if (!matchIdsList.Any())
+            return;
+
+        const string sql = @"
+            UPDATE
+                [Matches]
+            SET
+                [RoundId] = @TargetRoundId
+            WHERE
+                [Id] IN @MatchIds;";
+
+        var command = new CommandDefinition(
+            sql,
+            new { TargetRoundId = targetRoundId, MatchIds = matchIdsList },
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(command);
     }
 
     public async Task UpdateLastReminderSentAsync(Round round, CancellationToken cancellationToken)

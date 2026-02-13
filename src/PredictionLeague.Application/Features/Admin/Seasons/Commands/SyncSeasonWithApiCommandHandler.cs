@@ -1,5 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
+using Microsoft.Extensions.Logging;
+using PredictionLeague.Application.Features.Admin.Rounds.Commands;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Domain.Common.Guards;
@@ -13,17 +15,23 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
     private readonly ITeamRepository _teamRepository;
     private readonly IRoundRepository _roundRepository;
     private readonly IFootballDataService _footballDataService;
+    private readonly IMediator _mediator;
+    private readonly ILogger<SyncSeasonWithApiCommandHandler> _logger;
 
     public SyncSeasonWithApiCommandHandler(
         ISeasonRepository seasonRepository,
         ITeamRepository teamRepository,
         IRoundRepository roundRepository,
-        IFootballDataService footballDataService)
+        IFootballDataService footballDataService,
+        IMediator mediator,
+        ILogger<SyncSeasonWithApiCommandHandler> logger)
     {
         _seasonRepository = seasonRepository;
         _teamRepository = teamRepository;
         _roundRepository = roundRepository;
         _footballDataService = footballDataService;
+        _mediator = mediator;
+        _logger = logger;
     }
 
     public async Task Handle(SyncSeasonWithApiCommand request, CancellationToken cancellationToken)
@@ -34,15 +42,16 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
         if (season.ApiLeagueId == null)
             return;
 
+        // Phase 0: Load all data upfront
         var seasonYear = season.StartDateUtc.Year;
         var apiRoundNames = (await _footballDataService.GetRoundsForSeasonAsync(season.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
-
-        var currentSeasonFixtures = (await _footballDataService.GetAllFixturesForSeasonAsync(season.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
-
-        var allSeasonRounds = await _roundRepository.GetAllForSeasonAsync(season.Id, cancellationToken);
-
+        var apiFixtures = (await _footballDataService.GetAllFixturesForSeasonAsync(season.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
+        var allRounds = await _roundRepository.GetAllForSeasonAsync(season.Id, cancellationToken);
+        var allApiTeamIds = apiFixtures.Where(f => f.Teams?.Home != null && f.Teams?.Away != null).SelectMany(f => new[] { f.Teams!.Home.Id, f.Teams!.Away.Id }).Distinct();
+        var teamsByApiId = await _teamRepository.GetByApiIdsAsync(allApiTeamIds, cancellationToken);
         var matchesByExternalId = new Dictionary<int, (Round Round, Match Match)>();
-        foreach (var round in allSeasonRounds.Values)
+    
+        foreach (var round in allRounds.Values)
         {
             foreach (var match in round.Matches)
             {
@@ -51,134 +60,131 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
             }
         }
 
-        var rescheduledMatchesToCheck = new List<FootballApi.DTOs.FixtureResponse>();
-        var roundsWithRemovedMatches = new HashSet<int>();
+        // Phase 1: Filter valid fixtures
+        var validFixtures = new List<ValidFixture>();
+
+        foreach (var fixture in apiFixtures)
+        {
+            if (fixture.Fixture == null || fixture.Teams?.Home == null || fixture.Teams?.Away == null || fixture.League?.RoundName == null)
+                continue;
+
+            if (!teamsByApiId.TryGetValue(fixture.Teams.Home.Id, out var homeTeam) ||
+                !teamsByApiId.TryGetValue(fixture.Teams.Away.Id, out var awayTeam))
+                continue;
+
+            validFixtures.Add(new ValidFixture(
+                fixture.Fixture.Id,
+                fixture.Fixture.Date.UtcDateTime,
+                homeTeam.Id,
+                awayTeam.Id,
+                fixture.League.RoundName));
+        }
+
+        // Phase 2: Calculate round date windows using gap-based boundaries
+        var roundSummaries = new List<RoundFixtureSummary>();
 
         foreach (var apiRoundName in apiRoundNames)
         {
-            var hasChanges = false;
-            var currentRoundFixtures = currentSeasonFixtures.Where(f => f.League?.RoundName == apiRoundName).ToList();
+            if (!TryParseRoundNumber(apiRoundName, out var roundNumber))
+                continue;
 
-            var round = allSeasonRounds.Values.FirstOrDefault(r => r.ApiRoundName == apiRoundName);
+            var fixturesInApiRound = validFixtures
+                .Where(f => f.ApiRoundName == apiRoundName)
+                .OrderBy(f => f.MatchDateTimeUtc)
+                .ToList();
+
+            if (!fixturesInApiRound.Any())
+                continue;
+
+            var medianDateUtc = fixturesInApiRound[fixturesInApiRound.Count / 2].MatchDateTimeUtc;
+            roundSummaries.Add(new RoundFixtureSummary(apiRoundName, roundNumber, medianDateUtc));
+        }
+
+        roundSummaries.Sort((a, b) =>
+        {
+            var cmp = a.MedianDateUtc.CompareTo(b.MedianDateUtc);
+            return cmp != 0 ? cmp : a.RoundNumber.CompareTo(b.RoundNumber);
+        });
+
+        var roundWindows = CalculateRoundWindows(roundSummaries);
+
+        // Phase 3: Allocate each fixture to a round window
+        var fixturesByRound = new Dictionary<string, List<ValidFixture>>();
+        var unplaceableFixtures = new List<ValidFixture>();
+
+        foreach (var fixture in validFixtures)
+        {
+            var targetWindow = roundWindows.FirstOrDefault(w => fixture.MatchDateTimeUtc >= w.WindowStart && fixture.MatchDateTimeUtc < w.WindowEnd);
+            if (targetWindow != null)
+            {
+                if (!fixturesByRound.ContainsKey(targetWindow.ApiRoundName))
+                    fixturesByRound[targetWindow.ApiRoundName] = [];
+
+                fixturesByRound[targetWindow.ApiRoundName].Add(fixture);
+            }
+            else
+            {
+                unplaceableFixtures.Add(fixture);
+            }
+        }
+
+        // Phase 4: Reconcile with existing database rounds
+        var movedMatchesByTargetRound = new Dictionary<int, List<int>>();
+        var allChangedRoundIds = new HashSet<int>();
+
+        foreach (var window in roundWindows)
+        {
+            if (!fixturesByRound.TryGetValue(window.ApiRoundName, out var fixtures) || !fixtures.Any())
+                continue;
+
+            var round = allRounds.Values.FirstOrDefault(r => r.ApiRoundName == window.ApiRoundName);
             if (round == null)
             {
-                if (!currentRoundFixtures.Any())
-                    continue;
+                var earliestMatchDateUtc = fixtures.Min(f => f.MatchDateTimeUtc);
+                var newRound = Round.Create(
+                    season.Id,
+                    window.RoundNumber,
+                    earliestMatchDateUtc,
+                    earliestMatchDateUtc.AddMinutes(-30),
+                    window.ApiRoundName);
 
-                var earliestMatchDate = currentRoundFixtures.Min(f => f.Fixture?.Date);
-                if (earliestMatchDate == null)
-                    continue;
-
-                var deadlineUtc = earliestMatchDate.Value.UtcDateTime.AddMinutes(-30);
-
-                if (int.TryParse(apiRoundName.Split(" - ").LastOrDefault(), out var roundNumber))
-                {
-                    var newRound = Round.Create(
-                        season.Id,
-                        roundNumber,
-                        earliestMatchDate.Value.UtcDateTime,
-                        deadlineUtc,
-                        apiRoundName
-                    );
-
-                    round = await _roundRepository.CreateAsync(newRound, cancellationToken);
-                    allSeasonRounds[round.Id] = round;
-                    hasChanges = true;
-                }
-                else
-                {
-                    continue;
-                }
+                round = await _roundRepository.CreateAsync(newRound, cancellationToken);
+                allRounds[round.Id] = round;
             }
 
-            var matchesPlacedFromList = new List<FootballApi.DTOs.FixtureResponse>();
-
-            foreach (var rescheduledMatch in rescheduledMatchesToCheck)
+            foreach (var fixture in fixtures)
             {
-                if (rescheduledMatch.Fixture == null || rescheduledMatch.Teams?.Home == null || rescheduledMatch.Teams?.Away == null)
-                    continue;
-
-                var fixtureDateUtc = rescheduledMatch.Fixture.Date.UtcDateTime;
-
-                if (!IsMatchInRoundTimespan(fixtureDateUtc, round))
-                    continue;
-
-                if (matchesByExternalId.TryGetValue(rescheduledMatch.Fixture.Id, out var existing) && existing.Round.Id != round.Id)
+                if (matchesByExternalId.TryGetValue(fixture.ExternalId, out var existing))
                 {
-                    existing.Round.RemoveMatch(existing.Match.Id);
-                    roundsWithRemovedMatches.Add(existing.Round.Id);
-
-                    existing.Match.UpdateDate(fixtureDateUtc);
-                    round.AcceptMatch(existing.Match);
-
-                    matchesByExternalId[rescheduledMatch.Fixture.Id] = (round, existing.Match);
-                    hasChanges = true;
-                }
-                else if (!matchesByExternalId.ContainsKey(rescheduledMatch.Fixture.Id))
-                {
-                    var homeTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Home.Id, cancellationToken);
-                    var awayTeam = await _teamRepository.GetByApiIdAsync(rescheduledMatch.Teams.Away.Id, cancellationToken);
-
-                    if (homeTeam != null && awayTeam != null)
+                    if (existing.Round.Id == round.Id)
                     {
-                        if (!round.Matches.Any(m => m.HomeTeamId == homeTeam.Id && m.AwayTeamId == awayTeam.Id))
+                        if (existing.Match.MatchDateTimeUtc != fixture.MatchDateTimeUtc)
                         {
-                            round.AddMatch(homeTeam.Id, awayTeam.Id, fixtureDateUtc, rescheduledMatch.Fixture.Id);
-                            hasChanges = true;
+                            existing.Match.UpdateDate(fixture.MatchDateTimeUtc);
+                            allChangedRoundIds.Add(round.Id);
                         }
-                    }
-                }
-
-                matchesPlacedFromList.Add(rescheduledMatch);
-            }
-
-            rescheduledMatchesToCheck.RemoveAll(m => matchesPlacedFromList.Contains(m));
-
-            var existingMatchesInRound = round.Matches.ToDictionary(m => m.ExternalId ?? 0);
-
-            foreach (var fixture in currentRoundFixtures)
-            {
-                if (fixture.Fixture == null || fixture.Teams?.Home == null || fixture.Teams?.Away == null)
-                    continue;
-
-                var fixtureDateUtc = fixture.Fixture.Date.UtcDateTime;
-
-                if (existingMatchesInRound.TryGetValue(fixture.Fixture.Id, out var localMatch))
-                {
-                    if (localMatch.MatchDateTimeUtc == fixtureDateUtc)
-                        continue;
-
-                    localMatch.UpdateDate(fixtureDateUtc);
-                    hasChanges = true;
-                }
-                else if (matchesByExternalId.TryGetValue(fixture.Fixture.Id, out var existingInOtherRound) && existingInOtherRound.Round.Id != round.Id)
-                {
-                    existingInOtherRound.Round.RemoveMatch(existingInOtherRound.Match.Id);
-                    roundsWithRemovedMatches.Add(existingInOtherRound.Round.Id);
-
-                    existingInOtherRound.Match.UpdateDate(fixtureDateUtc);
-                    round.AcceptMatch(existingInOtherRound.Match);
-
-                    matchesByExternalId[fixture.Fixture.Id] = (round, existingInOtherRound.Match);
-                    hasChanges = true;
-                }
-                else
-                {
-                    if (IsMatchInRoundTimespan(fixtureDateUtc, round))
-                    {
-                        var homeTeam = await _teamRepository.GetByApiIdAsync(fixture.Teams.Home.Id, cancellationToken);
-                        var awayTeam = await _teamRepository.GetByApiIdAsync(fixture.Teams.Away.Id, cancellationToken);
-
-                        if (homeTeam == null || awayTeam == null)
-                            continue;
-
-                        round.AddMatch(homeTeam.Id, awayTeam.Id, fixtureDateUtc, fixture.Fixture.Id);
-                        hasChanges = true;
                     }
                     else
                     {
-                        rescheduledMatchesToCheck.Add(fixture);
+                        existing.Round.RemoveMatch(existing.Match.Id);
+                        allChangedRoundIds.Add(existing.Round.Id);
+
+                        existing.Match.UpdateDate(fixture.MatchDateTimeUtc);
+                        round.AcceptMatch(existing.Match);
+
+                        if (!movedMatchesByTargetRound.ContainsKey(round.Id))
+                            movedMatchesByTargetRound[round.Id] = [];
+
+                        movedMatchesByTargetRound[round.Id].Add(existing.Match.Id);
+                        allChangedRoundIds.Add(round.Id);
+
+                        matchesByExternalId[fixture.ExternalId] = (round, existing.Match);
                     }
+                }
+                else
+                {
+                    round.AddMatch(fixture.HomeTeamId, fixture.AwayTeamId, fixture.MatchDateTimeUtc, fixture.ExternalId);
+                    allChangedRoundIds.Add(round.Id);
                 }
             }
 
@@ -187,123 +193,132 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
                 var earliestMatchDateUtc = round.Matches.Min(m => m.MatchDateTimeUtc);
                 if (earliestMatchDateUtc != round.StartDateUtc)
                 {
-                    round.UpdateDetails(round.RoundNumber, earliestMatchDateUtc, earliestMatchDateUtc.AddMinutes(-30), round.Status, round.ApiRoundName);
-                    hasChanges = true;
+                    round.UpdateDetails(
+                        round.RoundNumber,
+                        earliestMatchDateUtc,
+                        earliestMatchDateUtc.AddMinutes(-30),
+                        round.Status,
+                        round.ApiRoundName);
+                    allChangedRoundIds.Add(round.Id);
+                }
+            }
+        }
+
+        // Phase 5: Delete stale matches
+        var allApiExternalIds = new HashSet<int>(validFixtures.Select(f => f.ExternalId));
+        var staleMatchIds = new List<int>();
+
+        foreach (var round in allRounds.Values)
+        {
+            foreach (var match in round.Matches)
+            {
+                if (match.ExternalId.HasValue && !allApiExternalIds.Contains(match.ExternalId.Value))
+                    staleMatchIds.Add(match.Id);
+            }
+        }
+
+        if (staleMatchIds.Any())
+        {
+            var matchIdsWithPredictions = (await _roundRepository.GetMatchIdsWithPredictionsAsync(staleMatchIds, cancellationToken)).ToHashSet();
+
+            foreach (var round in allRounds.Values)
+            {
+                foreach (var match in round.Matches.ToList())
+                {
+                    if (!match.ExternalId.HasValue || allApiExternalIds.Contains(match.ExternalId.Value))
+                        continue;
+
+                    if (matchIdsWithPredictions.Contains(match.Id))
+                    {
+                        _logger.LogWarning("Stale Match (ID: {MatchId}, ExternalId: {ExternalId}) has user predictions and cannot be deleted from Round (ID: {RoundId})", match.Id, match.ExternalId, round.Id);
+                        continue;
+                    }
+
+                    round.RemoveMatch(match.Id);
+                    allChangedRoundIds.Add(round.Id);
+                }
+            }
+        }
+
+        // Phase 6: Handle unplaceable fixtures
+        foreach (var fixture in unplaceableFixtures)
+        {
+            if (matchesByExternalId.TryGetValue(fixture.ExternalId, out var existing))
+            {
+                if (existing.Match.MatchDateTimeUtc != fixture.MatchDateTimeUtc)
+                {
+                    existing.Match.UpdateDate(fixture.MatchDateTimeUtc);
+                    allChangedRoundIds.Add(existing.Round.Id);
                 }
             }
 
-            if (hasChanges)
-            {
+            _logger.LogError("Match (ExternalId: {ExternalId}) could not be allocated to any round window. Match date (Value: {MatchDateTimeUtc})", fixture.ExternalId, fixture.MatchDateTimeUtc);
+        }
+
+        // Phase 7: Persist all changes
+        // Move matches in the database first so their RoundId is updated before any
+        // round's UpdateAsync runs. This prevents source rounds from deleting moved matches.
+        foreach (var (targetRoundId, matchIds) in movedMatchesByTargetRound)
+        {
+            await _roundRepository.MoveMatchesToRoundAsync(matchIds, targetRoundId, cancellationToken);
+        }
+
+        foreach (var roundId in allChangedRoundIds)
+        {
+            if (allRounds.TryGetValue(roundId, out var round))
                 await _roundRepository.UpdateAsync(round, cancellationToken);
-                roundsWithRemovedMatches.Remove(round.Id);
-            }
         }
 
-        foreach (var roundId in roundsWithRemovedMatches)
-        {
-            if (!allSeasonRounds.TryGetValue(roundId, out var round))
-                continue;
-
-            if (round.Matches.Any())
-            {
-                var earliestMatchDateUtc = round.Matches.Min(m => m.MatchDateTimeUtc);
-                if (earliestMatchDateUtc != round.StartDateUtc)
-                    round.UpdateDetails(round.RoundNumber, earliestMatchDateUtc, earliestMatchDateUtc.AddMinutes(-30), round.Status, round.ApiRoundName);
-            }
-
-            await _roundRepository.UpdateAsync(round, cancellationToken);
-        }
-
-        await RelocateOutlierMatchesAsync(allSeasonRounds, cancellationToken);
+        // Phase 8: Publish/unpublish rounds based on updated start dates
+        await _mediator.Send(new PublishUpcomingRoundsCommand(), cancellationToken);
     }
 
-    private async Task RelocateOutlierMatchesAsync(
-        Dictionary<int, Round> allRounds,
-        CancellationToken cancellationToken)
+    private static List<RoundWindow> CalculateRoundWindows(List<RoundFixtureSummary> sortedSummaries)
     {
-        var roundsToSave = new HashSet<int>();
-
-        foreach (var sourceRound in allRounds.Values.ToList())
-        {
-            var matches = sourceRound.Matches.OrderBy(m => m.MatchDateTimeUtc).ToList();
-            if (matches.Count < 3)
-                continue;
-
-            var outliers = FindOutlierMatches(matches);
-
-            foreach (var outlier in outliers)
-            {
-                var targetRound = allRounds.Values
-                    .Where(r => r.Id != sourceRound.Id)
-                    .FirstOrDefault(r => IsMatchInRoundTimespan(outlier.MatchDateTimeUtc, r));
-
-                if (targetRound == null)
-                    continue;
-
-                sourceRound.RemoveMatch(outlier.Id);
-                targetRound.AcceptMatch(outlier);
-
-                roundsToSave.Add(sourceRound.Id);
-                roundsToSave.Add(targetRound.Id);
-            }
-        }
-
-        foreach (var roundId in roundsToSave)
-        {
-            if (!allRounds.TryGetValue(roundId, out var round))
-                continue;
-
-            if (round.Matches.Any())
-            {
-                var earliestMatchDateUtc = round.Matches.Min(m => m.MatchDateTimeUtc);
-                if (earliestMatchDateUtc != round.StartDateUtc)
-                    round.UpdateDetails(round.RoundNumber, earliestMatchDateUtc, earliestMatchDateUtc.AddMinutes(-30), round.Status, round.ApiRoundName);
-            }
-
-            await _roundRepository.UpdateAsync(round, cancellationToken);
-        }
-    }
-
-    private static List<Match> FindOutlierMatches(List<Match> sortedMatches)
-    {
-        if (sortedMatches.Count < 3)
+        if (sortedSummaries.Count == 0)
             return [];
 
-        var largestGap = TimeSpan.Zero;
-        var largestGapIndex = -1;
-
-        for (var i = 1; i < sortedMatches.Count; i++)
+        if (sortedSummaries.Count == 1)
         {
-            var gap = sortedMatches[i].MatchDateTimeUtc - sortedMatches[i - 1].MatchDateTimeUtc;
-            if (gap > largestGap)
-            {
-                largestGap = gap;
-                largestGapIndex = i;
-            }
+            var only = sortedSummaries[0];
+            return [new RoundWindow(only.ApiRoundName, only.RoundNumber, DateTime.MinValue, DateTime.MaxValue)];
         }
 
-        if (largestGap.TotalDays <= 7 || largestGapIndex < 0)
-            return [];
+        // Calculate boundaries as midpoints between consecutive round medians.
+        // A fixture closer to one round's median than the next will naturally
+        // fall into the nearer round's window.
+        var boundaries = new DateTime[sortedSummaries.Count - 1];
+        for (var i = 0; i < boundaries.Length; i++)
+        {
+            var currentMedian = sortedSummaries[i].MedianDateUtc;
+            var nextMedian = sortedSummaries[i + 1].MedianDateUtc;
+            var midpointTicks = currentMedian.Ticks + (nextMedian.Ticks - currentMedian.Ticks) / 2;
+            boundaries[i] = new DateTime(midpointTicks, DateTimeKind.Utc);
+        }
 
-        var earlyGroup = sortedMatches.Take(largestGapIndex).ToList();
-        var lateGroup = sortedMatches.Skip(largestGapIndex).ToList();
+        // Build windows from boundaries
+        var windows = new List<RoundWindow>(sortedSummaries.Count);
+        for (var i = 0; i < sortedSummaries.Count; i++)
+        {
+            var summary = sortedSummaries[i];
+            var windowStart = i == 0 ? DateTime.MinValue : boundaries[i - 1];
+            var windowEnd = i == sortedSummaries.Count - 1 ? DateTime.MaxValue : boundaries[i];
+            windows.Add(new RoundWindow(summary.ApiRoundName, summary.RoundNumber, windowStart, windowEnd));
+        }
 
-        var smallerGroup = earlyGroup.Count <= lateGroup.Count ? earlyGroup : lateGroup;
-
-        if (smallerGroup.Count * 3 >= sortedMatches.Count)
-            return [];
-
-        return smallerGroup;
+        return windows;
     }
 
-    private static bool IsMatchInRoundTimespan(DateTime apiFixtureDate, Round round)
+    private static bool TryParseRoundNumber(string apiRoundName, out int roundNumber)
     {
-        const DayOfWeek targetStartDay = DayOfWeek.Wednesday;
-
-        var daysToSubtract = ((int)round.StartDateUtc.DayOfWeek - (int)targetStartDay + 7) % 7;
-        var roundStartDate = round.StartDateUtc.AddDays(-daysToSubtract).Date;
-        var roundEndDate = roundStartDate.AddDays(7);
-
-        return apiFixtureDate >= roundStartDate && apiFixtureDate < roundEndDate;
+        roundNumber = 0;
+        var parts = apiRoundName.Split(" - ");
+        return parts.Length > 1 && int.TryParse(parts[^1], out roundNumber);
     }
+
+    private record ValidFixture(int ExternalId, DateTime MatchDateTimeUtc, int HomeTeamId, int AwayTeamId, string ApiRoundName);
+
+    private record RoundFixtureSummary(string ApiRoundName, int RoundNumber, DateTime MedianDateUtc);
+
+    private record RoundWindow(string ApiRoundName, int RoundNumber, DateTime WindowStart, DateTime WindowEnd);
 }

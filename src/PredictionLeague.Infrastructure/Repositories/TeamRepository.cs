@@ -96,6 +96,37 @@ public class TeamRepository : ITeamRepository
         return await Connection.QuerySingleOrDefaultAsync<Team>(command);
     }
 
+    public async Task<Dictionary<int, Team>> GetByApiIdsAsync(IEnumerable<int> apiIds, CancellationToken cancellationToken)
+    {
+        var apiIdsList = apiIds.ToList();
+        if (!apiIdsList.Any())
+            return new Dictionary<int, Team>();
+
+        const string sql = @"
+                SELECT
+                    t.[Id],
+                    t.[Name],
+                    t.[ShortName],
+                    t.[LogoUrl],
+                    t.[Abbreviation],
+                    t.[ApiTeamId]
+                FROM
+                    [Teams] t
+                WHERE
+                    t.[ApiTeamId] IN @ApiIds;";
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { ApiIds = apiIdsList },
+            cancellationToken: cancellationToken
+        );
+
+        var teams = await Connection.QueryAsync<Team>(command);
+        return teams
+            .Where(t => t.ApiTeamId.HasValue)
+            .ToDictionary(t => t.ApiTeamId!.Value);
+    }
+
     #endregion
 
     #region Update
