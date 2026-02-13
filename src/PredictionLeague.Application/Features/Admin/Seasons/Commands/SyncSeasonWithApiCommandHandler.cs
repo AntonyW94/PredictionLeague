@@ -201,8 +201,17 @@ public class SyncSeasonWithApiCommandHandler : IRequestHandler<SyncSeasonWithApi
 
         foreach (var roundId in roundsWithRemovedMatches)
         {
-            if (allSeasonRounds.TryGetValue(roundId, out var round))
-                await _roundRepository.UpdateAsync(round, cancellationToken);
+            if (!allSeasonRounds.TryGetValue(roundId, out var round))
+                continue;
+
+            if (round.Matches.Any())
+            {
+                var earliestMatchDateUtc = round.Matches.Min(m => m.MatchDateTimeUtc);
+                if (earliestMatchDateUtc != round.StartDateUtc)
+                    round.UpdateDetails(round.RoundNumber, earliestMatchDateUtc, earliestMatchDateUtc.AddMinutes(-30), round.Status, round.ApiRoundName);
+            }
+
+            await _roundRepository.UpdateAsync(round, cancellationToken);
         }
     }
 
