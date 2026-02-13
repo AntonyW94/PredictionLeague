@@ -1,7 +1,0 @@
-<Project>
-  <ItemGroup>
-    <Content Remove="appsettings.Production.json" />
-    <Content Remove="appsettings.Production.Secrets.json" />
-    <Content Remove="appsettings.Local.json" />
-  </ItemGroup>
-</Project>
