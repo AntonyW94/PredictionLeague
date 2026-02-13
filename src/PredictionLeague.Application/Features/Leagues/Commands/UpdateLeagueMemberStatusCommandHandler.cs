@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Common.Guards;
 
@@ -10,11 +11,13 @@ public class UpdateLeagueMemberStatusCommandHandler : IRequestHandler<UpdateLeag
 {
     private readonly ILeagueRepository _leagueRepository;
     private readonly ILeagueMemberRepository _leagueMemberRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepository, ILeagueMemberRepository leagueMemberRepository)
+    public UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepository, ILeagueMemberRepository leagueMemberRepository, IDateTimeProvider dateTimeProvider)
     {
         _leagueRepository = leagueRepository;
         _leagueMemberRepository = leagueMemberRepository;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task Handle(UpdateLeagueMemberStatusCommand request, CancellationToken cancellationToken)
@@ -31,7 +34,7 @@ public class UpdateLeagueMemberStatusCommandHandler : IRequestHandler<UpdateLeag
         switch (request.NewStatus)
         {
             case LeagueMemberStatus.Approved:
-                member.Approve();
+                member.Approve(_dateTimeProvider);
                 break;
 
             case LeagueMemberStatus.Rejected:

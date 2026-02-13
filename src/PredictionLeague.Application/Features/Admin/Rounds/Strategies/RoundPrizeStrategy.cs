@@ -2,6 +2,7 @@
 using PredictionLeague.Application.Features.Admin.Rounds.Commands;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Domain.Common.Enumerations;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Admin.Rounds.Strategies;
@@ -11,15 +12,18 @@ public class RoundPrizeStrategy : IPrizeStrategy
     private readonly IWinningsRepository _winningsRepository;
     private readonly IRoundRepository _roundRepository;
     private readonly ILeagueRepository _leagueRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
     public RoundPrizeStrategy(
         IWinningsRepository winningsRepository,
         IRoundRepository roundRepository,
-        ILeagueRepository leagueRepository)
+        ILeagueRepository leagueRepository,
+        IDateTimeProvider dateTimeProvider)
     {
         _winningsRepository = winningsRepository;
         _roundRepository = roundRepository;
         _leagueRepository = leagueRepository;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public PrizeType PrizeType => PrizeType.Round;
@@ -61,7 +65,8 @@ public class RoundPrizeStrategy : IPrizeStrategy
                     roundPrize.Id,
                     prizeAmount,
                     round.RoundNumber,
-                    null
+                    null,
+                    _dateTimeProvider
                 );
                 allNewWinnings.Add(newWinning);
             }

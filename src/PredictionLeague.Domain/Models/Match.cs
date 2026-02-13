@@ -41,6 +41,7 @@ public class Match
     
     public static Match Create(int roundId, int homeTeamId, int awayTeamId, DateTime matchDateTimeUtc, int? externalId)
     {
+        Guard.Against.NegativeOrZero(roundId, parameterName: null, message: "Round ID must be greater than 0");
         Guard.Against.Default(matchDateTimeUtc);
         Guard.Against.Expression(h => h == awayTeamId, homeTeamId, "A team cannot play against itself.");
 

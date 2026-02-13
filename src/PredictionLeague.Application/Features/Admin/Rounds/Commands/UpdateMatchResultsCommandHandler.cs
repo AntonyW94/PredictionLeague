@@ -3,6 +3,7 @@ using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Application.Services.Boosts;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Common.Guards;
 using PredictionLeague.Domain.Models;
@@ -18,6 +19,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
     private readonly IUserPredictionRepository _userPredictionRepository;
     private readonly ILeagueStatsService _statsService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
     public UpdateMatchResultsCommandHandler(
         IMediator mediator,
@@ -26,7 +28,8 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         IRoundRepository roundRepository,
         IUserPredictionRepository userPredictionRepository,
         ILeagueStatsService statsService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IDateTimeProvider dateTimeProvider)
     {
         _mediator = mediator;
         _boostService = boostService;
@@ -35,6 +38,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         _userPredictionRepository = userPredictionRepository;
         _statsService = statsService;
         _currentUserService = currentUserService;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task Handle(UpdateMatchResultsCommand request, CancellationToken cancellationToken)
@@ -71,7 +75,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
         var isRoundStarting = wasRoundPublished && matchesToUpdate.Any(m => m.Status is MatchStatus.InProgress or MatchStatus.Completed);
         if (isRoundStarting)
         {
-            round.UpdateStatus(RoundStatus.InProgress);
+            round.UpdateStatus(RoundStatus.InProgress, _dateTimeProvider);
             await _roundRepository.UpdateAsync(round, cancellationToken);
             await _statsService.TakeRoundStartSnapshotsAsync(round.Id, cancellationToken);
         }
@@ -89,7 +93,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
                 if (match == null)
                     continue;
 
-                prediction.SetOutcome(match.Status, match.ActualHomeTeamScore, match.ActualAwayTeamScore);
+                prediction.SetOutcome(match.Status, match.ActualHomeTeamScore, match.ActualAwayTeamScore, _dateTimeProvider);
             }
         }
         
@@ -106,7 +110,7 @@ public class UpdateMatchResultsCommandHandler : IRequestHandler<UpdateMatchResul
       
         if (round.Matches.All(m => m.Status == MatchStatus.Completed))
         {
-            round.UpdateStatus(RoundStatus.Completed);
+            round.UpdateStatus(RoundStatus.Completed, _dateTimeProvider);
             await _roundRepository.UpdateAsync(round, cancellationToken);
 
             var leagueIds = await _leagueRepository.GetLeagueIdsForSeasonAsync(round.SeasonId, cancellationToken);

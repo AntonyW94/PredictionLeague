@@ -2,6 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -15,12 +16,14 @@ public class AuthenticationTokenService : IAuthenticationTokenService
     private readonly IUserManager _userManager;
     private readonly IConfiguration _configuration;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public AuthenticationTokenService(IUserManager userManager, IConfiguration configuration, IRefreshTokenRepository refreshTokenRepository)
+    public AuthenticationTokenService(IUserManager userManager, IConfiguration configuration, IRefreshTokenRepository refreshTokenRepository, IDateTimeProvider dateTimeProvider)
     {
         _userManager = userManager;
         _configuration = configuration;
         _refreshTokenRepository = refreshTokenRepository;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<(string AccessToken, string RefreshToken, DateTime ExpiresAtUtc)> GenerateTokensAsync(ApplicationUser user, CancellationToken cancellationToken)
@@ -39,7 +42,7 @@ public class AuthenticationTokenService : IAuthenticationTokenService
 
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var expiryMinutes = double.Parse(jwtSettings["ExpiryMinutes"]!);
-        var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
+        var expiresAt = _dateTimeProvider.UtcNow.AddMinutes(expiryMinutes);
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!));
 
@@ -57,8 +60,8 @@ public class AuthenticationTokenService : IAuthenticationTokenService
         {
             UserId = user.Id,
             Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-            Expires = DateTime.UtcNow.AddDays(double.Parse(jwtSettings["RefreshTokenExpiryDays"]!)),
-            Created = DateTime.UtcNow
+            Expires = _dateTimeProvider.UtcNow.AddDays(double.Parse(jwtSettings["RefreshTokenExpiryDays"]!)),
+            Created = _dateTimeProvider.UtcNow
         };
 
         await _refreshTokenRepository.CreateAsync(refreshToken, cancellationToken);

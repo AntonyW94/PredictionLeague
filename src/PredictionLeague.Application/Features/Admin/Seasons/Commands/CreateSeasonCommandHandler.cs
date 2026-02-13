@@ -5,6 +5,7 @@ using PredictionLeague.Application.Features.Admin.Teams.Queries;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Admin.Seasons;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Models;
 
 namespace PredictionLeague.Application.Features.Admin.Seasons.Commands;
@@ -16,19 +17,22 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
     private readonly IFootballDataService _footballDataService;
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
     public CreateSeasonCommandHandler(
         ISeasonRepository seasonRepository,
         ILeagueRepository leagueRepository,
         IFootballDataService footballDataService,
         IMediator mediator,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IDateTimeProvider dateTimeProvider)
     {
         _seasonRepository = seasonRepository;
         _leagueRepository = leagueRepository;
         _footballDataService = footballDataService;
         _mediator = mediator;
         _currentUserService = currentUserService;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<SeasonDto> Handle(CreateSeasonCommand request, CancellationToken cancellationToken)
@@ -109,7 +113,7 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
             request.ApiLeagueId);
     }
 
-    private static League CreatePublicLeagueEntity(CreateSeasonCommand request, Season createdSeason)
+    private League CreatePublicLeagueEntity(CreateSeasonCommand request, Season createdSeason)
     {
         return League.CreateOfficialPublicLeague(
             createdSeason.Id,
@@ -117,7 +121,8 @@ public class CreateSeasonCommandHandler : IRequestHandler<CreateSeasonCommand, S
             0,
             request.CreatorId,
             createdSeason.StartDateUtc.AddDays(-1),
-            createdSeason
+            createdSeason,
+            _dateTimeProvider
         );
     }
 

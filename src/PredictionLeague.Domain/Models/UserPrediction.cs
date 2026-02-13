@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -18,14 +19,14 @@ public class UserPrediction
 
     private UserPrediction() { }
 
-    public static UserPrediction Create(string userId, int matchId, int homeScore, int awayScore)
+    public static UserPrediction Create(string userId, int matchId, int homeScore, int awayScore, IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.NullOrWhiteSpace(userId);
         Guard.Against.NegativeOrZero(matchId);
         Guard.Against.Negative(homeScore);
         Guard.Against.Negative(awayScore);
 
-        var nowUtc = DateTime.UtcNow;
+        var nowUtc = dateTimeProvider.UtcNow;
 
         return new UserPrediction
         {
@@ -38,13 +39,13 @@ public class UserPrediction
             Outcome = PredictionOutcome.Pending
         };
     }
-    
-    public void SetOutcome(MatchStatus status, int? actualHomeScore, int? actualAwayScore)
+
+    public void SetOutcome(MatchStatus status, int? actualHomeScore, int? actualAwayScore, IDateTimeProvider dateTimeProvider)
     {
         if (status == MatchStatus.Scheduled || actualHomeScore == null || actualAwayScore == null)
         {
             Outcome = PredictionOutcome.Pending;
-            UpdatedAtUtc = DateTime.UtcNow;
+            UpdatedAtUtc = dateTimeProvider.UtcNow;
             return;
         }
 
@@ -55,6 +56,6 @@ public class UserPrediction
         else
             Outcome = PredictionOutcome.Incorrect;
 
-        UpdatedAtUtc = DateTime.UtcNow;
+        UpdatedAtUtc = dateTimeProvider.UtcNow;
     }
 }

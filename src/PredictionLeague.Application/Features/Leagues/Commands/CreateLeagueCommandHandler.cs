@@ -2,9 +2,9 @@
 using MediatR;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Contracts.Leagues;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Guards;
 using PredictionLeague.Domain.Models;
-using PredictionLeague.Domain.Services;
 
 namespace PredictionLeague.Application.Features.Leagues.Commands;
 
@@ -12,13 +12,13 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
 {
     private readonly ILeagueRepository _leagueRepository;
     private readonly ISeasonRepository _seasonRepository;
-    private readonly IEntryCodeUniquenessChecker _uniquenessChecker;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IEntryCodeUniquenessChecker uniquenessChecker)
+    public CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IDateTimeProvider dateTimeProvider)
     {
         _leagueRepository = leagueRepository;
         _seasonRepository = seasonRepository;
-        _uniquenessChecker = uniquenessChecker;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task<LeagueDto> Handle(CreateLeagueCommand request, CancellationToken cancellationToken)
@@ -34,11 +34,18 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
              request.PointsForExactScore,
              request.PointsForCorrectResult,
              request.Price,
-             season
+             season,
+             _dateTimeProvider
          );
 
-        await league.GenerateEntryCode(_uniquenessChecker, cancellationToken);
-        
+        string entryCode;
+        do
+        {
+            entryCode = GenerateRandomEntryCode();
+        } while (await _leagueRepository.GetByEntryCodeAsync(entryCode, cancellationToken) != null);
+
+        league.SetEntryCode(entryCode);
+
         var createdLeague = await _leagueRepository.CreateAsync(league, cancellationToken);
 
         return new LeagueDto(
@@ -52,5 +59,12 @@ public class CreateLeagueCommandHandler : IRequestHandler<CreateLeagueCommand, L
             createdLeague.PointsForExactScore,
             createdLeague.PointsForCorrectResult
         );
+    }
+
+    private static string GenerateRandomEntryCode()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, 6).Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }

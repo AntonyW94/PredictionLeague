@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Enumerations;
 
 namespace PredictionLeague.Domain.Models;
@@ -37,7 +38,7 @@ public class LeagueMember
             _roundResults.AddRange(roundResults);
     }
 
-    public static LeagueMember Create(int leagueId, string userId)
+    public static LeagueMember Create(int leagueId, string userId, IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.NegativeOrZero(leagueId);
         Guard.Against.NullOrWhiteSpace(userId);
@@ -48,18 +49,18 @@ public class LeagueMember
             UserId = userId,
             Status = LeagueMemberStatus.Pending,
             IsAlertDismissed = false,
-            JoinedAtUtc = DateTime.UtcNow,
+            JoinedAtUtc = dateTimeProvider.UtcNow,
             ApprovedAtUtc = null
         };
     }
 
-    public void Approve()
+    public void Approve(IDateTimeProvider dateTimeProvider)
     {
         if (Status != LeagueMemberStatus.Pending)
             throw new InvalidOperationException("Only pending members can be approved.");
 
         Status = LeagueMemberStatus.Approved;
-        ApprovedAtUtc = DateTime.UtcNow;
+        ApprovedAtUtc = dateTimeProvider.UtcNow;
     }
 
     public void Reject()

@@ -1,6 +1,7 @@
 ﻿using Ardalis.GuardClauses;
 using MediatR;
 using PredictionLeague.Application.Repositories;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Common.Guards;
 using PredictionLeague.Domain.Models;
 
@@ -10,11 +11,13 @@ public class JoinLeagueCommandHandler : IRequestHandler<JoinLeagueCommand>
 {
     private readonly ILeagueRepository _leagueRepository;
     private readonly IMediator _mediator;
+    private readonly IDateTimeProvider _dateTimeProvider;
 
-    public JoinLeagueCommandHandler(ILeagueRepository leagueRepository, IMediator mediator)
+    public JoinLeagueCommandHandler(ILeagueRepository leagueRepository, IMediator mediator, IDateTimeProvider dateTimeProvider)
     {
         _leagueRepository = leagueRepository;
         _mediator = mediator;
+        _dateTimeProvider = dateTimeProvider;
     }
 
     public async Task Handle(JoinLeagueCommand request, CancellationToken cancellationToken)
@@ -23,7 +26,7 @@ public class JoinLeagueCommandHandler : IRequestHandler<JoinLeagueCommand>
 
         Guard.Against.EntityNotFound(request.LeagueId ?? 0, league, "League");
 
-        league.AddMember(request.JoiningUserId);
+        league.AddMember(request.JoiningUserId, _dateTimeProvider);
 
         await _leagueRepository.UpdateAsync(league, cancellationToken);
         await NotifyAdminAsync(league, request, cancellationToken);

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Contracts.Authentication;
+using PredictionLeague.Domain.Common;
 
 namespace PredictionLeague.Application.Features.Authentication.Commands.ResetPassword;
 
@@ -11,17 +12,20 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
     private readonly IPasswordResetTokenRepository _tokenRepository;
     private readonly IUserManager _userManager;
     private readonly IAuthenticationTokenService _tokenService;
+    private readonly IDateTimeProvider _dateTimeProvider;
     private readonly ILogger<ResetPasswordCommandHandler> _logger;
 
     public ResetPasswordCommandHandler(
         IPasswordResetTokenRepository tokenRepository,
         IUserManager userManager,
         IAuthenticationTokenService tokenService,
+        IDateTimeProvider dateTimeProvider,
         ILogger<ResetPasswordCommandHandler> logger)
     {
         _tokenRepository = tokenRepository;
         _userManager = userManager;
         _tokenService = tokenService;
+        _dateTimeProvider = dateTimeProvider;
         _logger = logger;
     }
 
@@ -39,7 +43,7 @@ public class ResetPasswordCommandHandler : IRequestHandler<ResetPasswordCommand,
             return new FailedResetPasswordResponse("The password reset link is invalid or has expired.");
         }
 
-        if (resetToken.IsExpired)
+        if (resetToken.IsExpired(_dateTimeProvider))
         {
             _logger.LogWarning("Password reset attempted with expired token for User (ID: {UserId})", resetToken.UserId);
             await _tokenRepository.DeleteAsync(request.Token, cancellationToken);

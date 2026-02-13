@@ -6,6 +6,7 @@ using PredictionLeague.Application.Formatters;
 using PredictionLeague.Application.Repositories;
 using PredictionLeague.Application.Services;
 using PredictionLeague.Application.Services.Boosts;
+using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Domain.Services;
 using PredictionLeague.Infrastructure.Data;
@@ -47,7 +48,7 @@ public static class DependencyInjection
             .AddRoleStore<DapperRoleStore>()
             .AddSignInManager<SignInManager<ApplicationUser>>()
             .AddDefaultTokenProviders();
-      
+
         services.ConfigureApplicationCookie(options =>
         {
             options.Events.OnRedirectToLogin = context =>
@@ -56,11 +57,11 @@ public static class DependencyInjection
                     context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 else
                     context.Response.Redirect(context.RedirectUri);
-                
+
                 return Task.CompletedTask;
             };
         });
-        
+
         services.AddScoped<ILeagueRepository, LeagueRepository>();
         services.AddScoped<ILeagueMemberRepository, LeagueMemberRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -71,21 +72,21 @@ public static class DependencyInjection
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
         services.AddScoped<IWinningsRepository, WinningsRepository>();
         services.AddScoped<IBoostReadRepository, BoostReadRepository>();
-        services.AddScoped<IBoostWriteRepository, BoostWriteRepository>(); 
+        services.AddScoped<IBoostWriteRepository, BoostWriteRepository>();
         services.AddScoped<ILeagueStatsRepository, LeagueStatsRepository>();
         services.AddScoped<IPrizeStrategy, RoundPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, MonthlyPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, OverallPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, MostExactScoresPrizeStrategy>();
 
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<PredictionDomainService>();
         services.AddSingleton<IEmailDateFormatter, UkEmailDateFormatter>();
-        
-        services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>(); 
+
+        services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
         services.AddScoped<IEmailService, BrevoEmailService>();
         services.AddScoped<IReminderService, ReminderService>();
         services.AddScoped<IBoostService, BoostService>();
-        services.AddScoped<IEntryCodeUniquenessChecker, EntryCodeUniquenessChecker>();
         services.AddScoped<IUserManager, UserManagerService>();
         services.AddHttpClient<IFootballDataService, FootballDataService>();
         services.AddScoped<ILeagueStatsService, LeagueStatsService>();
