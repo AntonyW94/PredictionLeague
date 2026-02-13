@@ -53,7 +53,7 @@ public class PublishUpcomingRoundsCommandHandler : IRequestHandler<PublishUpcomi
 
         foreach (var round in roundsToUnpublish.Values)
         {
-            round.UpdateStatus(RoundStatus.Draft);
+            round.UpdateStatus(RoundStatus.Draft, _dateTimeProvider);
             await _roundRepository.UpdateAsync(round, cancellationToken);
             _logger.LogInformation("Unpublished Round (Number: {RoundNumber}, ID: {RoundId}) — start date moved beyond 28-day window", round.RoundNumber, round.Id);
         }

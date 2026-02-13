@@ -8,6 +8,7 @@ using PredictionLeague.Application.Services;
 using PredictionLeague.Application.Services.Boosts;
 using PredictionLeague.Domain.Common;
 using PredictionLeague.Domain.Models;
+using PredictionLeague.Domain.Services;
 using PredictionLeague.Infrastructure.Data;
 using PredictionLeague.Infrastructure.Formatters;
 using PredictionLeague.Infrastructure.Identity;
@@ -47,7 +48,7 @@ public static class DependencyInjection
             .AddRoleStore<DapperRoleStore>()
             .AddSignInManager<SignInManager<ApplicationUser>>()
             .AddDefaultTokenProviders();
-      
+
         services.ConfigureApplicationCookie(options =>
         {
             options.Events.OnRedirectToLogin = context =>
@@ -56,11 +57,11 @@ public static class DependencyInjection
                     context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 else
                     context.Response.Redirect(context.RedirectUri);
-                
+
                 return Task.CompletedTask;
             };
         });
-        
+
         services.AddScoped<ILeagueRepository, LeagueRepository>();
         services.AddScoped<ILeagueMemberRepository, LeagueMemberRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -71,7 +72,7 @@ public static class DependencyInjection
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
         services.AddScoped<IWinningsRepository, WinningsRepository>();
         services.AddScoped<IBoostReadRepository, BoostReadRepository>();
-        services.AddScoped<IBoostWriteRepository, BoostWriteRepository>(); 
+        services.AddScoped<IBoostWriteRepository, BoostWriteRepository>();
         services.AddScoped<ILeagueStatsRepository, LeagueStatsRepository>();
         services.AddScoped<IPrizeStrategy, RoundPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, MonthlyPrizeStrategy>();
@@ -81,8 +82,8 @@ public static class DependencyInjection
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<PredictionDomainService>();
         services.AddSingleton<IEmailDateFormatter, UkEmailDateFormatter>();
-        
-        services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>(); 
+
+        services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
         services.AddScoped<IEmailService, BrevoEmailService>();
         services.AddScoped<IReminderService, ReminderService>();
         services.AddScoped<IBoostService, BoostService>();
