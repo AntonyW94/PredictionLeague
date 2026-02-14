@@ -30,23 +30,34 @@ public static class BoostEligibilityEvaluator
 
         if (seasonUses >= totalUsesPerSeason)
             return BoostEligibilityResult.NotAllowed("Season limit reached for this boost in this league.");
-       
+
+        return EvaluateWindowEligibility(totalUsesPerSeason, seasonUses, windowUses, roundNumber, windows);
+    }
+
+    private static BoostEligibilityResult EvaluateWindowEligibility(
+        int totalUsesPerSeason,
+        int seasonUses,
+        int windowUses,
+        int roundNumber,
+        IReadOnlyList<BoostWindowSnapshot>? windows)
+    {
         BoostWindowSnapshot? activeWindow = null;
 
-        if (windows != null && windows.Count > 0)
+        if (windows is { Count: > 0 })
         {
-            activeWindow = windows.FirstOrDefault(w => roundNumber >= w.StartRoundNumber && roundNumber <= w.EndRoundNumber);
-            
+            activeWindow = windows.FirstOrDefault(w =>
+                roundNumber >= w.StartRoundNumber && roundNumber <= w.EndRoundNumber);
+
             if (activeWindow == null)
                 return BoostEligibilityResult.NotAllowed("Boost is not available for this round.");
-            
+
             if (activeWindow.MaxUsesInWindow <= 0)
                 return BoostEligibilityResult.NotAllowed("Boost cannot be used in this window.");
-           
+
             if (windowUses >= activeWindow.MaxUsesInWindow)
                 return BoostEligibilityResult.NotAllowed("Window limit reached for this boost in this league.");
         }
-        
+
         var seasonRemaining = Math.Max(0, totalUsesPerSeason - seasonUses);
         var windowRemaining = activeWindow != null
             ? Math.Max(0, activeWindow.MaxUsesInWindow - windowUses)

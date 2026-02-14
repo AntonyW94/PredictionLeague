@@ -1,14 +1,14 @@
 using FluentAssertions;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
-using ThePredictions.Domain.Tests.Unit.Helpers;
+using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
 public class RoundTests
 {
-    private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+    private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
 
     private static readonly DateTime ValidStartDate = new(2025, 8, 16, 15, 0, 0, DateTimeKind.Utc);
     private static readonly DateTime ValidDeadline = new(2025, 8, 16, 11, 0, 0, DateTimeKind.Utc);

@@ -1,10 +1,10 @@
 using PredictionLeague.Domain.Common;
 
-namespace ThePredictions.Domain.Tests.Unit.Helpers;
+namespace ThePredictions.Tests.Shared.Helpers;
 
-public class FakeDateTimeProvider : IDateTimeProvider
+public class TestDateTimeProvider : IDateTimeProvider
 {
-    public FakeDateTimeProvider(DateTime utcNow)
+    public TestDateTimeProvider(DateTime utcNow)
     {
         UtcNow = utcNow;
     }

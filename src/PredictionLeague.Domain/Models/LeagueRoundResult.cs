@@ -1,4 +1,6 @@
-﻿namespace PredictionLeague.Domain.Models;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace PredictionLeague.Domain.Models;
 
 public class LeagueRoundResult
 {
@@ -11,6 +13,7 @@ public class LeagueRoundResult
     public string? AppliedBoostCode { get; init; }
     public int ExactScoreCount { get; init; }
 
+    [ExcludeFromCodeCoverage]
     public LeagueRoundResult() { }
 
     public LeagueRoundResult(int leagueId, int roundId, string userId, int basePoints, int boostedPoints, bool hasBoost, string? appliedBoostCode, int exactScoreCount)

@@ -2,14 +2,14 @@ using FluentAssertions;
 using PredictionLeague.Domain.Common.Constants;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
-using ThePredictions.Domain.Tests.Unit.Helpers;
+using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
 public class LeagueManagementTests
 {
-    private readonly FakeDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
+    private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2025, 6, 15, 10, 0, 0, DateTimeKind.Utc));
 
     private Season CreateFutureSeason() =>
         new(id: 1, name: "2025/26", startDateUtc: _dateTimeProvider.UtcNow.AddMonths(2),

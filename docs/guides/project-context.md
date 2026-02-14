@@ -39,8 +39,11 @@ src/
 ├── PredictionLeague.Validators       → FluentValidation validators
 ├── PredictionLeague.Web              → Blazor server host
 └── PredictionLeague.Web.Client       → Blazor WebAssembly UI components
-tests/                                → (planned)
+tests/
+├── Shared/                           → Shared test helpers (TestDateTimeProvider, etc.)
+└── Unit/                             → Unit tests (xUnit + FluentAssertions)
 tools/
+├── Test Coverage                     → Coverage scripts and settings
 └── ThePredictions.DatabaseTools      → Database refresh (dev) and backup (prod) tool
 ```
 
@@ -417,7 +420,7 @@ These are intentional trade-offs, not issues to fix:
 1. **Dapper over EF Core** — Chosen for performance and explicit SQL control
 2. **Blazor WASM** — Client-side rendering for responsiveness, tokens in localStorage
 3. **MediatR** — Decouples controllers from business logic
-4. **No unit tests yet** — Planned for future implementation
+4. **Unit tests with 100% coverage** — Domain project fully tested with xUnit, FluentAssertions, and coverlet
 5. **Manual FTP deployment** — Hosting limitation (CI/CD via GitHub Actions planned)
 6. **Separate environments** — Local (localhost), Development (hosted dev site), Production
 
@@ -428,6 +431,7 @@ These are intentional trade-offs, not issues to fix:
 | Coding guides | [`/docs/guides/`](.) |
 | Workflow checklists | [`/docs/guides/checklists/`](checklists/) |
 | Database schema | [`/docs/guides/database-schema.md`](database-schema.md) |
+| Testing & coverage | [`/docs/guides/testing.md`](testing.md) |
 | CSS reference | [`/docs/guides/css-reference.md`](css-reference.md) |
 | Security accepted risks | [`/docs/security/accepted-risks.md`](../security/accepted-risks.md) |
 | Security audit history | [`/docs/security/audit-history.md`](../security/audit-history.md) |
@@ -446,4 +450,7 @@ dotnet run --project src/PredictionLeague.Web
 
 # Build all projects
 dotnet build PredictionLeague.sln
+
+# Run unit tests with coverage report
+tools\Test Coverage\coverage-unit.bat
 ```

@@ -99,6 +99,13 @@ WHERE l.[SeasonId] = @SeasonId
 - [ ] UK English spelling used throughout
 - [ ] DateTime columns have `Utc` suffix
 
+## Testing Checklist
+
+- [ ] Unit tests written for any new domain logic triggered by the query
+- [ ] Test naming follows `MethodName_ShouldX_WhenY()` convention
+- [ ] Coverage report run (`tools\Test Coverage\coverage-unit.bat`) and confirms 100% line and branch coverage
+- [ ] Any untestable code (e.g. ORM constructors) marked with `[ExcludeFromCodeCoverage]`
+
 ## Common Mistakes to Avoid
 
 ```csharp

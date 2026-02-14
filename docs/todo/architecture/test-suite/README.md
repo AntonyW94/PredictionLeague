@@ -2,7 +2,7 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
 
 This document outlines the comprehensive testing strategy for the ThePredictions application, including CI/CD integration with GitHub Actions.
 
@@ -922,18 +922,34 @@ ThePredictions.sln
 │   └── ThePredictions.Web.Client/
 │
 ├── tests/
+│   ├── Shared/                                       ← Solution folder: Tests/Shared
+│   │   └── ThePredictions.Tests.Shared/              ← Shared test helpers (exists)
+│   │       └── Helpers/
+│   │           └── TestDateTimeProvider.cs
+│   │
 │   ├── Unit/                                         ← Solution folder: Tests/Unit
-│   │   ├── ThePredictions.Domain.Tests.Unit/
+│   │   ├── ThePredictions.Domain.Tests.Unit/         ← ✅ Phase 1 complete (462 tests)
 │   │   │   ├── Models/
 │   │   │   │   ├── LeagueManagementTests.cs
 │   │   │   │   ├── LeagueWinnersAndRankingsTests.cs
+│   │   │   │   ├── LeagueRoundResultTests.cs
+│   │   │   │   ├── LeagueMemberTests.cs
+│   │   │   │   ├── MatchTests.cs
+│   │   │   │   ├── PasswordResetTokenTests.cs
+│   │   │   │   ├── RefreshTokenTests.cs
 │   │   │   │   ├── RoundTests.cs
-│   │   │   │   └── UserPredictionTests.cs
-│   │   │   └── Services/
-│   │   │       ├── Boosts/BoostEligibilityEvaluatorTests.cs
-│   │   │       └── PredictionDomainServiceTests.cs
+│   │   │   │   ├── SeasonTests.cs
+│   │   │   │   ├── TeamTests.cs
+│   │   │   │   ├── UserPredictionTests.cs
+│   │   │   │   └── WinningTests.cs
+│   │   │   ├── Services/
+│   │   │   │   ├── Boosts/BoostEligibilityEvaluatorTests.cs
+│   │   │   │   └── PredictionDomainServiceTests.cs
+│   │   │   └── Common/
+│   │   │       ├── EntityNotFoundExceptionTests.cs
+│   │   │       └── GuardClauseExtensionsTests.cs
 │   │   │
-│   │   ├── ThePredictions.Application.Tests.Unit/
+│   │   ├── ThePredictions.Application.Tests.Unit/    ← Planned (Phase 5)
 │   │   │   └── Features/
 │   │   │       ├── Leagues/Commands/
 │   │   │       │   ├── CreateLeagueCommandHandlerTests.cs
@@ -941,13 +957,13 @@ ThePredictions.sln
 │   │   │       └── Predictions/Commands/
 │   │   │           └── SubmitPredictionsCommandHandlerTests.cs
 │   │   │
-│   │   └── ThePredictions.Validators.Tests.Unit/
+│   │   └── ThePredictions.Validators.Tests.Unit/     ← Planned (Phase 2)
 │   │       ├── CreateLeagueRequestValidatorTests.cs
 │   │       ├── SubmitPredictionsRequestValidatorTests.cs
 │   │       └── ...
 │   │
 │   ├── Integration/                                  ← Solution folder: Tests/Integration
-│   │   ├── ThePredictions.Infrastructure.Tests.Integration/
+│   │   ├── ThePredictions.Infrastructure.Tests.Integration/  ← Planned (Phases 3-4)
 │   │   │   ├── Repositories/
 │   │   │   │   ├── LeagueRepositoryTests.cs
 │   │   │   │   └── UserPredictionRepositoryTests.cs
@@ -957,25 +973,15 @@ ThePredictions.sln
 │   │   │   └── Services/
 │   │   │       └── BoostServiceTests.cs
 │   │   │
-│   │   ├── ThePredictions.API.Tests.Integration/
-│   │   │   ├── Controllers/
-│   │   │   │   ├── LeaguesControllerTests.cs
-│   │   │   │   ├── PredictionsControllerTests.cs
-│   │   │   │   └── AuthControllerTests.cs
-│   │   │   └── ThePredictionsApiFactory.cs
-│   │   │
-│   │   └── ThePredictions.Tests.Shared/
-│   │       ├── Fixtures/
-│   │       │   ├── SqliteTestFixture.cs
-│   │       │   └── SqliteConnectionFactory.cs
-│   │       ├── Builders/
-│   │       │   ├── LeagueBuilder.cs
-│   │       │   └── RoundBuilder.cs
-│   │       └── Extensions/
-│   │           └── TestDataExtensions.cs
+│   │   └── ThePredictions.API.Tests.Integration/     ← Planned (Phase 6)
+│   │       ├── Controllers/
+│   │       │   ├── LeaguesControllerTests.cs
+│   │       │   ├── PredictionsControllerTests.cs
+│   │       │   └── AuthControllerTests.cs
+│   │       └── ThePredictionsApiFactory.cs
 │   │
 │   └── E2E/                                          ← Solution folder: Tests/E2E
-│       └── ThePredictions.Web.E2E.Tests/
+│       └── ThePredictions.Web.E2E.Tests/             ← Planned (Phase 7)
 │           ├── LoginTests.cs
 │           ├── PredictionFlowTests.cs
 │           ├── LeaderboardTests.cs
@@ -995,17 +1001,28 @@ ThePredictions.sln
 
 ## 13. Implementation Priority
 
-### Phase 1: Domain Unit Tests (Start Here)
+### Phase 1: Domain Unit Tests ✅ Complete
 **Effort: Low | Value: High | Catches SQL bugs: No**
 
-**[Detailed task breakdown →](./phase-1-domain-unit-tests/README.md)** (11 tasks)
+Completed with **462 tests** across 15 test files achieving **100% line and 100% branch coverage** on the Domain project.
 
-1. `BoostEligibilityEvaluator` - Most complex logic
-2. `UserPrediction.SetOutcome()` - Core scoring algorithm
-3. `League.GetRoundWinners()` - Winner calculation
-4. `League.GetOverallRankings()` - Ranking with ties
-5. `Round` state transitions
-6. Entity factory methods
+| Area | Tests | File(s) |
+|------|-------|---------|
+| League Management | 74 | `LeagueManagementTests.cs` |
+| League Winners & Rankings | 35 | `LeagueWinnersAndRankingsTests.cs` |
+| Round | 48 | `RoundTests.cs` |
+| Match & Team | 55 | `MatchTests.cs`, `TeamTests.cs` |
+| Season | 35 | `SeasonTests.cs` |
+| UserPrediction | 31 | `UserPredictionTests.cs` |
+| BoostEligibilityEvaluator | 31 | `BoostEligibilityEvaluatorTests.cs` |
+| LeagueMember | 22 | `LeagueMemberTests.cs` |
+| Supporting Entities | 77 | `PasswordResetTokenTests.cs`, `RefreshTokenTests.cs`, `WinningTests.cs`, `EntityNotFoundExceptionTests.cs`, `GuardClauseExtensionsTests.cs`, `LeagueRoundResultTests.cs` |
+| Domain Services & Utilities | 28 | `PredictionDomainServiceTests.cs`, `BoostEligibilityEvaluatorTests.cs` |
+
+**Infrastructure created:**
+- `ThePredictions.Tests.Shared` project with `TestDateTimeProvider` helper
+- Coverage tooling: `tools\Test Coverage\coverage-unit.bat` (coverlet + ReportGenerator)
+- Documentation: `docs/guides/testing.md`
 
 ### Phase 2: Validator Tests (Quick Wins)
 **Effort: Low | Value: Medium | Catches SQL bugs: No**

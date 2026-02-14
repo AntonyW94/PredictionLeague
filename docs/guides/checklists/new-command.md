@@ -87,3 +87,10 @@ public class {CommandName}CommandValidator : AbstractValidator<{CommandName}Comm
 - [ ] One public type per file
 - [ ] All async methods end with `Async`
 - [ ] UK English spelling used throughout
+
+## Testing Checklist
+
+- [ ] Unit tests written for any new domain logic triggered by the command
+- [ ] Test naming follows `MethodName_ShouldX_WhenY()` convention
+- [ ] Coverage report run (`tools\Test Coverage\coverage-unit.bat`) and confirms 100% line and branch coverage
+- [ ] Any untestable code (e.g. ORM constructors) marked with `[ExcludeFromCodeCoverage]`

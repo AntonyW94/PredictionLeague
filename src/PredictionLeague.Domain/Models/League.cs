@@ -296,15 +296,7 @@ public partial class League
         if (!_members.Any())
             return new List<LeagueMember>();
 
-        var exactScoreCounts = _members
-            .Select(member => new
-            {
-                Member = member,
-                ExactCount = member.RoundResults.Sum(r => r.ExactScoreCount)
-            }).ToList();
-
-        if (!exactScoreCounts.Any())
-            return new List<LeagueMember>();
+        var exactScoreCounts = _members.Select(member => new { Member = member, ExactCount = member.RoundResults.Sum(r => r.ExactScoreCount) }).ToList();
 
         var maxCount = exactScoreCounts.Max(s => s.ExactCount);
         if (maxCount == 0)

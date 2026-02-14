@@ -240,3 +240,16 @@ CREATE TABLE [Matches] (
 - [ ] All DateTime values use `DateTime.UtcNow`
 - [ ] UK English spelling throughout
 - [ ] One public type per file
+
+## Testing Checklist
+
+- [ ] Test file created at `tests/Unit/ThePredictions.Domain.Tests.Unit/Models/{EntityName}Tests.cs`
+- [ ] Factory method tests: all guard clause validations throw on invalid input
+- [ ] Factory method tests: all properties set correctly on valid input (happy path)
+- [ ] Constructor tests: properties mapped correctly when loading from database
+- [ ] Domain method tests: all public methods tested with happy path and edge cases
+- [ ] Test naming follows `MethodName_ShouldX_WhenY()` convention
+- [ ] Tests use public constructor (with explicit ID) when testing methods that require a valid ID
+- [ ] Coverage report run (`tools\Test Coverage\coverage-unit.bat`) and confirms 100% line and branch coverage
+- [ ] ORM-only parameterless constructor marked with `[ExcludeFromCodeCoverage]` if present
+- [ ] Data-only classes (no logic) marked with `[ExcludeFromCodeCoverage]`

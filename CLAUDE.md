@@ -86,6 +86,24 @@ WHERE
 SELECT Id, name FROM Leagues WHERE season_id = @seasonId
 ```
 
+### Testing & Code Coverage
+
+The Domain project **must maintain 100% line and branch coverage**. After writing or modifying code:
+
+1. Write unit tests for all new/changed logic
+2. Run the coverage script: `tools\Test Coverage\coverage-unit.bat`
+3. Verify the report shows 100% line and 100% branch coverage
+4. If code genuinely cannot be tested (e.g. parameterless constructors for ORM hydration), add `[ExcludeFromCodeCoverage]` to keep 100%
+
+| Rule | Detail |
+|------|--------|
+| **Test naming** | `MethodName_ShouldX_WhenY()` |
+| **New entities in tests** | Use public constructor with explicit ID (not `Create()` factory which leaves ID as 0) |
+| **Factory methods in tests** | Use `Entity.Create(...)` only when testing the factory itself |
+| **ORM-only constructors** | Mark with `[ExcludeFromCodeCoverage]` — they have no logic to test |
+| **Data-only classes** | Mark with `[ExcludeFromCodeCoverage]` if class has no logic (only properties) |
+| **Unreachable code** | Remove it rather than excluding it |
+
 ### Logging Format
 
 ```csharp
@@ -107,6 +125,7 @@ For comprehensive rules with examples, consult these files:
 | Entity construction, repositories, immutability | [`docs/guides/domain-models.md`](docs/guides/domain-models.md) |
 | SQL conventions, Dapper patterns | [`docs/guides/database.md`](docs/guides/database.md) |
 | Log message formatting | [`docs/guides/logging.md`](docs/guides/logging.md) |
+| Testing, coverage tools, report interpretation | [`docs/guides/testing.md`](docs/guides/testing.md) |
 | Domain concepts, tech stack, infrastructure | [`docs/guides/project-context.md`](docs/guides/project-context.md) |
 
 ## Project-Specific Guidelines
@@ -140,6 +159,7 @@ Use these when creating new features:
 6. **NEVER put multiple public types in one file**
 7. **NEVER use US English spelling** - Use UK English
 8. **NEVER make database changes without updating `docs/guides/database-schema.md`** and the refresh tool in `tools/ThePredictions.DatabaseTools/`
+9. **NEVER leave code coverage below 100%** - Write tests or add `[ExcludeFromCodeCoverage]` for untestable code
 
 ## Quick Reference
 
@@ -167,8 +187,11 @@ src/
 ├── PredictionLeague.Contracts        → DTOs
 └── PredictionLeague.Validators       → FluentValidation validators
 tools/
+├── Test Coverage                     → Coverage scripts and settings
 └── ThePredictions.DatabaseTools      → Dev database refresh & prod backup tool
-tests/                                → (planned)
+tests/
+├── Shared/                           → Shared test helpers (TestDateTimeProvider, etc.)
+└── Unit/                             → Unit tests (xUnit + FluentAssertions)
 ```
 
 ### Useful Commands
@@ -177,4 +200,5 @@ tests/                                → (planned)
 dotnet run --project src/PredictionLeague.API      # Run API
 dotnet run --project src/PredictionLeague.Web      # Run Blazor client
 dotnet build PredictionLeague.sln                  # Build all
+tools\Test Coverage\coverage-unit.bat              # Run unit tests + coverage report
 ```

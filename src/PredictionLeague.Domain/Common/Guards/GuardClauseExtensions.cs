@@ -9,6 +9,6 @@ public static class GuardClauseExtensions
     public static void EntityNotFound<T>(this IGuardClause _, object key, [NotNull] T? input, string name = "Entity")
     {
         if (input is null)
-            throw new EntityNotFoundException(name, key.ToString() ?? string.Empty);
+            throw new EntityNotFoundException(name, key.ToString()!);
     }
 }
