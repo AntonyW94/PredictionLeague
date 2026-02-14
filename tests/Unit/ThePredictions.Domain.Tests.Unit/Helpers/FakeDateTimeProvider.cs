@@ -10,4 +10,9 @@ public class FakeDateTimeProvider : IDateTimeProvider
     }
 
     public DateTime UtcNow { get; set; }
+
+    public void AdvanceBy(TimeSpan duration)
+    {
+        UtcNow = UtcNow.Add(duration);
+    }
 }
