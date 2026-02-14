@@ -2,6 +2,7 @@ using FluentAssertions;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 using ThePredictions.Domain.Tests.Unit.Helpers;
+using Xunit;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
@@ -26,6 +27,19 @@ public class RoundTests
             startDateUtc ?? ValidStartDate,
             deadlineUtc ?? ValidDeadline,
             apiRoundName);
+    }
+
+    /// <summary>
+    /// Creates a round with an explicit ID set (via the public/database constructor)
+    /// for tests that call methods requiring a valid ID (e.g. AddMatch).
+    /// </summary>
+    private static Round CreateRoundWithId(int id = 1)
+    {
+        return new Round(
+            id: id, seasonId: 1, roundNumber: 1,
+            startDateUtc: ValidStartDate, deadlineUtc: ValidDeadline,
+            status: RoundStatus.Draft, apiRoundName: null,
+            lastReminderSentUtc: null, matches: null);
     }
 
     #region Create — Happy Path
@@ -152,7 +166,7 @@ public class RoundTests
     public void Create_ShouldThrowException_WhenStartDateIsDefault()
     {
         // Act
-        var act = () => CreateRoundViaFactory(startDateUtc: default);
+        var act = () => CreateRoundViaFactory(startDateUtc: DateTime.MinValue);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -162,7 +176,7 @@ public class RoundTests
     public void Create_ShouldThrowException_WhenDeadlineIsDefault()
     {
         // Act
-        var act = () => CreateRoundViaFactory(deadlineUtc: default);
+        var act = () => CreateRoundViaFactory(deadlineUtc: DateTime.MinValue);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -331,7 +345,7 @@ public class RoundTests
     public void AddMatch_ShouldAddMatch_WhenValidTeamsProvided()
     {
         // Arrange
-        var round = CreateRoundViaFactory();
+        var round = CreateRoundWithId();
 
         // Act
         round.AddMatch(1, 2, ValidMatchTime, null);
@@ -344,7 +358,7 @@ public class RoundTests
     public void AddMatch_ShouldCreateMatchWithScheduledStatus_WhenAdded()
     {
         // Arrange
-        var round = CreateRoundViaFactory();
+        var round = CreateRoundWithId();
 
         // Act
         round.AddMatch(1, 2, ValidMatchTime, null);
@@ -357,7 +371,7 @@ public class RoundTests
     public void AddMatch_ShouldSetCorrectTeamIds_WhenAdded()
     {
         // Arrange
-        var round = CreateRoundViaFactory();
+        var round = CreateRoundWithId();
 
         // Act
         round.AddMatch(1, 2, ValidMatchTime, null);
@@ -372,7 +386,7 @@ public class RoundTests
     public void AddMatch_ShouldThrowException_WhenTeamPlaysItself()
     {
         // Arrange
-        var round = CreateRoundViaFactory();
+        var round = CreateRoundWithId();
 
         // Act
         var act = () => round.AddMatch(1, 1, ValidMatchTime, null);
@@ -385,7 +399,7 @@ public class RoundTests
     public void AddMatch_ShouldThrowException_WhenDuplicateMatchExists()
     {
         // Arrange
-        var round = CreateRoundViaFactory();
+        var round = CreateRoundWithId();
         round.AddMatch(1, 2, ValidMatchTime, null);
 
         // Act
@@ -399,7 +413,7 @@ public class RoundTests
     public void AddMatch_ShouldAllowReverseFixture()
     {
         // Arrange
-        var round = CreateRoundViaFactory();
+        var round = CreateRoundWithId();
         round.AddMatch(1, 2, ValidMatchTime, null);
 
         // Act — B vs A is a different fixture
@@ -414,7 +428,7 @@ public class RoundTests
     public void AddMatch_ShouldAddMultipleMatches_WhenDifferentTeamPairs()
     {
         // Arrange
-        var round = CreateRoundViaFactory();
+        var round = CreateRoundWithId();
 
         // Act
         round.AddMatch(1, 2, ValidMatchTime, null);

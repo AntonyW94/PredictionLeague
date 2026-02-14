@@ -3,6 +3,7 @@ using PredictionLeague.Domain.Common.Constants;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 using ThePredictions.Domain.Tests.Unit.Helpers;
+using Xunit;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
@@ -36,6 +37,23 @@ public class LeagueManagementTests
             price,
             season ?? CreateFutureSeason(),
             _dateTimeProvider);
+    }
+
+    /// <summary>
+    /// Creates a league with an explicit ID set (via the public/database constructor)
+    /// for tests that call methods requiring a valid ID (e.g. AddMember, RemoveMember).
+    /// </summary>
+    private League CreateLeagueWithId(int id = 1)
+    {
+        return new League(
+            id: id, name: "Test League", seasonId: 1,
+            administratorUserId: "admin-user", entryCode: "ABC123",
+            createdAtUtc: _dateTimeProvider.UtcNow,
+            entryDeadlineUtc: FutureDeadline,
+            pointsForExactScore: 3, pointsForCorrectResult: 1,
+            price: 0, isFree: true, hasPrizes: false,
+            prizeFundOverride: null,
+            members: null, prizeSettings: null);
     }
 
     #region Create — Happy Path
@@ -472,7 +490,7 @@ public class LeagueManagementTests
     public void AddMember_ShouldAddMember_WhenUserIdIsValid()
     {
         // Arrange
-        var league = CreateLeagueViaFactory();
+        var league = CreateLeagueWithId();
 
         // Act
         league.AddMember("user-1", _dateTimeProvider);
@@ -485,7 +503,7 @@ public class LeagueManagementTests
     public void AddMember_ShouldCreateMemberWithPendingStatus()
     {
         // Arrange
-        var league = CreateLeagueViaFactory();
+        var league = CreateLeagueWithId();
 
         // Act
         league.AddMember("user-1", _dateTimeProvider);
@@ -498,7 +516,7 @@ public class LeagueManagementTests
     public void AddMember_ShouldAddMultipleMembers_WhenDifferentUserIds()
     {
         // Arrange
-        var league = CreateLeagueViaFactory();
+        var league = CreateLeagueWithId();
 
         // Act
         league.AddMember("user-1", _dateTimeProvider);
@@ -512,7 +530,7 @@ public class LeagueManagementTests
     public void AddMember_ShouldThrowException_WhenUserIdIsNull()
     {
         // Arrange
-        var league = CreateLeagueViaFactory();
+        var league = CreateLeagueWithId();
 
         // Act
         var act = () => league.AddMember(null!, _dateTimeProvider);
@@ -525,7 +543,7 @@ public class LeagueManagementTests
     public void AddMember_ShouldThrowException_WhenUserIdIsEmpty()
     {
         // Arrange
-        var league = CreateLeagueViaFactory();
+        var league = CreateLeagueWithId();
 
         // Act
         var act = () => league.AddMember("", _dateTimeProvider);
@@ -538,7 +556,7 @@ public class LeagueManagementTests
     public void AddMember_ShouldThrowException_WhenUserIdIsWhitespace()
     {
         // Arrange
-        var league = CreateLeagueViaFactory();
+        var league = CreateLeagueWithId();
 
         // Act
         var act = () => league.AddMember(" ", _dateTimeProvider);
@@ -551,7 +569,7 @@ public class LeagueManagementTests
     public void AddMember_ShouldThrowException_WhenUserIsAlreadyMember()
     {
         // Arrange
-        var league = CreateLeagueViaFactory();
+        var league = CreateLeagueWithId();
         league.AddMember("user-1", _dateTimeProvider);
 
         // Act
@@ -590,7 +608,7 @@ public class LeagueManagementTests
     public void RemoveMember_ShouldRemoveMember_WhenMemberExists()
     {
         // Arrange
-        var league = CreateLeagueViaFactory();
+        var league = CreateLeagueWithId();
         league.AddMember("user-1", _dateTimeProvider);
 
         // Act
@@ -604,7 +622,7 @@ public class LeagueManagementTests
     public void RemoveMember_ShouldDoNothing_WhenMemberDoesNotExist()
     {
         // Arrange
-        var league = CreateLeagueViaFactory();
+        var league = CreateLeagueWithId();
         league.AddMember("user-1", _dateTimeProvider);
 
         // Act
@@ -618,7 +636,7 @@ public class LeagueManagementTests
     public void RemoveMember_ShouldLeaveOtherMembers_WhenRemovingOne()
     {
         // Arrange
-        var league = CreateLeagueViaFactory();
+        var league = CreateLeagueWithId();
         league.AddMember("user-1", _dateTimeProvider);
         league.AddMember("user-2", _dateTimeProvider);
 

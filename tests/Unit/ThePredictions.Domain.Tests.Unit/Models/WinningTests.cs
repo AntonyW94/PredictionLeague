@@ -1,6 +1,7 @@
 using FluentAssertions;
 using PredictionLeague.Domain.Models;
 using ThePredictions.Domain.Tests.Unit.Helpers;
+using Xunit;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 

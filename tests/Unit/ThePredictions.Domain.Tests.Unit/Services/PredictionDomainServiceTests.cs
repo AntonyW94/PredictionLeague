@@ -3,6 +3,7 @@ using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 using PredictionLeague.Domain.Services;
 using ThePredictions.Domain.Tests.Unit.Helpers;
+using Xunit;
 
 namespace ThePredictions.Domain.Tests.Unit.Services;
 

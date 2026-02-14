@@ -2,6 +2,7 @@ using FluentAssertions;
 using PredictionLeague.Domain.Common.Enumerations;
 using PredictionLeague.Domain.Models;
 using ThePredictions.Domain.Tests.Unit.Helpers;
+using Xunit;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 

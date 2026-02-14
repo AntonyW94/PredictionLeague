@@ -1,5 +1,6 @@
 using FluentAssertions;
 using PredictionLeague.Domain.Models;
+using Xunit;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
@@ -138,7 +139,7 @@ public class SeasonTests
     public void Create_ShouldThrowException_WhenStartDateIsDefault()
     {
         // Act
-        var act = () => CreateSeasonViaFactory(startDateUtc: default);
+        var act = () => CreateSeasonViaFactory(startDateUtc: DateTime.MinValue);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -148,7 +149,7 @@ public class SeasonTests
     public void Create_ShouldThrowException_WhenEndDateIsDefault()
     {
         // Act
-        var act = () => CreateSeasonViaFactory(endDateUtc: default);
+        var act = () => CreateSeasonViaFactory(endDateUtc: DateTime.MinValue);
 
         // Assert
         act.Should().Throw<ArgumentException>();
