@@ -20,6 +20,52 @@ public class RefreshTokenTests
         };
     }
 
+    #region Constructor
+
+    [Fact]
+    public void Constructor_ShouldSetAllProperties_WhenCalledWithParameters()
+    {
+        // Arrange
+        var created = _dateTimeProvider.UtcNow;
+        var expires = created.AddDays(7);
+        var revoked = created.AddDays(1);
+
+        // Act
+        var token = new RefreshToken(
+            id: 5,
+            userId: "user-1",
+            token: "abc-token",
+            expires: expires,
+            created: created,
+            revoked: revoked);
+
+        // Assert
+        token.Id.Should().Be(5);
+        token.UserId.Should().Be("user-1");
+        token.Token.Should().Be("abc-token");
+        token.Expires.Should().Be(expires);
+        token.Created.Should().Be(created);
+        token.Revoked.Should().Be(revoked);
+    }
+
+    [Fact]
+    public void Constructor_ShouldSetRevokedToNull_WhenNotRevoked()
+    {
+        // Act
+        var token = new RefreshToken(
+            id: 1,
+            userId: "user-1",
+            token: "abc-token",
+            expires: _dateTimeProvider.UtcNow.AddDays(7),
+            created: _dateTimeProvider.UtcNow,
+            revoked: null);
+
+        // Assert
+        token.Revoked.Should().BeNull();
+    }
+
+    #endregion
+
     #region Revoke
 
     [Fact]

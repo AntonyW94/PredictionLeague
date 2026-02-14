@@ -962,4 +962,199 @@ public class LeagueManagementTests
     }
 
     #endregion
+
+    #region GetMostExactScoresWinners
+
+    [Fact]
+    public void GetMostExactScoresWinners_ShouldReturnEmptyList_WhenLeagueHasNoMembers()
+    {
+        // Arrange
+        var league = new League(
+            id: 1, name: "Test League", seasonId: 1,
+            administratorUserId: "admin-user", entryCode: "ABC123",
+            createdAtUtc: _dateTimeProvider.UtcNow,
+            entryDeadlineUtc: FutureDeadline,
+            pointsForExactScore: 3, pointsForCorrectResult: 1,
+            price: 0, isFree: true, hasPrizes: false,
+            prizeFundOverride: null,
+            members: null, prizeSettings: null);
+
+        // Act
+        var result = league.GetMostExactScoresWinners();
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetMostExactScoresWinners_ShouldReturnEmptyList_WhenAllMembersHaveZeroExactScores()
+    {
+        // Arrange
+        var roundResult1 = new LeagueRoundResult(leagueId: 1, roundId: 1, userId: "user-1",
+            basePoints: 5, boostedPoints: 5, hasBoost: false, appliedBoostCode: null, exactScoreCount: 0);
+        var roundResult2 = new LeagueRoundResult(leagueId: 1, roundId: 1, userId: "user-2",
+            basePoints: 3, boostedPoints: 3, hasBoost: false, appliedBoostCode: null, exactScoreCount: 0);
+
+        var member1 = new LeagueMember(leagueId: 1, userId: "user-1",
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
+            roundResults: new[] { roundResult1 });
+        var member2 = new LeagueMember(leagueId: 1, userId: "user-2",
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
+            roundResults: new[] { roundResult2 });
+
+        var league = new League(
+            id: 1, name: "Test League", seasonId: 1,
+            administratorUserId: "admin-user", entryCode: "ABC123",
+            createdAtUtc: _dateTimeProvider.UtcNow,
+            entryDeadlineUtc: FutureDeadline,
+            pointsForExactScore: 3, pointsForCorrectResult: 1,
+            price: 0, isFree: true, hasPrizes: false,
+            prizeFundOverride: null,
+            members: new[] { member1, member2 }, prizeSettings: null);
+
+        // Act
+        var result = league.GetMostExactScoresWinners();
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetMostExactScoresWinners_ShouldReturnSingleWinner_WhenOneMemberHasHighestExactScores()
+    {
+        // Arrange
+        var roundResult1 = new LeagueRoundResult(leagueId: 1, roundId: 1, userId: "user-1",
+            basePoints: 5, boostedPoints: 5, hasBoost: false, appliedBoostCode: null, exactScoreCount: 3);
+        var roundResult2 = new LeagueRoundResult(leagueId: 1, roundId: 1, userId: "user-2",
+            basePoints: 3, boostedPoints: 3, hasBoost: false, appliedBoostCode: null, exactScoreCount: 1);
+
+        var member1 = new LeagueMember(leagueId: 1, userId: "user-1",
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
+            roundResults: new[] { roundResult1 });
+        var member2 = new LeagueMember(leagueId: 1, userId: "user-2",
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
+            roundResults: new[] { roundResult2 });
+
+        var league = new League(
+            id: 1, name: "Test League", seasonId: 1,
+            administratorUserId: "admin-user", entryCode: "ABC123",
+            createdAtUtc: _dateTimeProvider.UtcNow,
+            entryDeadlineUtc: FutureDeadline,
+            pointsForExactScore: 3, pointsForCorrectResult: 1,
+            price: 0, isFree: true, hasPrizes: false,
+            prizeFundOverride: null,
+            members: new[] { member1, member2 }, prizeSettings: null);
+
+        // Act
+        var result = league.GetMostExactScoresWinners();
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.First().UserId.Should().Be("user-1");
+    }
+
+    [Fact]
+    public void GetMostExactScoresWinners_ShouldReturnMultipleWinners_WhenMembersTieOnExactScores()
+    {
+        // Arrange
+        var roundResult1 = new LeagueRoundResult(leagueId: 1, roundId: 1, userId: "user-1",
+            basePoints: 5, boostedPoints: 5, hasBoost: false, appliedBoostCode: null, exactScoreCount: 2);
+        var roundResult2 = new LeagueRoundResult(leagueId: 1, roundId: 1, userId: "user-2",
+            basePoints: 3, boostedPoints: 3, hasBoost: false, appliedBoostCode: null, exactScoreCount: 2);
+
+        var member1 = new LeagueMember(leagueId: 1, userId: "user-1",
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
+            roundResults: new[] { roundResult1 });
+        var member2 = new LeagueMember(leagueId: 1, userId: "user-2",
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
+            roundResults: new[] { roundResult2 });
+
+        var league = new League(
+            id: 1, name: "Test League", seasonId: 1,
+            administratorUserId: "admin-user", entryCode: "ABC123",
+            createdAtUtc: _dateTimeProvider.UtcNow,
+            entryDeadlineUtc: FutureDeadline,
+            pointsForExactScore: 3, pointsForCorrectResult: 1,
+            price: 0, isFree: true, hasPrizes: false,
+            prizeFundOverride: null,
+            members: new[] { member1, member2 }, prizeSettings: null);
+
+        // Act
+        var result = league.GetMostExactScoresWinners();
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Select(m => m.UserId).Should().Contain("user-1").And.Contain("user-2");
+    }
+
+    [Fact]
+    public void GetMostExactScoresWinners_ShouldSumAcrossRounds_WhenMemberHasMultipleRoundResults()
+    {
+        // Arrange
+        var round1Result = new LeagueRoundResult(leagueId: 1, roundId: 1, userId: "user-1",
+            basePoints: 5, boostedPoints: 5, hasBoost: false, appliedBoostCode: null, exactScoreCount: 1);
+        var round2Result = new LeagueRoundResult(leagueId: 1, roundId: 2, userId: "user-1",
+            basePoints: 5, boostedPoints: 5, hasBoost: false, appliedBoostCode: null, exactScoreCount: 2);
+        var otherResult = new LeagueRoundResult(leagueId: 1, roundId: 1, userId: "user-2",
+            basePoints: 3, boostedPoints: 3, hasBoost: false, appliedBoostCode: null, exactScoreCount: 2);
+
+        var member1 = new LeagueMember(leagueId: 1, userId: "user-1",
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
+            roundResults: new[] { round1Result, round2Result });
+        var member2 = new LeagueMember(leagueId: 1, userId: "user-2",
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
+            roundResults: new[] { otherResult });
+
+        var league = new League(
+            id: 1, name: "Test League", seasonId: 1,
+            administratorUserId: "admin-user", entryCode: "ABC123",
+            createdAtUtc: _dateTimeProvider.UtcNow,
+            entryDeadlineUtc: FutureDeadline,
+            pointsForExactScore: 3, pointsForCorrectResult: 1,
+            price: 0, isFree: true, hasPrizes: false,
+            prizeFundOverride: null,
+            members: new[] { member1, member2 }, prizeSettings: null);
+
+        // Act
+        var result = league.GetMostExactScoresWinners();
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.First().UserId.Should().Be("user-1");
+    }
+
+    #endregion
+
+    #region Constructor — PrizeSettings
+
+    [Fact]
+    public void Constructor_ShouldPopulatePrizeSettings_WhenPrizeSettingsProvided()
+    {
+        // Arrange
+        var prizeSetting = LeaguePrizeSetting.Create(leagueId: 1, prizeType: PrizeType.Overall, rank: 1, prizeAmount: 50m);
+
+        // Act
+        var league = new League(
+            id: 1, name: "Test League", seasonId: 1,
+            administratorUserId: "admin-user", entryCode: "ABC123",
+            createdAtUtc: _dateTimeProvider.UtcNow,
+            entryDeadlineUtc: FutureDeadline,
+            pointsForExactScore: 3, pointsForCorrectResult: 1,
+            price: 10, isFree: false, hasPrizes: true,
+            prizeFundOverride: null,
+            members: null, prizeSettings: new[] { prizeSetting });
+
+        // Assert
+        league.PrizeSettings.Should().HaveCount(1);
+    }
+
+    #endregion
 }

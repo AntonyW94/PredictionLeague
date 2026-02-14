@@ -1,8 +1,3 @@
 ﻿namespace PredictionLeague.Domain.Common.Exceptions;
 
-public class EntityNotFoundException : Exception
-{
-    public EntityNotFoundException(string name, object key) : base($"{name} (ID: {key}) was not found.")
-    {
-    }
-}
+public class EntityNotFoundException(string name, object key) : Exception($"{name} (ID: {key}) was not found.");

@@ -16,6 +16,47 @@ public class TeamTests
         return Team.Create(name, shortName, logoUrl, abbreviation, apiTeamId);
     }
 
+    #region Constructor
+
+    [Fact]
+    public void Constructor_ShouldSetAllProperties_WhenCalledWithParameters()
+    {
+        // Act
+        var team = new Team(
+            id: 10,
+            name: "Arsenal",
+            shortName: "Arsenal",
+            logoUrl: "https://example.com/afc.png",
+            abbreviation: "ARS",
+            apiTeamId: 57);
+
+        // Assert
+        team.Id.Should().Be(10);
+        team.Name.Should().Be("Arsenal");
+        team.ShortName.Should().Be("Arsenal");
+        team.LogoUrl.Should().Be("https://example.com/afc.png");
+        team.Abbreviation.Should().Be("ARS");
+        team.ApiTeamId.Should().Be(57);
+    }
+
+    [Fact]
+    public void Constructor_ShouldAcceptNullApiTeamId()
+    {
+        // Act
+        var team = new Team(
+            id: 1,
+            name: "Chelsea",
+            shortName: "Chelsea",
+            logoUrl: "https://example.com/cfc.png",
+            abbreviation: "CHE",
+            apiTeamId: null);
+
+        // Assert
+        team.ApiTeamId.Should().BeNull();
+    }
+
+    #endregion
+
     #region Create — Happy Path
 
     [Fact]

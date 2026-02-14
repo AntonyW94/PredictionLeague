@@ -441,6 +441,100 @@ public class RoundTests
 
     #endregion
 
+    #region AcceptMatch
+
+    [Fact]
+    public void AcceptMatch_ShouldAddMatchToRound_WhenMatchIsValid()
+    {
+        // Arrange
+        var round = new Round(id: 5, seasonId: 1, roundNumber: 1,
+            startDateUtc: ValidStartDate, deadlineUtc: ValidDeadline,
+            status: RoundStatus.Draft, apiRoundName: null,
+            lastReminderSentUtc: null, matches: null);
+        var match = new Match(id: 10, roundId: 1, homeTeamId: 1, awayTeamId: 2,
+            matchDateTimeUtc: ValidMatchTime, customLockTimeUtc: null,
+            status: MatchStatus.Scheduled, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, placeholderHomeName: null, placeholderAwayName: null);
+
+        // Act
+        round.AcceptMatch(match);
+
+        // Assert
+        round.Matches.Should().HaveCount(1);
+        round.Matches.First().Id.Should().Be(10);
+    }
+
+    [Fact]
+    public void AcceptMatch_ShouldUpdateMatchRoundId_WhenAccepted()
+    {
+        // Arrange
+        var round = new Round(id: 5, seasonId: 1, roundNumber: 1,
+            startDateUtc: ValidStartDate, deadlineUtc: ValidDeadline,
+            status: RoundStatus.Draft, apiRoundName: null,
+            lastReminderSentUtc: null, matches: null);
+        var match = new Match(id: 10, roundId: 1, homeTeamId: 1, awayTeamId: 2,
+            matchDateTimeUtc: ValidMatchTime, customLockTimeUtc: null,
+            status: MatchStatus.Scheduled, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, placeholderHomeName: null, placeholderAwayName: null);
+
+        // Act
+        round.AcceptMatch(match);
+
+        // Assert
+        round.Matches.First().RoundId.Should().Be(5);
+    }
+
+    [Fact]
+    public void AcceptMatch_ShouldThrowException_WhenMatchAlreadyExistsInRound()
+    {
+        // Arrange
+        var match = new Match(id: 10, roundId: 1, homeTeamId: 1, awayTeamId: 2,
+            matchDateTimeUtc: ValidMatchTime, customLockTimeUtc: null,
+            status: MatchStatus.Scheduled, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, placeholderHomeName: null, placeholderAwayName: null);
+        var round = new Round(id: 5, seasonId: 1, roundNumber: 1,
+            startDateUtc: ValidStartDate, deadlineUtc: ValidDeadline,
+            status: RoundStatus.Draft, apiRoundName: null,
+            lastReminderSentUtc: null, matches: new[] { match });
+
+        // Act — try to accept the same match again
+        var duplicateMatch = new Match(id: 10, roundId: 2, homeTeamId: 3, awayTeamId: 4,
+            matchDateTimeUtc: ValidMatchTime, customLockTimeUtc: null,
+            status: MatchStatus.Scheduled, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, placeholderHomeName: null, placeholderAwayName: null);
+        var act = () => round.AcceptMatch(duplicateMatch);
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithMessage("*already exists*");
+    }
+
+    [Fact]
+    public void AcceptMatch_ShouldAcceptMultipleMatches_WhenDifferentIds()
+    {
+        // Arrange
+        var round = new Round(id: 5, seasonId: 1, roundNumber: 1,
+            startDateUtc: ValidStartDate, deadlineUtc: ValidDeadline,
+            status: RoundStatus.Draft, apiRoundName: null,
+            lastReminderSentUtc: null, matches: null);
+        var match1 = new Match(id: 10, roundId: 1, homeTeamId: 1, awayTeamId: 2,
+            matchDateTimeUtc: ValidMatchTime, customLockTimeUtc: null,
+            status: MatchStatus.Scheduled, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, placeholderHomeName: null, placeholderAwayName: null);
+        var match2 = new Match(id: 11, roundId: 2, homeTeamId: 3, awayTeamId: 4,
+            matchDateTimeUtc: ValidMatchTime, customLockTimeUtc: null,
+            status: MatchStatus.Scheduled, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, placeholderHomeName: null, placeholderAwayName: null);
+
+        // Act
+        round.AcceptMatch(match1);
+        round.AcceptMatch(match2);
+
+        // Assert
+        round.Matches.Should().HaveCount(2);
+    }
+
+    #endregion
+
     #region RemoveMatch
 
     [Fact]

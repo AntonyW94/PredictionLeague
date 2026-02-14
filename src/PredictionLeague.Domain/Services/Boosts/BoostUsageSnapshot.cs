@@ -1,5 +1,8 @@
-﻿namespace PredictionLeague.Domain.Services.Boosts;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace PredictionLeague.Domain.Services.Boosts;
+
+[ExcludeFromCodeCoverage]
 public sealed class BoostUsageSnapshot
 {
     public int SeasonUses { get; init; }
