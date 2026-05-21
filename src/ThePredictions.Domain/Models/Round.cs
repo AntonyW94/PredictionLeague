@@ -20,6 +20,8 @@ public class Round
     private readonly List<Match> _matches = new();
     public IReadOnlyCollection<Match> Matches => _matches.AsReadOnly();
 
+    public bool HasConfirmedFixtures => _matches.Any(m => m.AreTeamsConfirmed);
+
     private Round() { }
   
     public Round(int id, int seasonId, int roundNumber, string displayName, DateTime startDateUtc, DateTime deadlineUtc, RoundStatus status, string? apiRoundName, DateTime? lastReminderSentUtc, IEnumerable<Match?>? matches)

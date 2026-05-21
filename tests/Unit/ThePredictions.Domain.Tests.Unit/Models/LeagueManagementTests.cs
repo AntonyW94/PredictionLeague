@@ -997,11 +997,11 @@ public class LeagueManagementTests
             basePoints: 3, boostedPoints: 3, hasBoost: false, appliedBoostCode: null, exactScoreCount: 0);
 
         var member1 = new LeagueMember(leagueId: 1, userId: "user-1",
-            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: [roundResult1]);
         var member2 = new LeagueMember(leagueId: 1, userId: "user-2",
-            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: [roundResult2]);
 
@@ -1032,11 +1032,11 @@ public class LeagueManagementTests
             basePoints: 3, boostedPoints: 3, hasBoost: false, appliedBoostCode: null, exactScoreCount: 1);
 
         var member1 = new LeagueMember(leagueId: 1, userId: "user-1",
-            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: [roundResult1]);
         var member2 = new LeagueMember(leagueId: 1, userId: "user-2",
-            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: [roundResult2]);
 
@@ -1068,11 +1068,11 @@ public class LeagueManagementTests
             basePoints: 3, boostedPoints: 3, hasBoost: false, appliedBoostCode: null, exactScoreCount: 2);
 
         var member1 = new LeagueMember(leagueId: 1, userId: "user-1",
-            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: [roundResult1]);
         var member2 = new LeagueMember(leagueId: 1, userId: "user-2",
-            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: [roundResult2]);
 
@@ -1106,11 +1106,11 @@ public class LeagueManagementTests
             basePoints: 3, boostedPoints: 3, hasBoost: false, appliedBoostCode: null, exactScoreCount: 2);
 
         var member1 = new LeagueMember(leagueId: 1, userId: "user-1",
-            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: [round1Result, round2Result]);
         var member2 = new LeagueMember(leagueId: 1, userId: "user-2",
-            status: LeagueMemberStatus.Approved, isAlertDismissed: false,
+            status: LeagueMemberStatus.Approved, isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: [otherResult]);
 

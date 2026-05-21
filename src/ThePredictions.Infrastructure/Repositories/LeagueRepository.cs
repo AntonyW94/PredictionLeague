@@ -177,6 +177,7 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                 member.UserId,
                 member.Status,
                 member.IsAlertDismissed,
+                member.IsArchivedByUser,
                 member.JoinedAtUtc,
                 member.ApprovedAtUtc,
                 memberRoundResults

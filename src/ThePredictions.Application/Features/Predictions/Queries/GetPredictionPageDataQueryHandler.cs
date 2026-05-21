@@ -18,6 +18,7 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
                 s.[Id] AS SeasonId,
                 s.[Name] AS SeasonName,
                 s.[CompetitionType],
+                s.[NumberOfRounds],
                 r.[DeadlineUtc],
                 m.[Id] AS MatchId,
                 m.[MatchDateTimeUtc],
@@ -78,7 +79,26 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
                             lbr.[LeagueId] = l.[Id]
                             AND lbr.[IsEnabled] = 1
                         ) THEN 1 ELSE 0 END AS BIT
-                    ) AS HasBoosts
+                    ) AS HasBoosts,
+                CAST
+                    (
+                        CASE WHEN EXISTS (
+                            SELECT 1
+                            FROM [LeagueBoostRules] lbr
+                            WHERE
+                                lbr.[LeagueId] = l.[Id]
+                                AND lbr.[IsEnabled] = 1
+                                AND lbr.[TotalUsesPerSeason] > 0
+                                AND NOT EXISTS (
+                                    SELECT 1
+                                    FROM [UserBoostUsages] ubu
+                                    WHERE ubu.[UserId] = @UserId
+                                        AND ubu.[LeagueId] = l.[Id]
+                                        AND ubu.[SeasonId] = @SeasonId
+                                        AND ubu.[BoostDefinitionId] = lbr.[BoostDefinitionId]
+                                )
+                        ) THEN 1 ELSE 0 END AS BIT
+                    ) AS HasUnusedBoostThisSeason
             FROM
                 [Leagues] l
             JOIN
@@ -122,6 +142,7 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
             DeadlineUtc = firstRow.DeadlineUtc,
             IsPastDeadline = firstRow.DeadlineUtc < DateTime.UtcNow,
             IsTournament = isTournament,
+            IsLastRoundOfSeason = firstRow.RoundNumber == firstRow.NumberOfRounds,
             Matches = results
                 .Where(r => r.MatchId.HasValue)
                 .Select(r =>
@@ -154,6 +175,7 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
                     LeagueId = l.LeagueId,
                     Name = l.Name,
                     HasBoosts = l.HasBoosts,
+                    HasUnusedBoostThisSeason = l.HasUnusedBoostThisSeason,
                     SelectedBoostCode = boostDictionary.GetValueOrDefault(l.LeagueId)
                 }).ToList()
         };
@@ -166,6 +188,7 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
         int SeasonId,
         string SeasonName,
         int CompetitionType,
+        int NumberOfRounds,
         DateTime DeadlineUtc,
         int? MatchId,
         DateTime? MatchDateTimeUtc,
@@ -188,7 +211,7 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
     );
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PredictionLeagueQueryResult(int LeagueId, string Name, bool HasBoosts);
+    private record PredictionLeagueQueryResult(int LeagueId, string Name, bool HasBoosts, bool HasUnusedBoostThisSeason);
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record UserBoostUsageResult(int LeagueId, string SelectedBoostCode);

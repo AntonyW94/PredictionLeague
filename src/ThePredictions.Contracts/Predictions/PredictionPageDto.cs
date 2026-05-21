@@ -10,6 +10,7 @@ public class PredictionPageDto
     public DateTime DeadlineUtc { get; init; }
     public bool IsPastDeadline { get; init; }
     public bool IsTournament { get; init; }
+    public bool IsLastRoundOfSeason { get; init; }
     public List<MatchPredictionDto> Matches { get; init; } = [];
     public List<PredictionLeagueDto> Leagues { get; init; } = [];
 }

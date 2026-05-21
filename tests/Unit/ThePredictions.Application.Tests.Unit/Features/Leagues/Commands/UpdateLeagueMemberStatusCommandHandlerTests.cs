@@ -44,7 +44,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
     {
         return new LeagueMember(
             leagueId: leagueId, userId: userId, status: status,
-            isAlertDismissed: false,
+            isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
             approvedAtUtc: null, roundResults: null);
     }

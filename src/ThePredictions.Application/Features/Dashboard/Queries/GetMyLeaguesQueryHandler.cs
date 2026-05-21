@@ -12,17 +12,20 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
     {
         const string sql = @"
         WITH MyLeagues AS (
-            SELECT 
+            SELECT
                 l.[Id] AS LeagueId,
                 l.[Name] AS LeagueName,
                 l.[Price],
 		        l.[PrizeFundOverride],
+                l.[IsFree],
                 s.[Id] AS SeasonId,
                 s.[Name] AS SeasonName,
                 s.[CompetitionType],
                 s.[StartDateUtc] AS SeasonStartDateUtc,
+                s.[NumberOfRounds],
                 lm.[UserId],
-                lm.[Status]
+                lm.[Status],
+                lm.[IsArchivedByUser]
             FROM [LeagueMembers] lm
             JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
             JOIN [Seasons] s ON l.[SeasonId] = s.[Id]
@@ -60,7 +63,22 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
                 l.[Id] AS LeagueId,
                 (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) AS MemberCount,
                 (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w JOIN [LeaguePrizeSettings] s ON w.[LeaguePrizeSettingId] = s.[Id] WHERE s.[LeagueId] = l.[Id]) AS TotalPaidOut,
-                (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w JOIN [LeaguePrizeSettings] s ON w.[LeaguePrizeSettingId] = s.[Id] WHERE s.[LeagueId] = l.[Id] AND [UserId] = @UserId) AS UserWinnings
+                (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w JOIN [LeaguePrizeSettings] s ON w.[LeaguePrizeSettingId] = s.[Id] WHERE s.[LeagueId] = l.[Id] AND [UserId] = @UserId) AS UserWinnings,
+                (SELECT COUNT(*) FROM (
+                    SELECT lrr.[UserId], lrr.[BoostedPoints],
+                        RANK() OVER (PARTITION BY lrr.[RoundId] ORDER BY lrr.[BoostedPoints] DESC) AS Rnk
+                    FROM [LeagueRoundResults] lrr
+                    INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
+                    WHERE lrr.[LeagueId] = l.[Id] AND r.[Status] = @CompletedStatus
+                ) rw WHERE rw.[UserId] = @UserId AND rw.[Rnk] = 1 AND rw.[BoostedPoints] > 0) AS UserRoundsWon,
+                (SELECT COUNT(*) FROM (
+                    SELECT lrr.[UserId], SUM(lrr.[BoostedPoints]) AS MonthPoints,
+                        RANK() OVER (PARTITION BY MONTH(r.[StartDateUtc]), YEAR(r.[StartDateUtc]) ORDER BY SUM(lrr.[BoostedPoints]) DESC) AS Rnk
+                    FROM [LeagueRoundResults] lrr
+                    INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
+                    WHERE lrr.[LeagueId] = l.[Id] AND r.[Status] = @CompletedStatus
+                    GROUP BY MONTH(r.[StartDateUtc]), YEAR(r.[StartDateUtc]), lrr.[UserId]
+                ) mw WHERE mw.[UserId] = @UserId AND mw.[Rnk] = 1 AND mw.[MonthPoints] > 0) AS UserMonthsWon
             FROM [Leagues] l
             WHERE l.[Id] IN (SELECT [LeagueId] FROM [MyLeagues])
         ),
@@ -136,7 +154,19 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
 
             lc.[UserWinnings] AS PrizeMoneyWon,
             (COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) - lc.[TotalPaidOut]) AS PrizeMoneyRemaining,
-            COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) AS TotalPrizeFund 
+            COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) AS TotalPrizeFund,
+            l.[Price] AS EntryFee,
+            l.[IsFree],
+
+            ISNULL(lc.[UserRoundsWon], 0) AS RoundsWon,
+            ISNULL(lc.[UserMonthsWon], 0) AS MonthsWon,
+
+            CAST(CASE
+                WHEN (SELECT COUNT(*) FROM [Rounds] r2 WHERE r2.[SeasonId] = l.[SeasonId] AND r2.[Status] = @CompletedStatus) >= l.[NumberOfRounds]
+                THEN 1
+                ELSE 0
+            END AS bit) AS IsFinished,
+            l.[IsArchivedByUser]
 
         FROM [MyLeagues] l
         LEFT JOIN [LeagueMemberStats] stats ON l.[LeagueId] = stats.[LeagueId] AND l.[UserId] = stats.[UserId]
@@ -151,11 +181,11 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             l.[LeagueName]";
 
         return await dbConnection.QueryAsync<MyLeagueDto>(
-            sql, 
-            cancellationToken, 
+            sql,
+            cancellationToken,
             new
             {
-                request.UserId, 
+                request.UserId,
                 ApprovedStatus = nameof(LeagueMemberStatus.Approved),
                 DraftStatus = nameof(RoundStatus.Draft),
                 PublishedStatus = nameof(RoundStatus.Published),

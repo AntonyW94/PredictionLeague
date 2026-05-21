@@ -17,6 +17,7 @@
                                Tooltip="@option.Tooltip"
                                IsSelected="@(SelectedCode == option.BoostCode)"
                                Eligibility="@option.Eligibility"
+                               IsLocked="@LockSelection"
                                IsSelectedChanged="@(async selected => await OnCardToggled(option.BoostCode, selected))" />
                 </div>
             }
@@ -46,11 +47,15 @@
 
     [Parameter] public string SelectedCode { get; set; } = "None";
     [Parameter] public EventCallback<string> SelectedCodeChanged { get; set; }
+    [Parameter] public bool LockSelection { get; set; }
 
     private BoostOptionDto? SelectedOption => Options.FirstOrDefault(o => o.BoostCode == SelectedCode);
 
     private async Task OnCardToggled(string code, bool isSelected)
     {
+        if (LockSelection)
+            return;
+
         SelectedCode = !isSelected ? "None" : code;
         await SelectedCodeChanged.InvokeAsync(SelectedCode);
     }

@@ -24,7 +24,7 @@ public class CancelLeagueRequestCommandHandlerTests
     {
         return new LeagueMember(
             leagueId: 1, userId: "user-1", status: status,
-            isAlertDismissed: false,
+            isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
             approvedAtUtc: null, roundResults: null);
     }

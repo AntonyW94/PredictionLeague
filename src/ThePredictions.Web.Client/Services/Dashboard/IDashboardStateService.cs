@@ -45,4 +45,5 @@ public interface IDashboardStateService
     Task JoinPublicLeagueAsync(int leagueId);
     Task CancelJoinRequestAsync(int leagueId);
     Task DismissAlertAsync(int leagueId);
+    Task SetLeagueArchivedAsync(int leagueId, bool isArchived);
 }

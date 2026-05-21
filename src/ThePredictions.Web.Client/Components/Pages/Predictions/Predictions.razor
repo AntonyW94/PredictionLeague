@@ -174,6 +174,7 @@
                                     var selectedCode = GetSelectedCode(leagueId);
                                     var actionableOptions = GetActionableOptions(allOptions, selectedCode);
                                     var futureBoostMessages = GetFutureBoostMessages(allOptions, selectedCode);
+                                    var lockBoost = IsBoostMandatory(league);
 
                                     if (actionableOptions.Count == 0 && futureBoostMessages.Count == 0)
                                     {
@@ -183,12 +184,22 @@
                                     <div class="boost-league-row w-100">
                                         <h5 class="text-center text-white mb-2">@league.Name</h5>
 
+                                        @if (lockBoost)
+                                        {
+                                            <div class="alert alert-warning text-center mb-3" role="alert">
+                                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                                <strong>Final round of the season.</strong>
+                                                You haven't used your boost yet for @league.Name, so it must be applied to this round.
+                                            </div>
+                                        }
+
                                         @if (actionableOptions.Count > 0)
                                         {
                                             <BoostSelector LeagueId="@leagueId"
                                                            RoundId="@_pageData.RoundId"
                                                            Options="@actionableOptions"
                                                            SelectedCode="@selectedCode"
+                                                           LockSelection="@lockBoost"
                                                            SelectedCodeChanged="@(async c => await SetSelectedCode(leagueId, c))" />
                                         }
 
@@ -297,8 +308,17 @@
 
                     _boostOptions[leagueDto.LeagueId] = list;
 
+                    var initialCode = leagueDto.SelectedBoostCode ?? "None";
+
+                    if (initialCode == "None" && IsBoostMandatory(leagueDto))
+                    {
+                        var firstUsableBoost = list.FirstOrDefault(o => o.BoostCode != "None" && o.Eligibility is { CanUse: true });
+                        if (firstUsableBoost is not null)
+                            initialCode = firstUsableBoost.BoostCode;
+                    }
+
                     _initialBoostSelections[leagueDto.LeagueId] = leagueDto.SelectedBoostCode ?? "None";
-                    _boostSelections[leagueDto.LeagueId] = leagueDto.SelectedBoostCode ?? "None";
+                    _boostSelections[leagueDto.LeagueId] = initialCode;
                 }
 
                 _hasVisibleBoosts = _boostOptions.Any(kvp =>
@@ -337,6 +357,9 @@
 
     private string GetSelectedCode(int leagueId) => _boostSelections.GetValueOrDefault(leagueId, "None");
     private Task SetSelectedCode(int leagueId, string code) { _boostSelections[leagueId] = code; return Task.CompletedTask; }
+
+    private bool IsBoostMandatory(PredictionLeagueDto league) =>
+        _pageData is { IsLastRoundOfSeason: true } && league is { HasBoosts: true, HasUnusedBoostThisSeason: true };
 
     private static List<BoostOptionDto> GetActionableOptions(List<BoostOptionDto> allOptions, string selectedCode)
     {

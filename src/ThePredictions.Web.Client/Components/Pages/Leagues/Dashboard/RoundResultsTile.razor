@@ -1,4 +1,5 @@
 @inject LeagueDashboardStateService State
+@inject IJSRuntime JsRuntime
 
 @implements IAsyncDisposable
 
@@ -10,21 +11,25 @@
 @using ThePredictions.Web.Client.Services.Leagues
 
 <div class="section">
-    <div class="d-flex flex-column flex-md-row justify-content-md-between align-items-center mb-3 text-center text-md-start">
-        <h5 class="text-white fw-bold mb-3 mb-md-0">Round Results</h5>
+    <h5 class="text-white fw-bold mb-3 text-center">Round Results</h5>
 
-        @if (State.ViewableRounds.Any())
-        {
-            <div class="w-100" style="max-width:200px;">
-                <InputSelect TValue="int?" class="form-select form-select-sm" @bind-Value="State.SelectedRoundId" @bind-Value:after="OnRoundSelected">
-                    @foreach (var round in State.ViewableRounds)
-                    {
-                        <option value="@round.Id">Round @round.RoundNumber</option>
-                    }
-                </InputSelect>
-            </div>
-        }
-    </div>
+    @if (State.ViewableRounds.Any())
+    {
+        <div class="round-pill-selector mb-3" @ref="_roundPillContainerRef" role="tablist" aria-label="Select round">
+            @foreach (var round in State.ViewableRounds.OrderBy(r => r.RoundNumber))
+            {
+                var isActive = round.Id == State.SelectedRoundId;
+                <button class="round-pill @(isActive ? "active" : "")"
+                        type="button"
+                        role="tab"
+                        aria-selected="@isActive.ToString().ToLower()"
+                        @key="round.Id"
+                        @onclick="() => SelectRound(round.Id)">
+                    R@(round.RoundNumber)
+                </button>
+            }
+        </div>
+    }
 
     <ApiError Message="@State.RoundResultsError" />
 
@@ -115,6 +120,8 @@
     private int _currentIndex;
     private string _trackStyle = "transform: translateX(0%);";
     private double _touchStartX;
+    private ElementReference _roundPillContainerRef;
+    private bool _pendingScrollIntoView;
 
     private DateTime? DeadlineUtc => State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId.GetValueOrDefault())?.DeadlineUtc;
 
@@ -122,6 +129,7 @@
     {
         await base.OnInitializedAsync();
         State.OnStateChange += StateHasChanged;
+        _pendingScrollIntoView = true;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -131,15 +139,22 @@
             SetDefaultCarouselSlide();
             await InvokeAsync(StateHasChanged);
         }
+
+        if (_pendingScrollIntoView && State.ViewableRounds.Any())
+        {
+            _pendingScrollIntoView = false;
+            await JsRuntime.InvokeVoidAsync("blazorInterop.scrollActiveRoundIntoView", _roundPillContainerRef, firstRender ? false : true);
+        }
     }
 
-    private async Task OnRoundSelected()
+    private async Task SelectRound(int roundId)
     {
-        if (State.SelectedRoundId > 0)
-        {
-            await State.LoadRoundResults(LeagueId, State.SelectedRoundId.Value);
-            SetDefaultCarouselSlide();
-        }
+        if (State.SelectedRoundId == roundId)
+            return;
+
+        await State.LoadRoundResults(LeagueId, roundId);
+        SetDefaultCarouselSlide();
+        _pendingScrollIntoView = true;
     }
 
     private void SetDefaultCarouselSlide()

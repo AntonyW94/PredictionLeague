@@ -68,4 +68,41 @@ public class BoostWriteRepository(IDbConnectionFactory connectionFactory, IDbTra
 
         return affected > 0;
     }
+
+    public async Task<int> AutoApplyUnusedBoostsForRoundAsync(int seasonId, int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            INSERT INTO [UserBoostUsages] ([UserId], [LeagueId], [SeasonId], [RoundId], [BoostDefinitionId])
+            SELECT
+                lm.[UserId],
+                lm.[LeagueId],
+                @SeasonId,
+                @RoundId,
+                lbr.[BoostDefinitionId]
+            FROM
+                [LeagueMembers] lm
+                INNER JOIN [Leagues] l ON l.[Id] = lm.[LeagueId]
+                INNER JOIN [LeagueBoostRules] lbr ON lbr.[LeagueId] = lm.[LeagueId]
+            WHERE
+                l.[SeasonId] = @SeasonId
+                AND lm.[Status] = 'Approved'
+                AND lbr.[IsEnabled] = 1
+                AND lbr.[TotalUsesPerSeason] > 0
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM [UserBoostUsages] ubu
+                    WHERE ubu.[UserId] = lm.[UserId]
+                        AND ubu.[LeagueId] = lm.[LeagueId]
+                        AND ubu.[SeasonId] = @SeasonId
+                        AND ubu.[BoostDefinitionId] = lbr.[BoostDefinitionId]
+                );";
+
+        var command = new CommandDefinition(
+            sql,
+            new { SeasonId = seasonId, RoundId = roundId },
+            transaction: Transaction,
+            cancellationToken: cancellationToken);
+
+        return await Connection.ExecuteAsync(command);
+    }
 }

@@ -305,6 +305,52 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
 
     #endregion
 
+    #region Season Recap
+
+    [HttpGet("{leagueId:int}/season-recap")]
+    [SwaggerOperation(
+        Summary = "Get end-of-season recap for current user",
+        Description = "Returns the logged-in user's personal performance summary for the finished season: final position, winnings, profit/loss, and supporting stats.")]
+    [SwaggerResponse(200, "Recap retrieved successfully", typeof(SeasonRecapDto))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not a member of this league")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<SeasonRecapDto>> GetSeasonRecapAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetSeasonRecapQuery(leagueId, CurrentUserId);
+        var result = await mediator.Send(query, cancellationToken);
+
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
+    }
+
+    [HttpGet("{leagueId:int}/records")]
+    [SwaggerOperation(
+        Summary = "Get cross-member records for the league",
+        Description = "Returns league-wide highlights for the finished season: top/lowest single round, most exact scores in a round, champion, top earner, most rounds/months won, and headline trivia stats.")]
+    [SwaggerResponse(200, "Records retrieved successfully", typeof(LeagueRecordsDto))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not a member of this league")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<LeagueRecordsDto>> GetLeagueRecordsAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetLeagueRecordsQuery(leagueId, CurrentUserId);
+        var result = await mediator.Send(query, cancellationToken);
+
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
+    }
+
+    #endregion
+
     #endregion
 
     #region Update
@@ -444,6 +490,41 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var command = new DismissRejectedNotificationCommand(leagueId, CurrentUserId);
+        await mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPut("{leagueId:int}/archive")]
+    [SwaggerOperation(
+        Summary = "Archive league for current user",
+        Description = "Hides the league from the current user's My Leagues carousel by default. Only available to approved members.")]
+    [SwaggerResponse(204, "League archived successfully")]
+    [SwaggerResponse(400, "League cannot be archived in its current state")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(404, "League membership not found")]
+    public async Task<IActionResult> ArchiveLeagueAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var command = new SetLeagueArchivedCommand(leagueId, CurrentUserId, IsArchived: true);
+        await mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPut("{leagueId:int}/unarchive")]
+    [SwaggerOperation(
+        Summary = "Unarchive league for current user",
+        Description = "Restores a previously archived league to the current user's My Leagues carousel.")]
+    [SwaggerResponse(204, "League unarchived successfully")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(404, "League membership not found")]
+    public async Task<IActionResult> UnarchiveLeagueAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var command = new SetLeagueArchivedCommand(leagueId, CurrentUserId, IsArchived: false);
         await mediator.Send(command, cancellationToken);
 
         return NoContent();

@@ -23,14 +23,23 @@ public class PublishUpcomingRoundsCommandHandler(IRoundRepository roundRepositor
         if (!roundsToPublish.Any())
             return;
 
+        var publishedCount = 0;
+
         foreach (var round in roundsToPublish.Values)
         {
+            if (!round.HasConfirmedFixtures)
+            {
+                logger.LogInformation("Skipped publishing Round (Number: {RoundNumber}, ID: {RoundId}) - no fixtures with confirmed teams yet", round.RoundNumber, round.Id);
+                continue;
+            }
+
             round.UpdateStatus(RoundStatus.Published, dateTimeProvider);
             await roundRepository.UpdateAsync(round, cancellationToken);
             logger.LogInformation("Published Round (Number: {RoundNumber}, ID: {RoundId})", round.RoundNumber, round.Id);
+            publishedCount++;
         }
 
-        logger.LogInformation("Successfully published Rounds (Count: {Count})", roundsToPublish.Count);
+        logger.LogInformation("Successfully published Rounds (Count: {Count})", publishedCount);
     }
 
     private async Task UnpublishDistantRoundsAsync(DateTime cutoffUtc, CancellationToken cancellationToken)

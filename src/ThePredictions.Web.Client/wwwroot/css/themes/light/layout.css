@@ -104,21 +104,18 @@ main:has(.admin-light) .navbar-logo {
     color: var(--purple-300) !important;
 }
 
-/* Fixed action bar for Back/Save buttons */
+/* Sticky action bar for Back/Save buttons.
+   Sticks to the viewport bottom while the form is being scrolled through, then
+   scrolls up naturally so the page footer can sit beneath it at the end of the page. */
 .admin-light form > .d-flex:last-child {
-    position: fixed;
+    position: sticky;
     bottom: 0;
-    left: 0;
-    right: 0;
     background: var(--white);
     border-top: 1px solid var(--grey-200);
     padding: var(--space-3) var(--space-4);
-    margin-top: 0;
+    margin-top: var(--space-4);
     z-index: 100;
     box-shadow: 0 -2px 8px var(--black-alpha-15);
-    max-width: 75rem;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 @media (min-width: 768px) {

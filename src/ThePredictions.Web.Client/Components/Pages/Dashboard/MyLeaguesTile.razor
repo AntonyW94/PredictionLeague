@@ -3,6 +3,7 @@
 @inject IBrowserService BrowserService
 @inject IJSRuntime JsRuntime
 
+@using ThePredictions.Contracts.Leagues
 @using ThePredictions.Domain.Common.Enumerations
 @using ThePredictions.Web.Client.Services.Browser
 @using ThePredictions.Web.Client.Services.Dashboard
@@ -91,11 +92,24 @@
             <p class="text-white-50 mt-2 mb-0 text-center">You haven't joined any leagues yet.</p>
         </div>
     }
+    else if (!VisibleLeagues.Any())
+    {
+        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
+            <i class="bi bi-archive empty-state-icon"></i>
+            <p class="text-white-50 mt-2 mb-0 text-center">All your leagues are archived.</p>
+            @if (ArchivedLeagueCount > 0)
+            {
+                <button type="button" class="archive-toggle-link mt-3" @onclick="ToggleShowArchived">
+                    @($"Show {ArchivedLeagueCount} archived {(ArchivedLeagueCount == 1 ? "league" : "leagues")}")
+                </button>
+            }
+        </div>
+    }
     else
     {
         <div class="carousel-wrapper carousel--multi-item">
             <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
-                @if (_showTwoItems && DashboardState.MyLeagues.Count > 2)
+                @if (_showTwoItems && VisibleLeagues.Count > 2)
                 {
                     <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentIndex == 0)">
                         <span class="bi bi-chevron-left"></span>
@@ -104,7 +118,7 @@
 
                 <div class="carousel-track-wrapper" id="my-leagues-track-wrapper">
                     <div class="carousel-track" style="@_trackStyle">
-                        @foreach (var league in DashboardState.MyLeagues)
+                        @foreach (var league in VisibleLeagues)
                         {
                             <div class="carousel-item-wrapper">
                                 <div class="carousel-item-content">
@@ -115,7 +129,83 @@
                                         </div>
 
                                         <div class="body pt-2 space-between">
-                                            @if (league.CurrentRound is null)
+                                            @if (league.IsFinished)
+                                            {
+                                                var profitLoss = league.PrizeMoneyWon - league.EntryFee;
+
+                                                <div class="glass-panel hero-rank-container">
+                                                    <div class="text-center w-100">
+                                                        <div class="text-uppercase text-white fw-bold mb-2 text-sm">
+                                                            <i class="bi bi-trophy-fill me-1"></i>Season Complete
+                                                        </div>
+
+                                                        @if (league.Rank.HasValue && league.MemberCount.HasValue)
+                                                        {
+                                                            <div class="d-flex align-items-center justify-content-center">
+                                                                <div class="d-flex align-items-center gap-1">
+                                                                    <div class="rank-shield-container">
+                                                                        @{ var finishedColour = GetShieldColour(league.Rank, league.MemberCount); }
+                                                                        <svg viewBox="0 0 24 24" class="rank-shield-icon" filter="url(#shield-shadow)">
+                                                                            <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@finishedColour)" stroke="url(#rim-@finishedColour)" />
+                                                                        </svg>
+                                                                        <span class="rank-shield-text">
+                                                                            @league.Rank
+                                                                        </span>
+                                                                    </div>
+                                                                    <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
+                                                                </div>
+                                                            </div>
+                                                            <small class="text-white-50 d-block mt-2">Final Position</small>
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                @if (league.IsFree)
+                                                {
+                                                    <div class="row g-2 mb-3 flex-grow-1">
+                                                        <div class="col-12">
+                                                            <div class="glass-panel financial-row">
+                                                                <div class="financial-col">
+                                                                    <small class="d-block text-uppercase fw-bold text-2xs">Rounds Won</small>
+                                                                    <div class="fw-bold text-white fs-5">
+                                                                        @league.RoundsWon
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="financial-col">
+                                                                    <small class="d-block text-uppercase fw-bold text-2xs">Months Won</small>
+                                                                    <div class="fw-bold text-white fs-5">
+                                                                        @league.MonthsWon
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="row g-2 mb-3 flex-grow-1">
+                                                        <div class="col-12">
+                                                            <div class="glass-panel financial-row">
+                                                                <div class="financial-col">
+                                                                    <small class="d-block text-uppercase fw-bold text-2xs">Total Won</small>
+                                                                    <div class="fw-bold text-green-600 fs-5">
+                                                                        @((MarkupString)$"&pound;{league.PrizeMoneyWon:0.00}")
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="financial-col">
+                                                                    <small class="d-block text-uppercase fw-bold text-2xs">Profit / Loss</small>
+                                                                    <div class="fw-bold fs-5 @(profitLoss >= 0 ? "text-green-600" : "text-red")">
+                                                                        @(profitLoss >= 0 ? "+" : "-")@((MarkupString)$"&pound;{Math.Abs(profitLoss):0.00}")
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            }
+                                            else if (league.CurrentRound is null)
                                             {
                                                 <div class="text-center py-3 flex-grow-1 d-flex flex-column justify-content-center">
                                                     <i class="bi bi-hourglass-split text-purple-300" style="font-size: 2.5rem;"></i>
@@ -288,9 +378,25 @@
                                                 }
                                             }
 
-                                            <button class="btn purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(league.Id)">
-                                                View Dashboard
-                                            </button>
+                                            <div class="my-leagues-card-actions">
+                                                @{
+                                                    var isFinishedOrArchived = league.IsFinished || league.IsArchivedByUser;
+                                                    var primaryLabel = isFinishedOrArchived ? "View Recap" : "View Dashboard";
+                                                }
+                                                <button class="btn purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(league.Id)">
+                                                    @primaryLabel
+                                                </button>
+                                                @if (isFinishedOrArchived)
+                                                {
+                                                    var archiveLabel = league.IsArchivedByUser ? "Unarchive Season" : "Archive Season";
+                                                    var archiveIcon = league.IsArchivedByUser ? "bi-arrow-counterclockwise" : "bi-archive";
+                                                    <button class="btn archive-season-button w-100"
+                                                            aria-label="@archiveLabel"
+                                                            @onclick="() => ToggleArchive(league)">
+                                                        <i class="bi @archiveIcon me-2"></i>@archiveLabel
+                                                    </button>
+                                                }
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -299,7 +405,7 @@
                     </div>
                 </div>
 
-                @if (_showTwoItems && DashboardState.MyLeagues.Count > 2)
+                @if (_showTwoItems && VisibleLeagues.Count > 2)
                 {
                     <button class="carousel-btn" @onclick="ShowNext" disabled="@IsAtEnd()">
                         <span class="bi bi-chevron-right"></span>
@@ -319,6 +425,24 @@
             }
         </div>
     }
+
+    @if (ArchivedLeagueCount > 0)
+    {
+        <div class="archive-toggle-row">
+            <button type="button" class="archive-toggle-link" @onclick="ToggleShowArchived">
+                @if (_showArchived)
+                {
+                    <i class="bi bi-chevron-up me-1"></i>
+                    @($"Hide {ArchivedLeagueCount} archived {(ArchivedLeagueCount == 1 ? "league" : "leagues")}")
+                }
+                else
+                {
+                    <i class="bi bi-archive me-1"></i>
+                    @($"Show {ArchivedLeagueCount} archived {(ArchivedLeagueCount == 1 ? "league" : "leagues")}")
+                }
+            </button>
+        </div>
+    }
 </div>
 
 @code {
@@ -326,6 +450,14 @@
     private double _touchStartX;
     private string _trackStyle = "transform: translateX(0%);";
     private bool _showTwoItems;
+    private bool _showArchived;
+
+    private List<MyLeagueDto> VisibleLeagues =>
+        _showArchived
+            ? DashboardState.MyLeagues.ToList()
+            : DashboardState.MyLeagues.Where(l => !l.IsArchivedByUser).ToList();
+
+    private int ArchivedLeagueCount => DashboardState.MyLeagues.Count(l => l.IsArchivedByUser);
 
     protected override async Task OnInitializedAsync()
     {
@@ -338,7 +470,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (DashboardState.MyLeagues.Any())
+        if (VisibleLeagues.Any())
         {
             await UpdateCarouselHeightAsync();
         }
@@ -348,16 +480,31 @@
     {
         get
         {
-            if (!DashboardState.MyLeagues.Any())
+            var visible = VisibleLeagues;
+            if (!visible.Any())
                 return 0;
 
             var leaguesPerPage = _showTwoItems ? 2 : 1;
 
-            if (DashboardState.MyLeagues.Count <= leaguesPerPage)
+            if (visible.Count <= leaguesPerPage)
                 return 0;
 
-            return DashboardState.MyLeagues.Count - leaguesPerPage + 1;
+            return visible.Count - leaguesPerPage + 1;
         }
+    }
+
+    private async Task ToggleShowArchived()
+    {
+        _showArchived = !_showArchived;
+        _currentIndex = 0;
+        await UpdateTrackStyle();
+    }
+
+    private async Task ToggleArchive(MyLeagueDto league)
+    {
+        await DashboardState.SetLeagueArchivedAsync(league.Id, !league.IsArchivedByUser);
+        _currentIndex = 0;
+        await UpdateTrackStyle();
     }
 
     private void HandleTouchStart(TouchEventArgs e)
@@ -426,7 +573,7 @@
     private bool IsAtEnd()
     {
         var leaguesPerPage = _showTwoItems ? 2 : 1;
-        return _currentIndex >= DashboardState.MyLeagues.Count - leaguesPerPage;
+        return _currentIndex >= VisibleLeagues.Count - leaguesPerPage;
     }
 
     private void ViewLeagueDashboard(int leagueId)

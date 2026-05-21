@@ -154,4 +154,23 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
             return (false, "An unexpected error occurred.");
         }
     }
+
+    public async Task<(bool Success, string? ErrorMessage)> SetLeagueArchivedAsync(int leagueId, bool isArchived)
+    {
+        var endpoint = isArchived ? "archive" : "unarchive";
+        var response = await httpClient.PutAsync($"api/leagues/{leagueId}/{endpoint}", null);
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        try
+        {
+            var errorContent = await response.Content.ReadFromJsonAsync<JsonNode>();
+            var errorMessage = errorContent?["message"]?.ToString() ?? "Could not update league.";
+            return (false, errorMessage);
+        }
+        catch
+        {
+            return (false, "An unexpected error occurred.");
+        }
+    }
 }

@@ -57,6 +57,10 @@ public class UpdateMatchResultsCommandHandler(
             round.UpdateStatus(RoundStatus.InProgress, dateTimeProvider);
             await roundRepository.UpdateAsync(round, cancellationToken);
             await statsService.TakeRoundStartSnapshotsAsync(round.Id, cancellationToken);
+
+            var isLastRoundOfSeason = await roundRepository.IsLastRoundOfSeasonAsync(round.Id, round.SeasonId, cancellationToken);
+            if (isLastRoundOfSeason)
+                await boostService.AutoApplyUnusedBoostsForLastRoundAsync(round.Id, cancellationToken);
         }
 
         await roundRepository.UpdateMatchScoresAsync(matchesToUpdate, cancellationToken);

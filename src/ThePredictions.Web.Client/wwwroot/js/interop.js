@@ -230,5 +230,16 @@ window.blazorInterop = {
         const scrollTop = userRow.offsetTop - container.offsetTop - (containerRect.height / 2) + (rowRect.height / 2);
 
         container.scrollTop = Math.max(0, scrollTop);
+    },
+    scrollActiveRoundIntoView: function (container, smooth) {
+        if (!container) return;
+        const active = container.querySelector('.round-pill.active');
+        if (!active) return;
+
+        active.scrollIntoView({
+            inline: 'center',
+            block: 'nearest',
+            behavior: smooth ? 'smooth' : 'auto'
+        });
     }
 };

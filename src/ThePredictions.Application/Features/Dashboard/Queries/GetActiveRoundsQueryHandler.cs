@@ -35,6 +35,13 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
             WHERE
                 r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
                 AND s.[IsActive] = 1
+                AND EXISTS (
+                    SELECT 1
+                    FROM [Matches] m
+                    WHERE m.[RoundId] = r.[Id]
+                        AND m.[HomeTeamId] IS NOT NULL
+                        AND m.[AwayTeamId] IS NOT NULL
+                )
                 AND r.[SeasonId] IN (
                     SELECT l.[SeasonId]
                     FROM [Leagues] l

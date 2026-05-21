@@ -166,7 +166,7 @@ public class LeagueMemberTests
         var member = new LeagueMember(
             leagueId: 1, userId: "user-1",
             status: LeagueMemberStatus.Approved,
-            isAlertDismissed: false,
+            isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow,
             approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: null);
@@ -186,7 +186,7 @@ public class LeagueMemberTests
         var member = new LeagueMember(
             leagueId: 1, userId: "user-1",
             status: LeagueMemberStatus.Rejected,
-            isAlertDismissed: false,
+            isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow,
             approvedAtUtc: null,
             roundResults: null);
@@ -223,7 +223,7 @@ public class LeagueMemberTests
         var member = new LeagueMember(
             leagueId: 1, userId: "user-1",
             status: LeagueMemberStatus.Pending,
-            isAlertDismissed: true,
+            isAlertDismissed: true, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow,
             approvedAtUtc: null,
             roundResults: null);
@@ -255,7 +255,7 @@ public class LeagueMemberTests
         var member = new LeagueMember(
             leagueId: 1, userId: "user-1",
             status: LeagueMemberStatus.Approved,
-            isAlertDismissed: false,
+            isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow,
             approvedAtUtc: _dateTimeProvider.UtcNow,
             roundResults: null);
@@ -275,7 +275,7 @@ public class LeagueMemberTests
         var member = new LeagueMember(
             leagueId: 1, userId: "user-1",
             status: LeagueMemberStatus.Rejected,
-            isAlertDismissed: false,
+            isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: _dateTimeProvider.UtcNow,
             approvedAtUtc: null,
             roundResults: null);
@@ -317,6 +317,102 @@ public class LeagueMemberTests
 
         // Assert
         member.IsAlertDismissed.Should().BeTrue();
+    }
+
+    #endregion
+
+    #region Archive / Unarchive
+
+    private LeagueMember ApprovedMember() => new(
+        leagueId: 1, userId: "user-1",
+        status: LeagueMemberStatus.Approved,
+        isAlertDismissed: false, isArchivedByUser: false,
+        joinedAtUtc: _dateTimeProvider.UtcNow,
+        approvedAtUtc: _dateTimeProvider.UtcNow,
+        roundResults: null);
+
+    [Fact]
+    public void Create_ShouldSetIsArchivedByUserToFalse_WhenCreated()
+    {
+        // Arrange / Act
+        var member = LeagueMember.Create(1, "user-1", _dateTimeProvider);
+
+        // Assert
+        member.IsArchivedByUser.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Archive_ShouldSetIsArchivedByUserToTrue_WhenMemberIsApproved()
+    {
+        // Arrange
+        var member = ApprovedMember();
+
+        // Act
+        member.Archive();
+
+        // Assert
+        member.IsArchivedByUser.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Archive_ShouldThrowException_WhenMemberIsPending()
+    {
+        // Arrange
+        var member = LeagueMember.Create(1, "user-1", _dateTimeProvider);
+
+        // Act
+        var act = () => member.Archive();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*approved*");
+    }
+
+    [Fact]
+    public void Archive_ShouldThrowException_WhenMemberIsRejected()
+    {
+        // Arrange
+        var member = new LeagueMember(
+            leagueId: 1, userId: "user-1",
+            status: LeagueMemberStatus.Rejected,
+            isAlertDismissed: false, isArchivedByUser: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow,
+            approvedAtUtc: null,
+            roundResults: null);
+
+        // Act
+        var act = () => member.Archive();
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*approved*");
+    }
+
+    [Fact]
+    public void Unarchive_ShouldSetIsArchivedByUserToFalse_WhenCalled()
+    {
+        // Arrange
+        var member = ApprovedMember();
+        member.Archive();
+
+        // Act
+        member.Unarchive();
+
+        // Assert
+        member.IsArchivedByUser.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Unarchive_ShouldBeIdempotent_WhenAlreadyUnarchived()
+    {
+        // Arrange
+        var member = ApprovedMember();
+
+        // Act
+        member.Unarchive();
+
+        // Assert
+        member.IsArchivedByUser.Should().BeFalse();
     }
 
     #endregion

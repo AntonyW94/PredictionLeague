@@ -17,7 +17,7 @@ public class LeagueWinnersAndRankingsTests
                 leagueId: 1,
                 userId: m.UserId,
                 status: LeagueMemberStatus.Approved,
-                isAlertDismissed: false,
+                isAlertDismissed: false, isArchivedByUser: false,
                 joinedAtUtc: FixedDate,
                 approvedAtUtc: FixedDate,
                 roundResults: m.Results.Select(r => new LeagueRoundResult(
@@ -172,7 +172,7 @@ public class LeagueWinnersAndRankingsTests
         var memberA = new LeagueMember(
             leagueId: 1, userId: "user-a",
             status: LeagueMemberStatus.Approved,
-            isAlertDismissed: false, joinedAtUtc: FixedDate, approvedAtUtc: FixedDate,
+            isAlertDismissed: false, isArchivedByUser: false, joinedAtUtc: FixedDate, approvedAtUtc: FixedDate,
             roundResults: [new LeagueRoundResult(
                 leagueId: 1, roundId: 1, userId: "user-a",
                 basePoints: 5, boostedPoints: 10,
@@ -181,7 +181,7 @@ public class LeagueWinnersAndRankingsTests
         var memberB = new LeagueMember(
             leagueId: 1, userId: "user-b",
             status: LeagueMemberStatus.Approved,
-            isAlertDismissed: false, joinedAtUtc: FixedDate, approvedAtUtc: FixedDate,
+            isAlertDismissed: false, isArchivedByUser: false, joinedAtUtc: FixedDate, approvedAtUtc: FixedDate,
             roundResults: [new LeagueRoundResult(
                 leagueId: 1, roundId: 1, userId: "user-b",
                 basePoints: 8, boostedPoints: 8,

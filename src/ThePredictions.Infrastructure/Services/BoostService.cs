@@ -203,4 +203,11 @@ public sealed class BoostService(IBoostReadRepository boostReadRepository, IBoos
         if (updates.Any())
             await leagueRepository.UpdateLeagueRoundBoostsAsync(updates, cancellationToken);
     }
+
+    public async Task<int> AutoApplyUnusedBoostsForLastRoundAsync(int roundId, CancellationToken cancellationToken)
+    {
+        var (seasonId, _, _) = await boostReadRepository.GetRoundInfoAsync(roundId, cancellationToken);
+
+        return await boostWriteRepository.AutoApplyUnusedBoostsForRoundAsync(seasonId, roundId, cancellationToken);
+    }
 }

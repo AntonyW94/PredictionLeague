@@ -11,4 +11,6 @@ public interface IBoostWriteRepository
         CancellationToken cancellationToken);
 
     Task<bool> DeleteUserBoostUsageAsync(string userId, int leagueId, int roundId, CancellationToken cancellationToken);
+
+    Task<int> AutoApplyUnusedBoostsForRoundAsync(int seasonId, int roundId, CancellationToken cancellationToken);
 }

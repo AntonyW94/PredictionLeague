@@ -193,6 +193,7 @@ Junction table for users in leagues.
 | UserId | nvarchar(450) | NO | | FK to AspNetUsers |
 | Status | nvarchar(20) | NO | 'Pending' | Pending, Approved, Rejected |
 | IsAlertDismissed | bit | NO | 0 | UI state for alerts |
+| IsArchivedByUser | bit | NO | 0 | When set, the league is hidden from the user's My Leagues carousel by default and surfaced behind the "Show X archived leagues" toggle |
 | JoinedAtUtc | datetime2 | NO | GETUTCDATE() | When user requested to join |
 | ApprovedAtUtc | datetime2 | YES | | When membership was approved |
 

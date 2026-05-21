@@ -33,7 +33,13 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
                 s.[CompetitionType],
                 s.[StartDateUtc],
                 (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus) AS MemberCount,
-                COALESCE(l.[PrizeFundOverride], l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus)) AS TotalPrizeFund
+                COALESCE(l.[PrizeFundOverride], l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus)) AS TotalPrizeFund,
+                l.[IsFree],
+                CAST(CASE
+                    WHEN (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id] AND r.[Status] = @CompletedStatus) >= s.[NumberOfRounds]
+                    THEN 1
+                    ELSE 0
+                END AS bit) AS IsFinished
             FROM
                 [Leagues] l
             JOIN
@@ -41,8 +47,13 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
             WHERE
                 l.[Id] = @LeagueId";
 
-        var leagueInfo = await dbConnection.QuerySingleOrDefaultAsync<(string Name, int CompetitionType, DateTime StartDateUtc, int MemberCount, decimal TotalPrizeFund)>(
-            leagueSql, cancellationToken, new { request.LeagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+        var leagueInfo = await dbConnection.QuerySingleOrDefaultAsync<(string Name, int CompetitionType, DateTime StartDateUtc, int MemberCount, decimal TotalPrizeFund, bool IsFree, bool IsFinished)>(
+            leagueSql, cancellationToken, new
+            {
+                request.LeagueId,
+                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
+                CompletedStatus = nameof(RoundStatus.Completed)
+            });
         if (leagueInfo == default)
             return null;
 
@@ -105,6 +116,8 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
             SeasonStartDateUtc = leagueInfo.StartDateUtc,
             MemberCount = leagueInfo.MemberCount,
             TotalPrizeFund = leagueInfo.TotalPrizeFund,
+            IsFinished = leagueInfo.IsFinished,
+            IsFree = leagueInfo.IsFree,
             Members = members.ToList(),
             ViewableRounds = rounds.ToList()
         };

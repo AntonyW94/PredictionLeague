@@ -206,6 +206,27 @@ public class DashboardStateService(ILeagueService leagueService) : IDashboardSta
         }
     }
 
+    public async Task SetLeagueArchivedAsync(int leagueId, bool isArchived)
+    {
+        MyLeaguesErrorMessage = null;
+
+        var leagueIndex = MyLeagues.FindIndex(l => l.Id == leagueId);
+        if (leagueIndex < 0)
+            return;
+
+        var original = MyLeagues[leagueIndex];
+        MyLeagues[leagueIndex] = original with { IsArchivedByUser = isArchived };
+        NotifyStateChanged();
+
+        var (success, errorMessage) = await leagueService.SetLeagueArchivedAsync(leagueId, isArchived);
+        if (success)
+            return;
+
+        MyLeagues[leagueIndex] = original;
+        MyLeaguesErrorMessage = errorMessage;
+        NotifyStateChanged();
+    }
+
     public async Task LoadPendingMembersAsync()
     {
         IsPendingMembersLoading = true;

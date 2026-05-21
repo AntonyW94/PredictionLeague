@@ -129,10 +129,10 @@ public class UpdateLeagueCommandHandlerTests
         var members = new List<LeagueMember?>
         {
             new(leagueId: 1, userId: "admin-user", status: LeagueMemberStatus.Approved,
-                isAlertDismissed: false, joinedAtUtc: _dateTimeProvider.UtcNow.AddDays(-20),
+                isAlertDismissed: false, isArchivedByUser: false, joinedAtUtc: _dateTimeProvider.UtcNow.AddDays(-20),
                 approvedAtUtc: _dateTimeProvider.UtcNow.AddDays(-20), roundResults: null),
             new(leagueId: 1, userId: "other-user", status: LeagueMemberStatus.Approved,
-                isAlertDismissed: false, joinedAtUtc: _dateTimeProvider.UtcNow.AddDays(-10),
+                isAlertDismissed: false, isArchivedByUser: false, joinedAtUtc: _dateTimeProvider.UtcNow.AddDays(-10),
                 approvedAtUtc: _dateTimeProvider.UtcNow.AddDays(-10), roundResults: null)
         };
         var league = CreateLeague(
@@ -159,7 +159,7 @@ public class UpdateLeagueCommandHandlerTests
         var members = new List<LeagueMember?>
         {
             new(leagueId: 1, userId: "admin-user", status: LeagueMemberStatus.Approved,
-                isAlertDismissed: false, joinedAtUtc: _dateTimeProvider.UtcNow.AddDays(-20),
+                isAlertDismissed: false, isArchivedByUser: false, joinedAtUtc: _dateTimeProvider.UtcNow.AddDays(-20),
                 approvedAtUtc: _dateTimeProvider.UtcNow.AddDays(-20), roundResults: null)
         };
         var league = CreateLeague(

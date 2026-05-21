@@ -14,18 +14,26 @@ public class LeagueDashboardStateService(HttpClient httpClient)
     public DateTime? SeasonStartDateUtc { get; private set; }
     public int MemberCount { get; private set; }
     public decimal TotalPrizeFund { get; private set; }
+    public bool IsFinished { get; private set; }
+    public bool IsFree { get; private set; }
     public List<LeagueDashboardMemberDto> Members { get; private set; } = [];
     public List<RoundDto> ViewableRounds { get; private set; } = [];
     public List<PredictionResultDto> CurrentRoundResults { get; private set; } = [];
     public List<MatchInRoundDto> CurrentRoundMatches { get; private set; } = [];
+    public SeasonRecapDto? SeasonRecap { get; private set; }
+    public LeagueRecordsDto? LeagueRecords { get; private set; }
 
     public int? SelectedRoundId { get; set; }
 
     public bool IsLoadingDashboard { get; private set; }
     public bool IsLoadingRoundResults { get; private set; }
+    public bool IsLoadingSeasonRecap { get; private set; }
+    public bool IsLoadingLeagueRecords { get; private set; }
 
     public string? DashboardLoadError { get; private set; }
     public string? RoundResultsError { get; private set; }
+    public string? SeasonRecapError { get; private set; }
+    public string? LeagueRecordsError { get; private set; }
 
     public async Task LoadDashboardData(int leagueId)
     {
@@ -44,17 +52,30 @@ public class LeagueDashboardStateService(HttpClient httpClient)
                 SeasonStartDateUtc = data.SeasonStartDateUtc;
                 MemberCount = data.MemberCount;
                 TotalPrizeFund = data.TotalPrizeFund;
+                IsFinished = data.IsFinished;
+                IsFree = data.IsFree;
                 Members = data.Members;
                 ViewableRounds = data.ViewableRounds;
 
                 if (ViewableRounds.Any())
                 {
-                    var defaultRound = ViewableRounds.OrderBy(r => r.StartDateUtc).FirstOrDefault(r => r.Status == RoundStatus.InProgress) ?? ViewableRounds.OrderBy(r => r.StartDateUtc).FirstOrDefault(r => r.Status == RoundStatus.Published);
+                    var defaultRound =
+                        ViewableRounds.OrderBy(r => r.StartDateUtc).FirstOrDefault(r => r.Status == RoundStatus.InProgress)
+                        ?? ViewableRounds.OrderBy(r => r.StartDateUtc).FirstOrDefault(r => r.Status == RoundStatus.Published)
+                        ?? ViewableRounds.OrderByDescending(r => r.StartDateUtc).FirstOrDefault(r => r.Status == RoundStatus.Completed);
+
                     if (defaultRound != null)
                     {
                         SelectedRoundId = defaultRound.Id;
                         await LoadRoundResults(leagueId, SelectedRoundId.Value);
                     }
+                }
+
+                if (IsFinished)
+                {
+                    await Task.WhenAll(
+                        LoadSeasonRecap(leagueId),
+                        LoadLeagueRecords(leagueId));
                 }
             }
         }
@@ -94,6 +115,48 @@ public class LeagueDashboardStateService(HttpClient httpClient)
         finally
         {
             IsLoadingRoundResults = false;
+            NotifyStateChanged();
+        }
+    }
+
+    public async Task LoadSeasonRecap(int leagueId)
+    {
+        IsLoadingSeasonRecap = true;
+        SeasonRecapError = null;
+        NotifyStateChanged();
+
+        try
+        {
+            SeasonRecap = await httpClient.GetFromJsonAsync<SeasonRecapDto>($"api/leagues/{leagueId}/season-recap");
+        }
+        catch
+        {
+            SeasonRecapError = "Could not load your season summary.";
+        }
+        finally
+        {
+            IsLoadingSeasonRecap = false;
+            NotifyStateChanged();
+        }
+    }
+
+    public async Task LoadLeagueRecords(int leagueId)
+    {
+        IsLoadingLeagueRecords = true;
+        LeagueRecordsError = null;
+        NotifyStateChanged();
+
+        try
+        {
+            LeagueRecords = await httpClient.GetFromJsonAsync<LeagueRecordsDto>($"api/leagues/{leagueId}/records");
+        }
+        catch
+        {
+            LeagueRecordsError = "Could not load league records.";
+        }
+        finally
+        {
+            IsLoadingLeagueRecords = false;
             NotifyStateChanged();
         }
     }

@@ -838,4 +838,42 @@ public class RoundTests
     }
 
     #endregion
+
+    #region HasConfirmedFixtures
+
+    [Fact]
+    public void HasConfirmedFixtures_ShouldBeFalse_WhenRoundHasNoMatches()
+    {
+        // Arrange
+        var round = CreateRoundWithId();
+
+        // Act / Assert
+        round.HasConfirmedFixtures.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasConfirmedFixtures_ShouldBeFalse_WhenAllMatchesArePlaceholders()
+    {
+        // Arrange
+        var round = CreateRoundWithId();
+        round.AddPlaceholderMatch("Winner QF1", "Winner QF2", "Semi-finals");
+        round.AddPlaceholderMatch("Winner QF3", "Winner QF4", "Semi-finals");
+
+        // Act / Assert
+        round.HasConfirmedFixtures.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasConfirmedFixtures_ShouldBeTrue_WhenAtLeastOneMatchHasBothTeams()
+    {
+        // Arrange
+        var round = CreateRoundWithId();
+        round.AddPlaceholderMatch("Winner QF1", "Winner QF2", "Semi-finals");
+        round.AddMatch(1, 2, ValidMatchTime, externalId: null);
+
+        // Act / Assert
+        round.HasConfirmedFixtures.Should().BeTrue();
+    }
+
+    #endregion
 }

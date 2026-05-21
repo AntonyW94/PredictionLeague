@@ -50,13 +50,14 @@
 
     [Parameter] public BoostEligibilityDto? Eligibility { get; set; }
     [Parameter] public EventCallback<bool> IsSelectedChanged { get; set; }
+    [Parameter] public bool IsLocked { get; set; }
 
     private bool _initialized;
-    private bool _initiallySelected;          
-    private int _serverRemaining;             
-    private bool _localSelected;         
+    private bool _initiallySelected;
+    private int _serverRemaining;
+    private bool _localSelected;
 
-    private bool IsDisabled => !_initiallySelected && (Eligibility == null || !Eligibility.CanUse || Eligibility.AlreadyUsedThisRound);
+    private bool IsDisabled => IsLocked || (!_initiallySelected && (Eligibility == null || !Eligibility.CanUse || Eligibility.AlreadyUsedThisRound));
 
     private string CurrentImageUrl =>
         IsSelected ? SelectedImageUrl :

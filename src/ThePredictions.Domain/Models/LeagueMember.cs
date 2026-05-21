@@ -10,6 +10,7 @@ public class LeagueMember
     public string UserId { get; private set; } = string.Empty;
     public LeagueMemberStatus Status { get; private set; }
     public bool IsAlertDismissed { get; private set; }
+    public bool IsArchivedByUser { get; private set; }
     public DateTime JoinedAtUtc { get; private set; }
     public DateTime? ApprovedAtUtc { get; private set; }
     public IReadOnlyCollection<LeagueRoundResult> RoundResults => _roundResults.AsReadOnly();
@@ -23,6 +24,7 @@ public class LeagueMember
         string userId,
         LeagueMemberStatus status,
         bool isAlertDismissed,
+        bool isArchivedByUser,
         DateTime joinedAtUtc,
         DateTime? approvedAtUtc,
         IEnumerable<LeagueRoundResult>? roundResults)
@@ -31,10 +33,11 @@ public class LeagueMember
         UserId = userId;
         Status = status;
         IsAlertDismissed = isAlertDismissed;
+        IsArchivedByUser = isArchivedByUser;
         JoinedAtUtc = joinedAtUtc;
         ApprovedAtUtc = approvedAtUtc;
 
-        if (roundResults != null) 
+        if (roundResults != null)
             _roundResults.AddRange(roundResults);
     }
 
@@ -49,6 +52,7 @@ public class LeagueMember
             UserId = userId,
             Status = LeagueMemberStatus.Pending,
             IsAlertDismissed = false,
+            IsArchivedByUser = false,
             JoinedAtUtc = dateTimeProvider.UtcNow,
             ApprovedAtUtc = null
         };
@@ -75,5 +79,18 @@ public class LeagueMember
     public void DismissAlert()
     {
         IsAlertDismissed = true;
+    }
+
+    public void Archive()
+    {
+        if (Status != LeagueMemberStatus.Approved)
+            throw new InvalidOperationException("Only approved members can archive a league.");
+
+        IsArchivedByUser = true;
+    }
+
+    public void Unarchive()
+    {
+        IsArchivedByUser = false;
     }
 }

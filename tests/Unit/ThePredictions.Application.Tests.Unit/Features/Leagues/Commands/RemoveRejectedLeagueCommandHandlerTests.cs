@@ -25,7 +25,7 @@ public class RemoveRejectedLeagueCommandHandlerTests
     {
         var member = new LeagueMember(
             leagueId: 1, userId: memberUserId, status: memberStatus,
-            isAlertDismissed: false,
+            isAlertDismissed: false, isArchivedByUser: false,
             joinedAtUtc: new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc),
             approvedAtUtc: null, roundResults: null);
 

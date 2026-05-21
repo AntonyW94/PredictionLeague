@@ -17,6 +17,7 @@ public class LeagueMemberRepository(IDbConnectionFactory connectionFactory, IDbT
                 [UserId],
                 [Status],
                 [IsAlertDismissed],
+                [IsArchivedByUser],
                 [JoinedAtUtc],
                 [ApprovedAtUtc]
             FROM
@@ -37,6 +38,7 @@ public class LeagueMemberRepository(IDbConnectionFactory connectionFactory, IDbT
             SET
                 [Status] = @Status,
                 [IsAlertDismissed] = @IsAlertDismissed,
+                [IsArchivedByUser] = @IsArchivedByUser,
                 [ApprovedAtUtc] = @ApprovedAtUtc
             WHERE
                 [LeagueId] = @LeagueId
@@ -46,6 +48,7 @@ public class LeagueMemberRepository(IDbConnectionFactory connectionFactory, IDbT
         {
             Status = member.Status.ToString(),
             member.IsAlertDismissed,
+            member.IsArchivedByUser,
             member.ApprovedAtUtc,
             member.LeagueId,
             member.UserId

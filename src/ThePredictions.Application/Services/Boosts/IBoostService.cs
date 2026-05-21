@@ -25,4 +25,6 @@ public interface IBoostService
         CancellationToken cancellationToken);
 
     Task ApplyRoundBoostsAsync(int roundId, CancellationToken cancellationToken);
+
+    Task<int> AutoApplyUnusedBoostsForLastRoundAsync(int roundId, CancellationToken cancellationToken);
 }

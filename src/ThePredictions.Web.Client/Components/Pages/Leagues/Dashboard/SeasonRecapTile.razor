@@ -1,0 +1,133 @@
+@inject LeagueDashboardStateService State
+
+@implements IDisposable
+
+@using ThePredictions.Web.Client.Services.Leagues
+
+<div class="section season-recap">
+    <h5 class="text-white fw-bold mb-3 text-center">Your Season</h5>
+
+    <ApiError Message="@State.SeasonRecapError" />
+
+    @if (State.IsLoadingSeasonRecap)
+    {
+        <p class="text-center text-white"><em>Loading your season summary...</em></p>
+    }
+    else if (State.SeasonRecap is { } recap)
+    {
+        <div class="recap-hero-grid">
+            <div class="recap-hero-card">
+                <i class="bi bi-trophy-fill recap-hero-icon"></i>
+                <div class="recap-hero-value">
+                    @recap.FinalPosition<sup>@GetOrdinalSuffix(recap.FinalPosition)</sup>
+                </div>
+                <div class="recap-hero-label">of @recap.TotalMembers</div>
+                <div class="recap-hero-caption">Final Position</div>
+            </div>
+
+            @if (recap.HighestPosition > 0)
+            {
+                <div class="recap-hero-card">
+                    <i class="bi bi-graph-up-arrow recap-hero-icon"></i>
+                    <div class="recap-hero-value">
+                        @recap.HighestPosition<sup>@GetOrdinalSuffix(recap.HighestPosition)</sup>
+                    </div>
+                    <div class="recap-hero-label">
+                        held for @recap.RoundsAtHighestPosition @(recap.RoundsAtHighestPosition == 1 ? "round" : "rounds")
+                    </div>
+                    <div class="recap-hero-caption">Peak Position</div>
+                </div>
+            }
+
+            @if (!recap.IsFree)
+            {
+                <div class="recap-hero-card">
+                    <i class="bi bi-cash-stack recap-hero-icon"></i>
+                    <div class="recap-hero-value">@FormatMoney(recap.TotalWinnings)</div>
+                    <div class="recap-hero-caption">Total Winnings</div>
+                </div>
+
+                <div class="recap-hero-card @(recap.ProfitLoss >= 0 ? "profit" : "loss")">
+                    <i class="bi @(recap.ProfitLoss >= 0 ? "bi-arrow-up-right-circle-fill" : "bi-arrow-down-right-circle-fill") recap-hero-icon"></i>
+                    <div class="recap-hero-value">
+                        @(recap.ProfitLoss >= 0 ? "+" : "-")@FormatMoney(Math.Abs(recap.ProfitLoss))
+                    </div>
+                    <div class="recap-hero-caption">vs @FormatMoney(recap.LeaguePrice) buy-in</div>
+                </div>
+            }
+        </div>
+
+        <div class="recap-stats-grid">
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-bar-chart-fill"></i></div>
+                <div class="record-card-value">@recap.AveragePointsPerRound.ToString("0.0")</div>
+                <div class="record-card-label">Avg Points / Round</div>
+            </div>
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                <div class="record-card-value">@recap.BestRoundPoints<span class="record-card-unit"> pts</span></div>
+                <div class="record-card-label">Best Round</div>
+                @if (recap.BestRoundNumber.HasValue)
+                {
+                    <div class="record-card-context">R@(recap.BestRoundNumber)</div>
+                }
+            </div>
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-graph-down-arrow"></i></div>
+                <div class="record-card-value">@recap.WorstRoundPoints<span class="record-card-unit"> pts</span></div>
+                <div class="record-card-label">Worst Round</div>
+                @if (recap.WorstRoundNumber.HasValue)
+                {
+                    <div class="record-card-context">R@(recap.WorstRoundNumber)</div>
+                }
+            </div>
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-bullseye"></i></div>
+                <div class="record-card-value">@recap.TotalExactScores</div>
+                <div class="record-card-label">Exact Scores</div>
+            </div>
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-calendar-week"></i></div>
+                <div class="record-card-value">@recap.RoundsWon</div>
+                <div class="record-card-label">Rounds Won</div>
+            </div>
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-calendar-month"></i></div>
+                <div class="record-card-value">@recap.MonthsWon</div>
+                <div class="record-card-label">Months Won</div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        State.OnStateChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        State.OnStateChange -= StateHasChanged;
+    }
+
+    private static string FormatMoney(decimal amount) => $"£{amount:0.00}";
+
+    private static string GetOrdinalSuffix(int position)
+    {
+        if (position <= 0)
+            return string.Empty;
+
+        var lastTwo = position % 100;
+        if (lastTwo is >= 11 and <= 13)
+            return "th";
+
+        return (position % 10) switch
+        {
+            1 => "st",
+            2 => "nd",
+            3 => "rd",
+            _ => "th"
+        };
+    }
+}

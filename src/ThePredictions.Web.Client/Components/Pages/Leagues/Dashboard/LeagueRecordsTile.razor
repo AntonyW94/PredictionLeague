@@ -1,0 +1,115 @@
+@inject LeagueDashboardStateService State
+
+@implements IDisposable
+
+@using ThePredictions.Web.Client.Services.Leagues
+
+<div class="section league-records">
+    <h5 class="text-white fw-bold mb-3 text-center">League Records</h5>
+
+    <ApiError Message="@State.LeagueRecordsError" />
+
+    @if (State.IsLoadingLeagueRecords)
+    {
+        <p class="text-center text-white"><em>Loading league records...</em></p>
+    }
+    else if (State.LeagueRecords is { } r)
+    {
+        <div class="records-grid @(r.IsFree ? "records-grid--free" : string.Empty)">
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                <div class="record-card-value">@r.TopRoundPoints<span class="record-card-unit"> pts</span></div>
+                <div class="record-card-label">Top Single Round</div>
+                @if (!string.IsNullOrEmpty(r.TopRoundPlayerName))
+                {
+                    <div class="record-card-context">@r.TopRoundPlayerName · R@(r.TopRoundNumber)</div>
+                }
+            </div>
+
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-graph-down-arrow"></i></div>
+                <div class="record-card-value">@r.LowestRoundPoints<span class="record-card-unit"> pts</span></div>
+                <div class="record-card-label">Lowest Single Round</div>
+                @if (!string.IsNullOrEmpty(r.LowestRoundPlayerName))
+                {
+                    <div class="record-card-context">@r.LowestRoundPlayerName · R@(r.LowestRoundNumber)</div>
+                }
+            </div>
+
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-bullseye"></i></div>
+                <div class="record-card-value">@r.MostExactInRoundCount</div>
+                <div class="record-card-label">Most Exact in a Round</div>
+                @if (!string.IsNullOrEmpty(r.MostExactInRoundPlayerName))
+                {
+                    <div class="record-card-context">@r.MostExactInRoundPlayerName · R@(r.MostExactInRoundNumber)</div>
+                }
+            </div>
+
+            @if (!r.IsFree)
+            {
+                <div class="record-card">
+                    <div class="record-card-icon"><i class="bi bi-cash-stack"></i></div>
+                    <div class="record-card-value">@((MarkupString)$"&pound;{r.TopEarnerAmount:0.00}")</div>
+                    <div class="record-card-label">Top Earner</div>
+                    @if (!string.IsNullOrEmpty(r.TopEarnerName))
+                    {
+                        <div class="record-card-context">@r.TopEarnerName</div>
+                    }
+                </div>
+            }
+
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-calendar-week"></i></div>
+                <div class="record-card-value">@r.MostRoundsWonCount</div>
+                <div class="record-card-label">Most Rounds Won</div>
+                @if (!string.IsNullOrEmpty(r.MostRoundsWonPlayerName))
+                {
+                    <div class="record-card-context">@r.MostRoundsWonPlayerName</div>
+                }
+            </div>
+
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-calendar-month"></i></div>
+                <div class="record-card-value">@r.MostMonthsWonCount</div>
+                <div class="record-card-label">Most Months Won</div>
+                @if (!string.IsNullOrEmpty(r.MostMonthsWonPlayerName))
+                {
+                    <div class="record-card-context">@r.MostMonthsWonPlayerName</div>
+                }
+            </div>
+
+            @if (!r.IsFree)
+            {
+                <div class="record-card">
+                    <div class="record-card-icon"><i class="bi bi-stars"></i></div>
+                    <div class="record-card-value">@r.TotalExactScores</div>
+                    <div class="record-card-label">Exact Scores</div>
+                    <div class="record-card-context">Across the League</div>
+                </div>
+            }
+
+            <div class="record-card">
+                <div class="record-card-icon"><i class="bi bi-fire"></i></div>
+                <div class="record-card-value">@r.HighestGameweekPoints<span class="record-card-unit"> pts</span></div>
+                <div class="record-card-label">Top Gameweek</div>
+                @if (r.HighestGameweekRoundNumber.HasValue)
+                {
+                    <div class="record-card-context">R@(r.HighestGameweekRoundNumber)</div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        State.OnStateChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        State.OnStateChange -= StateHasChanged;
+    }
+}

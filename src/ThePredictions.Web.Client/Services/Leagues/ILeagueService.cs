@@ -27,4 +27,5 @@ public interface ILeagueService
     Task<(bool Success, string? ErrorMessage)> JoinPrivateLeagueAsync(string entryCode);
     Task<(bool Success, string? ErrorMessage)> CancelJoinRequestAsync(int leagueId);
     Task<(bool Success, string? ErrorMessage)> DismissAlertAsync(int leagueId);
+    Task<(bool Success, string? ErrorMessage)> SetLeagueArchivedAsync(int leagueId, bool isArchived);
 }

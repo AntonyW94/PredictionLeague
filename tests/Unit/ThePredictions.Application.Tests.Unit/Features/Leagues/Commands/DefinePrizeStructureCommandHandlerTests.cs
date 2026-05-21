@@ -46,7 +46,7 @@ public class DefinePrizeStructureCommandHandlerTests
             .Select(i => new LeagueMember(
                 leagueId: id, userId: i == 0 ? administratorUserId : $"member-{i}",
                 status: LeagueMemberStatus.Approved,
-                isAlertDismissed: false,
+                isAlertDismissed: false, isArchivedByUser: false,
                 joinedAtUtc: FixedNow.AddDays(-30 + i),
                 approvedAtUtc: FixedNow.AddDays(-30 + i),
                 roundResults: null))

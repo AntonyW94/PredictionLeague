@@ -25,5 +25,13 @@ public record MyLeagueDto(
 
     decimal PrizeMoneyWon,
     decimal PrizeMoneyRemaining,
-    decimal TotalPrizeFund
+    decimal TotalPrizeFund,
+    decimal EntryFee,
+    bool IsFree,
+
+    int RoundsWon,
+    int MonthsWon,
+
+    bool IsFinished,
+    bool IsArchivedByUser
 );
