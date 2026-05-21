@@ -1,11 +1,16 @@
-/* --- Desktop Grid Styles --- */
+/* --- Desktop Grid Styles ---
+   Players are rows, matches are columns. The player + total columns
+   are sticky-left so they stay visible while scrolling horizontally
+   through many matches (essential for the World Cup group stage's 24). */
 .results-grid-container {
     overflow-x: auto;
+    max-height: 70vh;
+    overflow-y: auto;
 }
 
-/* Custom scrollbar for results grid */
 .results-grid-container::-webkit-scrollbar {
     height: 0.5rem;
+    width: 0.5rem;
 }
 
 .results-grid-container::-webkit-scrollbar-track {
@@ -18,12 +23,13 @@
     border-radius: 0.25rem;
 }
 
-.results-grid-container::-webkit-scrollbar-thumb:hover {
-    background: var(--grey-500);
-}
+    .results-grid-container::-webkit-scrollbar-thumb:hover {
+        background: var(--grey-500);
+    }
 
 .results-grid {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     width: 100%;
     color: var(--purple-1000);
     font-size: 0.9rem;
@@ -31,67 +37,149 @@
 
     .results-grid th,
     .results-grid td {
-        padding: 0.75rem;
+        padding: 0.5rem 0.75rem;
         text-align: center;
         border-bottom: 1px solid var(--grey-200);
         white-space: nowrap;
+        background-color: var(--white);
     }
 
-    .results-grid th {
+    .results-grid thead th {
         background-color: var(--purple-50);
         font-weight: bold;
         position: sticky;
         top: 0;
-        z-index: 1;
+        z-index: 2;
+        vertical-align: middle;
+        padding: 0.5rem 0.5rem;
     }
 
-    .results-grid .match-info {
-        text-align: left;
-        min-width: 3.75rem;
+    /* Player column: sticky left so the name stays visible during horizontal scroll */
+    .results-grid .player-col {
         position: sticky;
         left: 0;
-        background-color: var(--purple-50);
-        font-weight: bold;
-    }
-
-    .results-grid thead .match-info,
-    .results-grid tfoot .match-info {
         z-index: 3;
+        min-width: 9.5rem;
+        text-align: left;
+        background-color: var(--purple-50);
     }
 
-    .results-grid td.match-info {
+    .results-grid tbody td.player-col {
         background-color: var(--white);
-        z-index: 2;
     }
 
-    /* Striping handled by .table-striped-purple utility */
+    .results-grid thead .player-col {
+        z-index: 4;
+    }
+
+    /* Total column: sticky to the right of the player column */
+    .results-grid .total-col {
+        position: sticky;
+        left: 9.5rem;
+        z-index: 3;
+        min-width: 3.5rem;
+        background-color: var(--purple-50);
+        box-shadow: 0.25rem 0 0.35rem -0.25rem var(--black-alpha-15);
+    }
+
+    .results-grid tbody td.total-col {
+        background-color: var(--white);
+    }
+
+    .results-grid thead .total-col {
+        z-index: 4;
+    }
+
+    .results-grid .match-col {
+        min-width: 6.5rem;
+    }
+
+    .results-grid .match-col-teams {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .results-grid .match-logo-tiny {
+        width: 1.25rem;
+        height: 1.25rem;
+        object-fit: contain;
+    }
+
+    .results-grid .match-col-abbr {
+        font-size: 0.7rem;
+    }
+
+    .results-grid .match-col-actual {
+        margin-top: 0.4rem;
+        display: flex;
+        justify-content: center;
+    }
 
     .results-grid .score-cell {
         font-weight: bold;
+        font-size: 1rem;
+    }
+
+    .results-grid .total-col.score-cell {
         font-size: 1.1rem;
-        background: var(--white);
+    }
+
+    .results-grid .player-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .results-grid .player-rank {
+        font-weight: 700;
+        color: var(--grey-500);
+        min-width: 1.25rem;
+        text-align: right;
+    }
+
+    .results-grid .player-name {
+        font-weight: 600;
     }
 
     .results-grid .not-predicted-icon {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         color: var(--grey-300);
     }
 
-    .results-grid .match-info .match-logo-small {
-        height: 1.875rem;
-        width: 1.875rem;
+    /* Winning row(s) highlight - top scorer(s) of this round */
+    .results-grid tbody tr.winner-row td {
+        background-color: var(--yellow-alpha-18);
     }
 
-    .results-grid tfoot th {
-        background-color: var(--purple-50);
-        font-size: 1.2rem;
-        position: sticky;
-        bottom: 0;
+    .results-grid tbody tr.winner-row td.player-col,
+    .results-grid tbody tr.winner-row td.total-col {
+        background-color: var(--yellow-alpha-18);
     }
 
-    .results-grid .actual-score.in-progress {
-        color: var(--green-600);
-        animation: pulse-scale 1.5s infinite;
+    .results-grid tbody tr.winner-row .player-rank {
+        color: var(--purple-1000);
+    }
+
+    /* Current user row highlight (overrides winner colouring for clarity on own row) */
+    .results-grid tbody tr.current-user-highlight td {
+        background-color: var(--purple-100);
+    }
+
+    .results-grid tbody tr.current-user-highlight td.player-col,
+    .results-grid tbody tr.current-user-highlight td.total-col {
+        background-color: var(--purple-100);
+    }
+
+    .results-grid tbody tr.current-user-highlight.winner-row td {
+        background-color: var(--yellow-alpha-18);
+        outline: 2px solid var(--purple-500);
+        outline-offset: -2px;
     }
 
 .blurred-score {
@@ -100,9 +188,46 @@
     user-select: none;
 }
 
-.results-grid thead th.winner-column,
-.results-grid tfoot th.winner-column {
-    background-color: var(--gold) !important;
+/* Dark mode overrides */
+.theme-dark .results-grid {
+    color: var(--white);
+}
+
+.theme-dark .results-grid th,
+.theme-dark .results-grid td {
+    background-color: var(--purple-1000);
+    border-bottom-color: var(--white-alpha-10);
+}
+
+.theme-dark .results-grid thead th,
+.theme-dark .results-grid .player-col,
+.theme-dark .results-grid .total-col {
+    background-color: var(--purple-900);
+}
+
+.theme-dark .results-grid tbody td.player-col,
+.theme-dark .results-grid tbody td.total-col {
+    background-color: var(--purple-1000);
+}
+
+.theme-dark .results-grid .player-rank {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .results-grid tbody tr.winner-row td,
+.theme-dark .results-grid tbody tr.winner-row td.player-col,
+.theme-dark .results-grid tbody tr.winner-row td.total-col {
+    background-color: var(--purple-800);
+}
+
+.theme-dark .results-grid tbody tr.winner-row .player-rank {
+    color: var(--white);
+}
+
+.theme-dark .results-grid tbody tr.current-user-highlight td,
+.theme-dark .results-grid tbody tr.current-user-highlight td.player-col,
+.theme-dark .results-grid tbody tr.current-user-highlight td.total-col {
+    background-color: var(--purple-700);
 }
 
 /* --- Mobile Carousel and Card Styles --- */
