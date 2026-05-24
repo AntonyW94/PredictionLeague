@@ -40,8 +40,7 @@ public class GetMatchesForRoundQueryHandler(IApplicationReadDbConnection dbConne
                 m.[RoundId] = @RoundId
                 AND m.[Status] IN (@Scheduled, @InProgress, @Completed)
             ORDER BY
-                m.[MatchDateTimeUtc],
-                m.[MatchNumber];";
+                m.[MatchDateTimeUtc];";
 
         return await dbConnection.QueryAsync<MatchInRoundDto>(sql, cancellationToken, new
             {

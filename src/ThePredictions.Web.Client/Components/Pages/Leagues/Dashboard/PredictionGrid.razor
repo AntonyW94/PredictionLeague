@@ -7,7 +7,7 @@
 
 @if (Results != null && Matches != null)
 {
-    var orderedMatches = Matches.OrderBy(m => m.MatchDateTimeUtc).ThenBy(m => m.MatchNumber).ThenBy(m => m.HomeTeamShortName).ToList();
+    var orderedMatches = Matches.OrderBy(m => m.MatchDateTimeUtc).ThenBy(m => m.HomeTeamShortName).ThenBy(m => m.MatchNumber).ToList();
     var orderedPlayers = Results.OrderBy(p => p.Rank).ThenBy(p => p.PlayerName).ToList();
     var winnerPoints = Results.Any() ? Results.Max(p => p.TotalPoints) : 0;
     var hasWinner = orderedPlayers.Any() && winnerPoints > 0;
