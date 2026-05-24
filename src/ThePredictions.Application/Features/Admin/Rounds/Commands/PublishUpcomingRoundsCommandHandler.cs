@@ -10,10 +10,10 @@ public class PublishUpcomingRoundsCommandHandler(IRoundRepository roundRepositor
 {
     public async Task Handle(PublishUpcomingRoundsCommand request, CancellationToken cancellationToken)
     {
-        var fourWeeksFromNowUtc = dateTimeProvider.UtcNow.AddDays(28);
+        var sixWeeksFromNowUtc = dateTimeProvider.UtcNow.AddDays(42);
 
-        await PublishDraftRoundsAsync(fourWeeksFromNowUtc, cancellationToken);
-        await UnpublishDistantRoundsAsync(fourWeeksFromNowUtc, cancellationToken);
+        await PublishDraftRoundsAsync(sixWeeksFromNowUtc, cancellationToken);
+        await UnpublishDistantRoundsAsync(sixWeeksFromNowUtc, cancellationToken);
     }
 
     private async Task PublishDraftRoundsAsync(DateTime cutoffUtc, CancellationToken cancellationToken)
@@ -53,7 +53,7 @@ public class PublishUpcomingRoundsCommandHandler(IRoundRepository roundRepositor
         {
             round.UpdateStatus(RoundStatus.Draft, dateTimeProvider);
             await roundRepository.UpdateAsync(round, cancellationToken);
-            logger.LogInformation("Unpublished Round (Number: {RoundNumber}, ID: {RoundId}) — start date moved beyond 28-day window", round.RoundNumber, round.Id);
+            logger.LogInformation("Unpublished Round (Number: {RoundNumber}, ID: {RoundId}) — start date moved beyond 6-week window", round.RoundNumber, round.Id);
         }
 
         logger.LogInformation("Successfully unpublished Rounds (Count: {Count})", roundsToUnpublish.Count);
