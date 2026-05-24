@@ -42,15 +42,15 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
                 (SELECT COUNT(*) FROM [Matches] WHERE [RoundId] = r.[Id] AND [Status] = @InProgressStatus) AS InProgressCount,
                 (SELECT COUNT(*) FROM [Matches] WHERE [RoundId] = r.[Id] AND [Status] = @CompletedStatus) AS CompletedCount,
                 ROW_NUMBER() OVER (
-                    PARTITION BY r.[SeasonId] 
-                        ORDER BY 
-                           CASE 
-                            WHEN r.[Status] = @InProgressStatus THEN 0 
+                    PARTITION BY r.[SeasonId]
+                        ORDER BY
+                           CASE
+                            WHEN r.[Status] = @InProgressStatus THEN 0
                             WHEN r.[Status] = @CompletedStatus AND r.[CompletedDateUtc] > DATEADD(HOUR, -48, GETUTCDATE()) THEN 1
                             WHEN r.[Status] = @PublishedStatus THEN 2
-                            ELSE 3 
+                            ELSE 3
                         END ASC,
-                        r.[StartDateUtc] ASC
+                        r.[RoundNumber] ASC
                 ) as [PriorityRank]
             FROM [Rounds] r
             WHERE 
