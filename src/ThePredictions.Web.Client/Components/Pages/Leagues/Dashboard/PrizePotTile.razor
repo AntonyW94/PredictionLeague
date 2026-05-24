@@ -1,33 +1,38 @@
 @using ThePredictions.Contracts.Leagues
 
-<div class="section h-100">
-    <h5 class="text-white fw-bold mb-3">Winnings</h5>
-    <div class="body centered">
+<div class="section prize-pot">
+    <h5 class="text-white fw-bold mb-3 text-center">Winnings</h5>
 
-        <div class="message-box-solid warning" role="alert">
-            Winnings will be calculated after the league entry deadline has passed and the prize structure has been confirmed.
+    <div class="recap-hero-grid mb-0">
+        <div class="recap-hero-card prize">
+            <i class="bi bi-cash-stack recap-hero-icon"></i>
+            <div class="recap-hero-value">@FormatMoney(WinningsData.TotalPrizePot)</div>
+            <div class="recap-hero-caption">Estimated Prize Pot</div>
         </div>
+    </div>
 
-        <div class="mt-4">
-            <p class="text-white-50 mb-1">Current Entries</p>
-            <h4 class="text-white fw-bold">@WinningsData.EntryCount</h4>
+    <div class="prize-pot-grid">
+        <div class="record-card">
+            <div class="record-card-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="record-card-value">@WinningsData.EntryCount</div>
+            <div class="record-card-label">Current Entries</div>
         </div>
-
-        <div class="mt-3">
-            <p class="text-white-50 mb-1">Entry Cost</p>
-            <h4 class="text-white fw-bold">@WinningsData.EntryCost.ToString("C", new System.Globalization.CultureInfo("en-GB"))</h4>
+        <div class="record-card">
+            <div class="record-card-icon"><i class="bi bi-ticket-detailed-fill"></i></div>
+            <div class="record-card-value">@FormatMoney(WinningsData.EntryCost)</div>
+            <div class="record-card-label">Entry Cost</div>
         </div>
+    </div>
 
-        <hr class="text-white w-75 my-4" />
-
-        <div>
-            <p class="text-white-50 mb-1">Estimated Prize Pot</p>
-            <h3 class="text-white fw-bold text-green-600">@WinningsData.TotalPrizePot.ToString("C", new System.Globalization.CultureInfo("en-GB"))</h3>
-        </div>
+    <div class="prize-pot-note">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>Winnings will be calculated after the league entry deadline has passed and the prize structure has been confirmed.</span>
     </div>
 </div>
 
 @code {
     [Parameter, EditorRequired]
     public WinningsDto WinningsData { get; set; } = null!;
+
+    private static string FormatMoney(decimal amount) => $"£{amount:0.00}";
 }

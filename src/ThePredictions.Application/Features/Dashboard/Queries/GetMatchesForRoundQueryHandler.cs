@@ -27,17 +27,19 @@ public class GetMatchesForRoundQueryHandler(IApplicationReadDbConnection dbConne
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 m.[ActualHomeTeamScore],
                 m.[ActualAwayTeamScore],
-                m.[Status]
-            FROM 
+                m.[Status],
+                m.[PlaceholderHomeName],
+                m.[PlaceholderAwayName]
+            FROM
                 [Matches] m
-            JOIN 
+            LEFT JOIN
                 [Teams] ht ON m.[HomeTeamId] = ht.[Id]
-            JOIN 
+            LEFT JOIN
                 [Teams] at ON m.[AwayTeamId] = at.[Id]
             WHERE
                 m.[RoundId] = @RoundId
                 AND m.[Status] IN (@Scheduled, @InProgress, @Completed)
-            ORDER BY 
+            ORDER BY
                 m.[MatchDateTimeUtc];";
 
         return await dbConnection.QueryAsync<MatchInRoundDto>(sql, cancellationToken, new

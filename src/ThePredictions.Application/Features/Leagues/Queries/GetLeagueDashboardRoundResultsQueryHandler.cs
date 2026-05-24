@@ -15,12 +15,6 @@ public class GetLeagueDashboardRoundResultsQueryHandler(
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
-        const string roundStatusSql = "SELECT [Status] FROM [Rounds] WHERE [Id] = @RoundId;";
-      
-        var roundStatus = await dbConnection.QuerySingleOrDefaultAsync<string>(roundStatusSql, cancellationToken, new { request.RoundId });
-        if (roundStatus == null || Enum.Parse<RoundStatus>(roundStatus) == RoundStatus.Draft)
-            return null;
-
         const string sql = @"WITH RoundRankings AS (
                                 SELECT 
                                     lm.[UserId],

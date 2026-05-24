@@ -14,26 +14,33 @@ public class GetExactScoresLeaderboardQueryHandler(
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
         const string entriesSql = @"
+            DECLARE @SeasonId int = (SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId);
+
             SELECT
-	            RANK() OVER (ORDER BY COALESCE(SUM(rr.[ExactScoreCount]), 0) DESC) AS [Rank],
+                RANK() OVER (ORDER BY ISNULL(exact_scores.[Total], 0) DESC) AS [Rank],
                 u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
-  	            COALESCE(SUM(rr.[ExactScoreCount]), 0) AS [ExactScoresCount],
-	            u.[Id] AS [UserId]
-            FROM 
-	            [LeagueMembers] lm
-            JOIN 
+                ISNULL(exact_scores.[Total], 0) AS [ExactScoresCount],
+                u.[Id] AS [UserId]
+            FROM
+                [LeagueMembers] lm
+            INNER JOIN
                 [AspNetUsers] u ON u.[Id] = lm.[UserId]
-            LEFT JOIN		
-	            [RoundResults] rr ON lm.[UserId] = rr.[UserId]
+            OUTER APPLY (
+                SELECT
+                    SUM(rr.[ExactScoreCount]) AS [Total]
+                FROM
+                    [RoundResults] rr
+                INNER JOIN
+                    [Rounds] r ON r.[Id] = rr.[RoundId]
+                WHERE
+                    rr.[UserId] = lm.[UserId]
+                    AND r.[SeasonId] = @SeasonId
+            ) exact_scores
             WHERE
-                lm.[LeagueId] = @LeagueId 
+                lm.[LeagueId] = @LeagueId
                 AND lm.[Status] = @ApprovedStatus
-            GROUP BY 
-                u.[FirstName],
-                u.[LastName],
-                u.[Id]
             ORDER BY
-                [ExactScoresCount] DESC, 
+                [ExactScoresCount] DESC,
                 [PlayerName]";
 
         var leaderboardEntries = await connection.QueryAsync<ExactScoresLeaderboardEntryDto>(entriesSql, cancellationToken, new { request.LeagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });

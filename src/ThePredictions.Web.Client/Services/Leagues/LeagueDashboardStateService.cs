@@ -60,9 +60,9 @@ public class LeagueDashboardStateService(HttpClient httpClient)
                 if (ViewableRounds.Any())
                 {
                     var defaultRound =
-                        ViewableRounds.OrderBy(r => r.StartDateUtc).FirstOrDefault(r => r.Status == RoundStatus.InProgress)
-                        ?? ViewableRounds.OrderBy(r => r.StartDateUtc).FirstOrDefault(r => r.Status == RoundStatus.Published)
-                        ?? ViewableRounds.OrderByDescending(r => r.StartDateUtc).FirstOrDefault(r => r.Status == RoundStatus.Completed);
+                        ViewableRounds.OrderBy(r => r.RoundNumber).FirstOrDefault(r => r.Status == RoundStatus.InProgress)
+                        ?? ViewableRounds.OrderBy(r => r.RoundNumber).FirstOrDefault(r => r.Status == RoundStatus.Published)
+                        ?? ViewableRounds.OrderByDescending(r => r.RoundNumber).FirstOrDefault(r => r.Status == RoundStatus.Completed);
 
                     if (defaultRound != null)
                     {

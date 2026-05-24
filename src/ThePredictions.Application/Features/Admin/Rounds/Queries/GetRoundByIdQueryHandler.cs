@@ -44,7 +44,9 @@ public class GetRoundByIdQueryHandler(IApplicationReadDbConnection dbConnection)
                 at.[LogoUrl] AS AwayTeamLogoUrl,
                 m.[ActualHomeTeamScore],
                 m.[ActualAwayTeamScore],
-                m.[Status] AS 'MatchStatus'
+                m.[Status] AS 'MatchStatus',
+                m.[PlaceholderHomeName],
+                m.[PlaceholderAwayName]
             FROM [Rounds] r
             LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]
             LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
@@ -91,7 +93,9 @@ public class GetRoundByIdQueryHandler(IApplicationReadDbConnection dbConnection)
                     r.AwayTeamLogoUrl,
                     r.ActualHomeTeamScore,
                     r.ActualAwayTeamScore,
-                    Enum.Parse<MatchStatus>(r.MatchStatus!)
+                    Enum.Parse<MatchStatus>(r.MatchStatus!),
+                    r.PlaceholderHomeName,
+                    r.PlaceholderAwayName
                 )).ToList()
         };
 
@@ -122,6 +126,8 @@ public class GetRoundByIdQueryHandler(IApplicationReadDbConnection dbConnection)
         string? AwayTeamLogoUrl,
         int? ActualHomeTeamScore,
         int? ActualAwayTeamScore,
-        string? MatchStatus
+        string? MatchStatus,
+        string? PlaceholderHomeName,
+        string? PlaceholderAwayName
     );
 }

@@ -18,5 +18,7 @@ public record MatchInRoundDto(
     string? AwayTeamLogoUrl,
     int? ActualHomeTeamScore,
     int? ActualAwayTeamScore,
-    MatchStatus Status
+    MatchStatus Status,
+    string? PlaceholderHomeName = null,
+    string? PlaceholderAwayName = null
 );

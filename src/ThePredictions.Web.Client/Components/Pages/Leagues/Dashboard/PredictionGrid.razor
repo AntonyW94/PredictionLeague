@@ -7,7 +7,7 @@
 
 @if (Results != null && Matches != null)
 {
-    var orderedMatches = Matches.OrderBy(m => m.MatchDateTimeUtc).ThenBy(m => m.HomeTeamShortName).ToList();
+    var orderedMatches = Matches.OrderBy(m => m.MatchDateTimeUtc).ThenBy(m => m.HomeTeamShortName).ThenBy(m => m.MatchNumber).ToList();
     var orderedPlayers = Results.OrderBy(p => p.Rank).ThenBy(p => p.PlayerName).ToList();
     var winnerPoints = Results.Any() ? Results.Max(p => p.TotalPoints) : 0;
     var hasWinner = orderedPlayers.Any() && winnerPoints > 0;
@@ -20,17 +20,41 @@
                     <th class="total-col">Total</th>
                     @foreach (var match in orderedMatches)
                     {
+                        var homeConfirmed = match.HomeTeamId.HasValue;
+                        var awayConfirmed = match.AwayTeamId.HasValue;
+                        var areTeamsConfirmed = homeConfirmed && awayConfirmed;
                         <th class="match-col">
                             <div class="match-col-teams">
-                                <img src="@match.HomeTeamLogoUrl" class="match-logo-tiny" alt="@match.HomeTeamName" />
-                                <span class="match-col-abbr">@match.HomeTeamAbbreviation v @match.AwayTeamAbbreviation</span>
-                                <img src="@match.AwayTeamLogoUrl" class="match-logo-tiny" alt="@match.AwayTeamName" />
+                                @if (homeConfirmed)
+                                {
+                                    <img src="@match.HomeTeamLogoUrl" class="match-logo-tiny" alt="@match.HomeTeamName" />
+                                }
+                                else
+                                {
+                                    <span class="match-logo-tiny match-logo-placeholder" title="Team to be decided">?</span>
+                                }
+                                <span class="match-col-abbr">@(homeConfirmed ? match.HomeTeamAbbreviation : "TBD") v @(awayConfirmed ? match.AwayTeamAbbreviation : "TBD")</span>
+                                @if (awayConfirmed)
+                                {
+                                    <img src="@match.AwayTeamLogoUrl" class="match-logo-tiny" alt="@match.AwayTeamName" />
+                                }
+                                else
+                                {
+                                    <span class="match-logo-tiny match-logo-placeholder" title="Team to be decided">?</span>
+                                }
                             </div>
                             <div class="match-col-actual">
-                                <MatchStatusBadge Status="match.Status"
-                                                  HomeScore="match.ActualHomeTeamScore"
-                                                  AwayScore="match.ActualAwayTeamScore"
-                                                  MatchDateTimeUtc="match.MatchDateTimeUtc" />
+                                @if (areTeamsConfirmed)
+                                {
+                                    <MatchStatusBadge Status="match.Status"
+                                                      HomeScore="match.ActualHomeTeamScore"
+                                                      AwayScore="match.ActualAwayTeamScore"
+                                                      MatchDateTimeUtc="match.MatchDateTimeUtc" />
+                                }
+                                else
+                                {
+                                    <span class="match-col-tbc-label">TBC</span>
+                                }
                             </div>
                         </th>
                     }
@@ -54,8 +78,13 @@
                         @foreach (var match in orderedMatches)
                         {
                             var prediction = player.Predictions.FirstOrDefault(p => p.MatchId == match.Id);
+                            var matchTeamsConfirmed = match.HomeTeamId.HasValue && match.AwayTeamId.HasValue;
                             <td class="match-col score-cell">
-                                @if (prediction?.HomeScore != null || prediction?.AwayScore != null)
+                                @if (!matchTeamsConfirmed)
+                                {
+                                    <span class="not-predicted-icon" title="Teams not yet decided">&mdash;</span>
+                                }
+                                else if (prediction?.HomeScore != null || prediction?.AwayScore != null)
                                 {
                                     @if (prediction.IsHidden)
                                     {

@@ -188,6 +188,43 @@
     user-select: none;
 }
 
+.match-logo-placeholder {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--grey-500);
+    color: var(--white);
+    border-radius: 50%;
+    font-weight: 700;
+    line-height: 1;
+    user-select: none;
+}
+
+.match-logo-placeholder.match-logo-tiny {
+    font-size: 0.75rem;
+}
+
+.match-logo-placeholder.match-logo-small {
+    font-size: 1rem;
+}
+
+.match-col-tbc-label {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--grey-500);
+    padding: 0.1rem 0.45rem;
+    border: 1px solid var(--grey-300);
+    border-radius: 50rem;
+    text-transform: uppercase;
+}
+
+.theme-dark .match-col-tbc-label {
+    color: var(--white-alpha-50);
+    border-color: var(--white-alpha-30);
+}
+
 /* Dark mode overrides */
 .theme-dark .results-grid {
     color: var(--white);
