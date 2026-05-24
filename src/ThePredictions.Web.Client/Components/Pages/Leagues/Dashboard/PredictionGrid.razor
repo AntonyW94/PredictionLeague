@@ -31,16 +31,16 @@
                                 }
                                 else
                                 {
-                                    <span class="match-logo-tiny match-logo-placeholder bi bi-question-circle" title="@(match.PlaceholderHomeName ?? "TBC")"></span>
+                                    <span class="match-logo-tiny match-logo-placeholder" title="Team to be decided">?</span>
                                 }
-                                <span class="match-col-abbr">@(homeConfirmed ? match.HomeTeamAbbreviation : "TBC") v @(awayConfirmed ? match.AwayTeamAbbreviation : "TBC")</span>
+                                <span class="match-col-abbr">@(homeConfirmed ? match.HomeTeamAbbreviation : "TBD") v @(awayConfirmed ? match.AwayTeamAbbreviation : "TBD")</span>
                                 @if (awayConfirmed)
                                 {
                                     <img src="@match.AwayTeamLogoUrl" class="match-logo-tiny" alt="@match.AwayTeamName" />
                                 }
                                 else
                                 {
-                                    <span class="match-logo-tiny match-logo-placeholder bi bi-question-circle" title="@(match.PlaceholderAwayName ?? "TBC")"></span>
+                                    <span class="match-logo-tiny match-logo-placeholder" title="Team to be decided">?</span>
                                 }
                             </div>
                             <div class="match-col-actual">

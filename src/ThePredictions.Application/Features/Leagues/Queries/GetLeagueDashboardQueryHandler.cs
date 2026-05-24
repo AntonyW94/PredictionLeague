@@ -73,7 +73,10 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
                 [Leagues] l ON r.[SeasonId] = l.[SeasonId]
             WHERE
                 l.[Id] = @LeagueId
-                AND r.[Status] IN (@PublishedStatus, @InProgressStatus, @CompletedStatus)
+                AND (
+                    r.[Status] IN (@PublishedStatus, @InProgressStatus, @CompletedStatus)
+                    OR (r.[Status] = @DraftStatus AND EXISTS (SELECT 1 FROM [Matches] m WHERE m.[RoundId] = r.[Id]))
+                )
             ORDER BY
                 r.[RoundNumber] DESC;";
 
@@ -82,7 +85,8 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
             request.LeagueId,
             PublishedStatus = nameof(RoundStatus.Published),
             InProgressStatus = nameof(RoundStatus.InProgress),
-            CompletedStatus = nameof(RoundStatus.Completed)
+            CompletedStatus = nameof(RoundStatus.Completed),
+            DraftStatus = nameof(RoundStatus.Draft)
         };
         var rounds = await dbConnection.QueryAsync<RoundDto>(roundsSql, cancellationToken, parameters);
 

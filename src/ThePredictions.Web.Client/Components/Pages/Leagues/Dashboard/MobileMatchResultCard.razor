@@ -18,12 +18,12 @@
             }
             else
             {
-                <span class="match-logo-small match-logo-placeholder bi bi-question-circle" title="@(Match.PlaceholderHomeName ?? "TBC")"></span>
+                <span class="match-logo-small match-logo-placeholder" title="Team to be decided">?</span>
             }
             <span class="mx-2 fs-5 fw-bold">
-                @(homeConfirmed ? Match.HomeTeamAbbreviation : (Match.PlaceholderHomeName ?? "TBC"))
+                @(homeConfirmed ? Match.HomeTeamAbbreviation : "TBD")
                 vs
-                @(awayConfirmed ? Match.AwayTeamAbbreviation : (Match.PlaceholderAwayName ?? "TBC"))
+                @(awayConfirmed ? Match.AwayTeamAbbreviation : "TBD")
             </span>
             @if (awayConfirmed)
             {
@@ -31,7 +31,7 @@
             }
             else
             {
-                <span class="match-logo-small match-logo-placeholder bi bi-question-circle" title="@(Match.PlaceholderAwayName ?? "TBC")"></span>
+                <span class="match-logo-small match-logo-placeholder" title="Team to be decided">?</span>
             }
         </div>
 

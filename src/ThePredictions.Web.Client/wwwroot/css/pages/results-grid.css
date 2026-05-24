@@ -192,16 +192,20 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--grey-500);
+    background: var(--grey-500);
+    color: var(--white);
+    border-radius: 50%;
+    font-weight: 700;
     line-height: 1;
+    user-select: none;
 }
 
 .match-logo-placeholder.match-logo-tiny {
-    font-size: 1.25rem;
+    font-size: 0.75rem;
 }
 
 .match-logo-placeholder.match-logo-small {
-    font-size: 1.875rem;
+    font-size: 1rem;
 }
 
 .match-col-tbc-label {
@@ -214,10 +218,6 @@
     border: 1px solid var(--grey-300);
     border-radius: 50rem;
     text-transform: uppercase;
-}
-
-.theme-dark .match-logo-placeholder {
-    color: var(--white-alpha-50);
 }
 
 .theme-dark .match-col-tbc-label {
