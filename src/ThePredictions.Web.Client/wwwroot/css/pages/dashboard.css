@@ -239,9 +239,10 @@
         font-weight: bold;
     }
 
-/* Season Recap tile (end-of-season personal summary).
+/* Reusable hero stat card.
+   Used by Season Recap, Prize Pot tile, and any future end-of-season style summary.
    Base styles target light mode (default theme); .theme-dark overrides at bottom. */
-.season-recap .recap-hero-grid {
+.recap-hero-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-3);
@@ -260,7 +261,7 @@
     }
 }
 
-.season-recap .recap-hero-card {
+.recap-hero-card {
     background: var(--purple-50);
     border: 1px solid var(--grey-200);
     border-radius: var(--bs-border-radius);
@@ -274,46 +275,83 @@
     gap: var(--space-1);
 }
 
-.season-recap .recap-hero-icon {
+.recap-hero-icon {
     font-size: 1.75rem;
     color: var(--purple-500);
     margin-bottom: var(--space-2);
 }
 
-.season-recap .recap-hero-card.profit .recap-hero-icon,
-.season-recap .recap-hero-card.profit .recap-hero-value {
+.recap-hero-card.profit .recap-hero-icon,
+.recap-hero-card.profit .recap-hero-value,
+.recap-hero-card.prize .recap-hero-icon,
+.recap-hero-card.prize .recap-hero-value {
     color: var(--green-600);
 }
 
-.season-recap .recap-hero-card.loss .recap-hero-icon,
-.season-recap .recap-hero-card.loss .recap-hero-value {
+.recap-hero-card.loss .recap-hero-icon,
+.recap-hero-card.loss .recap-hero-value {
     color: var(--red);
 }
 
-.season-recap .recap-hero-value {
+.recap-hero-value {
     font-size: 2.25rem;
     font-weight: 700;
     line-height: 1.1;
     color: var(--purple-1000);
 }
 
-.season-recap .recap-hero-value sup {
+.recap-hero-value sup {
     font-size: 1.1rem;
     margin-left: 0.15rem;
     font-weight: 600;
 }
 
-.season-recap .recap-hero-label {
+.recap-hero-label {
     font-size: 0.875rem;
     color: var(--grey-500);
 }
 
-.season-recap .recap-hero-caption {
+.recap-hero-caption {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--grey-500);
     font-weight: 600;
+}
+
+/* Prize Pot tile (Winnings before payout). Hero card + 2-up record grid + info note. */
+.prize-pot-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+}
+
+.prize-pot-note {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.8rem;
+    color: var(--grey-500);
+    background: var(--purple-50);
+    border-radius: var(--bs-border-radius);
+}
+
+    .prize-pot-note i {
+        font-size: 1rem;
+        color: var(--purple-500);
+        line-height: 1.3;
+    }
+
+.theme-dark .prize-pot-note {
+    background: var(--white-alpha-05);
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .prize-pot-note i {
+    color: var(--purple-300);
 }
 
 /* Shared stat-card grid used by Your Season stats and League Records.
@@ -398,25 +436,25 @@
 }
 
 /* Dark mode overrides */
-.theme-dark .season-recap .recap-hero-card,
+.theme-dark .recap-hero-card,
 .theme-dark .record-card {
     background: var(--white-alpha-05);
     border-color: var(--white-alpha-15);
     color: var(--white);
 }
 
-.theme-dark .season-recap .recap-hero-icon,
+.theme-dark .recap-hero-icon,
 .theme-dark .record-card-icon {
     color: var(--purple-300);
 }
 
-.theme-dark .season-recap .recap-hero-value,
+.theme-dark .recap-hero-value,
 .theme-dark .record-card-value {
     color: var(--white);
 }
 
-.theme-dark .season-recap .recap-hero-label,
-.theme-dark .season-recap .recap-hero-caption,
+.theme-dark .recap-hero-label,
+.theme-dark .recap-hero-caption,
 .theme-dark .record-card-unit,
 .theme-dark .record-card-label,
 .theme-dark .record-card-context {
