@@ -44,27 +44,44 @@ public class OverallPrizeStrategy(
 
         var allNewWinnings = new List<Winning>();
 
-        foreach (var prizeSetting in overallPrizeSettings)
+        foreach (var rankingGroup in overallRankings)
         {
-            var rankingGroup = overallRankings.FirstOrDefault(r => r.Rank == prizeSetting.Rank);
-            if (rankingGroup == null || !rankingGroup.Members.Any())
-                continue;
-            
             var winnersForThisRank = rankingGroup.Members;
+            if (winnersForThisRank.Count == 0)
+                continue;
+
+            // A joint group at rank R with N members occupies slots R, R+1, ..., R+N-1.
+            // Pool the prize money from every setting whose rank falls within those slots,
+            // because the lower-rank finishers that would have claimed them do not exist.
+            var firstSlot = rankingGroup.Rank;
+            var lastSlot = rankingGroup.Rank + winnersForThisRank.Count - 1;
+
+            var coveredPrizeSettings = overallPrizeSettings
+                .Where(p => p.Rank >= firstSlot && p.Rank <= lastSlot)
+                .ToList();
+
+            if (coveredPrizeSettings.Count == 0)
+                continue;
+
+            var pooledPrizeAmount = coveredPrizeSettings.Sum(p => p.PrizeAmount);
+            if (pooledPrizeAmount == 0)
+                continue;
+
+            var anchorPrizeSetting = coveredPrizeSettings[0];
 
             var individualPrizes = PrizeDistributionHelper.DistributePrizeMoney(
-                prizeSetting.PrizeAmount,
+                pooledPrizeAmount,
                 winnersForThisRank.Count
             );
 
             for (var i = 0; i < winnersForThisRank.Count; i++)
             {
                 var winner = winnersForThisRank[i];
-                var prizeAmount = individualPrizes[i]; 
+                var prizeAmount = individualPrizes[i];
 
                 var newWinning = Winning.Create(
                     winner.UserId,
-                    prizeSetting.Id,
+                    anchorPrizeSetting.Id,
                     prizeAmount,
                     null,
                     null,
