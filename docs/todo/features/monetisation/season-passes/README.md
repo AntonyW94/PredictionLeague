@@ -153,6 +153,7 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 | 16 | [Competitions management](./16-competitions-management.md) | `Competitions` table (hosted logo, `Type`, admin API id); `Season` → `CompetitionId`, drop `ApiLeagueId` + `CompetitionType` | Code |
 | 17 | [Refunds](./17-refunds.md) | Refund a pass (Stripe) before the season starts; revoke entitlement | Code |
 | 18 | [Email verification & identity](./18-email-verification-and-identity.md) | Finish email confirmation; normalise emails to block `+`-alias trial abuse | Code |
+| 19 | [Entry-fee settlement](./19-entry-fee-settlement.md) | Encrypted admin bank details shown at join; code-free join, admin accepts on payment (peer-to-peer) | Code |
 
 ## Dependencies
 
@@ -188,6 +189,7 @@ These were decided this session (see `docs/decisions/`):
 - **SMS = UK mobiles only**, required and validated (libphonenumber → E.164) **at purchase** (ADR 0007, Task 10).
 - **No late entry** → handled by the **existing per-league entry-deadline rules** (paid seasons inherit them); no new access-gate mechanism, just don't offer purchase once entry has closed. No late/pro-rata pricing (ADR 0005, Task 10).
 - **Overlapping seasons** → already supported: `SeasonPasses` holds **one row per (user, season)** with a unique index, so a user can hold concurrent passes (e.g. World Cup + Premier League). **No new table needed.** Free/grandfathered seasons **do** get a £0 `Free` record (and existing ones are backfilled) so free play burns the free-first-season — this is the chosen approach over a no-record/`RequiresPass`-only gate.
+- **Entry-fee settlement (peer-to-peer)** → admins can store **bank details (encrypted at rest)** on a league; the entry code is shared freely, players see the details + amount + reference on requesting to join, and the **admin accepts once paid**. The software never touches the money (ADR 0010, 0003; Task 19).
 - **Comparable season / "same competition"** = matched on `Season.CompetitionId`, a FK to a new **`Competitions` reference table** (ADR 0009), **not** `ApiLeagueId`. The table carries a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id**; `Season` **drops `ApiLeagueId` and `CompetitionType`** and the sync/type resolve from the competition (Task 16). Switching fixture provider is a no-deploy admin edit that never invalidates free-SMS entitlements or price comparables.
 
 ## Open Questions
