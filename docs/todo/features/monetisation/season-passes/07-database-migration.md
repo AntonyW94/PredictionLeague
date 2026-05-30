@@ -59,6 +59,7 @@ CREATE TABLE [SeasonPasses] (
     [SmsSentCount]             INT NOT NULL DEFAULT (0),    -- SMS reminders sent this season (powers reward)
     [RewardRedeemedForSeasonId] INT NULL,                  -- set when this pass's leftover funded a later free SMS season
     [SmsPaused]                BIT NOT NULL DEFAULT (0),    -- user paused their SMS for this season (in-app toggle)
+    [RefundedAtUtc]            DATETIME2 NULL,              -- set when the pass is refunded (pre-season-start; ADR 0019)
     CONSTRAINT [FK_SeasonPasses_Seasons] FOREIGN KEY ([SeasonId]) REFERENCES [Seasons]([Id]),
     CONSTRAINT [FK_SeasonPasses_Users]   FOREIGN KEY ([UserId])   REFERENCES [AspNetUsers]([Id])
 );

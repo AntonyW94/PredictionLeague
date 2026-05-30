@@ -124,6 +124,9 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 - [ ] Everyone (incl. SMS-tier) keeps all emails at every milestone; SMS is an **additional** 6h/1h nudge for unsubmitted SMS-tier holders.
 - [ ] Per-season SMS count tracked per user (`SmsSentCount`).
 - [ ] Self-funding reward: a paying low-usage SMS season earns the next SMS season free when the leftover fee covers that season's worst-case SMS cost.
+- [ ] Passes (incl. SMS) are refundable before the season starts (Stripe refund + entitlement revoked); non-refundable after.
+- [ ] Email verification completed: unconfirmed users can't purchase/take part; `+`-alias emails are rejected as duplicates.
+- [ ] SMS purchase requires a valid UK mobile (libphonenumber, E.164); blocked until one is added.
 - [ ] Terms & Privacy updated and flagged for solicitor review; refund/consumer-rights wording added.
 - [ ] Domain project at 100% line + branch coverage; schema docs + DatabaseTools updated.
 
@@ -147,6 +150,8 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 | 14 | [Admin running costs](./14-admin-running-costs.md) | Page to record annual costs, renewal dates, payer status | Code |
 | 15 | [Configurable prices & calculator](./15-configurable-prices-and-calculator.md) | Per-season admin prices + recommended-price calculator | Code |
 | 16 | [Competitions management](./16-competitions-management.md) | `Competitions` table (hosted logo, `Type`, admin API id); `Season` → `CompetitionId`, drop `ApiLeagueId` + `CompetitionType` | Code |
+| 17 | [Refunds](./17-refunds.md) | Refund a pass (Stripe) before the season starts; revoke entitlement | Code |
+| 18 | [Email verification & identity](./18-email-verification-and-identity.md) | Finish email confirmation; normalise emails to block `+`-alias trial abuse | Code |
 
 ## Dependencies
 
@@ -177,6 +182,9 @@ These were decided this session (see `docs/decisions/`):
 - **Running-cost data** → store **cost type, price, start/end dates** for flexible future apportionment (ADR 0012, Task 14).
 - **Trial + SMS** → trial comps **Entry only**; user may **pay the SMS uplift** on top (ADR 0006).
 - **Pause-SMS toggle** → **build now** (in scope), not deferred (ADR 0009).
+- **Refunds** → passes (incl. SMS) refundable **before the season starts**, non-refundable after; covers cancellation (ADR 0019, Task 17).
+- **Email verification** → finish it and **normalise emails (strip `+` alias)** to stop multi-account trial abuse (ADR 0020, Task 18).
+- **SMS = UK mobiles only**, required and validated (libphonenumber → E.164) **at purchase** (ADR 0009, Task 10).
 - **Comparable season / "same competition"** = matched on `Season.CompetitionId`, a FK to a new **`Competitions` reference table** (ADR 0017), **not** `ApiLeagueId`. The table carries a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id**; `Season` **drops `ApiLeagueId` and `CompetitionType`** and the sync/type resolve from the competition (Task 16). Switching fixture provider is a no-deploy admin edit that never invalidates free-SMS entitlements or price comparables.
 
 ## Open Questions
