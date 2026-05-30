@@ -61,7 +61,7 @@ if milestone is in final window (6h / 1h):
 ### Step 4: In-app "pause SMS" toggle (in scope for v1)
 
 - Add a per-season toggle on the user's notification/account settings: **"Pause SMS reminders for this season"**, setting `SeasonPass.SmsPaused`.
-- Paused users still receive **all emails**; no refund (the SMS tier is non-refundable — ADR 0009). They can un-pause at any time.
+- Paused users still receive **all emails**; no refund (the SMS tier is non-refundable — ADR 0007). They can un-pause at any time.
 - This replaces inbound STOP handling (we don't do two-way SMS).
 
 - Track SMS dispatch separately so the **same SMS isn't sent twice** for the same milestone (e.g. an `SmsReminderSentUtc`/per-milestone marker), independent of the existing email `LastReminderSentUtc`.

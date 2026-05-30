@@ -26,7 +26,7 @@ Give the admin a page to record the website's running costs — amount, frequenc
 
 ### Step 1: Domain entity
 
-Per the owner's decision, capture **cost type, price, and start/end dates** so the cost can be apportioned/prorated **any way we may want in future** (ADR 0012):
+Per the owner's decision, capture **cost type, price, and start/end dates** so the cost can be apportioned/prorated **any way we may want in future** (ADR 0006):
 
 ```csharp
 public class RunningCost

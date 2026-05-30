@@ -29,25 +29,16 @@ Add a record when a decision is **hard to reverse, cross-cutting, or expensive t
 
 ## Table of Contents
 
-| # | Title | Status | Tags | Summary |
-|---|-------|--------|------|---------|
-| [0001](./0001-adopt-decision-records.md) | Adopt Decision Records (ADRs) | Accepted | process | Keep lightweight ADRs in `docs/decisions/` for product/business/legal/technical decisions. |
-| [0002](./0002-monetise-via-one-off-season-passes.md) | Monetise via one-off Season Passes | Accepted | product, business, legal | Revenue = a one-off, non-recurring Season Pass per competition (software-access fee). |
-| [0003](./0003-never-custody-prize-money.md) | Never custody or route prize money | Accepted / Deferred | legal, business | Prize money stays peer-to-peer; entry-fee routing deferred pending gambling-law advice. |
-| [0004](./0004-operate-as-sole-trader.md) | Operate as a sole trader for launch | Accepted | business, financial, legal | Sole trader now (cost, loss relief); incorporate later at a trigger. |
-| [0005](./0005-whole-site-pass-gating.md) | Whole-site pass gating | Accepted | product, legal | Pass needed for all leagues (free + money) for legal cleanliness. |
-| [0006](./0006-free-season-trial-for-new-players.md) | Free season trial for new players | Accepted | product, business | First-ever participants get one free Entry season (growth + friction + fair transition). |
-| [0007](./0007-world-cup-free-future-seasons-paid.md) | World Cup free; later seasons paid | Accepted | product, business, financial | WC costs are personal/sunk (never booked to business) → free; future seasons paid. |
-| [0008](./0008-sms-as-a-season-pass-tier.md) | SMS as a season-pass tier | Accepted | product | Two products (Entry / Entry + SMS), one entitlement with an SMS flag. |
-| [0009](./0009-sms-additive-transactional-no-stop.md) | SMS additive & transactional | Accepted | product, legal | SMS is extra (emails kept), final-window only, transactional, no inbound STOP, non-refundable. |
-| [0010](./0010-self-funding-early-bird-reward.md) | Self-funding early-bird reward | Accepted | product, financial | Free next same-competition SMS season only when leftover fee covers that season's worst-case cost. |
-| [0011](./0011-admin-configurable-season-pricing.md) | Admin-configurable pricing | Accepted | product, technical | Per-season Entry/SMS prices in DB, charged via dynamic Stripe amounts. |
-| [0012](./0012-recommended-price-calculator.md) | Recommended-price calculator | Accepted | business, financial, product | Editable pre-filled suggestion: costs +15% buffer, length-weighted, break-even at last comparable season's players, min floor. |
-| [0013](./0013-no-pay-to-win.md) | No pay-to-win monetisation | Accepted | product | Never sell competitive advantage; paid features are convenience/cosmetic only. |
-| [0014](./0014-stripe-as-payment-processor.md) | Stripe payment processor | Accepted / Deferred | technical, business, legal | Stripe Checkout + wallets now; direct-charges Connect for future entry-fee routing. |
-| [0015](./0015-defer-season-challenges.md) | Defer Season Challenges | Deferred | product | Badges/challenges parked as a separate future feature (cosmetic only). |
-| [0016](./0016-seed-business-with-owner-capital.md) | Seed business with owner's capital | Accepted | business, financial | Float initial costs from personal money (capital introduced), repay via drawings once income covers them. |
-| [0017](./0017-internal-competition-identifier.md) | Competitions reference table | Accepted | technical, domain, product | `Competitions` table (hosted logo, `Type`, admin-editable API id); `Season` gets `CompetitionId`, drops `ApiLeagueId` + `CompetitionType`. |
-| [0019](./0019-season-pass-refunds.md) | Season pass refunds | Accepted | product, legal, financial | Passes (incl. SMS) fully refundable until the season starts; revokes entitlement; covers cancellation. |
-| [0020](./0020-verified-normalised-email.md) | Verified, normalised email identity | Accepted | security, technical, legal | Finish email confirmation; normalise emails (strip `+` alias) to block multi-account trial abuse. |
-| [0021](./0021-no-late-entry.md) | No late entry | Accepted | product | No mid-season entry or late pricing; paid seasons inherit existing entry-deadline rules (no new gate). |
+Records are **thematic** — each groups a cohesive area of decisions (see 0001 for why).
+
+| # | Title | Status | Tags | Covers |
+|---|-------|--------|------|--------|
+| [0001](./0001-decision-records-process.md) | Decision Records process | Accepted | process | Why/how we keep thematic ADRs; supersede policy. |
+| [0002](./0002-monetisation-model.md) | Monetisation model & non-gambling stance | Accepted | product, business, legal | One-off Season Passes; whole-site gating; no pay-to-win. |
+| [0003](./0003-no-custody-of-prize-money.md) | No custody of prize money | Accepted / Deferred | legal, business | Never hold/route prize money; entry-fee routing deferred pending gambling-law advice. |
+| [0004](./0004-business-structure-and-funding.md) | Business structure & funding | Accepted | business, financial, legal | Sole trader for launch; seed with owner's capital, repay via drawings. |
+| [0005](./0005-season-pass-lifecycle.md) | Season pass lifecycle | Accepted | product, business, financial | Which seasons are paid (WC free); free-first trial (free play burns it); refunds; no late entry. |
+| [0006](./0006-season-pricing.md) | Season pricing | Accepted | product, business, financial, technical | Admin-configurable prices via dynamic Stripe; recommended-price calculator. |
+| [0007](./0007-sms-reminders-and-reward.md) | SMS reminders & early-bird reward | Accepted | product, legal, financial | SMS tier; additive/transactional/UK-only; self-funding free-upgrade reward. |
+| [0008](./0008-payments-stripe.md) | Payments (Stripe) | Accepted / Deferred | technical, business, legal | Stripe Checkout + wallets; direct-charges Connect for future entry-fee routing. |
+| [0009](./0009-platform-and-data.md) | Platform & data | Accepted / Deferred | technical, domain, security | Competitions reference table; verified/normalised email; Season Challenges deferred. |

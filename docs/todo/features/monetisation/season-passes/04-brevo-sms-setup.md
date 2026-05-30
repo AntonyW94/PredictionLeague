@@ -56,4 +56,4 @@ If a message exceeds 160 chars it counts as multiple SMS — keep reminder text 
 
 No inbound number / STOP keyword needed. The in-app "pause SMS" toggle (Task 11) covers opt-out without inbound SMS.
 
-**UK-only:** SMS is offered only to **valid UK mobiles**, enforced **at purchase** and validated via `libphonenumber-csharp` (region `GB`, type `Mobile`), stored as **E.164** — see Task 10. The per-message cost assumptions here and the reward maths (ADR 0010) are UK-based; non-UK numbers are not offered SMS.
+**UK-only:** SMS is offered only to **valid UK mobiles**, enforced **at purchase** and validated via `libphonenumber-csharp` (region `GB`, type `Mobile`), stored as **E.164** — see Task 10. The per-message cost assumptions here and the reward maths (ADR 0007) are UK-based; non-UK numbers are not offered SMS.

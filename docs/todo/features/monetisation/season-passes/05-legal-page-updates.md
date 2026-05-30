@@ -28,7 +28,7 @@ Update Terms of Service and Privacy Policy to reflect a paid service (Season Pas
 - **§10:** remove *"free of charge as a hobby project"*; reframe as a paid service (keep the no-guaranteed-uptime spirit within consumer-law limits).
 - **§11:** add: *"Nothing in these terms affects your statutory rights as a consumer under the Consumer Rights Act 2015."*
 - **NEW section "Season Passes, payments and refunds":**
-  > Season Passes are one-off, non-recurring charges processed by **Stripe**. You may **cancel for a full refund any time before the season starts** (its first round deadline); after the season has started a pass is non-refundable, and by taking part you consent to immediate access and acknowledge you lose the statutory 14-day cancellation right. The SMS reminder option follows the same rule (refundable before the season starts, non-refundable after); pausing reminders does not itself entitle you to a refund. If we ever cancel a season, affected paid players are refunded. (See ADR 0019.)
+  > Season Passes are one-off, non-recurring charges processed by **Stripe**. You may **cancel for a full refund any time before the season starts** (its first round deadline); after the season has started a pass is non-refundable, and by taking part you consent to immediate access and acknowledge you lose the statutory 14-day cancellation right. The SMS reminder option follows the same rule (refundable before the season starts, non-refundable after); pausing reminders does not itself entitle you to a refund. If we ever cancel a season, affected paid players are refunded. (See ADR 0005.)
 - Bump `LastUpdated`. Keep the `@* solicitor review *@` TODO comment.
 
 ### Step 2: Privacy Policy

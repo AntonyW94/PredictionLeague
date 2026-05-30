@@ -75,7 +75,7 @@ A user may take part in a season (join or create a league in it) if **any** of:
 
 Otherwise (paid season, ≥1 record) → **block, redirect to purchase page.**
 
-Eligibility is a single `COUNT`/`EXISTS` on `SeasonPasses` — **no `LeagueMember` history check**. **Every participation writes a record** (free → £0 `Free`), so **free play burns the freebie**. Late entry is handled by the existing per-league entry-deadline rules (ADR 0021).
+Eligibility is a single `COUNT`/`EXISTS` on `SeasonPasses` — **no `LeagueMember` history check**. **Every participation writes a record** (free → £0 `Free`), so **free play burns the freebie**. Late entry is handled by the existing per-league entry-deadline rules (ADR 0005).
 
 **Worked examples:**
 
@@ -177,18 +177,18 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 
 These were decided this session (see `docs/decisions/`):
 
-- **Reward eligibility** → **same competition only**, worst case assumes the next same-competition season ≈ the current one's length (ADR 0010).
-- **Final-window milestones** → **2** (6h + 1h) for both reminders and reward maths (ADR 0009).
-- **Recommended price** → always an **editable, pre-filled info box**; **blank + explanatory wording** when no comparable prior season; **small minimum floor** (ADR 0012).
-- **Running-cost data** → store **cost type, price, start/end dates** for flexible future apportionment (ADR 0012, Task 14).
-- **Free trial = zero `SeasonPass` records** → a user's first season is free (a `Trial` pass on the first *paid* season). **Every participation writes a record** — free seasons get a £0 `Free` record — so **free play burns the freebie**; existing free play is **backfilled** so existing players pay for their first paid season (ADR 0006). Trial comps **Entry only**; user may **pay the SMS uplift** on top.
-- **Pause-SMS toggle** → **build now** (in scope), not deferred (ADR 0009).
-- **Refunds** → passes (incl. SMS) refundable **before the season starts**, non-refundable after; covers cancellation (ADR 0019, Task 17).
-- **Email verification** → finish it and **normalise emails (strip `+` alias)** to stop multi-account trial abuse (ADR 0020, Task 18).
-- **SMS = UK mobiles only**, required and validated (libphonenumber → E.164) **at purchase** (ADR 0009, Task 10).
-- **No late entry** → handled by the **existing per-league entry-deadline rules** (paid seasons inherit them); no new access-gate mechanism, just don't offer purchase once entry has closed. No late/pro-rata pricing (ADR 0021, Task 10).
+- **Reward eligibility** → **same competition only**, worst case assumes the next same-competition season ≈ the current one's length (ADR 0007).
+- **Final-window milestones** → **2** (6h + 1h) for both reminders and reward maths (ADR 0007).
+- **Recommended price** → always an **editable, pre-filled info box**; **blank + explanatory wording** when no comparable prior season; **small minimum floor** (ADR 0006).
+- **Running-cost data** → store **cost type, price, start/end dates** for flexible future apportionment (ADR 0006, Task 14).
+- **Free trial = zero `SeasonPass` records** → a user's first season is free (a `Trial` pass on the first *paid* season). **Every participation writes a record** — free seasons get a £0 `Free` record — so **free play burns the freebie**; existing free play is **backfilled** so existing players pay for their first paid season (ADR 0005). Trial comps **Entry only**; user may **pay the SMS uplift** on top.
+- **Pause-SMS toggle** → **build now** (in scope), not deferred (ADR 0007).
+- **Refunds** → passes (incl. SMS) refundable **before the season starts**, non-refundable after; covers cancellation (ADR 0005, Task 17).
+- **Email verification** → finish it and **normalise emails (strip `+` alias)** to stop multi-account trial abuse (ADR 0009, Task 18).
+- **SMS = UK mobiles only**, required and validated (libphonenumber → E.164) **at purchase** (ADR 0007, Task 10).
+- **No late entry** → handled by the **existing per-league entry-deadline rules** (paid seasons inherit them); no new access-gate mechanism, just don't offer purchase once entry has closed. No late/pro-rata pricing (ADR 0005, Task 10).
 - **Overlapping seasons** → already supported: `SeasonPasses` holds **one row per (user, season)** with a unique index, so a user can hold concurrent passes (e.g. World Cup + Premier League). **No new table needed.** Free/grandfathered seasons **do** get a £0 `Free` record (and existing ones are backfilled) so free play burns the free-first-season — this is the chosen approach over a no-record/`RequiresPass`-only gate.
-- **Comparable season / "same competition"** = matched on `Season.CompetitionId`, a FK to a new **`Competitions` reference table** (ADR 0017), **not** `ApiLeagueId`. The table carries a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id**; `Season` **drops `ApiLeagueId` and `CompetitionType`** and the sync/type resolve from the competition (Task 16). Switching fixture provider is a no-deploy admin edit that never invalidates free-SMS entitlements or price comparables.
+- **Comparable season / "same competition"** = matched on `Season.CompetitionId`, a FK to a new **`Competitions` reference table** (ADR 0009), **not** `ApiLeagueId`. The table carries a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id**; `Season` **drops `ApiLeagueId` and `CompetitionType`** and the sync/type resolve from the competition (Task 16). Switching fixture provider is a no-deploy admin edit that never invalidates free-SMS entitlements or price comparables.
 
 ## Open Questions
 

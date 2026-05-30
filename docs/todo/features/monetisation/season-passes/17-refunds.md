@@ -8,13 +8,13 @@
 
 ## Goal
 
-Allow a season pass (incl. any SMS uplift) to be refunded **before the season starts** (change of mind, or the unlikely season cancellation), via Stripe, revoking the entitlement. See ADR 0019.
+Allow a season pass (incl. any SMS uplift) to be refunded **before the season starts** (change of mind, or the unlikely season cancellation), via Stripe, revoking the entitlement. See ADR 0005.
 
-## Policy (ADR 0019)
+## Policy (ADR 0005)
 
 - **Refundable until the season's first round deadline.** After the season starts → non-refundable.
 - Refund reverses the `SeasonPass` (entitlement revoked, can no longer take part).
-- A refunded pass must **not** count toward the early-bird reward (its `SmsFeePaid` is treated as reversed) — see Task 13 / ADR 0010.
+- A refunded pass must **not** count toward the early-bird reward (its `SmsFeePaid` is treated as reversed) — see Task 13 / ADR 0007.
 - Season cancellation → refund affected paid users regardless of start.
 
 ## Files to Modify
@@ -64,4 +64,4 @@ Allow a season pass (incl. any SMS uplift) to be refunded **before the season st
 
 ## Related
 
-- ADR 0019; Tasks 07, 08, 09, 13, 05 (Terms refund clause).
+- ADR 0005; Tasks 07, 08, 09, 13, 05 (Terms refund clause).

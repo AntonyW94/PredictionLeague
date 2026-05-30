@@ -8,7 +8,7 @@
 
 ## Goal
 
-Introduce a `Competitions` reference table (ADR 0017) as the stable, provider-independent competition identity — with a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id** — and refactor `Season` and the fixture sync to use it instead of `Season.ApiLeagueId` / `Season.CompetitionType`.
+Introduce a `Competitions` reference table (ADR 0009) as the stable, provider-independent competition identity — with a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id** — and refactor `Season` and the fixture sync to use it instead of `Season.ApiLeagueId` / `Season.CompetitionType`.
 
 ## Scope note
 
@@ -88,4 +88,4 @@ The existing `CompetitionType` enum is reused here (just relocated from `Season`
 
 ## Related
 
-- ADR 0017; Tasks 06, 07, 13, 15.
+- ADR 0009; Tasks 06, 07, 13, 15.

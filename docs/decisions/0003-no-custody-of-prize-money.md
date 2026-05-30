@@ -1,9 +1,11 @@
-# 0003. Never custody or route prize money (defer entry-fee routing)
+# 0003. No custody of prize money (gambling / PSD2 stance)
 
 - **Status:** Accepted (core) / Deferred (entry-fee routing)
 - **Date:** 2026-05-30
 - **Deciders:** Antony
 - **Tags:** legal, business, product
+
+> Kept as a standalone record (rather than merged into 0002) because it is the single point a gambling-law solicitor will want to read in isolation.
 
 ## Context
 
@@ -13,21 +15,21 @@ Paid leagues have entry fees and prize pots. Two UK regulatory regimes bite if w
 
 ## Decision
 
-We will **never hold, escrow, or distribute prize money** ourselves. Prize money stays a **private, peer-to-peer arrangement between league members**. The platform sells software only. Routing players' **entry fees** through the platform (even via Stripe Connect, where Stripe holds funds) is **deferred** until a **UK gambling-law solicitor signs off** the structure.
+We will **never hold, escrow, or distribute prize money** ourselves. Prize money stays a **private, peer-to-peer arrangement between league members**; the platform sells software only. Routing players' **entry fees** through the platform (even via Stripe Connect, where Stripe holds funds) is **deferred** until a **UK gambling-law solicitor signs off** the structure.
 
 ## Consequences
 
 **For / positive**
 - Avoids both the gambling-operator and payment-institution licensing burdens.
-- Keeps the existing, defensible "we're just software; members settle privately" position.
+- Keeps the defensible "we're just software; members settle privately" position.
 
 **Against / cost**
-- Players must settle entry fees/prizes themselves (manual), no in-app convenience for that flow.
+- Players settle entry fees/prizes themselves (manual); no in-app convenience for that flow.
 - Forgoes potential transaction-fee revenue for now.
 
 **Neutral / notes**
 - Existing Terms §7 already states we don't hold money — kept and strengthened.
-- The future Connect model, *if* approved, would use **direct charges** (admin is merchant of record), so we still never control funds (see 0014).
+- The future Connect model, *if* approved, would use **direct charges** (admin is merchant of record), so we still never control funds (0008).
 
 ## Alternatives considered
 
@@ -36,4 +38,4 @@ We will **never hold, escrow, or distribute prize money** ourselves. Prize money
 
 ## Related
 
-- 0002, 0013, 0014; `season-passes/05-legal-page-updates.md`
+- 0002, 0008; `season-passes/05-legal-page-updates.md`.

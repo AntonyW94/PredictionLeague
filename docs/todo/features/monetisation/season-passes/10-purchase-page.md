@@ -35,14 +35,14 @@ Build the Blazor Season Pass purchase page from the mockup: two tiers (Entry / E
 
 ### Step 2b: No late entry
 
-- Don't offer purchase/trial once **entry for the season has closed** — reuse the **existing entry-deadline rules** (the same ones that already stop late joins on free seasons); no new mechanism (ADR 0021). Show an "entries closed" state.
+- Don't offer purchase/trial once **entry for the season has closed** — reuse the **existing entry-deadline rules** (the same ones that already stop late joins on free seasons); no new mechanism (ADR 0005). Show an "entries closed" state.
 
 ### Step 2a: Require a valid UK mobile before SMS purchase
 
 - The **Entry + SMS** option (and the trial SMS add-on) is **blocked until the user has a valid UK mobile** on their account.
 - Validate with **`libphonenumber-csharp`**: parse region `"GB"`, require `IsValidNumber` **and** `NumberType == Mobile`; store the **E.164** form. (Add a reusable phone validator in the Validators project.)
-- If no/invalid number, prompt to add one inline before allowing the SMS purchase. Email-only Entry needs no phone. UK-only — non-UK mobiles are not offered SMS (ADR 0009).
-- Also require a **confirmed email** before any purchase (ADR 0020 / Task 18).
+- If no/invalid number, prompt to add one inline before allowing the SMS purchase. Email-only Entry needs no phone. UK-only — non-UK mobiles are not offered SMS (ADR 0007).
+- Also require a **confirmed email** before any purchase (ADR 0009 / Task 18).
 - Follow Web.Client `CLAUDE.md`: state-service + `OnStateChange`/`IDisposable`, design tokens, **mobile-first `min-width`** media queries, verify **light + dark** mode.
 
 ### Step 3: Redirect entry points

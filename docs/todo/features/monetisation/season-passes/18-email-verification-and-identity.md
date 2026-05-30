@@ -8,7 +8,7 @@
 
 ## Type
 
-**Code (refactors existing auth)** — completes the half-built email-confirmation flow and hardens email uniqueness. See ADR 0020.
+**Code (refactors existing auth)** — completes the half-built email-confirmation flow and hardens email uniqueness. See ADR 0009.
 
 ## Goal
 
@@ -64,9 +64,9 @@ Require a **verified email** before purchasing/participating, and **normalise em
 ## Edge Cases to Consider
 
 - Existing unconfirmed users at rollout — grandfather or prompt to confirm (don't lock them out abruptly).
-- Provider that treats `+` as distinct mailboxes — accepted over-merge (ADR 0020).
+- Provider that treats `+` as distinct mailboxes — accepted over-merge (ADR 0009).
 - Resend throttling to avoid email spam.
 
 ## Related
 
-- ADR 0020; 0006 (trial abuse).
+- ADR 0009; 0006 (trial abuse).

@@ -25,7 +25,7 @@ Add the `Seasons.RequiresPass` + price columns, the `SeasonPasses` table, and th
 ### Step 1: Schema changes
 
 ```sql
--- Competitions reference table (ADR 0017) — created first so Seasons can FK to it
+-- Competitions reference table (ADR 0009) — created first so Seasons can FK to it
 CREATE TABLE [Competitions] (
     [Id]            INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
     [Code]          NVARCHAR(50) NOT NULL,        -- stable slug, e.g. 'WORLD_CUP', 'EPL'
@@ -41,7 +41,7 @@ ALTER TABLE [Seasons] ADD
     [RequiresPass]  BIT NOT NULL DEFAULT (0),
     [EntryPrice]    DECIMAL(10,2) NULL,           -- admin-set; required when RequiresPass = 1
     [SmsPrice]      DECIMAL(10,2) NULL,           -- admin-set full price of the +SMS tier
-    [CompetitionId] INT NULL;                     -- FK to Competitions (ADR 0017); backfill then enforce NOT NULL
+    [CompetitionId] INT NULL;                     -- FK to Competitions (ADR 0009); backfill then enforce NOT NULL
 -- after backfill: ADD CONSTRAINT [FK_Seasons_Competitions] FOREIGN KEY ([CompetitionId]) REFERENCES [Competitions]([Id]);
 -- after backfill: ALTER TABLE [Seasons] DROP COLUMN [ApiLeagueId];      -- provider id now lives on Competitions
 -- after backfill: ALTER TABLE [Seasons] DROP COLUMN [CompetitionType];  -- type now lives on Competitions.Type
@@ -59,7 +59,7 @@ CREATE TABLE [SeasonPasses] (
     [SmsSentCount]             INT NOT NULL DEFAULT (0),    -- SMS reminders sent this season (powers reward)
     [RewardRedeemedForSeasonId] INT NULL,                  -- set when this pass's leftover funded a later free SMS season
     [SmsPaused]                BIT NOT NULL DEFAULT (0),    -- user paused their SMS for this season (in-app toggle)
-    [RefundedAtUtc]            DATETIME2 NULL,              -- set when the pass is refunded (pre-season-start; ADR 0019)
+    [RefundedAtUtc]            DATETIME2 NULL,              -- set when the pass is refunded (pre-season-start; ADR 0005)
     CONSTRAINT [FK_SeasonPasses_Seasons] FOREIGN KEY ([SeasonId]) REFERENCES [Seasons]([Id]),
     CONSTRAINT [FK_SeasonPasses_Users]   FOREIGN KEY ([UserId])   REFERENCES [AspNetUsers]([Id])
 );
@@ -79,10 +79,10 @@ CREATE TABLE [RunningCosts] (
 ```
 
 - Unique index enforces **one pass per user per season** — and because rows are per-(user, season), a user can hold **multiple concurrent passes for overlapping seasons** (e.g. World Cup + Premier League) with no extra modelling.
-- **Every participation has a record:** free seasons store a **£0 `Free`** pass; paid seasons store `Purchased`/`Trial`. This is what makes free play **burn the free-first-season** (ADR 0006).
-- **Backfill (ADR 0006):** for every existing approved `(user, season)` membership, insert a **£0 `Free`** `SeasonPass` (Source 2), so existing players already have records and pay for their first paid season. One-time migration query.
+- **Every participation has a record:** free seasons store a **£0 `Free`** pass; paid seasons store `Purchased`/`Trial`. This is what makes free play **burn the free-first-season** (ADR 0005).
+- **Backfill (ADR 0005):** for every existing approved `(user, season)` membership, insert a **£0 `Free`** `SeasonPass` (Source 2), so existing players already have records and pay for their first paid season. One-time migration query.
 - `DEFAULT (0)` on `RequiresPass` grandfathers every existing season as free; prices stay NULL on those.
-- **Competition migration (ADR 0017):** insert a `Competitions` row per distinct existing `Season.ApiLeagueId` (set `Code`/`Name`/`ApiLeagueId`, and `Type` from the seasons' existing `CompetitionType`; logo added later), add `Seasons.CompetitionId` nullable, **backfill** it, add the FK, make it `NOT NULL`, then **drop `Seasons.ApiLeagueId` and `Seasons.CompetitionType`**. Update the existing season-sync handler and any `Season.ApiLeagueId` / `Season.CompetitionType` / `Season.IsTournament` readers to go via the season's `Competition` — see Task 16.
+- **Competition migration (ADR 0009):** insert a `Competitions` row per distinct existing `Season.ApiLeagueId` (set `Code`/`Name`/`ApiLeagueId`, and `Type` from the seasons' existing `CompetitionType`; logo added later), add `Seasons.CompetitionId` nullable, **backfill** it, add the FK, make it `NOT NULL`, then **drop `Seasons.ApiLeagueId` and `Seasons.CompetitionType`**. Update the existing season-sync handler and any `Season.ApiLeagueId` / `Season.CompetitionType` / `Season.IsTournament` readers to go via the season's `Competition` — see Task 16.
 - `RunningCosts` has **no personal data** — copy as-is in the refresh (no anonymisation), but include it in `TableCopyOrder`.
 
 ### Step 2: Update schema docs

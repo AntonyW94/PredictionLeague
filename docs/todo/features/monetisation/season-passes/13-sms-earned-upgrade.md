@@ -30,11 +30,11 @@ If `eligible`, the **next same-competition season's** SMS tier is **free** (comp
 - The qualifying allowance is **computed** and **varies by season length and the live per-message rate** — never a hardcoded 10.
 - A **comped** season has `SmsFeePaid = 0`, so it can't fund another free season — a *paying* low-usage season earns the *next same-competition* one free (at most every-other-season free).
 
-## Why same-competition + current-length (decision — ADR 0010)
+## Why same-competition + current-length (decision — ADR 0007)
 
 When a season runs, the next season often isn't created yet, so we can't read its real length. Restricting the reward to the **same competition** and assuming it's the **same length as the current season** lets us evaluate fairly with data we already have (X's own length, which is stable year-on-year for a given competition). A reward earned in one competition is **not** transferable to a different competition.
 
-**"Same competition" is matched on `Season.CompetitionId`** (the `Competitions` reference table, ADR 0017), never on `ApiLeagueId` — so switching fixture-data provider (an admin edit to `Competition.ApiLeagueId`) does not invalidate any earned free-SMS entitlement.
+**"Same competition" is matched on `Season.CompetitionId`** (the `Competitions` reference table, ADR 0009), never on `ApiLeagueId` — so switching fixture-data provider (an admin edit to `Competition.ApiLeagueId`) does not invalidate any earned free-SMS entitlement.
 
 ## Files to Modify
 
@@ -51,7 +51,7 @@ When a season runs, the next season often isn't created yet, so we can't read it
 ### Step 1: Eligibility service
 
 - `SmsRewardService.EvaluateAsync(userId, seasonY)` returns `{ IsFree, FundingPassId, LeftoverGbp, WorstCaseGbp }`.
-- Inputs from query side (`IApplicationReadDbConnection`): the user's most recent paying, unredeemed SMS pass **whose season's `CompetitionId` matches Y's `CompetitionId`** (ADR 0017); that pass's `SmsFeePaid`, `SmsSentCount`, and **its own season's `rounds`** (used as the same-length assumption); `ppm`. Do **not** read Y's length (it may not exist yet).
+- Inputs from query side (`IApplicationReadDbConnection`): the user's most recent paying, unredeemed SMS pass **whose season's `CompetitionId` matches Y's `CompetitionId`** (ADR 0009); that pass's `SmsFeePaid`, `SmsSentCount`, and **its own season's `rounds`** (used as the same-length assumption); `ppm`. Do **not** read Y's length (it may not exist yet).
 
 ### Step 2: Apply at purchase (ties into Task 09)
 
