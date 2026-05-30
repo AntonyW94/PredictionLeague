@@ -1,0 +1,148 @@
+@page "/admin/competitions/edit/{CompetitionId:int}"
+
+@attribute [Authorize(Roles = RoleNames.Administrator)]
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+
+@using ThePredictions.Contracts.Admin.Competitions
+
+<PageTitle>Edit Competition</PageTitle>
+
+<div class="page-container admin-light">
+    <div class="form-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold mb-0">Edit Competition</h3>
+            @if (_model != null)
+            {
+                <button type="button" class="btn red-button" @onclick="DeleteCompetitionAsync" disabled="@(_isDeleting || _seasonCount > 0)" title="@(_seasonCount > 0 ? "Cannot delete — seasons exist" : "Delete this competition")">
+                    <span class="bi bi-trash-fill me-1"></span>Delete
+                </button>
+            }
+        </div>
+        <ApiError Message="@_deleteError" />
+
+        @if (_model == null)
+        {
+            <p class="text-center text-white"><em>Loading competition...</em></p>
+        }
+        else
+        {
+            <BaseFormComponent TModel="UpdateCompetitionRequest"
+                               Model="_model"
+                               SubmitAction="HandleUpdateCompetitionAsync"
+                               SuccessRedirectUrl="/admin/competitions"
+                               BackUrl="/admin/competitions"
+                               SuccessAlertMessage="Competition updated successfully!"
+                               BusyText="Saving...">
+                <ChildContent>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="name" class="form-label">Competition Name</label>
+                            <InputText id="name" class="form-control" @bind-Value="_model.Name" />
+                            <StyledValidationMessage For="@(() => _model.Name)" />
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="code" class="form-label">Code</label>
+                            <InputText id="code" class="form-control" @bind-Value="_model.Code" />
+                            <StyledValidationMessage For="@(() => _model.Code)" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="type" class="form-label">Type</label>
+                            <InputSelect id="type" class="form-control" @bind-Value="_model.Type">
+                                <option value="0">League</option>
+                                <option value="1">Tournament</option>
+                            </InputSelect>
+                            <StyledValidationMessage For="@(() => _model.Type)" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="apiLeagueId" class="form-label">API League ID (optional)</label>
+                            <InputNumber id="apiLeagueId" class="form-control" @bind-Value="_model.ApiLeagueId" />
+                            <StyledValidationMessage For="@(() => _model.ApiLeagueId!)" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="logoUrl" class="form-label">Logo URL (optional)</label>
+                        <InputText id="logoUrl" class="form-control" @bind-Value="_model.LogoUrl" placeholder="https://..." />
+                        <StyledValidationMessage For="@(() => _model.LogoUrl!)" />
+                    </div>
+                </ChildContent>
+            </BaseFormComponent>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int CompetitionId { get; set; }
+    private UpdateCompetitionRequest? _model;
+    private int _seasonCount;
+    private bool _isDeleting;
+    private string? _deleteError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var competition = await Http.GetFromJsonAsync<CompetitionDto>($"api/admin/competitions/{CompetitionId}");
+        if (competition != null)
+        {
+            _model = new UpdateCompetitionRequest
+            {
+                Code = competition.Code,
+                Name = competition.Name,
+                Type = competition.Type,
+                LogoUrl = competition.LogoUrl,
+                ApiLeagueId = competition.ApiLeagueId
+            };
+            _seasonCount = competition.SeasonCount;
+        }
+    }
+
+    private Task<HttpResponseMessage> HandleUpdateCompetitionAsync()
+    {
+        return Http.PutAsJsonAsync($"api/admin/competitions/{CompetitionId}/update", _model);
+    }
+
+    private async Task DeleteCompetitionAsync()
+    {
+        _deleteError = null;
+
+        var confirmed = await JsRuntime.InvokeAsync<bool>(
+            "blazorInterop.showConfirm",
+            "Delete this competition?",
+            "This cannot be undone.",
+            "Delete",
+            "Cancel");
+
+        if (!confirmed)
+            return;
+
+        _isDeleting = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/admin/competitions/{CompetitionId}");
+            if (response.IsSuccessStatusCode)
+            {
+                NavigationManager.NavigateTo("/admin/competitions");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _deleteError = string.IsNullOrWhiteSpace(error) ? "Failed to delete competition." : error;
+            }
+        }
+        catch
+        {
+            _deleteError = "An unexpected error occurred while deleting the competition.";
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+}

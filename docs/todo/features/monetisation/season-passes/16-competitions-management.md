@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> Logos are stored as an **external URL** (`Competition.LogoUrl`, admin-entered), not a hosted upload (open question resolved this way for Fasthosts shared hosting). The `Competitions` table + `Seasons.CompetitionId` DDL was pulled forward from Task 07 into `tools/sql/competitions-schema-migration.sql` so this task is self-contained; the remaining season-pass/running-costs DDL stays in Task 07.
 
 ## Goal
 

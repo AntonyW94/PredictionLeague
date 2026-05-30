@@ -26,8 +26,7 @@ public class CreateLeagueCommandHandlerTests
         new(id: id, name: "2025/26",
             startDateUtc: _dateTimeProvider.UtcNow.AddMonths(2),
             endDateUtc: _dateTimeProvider.UtcNow.AddMonths(8),
-            isActive: true, numberOfRounds: 38, apiLeagueId: null,
-            competitionType: CompetitionType.League);
+            isActive: true, numberOfRounds: 38, competitionId: 1);
 
     [Fact]
     public async Task Handle_ShouldReturnLeagueDto_WhenRequestIsValid()

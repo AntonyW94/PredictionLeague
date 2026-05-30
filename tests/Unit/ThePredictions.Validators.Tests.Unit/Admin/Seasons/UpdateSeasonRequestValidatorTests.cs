@@ -141,26 +141,26 @@ public class UpdateSeasonRequestValidatorTests
     }
 
     [Fact]
-    public void Validate_ShouldFail_WhenCompetitionTypeIsNegative()
+    public void Validate_ShouldFail_WhenCompetitionIdIsZero()
     {
         var request = new UpdateSeasonRequestBuilder()
-            .WithCompetitionType(-1)
+            .WithCompetitionId(0)
             .Build();
 
         var result = _validator.TestValidate(request);
 
-        result.ShouldHaveValidationErrorFor(x => x.CompetitionType);
+        result.ShouldHaveValidationErrorFor(x => x.CompetitionId);
     }
 
     [Fact]
-    public void Validate_ShouldFail_WhenCompetitionTypeExceeds1()
+    public void Validate_ShouldFail_WhenCompetitionIdIsNegative()
     {
         var request = new UpdateSeasonRequestBuilder()
-            .WithCompetitionType(2)
+            .WithCompetitionId(-1)
             .Build();
 
         var result = _validator.TestValidate(request);
 
-        result.ShouldHaveValidationErrorFor(x => x.CompetitionType);
+        result.ShouldHaveValidationErrorFor(x => x.CompetitionId);
     }
 }

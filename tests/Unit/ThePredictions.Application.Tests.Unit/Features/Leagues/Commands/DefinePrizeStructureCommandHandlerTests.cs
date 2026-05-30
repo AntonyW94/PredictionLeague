@@ -32,8 +32,7 @@ public class DefinePrizeStructureCommandHandlerTests
         new(id: id, name: "2025/26",
             startDateUtc: FixedNow.AddMonths(-2),
             endDateUtc: FixedNow.AddMonths(6),
-            isActive: true, numberOfRounds: 38, apiLeagueId: null,
-            competitionType: CompetitionType.League);
+            isActive: true, numberOfRounds: 38, competitionId: 1);
 
     private static League CreateLeagueWithMembers(
         int id = 1,

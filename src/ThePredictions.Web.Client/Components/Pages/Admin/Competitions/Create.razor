@@ -1,0 +1,68 @@
+@page "/admin/competitions/create"
+
+@attribute [Authorize(Roles = RoleNames.Administrator)]
+
+@inject HttpClient Http
+
+@using ThePredictions.Contracts.Admin.Competitions
+
+<PageTitle>Create Competition</PageTitle>
+
+<div class="page-container admin-light">
+    <div class="form-container">
+        <h3 class="text-center fw-bold mb-4">Create New Competition</h3>
+        <BaseFormComponent TModel="CreateCompetitionRequest"
+                           Model="_model"
+                           SubmitAction="HandleCreateCompetitionAsync"
+                           SuccessRedirectUrl="/admin/competitions"
+                           BackUrl="/admin/competitions"
+                           SuccessAlertMessage="Competition created successfully!"
+                           BusyText="Creating Competition...">
+            <ChildContent>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label for="name" class="form-label">Competition Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="_model.Name" placeholder="e.g., Premier League" />
+                        <StyledValidationMessage For="@(() => _model.Name)" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="code" class="form-label">Code</label>
+                        <InputText id="code" class="form-control" @bind-Value="_model.Code" placeholder="e.g., EPL" />
+                        <StyledValidationMessage For="@(() => _model.Code)" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="type" class="form-label">Type</label>
+                        <InputSelect id="type" class="form-control" @bind-Value="_model.Type">
+                            <option value="0">League</option>
+                            <option value="1">Tournament</option>
+                        </InputSelect>
+                        <StyledValidationMessage For="@(() => _model.Type)" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="apiLeagueId" class="form-label">API League ID (optional)</label>
+                        <InputNumber id="apiLeagueId" class="form-control" @bind-Value="_model.ApiLeagueId" />
+                        <StyledValidationMessage For="@(() => _model.ApiLeagueId!)" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="logoUrl" class="form-label">Logo URL (optional)</label>
+                    <InputText id="logoUrl" class="form-control" @bind-Value="_model.LogoUrl" placeholder="https://..." />
+                    <StyledValidationMessage For="@(() => _model.LogoUrl!)" />
+                </div>
+            </ChildContent>
+        </BaseFormComponent>
+    </div>
+</div>
+
+@code {
+    private readonly CreateCompetitionRequest _model = new();
+
+    private Task<HttpResponseMessage> HandleCreateCompetitionAsync()
+    {
+        return Http.PostAsJsonAsync("api/admin/competitions/create", _model);
+    }
+}

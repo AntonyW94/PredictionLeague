@@ -4,6 +4,7 @@
 
 @inject HttpClient Http
 
+@using ThePredictions.Contracts.Admin.Competitions
 @using ThePredictions.Contracts.Admin.Seasons
 @using ThePredictions.Domain.Common
 @using ThePredictions.Domain.Common.Enumerations
@@ -25,20 +26,26 @@
                            BusyText="Creating Season...">
             <ChildContent>
                 <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="apiLeagueId" class="form-label">API League ID</label>
-                        <InputNumber id="apiLeagueId" class="form-control" @bind-Value="_model.ApiLeagueId" />
-                        <StyledValidationMessage For="@(() => _model.ApiLeagueId)" />
+                    <div class="col-md-5 mb-3">
+                        <label for="competition" class="form-label">Competition</label>
+                        <InputSelect id="competition" class="form-control" @bind-Value="_model.CompetitionId" @bind-Value:after="OnCompetitionChanged">
+                            <option value="0">Select a competition...</option>
+                            @foreach (var competition in _competitions)
+                            {
+                                <option value="@competition.Id">@competition.Name (@(competition.Type == (int)CompetitionType.Tournament ? "Tournament" : "League"))</option>
+                            }
+                        </InputSelect>
+                        <StyledValidationMessage For="@(() => _model.CompetitionId)" />
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label for="seasonYear" class="form-label">Season Year</label>
                         <InputNumber id="seasonYear" class="form-control" @bind-Value="_seasonYear" />
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label">&nbsp;</label>
                         <div>
-                            <button type="button" class="btn purple-accent-button w-100" @onclick="LookupApiLeagueAsync" disabled="@(_isLookingUp || !_model.ApiLeagueId.HasValue)">
-                                <span class="bi bi-cloud-download me-1"></span>@(_isLookingUp ? "Looking up..." : "Lookup")
+                            <button type="button" class="btn purple-accent-button w-100" @onclick="LookupApiLeagueAsync" disabled="@(_isLookingUp || !SelectedApiLeagueId.HasValue)">
+                                <span class="bi bi-cloud-download me-1"></span>@(_isLookingUp ? "Looking up..." : "Lookup from API")
                             </button>
                         </div>
                     </div>
@@ -47,18 +54,10 @@
                 <ApiError Message="@_lookupError" />
 
                 <div class="row">
-                    <div class="col-md-8 mb-3">
+                    <div class="col-md-12 mb-3">
                         <label for="name" class="form-label">Season Name</label>
                         <InputText id="name" class="form-control" @bind-Value="_model.Name" placeholder="e.g., 2025/2026" />
                         <StyledValidationMessage For="@(() => _model.Name)" />
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="competitionType" class="form-label">Competition Type</label>
-                        <InputSelect id="competitionType" class="form-control" @bind-Value="_model.CompetitionType" @bind-Value:after="OnCompetitionTypeChanged">
-                            <option value="0">League</option>
-                            <option value="1">Tournament</option>
-                        </InputSelect>
-                        <StyledValidationMessage For="@(() => _model.CompetitionType)" />
                     </div>
                 </div>
 
@@ -73,12 +72,12 @@
                         <InputDate id="endDate" Type="InputDateType.Date" class="form-control" @bind-Value="_model.EndDateUtc" />
                         <StyledValidationMessage For="@(() => _model.EndDateUtc)" />
                     </div>
-                    <div class="@(_model.CompetitionType == 1 ? "col-md-2" : "col-md-4") mb-3">
+                    <div class="@(IsTournament ? "col-md-2" : "col-md-4") mb-3">
                         <label for="numberOfRounds" class="form-label">Rounds</label>
                         <InputNumber id="numberOfRounds" class="form-control" @bind-Value="_model.NumberOfRounds" />
                         <StyledValidationMessage For="@(() => _model.NumberOfRounds)" />
                     </div>
-                    @if (_model.CompetitionType == 1)
+                    @if (IsTournament)
                     {
                         <div class="col-md-2 mb-3">
                             <label for="teamCount" class="form-label">Teams</label>
@@ -87,13 +86,13 @@
                     }
                 </div>
 
-                @if (_model.CompetitionType == 1)
+                @if (IsTournament)
                 {
                     <div class="tournament-structure-section">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="fw-bold mb-0">Tournament Structure</h5>
                             <div class="d-flex gap-2">
-                                @if (_model.ApiLeagueId.HasValue)
+                                @if (SelectedApiLeagueId.HasValue)
                                 {
                                     <button type="button" class="btn btn-sm purple-accent-button" @onclick="FetchApiRoundsAsync" disabled="@_isFetchingRounds">
                                         <span class="bi bi-cloud-download me-1"></span><span class="btn-text">@(_isFetchingRounds ? "Fetching..." : "Fetch from API")</span>
@@ -188,6 +187,7 @@
         NumberOfRounds = 38
     };
 
+    private List<CompetitionDto> _competitions = [];
     private int _seasonYear = DateTime.UtcNow.Year;
     private int _teamCount;
     private readonly Dictionary<int, TournamentStage?> _selectedStageForRow = new();
@@ -195,6 +195,15 @@
     private string? _fetchRoundsError;
     private bool _isLookingUp;
     private string? _lookupError;
+
+    private CompetitionDto? SelectedCompetition => _competitions.FirstOrDefault(c => c.Id == _model.CompetitionId);
+    private bool IsTournament => SelectedCompetition?.Type == (int)CompetitionType.Tournament;
+    private int? SelectedApiLeagueId => SelectedCompetition?.ApiLeagueId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _competitions = await Http.GetFromJsonAsync<List<CompetitionDto>>("api/admin/competitions") ?? [];
+    }
 
     private Task<HttpResponseMessage> HandleCreateSeasonAsync()
     {
@@ -204,13 +213,18 @@
         return Http.PostAsJsonAsync("api/admin/seasons/create", _model);
     }
 
-    private void OnCompetitionTypeChanged()
+    private void OnCompetitionChanged()
     {
+        if (!IsTournament)
+        {
+            _model.TournamentRoundMappings.Clear();
+            _selectedStageForRow.Clear();
+        }
     }
 
     private async Task LookupApiLeagueAsync()
     {
-        if (!_model.ApiLeagueId.HasValue)
+        if (!SelectedApiLeagueId.HasValue)
             return;
 
         _isLookingUp = true;
@@ -220,7 +234,7 @@
         try
         {
             var result = await Http.GetFromJsonAsync<ApiLeagueLookupResult>(
-                $"api/admin/seasons/api-league-lookup?apiLeagueId={_model.ApiLeagueId.Value}&seasonYear={_seasonYear}");
+                $"api/admin/seasons/api-league-lookup?apiLeagueId={SelectedApiLeagueId.Value}&seasonYear={_seasonYear}");
 
             if (result != null)
             {
@@ -230,10 +244,9 @@
                 _model.StartDateUtc = result.StartDateUtc;
                 _model.EndDateUtc = result.EndDateUtc;
                 _model.NumberOfRounds = result.RoundCount;
-                _model.CompetitionType = result.CompetitionType;
                 _teamCount = result.TeamCount;
 
-                if (result.CompetitionType == 1)
+                if (IsTournament)
                 {
                     PopulateTournamentStructure(result.TournamentStages);
                 }
@@ -241,7 +254,7 @@
         }
         catch
         {
-            _lookupError = "Could not look up league details. Check the API League ID and Season Year.";
+            _lookupError = "Could not look up league details. Check the competition's API League ID and Season Year.";
         }
         finally
         {
@@ -284,7 +297,7 @@
 
     private async Task FetchApiRoundsAsync()
     {
-        if (!_model.ApiLeagueId.HasValue)
+        if (!SelectedApiLeagueId.HasValue)
             return;
 
         _isFetchingRounds = true;
@@ -293,7 +306,7 @@
 
         try
         {
-            var stages = await Http.GetFromJsonAsync<List<TournamentStage>>($"api/admin/seasons/api-rounds?apiLeagueId={_model.ApiLeagueId.Value}&seasonYear={_seasonYear}");
+            var stages = await Http.GetFromJsonAsync<List<TournamentStage>>($"api/admin/seasons/api-rounds?apiLeagueId={SelectedApiLeagueId.Value}&seasonYear={_seasonYear}");
 
             _model.TournamentRoundMappings.Clear();
             _selectedStageForRow.Clear();
@@ -332,7 +345,7 @@
         }
         catch
         {
-            _fetchRoundsError = "Could not fetch round names from the API. Check the League ID and Season Year.";
+            _fetchRoundsError = "Could not fetch round names from the API. Check the competition's API League ID and Season Year.";
         }
         finally
         {

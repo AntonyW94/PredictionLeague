@@ -13,8 +13,7 @@ public class LeagueManagementTests
 
     private Season CreateFutureSeason() =>
         new(id: 1, name: "2025/26", startDateUtc: _dateTimeProvider.UtcNow.AddMonths(2),
-            endDateUtc: _dateTimeProvider.UtcNow.AddMonths(8), isActive: true, numberOfRounds: 38, apiLeagueId: null,
-            competitionType: CompetitionType.League);
+            endDateUtc: _dateTimeProvider.UtcNow.AddMonths(8), isActive: true, numberOfRounds: 38, competitionId: 1);
 
     private DateTime FutureDeadline => _dateTimeProvider.UtcNow.AddMonths(1);
 

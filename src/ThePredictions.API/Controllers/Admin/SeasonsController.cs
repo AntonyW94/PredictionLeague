@@ -38,8 +38,7 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
             CurrentUserId,
             request.IsActive,
             request.NumberOfRounds,
-            request.ApiLeagueId,
-            (CompetitionType)request.CompetitionType,
+            request.CompetitionId,
             request.TournamentRoundMappings
         );
 
@@ -220,8 +219,7 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
             request.EndDateUtc,
             request.IsActive,
             request.NumberOfRounds,
-            request.ApiLeagueId,
-            (CompetitionType)request.CompetitionType,
+            request.CompetitionId,
             request.TournamentRoundMappings);
 
         await mediator.Send(command, cancellationToken);

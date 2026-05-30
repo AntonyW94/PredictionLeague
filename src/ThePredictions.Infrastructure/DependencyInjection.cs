@@ -82,6 +82,7 @@ public static class DependencyInjection
             };
         });
 
+        services.AddScoped<ICompetitionRepository, CompetitionRepository>();
         services.AddScoped<ILeagueRepository, LeagueRepository>();
         services.AddScoped<ILeagueMemberRepository, LeagueMemberRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();

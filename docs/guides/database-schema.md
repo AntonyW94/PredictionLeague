@@ -39,9 +39,29 @@ This document describes the SQL Server database schema for the ThePredictions ap
 
 ## Core Domain Tables
 
+### Competitions
+
+Reference data for a competition: the stable, provider-independent identity that seasons belong to (ADR 0009). Holds the competition type and the external API league id (both moved off `Seasons`), plus an optional logo URL. The `ApiLeagueId` is admin-editable so the fixture provider can be repointed without a deploy and without changing the competition's `Id` (which keeps reward entitlements and price comparables intact).
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| Code | nvarchar(50) | NO | | Stable slug (e.g., "EPL", "WORLD_CUP") |
+| Name | nvarchar(200) | NO | | Competition name (e.g., "Premier League") |
+| Type | int | NO | | Type of competition (0 = League, 1 = Tournament) |
+| LogoUrl | nvarchar(500) | YES | | External logo URL (admin-entered) |
+| ApiLeagueId | int | YES | | External API league identifier (admin-editable) |
+| CreatedAtUtc | datetime2 | NO | | When the competition was created |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `Code` (`UX_Competitions_Code`)
+
+---
+
 ### Seasons
 
-Represents a football season or competition period.
+Represents a football season within a competition.
 
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
@@ -49,14 +69,16 @@ Represents a football season or competition period.
 | Name | nvarchar(50) | NO | | Season name (e.g., "Premier League 2025/26") |
 | IsActive | bit | NO | 1 | Whether season is currently active |
 | NumberOfRounds | int | NO | 0 | Total rounds in the season |
-| ApiLeagueId | int | YES | | External API league identifier |
+| CompetitionId | int | NO | | FK to Competitions (the competition this season belongs to) |
 | StartDateUtc | datetime2 | NO | | Season start date |
 | EndDateUtc | datetime2 | NO | | Season end date |
-| CompetitionType | int | NO | 0 | Type of competition (0 = League, 1 = Tournament) |
+
+> `ApiLeagueId` and `CompetitionType` previously lived here; both moved to `Competitions` (ADR 0009). The provider id and competition type are now resolved via the season's `Competition` at sync time, and `IsTournament` reads `Competition.Type`.
 
 **Constraints:**
 - PK: `Id`
 - UNIQUE: `Name`
+- FK: `CompetitionId` → `Competitions(Id)` (`FK_Seasons_Competitions`)
 
 ---
 

@@ -17,8 +17,10 @@ public class FetchAllSeasonsQueryHandler(IApplicationReadDbConnection dbConnecti
                 s.[EndDateUtc],
                 s.[IsActive],
                 s.[NumberOfRounds],
-                s.[CompetitionType],
-                s.[ApiLeagueId],
+                s.[CompetitionId],
+                c.[Name] AS CompetitionName,
+                c.[Type] AS CompetitionType,
+                c.[ApiLeagueId],
                 (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id]) AS RoundCount,
                 (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id] AND r.[Status] = 'Draft') AS DraftCount,
                 (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id] AND r.[Status] = 'Published') AS PublishedCount,
@@ -26,6 +28,8 @@ public class FetchAllSeasonsQueryHandler(IApplicationReadDbConnection dbConnecti
                 (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id] AND r.[Status] = 'Completed') AS CompletedCount
             FROM
                 [Seasons] s
+            JOIN
+                [Competitions] c ON s.[CompetitionId] = c.[Id]
             ORDER BY
                 s.[StartDateUtc] DESC;";
 
