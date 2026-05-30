@@ -22,8 +22,15 @@ A player may **optionally** store **payout bank details** so league admins can p
 
 **Join-time consent:** when a player joins a **new prize league** and **already has saved payout details**, warn them that **that league's admin (named) will now be able to see** their details, with a **"remove my saved details"** button at that point.
 
-### d) Payouts list (one aggregated total per user, manual mark-as-paid)
-A player can win **several prizes** in one league (round/monthly/overall/most-exact). The admin pays them **one lump sum**, so payouts are tracked **per (league, user)** in `LeaguePayouts` — the **sum** of that user's `Winnings` in the league — **not** per individual winning. At league end the admin sees a **payouts list** (one row per winner: total amount, payout details if shared) and **marks each total as paid** (`LeaguePayouts.PaidAtUtc`). Winners with no stored details show a "contact them" prompt. Settlement is **manual/peer-to-peer**; an automated payout system could replace it later **only with legal sign-off** (0003/0008).
+### d) Payouts list (one aggregated total per user, marked paid only after season end)
+A player can win **several prizes** in one league (round/monthly/overall/most-exact). The admin pays them **one lump sum**, so payouts are tracked **per (league, user)** in `LeaguePayouts` — the **sum** of that user's `Winnings` in the league — **not** per individual winning.
+
+- **`Winnings` stays the source of truth.** The Round/Monthly/Overall/etc. **breakdown is computed live** from `Winnings` (as the dashboard does today) for both standings and the payouts list. We do **not** duplicate the live breakdown onto `LeaguePayouts`; that row holds only the **settlement state** (total + `PaidAtUtc`). (An *immutable breakdown snapshot* at payout is optional, justified only as an audit record — see below.)
+- **Mark-as-paid is only available once the season is complete** (all rounds completed). Until then the button is hidden/disabled, so totals are final before any settlement and there's no mid-season drift.
+- The admin sees a **payouts list** (one row per winner: total + live breakdown + payout details if shared) and **marks each total as paid** (`LeaguePayouts.PaidAtUtc`); winners with no stored details show a "contact them" prompt.
+- If a winning is corrected **after** a payout was marked paid, recompute the total and **flag a discrepancy** (don't silently overwrite `PaidAtUtc`).
+
+Settlement is **manual/peer-to-peer**; an automated payout system could replace it later **only with legal sign-off** (0003/0008).
 
 ## Consequences
 

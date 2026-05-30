@@ -36,8 +36,9 @@ Let players **optionally** store encrypted **payout bank details**, and give lea
 
 ### Step 3: Payouts list (admin) — one aggregated total per winner
 - A user can have **several `Winnings`** in a league; payouts are tracked **per (league, user)** in `LeaguePayouts` = the **sum** of their winnings, **not** per individual prize.
-- `GetLeaguePayoutsQuery` returns **one row per winner**: name, **total amount** (aggregated), **payout details if shared** (else a "contact them" prompt), and **paid?** (`LeaguePayouts.PaidAtUtc`). Populate/refresh `LeaguePayouts` from the `Winnings` aggregation (e.g. when prizes finalise or the page loads).
-- `MarkLeaguePayoutPaidCommand` sets `PaidAtUtc` on the user's league total when paid manually. Show outstanding vs paid totals.
+- **`Winnings` is the source of truth.** Compute the **Round/Monthly/Overall/etc. breakdown live from `Winnings`** for both the dashboard (unchanged) and the payouts list — do **not** duplicate the breakdown onto `LeaguePayouts`.
+- `GetLeaguePayoutsQuery` returns **one row per winner**: name, **total amount** + the **live breakdown**, **payout details if shared** (else a "contact them" prompt), and **paid?** (`LeaguePayouts.PaidAtUtc`). The `LeaguePayouts` row carries the settlement state (total + `PaidAtUtc`).
+- **Gate on season complete:** the **mark-as-paid action is hidden/disabled until the season is complete** (all rounds completed) so totals are final. `MarkLeaguePayoutPaidCommand` then sets `PaidAtUtc` on the user's league total. Show outstanding vs paid totals.
 
 ### Step 4: Tools
 - `DataAnonymiser` replaces `UserPayoutDetails` ciphertext with dummy values on dev refresh; `PersonalDataVerifier` asserts none survive.
@@ -47,7 +48,9 @@ Let players **optionally** store encrypted **payout bank details**, and give lea
 - [ ] Player can add/edit/delete payout details; stored as ciphertext (not human-readable in DB).
 - [ ] Details visible only to admins of leagues the player is in (and the player); denied to others; named-admin disclosure shown before saving.
 - [ ] **Join-time warning** appears when joining a prize league with saved details, naming the admin, with a working "remove" button.
-- [ ] Payouts list shows **one total per winner** (sum of their winnings) + details (or contact prompt) + paid state; mark-as-paid sets `LeaguePayouts.PaidAtUtc` on the aggregate row.
+- [ ] Payouts list shows **one total per winner** (sum of their winnings) + a **live breakdown computed from `Winnings`** + details (or contact prompt) + paid state.
+- [ ] **Mark-as-paid is hidden/disabled until the season is complete** (all rounds done); enabling it sets `LeaguePayouts.PaidAtUtc`.
+- [ ] Standings/dashboard winnings breakdown still computes live from `Winnings` (unchanged; not coupled to `LeaguePayouts`).
 - [ ] No plaintext payout details in logs or unauthorised responses; dev refresh anonymises them.
 - [ ] Domain coverage 100% for new logic.
 
