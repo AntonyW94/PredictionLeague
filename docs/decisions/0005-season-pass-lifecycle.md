@@ -12,7 +12,7 @@ Introducing a paid model onto a previously-free site needs clear rules for: whic
 ## Decision
 
 ### a) Which seasons are paid
-`Season` gains a `RequiresPass` flag (default `false`).
+A season is pass-required when it has prices. `Season` exposes a **computed** `RequiresPass => PassEntryPrice.HasValue` (no stored flag/column - refined during implementation; the original draft proposed a stored `RequiresPass` boolean, but it was redundant with `PassEntryPrice` presence).
 - All **existing/past seasons** stay free (grandfathered).
 - **World Cup 2026** is **free for everyone**.
 - **Premier League 2026/27 onward** require a pass.

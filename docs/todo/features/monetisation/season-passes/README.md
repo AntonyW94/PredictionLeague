@@ -54,7 +54,7 @@ Prices are **not hardcoded**. Each pass-required season stores an admin-set **En
 - **Cost apportionment:** annual running costs are split across the year's paid seasons **weighted by season length** (rounds/duration) — a long Premier League season carries more than a short cup.
 - **Denominator = expected players:** the **distinct participant count of the last completed season of the same competition**, i.e. recommend a price that **breaks even at roughly last season's player numbers**.
 - **Business-borne costs only:** costs still paid from the owner's **personal** account are **excluded until their renewal date**, when they move to the business and enter the calculation. (Owner migrates each cost to the business bank as it renews.)
-- **Free seasons:** World Cup 2026 is `RequiresPass = false`, run at a **deliberate one-off loss**. **After it, all seasons are paid**, so no ongoing free-season subsidy logic is needed.
+- **Free seasons:** World Cup 2026 is free (no prices set), run at a **deliberate one-off loss**. **After it, all seasons are paid**, so no ongoing free-season subsidy logic is needed.
 - Entry recommendation is grossed up for **Stripe fees**; the **SMS uplift** reflects expected SMS cost per SMS-user over the season (Task 04 rate) + buffer.
 - **Always an editable, pre-filled info box** on the create-season page — never enforced. If there's **no comparable prior season** to derive player numbers, leave it **blank with explanatory wording**. Apply a **small minimum floor** (covers Stripe fees + a little), still editable below.
 - Running costs are stored with **cost type, price, and start/end dates** so apportionment/proration can be done any way in future (Task 14).
@@ -70,7 +70,7 @@ Prices are **not hardcoded**. Each pass-required season stores an admin-set **En
 A user may take part in a season (join or create a league in it) if **any** of:
 
 1. A `SeasonPass` exists for `(UserId, SeasonId)` → **allow** (already participating this season), **or**
-2. `Season.RequiresPass == false` (free season) → **create a £0 `Free` pass** (records participation — burns the freebie) and **allow**, **or**
+2. Free season (`Season.RequiresPass` is false, i.e. `PassEntryPrice IS NULL`) → **create a £0 `Free` pass** (records participation — burns the freebie) and **allow**, **or**
 3. Paid season + the user has **zero `SeasonPass` records** (`COUNT == 0`) → **grant a free `Trial` pass** (their first season is free) and **allow**.
 
 Otherwise (paid season, ≥1 record) → **block, redirect to purchase page.**
@@ -114,7 +114,7 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 ## Acceptance Criteria
 
 - [ ] Sole trader registered; Monzo Business + Stripe live in the business name.
-- [ ] `Season.RequiresPass` flag exists; all existing seasons + World Cup 2026 = `false`; PL 2026/27 = `true`.
+- [ ] Pass-required is derived from price (`Season.PassEntryPrice IS NOT NULL`); all existing seasons + World Cup 2026 are free (no prices); PL 2026/27 is priced.
 - [ ] A user with no pass cannot join/create a league in a pass-required season unless trial-eligible.
 - [ ] Brand-new users are auto-granted a free Entry trial on first participation in a pass-required season.
 - [ ] Per-season **Entry** and **Entry + SMS** prices are admin-configurable (DB-backed); Stripe charges those exact amounts (dynamic).

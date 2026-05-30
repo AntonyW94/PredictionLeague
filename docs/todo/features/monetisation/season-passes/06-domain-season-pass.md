@@ -6,17 +6,19 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> Domain only: `Season` gained `PassEntryPrice`/`PassSmsPrice` (with validation) plus a **computed** `RequiresPass => PassEntryPrice.HasValue` (no stored column - a season is pass-required exactly when it has prices), and `SeasonPass` + the `SeasonPassTier`/`SeasonPassSource` enums were added. The `SeasonPasses` **table** stays in Task 07 (no reads/writes until the access gate, Task 08); only the additive `Seasons` price columns are migrated (presented as SQL in chat, no committed file). Season create always makes a free season; update preserves existing pricing - admin pricing UI is Task 15.
 
 ## Goal
 
-Add the `RequiresPass` flag and admin-set prices to `Season`, and introduce the `SeasonPass` domain entity (with SMS usage + reward tracking) and supporting enums.
+Add admin-set prices to `Season` (with `RequiresPass` derived from them), and introduce the `SeasonPass` domain entity (with SMS usage + reward tracking) and supporting enums.
 
 ## Files to Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/ThePredictions.Domain/Models/Season.cs` | Modify | Add `RequiresPass`, prices, and `CompetitionId` (FK); **drop `ApiLeagueId` and `CompetitionType`** (both move to `Competitions`, ADR 0009) |
+| `src/ThePredictions.Domain/Models/Season.cs` | Modify | Add prices and `CompetitionId` (FK) plus a computed `RequiresPass`; **drop `ApiLeagueId` and `CompetitionType`** (both move to `Competitions`, ADR 0009) |
 | `src/ThePredictions.Domain/Models/SeasonPass.cs` | Create | New entity |
 | `src/ThePredictions.Domain/Common/Enumerations/SeasonPassTier.cs` | Create | `Entry`, `EntryPlusSms` |
 | `src/ThePredictions.Domain/Common/Enumerations/SeasonPassSource.cs` | Create | `Purchased`, `Trial`, `Free` (free-season participation) |
@@ -25,13 +27,13 @@ Add the `RequiresPass` flag and admin-set prices to `Season`, and introduce the 
 
 ## Implementation Steps
 
-### Step 1: Add `RequiresPass` and prices to `Season`
+### Step 1: Add prices to `Season` (RequiresPass derived)
 
-- Add `public bool RequiresPass { get; private set; }` (default `false`).
-- Add admin-set prices: `public decimal? EntryPrice { get; private set; }` and `public decimal? SmsPrice { get; private set; }` (full price of the +SMS tier). Null for free seasons.
+- Add a **computed** `public bool RequiresPass => PassEntryPrice.HasValue;` (no stored column - a season is pass-required exactly when it has prices).
+- Add admin-set prices: `public decimal? PassEntryPrice { get; private set; }` and `public decimal? PassSmsPrice { get; private set; }` (full price of the +SMS tier). Null for free seasons.
 - Add `public int CompetitionId { get; private set; }` (FK to the `Competitions` reference table, ADR 0009 / Task 16) — the **stable internal competition identity** used for the reward's same-competition match (Task 13) and comparable-season pricing (Task 15). **Remove both `ApiLeagueId` and `CompetitionType` from `Season`** — the provider id and competition type now live on `Competition` (resolved at sync time). The existing `Season.IsTournament` helper moves to read `Competition.Type` (update its callers — Task 16).
 - Thread through the public constructor, `Create(...)`, and `UpdateDetails(...)` (default-false keeps all existing seasons free).
-- Validation: when `RequiresPass` is `true`, require `EntryPrice > 0` and `SmsPrice >= EntryPrice`; when `false`, prices must be null. (Prices are set/edited in admin and suggested by the calculator — Task 15.)
+- Validation: a season is either **free** (both prices null) or **paid** (both prices set, `PassEntryPrice > 0`, `PassSmsPrice >= PassEntryPrice`); a mismatch (one set, one null) is rejected. (Prices are set/edited in admin and suggested by the calculator — Task 15.)
 
 ### Step 2: Create enums
 
@@ -120,7 +122,7 @@ Mirror `Season.cs` / `League.cs`: private parameterless ctor for ORM (`[ExcludeF
 - Trial pass must always be Entry tier, amount 0, `SmsFeePaid` 0, no Stripe reference.
 - Purchased pass must reject zero amount / blank reference; `SmsFeePaid > 0` only allowed on `EntryPlusSms`.
 - Reward-upgrade pass: `EntryPlusSms` tier but `SmsFeePaid = 0`.
-- `Season` with `RequiresPass = true` must reject null/zero prices; `RequiresPass = false` must reject non-null prices.
+- A paid `Season` must reject null/zero prices or `PassSmsPrice < PassEntryPrice`; a free season must reject a single price being set (both must be null).
 
 ## Notes
 

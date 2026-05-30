@@ -16,12 +16,12 @@ Let the admin set each pass-required season's **Entry** and **Entry + SMS** pric
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/ThePredictions.Domain/Models/Season.cs` | Modify | `EntryPrice` / `SmsPrice` (Task 06) |
+| `src/ThePredictions.Domain/Models/Season.cs` | Modify | `PassEntryPrice` / `PassSmsPrice` (Task 06) |
 | Seasons columns | Modify | (Task 07) |
 | `...Application/Features/.../PriceRecommendation/IPriceRecommendationService.cs` (+ impl) | Create | The calculator |
 | `...Queries/GetSeasonPriceRecommendationQuery(.Handler).cs` | Create | Feed the season-create UI |
 | Admin season create/edit page + commands | Modify | Price fields + "Recommended £X" with override |
-| Task 09 Checkout | (already wired) | Uses `EntryPrice`/`SmsPrice` as dynamic `price_data` |
+| Task 09 Checkout | (already wired) | Uses `PassEntryPrice`/`PassSmsPrice` as dynamic `price_data` |
 
 ## Calculator Algorithm (owner-confirmed decisions)
 
@@ -40,7 +40,7 @@ Result surfaced as *"Recommended: £X Entry · £Y +SMS (breaks even at ~N playe
 
 ### Step 1: Season price fields + validation
 
-- `EntryPrice` / `SmsPrice` on `Season` (Task 06): required & `> 0` when `RequiresPass`, `SmsPrice >= EntryPrice`; null when free.
+- `PassEntryPrice` / `PassSmsPrice` on `Season` (Task 06): both set for a paid season (`PassEntryPrice > 0`, `PassSmsPrice >= PassEntryPrice`) or both null when free. Setting prices is what makes a season pass-required (`RequiresPass` is derived from `PassEntryPrice`).
 
 ### Step 2: Calculator service
 

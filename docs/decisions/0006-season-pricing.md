@@ -12,7 +12,7 @@ Different seasons warrant different prices (a 38-week league vs a short cup), pr
 ## Decision
 
 ### a) Admin-configurable prices via dynamic Stripe amounts
-Each pass-required season stores admin-set **`EntryPrice`** and **`SmsPrice`** (DB-backed, editable in admin). Stripe Checkout uses **dynamic `price_data`** read from the DB at session creation — **no pre-created Stripe Price objects**. Validation: `RequiresPass ⇒ prices set`; `SmsPrice ≥ EntryPrice`.
+Each pass-required season stores admin-set **`PassEntryPrice`** and **`PassSmsPrice`** (DB-backed, editable in admin). Stripe Checkout uses **dynamic `price_data`** read from the DB at session creation — **no pre-created Stripe Price objects**. Validation: a season is either free (both prices null) or paid (both prices set, `PassEntryPrice > 0`, `PassSmsPrice ≥ PassEntryPrice`). `RequiresPass` is **derived** from price presence, not a stored flag.
 
 ### b) Recommended-price calculator (a suggestion, never enforced)
 During season creation, show a **pre-filled, editable info box**:

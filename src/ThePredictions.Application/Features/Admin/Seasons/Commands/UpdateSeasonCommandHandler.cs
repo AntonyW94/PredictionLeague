@@ -34,7 +34,9 @@ public class UpdateSeasonCommandHandler(
             request.EndDateUtc,
             request.IsActive,
             request.NumberOfRounds,
-            request.CompetitionId
+            request.CompetitionId,
+            season.PassEntryPrice,
+            season.PassSmsPrice
         );
 
         await seasonRepository.UpdateAsync(season, cancellationToken);

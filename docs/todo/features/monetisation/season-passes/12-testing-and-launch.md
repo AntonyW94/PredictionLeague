@@ -16,8 +16,8 @@ Configure seasons, validate the whole flow in Stripe test mode, then go live for
 
 ### Step 1: Season configuration
 
-- All existing seasons + **World Cup 2026**: `RequiresPass = false` (free).
-- **Premier League 2026/27**: `RequiresPass = true`.
+- All existing seasons + **World Cup 2026**: free (no `PassEntryPrice`/`PassSmsPrice`).
+- **Premier League 2026/27**: priced (`PassEntryPrice`/`PassSmsPrice` set), which makes it pass-required.
 - Map PL 2026/27 tiers to the Stripe Price IDs from Task 03.
 
 ### Step 2: End-to-end test (Stripe TEST mode)

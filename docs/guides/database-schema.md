@@ -72,6 +72,10 @@ Represents a football season within a competition.
 | CompetitionId | int | NO | | FK to Competitions (the competition this season belongs to) |
 | StartDateUtc | datetime2 | NO | | Season start date |
 | EndDateUtc | datetime2 | NO | | Season end date |
+| PassEntryPrice | decimal(10,2) | YES | | Admin-set Entry price (> 0) for a pass-required season; NULL for a free season |
+| PassSmsPrice | decimal(10,2) | YES | | Admin-set full price of the Entry + SMS tier (>= PassEntryPrice); NULL for a free season |
+
+> There is no stored `RequiresPass` column: a season is pass-required exactly when it has prices (`PassEntryPrice IS NOT NULL`). The `Season.RequiresPass` domain property is computed from that.
 
 > `ApiLeagueId` and `CompetitionType` previously lived here; both moved to `Competitions` (ADR 0009). The provider id and competition type are now resolved via the season's `Competition` at sync time, and `IsTournament` reads `Competition.Type`.
 

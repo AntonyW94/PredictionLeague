@@ -15,7 +15,9 @@ public class SeasonTests
         DateTime? endDateUtc = null,
         bool isActive = true,
         int numberOfRounds = 38,
-        int competitionId = 1)
+        int competitionId = 1,
+        decimal? passEntryPrice = null,
+        decimal? passSmsPrice = null)
     {
         return Season.Create(
             name,
@@ -23,7 +25,9 @@ public class SeasonTests
             endDateUtc ?? ValidEnd,
             isActive,
             numberOfRounds,
-            competitionId);
+            competitionId,
+            passEntryPrice,
+            passSmsPrice);
     }
 
     #region Create — Happy Path
@@ -181,7 +185,7 @@ public class SeasonTests
         var end = start.AddMonths(10).AddDays(1);
 
         // Act
-        var act = () => Season.Create("Test", start, end, true, 38, 1);
+        var act = () => Season.Create("Test", start, end, true, 38, 1, null, null);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -195,7 +199,7 @@ public class SeasonTests
         var end = start.AddMonths(10);
 
         // Act
-        var act = () => Season.Create("Test", start, end, true, 38, 1);
+        var act = () => Season.Create("Test", start, end, true, 38, 1, null, null);
 
         // Assert
         act.Should().NotThrow();
@@ -281,6 +285,84 @@ public class SeasonTests
 
     #endregion
 
+    #region Pricing & RequiresPass
+
+    [Fact]
+    public void Create_ShouldBeFreeSeason_WhenNoPrices()
+    {
+        // Act
+        var season = CreateSeasonViaFactory();
+
+        // Assert
+        season.PassEntryPrice.Should().BeNull();
+        season.PassSmsPrice.Should().BeNull();
+        season.RequiresPass.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Create_ShouldRequirePass_WhenPricesSet()
+    {
+        // Act
+        var season = CreateSeasonViaFactory(passEntryPrice: 10m, passSmsPrice: 15m);
+
+        // Assert
+        season.PassEntryPrice.Should().Be(10m);
+        season.PassSmsPrice.Should().Be(15m);
+        season.RequiresPass.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Create_ShouldAcceptEqualEntryAndPassSmsPrice()
+    {
+        // Act
+        var act = () => CreateSeasonViaFactory(passEntryPrice: 10m, passSmsPrice: 10m);
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void Create_ShouldThrow_WhenPassEntryPriceSetButPassSmsPriceNull()
+    {
+        // Act
+        var act = () => CreateSeasonViaFactory(passEntryPrice: 10m, passSmsPrice: null);
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_ShouldThrow_WhenPassSmsPriceSetButPassEntryPriceNull()
+    {
+        // Act
+        var act = () => CreateSeasonViaFactory(passEntryPrice: null, passSmsPrice: 15m);
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_ShouldThrow_WhenPassEntryPriceZero()
+    {
+        // Act
+        var act = () => CreateSeasonViaFactory(passEntryPrice: 0m, passSmsPrice: 15m);
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_ShouldThrow_WhenPassSmsPriceBelowPassEntryPrice()
+    {
+        // Act
+        var act = () => CreateSeasonViaFactory(passEntryPrice: 15m, passSmsPrice: 10m);
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
+    #endregion
+
     #region UpdateDetails
 
     [Fact]
@@ -292,7 +374,7 @@ public class SeasonTests
         var newEnd = ValidEnd.AddMonths(1);
 
         // Act
-        season.UpdateDetails("Updated Season", newStart, newEnd, false, 20, 99);
+        season.UpdateDetails("Updated Season", newStart, newEnd, false, 20, 99, 10m, 15m);
 
         // Assert
         season.Name.Should().Be("Updated Season");
@@ -301,6 +383,9 @@ public class SeasonTests
         season.IsActive.Should().BeFalse();
         season.NumberOfRounds.Should().Be(20);
         season.CompetitionId.Should().Be(99);
+        season.PassEntryPrice.Should().Be(10m);
+        season.PassSmsPrice.Should().Be(15m);
+        season.RequiresPass.Should().BeTrue();
     }
 
     [Fact]
@@ -308,10 +393,10 @@ public class SeasonTests
     {
         // Arrange — use public constructor so we can set Id
         var season = new Season(id: 42, name: "Test", startDateUtc: ValidStart, endDateUtc: ValidEnd,
-            isActive: true, numberOfRounds: 38, competitionId: 1);
+            isActive: true, numberOfRounds: 38, competitionId: 1, passEntryPrice: null, passSmsPrice: null);
 
         // Act
-        season.UpdateDetails("Updated", ValidStart, ValidEnd, false, 20, 1);
+        season.UpdateDetails("Updated", ValidStart, ValidEnd, false, 20, 1, null, null);
 
         // Assert
         season.Id.Should().Be(42);
@@ -324,7 +409,7 @@ public class SeasonTests
         var season = CreateSeasonViaFactory();
 
         // Act
-        var act = () => season.UpdateDetails(null!, ValidStart, ValidEnd, true, 38, 1);
+        var act = () => season.UpdateDetails(null!, ValidStart, ValidEnd, true, 38, 1, null, null);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -337,7 +422,7 @@ public class SeasonTests
         var season = CreateSeasonViaFactory();
 
         // Act
-        var act = () => season.UpdateDetails("", ValidStart, ValidEnd, true, 38, 1);
+        var act = () => season.UpdateDetails("", ValidStart, ValidEnd, true, 38, 1, null, null);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -350,7 +435,7 @@ public class SeasonTests
         var season = CreateSeasonViaFactory();
 
         // Act
-        var act = () => season.UpdateDetails("Test", ValidStart, ValidStart.AddDays(-1), true, 38, 1);
+        var act = () => season.UpdateDetails("Test", ValidStart, ValidStart.AddDays(-1), true, 38, 1, null, null);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -363,7 +448,7 @@ public class SeasonTests
         var season = CreateSeasonViaFactory();
 
         // Act
-        var act = () => season.UpdateDetails("Test", ValidStart, ValidStart, true, 38, 1);
+        var act = () => season.UpdateDetails("Test", ValidStart, ValidStart, true, 38, 1, null, null);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -377,7 +462,7 @@ public class SeasonTests
         var farEnd = ValidStart.AddMonths(10).AddDays(1);
 
         // Act
-        var act = () => season.UpdateDetails("Test", ValidStart, farEnd, true, 38, 1);
+        var act = () => season.UpdateDetails("Test", ValidStart, farEnd, true, 38, 1, null, null);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -390,7 +475,7 @@ public class SeasonTests
         var season = CreateSeasonViaFactory();
 
         // Act
-        var act = () => season.UpdateDetails("Test", default, ValidEnd, true, 38, 1);
+        var act = () => season.UpdateDetails("Test", default, ValidEnd, true, 38, 1, null, null);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -403,7 +488,7 @@ public class SeasonTests
         var season = CreateSeasonViaFactory();
 
         // Act
-        var act = () => season.UpdateDetails("Test", ValidStart, default, true, 38, 1);
+        var act = () => season.UpdateDetails("Test", ValidStart, default, true, 38, 1, null, null);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -416,7 +501,7 @@ public class SeasonTests
         var season = CreateSeasonViaFactory();
 
         // Act
-        var act = () => season.UpdateDetails("Test", ValidStart, ValidEnd, true, 0, 1);
+        var act = () => season.UpdateDetails("Test", ValidStart, ValidEnd, true, 0, 1, null, null);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>();
@@ -429,7 +514,7 @@ public class SeasonTests
         var season = CreateSeasonViaFactory();
 
         // Act
-        var act = () => season.UpdateDetails("Test", ValidStart, ValidEnd, true, 53, 1);
+        var act = () => season.UpdateDetails("Test", ValidStart, ValidEnd, true, 53, 1, null, null);
 
         // Assert
         act.Should().Throw<ArgumentOutOfRangeException>();
@@ -442,7 +527,20 @@ public class SeasonTests
         var season = CreateSeasonViaFactory();
 
         // Act
-        var act = () => season.UpdateDetails("Test", ValidStart, ValidEnd, true, 38, 0);
+        var act = () => season.UpdateDetails("Test", ValidStart, ValidEnd, true, 38, 0, null, null);
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void UpdateDetails_ShouldThrowException_WhenPaidWithoutBothPrices()
+    {
+        // Arrange
+        var season = CreateSeasonViaFactory();
+
+        // Act
+        var act = () => season.UpdateDetails("Test", ValidStart, ValidEnd, true, 38, 1, 10m, null);
 
         // Assert
         act.Should().Throw<ArgumentException>();
