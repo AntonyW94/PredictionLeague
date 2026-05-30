@@ -33,7 +33,7 @@ public class DefinePrizeStructureCommandHandlerTests
             startDateUtc: FixedNow.AddMonths(-2),
             endDateUtc: FixedNow.AddMonths(6),
             isActive: true, numberOfRounds: 38, competitionId: 1,
-            passEntryPrice: null, passSmsPrice: null);
+            passStandardPrice: null, passPremiumPrice: null);
 
     private static League CreateLeagueWithMembers(
         int id = 1,

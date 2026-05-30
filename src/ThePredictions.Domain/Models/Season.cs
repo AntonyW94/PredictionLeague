@@ -12,15 +12,15 @@ public class Season
     public bool IsActive { get; private set; }
     public int NumberOfRounds { get; private set; }
     public int CompetitionId { get; private set; }
-    public decimal? PassEntryPrice { get; private set; }
-    public decimal? PassSmsPrice { get; private set; }
+    public decimal? PassStandardPrice { get; private set; }
+    public decimal? PassPremiumPrice { get; private set; }
 
     // A season requires a Season Pass when it has a price; free seasons have no prices.
-    public bool RequiresPass => PassEntryPrice.HasValue;
+    public bool RequiresPass => PassStandardPrice.HasValue;
 
     private Season() { }
 
-    public Season(int id, string name, DateTime startDateUtc, DateTime endDateUtc, bool isActive, int numberOfRounds, int competitionId, decimal? passEntryPrice, decimal? passSmsPrice)
+    public Season(int id, string name, DateTime startDateUtc, DateTime endDateUtc, bool isActive, int numberOfRounds, int competitionId, decimal? passStandardPrice, decimal? passPremiumPrice)
     {
         Id = id;
         Name = name;
@@ -29,13 +29,13 @@ public class Season
         IsActive = isActive;
         NumberOfRounds = numberOfRounds;
         CompetitionId = competitionId;
-        PassEntryPrice = passEntryPrice;
-        PassSmsPrice = passSmsPrice;
+        PassStandardPrice = passStandardPrice;
+        PassPremiumPrice = passPremiumPrice;
     }
 
-    public static Season Create(string name, DateTime startDateUtc, DateTime endDateUtc, bool isActive, int numberOfRounds, int competitionId, decimal? passEntryPrice, decimal? passSmsPrice)
+    public static Season Create(string name, DateTime startDateUtc, DateTime endDateUtc, bool isActive, int numberOfRounds, int competitionId, decimal? passStandardPrice, decimal? passPremiumPrice)
     {
-        Validate(name, startDateUtc, endDateUtc, numberOfRounds, competitionId, passEntryPrice, passSmsPrice);
+        Validate(name, startDateUtc, endDateUtc, numberOfRounds, competitionId, passStandardPrice, passPremiumPrice);
 
         var season = new Season
         {
@@ -45,16 +45,16 @@ public class Season
             IsActive = isActive,
             NumberOfRounds = numberOfRounds,
             CompetitionId = competitionId,
-            PassEntryPrice = passEntryPrice,
-            PassSmsPrice = passSmsPrice
+            PassStandardPrice = passStandardPrice,
+            PassPremiumPrice = passPremiumPrice
         };
 
         return season;
     }
 
-    public void UpdateDetails(string name, DateTime startDateUtc, DateTime endDateUtc, bool isActive, int numberOfRounds, int competitionId, decimal? passEntryPrice, decimal? passSmsPrice)
+    public void UpdateDetails(string name, DateTime startDateUtc, DateTime endDateUtc, bool isActive, int numberOfRounds, int competitionId, decimal? passStandardPrice, decimal? passPremiumPrice)
     {
-        Validate(name, startDateUtc, endDateUtc, numberOfRounds, competitionId, passEntryPrice, passSmsPrice);
+        Validate(name, startDateUtc, endDateUtc, numberOfRounds, competitionId, passStandardPrice, passPremiumPrice);
 
         Name = name;
         StartDateUtc = startDateUtc;
@@ -62,8 +62,8 @@ public class Season
         IsActive = isActive;
         NumberOfRounds = numberOfRounds;
         CompetitionId = competitionId;
-        PassEntryPrice = passEntryPrice;
-        PassSmsPrice = passSmsPrice;
+        PassStandardPrice = passStandardPrice;
+        PassPremiumPrice = passPremiumPrice;
     }
 
     public void SetIsActive(bool isActive)
@@ -71,7 +71,7 @@ public class Season
         IsActive = isActive;
     }
 
-    private static void Validate(string name, DateTime startDateUtc, DateTime endDateUtc, int numberOfRounds, int competitionId, decimal? passEntryPrice, decimal? passSmsPrice)
+    private static void Validate(string name, DateTime startDateUtc, DateTime endDateUtc, int numberOfRounds, int competitionId, decimal? passStandardPrice, decimal? passPremiumPrice)
     {
         Guard.Against.NullOrWhiteSpace(name);
         Guard.Against.Default(startDateUtc);
@@ -79,21 +79,21 @@ public class Season
         Guard.Against.InvalidSeasonDuration(startDateUtc, endDateUtc);
         Guard.Against.OutOfRange(numberOfRounds, nameof(numberOfRounds), 1, 52);
         Guard.Against.NegativeOrZero(competitionId);
-        ValidatePassPricing(passEntryPrice, passSmsPrice);
+        ValidatePassPricing(passStandardPrice, passPremiumPrice);
     }
 
-    private static void ValidatePassPricing(decimal? passEntryPrice, decimal? passSmsPrice)
+    private static void ValidatePassPricing(decimal? passStandardPrice, decimal? passPremiumPrice)
     {
-        if (passEntryPrice is null && passSmsPrice is null)
+        if (passStandardPrice is null && passPremiumPrice is null)
             return;
 
-        if (passEntryPrice is null || passSmsPrice is null)
-            throw new ArgumentException("A paid season must have both an entry price and an SMS price.", nameof(passEntryPrice));
+        if (passStandardPrice is null || passPremiumPrice is null)
+            throw new ArgumentException("A paid season must have both a Standard price and a Premium price.", nameof(passStandardPrice));
 
-        if (passEntryPrice <= 0)
-            throw new ArgumentException("The entry price must be greater than zero.", nameof(passEntryPrice));
+        if (passStandardPrice <= 0)
+            throw new ArgumentException("The Standard price must be greater than zero.", nameof(passStandardPrice));
 
-        if (passSmsPrice < passEntryPrice)
-            throw new ArgumentException("The SMS price must be greater than or equal to the entry price.", nameof(passSmsPrice));
+        if (passPremiumPrice < passStandardPrice)
+            throw new ArgumentException("The Premium price must be greater than or equal to the Standard price.", nameof(passPremiumPrice));
     }
 }

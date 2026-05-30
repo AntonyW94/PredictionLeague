@@ -16,8 +16,8 @@ public class SeasonTests
         bool isActive = true,
         int numberOfRounds = 38,
         int competitionId = 1,
-        decimal? passEntryPrice = null,
-        decimal? passSmsPrice = null)
+        decimal? passStandardPrice = null,
+        decimal? passPremiumPrice = null)
     {
         return Season.Create(
             name,
@@ -26,8 +26,8 @@ public class SeasonTests
             isActive,
             numberOfRounds,
             competitionId,
-            passEntryPrice,
-            passSmsPrice);
+            passStandardPrice,
+            passPremiumPrice);
     }
 
     #region Create — Happy Path
@@ -294,8 +294,8 @@ public class SeasonTests
         var season = CreateSeasonViaFactory();
 
         // Assert
-        season.PassEntryPrice.Should().BeNull();
-        season.PassSmsPrice.Should().BeNull();
+        season.PassStandardPrice.Should().BeNull();
+        season.PassPremiumPrice.Should().BeNull();
         season.RequiresPass.Should().BeFalse();
     }
 
@@ -303,59 +303,59 @@ public class SeasonTests
     public void Create_ShouldRequirePass_WhenPricesSet()
     {
         // Act
-        var season = CreateSeasonViaFactory(passEntryPrice: 10m, passSmsPrice: 15m);
+        var season = CreateSeasonViaFactory(passStandardPrice: 10m, passPremiumPrice: 15m);
 
         // Assert
-        season.PassEntryPrice.Should().Be(10m);
-        season.PassSmsPrice.Should().Be(15m);
+        season.PassStandardPrice.Should().Be(10m);
+        season.PassPremiumPrice.Should().Be(15m);
         season.RequiresPass.Should().BeTrue();
     }
 
     [Fact]
-    public void Create_ShouldAcceptEqualEntryAndPassSmsPrice()
+    public void Create_ShouldAcceptEqualEntryAndPassPremiumPrice()
     {
         // Act
-        var act = () => CreateSeasonViaFactory(passEntryPrice: 10m, passSmsPrice: 10m);
+        var act = () => CreateSeasonViaFactory(passStandardPrice: 10m, passPremiumPrice: 10m);
 
         // Assert
         act.Should().NotThrow();
     }
 
     [Fact]
-    public void Create_ShouldThrow_WhenPassEntryPriceSetButPassSmsPriceNull()
+    public void Create_ShouldThrow_WhenPassStandardPriceSetButPassPremiumPriceNull()
     {
         // Act
-        var act = () => CreateSeasonViaFactory(passEntryPrice: 10m, passSmsPrice: null);
+        var act = () => CreateSeasonViaFactory(passStandardPrice: 10m, passPremiumPrice: null);
 
         // Assert
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
-    public void Create_ShouldThrow_WhenPassSmsPriceSetButPassEntryPriceNull()
+    public void Create_ShouldThrow_WhenPassPremiumPriceSetButPassStandardPriceNull()
     {
         // Act
-        var act = () => CreateSeasonViaFactory(passEntryPrice: null, passSmsPrice: 15m);
+        var act = () => CreateSeasonViaFactory(passStandardPrice: null, passPremiumPrice: 15m);
 
         // Assert
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
-    public void Create_ShouldThrow_WhenPassEntryPriceZero()
+    public void Create_ShouldThrow_WhenPassStandardPriceZero()
     {
         // Act
-        var act = () => CreateSeasonViaFactory(passEntryPrice: 0m, passSmsPrice: 15m);
+        var act = () => CreateSeasonViaFactory(passStandardPrice: 0m, passPremiumPrice: 15m);
 
         // Assert
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
-    public void Create_ShouldThrow_WhenPassSmsPriceBelowPassEntryPrice()
+    public void Create_ShouldThrow_WhenPassPremiumPriceBelowPassStandardPrice()
     {
         // Act
-        var act = () => CreateSeasonViaFactory(passEntryPrice: 15m, passSmsPrice: 10m);
+        var act = () => CreateSeasonViaFactory(passStandardPrice: 15m, passPremiumPrice: 10m);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -383,8 +383,8 @@ public class SeasonTests
         season.IsActive.Should().BeFalse();
         season.NumberOfRounds.Should().Be(20);
         season.CompetitionId.Should().Be(99);
-        season.PassEntryPrice.Should().Be(10m);
-        season.PassSmsPrice.Should().Be(15m);
+        season.PassStandardPrice.Should().Be(10m);
+        season.PassPremiumPrice.Should().Be(15m);
         season.RequiresPass.Should().BeTrue();
     }
 
@@ -393,7 +393,7 @@ public class SeasonTests
     {
         // Arrange — use public constructor so we can set Id
         var season = new Season(id: 42, name: "Test", startDateUtc: ValidStart, endDateUtc: ValidEnd,
-            isActive: true, numberOfRounds: 38, competitionId: 1, passEntryPrice: null, passSmsPrice: null);
+            isActive: true, numberOfRounds: 38, competitionId: 1, passStandardPrice: null, passPremiumPrice: null);
 
         // Act
         season.UpdateDetails("Updated", ValidStart, ValidEnd, false, 20, 1, null, null);

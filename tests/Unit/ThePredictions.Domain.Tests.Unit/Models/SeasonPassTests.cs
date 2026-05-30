@@ -13,15 +13,15 @@ public class SeasonPassTests
     #region CreatePurchased
 
     [Fact]
-    public void CreatePurchased_ShouldSetProperties_WhenEntryTier()
+    public void CreatePurchased_ShouldSetProperties_WhenStandardTier()
     {
         // Act
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Entry, 10m, 0m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Standard, 10m, 0m, "pi_123", _dateTimeProvider);
 
         // Assert
         pass.UserId.Should().Be(1);
         pass.SeasonId.Should().Be(2);
-        pass.Tier.Should().Be(SeasonPassTier.Entry);
+        pass.Tier.Should().Be(SeasonPassTier.Standard);
         pass.Source.Should().Be(SeasonPassSource.Purchased);
         pass.AmountPaid.Should().Be(10m);
         pass.SmsFeePaid.Should().Be(0m);
@@ -32,55 +32,55 @@ public class SeasonPassTests
     }
 
     [Fact]
-    public void CreatePurchased_ShouldAllowSmsFee_WhenEntryPlusSmsTier()
+    public void CreatePurchased_ShouldAllowSmsFee_WhenPremiumTier()
     {
         // Act
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.EntryPlusSms, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
 
         // Assert
-        pass.Tier.Should().Be(SeasonPassTier.EntryPlusSms);
+        pass.Tier.Should().Be(SeasonPassTier.Premium);
         pass.SmsFeePaid.Should().Be(5m);
     }
 
     [Fact]
     public void CreatePurchased_ShouldThrow_WhenUserIdNotPositive()
     {
-        var act = () => SeasonPass.CreatePurchased(0, 2, SeasonPassTier.Entry, 10m, 0m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased(0, 2, SeasonPassTier.Standard, 10m, 0m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreatePurchased_ShouldThrow_WhenSeasonIdNotPositive()
     {
-        var act = () => SeasonPass.CreatePurchased(1, 0, SeasonPassTier.Entry, 10m, 0m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased(1, 0, SeasonPassTier.Standard, 10m, 0m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreatePurchased_ShouldThrow_WhenAmountPaidNotPositive()
     {
-        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Entry, 0m, 0m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Standard, 0m, 0m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreatePurchased_ShouldThrow_WhenReferenceIsBlank()
     {
-        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Entry, 10m, 0m, " ", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Standard, 10m, 0m, " ", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreatePurchased_ShouldThrow_WhenSmsFeeNegative()
     {
-        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.EntryPlusSms, 15m, -1m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, -1m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
-    public void CreatePurchased_ShouldThrow_WhenEntryTierHasSmsFee()
+    public void CreatePurchased_ShouldThrow_WhenStandardTierHasSmsFee()
     {
-        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Entry, 10m, 5m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Standard, 10m, 5m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -89,13 +89,13 @@ public class SeasonPassTests
     #region CreateRewardUpgrade
 
     [Fact]
-    public void CreateRewardUpgrade_ShouldBeEntryPlusSmsWithNoSmsFee()
+    public void CreateRewardUpgrade_ShouldBePremiumWithNoSmsFee()
     {
         // Act
         var pass = SeasonPass.CreateRewardUpgrade(1, 2, 10m, "pi_123", _dateTimeProvider);
 
         // Assert
-        pass.Tier.Should().Be(SeasonPassTier.EntryPlusSms);
+        pass.Tier.Should().Be(SeasonPassTier.Premium);
         pass.Source.Should().Be(SeasonPassSource.Purchased);
         pass.AmountPaid.Should().Be(10m);
         pass.SmsFeePaid.Should().Be(0m);
@@ -135,13 +135,13 @@ public class SeasonPassTests
     #region CreateTrial
 
     [Fact]
-    public void CreateTrial_ShouldBeFreeEntryTrial()
+    public void CreateTrial_ShouldBeFreeStandardTrial()
     {
         // Act
         var pass = SeasonPass.CreateTrial(1, 2, _dateTimeProvider);
 
         // Assert
-        pass.Tier.Should().Be(SeasonPassTier.Entry);
+        pass.Tier.Should().Be(SeasonPassTier.Standard);
         pass.Source.Should().Be(SeasonPassSource.Trial);
         pass.AmountPaid.Should().Be(0m);
         pass.SmsFeePaid.Should().Be(0m);
@@ -167,13 +167,13 @@ public class SeasonPassTests
     #region CreateTrialWithSms
 
     [Fact]
-    public void CreateTrialWithSms_ShouldCompEntryAndChargeSmsOnly()
+    public void CreateTrialWithSms_ShouldCompStandardAndChargeSmsOnly()
     {
         // Act
         var pass = SeasonPass.CreateTrialWithSms(1, 2, 5m, "pi_123", _dateTimeProvider);
 
         // Assert
-        pass.Tier.Should().Be(SeasonPassTier.EntryPlusSms);
+        pass.Tier.Should().Be(SeasonPassTier.Premium);
         pass.Source.Should().Be(SeasonPassSource.Trial);
         pass.AmountPaid.Should().Be(5m);
         pass.SmsFeePaid.Should().Be(5m);
@@ -213,13 +213,13 @@ public class SeasonPassTests
     #region CreateFree
 
     [Fact]
-    public void CreateFree_ShouldBeZeroEntryFreeRecord()
+    public void CreateFree_ShouldBeZeroStandardFreeRecord()
     {
         // Act
         var pass = SeasonPass.CreateFree(1, 2, _dateTimeProvider);
 
         // Assert
-        pass.Tier.Should().Be(SeasonPassTier.Entry);
+        pass.Tier.Should().Be(SeasonPassTier.Standard);
         pass.Source.Should().Be(SeasonPassSource.Free);
         pass.AmountPaid.Should().Be(0m);
         pass.SmsFeePaid.Should().Be(0m);
@@ -245,30 +245,30 @@ public class SeasonPassTests
     #region SMS behaviour
 
     [Fact]
-    public void HasSmsReminders_ShouldBeFalse_WhenEntryTier()
+    public void HasSmsReminders_ShouldBeFalse_WhenStandardTier()
     {
         var pass = SeasonPass.CreateFree(1, 2, _dateTimeProvider);
         pass.HasSmsReminders.Should().BeFalse();
     }
 
     [Fact]
-    public void ShouldSendSms_ShouldBeFalse_WhenEntryTier()
+    public void ShouldSendSms_ShouldBeFalse_WhenStandardTier()
     {
         var pass = SeasonPass.CreateFree(1, 2, _dateTimeProvider);
         pass.ShouldSendSms.Should().BeFalse();
     }
 
     [Fact]
-    public void ShouldSendSms_ShouldBeTrue_WhenEntryPlusSmsAndNotPaused()
+    public void ShouldSendSms_ShouldBeTrue_WhenPremiumAndNotPaused()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.EntryPlusSms, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
         pass.ShouldSendSms.Should().BeTrue();
     }
 
     [Fact]
     public void ShouldSendSms_ShouldBeFalse_WhenPaused()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.EntryPlusSms, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
 
         pass.PauseSms();
 
@@ -279,7 +279,7 @@ public class SeasonPassTests
     [Fact]
     public void ResumeSms_ShouldReenableSending()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.EntryPlusSms, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
         pass.PauseSms();
 
         pass.ResumeSms();
@@ -291,7 +291,7 @@ public class SeasonPassTests
     [Fact]
     public void RecordSmsSent_ShouldIncrementCount()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.EntryPlusSms, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
 
         pass.RecordSmsSent();
         pass.RecordSmsSent();
@@ -306,7 +306,7 @@ public class SeasonPassTests
     [Fact]
     public void MarkRewardRedeemed_ShouldStampSeasonId()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.EntryPlusSms, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
 
         pass.MarkRewardRedeemed(99);
 
@@ -316,7 +316,7 @@ public class SeasonPassTests
     [Fact]
     public void MarkRewardRedeemed_ShouldThrow_WhenSeasonIdNotPositive()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.EntryPlusSms, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
 
         var act = () => pass.MarkRewardRedeemed(0);
 
@@ -334,7 +334,7 @@ public class SeasonPassTests
         var createdAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         // Act
-        var pass = new SeasonPass(id: 5, userId: 1, seasonId: 2, tier: SeasonPassTier.EntryPlusSms,
+        var pass = new SeasonPass(id: 5, userId: 1, seasonId: 2, tier: SeasonPassTier.Premium,
             source: SeasonPassSource.Purchased, amountPaid: 15m, smsFeePaid: 5m, stripePaymentReference: "pi_123",
             createdAtUtc: createdAt, smsSentCount: 3, rewardRedeemedForSeasonId: 7, smsPaused: true);
 
@@ -342,7 +342,7 @@ public class SeasonPassTests
         pass.Id.Should().Be(5);
         pass.UserId.Should().Be(1);
         pass.SeasonId.Should().Be(2);
-        pass.Tier.Should().Be(SeasonPassTier.EntryPlusSms);
+        pass.Tier.Should().Be(SeasonPassTier.Premium);
         pass.Source.Should().Be(SeasonPassSource.Purchased);
         pass.AmountPaid.Should().Be(15m);
         pass.SmsFeePaid.Should().Be(5m);

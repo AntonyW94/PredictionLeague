@@ -10,18 +10,18 @@
 
 ## Goal
 
-Let the admin set each pass-required season's **Entry** and **Entry + SMS** prices, and show a **recommended price** during season creation, computed from the running costs (Task 14) using the owner-confirmed rules.
+Let the admin set each pass-required season's **Standard** and **Premium** prices, and show a **recommended price** during season creation, computed from the running costs (Task 14) using the owner-confirmed rules.
 
 ## Files to Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/ThePredictions.Domain/Models/Season.cs` | Modify | `PassEntryPrice` / `PassSmsPrice` (Task 06) |
+| `src/ThePredictions.Domain/Models/Season.cs` | Modify | `PassStandardPrice` / `PassPremiumPrice` (Task 06) |
 | Seasons columns | Modify | (Task 07) |
 | `...Application/Features/.../PriceRecommendation/IPriceRecommendationService.cs` (+ impl) | Create | The calculator |
 | `...Queries/GetSeasonPriceRecommendationQuery(.Handler).cs` | Create | Feed the season-create UI |
 | Admin season create/edit page + commands | Modify | Price fields + "Recommended £X" with override |
-| Task 09 Checkout | (already wired) | Uses `PassEntryPrice`/`PassSmsPrice` as dynamic `price_data` |
+| Task 09 Checkout | (already wired) | Uses `PassStandardPrice`/`PassPremiumPrice` as dynamic `price_data` |
 
 ## Calculator Algorithm (owner-confirmed decisions)
 
@@ -31,16 +31,16 @@ For a new season **S** being priced:
 2. **Apportion by season length:** `weight(S) = length(S) / Σ length(all paid seasons in the horizon)`, where length = number of rounds (or duration). `seasonCosts = businessBorneAnnualCosts × weight(S)`. (Free seasons are excluded — World Cup runs at a deliberate loss.)
 3. **Buffer:** `target = seasonCosts × 1.15` (15%).
 4. **Expected players = break-even denominator:** the **distinct approved participant count of the last completed season with the same `CompetitionId`** (the `Competitions` reference table — ADR 0009, not `ApiLeagueId`). `perPlayer = target / expectedPlayers`.
-5. **Gross up for Stripe fees:** `entryRecommendation = (perPlayer + stripeFixedFee) / (1 − stripePercent)`, rounded to a tidy figure (e.g. nearest £0.50/£1). → suggested **Entry price**.
-6. **SMS uplift:** expected SMS cost per SMS-user over the season ≈ `expectedSmsPerUser × ppm`, × 1.15, grossed up → add to Entry → suggested **Entry + SMS price**. (`ppm` from Task 04/14; `expectedSmsPerUser` an admin-tunable assumption, default a fraction of the worst case `rounds × finalWindowMilestones`.)
+5. **Gross up for Stripe fees:** `entryRecommendation = (perPlayer + stripeFixedFee) / (1 − stripePercent)`, rounded to a tidy figure (e.g. nearest £0.50/£1). → suggested **Standard price**.
+6. **SMS uplift:** expected SMS cost per SMS-user over the season ≈ `expectedSmsPerUser × ppm`, × 1.15, grossed up → add to Standard → suggested **Premium price**. (`ppm` from Task 04/14; `expectedSmsPerUser` an admin-tunable assumption, default a fraction of the worst case `rounds × finalWindowMilestones`.)
 
-Result surfaced as *"Recommended: £X Entry · £Y +SMS (breaks even at ~N players)"*. **Admin can override**; the stored values are what Stripe charges.
+Result surfaced as *"Recommended: £X Standard · £Y +SMS (breaks even at ~N players)"*. **Admin can override**; the stored values are what Stripe charges.
 
 ## Implementation Steps
 
 ### Step 1: Season price fields + validation
 
-- `PassEntryPrice` / `PassSmsPrice` on `Season` (Task 06): both set for a paid season (`PassEntryPrice > 0`, `PassSmsPrice >= PassEntryPrice`) or both null when free. Setting prices is what makes a season pass-required (`RequiresPass` is derived from `PassEntryPrice`).
+- `PassStandardPrice` / `PassPremiumPrice` on `Season` (Task 06): both set for a paid season (`PassStandardPrice > 0`, `PassPremiumPrice >= PassStandardPrice`) or both null when free. Setting prices is what makes a season pass-required (`RequiresPass` is derived from `PassStandardPrice`).
 
 ### Step 2: Calculator service
 
@@ -51,7 +51,7 @@ Result surfaced as *"Recommended: £X Entry · £Y +SMS (breaks even at ~N playe
 - The recommendation is **always just an editable, pre-filled info box** with a breakdown (apportioned costs, buffer, expected players, fees) so the figure is explainable — never enforced.
 - **No comparable prior season → leave the price blank with explanatory wording** (e.g. "Not enough history to suggest a price yet — set one manually"); the field stays editable.
 - Apply a **small minimum floor** (covers Stripe fees + a little) to the suggestion; the admin can still type a lower value.
-- Editable Entry / Entry + SMS fields, defaulted to the recommendation, saved on the season.
+- Editable Standard / Premium fields, defaulted to the recommendation, saved on the season.
 
 ## Verification
 

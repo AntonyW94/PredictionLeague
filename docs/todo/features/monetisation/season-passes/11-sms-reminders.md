@@ -45,7 +45,7 @@ SMS therefore **only ever fires in the final window (6h/1h)**, **only if predict
 ### Step 2: Add the extra SMS (final window only)
 
 - After the email step, at the **6h and 1h** milestones, additionally send an **SMS** to a user when **all** hold:
-  1. they hold a `SeasonPass` with `Tier == EntryPlusSms` for the round's season,
+  1. they hold a `SeasonPass` with `Tier == Premium` for the round's season,
   2. they have **not paused** SMS for the season (`SeasonPass.SmsPaused == false`),
   3. they have a valid mobile number, and
   4. they still haven't submitted predictions for the round.
@@ -91,7 +91,7 @@ Mirror the existing email reminder flow and `IEmailService` wiring. UK date form
 
 - SMS-tier user with no/invalid phone → still gets all emails; no SMS, no `SmsSentCount` increment; prompt to add a number.
 - Free-season rounds (World Cup): no SMS tier exists → email only (unchanged).
-- Trial (Entry) users: email only (the extra SMS requires the SMS tier).
+- Trial (Standard) users: email only (the extra SMS requires the SMS tier).
 - A round whose deadline is created <6h away: the first milestone is already in the final window → the extra SMS applies immediately for eligible SMS-tier holders.
 
 ## Notes

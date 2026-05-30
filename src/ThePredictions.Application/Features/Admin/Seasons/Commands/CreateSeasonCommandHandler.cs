@@ -195,8 +195,8 @@ public class CreateSeasonCommandHandler(
             request.IsActive,
             request.NumberOfRounds,
             request.CompetitionId,
-            passEntryPrice: null,
-            passSmsPrice: null);
+            passStandardPrice: null,
+            passPremiumPrice: null);
     }
 
     private League CreatePublicLeagueEntity(CreateSeasonCommand request, Season createdSeason)

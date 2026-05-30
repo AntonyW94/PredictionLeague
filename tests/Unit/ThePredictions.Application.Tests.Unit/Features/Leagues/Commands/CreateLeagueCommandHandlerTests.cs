@@ -27,7 +27,7 @@ public class CreateLeagueCommandHandlerTests
             startDateUtc: _dateTimeProvider.UtcNow.AddMonths(2),
             endDateUtc: _dateTimeProvider.UtcNow.AddMonths(8),
             isActive: true, numberOfRounds: 38, competitionId: 1,
-            passEntryPrice: null, passSmsPrice: null);
+            passStandardPrice: null, passPremiumPrice: null);
 
     [Fact]
     public async Task Handle_ShouldReturnLeagueDto_WhenRequestIsValid()

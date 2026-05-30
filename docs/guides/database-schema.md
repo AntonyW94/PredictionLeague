@@ -72,10 +72,10 @@ Represents a football season within a competition.
 | CompetitionId | int | NO | | FK to Competitions (the competition this season belongs to) |
 | StartDateUtc | datetime2 | NO | | Season start date |
 | EndDateUtc | datetime2 | NO | | Season end date |
-| PassEntryPrice | decimal(10,2) | YES | | Admin-set Entry price (> 0) for a pass-required season; NULL for a free season |
-| PassSmsPrice | decimal(10,2) | YES | | Admin-set full price of the Entry + SMS tier (>= PassEntryPrice); NULL for a free season |
+| PassStandardPrice | decimal(10,2) | YES | | Admin-set Standard price (> 0) for a pass-required season; NULL for a free season |
+| PassPremiumPrice | decimal(10,2) | YES | | Admin-set full price of the Premium tier (>= PassStandardPrice); NULL for a free season |
 
-> There is no stored `RequiresPass` column: a season is pass-required exactly when it has prices (`PassEntryPrice IS NOT NULL`). The `Season.RequiresPass` domain property is computed from that.
+> There is no stored `RequiresPass` column: a season is pass-required exactly when it has prices (`PassStandardPrice IS NOT NULL`). The `Season.RequiresPass` domain property is computed from that.
 
 > `ApiLeagueId` and `CompetitionType` previously lived here; both moved to `Competitions` (ADR 0009). The provider id and competition type are now resolved via the season's `Competition` at sync time, and `IsTournament` reads `Competition.Type`.
 
@@ -192,7 +192,7 @@ User-created prediction leagues.
 | SeasonId | int | NO | | FK to Seasons |
 | AdministratorUserId | nvarchar(450) | NO | | FK to AspNetUsers (league owner) |
 | EntryCode | nvarchar(10) | YES | | 6-char code to join league |
-| Price | decimal(18,2) | NO | 0 | Entry fee |
+| Price | decimal(18,2) | NO | 0 | Standard fee |
 | IsFree | bit | NO | 0 | Whether league is free to join |
 | HasPrizes | bit | NO | 1 | Whether league has prizes |
 | PrizeFundOverride | decimal(18,2) | YES | | Override calculated prize fund |

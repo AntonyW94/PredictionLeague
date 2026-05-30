@@ -37,7 +37,7 @@ Create a Stripe account in the business name, define one-off Season Pass Prices,
 
 ### Step 2: Pricing is dynamic — no fixed Prices to pre-create
 
-Prices are **admin-set per season** and stored in the database (`Season.PassEntryPrice` / `Season.PassSmsPrice`, Tasks 06–07, 15). Checkout uses Stripe **dynamic `price_data`** with the amount read from the DB at session creation (Task 09) — so you do **not** create fixed Stripe Price objects by hand, and changing a season's price needs no Stripe change.
+Prices are **admin-set per season** and stored in the database (`Season.PassStandardPrice` / `Season.PassPremiumPrice`, Tasks 06–07, 15). Checkout uses Stripe **dynamic `price_data`** with the amount read from the DB at session creation (Task 09) — so you do **not** create fixed Stripe Price objects by hand, and changing a season's price needs no Stripe change.
 
 - Optionally create a single **Product** ("Season Pass") in the catalogue purely for reporting/grouping → https://dashboard.stripe.com/products .
 - Currency: **GBP**. Statement descriptor as in Step 1.

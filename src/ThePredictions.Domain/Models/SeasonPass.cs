@@ -20,7 +20,7 @@ public class SeasonPass
     public int? RewardRedeemedForSeasonId { get; private set; }
     public bool SmsPaused { get; private set; }
 
-    public bool HasSmsReminders => Tier == SeasonPassTier.EntryPlusSms;
+    public bool HasSmsReminders => Tier >= SeasonPassTier.Premium;
     public bool ShouldSendSms => HasSmsReminders && !SmsPaused;
 
     [ExcludeFromCodeCoverage]
@@ -53,8 +53,8 @@ public class SeasonPass
         Guard.Against.NullOrWhiteSpace(stripePaymentReference);
         Guard.Against.Negative(smsFeePaid);
 
-        if (tier == SeasonPassTier.Entry && smsFeePaid > 0)
-            throw new ArgumentException("An Entry-tier pass cannot have an SMS fee.", nameof(smsFeePaid));
+        if (tier == SeasonPassTier.Standard && smsFeePaid > 0)
+            throw new ArgumentException("A Standard-tier pass cannot have an SMS fee.", nameof(smsFeePaid));
 
         return new SeasonPass
         {
@@ -69,7 +69,7 @@ public class SeasonPass
         };
     }
 
-    // Comped SMS upgrade earned via the early-bird reward: EntryPlusSms tier, SMS fee 0.
+    // Comped SMS upgrade earned via the early-bird reward: Premium tier, SMS fee 0.
     public static SeasonPass CreateRewardUpgrade(int userId, int seasonId,
         decimal amountPaid, string stripePaymentReference, IDateTimeProvider dateTimeProvider)
     {
@@ -82,7 +82,7 @@ public class SeasonPass
         {
             UserId = userId,
             SeasonId = seasonId,
-            Tier = SeasonPassTier.EntryPlusSms,
+            Tier = SeasonPassTier.Premium,
             Source = SeasonPassSource.Purchased,
             AmountPaid = amountPaid,
             SmsFeePaid = 0m,
@@ -91,7 +91,7 @@ public class SeasonPass
         };
     }
 
-    // Free first-season trial: Entry comped, no payment.
+    // Free first-season trial: Standard comped, no payment.
     public static SeasonPass CreateTrial(int userId, int seasonId, IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.NegativeOrZero(userId);
@@ -101,7 +101,7 @@ public class SeasonPass
         {
             UserId = userId,
             SeasonId = seasonId,
-            Tier = SeasonPassTier.Entry,
+            Tier = SeasonPassTier.Standard,
             Source = SeasonPassSource.Trial,
             AmountPaid = 0m,
             SmsFeePaid = 0m,
@@ -110,7 +110,7 @@ public class SeasonPass
         };
     }
 
-    // Free first-season trial where the user pays only the SMS uplift on top (Entry comped).
+    // Free first-season trial where the user pays only the SMS uplift on top (Standard comped).
     public static SeasonPass CreateTrialWithSms(int userId, int seasonId, decimal smsFeePaid,
         string stripePaymentReference, IDateTimeProvider dateTimeProvider)
     {
@@ -123,7 +123,7 @@ public class SeasonPass
         {
             UserId = userId,
             SeasonId = seasonId,
-            Tier = SeasonPassTier.EntryPlusSms,
+            Tier = SeasonPassTier.Premium,
             Source = SeasonPassSource.Trial,
             AmountPaid = smsFeePaid,
             SmsFeePaid = smsFeePaid,
@@ -132,7 +132,7 @@ public class SeasonPass
         };
     }
 
-    // Free-season participation record: £0, Entry tier — exists so free play burns the free-first-season (ADR 0005).
+    // Free-season participation record: £0, Standard tier — exists so free play burns the free-first-season (ADR 0005).
     public static SeasonPass CreateFree(int userId, int seasonId, IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.NegativeOrZero(userId);
@@ -142,7 +142,7 @@ public class SeasonPass
         {
             UserId = userId,
             SeasonId = seasonId,
-            Tier = SeasonPassTier.Entry,
+            Tier = SeasonPassTier.Standard,
             Source = SeasonPassSource.Free,
             AmountPaid = 0m,
             SmsFeePaid = 0m,
