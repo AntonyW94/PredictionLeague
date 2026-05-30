@@ -20,8 +20,10 @@ A league admin may add **bank details** (account name, sort code, account number
 ### c) Player payout details (optional, encrypted, admin-only)
 A player may **optionally** store **payout bank details** so league admins can pay winnings without messaging each winner. Stored **encrypted at rest** and **visible only to the admin(s) of leagues the player is a member of** — the UI **names which admin(s) can see them** so consent is explicit, and the player can delete them. If a player **doesn't** provide them and wins, the admin must contact them manually (made clear up front).
 
-### d) Payouts list (manual mark-as-paid)
-At league end the admin sees a **payouts list** — each winner, amount, and (if shared) their payout details — and **marks each as paid** one by one (`Winnings.PaidAtUtc`). Winners with no stored details show a "contact them" prompt. Settlement is **manual/peer-to-peer**; this could be replaced by an automated payout system later **only with legal sign-off** (0003/0008).
+**Join-time consent:** when a player joins a **new prize league** and **already has saved payout details**, warn them that **that league's admin (named) will now be able to see** their details, with a **"remove my saved details"** button at that point.
+
+### d) Payouts list (one aggregated total per user, manual mark-as-paid)
+A player can win **several prizes** in one league (round/monthly/overall/most-exact). The admin pays them **one lump sum**, so payouts are tracked **per (league, user)** in `LeaguePayouts` — the **sum** of that user's `Winnings` in the league — **not** per individual winning. At league end the admin sees a **payouts list** (one row per winner: total amount, payout details if shared) and **marks each total as paid** (`LeaguePayouts.PaidAtUtc`). Winners with no stored details show a "contact them" prompt. Settlement is **manual/peer-to-peer**; an automated payout system could replace it later **only with legal sign-off** (0003/0008).
 
 ## Consequences
 

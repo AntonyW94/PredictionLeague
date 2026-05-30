@@ -35,6 +35,7 @@ Let a league admin store **bank details** against a league (encrypted at rest), 
 - Entry code is **shared freely**; player **requests to join** → shown the admin's details + **exact amount** + **unique reference** (e.g. their name).
 - Optional **"I've paid"** button nudges the admin; **admin accepts** once payment received (never auto-accept on the player's claim).
 - If the admin set **no** bank details, fall back to today's "arrange payment manually" behaviour.
+- **Join-time payout-details warning:** if the joining player already has saved **payout** details (Task 20) and this league has prizes, warn them that **this league's admin (named) can now see** those details, with a **"remove my saved details"** button (Task 20 owns the payout-details model).
 
 ### Step 4: Schema + tools
 - Add columns to `Leagues` in `docs/guides/database-schema.md`; note they're encrypted.
