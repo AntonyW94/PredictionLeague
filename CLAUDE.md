@@ -160,6 +160,10 @@ Use these when creating new features:
 | Adding a new CSS file | [`docs/guides/checklists/new-css-file.md`](docs/guides/checklists/new-css-file.md) |
 | Running a security audit | [`docs/guides/checklists/security-audit.md`](docs/guides/checklists/security-audit.md) |
 
+## Decision Records (ADRs)
+
+Significant product, business, legal, and technical decisions are recorded in [`docs/decisions/`](docs/decisions/) (ADR-style). **Read the relevant record before changing a decision**, and when reversing one, add a new record and mark the old one `Superseded by NNNN` rather than rewriting it. See [`docs/decisions/README.md`](docs/decisions/README.md) for the index and template.
+
 ## Things to NEVER Do
 
 1. **NEVER use `DateTime.Now`** - Always `DateTime.UtcNow`

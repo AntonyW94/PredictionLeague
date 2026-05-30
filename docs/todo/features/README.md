@@ -11,6 +11,7 @@ This folder contains feature plans organised by category.
 | [email-notifications](email-notifications/) | Transactional emails, reminders, preferences |
 | [user-experience](user-experience/) | UI/UX, accessibility, mobile, gamification |
 | [admin-moderation](admin-moderation/) | Admin tools, user management, moderation |
+| [monetisation](monetisation/) | Revenue features — season passes, payments (non-gambling, service-based) |
 
 ## Priority Guide
 
