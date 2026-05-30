@@ -18,6 +18,7 @@ Add the `RequiresPass` flag and admin-set prices to `Season`, and introduce the 
 | `src/ThePredictions.Domain/Models/SeasonPass.cs` | Create | New entity |
 | `src/ThePredictions.Domain/Common/Enumerations/SeasonPassTier.cs` | Create | `Entry`, `EntryPlusSms` |
 | `src/ThePredictions.Domain/Common/Enumerations/SeasonPassSource.cs` | Create | `Purchased`, `Trial` |
+| `src/ThePredictions.Domain/Common/Enumerations/Competition.cs` | Create | Stable competition identity (`WorldCup`, `EnglishPremierLeague`, …) — see ADR 0017 |
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/...` | Create | Tests for factory + flag |
 
 ## Implementation Steps
@@ -26,6 +27,7 @@ Add the `RequiresPass` flag and admin-set prices to `Season`, and introduce the 
 
 - Add `public bool RequiresPass { get; private set; }` (default `false`).
 - Add admin-set prices: `public decimal? EntryPrice { get; private set; }` and `public decimal? SmsPrice { get; private set; }` (full price of the +SMS tier). Null for free seasons.
+- Add `public Competition Competition { get; private set; }` — the **stable internal competition identity** (ADR 0017) used for the reward's same-competition match (Task 13) and comparable-season pricing (Task 15), **independent of `ApiLeagueId`** (which stays only as the provider sync mapping).
 - Thread through the public constructor, `Create(...)`, and `UpdateDetails(...)` (default-false keeps all existing seasons free).
 - Validation: when `RequiresPass` is `true`, require `EntryPrice > 0` and `SmsPrice >= EntryPrice`; when `false`, prices must be null. (Prices are set/edited in admin and suggested by the calculator — Task 15.)
 
@@ -34,6 +36,7 @@ Add the `RequiresPass` flag and admin-set prices to `Season`, and introduce the 
 ```csharp
 public enum SeasonPassTier { Entry, EntryPlusSms }
 public enum SeasonPassSource { Purchased, Trial }
+public enum Competition { WorldCup, EnglishPremierLeague, EnglishChampionship, ChampionsLeague, EuropaLeague } // extend as needed (ADR 0017)
 ```
 
 ### Step 3: Create `SeasonPass`

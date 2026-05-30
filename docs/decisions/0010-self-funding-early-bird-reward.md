@@ -39,6 +39,7 @@ A comped season pays no fee so cannot fund another free one. **Final-window mile
 ## Resolved
 
 - **Same competition only** (not any-next-season): when a season runs, the next season may not be created yet, so eligibility is computed against the **current season's own length** as the assumption for the next same-competition season.
+- **"Same competition" is keyed on the internal `Competition` enum** (0017), not the API league id — so a provider switch never invalidates an earned reward.
 - **Final-window milestones = 2** (6h + 1h).
 
 ## Alternatives considered
@@ -49,4 +50,4 @@ A comped season pays no fee so cannot fund another free one. **Final-window mile
 
 ## Related
 
-- 0008, 0009, 0012; `season-passes/13-sms-earned-upgrade.md`
+- 0008, 0009, 0012, 0017; `season-passes/13-sms-earned-upgrade.md`

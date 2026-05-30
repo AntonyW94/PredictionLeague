@@ -40,7 +40,7 @@ Running costs are stored with enough detail to apportion **any way we may want i
 - **No comparable prior season:** leave the suggestion **blank with explanatory wording**; the field is always editable, so the admin just types a price.
 - **Proration:** store cost type + price + **start/end dates** so we can prorate by overlap in future; for now count a cost when business-borne during the season.
 - **Minimum floor:** yes — never suggest below a small floor (covers Stripe fees + a little), still editable.
-- **Comparable season** = same competition (same `ApiLeagueId`, else `CompetitionType`).
+- **Comparable season** = same competition, matched on the internal **`Competition` enum** (0017), not the API league id.
 
 ## Alternatives considered
 
@@ -49,4 +49,4 @@ Running costs are stored with enough detail to apportion **any way we may want i
 
 ## Related
 
-- 0004, 0007, 0011; `season-passes/14-admin-running-costs.md`, `15-configurable-prices-and-calculator.md`
+- 0004, 0007, 0011, 0017; `season-passes/14-admin-running-costs.md`, `15-configurable-prices-and-calculator.md`

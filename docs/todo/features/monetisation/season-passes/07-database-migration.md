@@ -28,7 +28,8 @@ Add the `Seasons.RequiresPass` + price columns, the `SeasonPasses` table, and th
 ALTER TABLE [Seasons] ADD
     [RequiresPass] BIT NOT NULL DEFAULT (0),
     [EntryPrice]   DECIMAL(10,2) NULL,            -- admin-set; required when RequiresPass = 1
-    [SmsPrice]     DECIMAL(10,2) NULL;            -- admin-set full price of the +SMS tier
+    [SmsPrice]     DECIMAL(10,2) NULL,            -- admin-set full price of the +SMS tier
+    [Competition]  INT NULL;                      -- stable internal competition id (ADR 0017); backfill then enforce NOT NULL
 
 CREATE TABLE [SeasonPasses] (
     [Id]                       INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
@@ -63,6 +64,7 @@ CREATE TABLE [RunningCosts] (
 
 - Unique index enforces **one pass per user per season**.
 - `DEFAULT (0)` on `RequiresPass` grandfathers every existing season as free; prices stay NULL on those.
+- `Competition` (ADR 0017) is added nullable, **backfilled** for existing seasons (map current `ApiLeagueId`/name → enum value), then ideally made `NOT NULL`. `ApiLeagueId` remains for provider sync only.
 - `RunningCosts` has **no personal data** — copy as-is in the refresh (no anonymisation), but include it in `TableCopyOrder`.
 
 ### Step 2: Update schema docs

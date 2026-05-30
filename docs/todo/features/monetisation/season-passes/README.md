@@ -176,7 +176,7 @@ These were decided this session (see `docs/decisions/`):
 - **Running-cost data** → store **cost type, price, start/end dates** for flexible future apportionment (ADR 0012, Task 14).
 - **Trial + SMS** → trial comps **Entry only**; user may **pay the SMS uplift** on top (ADR 0006).
 - **Pause-SMS toggle** → **build now** (in scope), not deferred (ADR 0009).
-- **Comparable season** = same competition (same `ApiLeagueId`, else `CompetitionType`).
+- **Comparable season / "same competition"** = matched on a new internal **`Competition` enum** on `Season` (ADR 0017), **not** `ApiLeagueId` — so switching fixture provider never invalidates free-SMS entitlements or price comparables. `ApiLeagueId` stays as the provider sync mapping only.
 
 ## Open Questions
 
