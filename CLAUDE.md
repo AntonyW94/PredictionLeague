@@ -103,6 +103,17 @@ The Domain project **must maintain 100% line and branch coverage**. After writin
 | **ORM-only constructors** | Mark with `[ExcludeFromCodeCoverage]` — they have no logic to test |
 | **Data-only classes** | Mark with `[ExcludeFromCodeCoverage]` if class has no logic (only properties) |
 | **Unreachable code** | Remove it rather than excluding it |
+| **CancellationToken arguments** | Use `CancellationToken.None`, never a bare `default` |
+
+> **CancellationToken in tests (xUnit1051):** The CI build runs with `/p:TreatWarningsAsErrors=true`, and the `xunit.v3` analyser raises **xUnit1051** when a method taking a `CancellationToken` is called with a bare `default`. This turns the whole build red. Always pass `CancellationToken.None` instead — including in mock verifications such as `DidNotReceiveWithAnyArgs()`.
+>
+> ```csharp
+> // WRONG — xUnit1051, fails CI under TreatWarningsAsErrors
+> await _repo.DidNotReceiveWithAnyArgs().AddWinningsAsync(default!, default);
+>
+> // CORRECT
+> await _repo.DidNotReceiveWithAnyArgs().AddWinningsAsync(default!, CancellationToken.None);
+> ```
 
 ### Logging Format
 
@@ -202,3 +213,23 @@ dotnet run --project src/ThePredictions.Web      # Run Blazor client
 dotnet build ThePredictions.sln                  # Build all
 tools\Test Coverage\coverage-unit.bat              # Run unit tests + coverage report
 ```
+
+## Claude Code on the Web — Installing the .NET SDK
+
+Web/mobile sessions run in an ephemeral Linux container that does **not** ship
+with the .NET SDK, so `dotnet` is missing by default. The network allowlist
+blocks the usual installers (`dot.net`, `builds.dotnet.microsoft.com`,
+`packages.microsoft.com`), so `dotnet-install.sh` and `packages.microsoft.com`
+will fail — but the **Ubuntu archive and `api.nuget.org` are reachable**, so
+install the SDK from `apt` instead:
+
+```bash
+sudo apt-get update -qq                    # refresh the (stale) package index first
+sudo apt-get install -y -qq dotnet-sdk-8.0 # installs the latest 8.0.1xx SDK
+dotnet --version                           # confirm (e.g. 8.0.127)
+```
+
+This satisfies `global.json` (pinned to `8.0.100`, `rollForward: latestFeature`).
+Once installed, `dotnet restore`/`build`/`test` work normally because
+`api.nuget.org` is allowlisted. Build with `/p:TreatWarningsAsErrors=true` to
+reproduce CI exactly.
