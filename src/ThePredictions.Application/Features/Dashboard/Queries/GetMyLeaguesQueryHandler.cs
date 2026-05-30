@@ -20,7 +20,7 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
                 l.[IsFree],
                 s.[Id] AS SeasonId,
                 s.[Name] AS SeasonName,
-                s.[CompetitionType],
+                c.[Type] AS CompetitionType,
                 s.[StartDateUtc] AS SeasonStartDateUtc,
                 s.[NumberOfRounds],
                 lm.[UserId],
@@ -29,6 +29,7 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             FROM [LeagueMembers] lm
             JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
             JOIN [Seasons] s ON l.[SeasonId] = s.[Id]
+            JOIN [Competitions] c ON s.[CompetitionId] = c.[Id]
             WHERE lm.[UserId] = @UserId AND lm.[Status] = @ApprovedStatus
         ),
 

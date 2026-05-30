@@ -13,6 +13,7 @@ namespace ThePredictions.Application.Features.Admin.Seasons.Commands;
 
 public class SyncSeasonWithApiCommandHandler(
     ISeasonRepository seasonRepository,
+    ICompetitionRepository competitionRepository,
     ITeamRepository teamRepository,
     IRoundRepository roundRepository,
     ITournamentRoundMappingRepository tournamentRoundMappingRepository,
@@ -25,19 +26,24 @@ public class SyncSeasonWithApiCommandHandler(
         var season = await seasonRepository.GetByIdAsync(request.SeasonId, cancellationToken);
         Guard.Against.EntityNotFound(request.SeasonId, season, "Season");
 
-        if (season.ApiLeagueId == null)
+        var competition = await competitionRepository.GetByIdAsync(season.CompetitionId, cancellationToken);
+        Guard.Against.EntityNotFound(season.CompetitionId, competition, "Competition");
+
+        if (competition.ApiLeagueId == null)
             return;
 
-        if (season.IsTournament)
+        var apiLeagueId = competition.ApiLeagueId.Value;
+
+        if (competition.IsTournament)
         {
-            await HandleTournamentSyncAsync(season, cancellationToken);
+            await HandleTournamentSyncAsync(season, apiLeagueId, cancellationToken);
             return;
         }
 
         // Phase 0: Load all data upfront
         var seasonYear = season.StartDateUtc.Year;
-        var apiRoundNames = (await footballDataService.GetRoundsForSeasonAsync(season.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
-        var apiFixtures = (await footballDataService.GetAllFixturesForSeasonAsync(season.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
+        var apiRoundNames = (await footballDataService.GetRoundsForSeasonAsync(apiLeagueId, seasonYear, cancellationToken)).ToList();
+        var apiFixtures = (await footballDataService.GetAllFixturesForSeasonAsync(apiLeagueId, seasonYear, cancellationToken)).ToList();
         var allRounds = await roundRepository.GetAllForSeasonAsync(season.Id, cancellationToken);
         var allApiTeamIds = apiFixtures.Where(f => f.Teams?.Home != null && f.Teams?.Away != null).SelectMany(f => new[] { f.Teams!.Home.Id, f.Teams!.Away.Id }).Distinct();
         var teamsByApiId = await teamRepository.GetByApiIdsAsync(allApiTeamIds, cancellationToken);
@@ -287,12 +293,12 @@ public class SyncSeasonWithApiCommandHandler(
         await mediator.Send(new PublishUpcomingRoundsCommand(), cancellationToken);
     }
 
-    private async Task HandleTournamentSyncAsync(Season season, CancellationToken cancellationToken)
+    private async Task HandleTournamentSyncAsync(Season season, int apiLeagueId, CancellationToken cancellationToken)
     {
         var seasonYear = season.StartDateUtc.Year;
 
         // Load data
-        var apiFixtures = (await footballDataService.GetAllFixturesForSeasonAsync(season.ApiLeagueId!.Value, seasonYear, cancellationToken)).ToList();
+        var apiFixtures = (await footballDataService.GetAllFixturesForSeasonAsync(apiLeagueId, seasonYear, cancellationToken)).ToList();
         var allRounds = await roundRepository.GetAllForSeasonAsync(season.Id, cancellationToken);
         var mappings = await tournamentRoundMappingRepository.GetBySeasonIdAsync(season.Id, cancellationToken);
         var allApiTeamIds = apiFixtures

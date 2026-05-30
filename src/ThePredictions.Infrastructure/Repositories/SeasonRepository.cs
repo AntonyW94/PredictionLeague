@@ -21,8 +21,7 @@ public class SeasonRepository(IDbConnectionFactory connectionFactory, IDbTransac
                     [EndDateUtc],
                     [IsActive],
                     [NumberOfRounds],
-                    [ApiLeagueId],
-                    [CompetitionType]
+                    [CompetitionId]
                 )
                 VALUES
                 (
@@ -31,8 +30,7 @@ public class SeasonRepository(IDbConnectionFactory connectionFactory, IDbTransac
                     @EndDateUtc,
                     @IsActive,
                     @NumberOfRounds,
-                    @ApiLeagueId,
-                    @CompetitionType
+                    @CompetitionId
                 );
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
@@ -52,8 +50,7 @@ public class SeasonRepository(IDbConnectionFactory connectionFactory, IDbTransac
             endDateUtc: season.EndDateUtc,
             isActive: season.IsActive,
             numberOfRounds: season.NumberOfRounds,
-            apiLeagueId: season.ApiLeagueId,
-            competitionType: season.CompetitionType
+            competitionId: season.CompetitionId
         );
     }
 
@@ -123,8 +120,7 @@ public class SeasonRepository(IDbConnectionFactory connectionFactory, IDbTransac
                     [EndDateUtc] = @EndDateUtc,
                     [IsActive] = @IsActive,
                     [NumberOfRounds] = @NumberOfRounds,
-                    [ApiLeagueId] = @ApiLeagueId,
-                    [CompetitionType] = @CompetitionType
+                    [CompetitionId] = @CompetitionId
                 WHERE [Id] = @Id;";
 
         var command = new CommandDefinition(

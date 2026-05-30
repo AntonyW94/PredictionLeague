@@ -17,7 +17,7 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
                 r.[RoundNumber],
                 s.[Id] AS SeasonId,
                 s.[Name] AS SeasonName,
-                s.[CompetitionType],
+                c.[Type] AS CompetitionType,
                 s.[NumberOfRounds],
                 r.[DeadlineUtc],
                 m.[Id] AS MatchId,
@@ -40,6 +40,7 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
                 up.[PredictedAwayScore]
             FROM [Rounds] r
             JOIN [Seasons] s ON r.[SeasonId] = s.[Id]
+            JOIN [Competitions] c ON s.[CompetitionId] = c.[Id]
             LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]
             LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
             LEFT JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]

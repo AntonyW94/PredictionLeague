@@ -26,8 +26,7 @@ public class UpdateLeagueCommandHandlerTests
         new(id: id, name: "2025/26",
             startDateUtc: _dateTimeProvider.UtcNow.AddMonths(2),
             endDateUtc: _dateTimeProvider.UtcNow.AddMonths(8),
-            isActive: true, numberOfRounds: 38, apiLeagueId: null,
-            competitionType: CompetitionType.League);
+            isActive: true, numberOfRounds: 38, competitionId: 1);
 
     private League CreateLeague(
         int id = 1,

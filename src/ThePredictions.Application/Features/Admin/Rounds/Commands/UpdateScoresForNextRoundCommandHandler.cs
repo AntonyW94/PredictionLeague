@@ -12,6 +12,7 @@ namespace ThePredictions.Application.Features.Admin.Rounds.Commands;
 public class UpdateScoresForNextRoundCommandHandler(
     IRoundRepository roundRepository,
     ISeasonRepository seasonRepository,
+    ICompetitionRepository competitionRepository,
     IFootballDataService footballDataService,
     IMediator mediator) : IRequestHandler<UpdateScoresForNextRoundCommand>
 {
@@ -41,7 +42,10 @@ public class UpdateScoresForNextRoundCommandHandler(
             return;
 
         var season = await seasonRepository.GetByIdAsync(request.SeasonId, cancellationToken);
-        var isTournament = season?.IsTournament ?? false;
+        var competition = season == null
+            ? null
+            : await competitionRepository.GetByIdAsync(season.CompetitionId, cancellationToken);
+        var isTournament = competition?.IsTournament ?? false;
 
         var matchResults = liveFixtures.Where(f => f.Fixture != null && f.Goals != null).Select(fixture =>
         {

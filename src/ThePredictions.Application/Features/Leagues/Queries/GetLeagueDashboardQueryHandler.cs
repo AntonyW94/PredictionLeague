@@ -30,7 +30,7 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
         const string leagueSql = @"
             SELECT
                 l.[Name],
-                s.[CompetitionType],
+                c.[Type] AS CompetitionType,
                 s.[StartDateUtc],
                 (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus) AS MemberCount,
                 COALESCE(l.[PrizeFundOverride], l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus)) AS TotalPrizeFund,
@@ -44,6 +44,8 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
                 [Leagues] l
             JOIN
                 [Seasons] s ON l.[SeasonId] = s.[Id]
+            JOIN
+                [Competitions] c ON s.[CompetitionId] = c.[Id]
             WHERE
                 l.[Id] = @LeagueId";
 

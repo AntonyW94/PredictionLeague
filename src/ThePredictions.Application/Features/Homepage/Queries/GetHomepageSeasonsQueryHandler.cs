@@ -15,7 +15,7 @@ public class GetHomepageSeasonsQueryHandler(IApplicationReadDbConnection dbConne
             SELECT
                 s.[Id],
                 s.[Name],
-                s.[CompetitionType],
+                c.[Type] AS CompetitionType,
                 s.[StartDateUtc],
                 s.[EndDateUtc],
                 CASE
@@ -30,6 +30,7 @@ public class GetHomepageSeasonsQueryHandler(IApplicationReadDbConnection dbConne
                 ISNULL(players.[PlayerCount], 0) AS PlayerCount,
                 ISNULL(stats.[TotalPrizeFund], 0) AS TotalPrizeFund
             FROM [Seasons] s
+            JOIN [Competitions] c ON s.[CompetitionId] = c.[Id]
             LEFT JOIN (
                 SELECT
                     lf.[SeasonId],

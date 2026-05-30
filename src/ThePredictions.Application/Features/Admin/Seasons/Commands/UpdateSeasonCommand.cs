@@ -1,6 +1,5 @@
 using MediatR;
 using ThePredictions.Contracts.Admin.Seasons;
-using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Admin.Seasons.Commands;
 
@@ -11,6 +10,5 @@ public record UpdateSeasonCommand(
     DateTime EndDateUtc,
     bool IsActive,
     int NumberOfRounds,
-    int? ApiLeagueId,
-    CompetitionType CompetitionType,
+    int CompetitionId,
     List<TournamentRoundMappingDto> TournamentRoundMappings) : IRequest;

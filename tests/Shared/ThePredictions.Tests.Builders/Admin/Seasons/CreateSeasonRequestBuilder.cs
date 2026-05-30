@@ -8,7 +8,7 @@ public class CreateSeasonRequestBuilder
     private DateTime _startDateUtc = new(2025, 8, 1, 0, 0, 0, DateTimeKind.Utc);
     private DateTime _endDateUtc = new(2026, 5, 31, 0, 0, 0, DateTimeKind.Utc);
     private int _numberOfRounds = 38;
-    private int _competitionType;
+    private int _competitionId = 1;
 
     public CreateSeasonRequestBuilder WithName(string name)
     {
@@ -34,9 +34,9 @@ public class CreateSeasonRequestBuilder
         return this;
     }
 
-    public CreateSeasonRequestBuilder WithCompetitionType(int competitionType)
+    public CreateSeasonRequestBuilder WithCompetitionId(int competitionId)
     {
-        _competitionType = competitionType;
+        _competitionId = competitionId;
         return this;
     }
 
@@ -46,6 +46,6 @@ public class CreateSeasonRequestBuilder
         StartDateUtc = _startDateUtc,
         EndDateUtc = _endDateUtc,
         NumberOfRounds = _numberOfRounds,
-        CompetitionType = _competitionType
+        CompetitionId = _competitionId
     };
 }

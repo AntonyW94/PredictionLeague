@@ -177,50 +177,38 @@ public class CreateSeasonRequestValidatorTests
     }
 
     [Fact]
-    public void Validate_ShouldFail_WhenCompetitionTypeIsNegative()
+    public void Validate_ShouldFail_WhenCompetitionIdIsZero()
     {
         var request = new CreateSeasonRequestBuilder()
-            .WithCompetitionType(-1)
+            .WithCompetitionId(0)
             .Build();
 
         var result = _validator.TestValidate(request);
 
-        result.ShouldHaveValidationErrorFor(x => x.CompetitionType);
+        result.ShouldHaveValidationErrorFor(x => x.CompetitionId);
     }
 
     [Fact]
-    public void Validate_ShouldFail_WhenCompetitionTypeExceeds1()
+    public void Validate_ShouldFail_WhenCompetitionIdIsNegative()
     {
         var request = new CreateSeasonRequestBuilder()
-            .WithCompetitionType(2)
+            .WithCompetitionId(-1)
             .Build();
 
         var result = _validator.TestValidate(request);
 
-        result.ShouldHaveValidationErrorFor(x => x.CompetitionType);
+        result.ShouldHaveValidationErrorFor(x => x.CompetitionId);
     }
 
     [Fact]
-    public void Validate_ShouldPass_WhenCompetitionTypeIs0()
+    public void Validate_ShouldPass_WhenCompetitionIdIsPositive()
     {
         var request = new CreateSeasonRequestBuilder()
-            .WithCompetitionType(0)
+            .WithCompetitionId(1)
             .Build();
 
         var result = _validator.TestValidate(request);
 
-        result.ShouldNotHaveValidationErrorFor(x => x.CompetitionType);
-    }
-
-    [Fact]
-    public void Validate_ShouldPass_WhenCompetitionTypeIs1()
-    {
-        var request = new CreateSeasonRequestBuilder()
-            .WithCompetitionType(1)
-            .Build();
-
-        var result = _validator.TestValidate(request);
-
-        result.ShouldNotHaveValidationErrorFor(x => x.CompetitionType);
+        result.ShouldNotHaveValidationErrorFor(x => x.CompetitionId);
     }
 }

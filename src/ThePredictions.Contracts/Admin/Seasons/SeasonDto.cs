@@ -7,6 +7,8 @@ public record SeasonDto(
     DateTime EndDateUtc,
     bool IsActive,
     int NumberOfRounds,
+    int CompetitionId,
+    string CompetitionName,
     int CompetitionType,
     int? ApiLeagueId,
     int RoundCount,
