@@ -78,6 +78,21 @@ Otherwise → **block, redirect to purchase page.**
 
 Trial is **once per user, lifetime**, **Entry tier only** (no free SMS).
 
+## SMS Reminder Behaviour & Early-Bird Reward
+
+The SMS tier is designed to **reward getting predictions in early**, not to spam:
+
+- **Emails run as now and stay free for everyone** at the early milestones (5 days, 3 days, 1 day).
+- **SMS only fires in the final window** — at the **6-hour** milestone (and **1-hour** last-chance) — and **only if the user still hasn't submitted**. A user who predicts before the 6-hour mark receives **zero** SMS that round.
+- At the 6h/1h milestones, an SMS-tier holder with a valid phone gets an **SMS instead of the email** (no double-message); everyone else continues to get the email.
+
+We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount`). This:
+
+- gives cost visibility, and
+- powers an **early-bird reward**: a user who was sent **fewer than a threshold (default 10) SMS** across a paid season **earns a free SMS upgrade for their next paid season** — so disciplined early submitters keep the peace-of-mind safety net for free.
+
+> The reward needs a completed paid season of data first, so it begins from the **second** paid season onward (no reward on PL 2026/27, the first paid season). See [Task 13](./13-sms-earned-upgrade.md).
+
 ## Acceptance Criteria
 
 - [ ] Sole trader registered; Monzo Business + Stripe live in the business name.
@@ -86,7 +101,9 @@ Trial is **once per user, lifetime**, **Entry tier only** (no free SMS).
 - [ ] Brand-new users are auto-granted a free Entry trial on first participation in a pass-required season.
 - [ ] Users can buy Entry or Entry + SMS via Stripe Checkout (one-off, Apple/Google Pay enabled).
 - [ ] A `SeasonPass` is created reliably on successful payment (webhook-driven).
-- [ ] SMS-tier holders receive deadline reminders by SMS; everyone else continues to get email.
+- [ ] SMS-tier holders receive deadline reminders by SMS **only in the final 6 hours and only if still unsubmitted**; emails run free at earlier milestones for everyone.
+- [ ] Per-season SMS count tracked per user (`SmsSentCount`).
+- [ ] Early-bird reward: users sent fewer than the threshold last paid season earn a free SMS upgrade next paid season.
 - [ ] Terms & Privacy updated and flagged for solicitor review; refund/consumer-rights wording added.
 - [ ] Domain project at 100% line + branch coverage; schema docs + DatabaseTools updated.
 
@@ -104,8 +121,9 @@ Trial is **once per user, lifetime**, **Entry tier only** (no free SMS).
 | 8 | [Access gate & trial](./08-access-gate-and-trial.md) | Access rule + trial grant, wire into Join/Create | Code |
 | 9 | [Stripe Checkout integration](./09-stripe-checkout-integration.md) | Checkout session command + webhook → `SeasonPass` | Code |
 | 10 | [Purchase page](./10-purchase-page.md) | Blazor page from the mockup | Code |
-| 11 | [SMS reminders](./11-sms-reminders.md) | Split reminder job: SMS for SMS-tier, email for rest | Code |
+| 11 | [SMS reminders](./11-sms-reminders.md) | Final-6h-only SMS for SMS-tier (email earlier), track per-season count | Code |
 | 12 | [Testing & launch](./12-testing-and-launch.md) | Season config, Stripe test-mode E2E, go-live | Code/Manual |
+| 13 | [SMS early-bird reward](./13-sms-earned-upgrade.md) | Free SMS upgrade next season for low-SMS users (2nd paid season on) | Code (follow-on) |
 
 ## Dependencies
 
@@ -127,3 +145,6 @@ Trial is **once per user, lifetime**, **Entry tier only** (no free SMS).
 - [ ] Final prices per competition (pending cost totals).
 - [ ] Should trial-eligible users be allowed to *upgrade* their free Entry trial to SMS for the £5 difference? (Default: no, keep trial Entry-only for v1.)
 - [ ] Add an in-app "pause SMS reminders" toggle now or defer? (Goodwill only; not required.)
+- [ ] Early-bird reward threshold — confirm **<10 SMS/season** (configurable).
+- [ ] Reward form — free SMS upgrade for the next season (default) vs a discount? How is it modelled on the pass (e.g. `Source = RewardUpgrade`, or SMS-comped flag with `AmountPaid` = Entry price)?
+- [ ] Should SMS also fire at the 1-hour milestone, or 6-hour only? (Default: both 6h and 1h.)

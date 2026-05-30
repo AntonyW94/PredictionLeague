@@ -8,7 +8,7 @@
 
 ## Goal
 
-Send deadline reminders by SMS to SMS-tier pass holders, while everyone else continues to receive the existing email reminder.
+Send deadline reminders by SMS to SMS-tier pass holders **only in the final window (6h / 1h) and only if still unsubmitted**, while emails continue free for everyone at the earlier milestones. Track how many SMS each user is sent per season.
 
 ## Files to Modify
 
@@ -20,25 +20,43 @@ Send deadline reminders by SMS to SMS-tier pass holders, while everyone else con
 | `src/ThePredictions.Application/Services/ISmsService.cs` | Create | SMS send abstraction |
 | `src/ThePredictions.Infrastructure/Services/Sms/BrevoSmsService.cs` | Create | Brevo SMS implementation |
 
+## Reminder Channel Matrix
+
+| Milestone | Non-SMS user | SMS-tier user (still unsubmitted) |
+|-----------|--------------|-----------------------------------|
+| 5 days | Email | Email |
+| 3 days | Email | Email |
+| 1 day | Email | Email |
+| **6 hours** | Email | **SMS** (not email) |
+| **1 hour** | Email | **SMS** (not email) |
+
+SMS therefore **only ever fires in the final 6 hours**, and **only if predictions are still missing**. An early submitter gets **zero** SMS that round. (Whether 1h also sends SMS is configurable — default yes; see README open question.)
+
 ## Implementation Steps
 
-### Step 1: Identify SMS recipients
+### Step 1: Identify SMS recipients (final-window only)
 
-- For the round's season, a user gets SMS if they hold a `SeasonPass` with `Tier == EntryPlusSms` **and** have a valid mobile number.
-- Read via `IApplicationReadDbConnection` (query side), joining `SeasonPasses` to the users missing predictions.
+- A user gets **SMS instead of email** for a milestone if **all** hold:
+  1. the milestone is in the **final window** (≤6 hours: i.e. the 6h and 1h milestones),
+  2. they hold a `SeasonPass` with `Tier == EntryPlusSms` for the round's season,
+  3. they have a valid mobile number, and
+  4. they still haven't submitted predictions for the round.
+- Read via `IApplicationReadDbConnection` (query side), joining `SeasonPasses` to the users missing predictions for the upcoming round.
 
 ### Step 2: Send logic (in the handler)
 
 ```
-for each user missing predictions for the upcoming round:
-    if user has SMS entitlement for that season AND valid phone:
-        send SMS via ISmsService  (short, transactional text + link)
+for each user missing predictions for the upcoming round at this milestone:
+    if milestone is in final window (<= 6h) AND user has SMS entitlement AND valid phone:
+        send SMS via ISmsService          (short, transactional text + link)
+        pass.RecordSmsSent()              (increment SeasonPass.SmsSentCount, persist via repository)
     else:
         send email (existing behaviour)
 ```
 
-- Keep the existing **one-message-per-user-per-round** de-dup and `LastReminderSentUtc` tracking.
+- Keep the existing **one-message-per-user-per-round-per-milestone** de-dup and `LastReminderSentUtc` tracking so a user never gets both channels for the same milestone.
 - SMS body ≤160 chars; transactional only (no promo) — see Task 04.
+- Incrementing `SmsSentCount` is what powers the early-bird reward (Task 13). Note the reminder job is a **command** path, so update the count via the `SeasonPass` repository, not the read connection.
 
 ### Step 3: Brevo SMS implementation
 
@@ -50,16 +68,20 @@ Mirror the existing email reminder flow and `IEmailService` wiring. UK date form
 
 ## Verification
 
-- [ ] SMS-tier holder with valid phone receives an SMS; non-SMS users still get email.
-- [ ] No double-send (email + SMS) to the same user for the same round.
+- [ ] At 5d/3d/1d, **all** users (incl. SMS-tier) get email — no SMS sent early.
+- [ ] At 6h/1h, an unsubmitted SMS-tier holder with a valid phone gets an SMS (not email); non-SMS users get email.
+- [ ] A user who submitted before the 6h mark receives **no** SMS that round.
+- [ ] `SmsSentCount` increments by exactly one per SMS actually sent.
+- [ ] No double-send (email + SMS) for the same user/milestone.
 - [ ] Invalid/missing phone falls back to email.
 - [ ] Test SMS verified in Brevo (Task 04).
 
 ## Edge Cases to Consider
 
-- User bought SMS tier but never added a phone → fall back to email + prompt to add number.
+- User bought SMS tier but never added a phone → fall back to email + prompt to add number (no `SmsSentCount` increment).
 - Free-season rounds (World Cup): no SMS tier exists → all email (unchanged).
 - Trial (Entry) users: email only.
+- A round whose deadline is created <6h away: the first eligible milestone is already in the final window → SMS applies immediately for SMS-tier holders.
 
 ## Notes
 

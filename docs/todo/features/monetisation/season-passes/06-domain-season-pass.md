@@ -47,8 +47,14 @@ public class SeasonPass
     public decimal AmountPaid { get; private set; }
     public string? StripePaymentReference { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
+    public int SmsSentCount { get; private set; }        // SMS reminders sent to this user this season
 
     public bool HasSmsReminders => Tier == SeasonPassTier.EntryPlusSms;
+
+    public void RecordSmsSent()                          // called when an SMS reminder is sent
+    {
+        SmsSentCount++;
+    }
 
     private SeasonPass() { }              // ORM — [ExcludeFromCodeCoverage]
 
@@ -64,6 +70,8 @@ public class SeasonPass
 
 - Validate: `userId`/`seasonId` not default; purchased `amountPaid > 0` and reference not blank; trial = `Entry`, `0.00`, `Trial`. Use `Guard` clauses as elsewhere.
 - Use `IDateTimeProvider` for `CreatedAtUtc` (never `DateTime.Now`).
+- `SmsSentCount` starts at 0; `RecordSmsSent()` increments it (used by Task 11 and consumed by the reward in Task 13).
+- **Reward modelling (for Task 13):** a free SMS upgrade earned by an early bird should result in a pass with `Tier = EntryPlusSms` while `AmountPaid` reflects only the Entry price paid. Decide whether to add a `SeasonPassSource.RewardUpgrade` value or a separate `SmsComped` flag — see README open question. Cover whichever is chosen with tests.
 
 ## Code Patterns to Follow
 
@@ -72,7 +80,7 @@ Mirror `Season.cs` / `League.cs`: private parameterless ctor for ORM (`[ExcludeF
 ## Verification
 
 - [ ] Builds clean.
-- [ ] Unit tests cover both factories, `HasSmsReminders`, and every guard branch.
+- [ ] Unit tests cover both factories, `HasSmsReminders`, `RecordSmsSent()`, and every guard branch.
 - [ ] `coverage-unit.bat` shows **100% line + branch** on Domain.
 
 ## Edge Cases to Consider

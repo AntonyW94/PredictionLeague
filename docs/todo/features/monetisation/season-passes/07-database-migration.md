@@ -36,6 +36,7 @@ CREATE TABLE [SeasonPasses] (
     [AmountPaid]             DECIMAL(10,2) NOT NULL,
     [StripePaymentReference] NVARCHAR(255) NULL,
     [CreatedAtUtc]           DATETIME2 NOT NULL,
+    [SmsSentCount]           INT NOT NULL DEFAULT (0),    -- SMS reminders sent this season (powers early-bird reward)
     CONSTRAINT [FK_SeasonPasses_Seasons] FOREIGN KEY ([SeasonId]) REFERENCES [Seasons]([Id]),
     CONSTRAINT [FK_SeasonPasses_Users]   FOREIGN KEY ([UserId])   REFERENCES [AspNetUsers]([Id])
 );

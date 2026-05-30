@@ -24,7 +24,9 @@ Configure seasons, validate the whole flow in Stripe test mode, then go live for
 |----------|----------|
 | Brand-new user joins a PL league | Free trial granted; can join; no Checkout |
 | World-Cup-only user joins PL | Blocked → purchase page → pays (test card) → pass created → can join |
-| Buy Entry + SMS | Pass tier = `EntryPlusSms`; SMS received on next reminder run |
+| Buy Entry + SMS | Pass tier = `EntryPlusSms` |
+| SMS-tier user, submits early (>6h before) | Gets emails at 5d/3d/1d; **no SMS**; `SmsSentCount` unchanged |
+| SMS-tier user, still unsubmitted at 6h/1h | Gets **SMS** (not email); `SmsSentCount` increments by one each |
 | Apple/Google Pay | Wallet buttons appear in test Checkout |
 | Webhook retry / double event | Only one pass created (idempotent) |
 | Existing past-season user joins PL | Must purchase |
