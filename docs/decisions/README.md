@@ -50,4 +50,4 @@ Add a record when a decision is **hard to reverse, cross-cutting, or expensive t
 | [0017](./0017-internal-competition-identifier.md) | Competitions reference table | Accepted | technical, domain, product | `Competitions` table (hosted logo, `Type`, admin-editable API id); `Season` gets `CompetitionId`, drops `ApiLeagueId` + `CompetitionType`. |
 | [0019](./0019-season-pass-refunds.md) | Season pass refunds | Accepted | product, legal, financial | Passes (incl. SMS) fully refundable until the season starts; revokes entitlement; covers cancellation. |
 | [0020](./0020-verified-normalised-email.md) | Verified, normalised email identity | Accepted | security, technical, legal | Finish email confirmation; normalise emails (strip `+` alias) to block multi-account trial abuse. |
-| [0021](./0021-no-late-entry.md) | No late entry | Accepted | product | Pass purchase, trial and joining close at season start (first round deadline); no mid-season entry. |
+| [0021](./0021-no-late-entry.md) | No late entry | Accepted | product | No mid-season entry or late pricing; paid seasons inherit existing entry-deadline rules (no new gate). |

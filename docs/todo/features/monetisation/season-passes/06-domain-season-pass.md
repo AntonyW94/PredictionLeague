@@ -17,7 +17,7 @@ Add the `RequiresPass` flag and admin-set prices to `Season`, and introduce the 
 | `src/ThePredictions.Domain/Models/Season.cs` | Modify | Add `RequiresPass`, prices, and `CompetitionId` (FK); **drop `ApiLeagueId` and `CompetitionType`** (both move to `Competitions`, ADR 0017) |
 | `src/ThePredictions.Domain/Models/SeasonPass.cs` | Create | New entity |
 | `src/ThePredictions.Domain/Common/Enumerations/SeasonPassTier.cs` | Create | `Entry`, `EntryPlusSms` |
-| `src/ThePredictions.Domain/Common/Enumerations/SeasonPassSource.cs` | Create | `Purchased`, `Trial` |
+| `src/ThePredictions.Domain/Common/Enumerations/SeasonPassSource.cs` | Create | `Purchased`, `Trial`, `Free` (free-season participation) |
 | `Competition` entity + `Competitions` table + admin page | Create (**Task 16**) | Stable competition reference data with logo + admin-editable API id — ADR 0017 |
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/...` | Create | Tests for factory + flag |
 
@@ -35,7 +35,7 @@ Add the `RequiresPass` flag and admin-set prices to `Season`, and introduce the 
 
 ```csharp
 public enum SeasonPassTier { Entry, EntryPlusSms }
-public enum SeasonPassSource { Purchased, Trial }
+public enum SeasonPassSource { Purchased, Trial, Free }   // Free = £0 record for free-season participation (burns the freebie)
 ```
 
 (Competition is now a **reference entity/table**, not an enum — see Task 16 / ADR 0017.)
@@ -92,6 +92,9 @@ public class SeasonPass
 
     public static SeasonPass CreateTrialWithSms(int userId, int seasonId, decimal smsFeePaid,
         string stripePaymentReference, IDateTimeProvider dateTimeProvider) { /* Source Trial, EntryPlusSms, AmountPaid = smsFeePaid (Entry comped) */ }
+
+    // Free-season participation record: £0, Source Free, Entry tier — exists so free play burns the freebie (ADR 0006)
+    public static SeasonPass CreateFree(int userId, int seasonId, IDateTimeProvider dateTimeProvider) { /* Entry, 0.00, Free */ }
 }
 ```
 
@@ -107,7 +110,7 @@ Mirror `Season.cs` / `League.cs`: private parameterless ctor for ORM (`[ExcludeF
 ## Verification
 
 - [ ] Builds clean.
-- [ ] Unit tests cover all factories (`CreatePurchased`, `CreateRewardUpgrade`, `CreateTrial`, `CreateTrialWithSms`), `HasSmsReminders`, `ShouldSendSms`, `RecordSmsSent()`, `MarkRewardRedeemed()`, `PauseSms()/ResumeSms()`, the `Season` price validation, and every guard branch.
+- [ ] Unit tests cover all factories (`CreatePurchased`, `CreateRewardUpgrade`, `CreateTrial`, `CreateTrialWithSms`, `CreateFree`), `HasSmsReminders`, `ShouldSendSms`, `RecordSmsSent()`, `MarkRewardRedeemed()`, `PauseSms()/ResumeSms()`, the `Season` price validation, and every guard branch.
 - [ ] `coverage-unit.bat` shows **100% line + branch** on Domain.
 
 ## Edge Cases to Consider

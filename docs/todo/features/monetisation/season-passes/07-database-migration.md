@@ -51,7 +51,7 @@ CREATE TABLE [SeasonPasses] (
     [UserId]                   INT NOT NULL,
     [SeasonId]                 INT NOT NULL,
     [Tier]                     INT NOT NULL,        -- 0 Entry, 1 EntryPlusSms
-    [Source]                   INT NOT NULL,        -- 0 Purchased, 1 Trial (2 RewardUpgrade if added)
+    [Source]                   INT NOT NULL,        -- 0 Purchased, 1 Trial, 2 Free (3 RewardUpgrade if added)
     [AmountPaid]               DECIMAL(10,2) NOT NULL,
     [SmsFeePaid]               DECIMAL(10,2) NOT NULL DEFAULT (0),  -- SMS uplift actually paid (0 if comped/trial/entry)
     [StripePaymentReference]   NVARCHAR(255) NULL,
@@ -79,7 +79,8 @@ CREATE TABLE [RunningCosts] (
 ```
 
 - Unique index enforces **one pass per user per season** — and because rows are per-(user, season), a user can hold **multiple concurrent passes for overlapping seasons** (e.g. World Cup + Premier League) with no extra modelling.
-- **No pass rows for free/grandfathered seasons** — they're gated by `RequiresPass = false`, avoiding a backfill of pass records across every existing user × season.
+- **Every participation has a record:** free seasons store a **£0 `Free`** pass; paid seasons store `Purchased`/`Trial`. This is what makes free play **burn the free-first-season** (ADR 0006).
+- **Backfill (ADR 0006):** for every existing approved `(user, season)` membership, insert a **£0 `Free`** `SeasonPass` (Source 2), so existing players already have records and pay for their first paid season. One-time migration query.
 - `DEFAULT (0)` on `RequiresPass` grandfathers every existing season as free; prices stay NULL on those.
 - **Competition migration (ADR 0017):** insert a `Competitions` row per distinct existing `Season.ApiLeagueId` (set `Code`/`Name`/`ApiLeagueId`, and `Type` from the seasons' existing `CompetitionType`; logo added later), add `Seasons.CompetitionId` nullable, **backfill** it, add the FK, make it `NOT NULL`, then **drop `Seasons.ApiLeagueId` and `Seasons.CompetitionType`**. Update the existing season-sync handler and any `Season.ApiLeagueId` / `Season.CompetitionType` / `Season.IsTournament` readers to go via the season's `Competition` — see Task 16.
 - `RunningCosts` has **no personal data** — copy as-is in the refresh (no anonymisation), but include it in `TableCopyOrder`.

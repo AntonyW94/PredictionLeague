@@ -1,4 +1,4 @@
-# 0006. One free season trial for first-time players
+# 0006. First season free (zero-pass trial; free play burns it)
 
 - **Status:** Accepted
 - **Date:** 2026-05-30
@@ -7,33 +7,41 @@
 
 ## Context
 
-Whole-site gating (0005) removes the casual free on-ramp in paid seasons. We need a way to let genuinely new players experience the product before paying, without giving freebies to existing/returning players.
+Whole-site gating (0005) removes the casual free on-ramp in paid seasons. We want a genuine newcomer to get **their first season free as a taster**, but **not** people who have already played — including those who only ever played free seasons.
 
 ## Decision
 
-Every user who has **never participated before** (no approved league membership in any season and no prior pass) is **auto-granted a one-time free Entry-tier Season Pass** the first time they try to take part in a pass-required season. The **Entry portion is free**; if the new user wants SMS, they may **pay just the SMS uplift** on top of the free trial (so they're not denied SMS, but the trial only comps Entry). The trial is **once per user, lifetime**. Participating in a free season (e.g. World Cup) counts as participation and therefore consumes "new player" status.
+**Every season participation creates a `SeasonPass` record** (one per user/season — the per-user-per-season participation/entitlement record):
+
+- Paid season → `Purchased` (or a comped `Trial`) record.
+- **Free season → a £0 `Free` record.**
+
+A user's **first season is free**, with eligibility defined as **zero `SeasonPass` records** (`COUNT == 0`). On the first pass-required season: if the user has 0 records, grant a free `Trial` pass (£0); otherwise they must purchase. The **Entry** portion of a trial is free; the SMS uplift is payable on top.
+
+Because free seasons now create a record, **free-season play burns the freebie** — e.g. a World Cup 2026 player has a record, so their first Premier League season is **paid**. Existing free-season participation is **backfilled** with £0 `Free` records so existing players are treated the same way.
 
 ## Consequences
 
 **For / positive**
-- **Word-of-mouth growth** — new invitees can join a friend's league free.
-- **Lower signup friction** — try-before-you-buy.
-- **Fair transition to paid** — genuine newcomers aren't hit with an immediate paywall.
+- Dead-simple eligibility: a single `COUNT`/`EXISTS` on `SeasonPasses` — no `LeagueMember` history logic.
+- Free play correctly **burns** the freebie (matches intent: the taster is your *first* season, whatever it is).
+- Existing players are handled consistently via backfill.
 
 **Against / cost**
-- One season's access given away per new user (cost is near-zero for free leagues; modest for paid).
-- Someone could use the free World Cup as their "trial" and then pay for PL — accepted and intended (free-season participation consumes the newcomer trial).
+- A one-time **backfill**: create a £0 `Free` record per existing approved `(user, season)` participation.
+- Every participation writes a pass row (cheap; one per user/season).
+- Existing grandfathered users have (backfilled) records → they **pay** for their first pass-required season. Intended.
 
 **Neutral / notes**
-- Implemented as branch 3 of the access rule; trial pass recorded with `Source = Trial`.
+- A user whose first-ever season is a free one (e.g. World Cup) "spends" the freebie there (it was free anyway) and pays for the next paid season.
+- A refunded pass still counts as a record → no fresh free trial after a refund.
 
 ## Alternatives considered
 
-- **Trial includes free SMS** — rejected; SMS has a real per-message cost, so the trial comps Entry only and the user pays the uplift if they want texts.
-- **Trial is Entry-only with no SMS option** — rejected; we don't want to block a keen new user from SMS, just from getting it free.
-- **Discount instead of free** — rejected; a free first season is a stronger, simpler hook.
-- **No trial** — rejected; too much signup friction given 0005.
+- **Don't record free seasons (no burn)** — rejected; free play wouldn't consume the freebie, so World Cup players would also get the first Premier League season free, which is not wanted.
+- **Eligibility by "never participated" (LeagueMember history)** — rejected; more complex than a `SeasonPass` `COUNT`.
+- **Trial includes free SMS** — rejected; SMS has a real per-message cost, so the trial comps Entry only.
 
 ## Related
 
-- 0002, 0005, 0007; `season-passes/08-access-gate-and-trial.md`
+- 0002, 0005, 0007; `season-passes/06-domain-season-pass.md`, `07-database-migration.md`, `08-access-gate-and-trial.md`

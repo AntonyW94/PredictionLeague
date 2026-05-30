@@ -69,23 +69,24 @@ Prices are **not hardcoded**. Each pass-required season stores an admin-set **En
 
 A user may take part in a season (join or create a league in it) if **any** of:
 
-1. `Season.RequiresPass == false` (free season), **or**
-2. A `SeasonPass` exists for `(UserId, SeasonId)`, **or**
-3. The user has **never participated before** — no approved `LeagueMember` in *any* season **and** no `SeasonPass` of any kind — in which case **auto-grant a one-time Trial pass (Entry tier)** and allow.
+1. A `SeasonPass` exists for `(UserId, SeasonId)` → **allow** (already participating this season), **or**
+2. `Season.RequiresPass == false` (free season) → **create a £0 `Free` pass** (records participation — burns the freebie) and **allow**, **or**
+3. Paid season + the user has **zero `SeasonPass` records** (`COUNT == 0`) → **grant a free `Trial` pass** (their first season is free) and **allow**.
 
-Otherwise → **block, redirect to purchase page.**
+Otherwise (paid season, ≥1 record) → **block, redirect to purchase page.**
 
-"Participated" = holds/has held an approved `LeagueMember` row in any season **or** any `SeasonPass` record.
+Eligibility is a single `COUNT`/`EXISTS` on `SeasonPasses` — **no `LeagueMember` history check**. **Every participation writes a record** (free → £0 `Free`), so **free play burns the freebie**. Late entry is handled by the existing per-league entry-deadline rules (ADR 0021).
 
 **Worked examples:**
 
 | Scenario | Outcome |
 |----------|---------|
-| Brand-new user's first action is joining a PL 2026/27 league | Branch 3 → **free Trial pass** ✓ |
-| User who played the free World Cup 2026, then tries PL | Has approved membership → branch 3 fails → **must purchase** ✓ |
-| Existing user from a grandfathered past season tries PL | Has membership → **must purchase** ✓ |
-| Trial user joins a 2nd PL league the same season | Branch 2 (pass exists) → allowed, **no second charge** ✓ |
-| Trial user the following paid season | Has pass + membership history → **must purchase** ✓ |
+| Brand-new user's first-ever season is PL 2026/27 | 0 records → **free Trial pass** ✓ |
+| User who played the free World Cup 2026, then tries PL | Has a £0 `Free` record from WC → **must purchase** ✓ |
+| Existing grandfathered user tries PL | Backfilled `Free` record(s) → **must purchase** ✓ |
+| Trial user joins a 2nd PL league the same season | Branch 1 (pass exists) → allowed, **no second charge** ✓ |
+| User who already has any pass tries a later paid season | ≥1 record → **must purchase** ✓ |
+| User who bought then refunded, tries a later season | Refunded record still counts → **must purchase** (no re-trial) ✓ |
 
 Trial is **once per user, lifetime**. The **Entry portion is free**; a trial user who wants SMS may **pay just the SMS uplift** on top (the trial only comps Entry).
 
@@ -180,13 +181,13 @@ These were decided this session (see `docs/decisions/`):
 - **Final-window milestones** → **2** (6h + 1h) for both reminders and reward maths (ADR 0009).
 - **Recommended price** → always an **editable, pre-filled info box**; **blank + explanatory wording** when no comparable prior season; **small minimum floor** (ADR 0012).
 - **Running-cost data** → store **cost type, price, start/end dates** for flexible future apportionment (ADR 0012, Task 14).
-- **Trial + SMS** → trial comps **Entry only**; user may **pay the SMS uplift** on top (ADR 0006).
+- **Free trial = zero `SeasonPass` records** → a user's first season is free (a `Trial` pass on the first *paid* season). **Every participation writes a record** — free seasons get a £0 `Free` record — so **free play burns the freebie**; existing free play is **backfilled** so existing players pay for their first paid season (ADR 0006). Trial comps **Entry only**; user may **pay the SMS uplift** on top.
 - **Pause-SMS toggle** → **build now** (in scope), not deferred (ADR 0009).
 - **Refunds** → passes (incl. SMS) refundable **before the season starts**, non-refundable after; covers cancellation (ADR 0019, Task 17).
 - **Email verification** → finish it and **normalise emails (strip `+` alias)** to stop multi-account trial abuse (ADR 0020, Task 18).
 - **SMS = UK mobiles only**, required and validated (libphonenumber → E.164) **at purchase** (ADR 0009, Task 10).
-- **No late entry** → pass purchase, trial and joining **close at the season's first round deadline** (same cut-off as refunds); no mid-season entry or late pricing (ADR 0021, Task 08/10).
-- **Overlapping seasons** → already supported: `SeasonPasses` holds **one row per (user, season)** with a unique index, so a user can hold concurrent passes (e.g. World Cup + Premier League). **No new table needed** and **no pass rows are created for free/grandfathered seasons** — those are gated by `Season.RequiresPass = false`, which is cheaper than backfilling pass records for every existing user × season.
+- **No late entry** → handled by the **existing per-league entry-deadline rules** (paid seasons inherit them); no new access-gate mechanism, just don't offer purchase once entry has closed. No late/pro-rata pricing (ADR 0021, Task 10).
+- **Overlapping seasons** → already supported: `SeasonPasses` holds **one row per (user, season)** with a unique index, so a user can hold concurrent passes (e.g. World Cup + Premier League). **No new table needed.** Free/grandfathered seasons **do** get a £0 `Free` record (and existing ones are backfilled) so free play burns the free-first-season — this is the chosen approach over a no-record/`RequiresPass`-only gate.
 - **Comparable season / "same competition"** = matched on `Season.CompetitionId`, a FK to a new **`Competitions` reference table** (ADR 0017), **not** `ApiLeagueId`. The table carries a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id**; `Season` **drops `ApiLeagueId` and `CompetitionType`** and the sync/type resolve from the competition (Task 16). Switching fixture provider is a no-deploy admin edit that never invalidates free-SMS entitlements or price comparables.
 
 ## Open Questions
