@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ⛔ Phase B — needs Stripe (refund API).
+
 ## Status
 
 **Not Started** | In Progress | Complete

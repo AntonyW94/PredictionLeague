@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ✅ Phase A — buildable now (uses existing Brevo email).
+
 ## Status
 
 **Not Started** | In Progress | Complete

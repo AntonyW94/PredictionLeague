@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** 🟡 Phase A (partial) — build the job split + `ISmsService`/`BrevoSmsService` + tests now; **live SMS sending needs Brevo SMS (Phase B)**.
+
 ## Status
 
 **Not Started** | In Progress | Complete

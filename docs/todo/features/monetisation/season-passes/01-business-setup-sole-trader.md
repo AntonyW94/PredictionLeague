@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ⛔ Phase B — offline; HMRC sole-trader registration (Monday).
+
 ## Status
 
 **Not Started** | In Progress | Complete

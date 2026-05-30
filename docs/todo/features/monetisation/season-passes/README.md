@@ -131,30 +131,48 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 - [ ] Terms & Privacy updated and flagged for solicitor review; refund/consumer-rights wording added.
 - [ ] Domain project at 100% line + branch coverage; schema docs + DatabaseTools updated.
 
-## Tasks
+## Build Phases & Readiness
 
-| # | Task | Description | Type |
-|---|------|-------------|------|
-| 1 | [Business setup (sole trader)](./01-business-setup-sole-trader.md) | Register with HMRC, records, day-job tax note | Offline |
-| 2 | [Monzo Business account](./02-monzo-business-account.md) | Open free Lite account in business name | Offline |
-| 3 | [Stripe account & products](./03-stripe-account-products.md) | Account, one-off Prices, Apple/Google Pay, webhook, keys | Offline |
-| 4 | [Brevo SMS setup](./04-brevo-sms-setup.md) | Enable SMS, sender ID, credits, cost validation | Offline |
-| 5 | [Legal page updates](./05-legal-page-updates.md) | Terms & Privacy edits, refund/consumer-rights clause | Code |
-| 6 | [Domain model](./06-domain-season-pass.md) | `Season.RequiresPass`, `SeasonPass` entity + enums | Code |
-| 7 | [Database & schema](./07-database-migration.md) | Migration, schema docs, DatabaseTools | Code |
-| 8 | [Access gate & trial](./08-access-gate-and-trial.md) | Access rule + trial grant, wire into Join/Create | Code |
-| 9 | [Stripe Checkout integration](./09-stripe-checkout-integration.md) | Checkout session command + webhook → `SeasonPass` | Code |
-| 10 | [Purchase page](./10-purchase-page.md) | Blazor page from the mockup | Code |
-| 11 | [SMS reminders](./11-sms-reminders.md) | Final-6h-only SMS for SMS-tier (email earlier), track per-season count | Code |
-| 12 | [Testing & launch](./12-testing-and-launch.md) | Season config, Stripe test-mode E2E, go-live | Code/Manual |
-| 13 | [SMS early-bird reward](./13-sms-earned-upgrade.md) | Self-funding free SMS upgrade next season (2nd paid season on) | Code (follow-on) |
-| 14 | [Admin running costs](./14-admin-running-costs.md) | Page to record annual costs, renewal dates, payer status | Code |
-| 15 | [Configurable prices & calculator](./15-configurable-prices-and-calculator.md) | Per-season admin prices + recommended-price calculator | Code |
-| 16 | [Competitions management](./16-competitions-management.md) | `Competitions` table (hosted logo, `Type`, admin API id); `Season` → `CompetitionId`, drop `ApiLeagueId` + `CompetitionType` | Code |
-| 17 | [Refunds](./17-refunds.md) | Refund a pass (Stripe) before the season starts; revoke entitlement | Code |
-| 18 | [Email verification & identity](./18-email-verification-and-identity.md) | Finish email confirmation; normalise emails to block `+`-alias trial abuse | Code |
-| 19 | [Entry-fee settlement](./19-entry-fee-settlement.md) | Encrypted admin bank details shown at join; code-free join, admin accepts on payment (peer-to-peer) | Code |
-| 20 | [Payouts](./20-payouts.md) | Optional encrypted player payout details (admin-only); end-of-league payouts list with manual mark-as-paid | Code |
+> **How to use this plan:** this branch contains the **plan only** (no feature code yet). Execution happens in a separate session — work **Phase A top-down** (none of it needs any account), then **Phase B** once the business accounts exist. Each task file carries its own **Readiness** line.
+
+Work is split by what needs a **business entity / live accounts** (sole trader → Monzo Business → Stripe → Brevo SMS) and what doesn't.
+
+- **Phase A — buildable now (no accounts needed):** pure domain/DB/UI/logic work. None of it requires the sole trader, a bank, or Stripe/Brevo keys. **Start here, top-down.**
+- **Phase B — needs business setup:** anything that touches **live Stripe** (real charges/refunds) or **live SMS sending** (Brevo credits), plus the offline account setup itself and final go-live.
+
+Task **ID numbers are stable** (they're referenced across the ADRs and other tasks); the lists below are the **recommended build order**, not the file numbers. A couple of tasks are **partial** — the bulk is Phase A, with an account-dependent slice deferred to Phase B (noted inline).
+
+### Phase A — do now (no business accounts required)
+
+| Order | # | Task | Notes |
+|-------|---|------|-------|
+| A1 | 16 | [Competitions management](./16-competitions-management.md) | Foundational — `Competitions` table + `Season.CompetitionId`; refactors existing sync. Do first. |
+| A2 | 6 | [Domain model](./06-domain-season-pass.md) | `Season` changes, `SeasonPass`, enums. |
+| A3 | 7 | [Database & schema](./07-database-migration.md) | All new tables/columns, backfills, schema doc, DatabaseTools. |
+| A4 | 8 | [Access gate & trial](./08-access-gate-and-trial.md) | Free-first trial; gate Join/Create. |
+| A5 | 19 | [Entry-fee settlement](./19-entry-fee-settlement.md) | Encryption service + admin bank details + join/pay flow (peer-to-peer, no Stripe). |
+| A6 | 20 | [Payouts](./20-payouts.md) | Player payout details + payouts list + mark-as-paid (manual, no Stripe). |
+| A7 | 14 | [Admin running costs](./14-admin-running-costs.md) | Running-costs CRUD page. |
+| A8 | 15 | [Configurable prices & calculator](./15-configurable-prices-and-calculator.md) | Per-season prices + recommended-price calculator (maths only; uses fee constants). |
+| A9 | 18 | [Email verification & identity](./18-email-verification-and-identity.md) | Finish confirmation + `+`-alias normalisation (existing Brevo email). |
+| A10 | 13 | [SMS early-bird reward](./13-sms-earned-upgrade.md) | Reward eligibility logic (no live SMS needed to build). |
+| A11 | 11 | [SMS reminders](./11-sms-reminders.md) | **Partial:** build the job split + `ISmsService`/`BrevoSmsService` + unit tests now; **live sending** needs Brevo SMS (→ Phase B). |
+| A12 | 10 | [Purchase page](./10-purchase-page.md) | **Partial:** build the page + trial/reward/closed states now; the **Stripe Checkout redirect** needs Stripe (→ Phase B). |
+| A13 | 5 | [Legal page updates](./05-legal-page-updates.md) | Draft the Terms/Privacy edits now; **solicitor review** is a go-live gate (Phase B). |
+
+### Phase B — needs business setup / live accounts
+
+| Order | # | Task | Blocked on |
+|-------|---|------|------------|
+| B1 | 1 | [Business setup (sole trader)](./01-business-setup-sole-trader.md) | Offline — HMRC registration (**Monday**). |
+| B2 | 2 | [Monzo Business account](./02-monzo-business-account.md) | Offline — needs sole trader. |
+| B3 | 3 | [Stripe account & products](./03-stripe-account-products.md) | Offline — needs business + bank. |
+| B4 | 4 | [Brevo SMS setup](./04-brevo-sms-setup.md) | Offline config (not blocked on the sole trader — can be done anytime, but enables Phase-B SMS). |
+| B5 | 9 | [Stripe Checkout integration](./09-stripe-checkout-integration.md) | Stripe keys/account. |
+| B6 | 17 | [Refunds](./17-refunds.md) | Stripe (refund API). |
+| B7 | 10 | Purchase page — finish | Wire the Stripe Checkout redirect (rest built in A12). |
+| B8 | 11 | SMS reminders — go live | Enable live sending + Brevo credits (code built in A11). |
+| B9 | 12 | [Testing & launch](./12-testing-and-launch.md) | Live Stripe + Brevo; solicitor sign-off on Terms. |
 
 ## Dependencies
 

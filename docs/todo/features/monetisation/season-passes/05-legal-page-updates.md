@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ✅ Phase A — draft the edits now; **solicitor review is a Phase B go-live gate**.
+
 ## Status
 
 **Not Started** | In Progress | Complete

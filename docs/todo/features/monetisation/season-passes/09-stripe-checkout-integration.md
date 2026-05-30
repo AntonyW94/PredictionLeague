@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ⛔ Phase B — needs a Stripe account/keys.
+
 ## Status
 
 **Not Started** | In Progress | Complete

@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ⛔ Phase B — offline config; enables live SMS (not strictly blocked on the sole trader).
+
 ## Status
 
 **Not Started** | In Progress | Complete

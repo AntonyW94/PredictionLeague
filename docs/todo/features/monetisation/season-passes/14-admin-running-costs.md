@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ✅ Phase A — buildable now (no accounts).
+
 ## Status
 
 **Not Started** | In Progress | Complete

@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ✅ Phase A — buildable now (logic only; no live SMS needed).
+
 ## Status
 
 **Not Started** | In Progress | Complete

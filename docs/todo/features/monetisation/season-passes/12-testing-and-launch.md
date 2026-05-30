@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ⛔ Phase B — needs live Stripe + Brevo and solicitor sign-off.
+
 ## Status
 
 **Not Started** | In Progress | Complete

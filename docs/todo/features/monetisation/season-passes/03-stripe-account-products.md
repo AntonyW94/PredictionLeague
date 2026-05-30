@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ⛔ Phase B — offline; needs business + bank.
+
 ## Status
 
 **Not Started** | In Progress | Complete

@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** 🟡 Phase A (partial) — build the page + trial/reward/closed states now; the **Stripe Checkout redirect needs Stripe (Phase B)**.
+
 ## Status
 
 **Not Started** | In Progress | Complete

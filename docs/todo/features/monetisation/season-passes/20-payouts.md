@@ -2,6 +2,8 @@
 
 **Parent Feature:** [README.md](./README.md)
 
+> **Readiness:** ✅ Phase A — buildable now (manual payouts; no Stripe/accounts).
+
 ## Status
 
 **Not Started** | In Progress | Complete
