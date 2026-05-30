@@ -41,7 +41,7 @@ public class OverallPrizeStrategyTests
         await _strategy.AwardPrizes(CreateCommand(), CancellationToken.None);
 
         await _winningsRepository.DidNotReceiveWithAnyArgs()
-            .AddWinningsAsync(default!, default);
+            .AddWinningsAsync(default!, CancellationToken.None);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class OverallPrizeStrategyTests
         await _strategy.AwardPrizes(CreateCommand(), CancellationToken.None);
 
         await _winningsRepository.DidNotReceiveWithAnyArgs()
-            .AddWinningsAsync(default!, default);
+            .AddWinningsAsync(default!, CancellationToken.None);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class OverallPrizeStrategyTests
         await _strategy.AwardPrizes(CreateCommand(), CancellationToken.None);
 
         await _winningsRepository.DidNotReceiveWithAnyArgs()
-            .AddWinningsAsync(default!, default);
+            .AddWinningsAsync(default!, CancellationToken.None);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class OverallPrizeStrategyTests
         await _strategy.AwardPrizes(CreateCommand(), CancellationToken.None);
 
         await _winningsRepository.DidNotReceiveWithAnyArgs()
-            .AddWinningsAsync(default!, default);
+            .AddWinningsAsync(default!, CancellationToken.None);
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class OverallPrizeStrategyTests
 
         await _winningsRepository.Received(1).DeleteWinningsForOverallAsync(LeagueId, Arg.Any<CancellationToken>());
         await _winningsRepository.DidNotReceiveWithAnyArgs()
-            .AddWinningsAsync(default!, default);
+            .AddWinningsAsync(default!, CancellationToken.None);
     }
 
     [Fact]
