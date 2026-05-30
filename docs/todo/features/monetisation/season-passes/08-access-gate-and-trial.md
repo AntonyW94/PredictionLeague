@@ -28,16 +28,19 @@ Enforce the Season Pass requirement when joining/creating a league in a pass-req
 
 ```
 allowed if:
-  1. season.RequiresPass == false                          -> allow (free season)
-  2. pass exists for (userId, seasonId)                    -> allow
-  3. user has NEVER participated before
-     (no approved LeagueMember in ANY season
-      AND no SeasonPass of any kind)                        -> grant Trial (Entry) + allow
-  else                                                      -> deny (purchase required)
+  1. season.RequiresPass == false                          -> allow (free season; existing league entry deadlines apply)
+  else (pass-required season):
+     0. season has STARTED (first round deadline passed)    -> deny (entry closed: NO LATE ENTRY — ADR 0021)
+     2. pass exists for (userId, seasonId)                  -> allow
+     3. user has NEVER participated before
+        (no approved LeagueMember in ANY season
+         AND no SeasonPass of any kind)                     -> grant Trial (Entry) + allow
+     else                                                   -> deny (purchase required)
 ```
 
 - `SeasonAccessService.EnsureCanParticipateAsync(userId, seasonId)`:
   - Loads the season; if not `RequiresPass`, return.
+  - **If the season has started (its first round deadline has passed), throw `SeasonEntryClosedException(seasonId)` — no late entry, and no pass purchase, once a season is under way (ADR 0021). This is the same cut-off used for refunds (ADR 0019).**
   - Checks for existing pass; if present, return.
   - Checks participation history (`ISeasonPassRepository` + a membership check); if none, **create a Trial pass** (`SeasonPass.CreateTrial`) via repository and return.
   - Otherwise throw `SeasonPassRequiredException(seasonId)`.
@@ -57,6 +60,7 @@ In `CreateLeagueCommandHandler`, gate before creating the league for the chosen 
 ### Step 4: API surface
 
 - Map `SeasonPassRequiredException` to a response the client can act on (e.g. 402/409 + seasonId) so the UI redirects to the purchase page (Task 10).
+- Map `SeasonEntryClosedException` to a clear "entries for this season have closed" response (the season has already started) — the client should not offer purchase.
 
 ## Code Patterns to Follow
 

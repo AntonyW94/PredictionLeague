@@ -78,7 +78,8 @@ CREATE TABLE [RunningCosts] (
 );
 ```
 
-- Unique index enforces **one pass per user per season**.
+- Unique index enforces **one pass per user per season** — and because rows are per-(user, season), a user can hold **multiple concurrent passes for overlapping seasons** (e.g. World Cup + Premier League) with no extra modelling.
+- **No pass rows for free/grandfathered seasons** — they're gated by `RequiresPass = false`, avoiding a backfill of pass records across every existing user × season.
 - `DEFAULT (0)` on `RequiresPass` grandfathers every existing season as free; prices stay NULL on those.
 - **Competition migration (ADR 0017):** insert a `Competitions` row per distinct existing `Season.ApiLeagueId` (set `Code`/`Name`/`ApiLeagueId`, and `Type` from the seasons' existing `CompetitionType`; logo added later), add `Seasons.CompetitionId` nullable, **backfill** it, add the FK, make it `NOT NULL`, then **drop `Seasons.ApiLeagueId` and `Seasons.CompetitionType`**. Update the existing season-sync handler and any `Season.ApiLeagueId` / `Season.CompetitionType` / `Season.IsTournament` readers to go via the season's `Competition` — see Task 16.
 - `RunningCosts` has **no personal data** — copy as-is in the refresh (no anonymisation), but include it in `TableCopyOrder`.

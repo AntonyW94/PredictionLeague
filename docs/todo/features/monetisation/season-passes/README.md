@@ -185,6 +185,8 @@ These were decided this session (see `docs/decisions/`):
 - **Refunds** → passes (incl. SMS) refundable **before the season starts**, non-refundable after; covers cancellation (ADR 0019, Task 17).
 - **Email verification** → finish it and **normalise emails (strip `+` alias)** to stop multi-account trial abuse (ADR 0020, Task 18).
 - **SMS = UK mobiles only**, required and validated (libphonenumber → E.164) **at purchase** (ADR 0009, Task 10).
+- **No late entry** → pass purchase, trial and joining **close at the season's first round deadline** (same cut-off as refunds); no mid-season entry or late pricing (ADR 0021, Task 08/10).
+- **Overlapping seasons** → already supported: `SeasonPasses` holds **one row per (user, season)** with a unique index, so a user can hold concurrent passes (e.g. World Cup + Premier League). **No new table needed** and **no pass rows are created for free/grandfathered seasons** — those are gated by `Season.RequiresPass = false`, which is cheaper than backfilling pass records for every existing user × season.
 - **Comparable season / "same competition"** = matched on `Season.CompetitionId`, a FK to a new **`Competitions` reference table** (ADR 0017), **not** `ApiLeagueId`. The table carries a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id**; `Season` **drops `ApiLeagueId` and `CompetitionType`** and the sync/type resolve from the competition (Task 16). Switching fixture provider is a no-deploy admin edit that never invalidates free-SMS entitlements or price comparables.
 
 ## Open Questions

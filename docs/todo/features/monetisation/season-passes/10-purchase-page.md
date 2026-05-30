@@ -33,6 +33,10 @@ Build the Blazor Season Pass purchase page from the mockup: two tiers (Entry / E
 - If **trial-eligible**: show a "Your first season is on us — join free" state. The **Entry** CTA proceeds free without payment; an optional **"add SMS for £{uplift}"** choice routes through Checkout for the uplift only (creates a `CreateTrialWithSms` pass).
 - If **reward-eligible** (Task 13): offer Entry + SMS at the Entry price with a "you earned free SMS" message.
 
+### Step 2b: No late entry — purchase closes at season start
+
+- Once the season has **started** (its first round deadline has passed), **do not offer purchase or trial** — show an "entries for this season have closed" state instead (ADR 0021). Same cut-off as refunds (ADR 0019).
+
 ### Step 2a: Require a valid UK mobile before SMS purchase
 
 - The **Entry + SMS** option (and the trial SMS add-on) is **blocked until the user has a valid UK mobile** on their account.

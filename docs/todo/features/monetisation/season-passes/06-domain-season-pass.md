@@ -120,3 +120,5 @@ Mirror `Season.cs` / `League.cs`: private parameterless ctor for ORM (`[ExcludeF
 ## Notes
 
 Confirm the existing user identifier type before finalising `UserId` (match `LeagueMember`).
+
+`SeasonPass` is the per-(user, season) entitlement (effectively the "UserSeasonPass" record): one row per user per season, so overlapping/concurrent seasons each get their own pass. No separate table is needed for that.
