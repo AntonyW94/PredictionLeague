@@ -14,11 +14,11 @@ Add the `Seasons.RequiresPass` + price columns, the `SeasonPasses` table, and th
 
 | File | Action | Purpose |
 |------|--------|---------|
-| DB migration / script | Create | `Competitions` table; `Seasons` columns (+ `CompetitionId`, drop `ApiLeagueId`); `SeasonPasses` + `RunningCosts` tables |
-| `docs/guides/database-schema.md` | Modify | Document new columns + tables; reflect `ApiLeagueId` moving from `Seasons` to `Competitions` |
-| `tools/ThePredictions.DatabaseTools/DatabaseRefresher.cs` | Modify | Add `Competitions` (before `Seasons`), `SeasonPasses`, `RunningCosts` to `TableCopyOrder` (respect FK order) |
-| `tools/ThePredictions.DatabaseTools/DataAnonymiser.cs` | Modify | Anonymise `SeasonPasses` (holds `UserId` + payment ref) |
-| `tools/ThePredictions.DatabaseTools/PersonalDataVerifier.cs` | Modify | Verify `StripePaymentReference` handled |
+| DB migration / script | Create | `Competitions` table; `Seasons` columns (+ `CompetitionId`, drop `ApiLeagueId`); `SeasonPasses` + `RunningCosts` tables; **encrypted `Leagues` bank columns + `UserPayoutDetails` table + `Winnings.PaidAtUtc`** (ADR 0010) |
+| `docs/guides/database-schema.md` | Modify | Document new columns + tables; reflect `ApiLeagueId` moving from `Seasons` to `Competitions`; note encrypted bank columns |
+| `tools/ThePredictions.DatabaseTools/DatabaseRefresher.cs` | Modify | Add `Competitions` (before `Seasons`), `SeasonPasses`, `RunningCosts`, `UserPayoutDetails` to `TableCopyOrder` (respect FK order) |
+| `tools/ThePredictions.DatabaseTools/DataAnonymiser.cs` | Modify | Anonymise `SeasonPasses` (UserId + payment ref) **and all encrypted bank details (`Leagues` + `UserPayoutDetails`)** |
+| `tools/ThePredictions.DatabaseTools/PersonalDataVerifier.cs` | Modify | Verify `StripePaymentReference` **and bank details** never survive a refresh |
 
 ## Implementation Steps
 
@@ -76,6 +76,26 @@ CREATE TABLE [RunningCosts] (
     [Notes]         NVARCHAR(500) NULL,
     [CreatedAtUtc]  DATETIME2 NOT NULL
 );
+
+-- League admin's RECEIVING details (ADR 0010) — stored ENCRYPTED (app-level AES, key in Key Vault)
+ALTER TABLE [Leagues] ADD
+    [BankAccountNameEnc]       NVARCHAR(512) NULL,   -- ciphertext
+    [BankSortCodeEnc]          NVARCHAR(512) NULL,   -- ciphertext
+    [BankAccountNumberEnc]     NVARCHAR(512) NULL,   -- ciphertext
+    [PaymentReferenceTemplate] NVARCHAR(100) NULL;   -- not sensitive (e.g. "{PlayerName}")
+
+-- Player PAYOUT details (ADR 0010) — optional, ENCRYPTED; visible only to admins of leagues the user is in
+CREATE TABLE [UserPayoutDetails] (
+    [UserId]           INT NOT NULL PRIMARY KEY,
+    [AccountNameEnc]   NVARCHAR(512) NOT NULL,       -- ciphertext
+    [SortCodeEnc]      NVARCHAR(512) NOT NULL,       -- ciphertext
+    [AccountNumberEnc] NVARCHAR(512) NOT NULL,       -- ciphertext
+    [UpdatedAtUtc]     DATETIME2 NOT NULL,
+    CONSTRAINT [FK_UserPayoutDetails_Users] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers]([Id])
+);
+
+-- Track manual payouts (ADR 0010) — admin marks each winning as paid
+ALTER TABLE [Winnings] ADD [PaidAtUtc] DATETIME2 NULL;   -- null = outstanding
 ```
 
 - Unique index enforces **one pass per user per season** — and because rows are per-(user, season), a user can hold **multiple concurrent passes for overlapping seasons** (e.g. World Cup + Premier League) with no extra modelling.
@@ -84,6 +104,7 @@ CREATE TABLE [RunningCosts] (
 - `DEFAULT (0)` on `RequiresPass` grandfathers every existing season as free; prices stay NULL on those.
 - **Competition migration (ADR 0009):** insert a `Competitions` row per distinct existing `Season.ApiLeagueId` (set `Code`/`Name`/`ApiLeagueId`, and `Type` from the seasons' existing `CompetitionType`; logo added later), add `Seasons.CompetitionId` nullable, **backfill** it, add the FK, make it `NOT NULL`, then **drop `Seasons.ApiLeagueId` and `Seasons.CompetitionType`**. Update the existing season-sync handler and any `Season.ApiLeagueId` / `Season.CompetitionType` / `Season.IsTournament` readers to go via the season's `Competition` — see Task 16.
 - `RunningCosts` has **no personal data** — copy as-is in the refresh (no anonymisation), but include it in `TableCopyOrder`.
+- **Encrypted bank details (ADR 0010):** `Leagues` (admin receiving details) and `UserPayoutDetails` (player payout details) hold **ciphertext only** (app-level AES, key in Key Vault — never plaintext in the DB). `DataAnonymiser` must replace them with dummy values on dev refresh and `PersonalDataVerifier` must assert no real values survive. `Winnings.PaidAtUtc` tracks manual payout completion. Build/UX in **Tasks 19 & 20**.
 
 ### Step 2: Update schema docs
 
