@@ -33,18 +33,13 @@ Create a Stripe account in the business name, define one-off Season Pass Prices,
 | Statement descriptor | e.g. `THEPREDICTIONS` (what shows on customers' card statements; keep ≤22 chars) |
 | Tax details | Provide UTR if asked |
 
-### Step 2: Create Products & Prices (one-off)
+### Step 2: Pricing is dynamic — no fixed Prices to pre-create
 
-In **Product catalogue** → https://dashboard.stripe.com/products , create one Product per paid competition with **two one-off Prices** each:
+Prices are **admin-set per season** and stored in the database (`Season.EntryPrice` / `Season.SmsPrice`, Tasks 06–07, 15). Checkout uses Stripe **dynamic `price_data`** with the amount read from the DB at session creation (Task 09) — so you do **not** create fixed Stripe Price objects by hand, and changing a season's price needs no Stripe change.
 
-| Product | Price (one-off, GBP) | Internal label |
-|---------|----------------------|----------------|
-| Premier League 2026/27 | £10.00 | `pl-2026-entry` |
-| Premier League 2026/27 | £15.00 | `pl-2026-entry-sms` |
-
-- Set each Price as **One time** (not recurring).
-- Record each **Price ID** (`price_...`) — Task 09 maps `(SeasonId, Tier)` → Price ID (store in config, not code).
-- World Cup needs no Product (it's free).
+- Optionally create a single **Product** ("Season Pass") in the catalogue purely for reporting/grouping → https://dashboard.stripe.com/products .
+- Currency: **GBP**. Statement descriptor as in Step 1.
+- World Cup needs nothing (it's free).
 
 ### Step 3: Enable Apple Pay & Google Pay
 

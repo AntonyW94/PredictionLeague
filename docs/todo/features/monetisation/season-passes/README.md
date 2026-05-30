@@ -44,15 +44,24 @@ External mockup: `season-pass-mockup.html` (delivered separately). Two pricing c
 
 Trial-eligible (brand-new) users see a "Your first season is on us" state instead of prices.
 
-## Pricing (placeholder — finalise after costing in Task 03/04)
+## Pricing Model (admin-configurable, calculator-suggested)
 
-| Competition | Entry | Entry + SMS | Notes |
-|-------------|-------|-------------|-------|
-| Premier League 2026/27 | £10 | £15 | `RequiresPass = true` |
-| World Cup 2026 | Free | n/a | `RequiresPass = false` (free for everyone) |
-| All existing/past seasons | Free | n/a | `RequiresPass = false` (grandfathered) |
+Prices are **not hardcoded**. Each pass-required season stores an admin-set **Entry price** and **Entry + SMS price** (DB-backed, editable in admin, sent to Stripe as **dynamic amounts** so no fixed Stripe Prices are created by hand). During season creation the admin sees a **recommended price** from the running-costs calculator (Tasks 14–15), which they can override.
 
-SMS uplift (£5) must clear `cost-per-SMS × reminders-per-season` with margin (validate in Task 04).
+**Calculator rules (confirmed with owner):**
+
+- **Goal:** recommended price = covered costs **+ ~15% buffer**.
+- **Cost apportionment:** annual running costs are split across the year's paid seasons **weighted by season length** (rounds/duration) — a long Premier League season carries more than a short cup.
+- **Denominator = expected players:** the **distinct participant count of the last completed season of the same competition**, i.e. recommend a price that **breaks even at roughly last season's player numbers**.
+- **Business-borne costs only:** costs still paid from the owner's **personal** account are **excluded until their renewal date**, when they move to the business and enter the calculation. (Owner migrates each cost to the business bank as it renews.)
+- **Free seasons:** World Cup 2026 is `RequiresPass = false`, run at a **deliberate one-off loss**. **After it, all seasons are paid**, so no ongoing free-season subsidy logic is needed.
+- Entry recommendation is grossed up for **Stripe fees**; the **SMS uplift** reflects expected SMS cost per SMS-user over the season (Task 04 rate) + buffer.
+
+| Season | Pass required? | Price |
+|--------|----------------|-------|
+| All existing/past seasons | No (grandfathered) | Free |
+| World Cup 2026 | No (deliberate loss) | Free |
+| Premier League 2026/27 onward | Yes | Admin-set, calculator-suggested |
 
 ## Access & Trial Rule (authoritative definition)
 
@@ -80,18 +89,24 @@ Trial is **once per user, lifetime**, **Entry tier only** (no free SMS).
 
 ## SMS Reminder Behaviour & Early-Bird Reward
 
-The SMS tier is designed to **reward getting predictions in early**, not to spam:
+SMS is an **extra** safety net layered on top of the existing free emails — SMS-tier holders lose nothing:
 
-- **Emails run as now and stay free for everyone** at the early milestones (5 days, 3 days, 1 day).
-- **SMS only fires in the final window** — at the **6-hour** milestone (and **1-hour** last-chance) — and **only if the user still hasn't submitted**. A user who predicts before the 6-hour mark receives **zero** SMS that round.
-- At the 6h/1h milestones, an SMS-tier holder with a valid phone gets an **SMS instead of the email** (no double-message); everyone else continues to get the email.
+- **Everyone keeps every email at every milestone** (5d, 3d, 1d, **6h, 1h**), exactly as now — including SMS subscribers.
+- **SMS is additional:** at the **6h** and **1h** milestones, an SMS-tier holder with a valid phone *also* gets a text **only if they still haven't submitted**. Submit before 6h and you get **zero** texts that round (you still got the emails).
+- So SMS never replaces an email; it's a bonus nudge in the final window for people who haven't acted.
 
 We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount`). This:
 
 - gives cost visibility, and
-- powers an **early-bird reward**: a user who was sent **fewer than a threshold (default 10) SMS** across a paid season **earns a free SMS upgrade for their next paid season** — so disciplined early submitters keep the peace-of-mind safety net for free.
+- powers a **self-funding early-bird reward** (below).
 
-> The reward needs a completed paid season of data first, so it begins from the **second** paid season onward (no reward on PL 2026/27, the first paid season). See [Task 13](./13-sms-earned-upgrade.md).
+**Reward rule (profit-based — the "10" is computed, not hardcoded):** the SMS fee a user pays must first cover the texts actually sent to them (`SmsSentCount × price-per-message`). If enough of that fee is **left over to cover the worst case of the season they buy next** — `rounds × final-window-milestones × price-per-message` (e.g. PL 38 × 2 = **76** possible texts, World Cup 7 × 2 = **14**) — then their **next SMS season is free**. The qualifying allowance **varies with season length and the live per-message rate**, and is only known once actual costs are entered.
+
+- Evaluated **at the point of the next purchase** (not precomputed), so it uses the next season's real length and the current per-message rate.
+- A free (comped) season pays no fee, so it **cannot itself fund another free season** — in practice a *paying* low-usage season earns the *next* one free.
+- In-app, SMS-tier holders see their **remaining SMS budget** (`fee − texts used × rate`) — a budget to protect by getting predictions in early, not a bar to fill.
+
+> Begins from the **second** paid season onward (no reward on PL 2026/27). Cross-competition eligibility and storage are detailed in [Task 13](./13-sms-earned-upgrade.md).
 
 ## Acceptance Criteria
 
@@ -99,11 +114,14 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 - [ ] `Season.RequiresPass` flag exists; all existing seasons + World Cup 2026 = `false`; PL 2026/27 = `true`.
 - [ ] A user with no pass cannot join/create a league in a pass-required season unless trial-eligible.
 - [ ] Brand-new users are auto-granted a free Entry trial on first participation in a pass-required season.
+- [ ] Per-season **Entry** and **Entry + SMS** prices are admin-configurable (DB-backed); Stripe charges those exact amounts (dynamic).
+- [ ] Admin **Running Costs** page records costs, renewal dates, and payer status (business vs personal-until-renewal).
+- [ ] Season creation shows a **recommended price** from the calculator (15% buffer, length-weighted apportionment, break-even at last comparable season's player count, business-borne costs only).
 - [ ] Users can buy Entry or Entry + SMS via Stripe Checkout (one-off, Apple/Google Pay enabled).
 - [ ] A `SeasonPass` is created reliably on successful payment (webhook-driven).
-- [ ] SMS-tier holders receive deadline reminders by SMS **only in the final 6 hours and only if still unsubmitted**; emails run free at earlier milestones for everyone.
+- [ ] Everyone (incl. SMS-tier) keeps all emails at every milestone; SMS is an **additional** 6h/1h nudge for unsubmitted SMS-tier holders.
 - [ ] Per-season SMS count tracked per user (`SmsSentCount`).
-- [ ] Early-bird reward: users sent fewer than the threshold last paid season earn a free SMS upgrade next paid season.
+- [ ] Self-funding reward: a paying low-usage SMS season earns the next SMS season free when the leftover fee covers that season's worst-case SMS cost.
 - [ ] Terms & Privacy updated and flagged for solicitor review; refund/consumer-rights wording added.
 - [ ] Domain project at 100% line + branch coverage; schema docs + DatabaseTools updated.
 
@@ -123,7 +141,9 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 | 10 | [Purchase page](./10-purchase-page.md) | Blazor page from the mockup | Code |
 | 11 | [SMS reminders](./11-sms-reminders.md) | Final-6h-only SMS for SMS-tier (email earlier), track per-season count | Code |
 | 12 | [Testing & launch](./12-testing-and-launch.md) | Season config, Stripe test-mode E2E, go-live | Code/Manual |
-| 13 | [SMS early-bird reward](./13-sms-earned-upgrade.md) | Free SMS upgrade next season for low-SMS users (2nd paid season on) | Code (follow-on) |
+| 13 | [SMS early-bird reward](./13-sms-earned-upgrade.md) | Self-funding free SMS upgrade next season (2nd paid season on) | Code (follow-on) |
+| 14 | [Admin running costs](./14-admin-running-costs.md) | Page to record annual costs, renewal dates, payer status | Code |
+| 15 | [Configurable prices & calculator](./15-configurable-prices-and-calculator.md) | Per-season admin prices + recommended-price calculator | Code |
 
 ## Dependencies
 
@@ -140,11 +160,17 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 - Stripe = one-off **`payment` mode** Checkout, never Billing/Subscriptions.
 - Store only a Stripe **payment reference** on `SeasonPass` — never card data.
 
+## Related / Future Features
+
+- **[Season Challenges (badges)](../season-challenges/)** — earnable, show-off badges tied to a season pass (e.g. "Early Bird", "Perfect Round"). Separate follow-up; relates to `user-experience/achievements-badges`.
+
 ## Open Questions
 
-- [ ] Final prices per competition (pending cost totals).
-- [ ] Should trial-eligible users be allowed to *upgrade* their free Entry trial to SMS for the £5 difference? (Default: no, keep trial Entry-only for v1.)
+- [ ] **Cross-competition reward eligibility** — should a reward earned in one competition apply to the *next paid season of any competition* (validated against that season's length — recommended, uniform), or only the *same* competition? (World Cup is free so won't generate rewards in practice; mostly affects future short↔long seasons.)
+- [ ] **"Comparable season" matching** for the expected-players denominator — same `ApiLeagueId` if set, else same `CompetitionType`? Behaviour when there is no prior comparable season (fall back to manual price).
+- [ ] **Cost proration** — when a cost renews part-way through the pricing horizon, prorate it or include the full annual amount?
+- [ ] **Reward display** — show remaining SMS budget as £ or as a message count; where it appears (dashboard / pass page).
+- [ ] Should trial-eligible users be allowed to *upgrade* their free Entry trial to SMS? (Default: no, keep trial Entry-only for v1.)
 - [ ] Add an in-app "pause SMS reminders" toggle now or defer? (Goodwill only; not required.)
-- [ ] Early-bird reward threshold — confirm **<10 SMS/season** (configurable).
-- [ ] Reward form — free SMS upgrade for the next season (default) vs a discount? How is it modelled on the pass (e.g. `Source = RewardUpgrade`, or SMS-comped flag with `AmountPaid` = Entry price)?
-- [ ] Should SMS also fire at the 1-hour milestone, or 6-hour only? (Default: both 6h and 1h.)
+- [ ] Number of final-window milestones for both reminders and the reward maths — default **2** (6h + 1h); confirm.
+- [ ] How to model a comped reward upgrade on the pass — `Source = RewardUpgrade`, or an `SmsFeePaid = 0` flag (Task 13 uses `SmsFeePaid` + `RewardRedeemedForSeasonId`).

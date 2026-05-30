@@ -7,6 +7,7 @@ Feature plans for generating revenue from the site, structured to stay clearly o
 | Feature | Description | Priority |
 |---------|-------------|----------|
 | [season-passes](season-passes/) | One-off paid Season Pass gating participation, with a free trial for new players and an optional SMS reminder tier | Medium |
+| [season-challenges](season-challenges/) | Earnable badges tied to a season pass (stub — future follow-up) | Low |
 
 ## Out of Scope (pending legal advice)
 

@@ -1,4 +1,4 @@
-# Task: SMS Early-Bird Reward (Free Upgrade)
+# Task: SMS Early-Bird Reward (Self-Funding Free Upgrade)
 
 **Parent Feature:** [README.md](./README.md)
 
@@ -8,59 +8,85 @@
 
 ## Type
 
-**Code (follow-on)** — depends on at least one completed paid season of SMS data, so it goes live from the **second** paid season onward (not PL 2026/27).
+**Code (follow-on)** — needs at least one completed paid SMS season of data, so it goes live from the **second** paid season onward (not PL 2026/27).
 
 ## Goal
 
-Reward disciplined early submitters: a user who was sent **fewer than a threshold (default 10) SMS** during a paid season earns a **free SMS upgrade** for their next paid season — keeping the safety net without the extra charge.
+Reward early submitters with a **free SMS upgrade** for their next paid season — but only when it's **provably profitable**: the leftover from the SMS fee they already paid must cover the *worst case* cost of the next season's SMS.
 
-## Why
+## The Rule (profit-based — no hardcoded threshold)
 
-SMS only fires in the final 6 hours when predictions are still missing (Task 11). Low SMS usage therefore means the user reliably submits early. Rewarding that with free SMS next season reinforces the behaviour we want and gives genuine "peace of mind for free".
+For a user buying a pass for season **Y**, look at their most recent **paying** SMS-tier pass **X** (`SmsFeePaid > 0`, not already redeemed):
+
+```
+ppm              = current price per SMS message (from RunningCosts / Brevo rate, Task 04/14)
+leftover_X       = X.SmsFeePaid - (X.SmsSentCount * ppm)        # profit retained on pass X
+worstCase_Y      = roundsInSeason(Y) * finalWindowMilestones * ppm   # e.g. PL 38*2=76, WC 7*2=14 texts
+eligible         = leftover_X >= worstCase_Y
+```
+
+If `eligible`, season Y's SMS tier is **free** (comped uplift); stamp pass X via `MarkRewardRedeemed(Y)` so its leftover can't be reused.
+
+- The qualifying "allowance" (`X.SmsFeePaid / ppm - worstCase_messages_Y`) is therefore **computed**, and **varies by next-season length and the live per-message rate** — never a hardcoded 10.
+- A **comped** season has `SmsFeePaid = 0`, so it can't fund another free season — a *paying* low-usage season earns the *next* one free (at most every-other-season free).
+
+## Cross-Competition Eligibility (decision)
+
+**Recommended:** a reward applies to the **next paid SMS season of any competition**, because eligibility is validated against **that season's** worst case. This is uniform and always profitable — a short season's leftover simply won't clear a long season's worst case, so short→long rarely qualifies, while long→short often will. (In practice World Cup is free, so it won't generate rewards; this mainly matters for future seasons.) See README open question if you'd prefer to restrict to the same competition.
 
 ## Files to Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `...Passes/Services/SmsRewardService.cs` (+ interface) | Create | Determine reward eligibility from prior-season `SmsSentCount` |
-| `...Passes/Queries/GetSeasonPassPurchaseOptionsQuery(.Handler).cs` | Modify/Create | Tell the purchase page whether the SMS upgrade is free for this user |
-| `09-stripe-checkout-integration.md` flow | Modify | If reward applies, grant `EntryPlusSms` while charging the Entry price |
-| `10-purchase-page.md` UI | Modify | Show "You've earned free SMS for getting your predictions in early last season" |
-| Config | Modify | `SmsRewardThreshold` (default 10) |
+| `...Passes/Services/ISmsRewardService.cs` (+ impl) | Create | Compute eligibility per the rule above |
+| `...Passes/Queries/GetSeasonPassPurchaseOptionsQuery(.Handler).cs` | Modify/Create | Tell the purchase page whether SMS is free + the user's remaining budget |
+| Task 09 fulfilment | (already wired) | Create `CreateRewardUpgrade` pass; `MarkRewardRedeemed` on funding pass |
+| Task 10 purchase page | Modify | Show earned-free state + remaining SMS budget |
+| Config | Modify | `FinalWindowMilestoneCount` (default 2); `ppm` source (live rate vs stored) |
 
 ## Implementation Steps
 
-### Step 1: Eligibility check
+### Step 1: Eligibility service
 
-- `SmsRewardService.HasEarnedFreeSmsAsync(userId, newSeasonId)`:
-  - Find the user's **most recent prior pass-required season** in which they held an SMS-tier pass.
-  - If that pass's `SmsSentCount < SmsRewardThreshold` → **eligible**.
-  - If they had no prior SMS-tier season → not eligible (nothing to reward yet).
-- Query side (`IApplicationReadDbConnection`).
+- `SmsRewardService.EvaluateAsync(userId, seasonY)` returns `{ IsFree, FundingPassId, LeftoverGbp, WorstCaseGbp }`.
+- Inputs from query side (`IApplicationReadDbConnection`): the user's most recent paying, unredeemed SMS pass; that pass's `SmsFeePaid` and `SmsSentCount`; `roundsInSeason(Y)`; `ppm`.
 
-### Step 2: Apply the reward at purchase
+### Step 2: Apply at purchase (ties into Task 09)
 
-- On the purchase page (Task 10), if eligible, present the **Entry + SMS** tier at the **Entry price** (the SMS uplift is comped).
-- At fulfilment (Task 09 webhook), create the pass as `Tier = EntryPlusSms` with `AmountPaid` = the Entry price actually charged, and record the reward reason (`Source = RewardUpgrade` or an `SmsComped` flag — see README open question).
+- If `IsFree`, the Checkout session for the SMS tier uses `unit_amount = EntryPrice` (uplift comped); fulfilment creates `SeasonPass.CreateRewardUpgrade(...)` and calls `MarkRewardRedeemed(seasonY)` on the funding pass.
 
-### Step 3: Messaging
+### Step 3: Display (ties into Task 10)
 
-- Purchase page banner + (optional) end-of-season recap line: "You earned free SMS reminders next season for getting your predictions in early — nice one."
+- For current SMS-tier holders, show **remaining SMS budget** = `SmsFeePaid - SmsSentCount * ppm`, with copy: "Keep enough in the pot to cover next season and your SMS is on us."
+- On the next purchase, if earned: "You earned free SMS for getting your predictions in early — nice one."
+
+## Storage Summary (no new tables needed)
+
+All on `SeasonPass` (Tasks 06–07):
+
+| Field | Role |
+|-------|------|
+| `SmsFeePaid` | the SMS uplift actually paid on this pass (0 if comped/trial/entry) |
+| `SmsSentCount` | texts sent to the user this season |
+| `RewardRedeemedForSeasonId` | set when this pass's leftover funded a later free season (prevents reuse) |
+
+`ppm` and `FinalWindowMilestoneCount` come from config/RunningCosts, evaluated **at purchase time** — so nothing is precomputed or stale.
 
 ## Verification
 
-- [ ] User with prior-season `SmsSentCount < threshold` is offered free SMS; pass created as `EntryPlusSms` at Entry price.
-- [ ] User at/above threshold pays the normal SMS uplift.
-- [ ] User with no prior SMS season sees no reward.
-- [ ] Threshold is configurable and reflected in the eligibility check.
-- [ ] Domain coverage stays 100% (cover any new `SeasonPassSource`/flag).
+- [ ] Paying low-usage pass whose leftover ≥ next season's worst case → next SMS is free; funding pass stamped redeemed.
+- [ ] Leftover < worst case → user pays the normal uplift.
+- [ ] Comped pass (`SmsFeePaid = 0`) never earns a further free season.
+- [ ] A funding pass is used at most once (redeemed flag enforced).
+- [ ] Eligibility recomputes correctly for a longer vs shorter next season.
+- [ ] Domain coverage stays 100%.
 
 ## Edge Cases to Consider
 
-- User who bought SMS but never had any sent (`SmsSentCount = 0`) → strongly eligible.
-- User who switched between competitions: define "prior season" as the most recent *completed* pass-required season they held SMS in.
-- Reward should not stack into a fully free pass — it comps **only** the SMS uplift, never the Entry fee.
+- Mid-season per-message rate change: evaluate with the **current** `ppm` at purchase (conservative).
+- No prior paying SMS season → not eligible (nothing has been paid to fund it).
+- Reward comps **only** the SMS uplift, never the Entry fee.
 
 ## Notes
 
-Deliberately deferred: there's no data to reward until a paid season completes. Build after PL 2026/27 has run, ahead of the next paid season's pass sales.
+Deliberately deferred until PL 2026/27 has completed and there is real `SmsSentCount` data to evaluate.
