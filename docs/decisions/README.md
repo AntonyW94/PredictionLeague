@@ -45,4 +45,5 @@ Add a record when a decision is **hard to reverse, cross-cutting, or expensive t
 | [0014](./0014-stripe-as-payment-processor.md) | Stripe payment processor | Accepted / Deferred | technical, business, legal | Stripe Checkout + wallets now; direct-charges Connect for future entry-fee routing. |
 | [0015](./0015-defer-season-challenges.md) | Defer Season Challenges | Deferred | product | Badges/challenges parked as a separate future feature (cosmetic only). |
 | [0016](./0016-seed-business-with-owner-capital.md) | Seed business with owner's capital | Accepted | business, financial | Float initial costs from personal money (capital introduced), repay via drawings once income covers them. |
-| [0017](./0017-internal-competition-identifier.md) | Stable internal Competition identifier | Accepted | technical, domain | Add a `Competition` enum on `Season`; key reward + price comparables on it, not the API league id. |
+| [0017](./0017-internal-competition-identifier.md) | Stable internal Competition identifier | Superseded by 0018 | technical, domain | Proposed a `Competition` enum; superseded by the reference-table approach. |
+| [0018](./0018-competitions-reference-table.md) | Competitions reference table | Accepted | technical, domain, product | `Competitions` table (logos + admin-editable API id); `Season` gets `CompetitionId`, drops `ApiLeagueId`. |

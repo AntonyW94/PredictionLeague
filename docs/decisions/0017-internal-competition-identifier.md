@@ -1,9 +1,11 @@
 # 0017. Stable internal Competition identifier (decouple from API league id)
 
-- **Status:** Accepted
+- **Status:** Superseded by [0018](./0018-competitions-reference-table.md)
 - **Date:** 2026-05-30
 - **Deciders:** Antony
 - **Tags:** technical, domain
+
+> **Superseded by [0018](./0018-competitions-reference-table.md):** the same stable-identity goal is now met with a `Competitions` **reference table** instead of an enum, to also support per-competition logos and admin-editable API IDs. The decision below is retained for history.
 
 ## Context
 

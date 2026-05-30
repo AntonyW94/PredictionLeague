@@ -28,7 +28,7 @@ For a new season **S** being priced:
 1. **Business-borne costs** (Task 14): sum `AnnualisedAmount` of every cost where `IsBusinessBorneOn(S.start)` — i.e. exclude costs still on the personal card until they renew.
 2. **Apportion by season length:** `weight(S) = length(S) / Σ length(all paid seasons in the horizon)`, where length = number of rounds (or duration). `seasonCosts = businessBorneAnnualCosts × weight(S)`. (Free seasons are excluded — World Cup runs at a deliberate loss.)
 3. **Buffer:** `target = seasonCosts × 1.15` (15%).
-4. **Expected players = break-even denominator:** the **distinct approved participant count of the last completed season of the same `Competition`** (matched on the internal `Competition` enum — ADR 0017, not `ApiLeagueId`). `perPlayer = target / expectedPlayers`.
+4. **Expected players = break-even denominator:** the **distinct approved participant count of the last completed season with the same `CompetitionId`** (the `Competitions` reference table — ADR 0018, not `ApiLeagueId`). `perPlayer = target / expectedPlayers`.
 5. **Gross up for Stripe fees:** `entryRecommendation = (perPlayer + stripeFixedFee) / (1 − stripePercent)`, rounded to a tidy figure (e.g. nearest £0.50/£1). → suggested **Entry price**.
 6. **SMS uplift:** expected SMS cost per SMS-user over the season ≈ `expectedSmsPerUser × ppm`, × 1.15, grossed up → add to Entry → suggested **Entry + SMS price**. (`ppm` from Task 04/14; `expectedSmsPerUser` an admin-tunable assumption, default a fraction of the worst case `rounds × finalWindowMilestones`.)
 
@@ -65,7 +65,7 @@ Result surfaced as *"Recommended: £X Entry · £Y +SMS (breaks even at ~N playe
 - **No prior comparable season** (first ever of a competition): leave the suggestion **blank with explanatory wording**; the field is editable so the admin just types a price.
 - **Cost proration:** running costs store **start/end dates** (Task 14), so the calculator *can* prorate by date-overlap in future; for now include the cost when it's business-borne during the season.
 - **Minimum floor** applied so high player counts don't produce an absurdly tiny suggestion.
-- "Comparable season" = same competition, matched on the internal `Competition` enum (ADR 0017).
+- "Comparable season" = same competition, matched on `Season.CompetitionId` (the `Competitions` table, ADR 0018).
 
 ## Notes
 
