@@ -14,11 +14,11 @@ Add the `RequiresPass` flag and admin-set prices to `Season`, and introduce the 
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/ThePredictions.Domain/Models/Season.cs` | Modify | Add `RequiresPass`, prices, and `CompetitionId` (FK); **drop `ApiLeagueId`** (moves to `Competition`, ADR 0018) |
+| `src/ThePredictions.Domain/Models/Season.cs` | Modify | Add `RequiresPass`, prices, and `CompetitionId` (FK); **drop `ApiLeagueId` and `CompetitionType`** (both move to `Competitions`, ADR 0017) |
 | `src/ThePredictions.Domain/Models/SeasonPass.cs` | Create | New entity |
 | `src/ThePredictions.Domain/Common/Enumerations/SeasonPassTier.cs` | Create | `Entry`, `EntryPlusSms` |
 | `src/ThePredictions.Domain/Common/Enumerations/SeasonPassSource.cs` | Create | `Purchased`, `Trial` |
-| `Competition` entity + `Competitions` table + admin page | Create (**Task 16**) | Stable competition reference data with logo + admin-editable API id — ADR 0018 |
+| `Competition` entity + `Competitions` table + admin page | Create (**Task 16**) | Stable competition reference data with logo + admin-editable API id — ADR 0017 |
 | `tests/Unit/ThePredictions.Domain.Tests.Unit/...` | Create | Tests for factory + flag |
 
 ## Implementation Steps
@@ -27,7 +27,7 @@ Add the `RequiresPass` flag and admin-set prices to `Season`, and introduce the 
 
 - Add `public bool RequiresPass { get; private set; }` (default `false`).
 - Add admin-set prices: `public decimal? EntryPrice { get; private set; }` and `public decimal? SmsPrice { get; private set; }` (full price of the +SMS tier). Null for free seasons.
-- Add `public int CompetitionId { get; private set; }` (FK to the `Competitions` reference table, ADR 0018 / Task 16) — the **stable internal competition identity** used for the reward's same-competition match (Task 13) and comparable-season pricing (Task 15). **Remove `ApiLeagueId` from `Season`** — the provider id now lives on `Competition` and is resolved at sync time.
+- Add `public int CompetitionId { get; private set; }` (FK to the `Competitions` reference table, ADR 0017 / Task 16) — the **stable internal competition identity** used for the reward's same-competition match (Task 13) and comparable-season pricing (Task 15). **Remove both `ApiLeagueId` and `CompetitionType` from `Season`** — the provider id and competition type now live on `Competition` (resolved at sync time). The existing `Season.IsTournament` helper moves to read `Competition.Type` (update its callers — Task 16).
 - Thread through the public constructor, `Create(...)`, and `UpdateDetails(...)` (default-false keeps all existing seasons free).
 - Validation: when `RequiresPass` is `true`, require `EntryPrice > 0` and `SmsPrice >= EntryPrice`; when `false`, prices must be null. (Prices are set/edited in admin and suggested by the calculator — Task 15.)
 
@@ -38,7 +38,7 @@ public enum SeasonPassTier { Entry, EntryPlusSms }
 public enum SeasonPassSource { Purchased, Trial }
 ```
 
-(Competition is now a **reference entity/table**, not an enum — see Task 16 / ADR 0018.)
+(Competition is now a **reference entity/table**, not an enum — see Task 16 / ADR 0017.)
 
 ### Step 3: Create `SeasonPass`
 

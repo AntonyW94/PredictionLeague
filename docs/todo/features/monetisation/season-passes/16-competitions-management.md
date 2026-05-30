@@ -8,11 +8,11 @@
 
 ## Goal
 
-Introduce a `Competitions` reference table (ADR 0018) as the stable, provider-independent competition identity — with logos and an **admin-editable API league id** — and refactor `Season` and the fixture sync to use it instead of `Season.ApiLeagueId`.
+Introduce a `Competitions` reference table (ADR 0017) as the stable, provider-independent competition identity — with a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id** — and refactor `Season` and the fixture sync to use it instead of `Season.ApiLeagueId` / `Season.CompetitionType`.
 
 ## Scope note
 
-This **refactors existing code** (the season-sync handler and any `Season.ApiLeagueId` readers), not just new monetisation code. Treat existing sync tests as part of the blast radius.
+This **refactors existing code** — the season-sync handler and any readers of `Season.ApiLeagueId`, `Season.CompetitionType`, or `Season.IsTournament` (e.g. round-allocation/tournament logic). Treat existing **sync and tournament** tests as part of the blast radius.
 
 ## Files to Modify
 
@@ -23,8 +23,9 @@ This **refactors existing code** (the season-sync handler and any `Season.ApiLea
 | `...Application/Features/Admin/Competitions/Commands\|Queries/*` | Create | Create/Update/Delete + list |
 | `src/ThePredictions.Web.Client/Components/Pages/Admin/Competitions.razor` | Create | Admin CRUD page `/admin/competitions` |
 | `...Features/Admin/Seasons/Commands/SyncSeasonWithApiCommandHandler.cs` | Modify | Resolve provider id via `season.Competition.ApiLeagueId` |
-| Any `Season.ApiLeagueId` readers | Modify | Use `Competition.ApiLeagueId` instead |
-| `Competitions` table + `Seasons.CompetitionId` / drop `ApiLeagueId` | Create | (DDL in Task 07) |
+| Any `Season.ApiLeagueId` / `Season.CompetitionType` / `Season.IsTournament` readers | Modify | Use `Competition.ApiLeagueId` / `Competition.Type` instead (e.g. round-allocation/tournament logic) |
+| Logo upload/hosting (admin) | Create | Store the uploaded competition logo as a hosted asset, served from our domain |
+| `Competitions` table + `Seasons.CompetitionId` / drop `ApiLeagueId` + `CompetitionType` | Create | (DDL in Task 07) |
 
 ## Implementation Steps
 
@@ -34,31 +35,38 @@ This **refactors existing code** (the season-sync handler and any `Season.ApiLea
 public class Competition
 {
     public int Id { get; init; }
-    public string Code { get; private set; }       // stable slug, e.g. "WORLD_CUP", "EPL"
+    public string Code { get; private set; }        // stable slug, e.g. "WORLD_CUP", "EPL"
     public string Name { get; private set; }
-    public string? LogoUrl { get; private set; }
-    public int? ApiLeagueId { get; private set; }  // provider's league id — admin-editable
+    public CompetitionType Type { get; private set; }// League / Tournament (moved off Season)
+    public string? LogoAssetPath { get; private set; } // hosted asset (uploaded via admin)
+    public int? ApiLeagueId { get; private set; }   // provider's league id — admin-editable
     public DateTime CreatedAtUtc { get; private set; }
 
+    public bool IsTournament => Type == CompetitionType.Tournament;  // moved from Season
+
     public void UpdateApiLeagueId(int? apiLeagueId) => ApiLeagueId = apiLeagueId;  // no deploy needed
+    public void SetLogo(string assetPath) => LogoAssetPath = assetPath;
     // + Create factory and UpdateDetails (Code unique, Name not blank)
 }
 ```
+
+The existing `CompetitionType` enum is reused here (just relocated from `Season`).
 
 ### Step 2: Admin Competitions page (`/admin/competitions`)
 
 - List competitions; create/edit Name, Code, **logo**, and **API league id**.
 - Editing the API id is the **no-deploy provider repoint** — `CompetitionId` (the business key) is untouched, so free-SMS entitlements (Task 13) and price comparables (Task 15) are unaffected.
 
-### Step 3: `Season` uses `CompetitionId`; sync resolves the API id
+### Step 3: `Season` uses `CompetitionId`; sync + type resolve from the competition
 
-- `Season.CompetitionId` (FK) replaces `Season.ApiLeagueId` (Tasks 06–07).
-- `SyncSeasonWithApiCommandHandler` reads the provider id from the season's `Competition.ApiLeagueId` (load the competition, or join in the query feeding the handler).
-- Update any other reader of `Season.ApiLeagueId` accordingly.
+- `Season.CompetitionId` (FK) replaces both `Season.ApiLeagueId` and `Season.CompetitionType` (Tasks 06–07).
+- `SyncSeasonWithApiCommandHandler` reads the provider id from `season.Competition.ApiLeagueId`.
+- **Move `IsTournament`/type logic to the competition:** update every reader of `Season.CompetitionType` / `Season.IsTournament` (round-allocation, tournament handling) to use `season.Competition.Type` / `Competition.IsTournament`.
 
-### Step 4: Logos
+### Step 4: Logos (hosted assets)
 
-- Surface `Competition.LogoUrl` wherever a competition is shown (season lists, dashboards). Logo hosting (URL vs uploaded asset) is a UI detail — start with a URL field.
+- Logos are **hosted by us**: the admin **uploads** an image, we store it and serve it from our domain; `Competition.LogoAssetPath` points to it. Surface it wherever a competition is shown (season lists, dashboards).
+- Storage mechanism (DB blob vs persistent folder vs object storage) is an implementation detail to confirm given Fasthosts hosting (see Open Questions).
 
 ## Verification
 
@@ -70,15 +78,14 @@ public class Competition
 
 ## Edge Cases to Consider
 
-- A competition with **no** `ApiLeagueId` set (manual-only season) — sync should skip/неwarn gracefully.
+- A competition with **no** `ApiLeagueId` set (manual-only season) — sync should skip/warn gracefully.
 - Backfill must create exactly one competition per distinct legacy `ApiLeagueId` (Task 07).
 - Duplicate `Code` rejected (unique).
 
 ## Open Questions
 
-- [ ] Should `CompetitionType` (League/Tournament) move from `Season` onto `Competition`? (Recommended later; kept on `Season` for now to contain scope — ADR 0018.)
-- [ ] Logo storage: external URL vs uploaded/hosted asset.
+- [ ] **Logo hosting mechanism** — given Fasthosts shared hosting (FTP deploy), where do uploaded logos persist: DB blob served via an endpoint, a persistent uploads folder (survives deploys?), or object storage? Pick one before building Step 4.
 
 ## Related
 
-- ADR 0018 (supersedes 0017); Tasks 06, 07, 13, 15.
+- ADR 0017; Tasks 06, 07, 13, 15.

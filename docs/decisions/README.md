@@ -18,12 +18,14 @@ Add a record when a decision is **hard to reverse, cross-cutting, or expensive t
 
 `Proposed` → `Accepted` → (later) `Superseded by NNNN` / `Deprecated`. A `Deferred` status is used for decisions we've consciously parked (e.g. pending external advice).
 
+**Supersede only established decisions.** A record is only "superseded" once it has actually **taken effect** (merged to the main branch / implemented). While a decision is still being drafted in a feature branch and has not yet taken effect, **edit the record in place** — don't create a supersede chain for a decision that never went live.
+
 ## How to add one
 
 1. Copy [`_template.md`](./_template.md) to `NNNN-short-title.md` (next number, zero-padded).
 2. Fill it in; keep it short.
 3. Add a row to the index below.
-4. If a new decision reverses an old one, set the old one's status to `Superseded by NNNN` rather than editing its decision.
+4. If a new decision reverses an **already-established** one (merged/in effect), add a new record and set the old one's status to `Superseded by NNNN` rather than editing it. If the old one never took effect (still being drafted in this branch), just **edit it in place**.
 
 ## Table of Contents
 
@@ -45,5 +47,4 @@ Add a record when a decision is **hard to reverse, cross-cutting, or expensive t
 | [0014](./0014-stripe-as-payment-processor.md) | Stripe payment processor | Accepted / Deferred | technical, business, legal | Stripe Checkout + wallets now; direct-charges Connect for future entry-fee routing. |
 | [0015](./0015-defer-season-challenges.md) | Defer Season Challenges | Deferred | product | Badges/challenges parked as a separate future feature (cosmetic only). |
 | [0016](./0016-seed-business-with-owner-capital.md) | Seed business with owner's capital | Accepted | business, financial | Float initial costs from personal money (capital introduced), repay via drawings once income covers them. |
-| [0017](./0017-internal-competition-identifier.md) | Stable internal Competition identifier | Superseded by 0018 | technical, domain | Proposed a `Competition` enum; superseded by the reference-table approach. |
-| [0018](./0018-competitions-reference-table.md) | Competitions reference table | Accepted | technical, domain, product | `Competitions` table (logos + admin-editable API id); `Season` gets `CompetitionId`, drops `ApiLeagueId`. |
+| [0017](./0017-internal-competition-identifier.md) | Competitions reference table | Accepted | technical, domain, product | `Competitions` table (hosted logo, `Type`, admin-editable API id); `Season` gets `CompetitionId`, drops `ApiLeagueId` + `CompetitionType`. |

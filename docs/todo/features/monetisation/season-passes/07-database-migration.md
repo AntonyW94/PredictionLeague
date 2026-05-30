@@ -25,14 +25,15 @@ Add the `Seasons.RequiresPass` + price columns, the `SeasonPasses` table, and th
 ### Step 1: Schema changes
 
 ```sql
--- Competitions reference table (ADR 0018) — created first so Seasons can FK to it
+-- Competitions reference table (ADR 0017) — created first so Seasons can FK to it
 CREATE TABLE [Competitions] (
-    [Id]           INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [Code]         NVARCHAR(50) NOT NULL,         -- stable slug, e.g. 'WORLD_CUP', 'EPL'
-    [Name]         NVARCHAR(200) NOT NULL,
-    [LogoUrl]      NVARCHAR(500) NULL,
-    [ApiLeagueId]  INT NULL,                      -- provider's league id; ADMIN-EDITABLE, no deploy
-    [CreatedAtUtc] DATETIME2 NOT NULL
+    [Id]            INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [Code]          NVARCHAR(50) NOT NULL,        -- stable slug, e.g. 'WORLD_CUP', 'EPL'
+    [Name]          NVARCHAR(200) NOT NULL,
+    [Type]          INT NOT NULL,                 -- League / Tournament (moved from Seasons.CompetitionType)
+    [LogoAssetPath] NVARCHAR(500) NULL,           -- hosted asset (uploaded via admin), served from our domain
+    [ApiLeagueId]   INT NULL,                     -- provider's league id; ADMIN-EDITABLE, no deploy
+    [CreatedAtUtc]  DATETIME2 NOT NULL
 );
 CREATE UNIQUE INDEX [UX_Competitions_Code] ON [Competitions]([Code]);
 
@@ -40,9 +41,10 @@ ALTER TABLE [Seasons] ADD
     [RequiresPass]  BIT NOT NULL DEFAULT (0),
     [EntryPrice]    DECIMAL(10,2) NULL,           -- admin-set; required when RequiresPass = 1
     [SmsPrice]      DECIMAL(10,2) NULL,           -- admin-set full price of the +SMS tier
-    [CompetitionId] INT NULL;                     -- FK to Competitions (ADR 0018); backfill then enforce NOT NULL
+    [CompetitionId] INT NULL;                     -- FK to Competitions (ADR 0017); backfill then enforce NOT NULL
 -- after backfill: ADD CONSTRAINT [FK_Seasons_Competitions] FOREIGN KEY ([CompetitionId]) REFERENCES [Competitions]([Id]);
--- after backfill: ALTER TABLE [Seasons] DROP COLUMN [ApiLeagueId];   -- provider id now lives on Competitions
+-- after backfill: ALTER TABLE [Seasons] DROP COLUMN [ApiLeagueId];      -- provider id now lives on Competitions
+-- after backfill: ALTER TABLE [Seasons] DROP COLUMN [CompetitionType];  -- type now lives on Competitions.Type
 
 CREATE TABLE [SeasonPasses] (
     [Id]                       INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
@@ -77,7 +79,7 @@ CREATE TABLE [RunningCosts] (
 
 - Unique index enforces **one pass per user per season**.
 - `DEFAULT (0)` on `RequiresPass` grandfathers every existing season as free; prices stay NULL on those.
-- **Competition migration (ADR 0018):** insert a `Competitions` row per distinct existing `Season.ApiLeagueId` (set `Code`/`Name`/`ApiLeagueId`, logo later), add `Seasons.CompetitionId` nullable, **backfill** it from the old `ApiLeagueId`, add the FK, make it `NOT NULL`, then **drop `Seasons.ApiLeagueId`**. The existing season-sync handler (and any `Season.ApiLeagueId` readers) must be updated to resolve the provider id via the season's `Competition` — see Task 16.
+- **Competition migration (ADR 0017):** insert a `Competitions` row per distinct existing `Season.ApiLeagueId` (set `Code`/`Name`/`ApiLeagueId`, and `Type` from the seasons' existing `CompetitionType`; logo added later), add `Seasons.CompetitionId` nullable, **backfill** it, add the FK, make it `NOT NULL`, then **drop `Seasons.ApiLeagueId` and `Seasons.CompetitionType`**. Update the existing season-sync handler and any `Season.ApiLeagueId` / `Season.CompetitionType` / `Season.IsTournament` readers to go via the season's `Competition` — see Task 16.
 - `RunningCosts` has **no personal data** — copy as-is in the refresh (no anonymisation), but include it in `TableCopyOrder`.
 
 ### Step 2: Update schema docs

@@ -1,45 +1,54 @@
-# 0017. Stable internal Competition identifier (decouple from API league id)
+# 0017. Competitions reference table (stable competition identity)
 
-- **Status:** Superseded by [0018](./0018-competitions-reference-table.md)
+- **Status:** Accepted
 - **Date:** 2026-05-30
 - **Deciders:** Antony
-- **Tags:** technical, domain
-
-> **Superseded by [0018](./0018-competitions-reference-table.md):** the same stable-identity goal is now met with a `Competitions` **reference table** instead of an enum, to also support per-competition logos and admin-editable API IDs. The decision below is retained for history.
+- **Tags:** technical, domain, product
 
 ## Context
 
-`Season` carries an `ApiLeagueId` from the external football API (api-sports.io) used to sync fixtures. Two business rules need to match seasons to a **competition**:
+`Season` carries `ApiLeagueId` (the external fixture provider's id) and `CompetitionType` (League/Tournament). Two business rules need to match seasons to a **competition**:
 - the free-SMS early-bird reward, which applies to the **next season of the same competition** (0010), and
 - the recommended-price calculator's **comparable-season** denominator (0012).
 
-Keying these on `ApiLeagueId` couples business logic to the provider. If we **switch API provider** (or the provider renumbers a league), the identifier changes — which would **invalidate earned free-SMS entitlements** and break price comparables.
+Keying these on `ApiLeagueId` couples business logic to the provider — a provider switch or renumber would **invalidate earned free-SMS entitlements** and break price comparables. We also want **per-competition logos** and the ability to **change a provider's league id without a deploy**.
 
 ## Decision
 
-Introduce a domain **`Competition` enum** (initial values: `WorldCup`, `EnglishPremierLeague`, `EnglishChampionship`, `ChampionsLeague`, `EuropaLeague`; extend as needed) and add it to `Season`. **All business logic keys on `Competition`**, never on `ApiLeagueId`. `ApiLeagueId` is retained **only** as a provider mapping for sync at the infrastructure boundary; switching provider updates that mapping, not the `Competition`.
+Introduce a **`Competitions` reference table** (domain entity + table) as the stable, provider-independent competition identity:
+
+| Column | Role |
+|--------|------|
+| `Id` | stable internal PK — **the business key** for reward/pricing matching |
+| `Code` | stable unique slug (reference a competition in code without a magic id) |
+| `Name` | display name |
+| `LogoAsset` | **hosted** logo asset (uploaded via admin, stored and served by us) |
+| `Type` | League / Tournament — **moved from `Season.CompetitionType`** |
+| `ApiLeagueId` | provider's league id — **nullable and admin-editable** |
+
+`Season` **drops `ApiLeagueId` and `CompetitionType`** and gains **`CompetitionId`** (FK). All business rules key on `CompetitionId`; the provider id and competition type are read from the competition. The provider id is editable via an admin page.
 
 ## Consequences
 
 **For / positive**
-- Free-SMS entitlements and price comparables survive an **API-provider switch** — the core motivation.
-- Type-safe, explicit, and consistent with existing enums (`CompetitionType`).
-- Cleanly separates domain identity from third-party identifiers.
+- Stable identity survives a provider switch: `CompetitionId` never changes when an admin edits `ApiLeagueId`, so free-SMS entitlements and price comparables are safe.
+- **Per-competition logos** (hosted) + metadata; **no-deploy** API-id changes.
+- Single source of truth for both the provider id and the competition type.
 
 **Against / cost**
-- Adding a new competition needs an **enum value + deploy** (acceptable for a small, owner-controlled set).
-- Existing seasons must be **backfilled** with a `Competition` value in the migration.
+- More moving parts than a plain field (table, repository, admin CRUD, logo hosting).
+- **Refactors existing code:** migrate `Season.ApiLeagueId` into `Competitions`, **move `CompetitionType` onto `Competitions.Type`** and update every `Season.CompetitionType`/`IsTournament` reader (e.g. round-allocation/tournament logic), backfill `Season.CompetitionId`, then drop the old columns — with care around existing sync **and tournament** tests.
 
 **Neutral / notes**
-- `Competition` (specific competition) is distinct from `CompetitionType` (League vs Tournament) — they complement each other.
-- The reward's "same competition" check and the calculator's comparable-season lookup both use `Competition`.
+- `Code` lets code reference a specific competition without a magic DB id.
+- Logos are **hosted assets** (admin upload), not external URLs; the exact store (DB blob vs persistent folder vs object storage) is an implementation detail to confirm given Fasthosts hosting.
 
 ## Alternatives considered
 
-- **Key on `ApiLeagueId`** — rejected; provider coupling is the very problem being solved.
-- **Key on `CompetitionType`** — rejected; too coarse (all leagues collapse into one).
-- **`Competitions` reference table now** — deferred; the enum is simpler and sufficient. Migrate to a table later if admin-managed competitions or per-competition metadata (logos, default scoring) are needed.
+- **`Competition` enum** — considered earlier in planning; rejected because it can't hold logos/metadata or be edited without a deploy. (Recorded here as an alternative rather than a separate superseded ADR, since the enum was never an established decision — see the supersede policy in the README.)
+- **Keep `ApiLeagueId`/`CompetitionType` on `Season`** — rejected; provider coupling and a split source of truth.
+- **External logo URLs** — rejected; we want hosted assets we control.
 
 ## Related
 
-- 0010, 0012; `Season`, `season-passes/06-domain-season-pass.md`, `07-database-migration.md`, `13-sms-earned-upgrade.md`, `15-configurable-prices-and-calculator.md`
+- 0010, 0012; `season-passes/06-domain-season-pass.md`, `07-database-migration.md`, `13-sms-earned-upgrade.md`, `15-configurable-prices-and-calculator.md`, `16-competitions-management.md`

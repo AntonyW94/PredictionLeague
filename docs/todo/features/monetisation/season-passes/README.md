@@ -146,7 +146,7 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 | 13 | [SMS early-bird reward](./13-sms-earned-upgrade.md) | Self-funding free SMS upgrade next season (2nd paid season on) | Code (follow-on) |
 | 14 | [Admin running costs](./14-admin-running-costs.md) | Page to record annual costs, renewal dates, payer status | Code |
 | 15 | [Configurable prices & calculator](./15-configurable-prices-and-calculator.md) | Per-season admin prices + recommended-price calculator | Code |
-| 16 | [Competitions management](./16-competitions-management.md) | `Competitions` table (logos + admin API id); `Season` → `CompetitionId`, drop `ApiLeagueId` | Code |
+| 16 | [Competitions management](./16-competitions-management.md) | `Competitions` table (hosted logo, `Type`, admin API id); `Season` → `CompetitionId`, drop `ApiLeagueId` + `CompetitionType` | Code |
 
 ## Dependencies
 
@@ -177,7 +177,7 @@ These were decided this session (see `docs/decisions/`):
 - **Running-cost data** → store **cost type, price, start/end dates** for flexible future apportionment (ADR 0012, Task 14).
 - **Trial + SMS** → trial comps **Entry only**; user may **pay the SMS uplift** on top (ADR 0006).
 - **Pause-SMS toggle** → **build now** (in scope), not deferred (ADR 0009).
-- **Comparable season / "same competition"** = matched on `Season.CompetitionId`, a FK to a new **`Competitions` reference table** (ADR 0018; supersedes the enum in 0017), **not** `ApiLeagueId`. The table carries **logos** and an **admin-editable API league id**; `Season` **drops `ApiLeagueId`** and the sync resolves it from the competition (Task 16). Switching fixture provider is a no-deploy admin edit that never invalidates free-SMS entitlements or price comparables.
+- **Comparable season / "same competition"** = matched on `Season.CompetitionId`, a FK to a new **`Competitions` reference table** (ADR 0017), **not** `ApiLeagueId`. The table carries a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id**; `Season` **drops `ApiLeagueId` and `CompetitionType`** and the sync/type resolve from the competition (Task 16). Switching fixture provider is a no-deploy admin edit that never invalidates free-SMS entitlements or price comparables.
 
 ## Open Questions
 
