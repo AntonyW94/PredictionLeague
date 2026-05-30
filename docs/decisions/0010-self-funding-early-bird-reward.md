@@ -1,6 +1,6 @@
 # 0010. Self-funding, profit-based early-bird SMS reward
 
-- **Status:** Accepted (some parameters open)
+- **Status:** Accepted
 - **Date:** 2026-05-30
 - **Deciders:** Antony
 - **Tags:** product, financial
@@ -11,15 +11,16 @@ We want to reward players who get predictions in early (and so cost us few SMS) 
 
 ## Decision
 
-The reward is **profit-based and computed, not a fixed threshold**. When a user buys SMS for season **Y**, look at their most recent **paying** SMS pass **X**:
+The reward is **profit-based and computed, not a fixed threshold**, and applies **only to the next season of the same competition**. Because the next season may not exist yet when the current one runs, the worst case is assumed to be the **same length as the current (earning) season**. For a paying SMS pass **X** (same-competition, `SmsFeePaid > 0`, not yet redeemed):
 
 ```
-leftover_X  = X.SmsFeePaid − (X.SmsSentCount × price-per-message)
-worstCase_Y = roundsInSeason(Y) × finalWindowMilestones × price-per-message   # PL 38×2=76, WC 7×2=14
-eligible    = leftover_X ≥ worstCase_Y   → season Y SMS is free
+ppm         = current price per SMS message
+leftover_X  = X.SmsFeePaid − (X.SmsSentCount × ppm)
+worstCase   = X.season.rounds × finalWindowMilestones(2) × ppm   # assume next same-competition season ≈ X's length (e.g. PL 38×2=76)
+eligible    = leftover_X ≥ worstCase   → next same-competition season's SMS is free
 ```
 
-Evaluated **at purchase time** (live rate, real next-season length). A comped season pays no fee so cannot fund another free one. **Cross-competition eligibility:** a reward applies to the **next paid SMS season of any competition**, validated against that season's worst case.
+A comped season pays no fee so cannot fund another free one. **Final-window milestones = 2** (6h + 1h), per 0009.
 
 ## Consequences
 
@@ -35,13 +36,14 @@ Evaluated **at purchase time** (live rate, real next-season length). A comped se
 - Stored on `SeasonPass`: `SmsFeePaid`, `SmsSentCount`, `RewardRedeemedForSeasonId` (no new table).
 - Shown in-app as a **remaining SMS budget** to protect, not a filling bar.
 
-## Open / to confirm
+## Resolved
 
-- Cross-competition vs same-competition only (recommended: any next season).
-- Final-window milestone count (default 2).
+- **Same competition only** (not any-next-season): when a season runs, the next season may not be created yet, so eligibility is computed against the **current season's own length** as the assumption for the next same-competition season.
+- **Final-window milestones = 2** (6h + 1h).
 
 ## Alternatives considered
 
+- **Any-next-competition eligibility** — rejected; the next season's length is unknown at evaluation time, so we assume the same competition at the same length.
 - **Fixed threshold (e.g. <10)** — rejected; ignores season length and real cost.
 - **Filling "progress to free" bar** — rejected; each SMS works *against* the reward, so a depleting budget is the correct mental model.
 

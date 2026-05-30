@@ -44,18 +44,25 @@ SMS therefore **only ever fires in the final window (6h/1h)**, **only if predict
 
 - After the email step, at the **6h and 1h** milestones, additionally send an **SMS** to a user when **all** hold:
   1. they hold a `SeasonPass` with `Tier == EntryPlusSms` for the round's season,
-  2. they have a valid mobile number, and
-  3. they still haven't submitted predictions for the round.
+  2. they have **not paused** SMS for the season (`SeasonPass.SmsPaused == false`),
+  3. they have a valid mobile number, and
+  4. they still haven't submitted predictions for the round.
 - Identify eligible recipients via `IApplicationReadDbConnection` (query side), joining `SeasonPasses` to the users missing predictions for the upcoming round.
 
 ```
 # existing email path runs first, unchanged, for everyone
 
 if milestone is in final window (6h / 1h):
-    for each SMS-tier user still missing predictions with a valid phone:
+    for each SMS-tier user, not paused, still missing predictions, with a valid phone:
         send SMS via ISmsService          (short, transactional text + link)
         pass.RecordSmsSent()              (increment SeasonPass.SmsSentCount, persist via repository)
 ```
+
+### Step 4: In-app "pause SMS" toggle (in scope for v1)
+
+- Add a per-season toggle on the user's notification/account settings: **"Pause SMS reminders for this season"**, setting `SeasonPass.SmsPaused`.
+- Paused users still receive **all emails**; no refund (the SMS tier is non-refundable — ADR 0009). They can un-pause at any time.
+- This replaces inbound STOP handling (we don't do two-way SMS).
 
 - Track SMS dispatch separately so the **same SMS isn't sent twice** for the same milestone (e.g. an `SmsReminderSentUtc`/per-milestone marker), independent of the existing email `LastReminderSentUtc`.
 - SMS body ≤160 chars; transactional only (no promo) — see Task 04.

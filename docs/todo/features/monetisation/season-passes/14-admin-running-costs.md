@@ -26,33 +26,36 @@ Give the admin a page to record the website's running costs — amount, frequenc
 
 ### Step 1: Domain entity
 
+Per the owner's decision, capture **cost type, price, and start/end dates** so the cost can be apportioned/prorated **any way we may want in future** (ADR 0012):
+
 ```csharp
 public class RunningCost
 {
     public int Id { get; init; }
     public string Name { get; private set; }            // e.g. "Fasthosts hosting", "api-sports.io", "Brevo"
-    public decimal Amount { get; private set; }
-    public CostFrequency Frequency { get; private set; } // Monthly / Annual / OneOff
-    public DateTime? RenewalDateUtc { get; private set; }// next renewal / expiry
+    public decimal Amount { get; private set; }          // the price
+    public CostFrequency Frequency { get; private set; } // cost type: Monthly / Annual / OneOff
+    public DateTime StartDateUtc { get; private set; }   // when this cost (period) begins
+    public DateTime? EndDateUtc { get; private set; }    // when it ends / next renewal (null = ongoing)
     public CostPayer Payer { get; private set; }         // Business / PersonalUntilRenewal
     public string? Notes { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
-    public decimal AnnualisedAmount => Frequency switch    // helper for the calculator
+    public decimal AnnualisedAmount => Frequency switch    // convenience for the calculator
     {
         CostFrequency.Monthly => Amount * 12,
         CostFrequency.Annual  => Amount,
-        _                     => Amount                     // OneOff handled by horizon logic in Task 15
+        _                     => Amount                     // OneOff handled by date/horizon logic in Task 15
     };
 
-    // Business bears this cost on/after the given date
+    // Business bears this cost on/after the given date (personal costs move to the business at EndDate/renewal)
     public bool IsBusinessBorneOn(DateTime dateUtc)
         => Payer == CostPayer.Business
-           || (RenewalDateUtc.HasValue && RenewalDateUtc.Value <= dateUtc);
+           || (EndDateUtc.HasValue && EndDateUtc.Value <= dateUtc);
 }
 ```
 
-Factory + validation (name not blank, amount ≥ 0, renewal required when `PersonalUntilRenewal`). `IDateTimeProvider` for `CreatedAtUtc`.
+Storing **start + end dates** (not just a single renewal date) lets the calculator prorate by date-overlap with a season later, while the simple `AnnualisedAmount`/`IsBusinessBorneOn` helpers serve the current approach. Factory + validation (name not blank, amount ≥ 0, `StartDateUtc` set, `EndDateUtc` ≥ `StartDateUtc` when present). `IDateTimeProvider` for `CreatedAtUtc`.
 
 ### Step 2: Admin CRUD page
 

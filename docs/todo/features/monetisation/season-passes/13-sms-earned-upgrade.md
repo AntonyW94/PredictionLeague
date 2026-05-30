@@ -14,25 +14,25 @@
 
 Reward early submitters with a **free SMS upgrade** for their next paid season — but only when it's **provably profitable**: the leftover from the SMS fee they already paid must cover the *worst case* cost of the next season's SMS.
 
-## The Rule (profit-based — no hardcoded threshold)
+## The Rule (profit-based, same-competition, same-length assumption)
 
-For a user buying a pass for season **Y**, look at their most recent **paying** SMS-tier pass **X** (`SmsFeePaid > 0`, not already redeemed):
+A reward applies **only to the next season of the same competition**. Because that next season may not exist yet when the current one runs, the worst case **assumes it's the same length as the current (earning) season X**. For a user's most recent **paying** SMS pass **X** in that competition (`SmsFeePaid > 0`, not already redeemed):
 
 ```
-ppm              = current price per SMS message (from RunningCosts / Brevo rate, Task 04/14)
-leftover_X       = X.SmsFeePaid - (X.SmsSentCount * ppm)        # profit retained on pass X
-worstCase_Y      = roundsInSeason(Y) * finalWindowMilestones * ppm   # e.g. PL 38*2=76, WC 7*2=14 texts
-eligible         = leftover_X >= worstCase_Y
+ppm          = current price per SMS message (from RunningCosts / Brevo rate, Task 04/14)
+leftover_X   = X.SmsFeePaid - (X.SmsSentCount * ppm)              # profit retained on pass X
+worstCase    = X.season.rounds * finalWindowMilestones(2) * ppm  # assume next same-comp season ≈ X's length (PL 38*2=76)
+eligible     = leftover_X >= worstCase
 ```
 
-If `eligible`, season Y's SMS tier is **free** (comped uplift); stamp pass X via `MarkRewardRedeemed(Y)` so its leftover can't be reused.
+If `eligible`, the **next same-competition season's** SMS tier is **free** (comped uplift); stamp pass X via `MarkRewardRedeemed(nextSeasonId)` so its leftover can't be reused.
 
-- The qualifying "allowance" (`X.SmsFeePaid / ppm - worstCase_messages_Y`) is therefore **computed**, and **varies by next-season length and the live per-message rate** — never a hardcoded 10.
-- A **comped** season has `SmsFeePaid = 0`, so it can't fund another free season — a *paying* low-usage season earns the *next* one free (at most every-other-season free).
+- The qualifying allowance is **computed** and **varies by season length and the live per-message rate** — never a hardcoded 10.
+- A **comped** season has `SmsFeePaid = 0`, so it can't fund another free season — a *paying* low-usage season earns the *next same-competition* one free (at most every-other-season free).
 
-## Cross-Competition Eligibility (decision)
+## Why same-competition + current-length (decision — ADR 0010)
 
-**Recommended:** a reward applies to the **next paid SMS season of any competition**, because eligibility is validated against **that season's** worst case. This is uniform and always profitable — a short season's leftover simply won't clear a long season's worst case, so short→long rarely qualifies, while long→short often will. (In practice World Cup is free, so it won't generate rewards; this mainly matters for future seasons.) See README open question if you'd prefer to restrict to the same competition.
+When a season runs, the next season often isn't created yet, so we can't read its real length. Restricting the reward to the **same competition** and assuming it's the **same length as the current season** lets us evaluate fairly with data we already have (X's own length, which is stable year-on-year for a given competition). A reward earned in one competition is **not** transferable to a different competition.
 
 ## Files to Modify
 
@@ -49,7 +49,7 @@ If `eligible`, season Y's SMS tier is **free** (comped uplift); stamp pass X via
 ### Step 1: Eligibility service
 
 - `SmsRewardService.EvaluateAsync(userId, seasonY)` returns `{ IsFree, FundingPassId, LeftoverGbp, WorstCaseGbp }`.
-- Inputs from query side (`IApplicationReadDbConnection`): the user's most recent paying, unredeemed SMS pass; that pass's `SmsFeePaid` and `SmsSentCount`; `roundsInSeason(Y)`; `ppm`.
+- Inputs from query side (`IApplicationReadDbConnection`): the user's most recent paying, unredeemed SMS pass **in the same competition as Y**; that pass's `SmsFeePaid`, `SmsSentCount`, and **its own season's `rounds`** (used as the same-length assumption); `ppm`. Do **not** read Y's length (it may not exist yet).
 
 ### Step 2: Apply at purchase (ties into Task 09)
 
@@ -78,7 +78,8 @@ All on `SeasonPass` (Tasks 06–07):
 - [ ] Leftover < worst case → user pays the normal uplift.
 - [ ] Comped pass (`SmsFeePaid = 0`) never earns a further free season.
 - [ ] A funding pass is used at most once (redeemed flag enforced).
-- [ ] Eligibility recomputes correctly for a longer vs shorter next season.
+- [ ] A reward earned in one competition is **not** offered when buying a different competition.
+- [ ] Worst case uses the **earning season's** length (same-length assumption), not a not-yet-existing next season.
 - [ ] Domain coverage stays 100%.
 
 ## Edge Cases to Consider

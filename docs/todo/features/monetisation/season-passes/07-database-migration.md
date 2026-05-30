@@ -42,6 +42,7 @@ CREATE TABLE [SeasonPasses] (
     [CreatedAtUtc]             DATETIME2 NOT NULL,
     [SmsSentCount]             INT NOT NULL DEFAULT (0),    -- SMS reminders sent this season (powers reward)
     [RewardRedeemedForSeasonId] INT NULL,                  -- set when this pass's leftover funded a later free SMS season
+    [SmsPaused]                BIT NOT NULL DEFAULT (0),    -- user paused their SMS for this season (in-app toggle)
     CONSTRAINT [FK_SeasonPasses_Seasons] FOREIGN KEY ([SeasonId]) REFERENCES [Seasons]([Id]),
     CONSTRAINT [FK_SeasonPasses_Users]   FOREIGN KEY ([UserId])   REFERENCES [AspNetUsers]([Id])
 );
@@ -50,9 +51,10 @@ CREATE UNIQUE INDEX [UX_SeasonPasses_User_Season] ON [SeasonPasses]([UserId], [S
 CREATE TABLE [RunningCosts] (
     [Id]            INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
     [Name]          NVARCHAR(200) NOT NULL,
-    [Amount]        DECIMAL(10,2) NOT NULL,
-    [Frequency]     INT NOT NULL,                 -- 0 Monthly, 1 Annual, 2 OneOff
-    [RenewalDateUtc] DATETIME2 NULL,              -- next renewal / expiry
+    [Amount]        DECIMAL(10,2) NOT NULL,        -- the price
+    [Frequency]     INT NOT NULL,                 -- cost type: 0 Monthly, 1 Annual, 2 OneOff
+    [StartDateUtc]  DATETIME2 NOT NULL,           -- when this cost (period) begins
+    [EndDateUtc]    DATETIME2 NULL,               -- end / next renewal (null = ongoing)
     [Payer]         INT NOT NULL,                 -- 0 Business, 1 PersonalUntilRenewal
     [Notes]         NVARCHAR(500) NULL,
     [CreatedAtUtc]  DATETIME2 NOT NULL

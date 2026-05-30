@@ -13,8 +13,8 @@ How and when to send the paid SMS, and what compliance is needed. UK rules (PECR
 
 - **SMS is additive:** everyone keeps **all** email reminders at every milestone; SMS-tier holders get an **extra** text **only at the final window (6h and 1h)** and **only if they still haven't submitted**.
 - SMS content is **strictly transactional** (deadline only, no promo).
-- **No inbound STOP** keyword handling; an optional **in-app "pause SMS" toggle** may be offered as goodwill.
-- The SMS tier is **non-refundable**; disabling reminders does not trigger a refund.
+- **No inbound STOP** keyword handling; instead we **build an in-app "pause SMS" toggle** so SMS-tier holders can switch their texts off for the season.
+- The SMS tier is **non-refundable**; pausing/disabling reminders does not trigger a refund.
 
 ## Consequences
 
@@ -28,7 +28,8 @@ How and when to send the paid SMS, and what compliance is needed. UK rules (PECR
 - Must keep message content disciplined (any promo line would flip it to marketing and require opt-out).
 
 **Neutral / notes**
-- Number of final-window milestones (default 2: 6h + 1h) is configurable.
+- Final-window milestones = **2** (6h + 1h); configurable.
+- The in-app pause toggle is **in scope for v1** (built now), not deferred.
 
 ## Alternatives considered
 

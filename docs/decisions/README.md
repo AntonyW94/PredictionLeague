@@ -38,11 +38,10 @@ Add a record when a decision is **hard to reverse, cross-cutting, or expensive t
 | [0007](./0007-world-cup-free-future-seasons-paid.md) | World Cup free; later seasons paid | Accepted | product, business, financial | WC costs are personal/sunk (never booked to business) → free; future seasons paid. |
 | [0008](./0008-sms-as-a-season-pass-tier.md) | SMS as a season-pass tier | Accepted | product | Two products (Entry / Entry + SMS), one entitlement with an SMS flag. |
 | [0009](./0009-sms-additive-transactional-no-stop.md) | SMS additive & transactional | Accepted | product, legal | SMS is extra (emails kept), final-window only, transactional, no inbound STOP, non-refundable. |
-| [0010](./0010-self-funding-early-bird-reward.md) | Self-funding early-bird reward | Accepted* | product, financial | Free next-season SMS only when leftover fee covers that season's worst-case cost. |
+| [0010](./0010-self-funding-early-bird-reward.md) | Self-funding early-bird reward | Accepted | product, financial | Free next same-competition SMS season only when leftover fee covers that season's worst-case cost. |
 | [0011](./0011-admin-configurable-season-pricing.md) | Admin-configurable pricing | Accepted | product, technical | Per-season Entry/SMS prices in DB, charged via dynamic Stripe amounts. |
-| [0012](./0012-recommended-price-calculator.md) | Recommended-price calculator | Accepted* | business, financial, product | Costs +15% buffer, length-weighted, break-even at last comparable season's players. |
+| [0012](./0012-recommended-price-calculator.md) | Recommended-price calculator | Accepted | business, financial, product | Editable pre-filled suggestion: costs +15% buffer, length-weighted, break-even at last comparable season's players, min floor. |
 | [0013](./0013-no-pay-to-win.md) | No pay-to-win monetisation | Accepted | product | Never sell competitive advantage; paid features are convenience/cosmetic only. |
 | [0014](./0014-stripe-as-payment-processor.md) | Stripe payment processor | Accepted / Deferred | technical, business, legal | Stripe Checkout + wallets now; direct-charges Connect for future entry-fee routing. |
 | [0015](./0015-defer-season-challenges.md) | Defer Season Challenges | Deferred | product | Badges/challenges parked as a separate future feature (cosmetic only). |
-
-`*` = accepted with some parameters still open (see the record).
+| [0016](./0016-seed-business-with-owner-capital.md) | Seed business with owner's capital | Accepted | business, financial | Float initial costs from personal money (capital introduced), repay via drawings once income covers them. |

@@ -30,7 +30,8 @@ Build the Blazor Season Pass purchase page from the mockup: two tiers (Entry / E
 ### Step 2: Page UI (match mockup)
 
 - Two cards: **Season Entry** and **Season Entry + SMS** ("Best value" badge), feature lists, prices, CTA buttons.
-- If **trial-eligible**: replace prices with a "Your first season is on us — join free" state and a single CTA that proceeds without payment.
+- If **trial-eligible**: show a "Your first season is on us — join free" state. The **Entry** CTA proceeds free without payment; an optional **"add SMS for £{uplift}"** choice routes through Checkout for the uplift only (creates a `CreateTrialWithSms` pass).
+- If **reward-eligible** (Task 13): offer Entry + SMS at the Entry price with a "you earned free SMS" message.
 - Follow Web.Client `CLAUDE.md`: state-service + `OnStateChange`/`IDisposable`, design tokens, **mobile-first `min-width`** media queries, verify **light + dark** mode.
 
 ### Step 3: Redirect entry points

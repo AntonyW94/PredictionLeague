@@ -11,7 +11,7 @@ Whole-site gating (0005) removes the casual free on-ramp in paid seasons. We nee
 
 ## Decision
 
-Every user who has **never participated before** (no approved league membership in any season and no prior pass) is **auto-granted a one-time free Entry-tier Season Pass** the first time they try to take part in a pass-required season. The trial is **once per user, lifetime, Entry tier only** (no free SMS). Participating in a free season (e.g. World Cup) counts as participation and therefore consumes "new player" status.
+Every user who has **never participated before** (no approved league membership in any season and no prior pass) is **auto-granted a one-time free Entry-tier Season Pass** the first time they try to take part in a pass-required season. The **Entry portion is free**; if the new user wants SMS, they may **pay just the SMS uplift** on top of the free trial (so they're not denied SMS, but the trial only comps Entry). The trial is **once per user, lifetime**. Participating in a free season (e.g. World Cup) counts as participation and therefore consumes "new player" status.
 
 ## Consequences
 
@@ -29,6 +29,8 @@ Every user who has **never participated before** (no approved league membership 
 
 ## Alternatives considered
 
+- **Trial includes free SMS** — rejected; SMS has a real per-message cost, so the trial comps Entry only and the user pays the uplift if they want texts.
+- **Trial is Entry-only with no SMS option** — rejected; we don't want to block a keen new user from SMS, just from getting it free.
 - **Discount instead of free** — rejected; a free first season is a stronger, simpler hook.
 - **No trial** — rejected; too much signup friction given 0005.
 

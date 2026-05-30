@@ -56,6 +56,8 @@ Prices are **not hardcoded**. Each pass-required season stores an admin-set **En
 - **Business-borne costs only:** costs still paid from the owner's **personal** account are **excluded until their renewal date**, when they move to the business and enter the calculation. (Owner migrates each cost to the business bank as it renews.)
 - **Free seasons:** World Cup 2026 is `RequiresPass = false`, run at a **deliberate one-off loss**. **After it, all seasons are paid**, so no ongoing free-season subsidy logic is needed.
 - Entry recommendation is grossed up for **Stripe fees**; the **SMS uplift** reflects expected SMS cost per SMS-user over the season (Task 04 rate) + buffer.
+- **Always an editable, pre-filled info box** on the create-season page — never enforced. If there's **no comparable prior season** to derive player numbers, leave it **blank with explanatory wording**. Apply a **small minimum floor** (covers Stripe fees + a little), still editable below.
+- Running costs are stored with **cost type, price, and start/end dates** so apportionment/proration can be done any way in future (Task 14).
 
 | Season | Pass required? | Price |
 |--------|----------------|-------|
@@ -85,7 +87,7 @@ Otherwise → **block, redirect to purchase page.**
 | Trial user joins a 2nd PL league the same season | Branch 2 (pass exists) → allowed, **no second charge** ✓ |
 | Trial user the following paid season | Has pass + membership history → **must purchase** ✓ |
 
-Trial is **once per user, lifetime**, **Entry tier only** (no free SMS).
+Trial is **once per user, lifetime**. The **Entry portion is free**; a trial user who wants SMS may **pay just the SMS uplift** on top (the trial only comps Entry).
 
 ## SMS Reminder Behaviour & Early-Bird Reward
 
@@ -102,11 +104,11 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 
 **Reward rule (profit-based — the "10" is computed, not hardcoded):** the SMS fee a user pays must first cover the texts actually sent to them (`SmsSentCount × price-per-message`). If enough of that fee is **left over to cover the worst case of the season they buy next** — `rounds × final-window-milestones × price-per-message` (e.g. PL 38 × 2 = **76** possible texts, World Cup 7 × 2 = **14**) — then their **next SMS season is free**. The qualifying allowance **varies with season length and the live per-message rate**, and is only known once actual costs are entered.
 
-- Evaluated **at the point of the next purchase** (not precomputed), so it uses the next season's real length and the current per-message rate.
-- A free (comped) season pays no fee, so it **cannot itself fund another free season** — in practice a *paying* low-usage season earns the *next* one free.
+- **Same competition only**, and because the next season may not exist yet, the worst case **assumes the next same-competition season is the same length as the current one** (uses the earning season's `rounds × 2`).
+- Evaluated against the **current per-message rate**; a free (comped) season pays no fee, so it **cannot itself fund another free season** — a *paying* low-usage season earns the *next same-competition* one free.
 - In-app, SMS-tier holders see their **remaining SMS budget** (`fee − texts used × rate`) — a budget to protect by getting predictions in early, not a bar to fill.
 
-> Begins from the **second** paid season onward (no reward on PL 2026/27). Cross-competition eligibility and storage are detailed in [Task 13](./13-sms-earned-upgrade.md).
+> Begins from the **second** paid season of a competition onward (no reward on PL 2026/27). Storage and the same-competition rule are detailed in [Task 13](./13-sms-earned-upgrade.md).
 
 ## Acceptance Criteria
 
@@ -164,13 +166,19 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 
 - **[Season Challenges (badges)](../season-challenges/)** — earnable, show-off badges tied to a season pass (e.g. "Early Bird", "Perfect Round"). Separate follow-up; relates to `user-experience/achievements-badges`.
 
+## Resolved Decisions
+
+These were decided this session (see `docs/decisions/`):
+
+- **Reward eligibility** → **same competition only**, worst case assumes the next same-competition season ≈ the current one's length (ADR 0010).
+- **Final-window milestones** → **2** (6h + 1h) for both reminders and reward maths (ADR 0009).
+- **Recommended price** → always an **editable, pre-filled info box**; **blank + explanatory wording** when no comparable prior season; **small minimum floor** (ADR 0012).
+- **Running-cost data** → store **cost type, price, start/end dates** for flexible future apportionment (ADR 0012, Task 14).
+- **Trial + SMS** → trial comps **Entry only**; user may **pay the SMS uplift** on top (ADR 0006).
+- **Pause-SMS toggle** → **build now** (in scope), not deferred (ADR 0009).
+- **Comparable season** = same competition (same `ApiLeagueId`, else `CompetitionType`).
+
 ## Open Questions
 
-- [ ] **Cross-competition reward eligibility** — should a reward earned in one competition apply to the *next paid season of any competition* (validated against that season's length — recommended, uniform), or only the *same* competition? (World Cup is free so won't generate rewards in practice; mostly affects future short↔long seasons.)
-- [ ] **"Comparable season" matching** for the expected-players denominator — same `ApiLeagueId` if set, else same `CompetitionType`? Behaviour when there is no prior comparable season (fall back to manual price).
-- [ ] **Cost proration** — when a cost renews part-way through the pricing horizon, prorate it or include the full annual amount?
-- [ ] **Reward display** — show remaining SMS budget as £ or as a message count; where it appears (dashboard / pass page).
-- [ ] Should trial-eligible users be allowed to *upgrade* their free Entry trial to SMS? (Default: no, keep trial Entry-only for v1.)
-- [ ] Add an in-app "pause SMS reminders" toggle now or defer? (Goodwill only; not required.)
-- [ ] Number of final-window milestones for both reminders and the reward maths — default **2** (6h + 1h); confirm.
-- [ ] How to model a comped reward upgrade on the pass — `Source = RewardUpgrade`, or an `SmsFeePaid = 0` flag (Task 13 uses `SmsFeePaid` + `RewardRedeemedForSeasonId`).
+- [ ] **Reward display detail** — show remaining SMS budget as £ or as a message count, and where it appears (dashboard / pass page).
+- [ ] Whether to add a distinct `SeasonPassSource.RewardUpgrade` value, or keep the `SmsFeePaid = 0` + `RewardRedeemedForSeasonId` modelling (Task 13's default).

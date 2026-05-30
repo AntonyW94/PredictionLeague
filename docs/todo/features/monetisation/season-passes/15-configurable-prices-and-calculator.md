@@ -46,7 +46,9 @@ Result surfaced as *"Recommended: £X Entry · £Y +SMS (breaks even at ~N playe
 
 ### Step 3: Season create/edit UI
 
-- Show the recommendation inline with a breakdown (apportioned costs, buffer, expected players, fees) so the figure is explainable.
+- The recommendation is **always just an editable, pre-filled info box** with a breakdown (apportioned costs, buffer, expected players, fees) so the figure is explainable — never enforced.
+- **No comparable prior season → leave the price blank with explanatory wording** (e.g. "Not enough history to suggest a price yet — set one manually"); the field stays editable.
+- Apply a **small minimum floor** (covers Stripe fees + a little) to the suggestion; the admin can still type a lower value.
 - Editable Entry / Entry + SMS fields, defaulted to the recommendation, saved on the season.
 
 ## Verification
@@ -60,9 +62,10 @@ Result surfaced as *"Recommended: £X Entry · £Y +SMS (breaks even at ~N playe
 
 ## Edge Cases to Consider
 
-- **No prior comparable season** (first ever of a competition): can't derive expected players → show a note and require a manual price.
-- Cost renewing part-way through the horizon → prorate vs full annual (README open question; default: include full annual if business-borne at season start).
-- Very small expected-player counts → consider a sensible minimum so the price isn't absurd.
+- **No prior comparable season** (first ever of a competition): leave the suggestion **blank with explanatory wording**; the field is editable so the admin just types a price.
+- **Cost proration:** running costs store **start/end dates** (Task 14), so the calculator *can* prorate by date-overlap in future; for now include the cost when it's business-borne during the season.
+- **Minimum floor** applied so high player counts don't produce an absurdly tiny suggestion.
+- "Comparable season" = same competition (same `ApiLeagueId`, else `CompetitionType`).
 
 ## Notes
 

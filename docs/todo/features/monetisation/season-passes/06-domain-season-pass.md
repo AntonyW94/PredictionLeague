@@ -52,8 +52,10 @@ public class SeasonPass
     public DateTime CreatedAtUtc { get; private set; }
     public int SmsSentCount { get; private set; }          // SMS reminders sent to this user this season
     public int? RewardRedeemedForSeasonId { get; private set; }  // set when this pass's leftover funded a later free SMS season
+    public bool SmsPaused { get; private set; }            // user paused their SMS for this season (in-app toggle)
 
     public bool HasSmsReminders => Tier == SeasonPassTier.EntryPlusSms;
+    public bool ShouldSendSms => HasSmsReminders && !SmsPaused;
 
     public void RecordSmsSent()                            // called when an SMS reminder is sent
     {
@@ -64,6 +66,9 @@ public class SeasonPass
     {
         RewardRedeemedForSeasonId = redeemedForSeasonId;
     }
+
+    public void PauseSms()  => SmsPaused = true;   // in-app toggle (no refund)
+    public void ResumeSms() => SmsPaused = false;
 
     private SeasonPass() { }              // ORM — [ExcludeFromCodeCoverage]
 
@@ -78,7 +83,11 @@ public class SeasonPass
     public static SeasonPass CreateRewardUpgrade(int userId, int seasonId,
         decimal amountPaid, string stripePaymentReference, IDateTimeProvider dateTimeProvider) { /* EntryPlusSms, smsFeePaid 0 */ }
 
+    // Free first-season trial: Entry comped. Optionally the user pays the SMS uplift on top.
     public static SeasonPass CreateTrial(int userId, int seasonId, IDateTimeProvider dateTimeProvider) { /* Entry tier, 0.00, Trial */ }
+
+    public static SeasonPass CreateTrialWithSms(int userId, int seasonId, decimal smsFeePaid,
+        string stripePaymentReference, IDateTimeProvider dateTimeProvider) { /* Source Trial, EntryPlusSms, AmountPaid = smsFeePaid (Entry comped) */ }
 }
 ```
 
@@ -94,7 +103,7 @@ Mirror `Season.cs` / `League.cs`: private parameterless ctor for ORM (`[ExcludeF
 ## Verification
 
 - [ ] Builds clean.
-- [ ] Unit tests cover all factories (`CreatePurchased`, `CreateRewardUpgrade`, `CreateTrial`), `HasSmsReminders`, `RecordSmsSent()`, `MarkRewardRedeemed()`, the `Season` price validation, and every guard branch.
+- [ ] Unit tests cover all factories (`CreatePurchased`, `CreateRewardUpgrade`, `CreateTrial`, `CreateTrialWithSms`), `HasSmsReminders`, `ShouldSendSms`, `RecordSmsSent()`, `MarkRewardRedeemed()`, `PauseSms()/ResumeSms()`, the `Season` price validation, and every guard branch.
 - [ ] `coverage-unit.bat` shows **100% line + branch** on Domain.
 
 ## Edge Cases to Consider

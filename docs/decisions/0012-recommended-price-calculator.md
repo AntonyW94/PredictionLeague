@@ -1,6 +1,6 @@
 # 0012. Recommended-price calculator rules
 
-- **Status:** Accepted (some parameters open)
+- **Status:** Accepted
 - **Date:** 2026-05-30
 - **Deciders:** Antony
 - **Tags:** business, financial, product
@@ -19,7 +19,9 @@ For a season being priced:
 4. **Denominator = expected players = distinct participant count of the last completed season of the same competition** → recommend a price that **breaks even at roughly last season's player numbers**.
 5. **Gross up for Stripe fees**; SMS uplift = expected SMS cost per SMS-user × buffer, grossed up.
 
-The result is a suggestion only; the admin can override.
+The result is **always just an editable, pre-filled info box** on the create-season page — never enforced. A **small minimum floor** (at least covering Stripe fees + a little) prevents silly tiny suggestions; the admin can still edit below it.
+
+Running costs are stored with enough detail to apportion **any way we may want in future**: **cost type, price, and start/end dates** (so proration by date-overlap is possible later). For now, when a cost is business-borne during the season it counts.
 
 ## Consequences
 
@@ -33,11 +35,12 @@ The result is a suggestion only; the admin can override.
 **Neutral / notes**
 - World Cup / free seasons are excluded (run at deliberate loss with no business cost to recover — 0007).
 
-## Open / to confirm
+## Resolved
 
-- "Comparable season" matching (same `ApiLeagueId`, else `CompetitionType`); behaviour when none exists (fall back to manual).
-- Cost proration when a cost renews mid-horizon (default: include full annual if business-borne at season start).
-- Minimum price floor for tiny player counts.
+- **No comparable prior season:** leave the suggestion **blank with explanatory wording**; the field is always editable, so the admin just types a price.
+- **Proration:** store cost type + price + **start/end dates** so we can prorate by overlap in future; for now count a cost when business-borne during the season.
+- **Minimum floor:** yes — never suggest below a small floor (covers Stripe fees + a little), still editable.
+- **Comparable season** = same competition (same `ApiLeagueId`, else `CompetitionType`).
 
 ## Alternatives considered
 
