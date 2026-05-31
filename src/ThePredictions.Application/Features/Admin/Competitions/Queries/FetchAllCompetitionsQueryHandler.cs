@@ -16,6 +16,7 @@ public class FetchAllCompetitionsQueryHandler(IApplicationReadDbConnection dbCon
                 c.[Name],
                 c.[Type],
                 c.[LogoUrl],
+                c.[Description],
                 c.[ApiLeagueId],
                 (SELECT COUNT(*) FROM [Seasons] s WHERE s.[CompetitionId] = c.[Id]) AS SeasonCount
             FROM

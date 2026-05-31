@@ -1,0 +1,87 @@
+/* Dashboard prompt strip - reusable call-to-action banners shown above the dashboard
+   (above the tabs on mobile, above the tile grid on desktop). Condition-driven. */
+
+.dashboard-prompts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.dashboard-prompt {
+    display: flex;
+    flex-direction: column;            /* mobile: message row on top, action centred below */
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    border-left: 4px solid var(--green-600);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 2px 8px var(--black-alpha-15);
+}
+
+.dashboard-prompt__body {
+    display: flex;
+    align-items: center;               /* icon inline with the text */
+    gap: var(--space-3);
+}
+
+.dashboard-prompt__icon {
+    flex-shrink: 0;
+    font-size: 1.25rem;
+    color: var(--green-600);
+}
+
+.dashboard-prompt__message {
+    color: var(--text-primary, var(--purple-800));
+    font-weight: 600;
+}
+
+.dashboard-prompt__highlight {
+    font-weight: 800;
+    color: var(--green-600);
+}
+
+.dashboard-prompt__action {
+    align-self: center;                /* mobile: centred button */
+    display: inline-block;
+    padding: var(--space-2) var(--space-5);
+    background: var(--green-600);
+    color: var(--white);
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: var(--bs-border-radius);
+    white-space: nowrap;
+}
+
+.dashboard-prompt__action:hover {
+    filter: brightness(0.95);
+    color: var(--white);
+}
+
+/* Tablet+: single row, message fills, action pinned to the right */
+@media (min-width: 576px) {
+    .dashboard-prompt {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .dashboard-prompt__body {
+        flex: 1 1 auto;
+    }
+
+    .dashboard-prompt__action {
+        align-self: auto;
+    }
+}
+
+/* Dark mode */
+.theme-dark .dashboard-prompt {
+    background: var(--purple-800);
+    border-color: var(--purple-600);
+    border-left-color: var(--green-600);
+}
+
+.theme-dark .dashboard-prompt__message {
+    color: var(--white);
+}

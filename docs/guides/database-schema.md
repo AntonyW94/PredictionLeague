@@ -50,6 +50,7 @@ Reference data for a competition: the stable, provider-independent identity that
 | Name | nvarchar(200) | NO | | Competition name (e.g., "Premier League") |
 | Type | int | NO | | Type of competition (0 = League, 1 = Tournament) |
 | LogoUrl | nvarchar(500) | YES | | External logo URL (admin-entered) |
+| Description | nvarchar(max) | YES | | Admin-entered format/rules blurb shown on the Season Pass acquire page |
 | ApiLeagueId | int | YES | | External API league identifier (admin-editable) |
 | CreatedAtUtc | datetime2 | NO | | When the competition was created |
 
@@ -110,6 +111,22 @@ One record per user per season they take part in. A row is written for **every**
 - FK: `UserId` → `AspNetUsers(Id)` (`FK_SeasonPasses_AspNetUsers`)
 - FK: `SeasonId` → `Seasons(Id)` (`FK_SeasonPasses_Seasons`)
 - FK: `RewardRedeemedForSeasonId` → `Seasons(Id)` (`FK_SeasonPasses_Seasons_Reward`)
+
+---
+
+### UserOnboardingSkips
+
+Records which onboarding-checklist steps a user has skipped (or had skipped in bulk via "Dismiss"). The steps themselves are defined in code (`OnboardingStepRegistry`) and their completion is derived live from data - this table only stores skips, keyed by the stable string step key. A new step added in code is shown to everyone automatically (no row here, completion derived); nothing about the step set lives in the DB.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers |
+| StepKey | nvarchar(100) | NO | | Stable onboarding step key (e.g. `add-mobile`) |
+| SkippedAtUtc | datetime2 | NO | | When the step was skipped |
+
+**Constraints:**
+- PK: `(UserId, StepKey)`
+- FK: `UserId` → `AspNetUsers(Id)` (`FK_UserOnboardingSkips_AspNetUsers`)
 
 ---
 

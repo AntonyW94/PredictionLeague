@@ -9,4 +9,5 @@ public record CreateCompetitionCommand(
     string Name,
     CompetitionType Type,
     string? LogoUrl,
+    string? Description,
     int? ApiLeagueId) : IRequest<CompetitionDto>;

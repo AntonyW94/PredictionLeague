@@ -12,24 +12,24 @@
 <AuthorizeView>
     <Authorized>
         <div class="page-container">
-            <div class="form-container">
-                <h3 class="text-center fw-bold text-white mb-4">My Details</h3>
-
-                @if (_isLoading)
-                {
-                    <p class="text-center text-white"><em>Loading your details...</em></p>
-                }
-                else if (_model != null)
-                {
-                    <BaseFormComponent TModel="UserDetailsViewModel"
-                                       Model = "_model"
-                                       SubmitAction="HandleUpdateDetailsAsync"
-                                       SuccessRedirectUrl="/dashboard"
-                                       BackUrl="/dashboard"
-                                       SuccessAlertMessage="Your details have been successfully updated"
-                                       ErrorAlertMessage="There was an error updating your details."
-                                       BusyText="Saving...">
-                        <ChildContent>
+            @if (_isLoading)
+            {
+                <p class="text-center text-white"><em>Loading your details...</em></p>
+            }
+            else if (_model != null)
+            {
+                <BaseFormComponent TModel="UserDetailsViewModel"
+                                   Model = "_model"
+                                   SubmitAction="HandleUpdateDetailsAsync"
+                                   SuccessRedirectUrl="/dashboard"
+                                   BackUrl="/dashboard"
+                                   SuccessAlertMessage="Your details have been successfully updated"
+                                   ErrorAlertMessage="There was an error updating your details."
+                                   BusyText="Saving...">
+                    <Header>
+                        <h3 class="text-center fw-bold text-white mb-4">My Details</h3>
+                    </Header>
+                    <ChildContent>
                             <div class="mb-3">
                                 <label for="email" class="form-label text-white">Email Address</label>
                                 <input id="email" class="form-control" value="@_model.Email" readonly disabled />
@@ -53,14 +53,13 @@
                                 <InputText id="phoneNumber" class="form-control" @bind-Value="_model.PhoneNumber" />
                                 <StyledValidationMessage For="@(() => _model.PhoneNumber!)" />
                             </div>
-                        </ChildContent>
-                    </BaseFormComponent>
-                } 
-                else
-                {
-                    <ApiError Message="@_errorMessage" />
-                }
-            </div>
+                    </ChildContent>
+                </BaseFormComponent>
+            }
+            else
+            {
+                <ApiError Message="@_errorMessage" />
+            }
         </div>
     </Authorized>
 

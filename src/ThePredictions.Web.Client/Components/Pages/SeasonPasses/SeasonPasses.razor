@@ -1,0 +1,499 @@
+@page "/season-passes"
+@attribute [Authorize]
+@using System.Globalization
+@using ThePredictions.Contracts.SeasonPasses
+@using ThePredictions.Web.Client.Services.SeasonPasses
+@inject ISeasonPassService SeasonPassService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Season Passes</PageTitle>
+
+<div class="page-container page-container--top">
+    @if (SeasonId.HasValue)
+    {
+        @* ---------- Per-season acquire view ---------- *@
+        <div class="season-pass-acquire">
+            <ApiError Message="@_errorMessage" />
+
+            @if (_isLoading)
+            {
+                <div class="d-flex justify-content-center py-5"><div class="spinner-border" role="status"></div></div>
+            }
+            else if (_options is null)
+            {
+                <div class="empty-state">
+                    <i class="bi bi-ticket-perforated empty-state-icon"></i>
+                    <p>This season isn't available for a pass right now.</p>
+                    <a class="btn purple-accent-button" href="/dashboard">Back to dashboard</a>
+                </div>
+            }
+            else if (_options.AlreadyHeld || _justAcquired)
+            {
+                <div class="empty-state">
+                    <i class="bi bi-check-circle-fill empty-state-icon text-green-600"></i>
+                    <h3 class="fw-bold">You're all set</h3>
+                    <p>You have your <strong>@_options.SeasonName</strong> pass - you can now join its leagues.</p>
+                    <a class="btn green-button" href="/dashboard">Go to dashboard</a>
+                </div>
+            }
+            else
+            {
+                <div class="season-pass-hero season-pass-hero--detail">
+                    <span class="season-pass-hero__crest @(string.IsNullOrEmpty(_options.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
+                        @if (!string.IsNullOrEmpty(_options.CompetitionLogoUrl))
+                        {
+                            <img src="@_options.CompetitionLogoUrl" alt="@_options.SeasonName logo" />
+                        }
+                        else
+                        {
+                            <i class="bi bi-trophy-fill"></i>
+                        }
+                    </span>
+                    <h2 class="season-pass-hero__title">@_options.SeasonName</h2>
+                    <p class="season-pass-hero__lead">
+                        @if (_options.EntryOpen)
+                        {
+                            <text>Your Season Pass to take part - join or create leagues, make predictions and compete on the leaderboards all season.</text>
+                        }
+                        else
+                        {
+                            <text>Entry has closed, so you can no longer get a pass. Here's a look at what it involved.</text>
+                        }
+                    </p>
+                    <div class="season-pass-chips season-pass-chips--hero">
+                        @if (_options.EntryOpen)
+                        {
+                            <span class="season-pass-chip season-pass-chip--price">@DetailPriceChip</span>
+                            @if (_options.PlayerCount > 0)
+                            {
+                                <span class="season-pass-chip"><i class="bi bi-people-fill"></i> @PlayingLabel(_options.PlayerCount)</span>
+                            }
+                            @if (CountdownLabel(_options.NextEntryDeadlineUtc) is { } countdown)
+                            {
+                                <span class="season-pass-chip"><i class="bi bi-clock-fill"></i> @countdown</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="season-pass-chip">Finished</span>
+                            @if (_options.PlayerCount > 0)
+                            {
+                                <span class="season-pass-chip"><i class="bi bi-people-fill"></i> @PlayedLabel(_options.PlayerCount)</span>
+                            }
+                        }
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_options.CompetitionDescription))
+                {
+                    <div class="season-pass-about">
+                        <h3 class="season-pass-about__heading"><i class="bi bi-info-circle-fill"></i> Good to know</h3>
+                        <ul class="season-pass-about__list">
+                            @foreach (var line in _options.CompetitionDescription.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <li>@line.Trim()</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                @if (_options.EntryOpen)
+                {
+                    <h3 class="text-center fw-bold mt-5 mb-3">Get your pass</h3>
+                    <div class="season-pass-cards">
+                        <div class="season-pass-card">
+                            <div class="season-pass-card__tier">Standard</div>
+                            <div class="season-pass-card__price">@StandardPriceLabel</div>
+                            <ul class="season-pass-card__features">
+                                <li><i class="bi bi-check-lg"></i> Join or create unlimited leagues</li>
+                                <li><i class="bi bi-check-lg"></i> Make predictions every round</li>
+                                <li><i class="bi bi-check-lg"></i> Use prediction boosts</li>
+                                <li><i class="bi bi-check-lg"></i> Live match score updates</li>
+                                <li><i class="bi bi-check-lg"></i> Leaderboards &amp; standings</li>
+                                <li><i class="bi bi-check-lg"></i> Email reminders</li>
+                            </ul>
+                            @if (CanAcquireStandardFree)
+                            {
+                                <button class="btn green-button w-100" @onclick="AcquireAsync" disabled="@_isBusy">
+                                    @(_isBusy ? "Getting your pass..." : "Get your pass")
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn purple-accent-button w-100" disabled>Card payment coming soon</button>
+                            }
+                        </div>
+
+                        @if (_options.PremiumPrice.HasValue)
+                        {
+                            <div class="season-pass-card season-pass-card--premium">
+                                <span class="season-pass-card__badge">Most popular</span>
+                                <div class="season-pass-card__tier">Premium</div>
+                                <div class="season-pass-card__price">@PremiumPriceLabel</div>
+                                <ul class="season-pass-card__features">
+                                    <li><i class="bi bi-check-lg"></i> Everything in Standard</li>
+                                    <li><i class="bi bi-stars"></i> SMS deadline reminders</li>
+                                </ul>
+                                <button class="btn purple-accent-button w-100" disabled>Card payment coming soon</button>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="season-pass-closed-banner">
+                        <i class="bi bi-lock-fill"></i>
+                        <span>Entry for this season has closed</span>
+                    </div>
+                }
+
+                @if (_teams.Count > 0)
+                {
+                    <div class="season-pass-teams season-pass-teams--footnote">
+                        <p class="season-pass-teams__heading">@_teams.Count teams this season</p>
+                        <div class="season-pass-teams__grid">
+                            @foreach (var team in _teams)
+                            {
+                                <div class="season-pass-team">
+                                    @if (!string.IsNullOrEmpty(team.LogoUrl))
+                                    {
+                                        <img src="@team.LogoUrl" alt="@team.Name" />
+                                    }
+                                    <span>@team.Name</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }
+    else
+    {
+        @* ---------- Hub view: held + available ---------- *@
+        <div class="season-pass-hub">
+            <div class="season-pass-hero">
+                <span class="season-pass-hero__icon bi bi-ticket-perforated-fill" aria-hidden="true"></span>
+                <h2 class="season-pass-hero__title">Season Passes</h2>
+                <p class="season-pass-hero__lead">Your ticket to a competition - join its leagues, make predictions and climb the leaderboards all season. Your first season is a free trial; after that, each season has a Standard or Premium pass.</p>
+            </div>
+
+            <section class="season-pass-hub__section">
+                <h3 class="season-pass-hub__heading">How it works</h3>
+                <div class="season-pass-steps">
+                    <div class="season-pass-step">
+                        <span class="season-pass-step__num">1</span>
+                        <div class="season-pass-step__body">
+                            <span class="season-pass-step__title">Choose a season</span>
+                            <span class="season-pass-step__text">Tap any season below to see what it includes.</span>
+                        </div>
+                    </div>
+                    <div class="season-pass-step">
+                        <span class="season-pass-step__num">2</span>
+                        <div class="season-pass-step__body">
+                            <span class="season-pass-step__title">Get your pass</span>
+                            <span class="season-pass-step__text">Your first season is a free trial. After that, choose Standard or Premium.</span>
+                        </div>
+                    </div>
+                    <div class="season-pass-step">
+                        <span class="season-pass-step__num">3</span>
+                        <div class="season-pass-step__body">
+                            <span class="season-pass-step__title">Start playing</span>
+                            <span class="season-pass-step__text">Join or create a league and make your first prediction.</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <ApiError Message="@_errorMessage" />
+
+            @if (_isLoading)
+            {
+                <div class="d-flex justify-content-center py-5"><div class="spinner-border" role="status"></div></div>
+            }
+            else
+            {
+                @if (_mine.Count > 0)
+                {
+                    <section class="season-pass-hub__section">
+                        <h3 class="season-pass-hub__heading">Your passes</h3>
+                        <div class="season-pass-rows">
+                            @foreach (var pass in _mine)
+                            {
+                                <div class="season-pass-row season-pass-row--held">
+                                    <span class="season-pass-crest @(string.IsNullOrEmpty(pass.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
+                                        @if (!string.IsNullOrEmpty(pass.CompetitionLogoUrl))
+                                        {
+                                            <img src="@pass.CompetitionLogoUrl" alt="" />
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-trophy-fill"></i>
+                                        }
+                                    </span>
+                                    <div class="season-pass-row__info">
+                                        <span class="season-pass-row__name">@pass.SeasonName</span>
+                                        <span class="season-pass-row__meta">@pass.Tier@(pass.HasSmsReminders ? " - SMS reminders" : "")</span>
+                                    </div>
+                                    <span class="season-pass-row__held"><i class="bi bi-check-circle-fill"></i> Held</span>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+
+                @if (_available.Count > 0)
+                {
+                    var feature = _available[0];
+                    var rest = _available.Skip(1).ToList();
+                    <section class="season-pass-hub__section">
+                        <h3 class="season-pass-hub__heading">Available</h3>
+
+                        <a class="season-pass-feature" href="@($"/season-passes?seasonId={feature.SeasonId}")">
+                            <span class="season-pass-feature__crest @(string.IsNullOrEmpty(feature.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
+                                @if (!string.IsNullOrEmpty(feature.CompetitionLogoUrl))
+                                {
+                                    <img src="@feature.CompetitionLogoUrl" alt="" />
+                                }
+                                else
+                                {
+                                    <i class="bi bi-trophy-fill"></i>
+                                }
+                            </span>
+                            <div class="season-pass-feature__body">
+                                <div class="season-pass-chips">
+                                    <span class="season-pass-chip season-pass-chip--price">@PriceChip(feature)</span>
+                                    @if (feature.PlayerCount > 0)
+                                    {
+                                        <span class="season-pass-chip"><i class="bi bi-people-fill"></i> @PlayingLabel(feature.PlayerCount)</span>
+                                    }
+                                    @if (CountdownLabel(feature.NextEntryDeadlineUtc) is { } countdown)
+                                    {
+                                        <span class="season-pass-chip season-pass-chip--urgent"><i class="bi bi-clock-fill"></i> @countdown</span>
+                                    }
+                                </div>
+                                <span class="season-pass-feature__name">@feature.SeasonName</span>
+                                <span class="season-pass-feature__cta">Get your pass <i class="bi bi-arrow-right"></i></span>
+                            </div>
+                        </a>
+
+                        @if (rest.Count > 0)
+                        {
+                            <div class="season-pass-rows">
+                                @foreach (var available in rest)
+                                {
+                                    <a class="season-pass-row season-pass-row--link" href="@($"/season-passes?seasonId={available.SeasonId}")">
+                                        <span class="season-pass-crest @(string.IsNullOrEmpty(available.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
+                                            @if (!string.IsNullOrEmpty(available.CompetitionLogoUrl))
+                                            {
+                                                <img src="@available.CompetitionLogoUrl" alt="" />
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-trophy-fill"></i>
+                                            }
+                                        </span>
+                                        <div class="season-pass-row__info">
+                                            <span class="season-pass-row__name">@available.SeasonName</span>
+                                            <div class="season-pass-chips season-pass-chips--sm">
+                                                <span class="season-pass-chip season-pass-chip--price">@PriceChip(available)</span>
+                                                @if (available.PlayerCount > 0)
+                                                {
+                                                    <span class="season-pass-chip"><i class="bi bi-people-fill"></i> @PlayingLabel(available.PlayerCount)</span>
+                                                }
+                                                @if (CountdownLabel(available.NextEntryDeadlineUtc) is { } countdownRow)
+                                                {
+                                                    <span class="season-pass-chip season-pass-chip--urgent"><i class="bi bi-clock-fill"></i> @countdownRow</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <span class="season-pass-row__cta">View <i class="bi bi-chevron-right"></i></span>
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </section>
+                }
+
+                @if (_past.Count > 0)
+                {
+                    <section class="season-pass-hub__section">
+                        <h3 class="season-pass-hub__heading">Past seasons</h3>
+                        <p class="season-pass-hub__note">Entry has closed for these - here's what you missed.</p>
+                        <div class="season-pass-rows">
+                            @foreach (var past in _past)
+                            {
+                                <a class="season-pass-row season-pass-row--link" href="@($"/season-passes?seasonId={past.SeasonId}")">
+                                    <span class="season-pass-crest season-pass-crest--muted @(string.IsNullOrEmpty(past.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
+                                        @if (!string.IsNullOrEmpty(past.CompetitionLogoUrl))
+                                        {
+                                            <img src="@past.CompetitionLogoUrl" alt="" />
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-trophy-fill"></i>
+                                        }
+                                    </span>
+                                    <div class="season-pass-row__info">
+                                        <span class="season-pass-row__name">@past.SeasonName</span>
+                                        <div class="season-pass-chips season-pass-chips--sm">
+                                            <span class="season-pass-chip season-pass-chip--finished">Finished</span>
+                                            @if (past.PlayerCount > 0)
+                                            {
+                                                <span class="season-pass-chip"><i class="bi bi-people-fill"></i> @PlayedLabel(past.PlayerCount)</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <span class="season-pass-row__cta">View <i class="bi bi-chevron-right"></i></span>
+                                </a>
+                            }
+                        </div>
+                    </section>
+                }
+
+                @if (_mine.Count == 0 && _available.Count == 0 && _past.Count == 0)
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-ticket-perforated empty-state-icon"></i>
+                        <p>You're all set - there are no season passes to acquire right now.</p>
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public int? SeasonId { get; set; }
+
+    private bool _isLoading = true;
+    private bool _isBusy;
+    private bool _justAcquired;
+    private string? _errorMessage;
+
+    private SeasonPassOptionsDto? _options;
+    private List<SeasonTeamDto> _teams = [];
+    private List<MySeasonPassDto> _mine = [];
+    private List<AvailableSeasonPassDto> _available = [];
+    private List<PastSeasonPassDto> _past = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _justAcquired = false;
+
+        try
+        {
+            if (SeasonId.HasValue)
+            {
+                _options = await SeasonPassService.GetOptionsAsync(SeasonId.Value);
+                _teams = _options is null ? [] : await SeasonPassService.GetSeasonTeamsAsync(SeasonId.Value);
+            }
+            else
+            {
+                _mine = await SeasonPassService.GetMyPassesAsync();
+                _available = await SeasonPassService.GetAvailablePassesAsync();
+                _past = await SeasonPassService.GetPastPassesAsync();
+            }
+        }
+        catch
+        {
+            _errorMessage = "Could not load season passes. Please try again.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private bool CanAcquireStandardFree => _options is not null && (!_options.RequiresPayment || _options.IsTrialEligible);
+
+    private string StandardPriceLabel
+    {
+        get
+        {
+            if (_options is null)
+                return string.Empty;
+
+            if (!_options.RequiresPayment)
+                return "Free";
+
+            if (_options.IsTrialEligible)
+                return "Free (your first season)";
+
+            return _options.StandardPrice!.Value.ToString("C", new CultureInfo("en-GB"));
+        }
+    }
+
+    private string PremiumPriceLabel =>
+        _options?.PremiumPrice is { } price ? price.ToString("C", new CultureInfo("en-GB")) : string.Empty;
+
+    private string DetailPriceChip
+    {
+        get
+        {
+            if (_options is null)
+                return string.Empty;
+
+            if (!_options.RequiresPayment)
+                return "Free";
+
+            if (_options.IsTrialEligible)
+                return "Free trial";
+
+            return _options.StandardPrice!.Value.ToString("C", new CultureInfo("en-GB"));
+        }
+    }
+
+    private static string PriceChip(AvailableSeasonPassDto pass)
+    {
+        if (!pass.RequiresPayment)
+            return "Free";
+
+        if (pass.IsTrialEligible)
+            return "Free trial";
+
+        return pass.StandardPrice!.Value.ToString("C", new CultureInfo("en-GB"));
+    }
+
+    private static string PlayingLabel(int playerCount) =>
+        playerCount == 1 ? "1 playing" : $"{playerCount} playing";
+
+    private static string PlayedLabel(int playerCount) =>
+        playerCount == 1 ? "1 played" : $"{playerCount} played";
+
+    private static string? CountdownLabel(DateTime? deadlineUtc)
+    {
+        if (deadlineUtc is not { } deadline)
+            return null;
+
+        var remaining = deadline - DateTime.UtcNow;
+        if (remaining <= TimeSpan.Zero)
+            return null;
+
+        if (remaining.TotalDays < 1)
+            return "Closes today";
+
+        var days = (int)remaining.TotalDays;
+        return days == 1 ? "Closes in 1 day" : $"Closes in {days} days";
+    }
+
+    private async Task AcquireAsync()
+    {
+        if (!SeasonId.HasValue)
+            return;
+
+        _isBusy = true;
+        _errorMessage = null;
+
+        var (success, errorMessage) = await SeasonPassService.AcquireAsync(SeasonId.Value);
+        if (success)
+            _justAcquired = true;
+        else
+            _errorMessage = errorMessage;
+
+        _isBusy = false;
+    }
+}

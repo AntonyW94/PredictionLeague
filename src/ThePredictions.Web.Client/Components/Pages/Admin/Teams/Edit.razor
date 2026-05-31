@@ -9,22 +9,23 @@
 <PageTitle>Edit Team</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="form-container">
-        <h3 class="text-center fw-bold mb-4">Edit Team</h3>
-        @if (_model == null)
-        {
-            <p class="text-center text-white"><em>Loading team...</em></p>
-        }
-        else
-        {
-            <BaseFormComponent TModel="UpdateTeamRequest"
-                               Model="_model"
-                               SubmitAction="HandleUpdateTeamAsync"
-                               SuccessRedirectUrl="/admin/teams"
-                               BackUrl="/admin/teams"
-                               SuccessAlertMessage="Team updated successfully!"
-                               BusyText="Saving...">
-                <ChildContent>
+    @if (_model == null)
+    {
+        <p class="text-center text-white"><em>Loading team...</em></p>
+    }
+    else
+    {
+        <BaseFormComponent TModel="UpdateTeamRequest"
+                           Model="_model"
+                           SubmitAction="HandleUpdateTeamAsync"
+                           SuccessRedirectUrl="/admin/teams"
+                           BackUrl="/admin/teams"
+                           SuccessAlertMessage="Team updated successfully!"
+                           BusyText="Saving...">
+            <Header>
+                <h3 class="text-center fw-bold mb-4">Edit Team</h3>
+            </Header>
+            <ChildContent>
                     <div class="mb-3">
                         <label for="name" class="form-label">Team Name</label>
                         <InputText id="name" class="form-control" @bind-Value="_model.Name" />
@@ -54,10 +55,9 @@
                         <InputNumber id="api-team-id" class="form-control" @bind-Value="_model.ApiTeamId" />
                         <StyledValidationMessage For="@(() => _model.ApiTeamId!)" />
                     </div>
-                </ChildContent>
-            </BaseFormComponent>
-        }
-    </div>
+            </ChildContent>
+        </BaseFormComponent>
+    }
 </div>
 
 

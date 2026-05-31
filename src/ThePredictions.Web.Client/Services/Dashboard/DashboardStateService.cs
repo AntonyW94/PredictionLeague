@@ -1,15 +1,21 @@
 using ThePredictions.Contracts.Dashboard;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Contracts.Onboarding;
+using ThePredictions.Contracts.SeasonPasses;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Web.Client.Services.Leagues;
+using ThePredictions.Web.Client.Services.Onboarding;
+using ThePredictions.Web.Client.Services.SeasonPasses;
 
 namespace ThePredictions.Web.Client.Services.Dashboard;
 
-public class DashboardStateService(ILeagueService leagueService) : IDashboardStateService
+public class DashboardStateService(ILeagueService leagueService, ISeasonPassService seasonPassService, IOnboardingService onboardingService) : IDashboardStateService
 {
     public List<MyLeagueDto> MyLeagues { get; private set; } = [];
     public List<AvailableLeagueDto> AvailableLeagues { get; private set; } = [];
+    public List<AvailableSeasonPassDto> AvailableSeasonPasses { get; private set; } = [];
+    public OnboardingChecklistDto? OnboardingChecklist { get; private set; }
     public List<LeagueLeaderboardDto> Leaderboards { get; private set; } = [];
     public List<ActiveRoundDto> ActiveRounds { get; private set; } = [];
     public List<LeagueRequestDto> PendingRequests { get; private set; } = [];
@@ -84,6 +90,74 @@ public class DashboardStateService(ILeagueService leagueService) : IDashboardSta
         {
             IsAvailableLeaguesLoading = false;
             NotifyStateChanged();
+        }
+    }
+
+    public async Task LoadAvailableSeasonPassesAsync()
+    {
+        NotifyStateChanged();
+
+        try
+        {
+            AvailableSeasonPasses = await seasonPassService.GetAvailablePassesAsync();
+        }
+        catch
+        {
+            AvailableSeasonPasses = [];
+        }
+        finally
+        {
+            NotifyStateChanged();
+        }
+    }
+
+    public async Task LoadOnboardingAsync()
+    {
+        NotifyStateChanged();
+
+        try
+        {
+            OnboardingChecklist = await onboardingService.GetChecklistAsync();
+        }
+        catch
+        {
+            OnboardingChecklist = null;
+        }
+        finally
+        {
+            NotifyStateChanged();
+        }
+    }
+
+    public async Task SkipOnboardingStepAsync(string stepKey)
+    {
+        await onboardingService.SkipAsync(stepKey);
+        await LoadOnboardingAsync();
+    }
+
+    public async Task DismissOnboardingAsync()
+    {
+        await onboardingService.DismissAsync();
+        await LoadOnboardingAsync();
+    }
+
+    // Dashboard prompt strip - condition-driven CTAs shown above the dashboard. Each acquirable
+    // season becomes a "get your pass" prompt that self-dismisses once acquired. Append future
+    // prompts (e.g. missing mobile number, no profile photo) to this list.
+    public IReadOnlyList<DashboardPrompt> Prompts
+    {
+        get
+        {
+            var prompts = new List<DashboardPrompt>();
+
+            prompts.AddRange(AvailableSeasonPasses.Select(pass => new DashboardPrompt(
+                "bi-ticket-perforated-fill",
+                $"Get your {pass.SeasonName} pass to join its leagues.",
+                "Get pass",
+                $"/season-passes?seasonId={pass.SeasonId}",
+                Highlight: pass.SeasonName)));
+
+            return prompts;
         }
     }
 
@@ -162,7 +236,7 @@ public class DashboardStateService(ILeagueService leagueService) : IDashboardSta
         var (success, errorMessage) = await leagueService.JoinPublicLeagueAsync(leagueId);
         if (success)
         {
-            await Task.WhenAll(LoadMyLeaguesAsync(), LoadAvailableLeaguesAsync(), LoadPendingRequestsAsync());
+            await Task.WhenAll(LoadMyLeaguesAsync(), LoadAvailableLeaguesAsync(), LoadPendingRequestsAsync(), LoadOnboardingAsync());
         }
         else
         {

@@ -1,4 +1,5 @@
 @using ThePredictions.Web.Client.Services.Dashboard
+@using ThePredictions.Contracts.Onboarding
 
 @page "/dashboard"
 
@@ -27,9 +28,49 @@
                 var showAvailableLeagues = DashboardState.IsAvailableLeaguesLoading || DashboardState.AvailableLeagues.Any() || DashboardState.HasAvailablePrivateLeagues;
                 var myLeaguesClass = showAvailableLeagues ? "col-lg-6 mb-4 mb-md-0" : "col-lg-12 mb-4 mb-lg-0";
                 var showAdminTab = showPendingMembers || showPendingRequests;
+
+                var onboarding = DashboardState.OnboardingChecklist;
+                var onboardingTakeover = onboarding is { RequiredComplete: false };
+                var showOnboardingChecklist = onboarding is { HasOutstandingSteps: true };
+                var onboardingHasPass = onboarding?.Steps.Any(s => s.Key == OnboardingStepKeys.GetPass && s.State == "Completed") ?? false;
             }
 
+            @if (onboardingTakeover)
+            {
+                <div class="dashboard-container">
+                    @if (onboardingHasPass)
+                    {
+                        <OnboardingChecklist />
+                        <div class="row">
+                            <div class="col-lg-6 mb-4">
+                                <MyLeaguesTile />
+                            </div>
+                            <div class="col-lg-6 mb-4">
+                                <AvailableLeaguesTile />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row justify-content-center">
+                            <div class="col-lg-4">
+                                <OnboardingChecklist />
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
             <div class="dashboard-container dashboard--tab-@_activeTab">
+                @if (showOnboardingChecklist)
+                {
+                    <OnboardingChecklist />
+                }
+                else
+                {
+                    <DashboardPrompts Prompts="DashboardState.Prompts" />
+                }
                 <div class="dashboard-tabs d-lg-none">
                     <button type="button" class="dashboard-tab @(_activeTab == "play" ? "dashboard-tab--active" : "")" @onclick='() => _activeTab = "play"'>
                         <span class="bi bi-lightning-fill"></span>
@@ -104,6 +145,7 @@
                     </div>
                 </div>
             </div>
+            }
         </div>
     </Authorized>
 </AuthorizeView>
@@ -118,6 +160,8 @@
         await Task.WhenAll(
             DashboardState.LoadMyLeaguesAsync(),
             DashboardState.LoadAvailableLeaguesAsync(),
+            DashboardState.LoadAvailableSeasonPassesAsync(),
+            DashboardState.LoadOnboardingAsync(),
             DashboardState.LoadLeaderboardsAsync(),
             DashboardState.LoadActiveRoundsAsync(),
             DashboardState.LoadPendingRequestsAsync(),

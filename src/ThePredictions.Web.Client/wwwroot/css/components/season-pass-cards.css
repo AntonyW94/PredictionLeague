@@ -1,0 +1,747 @@
+/* Season Pass acquire (per-season) page - hero, "good to know", pricing cards, teams. */
+
+.season-pass-acquire {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    padding-bottom: var(--space-6);
+}
+
+/* Hero crest (per-season detail) - white circle inside the gradient hero */
+.season-pass-hero--detail {
+    margin-bottom: var(--space-5);
+}
+
+.season-pass-hero__crest {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--space-3);
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--white);
+    box-shadow: 0 4px 14px var(--black-alpha-25);
+    color: var(--purple-300);
+    font-size: 2.2rem;
+}
+
+.season-pass-hero__crest img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8px;
+}
+
+/* Hero stat chips sit on the dark gradient, so force light pills + a solid green price */
+.season-pass-chips--hero {
+    justify-content: center;
+    margin-top: var(--space-4);
+}
+
+.season-pass-chips--hero .season-pass-chip {
+    background: var(--white-alpha-15);
+    color: var(--white);
+}
+
+.season-pass-chips--hero .season-pass-chip--price {
+    background: var(--green-600);
+    color: var(--white);
+    box-shadow: none;
+}
+
+/* "Good to know" info card - intentionally left-aligned rules/format text */
+.season-pass-about {
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+    padding: var(--space-4) var(--space-5);
+    margin: 0 auto var(--space-5);
+    box-shadow: 0 2px 8px var(--black-alpha-15);
+}
+
+.season-pass-about__heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--grey-500);
+    margin-bottom: var(--space-3);
+}
+
+.season-pass-about__heading i {
+    color: var(--purple-300);
+}
+
+.season-pass-about__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.season-pass-about__list li {
+    position: relative;
+    padding-left: var(--space-4);
+    color: var(--text-primary, var(--purple-800));
+    line-height: 1.45;
+}
+
+.season-pass-about__list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green-600);
+}
+
+.theme-dark .season-pass-about {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-15);
+    box-shadow: 0 0 40px var(--purple-200-alpha-15);
+}
+
+.theme-dark .season-pass-about__list li {
+    color: var(--white);
+}
+
+.season-pass-teams {
+    margin-bottom: var(--space-5);
+}
+
+.season-pass-teams__grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.season-pass-team {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+    font-size: 0.85rem;
+    color: var(--text-primary, var(--purple-800));
+}
+
+.season-pass-team img {
+    height: 20px;
+    width: 20px;
+    object-fit: contain;
+}
+
+/* Footnote variant: shown below the pricing cards, understated. */
+.season-pass-teams--footnote {
+    max-width: 760px;
+    margin: var(--space-6) auto 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--purple-100);
+    text-align: center;
+}
+
+.season-pass-teams__heading {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--grey-500);
+    margin-bottom: var(--space-3);
+}
+
+.theme-dark .season-pass-teams--footnote {
+    border-top-color: var(--purple-600);
+}
+
+.theme-dark .season-pass-teams__heading {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .season-pass-team {
+    color: var(--white);
+    background: var(--purple-800);
+    border-color: var(--white-alpha-15);
+}
+
+/* Season Pass hub - "Your passes" + "Available" lists (single centred column). */
+
+.season-pass-hub {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    padding-bottom: var(--space-6);
+}
+
+/* Branded hero banner behind the page title */
+.season-pass-hero {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: var(--space-6) var(--space-5);
+    margin-bottom: var(--space-5);
+    border-radius: var(--bs-border-radius);
+    background: linear-gradient(135deg, var(--purple-800), var(--purple-600));
+    box-shadow: 0 8px 24px var(--black-alpha-25);
+}
+
+.season-pass-hero::after {
+    content: "";
+    position: absolute;
+    right: -40px;
+    bottom: -60px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: var(--white-alpha-08);
+    pointer-events: none;
+}
+
+.season-pass-hero__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--white-alpha-15);
+    color: var(--white);
+    font-size: 1.4rem;
+    margin-bottom: var(--space-3);
+}
+
+.season-pass-hero__title {
+    color: var(--white);
+    font-weight: 800;
+    margin: 0 0 var(--space-2);
+}
+
+.season-pass-hero__lead {
+    color: var(--white-alpha-50);
+    max-width: 540px;
+    margin: 0 auto;
+}
+
+/* Competition crest (circular badge) shown on each row */
+.season-pass-crest {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+}
+
+.season-pass-crest img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+}
+
+.season-pass-crest--empty {
+    color: var(--purple-300);
+    font-size: 1.2rem;
+}
+
+.season-pass-crest--muted img {
+    filter: grayscale(1);
+    opacity: 0.7;
+}
+
+/* "How it works" plain-English explainer - full-width tinted panel, 3 columns on desktop */
+.season-pass-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    background: var(--purple-50);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+}
+
+@media (min-width: 768px) {
+    .season-pass-steps {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0;
+    }
+
+    .season-pass-step {
+        padding: 0 var(--space-4);
+    }
+
+    .season-pass-step:not(:first-child) {
+        border-left: 1px solid var(--purple-100);
+    }
+}
+
+.season-pass-step {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.season-pass-step__num {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 800;
+    background: var(--green-600);
+    color: var(--white);
+    box-shadow: 0 2px 6px var(--green-600-alpha-15);
+}
+
+.season-pass-step__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.season-pass-step__title {
+    font-weight: 700;
+    color: var(--text-primary, var(--purple-800));
+}
+
+.season-pass-step__text {
+    font-size: 0.85rem;
+    color: var(--grey-500);
+}
+
+.theme-dark .season-pass-steps {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-15);
+}
+
+.theme-dark .season-pass-step:not(:first-child) {
+    border-left-color: var(--white-alpha-15);
+}
+
+.theme-dark .season-pass-step__num {
+    background: var(--green-600);
+    color: var(--white);
+}
+
+.theme-dark .season-pass-step__title {
+    color: var(--white);
+}
+
+.theme-dark .season-pass-step__text {
+    color: var(--white-alpha-50);
+}
+
+.season-pass-hub__section {
+    margin-bottom: var(--space-5);
+}
+
+.season-pass-hub__section:last-child {
+    margin-bottom: 0;
+}
+
+.season-pass-hub__heading {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--grey-500);
+    margin-bottom: var(--space-3);
+}
+
+/* Featured (headline) available season - large card with prominent CTA */
+.season-pass-feature {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    margin-bottom: var(--space-3);
+    background: var(--white);
+    border: 2px solid var(--green-600);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 6px 20px var(--black-alpha-15);
+    text-decoration: none;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.season-pass-feature:hover,
+.season-pass-feature:focus-visible {
+    box-shadow: 0 10px 28px var(--black-alpha-25);
+    transform: translateY(-2px);
+}
+
+.season-pass-feature__crest {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    color: var(--purple-300);
+    font-size: 2rem;
+}
+
+.season-pass-feature__crest img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 6px;
+}
+
+.season-pass-feature__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.season-pass-feature__name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary, var(--purple-800));
+}
+
+.season-pass-feature__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 700;
+    color: var(--green-600);
+}
+
+.season-pass-feature:hover .season-pass-feature__cta i {
+    transform: translateX(3px);
+}
+
+.season-pass-feature__cta i {
+    transition: transform 0.15s ease;
+}
+
+/* Stat / status chips */
+.season-pass-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.season-pass-chips--sm {
+    margin-top: 2px;
+}
+
+.season-pass-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-2);
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    background: var(--grey-100);
+    color: var(--grey-500);
+}
+
+.season-pass-chip--price {
+    background: var(--green-600-alpha-15);
+    color: var(--green-600);
+    box-shadow: inset 0 0 0 1px var(--green-600);
+}
+
+.season-pass-chip--urgent {
+    background: var(--purple-800);
+    color: var(--white);
+}
+
+.season-pass-chip--finished {
+    background: var(--grey-100);
+    color: var(--grey-500);
+}
+
+/* Dark mode: chips */
+.theme-dark .season-pass-chip {
+    background: var(--white-alpha-08);
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .season-pass-chip--price {
+    background: var(--green-600-alpha-15);
+    color: var(--green-300);
+    box-shadow: inset 0 0 0 1px var(--green-600);
+}
+
+.theme-dark .season-pass-chip--urgent {
+    background: var(--purple-200);
+    color: var(--purple-900);
+}
+
+/* Dark mode: feature card + crests */
+.theme-dark .season-pass-feature {
+    background: var(--purple-800);
+    border-color: var(--green-600);
+    box-shadow: 0 0 40px var(--purple-200-alpha-15);
+}
+
+.theme-dark .season-pass-feature__name {
+    color: var(--white);
+}
+
+.theme-dark .season-pass-crest,
+.theme-dark .season-pass-feature__crest {
+    border-color: var(--white-alpha-15);
+}
+
+.season-pass-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.season-pass-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 2px 8px var(--black-alpha-15);
+}
+
+.season-pass-row__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.season-pass-row__name {
+    font-weight: 700;
+    color: var(--text-primary, var(--purple-800));
+}
+
+.season-pass-row__meta {
+    font-size: 0.85rem;
+    color: var(--grey-500);
+}
+
+.season-pass-row__held {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--green-600);
+}
+
+/* Whole-row link variant (Available passes) */
+.season-pass-row--link {
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.season-pass-row--link:hover,
+.season-pass-row--link:focus-visible {
+    border-color: var(--green-600);
+    box-shadow: 0 4px 14px var(--black-alpha-15);
+    transform: translateY(-1px);
+}
+
+.season-pass-row__cta {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--green-600);
+}
+
+.season-pass-row--link:hover .season-pass-row__cta i {
+    transform: translateX(2px);
+}
+
+.season-pass-row__cta i {
+    transition: transform 0.15s ease;
+}
+
+/* Closed-entry banner on the per-season view (past seasons) */
+.season-pass-closed-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    max-width: 480px;
+    margin: 0 auto;
+    padding: var(--space-3) var(--space-4);
+    background: var(--grey-100);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+    color: var(--grey-500);
+    font-weight: 700;
+}
+
+.theme-dark .season-pass-closed-banner {
+    background: var(--white-alpha-08);
+    border-color: var(--white-alpha-15);
+    color: var(--white-alpha-50);
+}
+
+/* Past seasons note */
+.season-pass-hub__note {
+    font-size: 0.85rem;
+    color: var(--grey-500);
+    margin: -8px 0 var(--space-3);
+}
+
+.theme-dark .season-pass-hub__note {
+    color: var(--white-alpha-50);
+}
+
+/* Dark mode */
+.theme-dark .season-pass-row__meta {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .season-pass-row {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-15);
+    box-shadow: 0 4px 12px var(--black-alpha-25);
+}
+
+.theme-dark .season-pass-row__name {
+    color: var(--white);
+}
+
+/* Season Pass acquire cards - centered 1 or 2 pricing cards (Standard / Premium). */
+
+.season-pass-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    align-items: stretch;
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .season-pass-cards {
+        flex-direction: row;
+        justify-content: center;
+        align-items: stretch;
+        max-width: 760px;
+    }
+
+    .season-pass-cards .season-pass-card {
+        flex: 1 1 0;
+        max-width: 360px;
+    }
+}
+
+.season-pass-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-6) var(--space-5);
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 4px 16px var(--black-alpha-15);
+    text-align: center;
+}
+
+.season-pass-card--premium {
+    border-color: var(--green-600);
+    border-width: 2px;
+}
+
+.season-pass-card__badge {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: var(--space-1) var(--space-3);
+    background: var(--green-600);
+    color: var(--white);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: var(--bs-border-radius);
+    white-space: nowrap;
+}
+
+.season-pass-card__tier {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--purple-800);
+}
+
+.season-pass-card__price {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--green-600);
+    margin: var(--space-2) 0 var(--space-4);
+}
+
+.season-pass-card__features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-5);
+    text-align: left;
+    flex: 1 1 auto;
+}
+
+.season-pass-card__features li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) 0;
+    color: var(--text-primary, var(--purple-800));
+}
+
+.season-pass-card__features i {
+    color: var(--green-600);
+}
+
+/* Dark mode */
+.theme-dark .season-pass-card {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-15);
+    box-shadow: 0 0 40px var(--purple-200-alpha-15);
+}
+
+.theme-dark .season-pass-card--premium {
+    border-color: var(--green-600);
+}
+
+.theme-dark .season-pass-card__tier {
+    color: var(--white);
+}
+
+.theme-dark .season-pass-card__features li {
+    color: var(--white);
+}

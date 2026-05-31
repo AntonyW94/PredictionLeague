@@ -34,6 +34,7 @@ public class CompetitionsController(IMediator mediator) : ApiControllerBase
             request.Name,
             (CompetitionType)request.Type,
             request.LogoUrl,
+            request.Description,
             request.ApiLeagueId
         );
 
@@ -104,6 +105,7 @@ public class CompetitionsController(IMediator mediator) : ApiControllerBase
             request.Name,
             (CompetitionType)request.Type,
             request.LogoUrl,
+            request.Description,
             request.ApiLeagueId
         );
 

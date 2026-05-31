@@ -9,23 +9,24 @@
 <PageTitle>Edit League</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="form-container">
-        <h3 class="text-center fw-bold mb-4">Edit League</h3>
-        @if (_model == null)
-        {
-            <p class="text-center"><em>Loading...</em></p>
-        }
-        else
-        {
-            <BaseFormComponent TModel="UpdateLeagueRequest"
-                               Model="_model"
-                               SubmitAction="HandleUpdateLeagueAsync"
-                               SuccessRedirectUrl="/leagues"
-                               BackUrl="/leagues"
-                               SuccessAlertMessage="League updated successfully!"
-                               BusyText="Saving..."
-                               IsSaveDisabled="_isPastDeadline">
-                <ChildContent>
+    @if (_model == null)
+    {
+        <p class="text-center"><em>Loading...</em></p>
+    }
+    else
+    {
+        <BaseFormComponent TModel="UpdateLeagueRequest"
+                           Model="_model"
+                           SubmitAction="HandleUpdateLeagueAsync"
+                           SuccessRedirectUrl="/leagues"
+                           BackUrl="/leagues"
+                           SuccessAlertMessage="League updated successfully!"
+                           BusyText="Saving..."
+                           IsSaveDisabled="_isPastDeadline">
+            <Header>
+                <h3 class="text-center fw-bold mb-4">Edit League</h3>
+            </Header>
+            <ChildContent>
                     @if (_isPastDeadline)
                     {
                         <div class="message-box-solid warning mb-4">
@@ -103,10 +104,9 @@
                         </div>
                     </div>
 
-                </ChildContent>
-            </BaseFormComponent>
-        }
-    </div>
+            </ChildContent>
+        </BaseFormComponent>
+    }
 </div>
 
 @code {

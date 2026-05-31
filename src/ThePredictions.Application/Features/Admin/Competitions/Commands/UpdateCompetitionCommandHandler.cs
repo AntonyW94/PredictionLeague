@@ -21,7 +21,7 @@ public class UpdateCompetitionCommandHandler(
         if (existingWithCode != null && existingWithCode.Id != request.Id)
             throw new InvalidOperationException($"A competition with code '{request.Code}' already exists.");
 
-        competition.UpdateDetails(request.Code, request.Name, request.Type, request.LogoUrl, request.ApiLeagueId);
+        competition.UpdateDetails(request.Code, request.Name, request.Type, request.LogoUrl, request.Description, request.ApiLeagueId);
 
         await competitionRepository.UpdateAsync(competition, cancellationToken);
     }

@@ -94,7 +94,9 @@ public class DataAnonymiser
             var isFree = price == 0m;
 
             result["Name"] = isFree ? $"{surname}'s Free League" : $"{surname}'s League";
-            result["EntryCode"] = GenerateRandomEntryCode(faker);
+
+            // Only randomise real join codes; public leagues have no code (NULL) and must stay public.
+            result["EntryCode"] = dict["EntryCode"] is null ? null : GenerateRandomEntryCode(faker);
 
             anonymised.Add(result);
             counter++;
