@@ -195,7 +195,27 @@
                     </section>
                 }
 
-                @if (_mine.Count == 0 && _available.Count == 0)
+                @if (_past.Count > 0)
+                {
+                    <section class="season-pass-hub__section">
+                        <h3 class="season-pass-hub__heading">Past seasons</h3>
+                        <p class="season-pass-hub__note">Entry has closed for these - here's what you missed.</p>
+                        <div class="season-pass-rows">
+                            @foreach (var past in _past)
+                            {
+                                <div class="season-pass-row season-pass-row--past">
+                                    <div class="season-pass-row__info">
+                                        <span class="season-pass-row__name">@past.SeasonName</span>
+                                        <span class="season-pass-row__meta">@PlayersLabel(past.PlayerCount)</span>
+                                    </div>
+                                    <span class="season-pass-row__closed">Entry closed</span>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+
+                @if (_mine.Count == 0 && _available.Count == 0 && _past.Count == 0)
                 {
                     <div class="empty-state">
                         <i class="bi bi-ticket-perforated empty-state-icon"></i>
@@ -220,6 +240,7 @@
     private List<SeasonTeamDto> _teams = [];
     private List<MySeasonPassDto> _mine = [];
     private List<AvailableSeasonPassDto> _available = [];
+    private List<PastSeasonPassDto> _past = [];
 
     protected override async Task OnParametersSetAsync()
     {
@@ -238,6 +259,7 @@
             {
                 _mine = await SeasonPassService.GetMyPassesAsync();
                 _available = await SeasonPassService.GetAvailablePassesAsync();
+                _past = await SeasonPassService.GetPastPassesAsync();
             }
         }
         catch
@@ -271,6 +293,9 @@
 
     private string PremiumPriceLabel =>
         _options?.PremiumPrice is { } price ? price.ToString("C", new CultureInfo("en-GB")) : string.Empty;
+
+    private static string PlayersLabel(int playerCount) =>
+        playerCount == 1 ? "1 player took part" : $"{playerCount} players took part";
 
     private static string AvailableLabel(AvailableSeasonPassDto pass)
     {

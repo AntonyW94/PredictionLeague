@@ -271,6 +271,48 @@
     transition: transform 0.15s ease;
 }
 
+/* Past / closed seasons - muted, non-interactive */
+.season-pass-hub__note {
+    font-size: 0.85rem;
+    color: var(--grey-500);
+    margin: -8px 0 var(--space-3);
+}
+
+.season-pass-row--past {
+    background: transparent;
+    box-shadow: none;
+    border-style: dashed;
+}
+
+.season-pass-row--past .season-pass-row__name {
+    color: var(--grey-500);
+}
+
+.season-pass-row__closed {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--grey-500);
+    background: var(--grey-100);
+    border-radius: 999px;
+    padding: var(--space-1) var(--space-3);
+}
+
+.theme-dark .season-pass-hub__note {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .season-pass-row--past .season-pass-row__name {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .season-pass-row__closed {
+    background: var(--purple-900);
+    color: var(--white-alpha-50);
+}
+
 /* Dark mode */
 .theme-dark .season-pass-hub__lead,
 .theme-dark .season-pass-row__meta {

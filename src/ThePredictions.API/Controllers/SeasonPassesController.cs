@@ -24,6 +24,12 @@ public class SeasonPassesController(IMediator mediator) : ApiControllerBase
         return Ok(await mediator.Send(new GetAvailableSeasonPassesQuery(CurrentUserId), cancellationToken));
     }
 
+    [HttpGet("past")]
+    public async Task<ActionResult<IEnumerable<PastSeasonPassDto>>> GetPastAsync(CancellationToken cancellationToken)
+    {
+        return Ok(await mediator.Send(new GetPastSeasonPassesQuery(CurrentUserId), cancellationToken));
+    }
+
     [HttpGet("options")]
     public async Task<ActionResult<SeasonPassOptionsDto>> GetOptionsAsync([FromQuery] int seasonId, CancellationToken cancellationToken)
     {
