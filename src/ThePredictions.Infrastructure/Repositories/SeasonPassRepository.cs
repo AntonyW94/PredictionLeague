@@ -24,8 +24,7 @@ public class SeasonPassRepository(IDbConnectionFactory connectionFactory, IDbTra
                     [StripePaymentReference],
                     [CreatedAtUtc],
                     [SmsSentCount],
-                    [RewardRedeemedForSeasonId],
-                    [SmsPaused]
+                    [RewardRedeemedForSeasonId]
                 )
                 VALUES
                 (
@@ -38,13 +37,24 @@ public class SeasonPassRepository(IDbConnectionFactory connectionFactory, IDbTra
                     @StripePaymentReference,
                     @CreatedAtUtc,
                     @SmsSentCount,
-                    @RewardRedeemedForSeasonId,
-                    @SmsPaused
+                    @RewardRedeemedForSeasonId
                 );";
 
         var command = new CommandDefinition(
             commandText: sql,
-            parameters: seasonPass,
+            parameters: new
+            {
+                seasonPass.UserId,
+                seasonPass.SeasonId,
+                Tier = seasonPass.Tier.ToString(),
+                Source = seasonPass.Source.ToString(),
+                seasonPass.AmountPaid,
+                seasonPass.SmsFeePaid,
+                seasonPass.StripePaymentReference,
+                seasonPass.CreatedAtUtc,
+                seasonPass.SmsSentCount,
+                seasonPass.RewardRedeemedForSeasonId
+            },
             transaction: Transaction,
             cancellationToken: cancellationToken
         );

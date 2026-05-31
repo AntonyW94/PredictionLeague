@@ -95,15 +95,14 @@ One record per user per season they take part in. A row is written for **every**
 | Id | int | NO | IDENTITY | Primary key |
 | UserId | nvarchar(450) | NO | | FK to AspNetUsers (the participating user) |
 | SeasonId | int | NO | | FK to Seasons (the season this pass grants access to) |
-| Tier | int | NO | | Pass tier: 0 = Standard, 1 = Premium |
-| Source | int | NO | | How the pass arose: 0 = Purchased, 1 = Trial, 2 = Free |
+| Tier | nvarchar(20) | NO | | Pass tier (enum name): Standard, Premium |
+| Source | nvarchar(20) | NO | | How the pass arose (enum name): Purchased, Trial, Free |
 | AmountPaid | decimal(10,2) | NO | | Total paid for the pass (0 for trial/free) |
 | SmsFeePaid | decimal(10,2) | NO | | SMS uplift actually paid (0 for Standard, trial, or comped) |
 | StripePaymentReference | nvarchar(255) | YES | | Stripe payment reference; NULL for trial/free |
 | CreatedAtUtc | datetime2 | NO | | When the pass was created |
 | SmsSentCount | int | NO | 0 | SMS reminders sent to this user this season |
 | RewardRedeemedForSeasonId | int | YES | | Set when this pass's reward funded a later free SMS season |
-| SmsPaused | bit | NO | 0 | Whether the user paused their SMS for this season |
 
 **Constraints:**
 - PK: `Id`
