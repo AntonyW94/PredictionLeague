@@ -1,0 +1,109 @@
+@inject IDashboardStateService DashboardState
+@inject IJSRuntime JsRuntime
+@implements IDisposable
+@using ThePredictions.Web.Client.Services.Dashboard
+
+@{
+    var checklist = DashboardState.OnboardingChecklist;
+}
+
+@if (checklist is not null && checklist.HasOutstandingSteps)
+{
+    var visibleSteps = checklist.Steps.Where(s => s.State != "Skipped").ToList();
+    var doneCount = visibleSteps.Count(s => s.State == "Completed");
+
+    <div class="onboarding-card">
+        <div class="onboarding-card__header">
+            <div>
+                <h3 class="onboarding-card__title">Get started</h3>
+                <span class="onboarding-card__progress">@doneCount of @visibleSteps.Count done</span>
+            </div>
+            @if (checklist.RequiredComplete)
+            {
+                <button type="button" class="onboarding-card__dismiss" @onclick="DismissAsync" aria-label="Dismiss">
+                    <span class="bi bi-x-lg"></span>
+                </button>
+            }
+        </div>
+
+        <ul class="onboarding-steps">
+            @foreach (var step in visibleSteps)
+            {
+                <li class="onboarding-step onboarding-step--@step.State.ToLowerInvariant()">
+                    <span class="onboarding-step__icon bi @StepIcon(step.State)" aria-hidden="true"></span>
+                    <span class="onboarding-step__title">@step.Title</span>
+
+                    @if (step.State == "Active")
+                    {
+                        <span class="onboarding-step__actions">
+                            @if (step.Key == "join-league")
+                            {
+                                <button type="button" class="btn green-button btn-sm" @onclick="ShowJoinModalAsync">Join with a code</button>
+                                <a class="btn blue-light-button btn-sm" href="/leagues/create">Create a league</a>
+                            }
+                            else
+                            {
+                                <a class="btn green-button btn-sm" href="@step.ActionHref">@step.ActionLabel</a>
+                            }
+
+                            @if (step.Skippable)
+                            {
+                                <button type="button" class="btn btn-sm onboarding-step__skip" @onclick="() => SkipAsync(step.Key)">Skip</button>
+                            }
+                        </span>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+}
+
+@if (_showJoinModal)
+{
+    <JoinPrivateLeagueModal OnClose="HideJoinModalAsync" />
+}
+
+@code {
+    private bool _showJoinModal;
+
+    protected override void OnInitialized()
+    {
+        DashboardState.OnStateChange += StateHasChanged;
+    }
+
+    private static string StepIcon(string state) => state switch
+    {
+        "Completed" => "bi-check-circle-fill",
+        "Locked" => "bi-lock-fill",
+        _ => "bi-circle"
+    };
+
+    private async Task SkipAsync(string stepKey)
+    {
+        await DashboardState.SkipOnboardingStepAsync(stepKey);
+    }
+
+    private async Task DismissAsync()
+    {
+        await DashboardState.DismissOnboardingAsync();
+    }
+
+    private async Task ShowJoinModalAsync()
+    {
+        _showJoinModal = true;
+        await Task.Delay(50);
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "joinPrivateLeagueModal");
+    }
+
+    private async Task HideJoinModalAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "joinPrivateLeagueModal");
+        _showJoinModal = false;
+        await DashboardState.LoadOnboardingAsync();
+    }
+
+    public void Dispose()
+    {
+        DashboardState.OnStateChange -= StateHasChanged;
+    }
+}

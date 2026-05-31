@@ -1,0 +1,110 @@
+/* Onboarding checklist card - shown at the top of the dashboard (takeover or first tile). */
+
+.onboarding-card {
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 2px 8px var(--black-alpha-15);
+    padding: var(--space-4) var(--space-5);
+    margin-bottom: var(--space-4);
+}
+
+.onboarding-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.onboarding-card__title {
+    margin: 0;
+    font-weight: 800;
+}
+
+.onboarding-card__progress {
+    color: var(--grey-500);
+    font-size: 0.85rem;
+}
+
+.onboarding-card__dismiss {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--grey-500);
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.onboarding-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.onboarding-step {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.onboarding-step__icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    color: var(--grey-300);
+}
+
+.onboarding-step--completed .onboarding-step__icon {
+    color: var(--green-600);
+}
+
+.onboarding-step__title {
+    color: var(--text-primary, var(--purple-800));
+    font-weight: 600;
+}
+
+.onboarding-step--completed .onboarding-step__title {
+    color: var(--grey-500);
+    text-decoration: line-through;
+}
+
+.onboarding-step--locked .onboarding-step__title {
+    color: var(--grey-500);
+}
+
+.onboarding-step__actions {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    margin-left: auto;
+    flex-wrap: wrap;
+}
+
+.onboarding-step__skip {
+    color: var(--grey-500);
+    text-decoration: underline;
+    background: none;
+    border: none;
+}
+
+/* Dark mode */
+.theme-dark .onboarding-card {
+    background: var(--purple-800);
+    border-color: var(--purple-600);
+}
+
+.theme-dark .onboarding-card__title,
+.theme-dark .onboarding-step__title {
+    color: var(--white);
+}
+
+.theme-dark .onboarding-card__progress,
+.theme-dark .onboarding-step--completed .onboarding-step__title,
+.theme-dark .onboarding-step--locked .onboarding-step__title {
+    color: var(--white-alpha-50);
+}
