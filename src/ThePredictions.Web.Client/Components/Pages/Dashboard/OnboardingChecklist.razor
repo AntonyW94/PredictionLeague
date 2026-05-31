@@ -69,36 +69,38 @@
                         }
                     </span>
 
-                    <div class="onboarding-step__body">
-                        <span class="onboarding-step__title">
-                            @step.Title
-                            @if (!step.Required)
-                            {
-                                <span class="onboarding-step__optional">Optional</span>
-                            }
-                        </span>
-                        <span class="onboarding-step__hint">@StepHint(step.Key)</span>
+                    <div class="onboarding-step__main">
+                        <div class="onboarding-step__body">
+                            <span class="onboarding-step__title">
+                                @step.Title
+                                @if (!step.Required)
+                                {
+                                    <span class="onboarding-step__optional">Optional</span>
+                                }
+                            </span>
+                            <span class="onboarding-step__hint">@StepHint(step.Key)</span>
+                        </div>
+
+                        @if (step.State == "Active")
+                        {
+                            <span class="onboarding-step__actions">
+                                @if (step.Skippable)
+                                {
+                                    <button type="button" class="btn btn-sm onboarding-step__skip" @onclick="() => SkipAsync(step.Key)">Skip</button>
+                                }
+
+                                @if (step.Key == OnboardingStepKeys.JoinLeague)
+                                {
+                                    <button type="button" class="btn green-button btn-sm" @onclick="ShowJoinModalAsync">Join with a code</button>
+                                    <a class="btn blue-light-button btn-sm" href="/leagues/create">Create a league</a>
+                                }
+                                else
+                                {
+                                    <a class="btn green-button btn-sm" href="@step.ActionHref">@step.ActionLabel</a>
+                                }
+                            </span>
+                        }
                     </div>
-
-                    @if (step.State == "Active")
-                    {
-                        <span class="onboarding-step__actions">
-                            @if (step.Skippable)
-                            {
-                                <button type="button" class="btn btn-sm onboarding-step__skip" @onclick="() => SkipAsync(step.Key)">Skip</button>
-                            }
-
-                            @if (step.Key == OnboardingStepKeys.JoinLeague)
-                            {
-                                <button type="button" class="btn green-button btn-sm" @onclick="ShowJoinModalAsync">Join with a code</button>
-                                <a class="btn blue-light-button btn-sm" href="/leagues/create">Create a league</a>
-                            }
-                            else
-                            {
-                                <a class="btn green-button btn-sm" href="@step.ActionHref">@step.ActionLabel</a>
-                            }
-                        </span>
-                    }
                 </li>
             }
         </ul>
