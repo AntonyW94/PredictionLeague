@@ -101,7 +101,7 @@
 .theme-dark .season-pass-description,
 .theme-dark .season-pass-team {
     background: var(--purple-800);
-    border-color: var(--purple-600);
+    border-color: var(--white-alpha-15);
 }
 
 /* Season Pass hub - "Your passes" + "Available" lists (single centred column). */
@@ -309,7 +309,7 @@
 }
 
 .theme-dark .season-pass-row__closed {
-    background: var(--purple-900);
+    background: var(--white-alpha-08);
     color: var(--white-alpha-50);
 }
 
@@ -321,7 +321,13 @@
 
 .theme-dark .season-pass-row {
     background: var(--purple-800);
-    border-color: var(--purple-600);
+    border-color: var(--white-alpha-15);
+    box-shadow: 0 4px 12px var(--black-alpha-25);
+}
+
+.theme-dark .season-pass-row--past {
+    background: transparent;
+    box-shadow: none;
 }
 
 .theme-dark .season-pass-row__name {
@@ -420,7 +426,8 @@
 /* Dark mode */
 .theme-dark .season-pass-card {
     background: var(--purple-800);
-    border-color: var(--purple-600);
+    border-color: var(--white-alpha-15);
+    box-shadow: 0 0 40px var(--purple-200-alpha-15);
 }
 
 .theme-dark .season-pass-card--premium {

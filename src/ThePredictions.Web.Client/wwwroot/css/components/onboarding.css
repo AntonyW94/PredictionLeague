@@ -184,7 +184,8 @@
 /* Dark mode */
 .theme-dark .onboarding-card {
     background: var(--purple-800);
-    border-color: var(--purple-600);
+    border-color: var(--white-alpha-15);
+    box-shadow: 0 0 40px var(--purple-200-alpha-15);
 }
 
 .theme-dark .onboarding-card__title,
@@ -223,12 +224,16 @@
 }
 
 .theme-dark .onboarding-step--locked .onboarding-step__marker {
-    background: var(--purple-900);
-    border-color: var(--purple-900);
+    background: var(--white-alpha-08);
+    border-color: var(--white-alpha-15);
     color: var(--white-alpha-50);
 }
 
 .theme-dark .onboarding-step__optional {
-    background: var(--purple-900);
+    background: var(--white-alpha-08);
+    color: var(--purple-200);
+}
+
+.theme-dark .onboarding-step__skip {
     color: var(--white-alpha-50);
 }
