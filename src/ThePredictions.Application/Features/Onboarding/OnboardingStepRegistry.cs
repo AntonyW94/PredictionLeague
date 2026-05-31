@@ -10,12 +10,8 @@ namespace ThePredictions.Application.Features.Onboarding;
 /// </summary>
 public static class OnboardingStepRegistry
 {
-    public const string GetPass = "get-pass";
-    public const string JoinLeague = "join-league";
-    public const string AddMobile = "add-mobile";
-
     /// <summary>Optional steps a user may skip (and that "Dismiss" skips in bulk).</summary>
-    public static readonly IReadOnlyList<string> OptionalKeys = new[] { AddMobile };
+    public static readonly IReadOnlyList<string> OptionalKeys = new[] { OnboardingStepKeys.AddMobile };
 
     public static OnboardingChecklistDto Build(OnboardingUserState state, ISet<string> skippedKeys)
     {
@@ -25,11 +21,11 @@ public static class OnboardingStepRegistry
 
         var definitions = new[]
         {
-            new StepDefinition(GetPass, "Get your Season Pass", Required: true, Skippable: false,
+            new StepDefinition(OnboardingStepKeys.GetPass, "Get your Season Pass", Required: true, Skippable: false,
                 Completed: getPassDone, PrerequisiteMet: true, "Get pass", "/season-passes"),
-            new StepDefinition(JoinLeague, "Join or create a league", Required: true, Skippable: false,
+            new StepDefinition(OnboardingStepKeys.JoinLeague, "Join or create a league", Required: true, Skippable: false,
                 Completed: joinLeagueDone, PrerequisiteMet: getPassDone, "Find a league", "/dashboard"),
-            new StepDefinition(AddMobile, "Add your mobile number for SMS reminders", Required: false, Skippable: true,
+            new StepDefinition(OnboardingStepKeys.AddMobile, "Add your mobile number for SMS reminders", Required: false, Skippable: true,
                 Completed: addMobileDone, PrerequisiteMet: true, "Add", "/account/details")
         };
 
