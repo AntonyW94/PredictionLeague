@@ -1,0 +1,20 @@
+@using ThePredictions.Web.Client.Services.Dashboard
+
+@if (Prompts.Count > 0)
+{
+    <div class="dashboard-prompts">
+        @foreach (var prompt in Prompts)
+        {
+            <div class="dashboard-prompt">
+                <span class="dashboard-prompt__icon bi @prompt.Icon" aria-hidden="true"></span>
+                <span class="dashboard-prompt__message">@prompt.Message</span>
+                <a class="dashboard-prompt__action" href="@prompt.ActionHref">@prompt.ActionLabel</a>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<DashboardPrompt> Prompts { get; set; } = [];
+}

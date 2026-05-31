@@ -1,6 +1,7 @@
 using ThePredictions.Contracts.Dashboard;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Contracts.SeasonPasses;
 
 namespace ThePredictions.Web.Client.Services.Dashboard;
 
@@ -8,6 +9,8 @@ public interface IDashboardStateService
 {
     List<MyLeagueDto> MyLeagues { get; }
     List<AvailableLeagueDto> AvailableLeagues { get; }
+    List<AvailableSeasonPassDto> AvailableSeasonPasses { get; }
+    IReadOnlyList<DashboardPrompt> Prompts { get; }
     List<LeagueLeaderboardDto> Leaderboards { get; }
     List<ActiveRoundDto> ActiveRounds { get; }
     List<LeagueRequestDto> PendingRequests { get; }
@@ -35,6 +38,7 @@ public interface IDashboardStateService
 
     Task LoadMyLeaguesAsync();
     Task LoadAvailableLeaguesAsync();
+    Task LoadAvailableSeasonPassesAsync();
     Task LoadLeaderboardsAsync();
     Task LoadActiveRoundsAsync();
     Task LoadPendingRequestsAsync();

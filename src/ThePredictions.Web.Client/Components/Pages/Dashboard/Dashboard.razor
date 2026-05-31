@@ -17,6 +17,7 @@
     </Authorizing>
     <Authorized>
         <div class="page-container page-container--fits-content">
+            <DashboardPrompts Prompts="DashboardState.Prompts" />
             @{
                 var showPendingMembers = !DashboardState.IsPendingMembersLoading && DashboardState.IsAdminOfOpenLeague;
                 var showPendingRequests = DashboardState.PendingRequests.Any() || DashboardState.IsPendingRequestsLoading;
@@ -118,6 +119,7 @@
         await Task.WhenAll(
             DashboardState.LoadMyLeaguesAsync(),
             DashboardState.LoadAvailableLeaguesAsync(),
+            DashboardState.LoadAvailableSeasonPassesAsync(),
             DashboardState.LoadLeaderboardsAsync(),
             DashboardState.LoadActiveRoundsAsync(),
             DashboardState.LoadPendingRequestsAsync(),
