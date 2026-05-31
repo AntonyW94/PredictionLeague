@@ -10,7 +10,7 @@
 
 .dashboard-prompt {
     display: flex;
-    align-items: center;
+    flex-direction: column;            /* mobile: message row on top, action centred below */
     gap: var(--space-3);
     padding: var(--space-3) var(--space-4);
     background: var(--white);
@@ -20,6 +20,12 @@
     box-shadow: 0 2px 8px var(--black-alpha-15);
 }
 
+.dashboard-prompt__body {
+    display: flex;
+    align-items: center;               /* icon inline with the text */
+    gap: var(--space-3);
+}
+
 .dashboard-prompt__icon {
     flex-shrink: 0;
     font-size: 1.25rem;
@@ -27,7 +33,6 @@
 }
 
 .dashboard-prompt__message {
-    flex: 1 1 auto;
     color: var(--text-primary, var(--purple-800));
     font-weight: 600;
 }
@@ -38,9 +43,9 @@
 }
 
 .dashboard-prompt__action {
-    flex-shrink: 0;
+    align-self: center;                /* mobile: centred button */
     display: inline-block;
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) var(--space-5);
     background: var(--green-600);
     color: var(--white);
     font-weight: 700;
@@ -50,23 +55,23 @@
 }
 
 .dashboard-prompt__action:hover {
-    background: var(--green-600);
     filter: brightness(0.95);
     color: var(--white);
 }
 
-/* Mobile: stack the action below the message so long prompts don't squash */
-.dashboard-prompt {
-    flex-wrap: wrap;
-}
-
-.dashboard-prompt__action {
-    margin-left: auto;
-}
-
+/* Tablet+: single row, message fills, action pinned to the right */
 @media (min-width: 576px) {
     .dashboard-prompt {
-        flex-wrap: nowrap;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .dashboard-prompt__body {
+        flex: 1 1 auto;
+    }
+
+    .dashboard-prompt__action {
+        align-self: auto;
     }
 }
 
