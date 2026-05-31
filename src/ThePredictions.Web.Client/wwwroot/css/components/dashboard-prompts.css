@@ -32,6 +32,11 @@
     font-weight: 600;
 }
 
+.dashboard-prompt__highlight {
+    font-weight: 800;
+    color: var(--green-600);
+}
+
 .dashboard-prompt__action {
     flex-shrink: 0;
     display: inline-block;

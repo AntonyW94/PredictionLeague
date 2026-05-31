@@ -121,7 +121,8 @@ public class DashboardStateService(ILeagueService leagueService, ISeasonPassServ
                 "bi-ticket-perforated-fill",
                 $"Get your {pass.SeasonName} pass to join its leagues.",
                 "Get pass",
-                $"/season-passes?seasonId={pass.SeasonId}")));
+                $"/season-passes?seasonId={pass.SeasonId}",
+                Highlight: pass.SeasonName)));
 
             return prompts;
         }

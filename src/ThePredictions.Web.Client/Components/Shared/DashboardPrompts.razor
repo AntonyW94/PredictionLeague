@@ -7,7 +7,17 @@
         {
             <div class="dashboard-prompt">
                 <span class="dashboard-prompt__icon bi @prompt.Icon" aria-hidden="true"></span>
-                <span class="dashboard-prompt__message">@prompt.Message</span>
+                <span class="dashboard-prompt__message">
+                    @if (!string.IsNullOrEmpty(prompt.Highlight) && prompt.Message.Contains(prompt.Highlight, StringComparison.Ordinal))
+                    {
+                        var index = prompt.Message.IndexOf(prompt.Highlight, StringComparison.Ordinal);
+                        @prompt.Message[..index]<strong class="dashboard-prompt__highlight">@prompt.Highlight</strong>@prompt.Message[(index + prompt.Highlight.Length)..]
+                    }
+                    else
+                    {
+                        @prompt.Message
+                    }
+                </span>
                 <a class="dashboard-prompt__action" href="@prompt.ActionHref">@prompt.ActionLabel</a>
             </div>
         }

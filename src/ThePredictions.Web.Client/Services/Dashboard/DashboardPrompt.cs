@@ -6,4 +6,5 @@ namespace ThePredictions.Web.Client.Services.Dashboard;
 /// they self-dismiss once the underlying task is done (e.g. the pass is acquired).
 /// Add new prompts (e.g. "add your mobile", "upload a photo") by appending to the list.
 /// </summary>
-public record DashboardPrompt(string Icon, string Message, string ActionLabel, string ActionHref);
+/// <param name="Highlight">Optional phrase within <paramref name="Message"/> to emphasise (e.g. the season name).</param>
+public record DashboardPrompt(string Icon, string Message, string ActionLabel, string ActionHref, string? Highlight = null);
