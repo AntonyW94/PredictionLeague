@@ -1,6 +1,8 @@
 @inject IDashboardStateService DashboardState
 @inject IJSRuntime JsRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @implements IDisposable
+@using ThePredictions.Contracts.Onboarding
 @using ThePredictions.Web.Client.Services.Dashboard
 
 @{
@@ -11,12 +13,22 @@
 {
     var visibleSteps = checklist.Steps.Where(s => s.State != "Skipped").ToList();
     var doneCount = visibleSteps.Count(s => s.State == "Completed");
+    var percent = visibleSteps.Count == 0 ? 0 : (int)Math.Round(100.0 * doneCount / visibleSteps.Count);
+    var stepNumber = 0;
 
     <div class="onboarding-card">
         <div class="onboarding-card__header">
-            <div>
-                <h3 class="onboarding-card__title">Get started</h3>
-                <span class="onboarding-card__progress">@doneCount of @visibleSteps.Count done</span>
+            <div class="onboarding-card__hero">
+                @if (checklist.RequiredComplete)
+                {
+                    <h3 class="onboarding-card__title">You're all set</h3>
+                    <p class="onboarding-card__subtitle">Nice one@(string.IsNullOrWhiteSpace(_firstName) ? "" : $", {_firstName}") - you're in the game. Finish these optional extras whenever you fancy.</p>
+                }
+                else
+                {
+                    <h3 class="onboarding-card__title">Welcome@(string.IsNullOrWhiteSpace(_firstName) ? "" : $", {_firstName}")</h3>
+                    <p class="onboarding-card__subtitle">Predict the scores, beat your mates, climb the table. Let's get you playing - it only takes a minute.</p>
+                }
             </div>
             @if (checklist.RequiredComplete)
             {
@@ -26,17 +38,49 @@
             }
         </div>
 
+        <div class="onboarding-progress">
+            <div class="onboarding-progress__track">
+                <div class="onboarding-progress__fill" style="width: @(percent)%"></div>
+            </div>
+            <span class="onboarding-progress__label">@doneCount of @visibleSteps.Count done</span>
+        </div>
+
         <ul class="onboarding-steps">
             @foreach (var step in visibleSteps)
             {
+                stepNumber++;
+                var number = stepNumber;
                 <li class="onboarding-step onboarding-step--@step.State.ToLowerInvariant()">
-                    <span class="onboarding-step__icon bi @StepIcon(step.State)" aria-hidden="true"></span>
-                    <span class="onboarding-step__title">@step.Title</span>
+                    <span class="onboarding-step__marker" aria-hidden="true">
+                        @if (step.State == "Completed")
+                        {
+                            <span class="bi bi-check-lg"></span>
+                        }
+                        else if (step.State == "Locked")
+                        {
+                            <span class="bi bi-lock-fill"></span>
+                        }
+                        else
+                        {
+                            @number
+                        }
+                    </span>
+
+                    <div class="onboarding-step__body">
+                        <span class="onboarding-step__title">
+                            @step.Title
+                            @if (!step.Required)
+                            {
+                                <span class="onboarding-step__optional">Optional</span>
+                            }
+                        </span>
+                        <span class="onboarding-step__hint">@StepHint(step.Key)</span>
+                    </div>
 
                     @if (step.State == "Active")
                     {
                         <span class="onboarding-step__actions">
-                            @if (step.Key == "join-league")
+                            @if (step.Key == OnboardingStepKeys.JoinLeague)
                             {
                                 <button type="button" class="btn green-button btn-sm" @onclick="ShowJoinModalAsync">Join with a code</button>
                                 <a class="btn blue-light-button btn-sm" href="/leagues/create">Create a league</a>
@@ -65,17 +109,22 @@
 
 @code {
     private bool _showJoinModal;
+    private string? _firstName;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _firstName = authState.User.FindFirst("FirstName")?.Value;
     }
 
-    private static string StepIcon(string state) => state switch
+    private static string StepHint(string key) => key switch
     {
-        "Completed" => "bi-check-circle-fill",
-        "Locked" => "bi-lock-fill",
-        _ => "bi-circle"
+        OnboardingStepKeys.GetPass => "Your free ticket to play this season.",
+        OnboardingStepKeys.JoinLeague => "Go head-to-head with friends, or join a public league.",
+        OnboardingStepKeys.AddMobile => "We'll text you before each deadline so you never miss a round.",
+        _ => string.Empty
     };
 
     private async Task SkipAsync(string stepKey)
