@@ -108,14 +108,14 @@
 
 .season-pass-hub {
     width: 100%;
-    max-width: 560px;
+    max-width: 720px;
     margin: 0 auto;
 }
 
 .season-pass-hub__lead {
     text-align: center;
     color: var(--grey-500);
-    max-width: 480px;
+    max-width: 600px;
     margin: 0 auto var(--space-5);
 }
 
@@ -271,45 +271,36 @@
     transition: transform 0.15s ease;
 }
 
-/* Past / closed seasons - muted, non-interactive */
+/* Closed-entry banner on the per-season view (past seasons) */
+.season-pass-closed-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    max-width: 480px;
+    margin: 0 auto;
+    padding: var(--space-3) var(--space-4);
+    background: var(--grey-100);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+    color: var(--grey-500);
+    font-weight: 700;
+}
+
+.theme-dark .season-pass-closed-banner {
+    background: var(--white-alpha-08);
+    border-color: var(--white-alpha-15);
+    color: var(--white-alpha-50);
+}
+
+/* Past seasons note */
 .season-pass-hub__note {
     font-size: 0.85rem;
     color: var(--grey-500);
     margin: -8px 0 var(--space-3);
 }
 
-.season-pass-row--past {
-    background: transparent;
-    box-shadow: none;
-    border-style: dashed;
-}
-
-.season-pass-row--past .season-pass-row__name {
-    color: var(--grey-500);
-}
-
-.season-pass-row__closed {
-    flex-shrink: 0;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--grey-500);
-    background: var(--grey-100);
-    border-radius: 999px;
-    padding: var(--space-1) var(--space-3);
-}
-
 .theme-dark .season-pass-hub__note {
-    color: var(--white-alpha-50);
-}
-
-.theme-dark .season-pass-row--past .season-pass-row__name {
-    color: var(--white-alpha-50);
-}
-
-.theme-dark .season-pass-row__closed {
-    background: var(--white-alpha-08);
     color: var(--white-alpha-50);
 }
 
@@ -323,11 +314,6 @@
     background: var(--purple-800);
     border-color: var(--white-alpha-15);
     box-shadow: 0 4px 12px var(--black-alpha-25);
-}
-
-.theme-dark .season-pass-row--past {
-    background: transparent;
-    box-shadow: none;
 }
 
 .theme-dark .season-pass-row__name {

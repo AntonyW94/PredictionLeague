@@ -45,7 +45,14 @@
                     }
                     <h2 class="text-center fw-bold mb-2">@_options.SeasonName</h2>
                     <p class="season-pass-intro__lead text-center">
-                        A Season Pass lets you take part in <strong>@_options.SeasonName</strong> - join or create leagues, make predictions, and compete on the leaderboards all season.
+                        @if (_options.EntryOpen)
+                        {
+                            <text>A Season Pass lets you take part in <strong>@_options.SeasonName</strong> - join or create leagues, make predictions, and compete on the leaderboards all season.</text>
+                        }
+                        else
+                        {
+                            <text>Entry for <strong>@_options.SeasonName</strong> has closed, so you can no longer get a pass. Here's a look at what it involved.</text>
+                        }
                     </p>
 
                     @if (!string.IsNullOrEmpty(_options.CompetitionDescription))
@@ -59,43 +66,53 @@
                     }
                 </div>
 
-                <h3 class="text-center fw-bold mb-3">Get your pass</h3>
-                <div class="season-pass-cards">
-                    <div class="season-pass-card">
-                        <div class="season-pass-card__tier">Standard</div>
-                        <div class="season-pass-card__price">@StandardPriceLabel</div>
-                        <ul class="season-pass-card__features">
-                            <li><i class="bi bi-check-lg"></i> Join all leagues this season</li>
-                            <li><i class="bi bi-check-lg"></i> Make predictions</li>
-                            <li><i class="bi bi-check-lg"></i> Leaderboards</li>
-                            <li><i class="bi bi-check-lg"></i> Email reminders</li>
-                        </ul>
-                        @if (CanAcquireStandardFree)
+                @if (_options.EntryOpen)
+                {
+                    <h3 class="text-center fw-bold mb-3">Get your pass</h3>
+                    <div class="season-pass-cards">
+                        <div class="season-pass-card">
+                            <div class="season-pass-card__tier">Standard</div>
+                            <div class="season-pass-card__price">@StandardPriceLabel</div>
+                            <ul class="season-pass-card__features">
+                                <li><i class="bi bi-check-lg"></i> Join all leagues this season</li>
+                                <li><i class="bi bi-check-lg"></i> Make predictions</li>
+                                <li><i class="bi bi-check-lg"></i> Leaderboards</li>
+                                <li><i class="bi bi-check-lg"></i> Email reminders</li>
+                            </ul>
+                            @if (CanAcquireStandardFree)
+                            {
+                                <button class="btn green-button w-100" @onclick="AcquireAsync" disabled="@_isBusy">
+                                    @(_isBusy ? "Getting your pass..." : "Get your pass")
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn purple-accent-button w-100" disabled>Card payment coming soon</button>
+                            }
+                        </div>
+
+                        @if (_options.PremiumPrice.HasValue)
                         {
-                            <button class="btn green-button w-100" @onclick="AcquireAsync" disabled="@_isBusy">
-                                @(_isBusy ? "Getting your pass..." : "Get your pass")
-                            </button>
-                        }
-                        else
-                        {
-                            <button class="btn purple-accent-button w-100" disabled>Card payment coming soon</button>
+                            <div class="season-pass-card season-pass-card--premium">
+                                <span class="season-pass-card__badge">Most popular</span>
+                                <div class="season-pass-card__tier">Premium</div>
+                                <div class="season-pass-card__price">@PremiumPriceLabel</div>
+                                <ul class="season-pass-card__features">
+                                    <li><i class="bi bi-check-lg"></i> Everything in Standard</li>
+                                    <li><i class="bi bi-stars"></i> SMS deadline reminders</li>
+                                </ul>
+                                <button class="btn purple-accent-button w-100" disabled>Card payment coming soon</button>
+                            </div>
                         }
                     </div>
-
-                    @if (_options.PremiumPrice.HasValue)
-                    {
-                        <div class="season-pass-card season-pass-card--premium">
-                            <span class="season-pass-card__badge">Most popular</span>
-                            <div class="season-pass-card__tier">Premium</div>
-                            <div class="season-pass-card__price">@PremiumPriceLabel</div>
-                            <ul class="season-pass-card__features">
-                                <li><i class="bi bi-check-lg"></i> Everything in Standard</li>
-                                <li><i class="bi bi-stars"></i> SMS deadline reminders</li>
-                            </ul>
-                            <button class="btn purple-accent-button w-100" disabled>Card payment coming soon</button>
-                        </div>
-                    }
-                </div>
+                }
+                else
+                {
+                    <div class="season-pass-closed-banner">
+                        <i class="bi bi-lock-fill"></i>
+                        <span>Entry for this season has closed</span>
+                    </div>
+                }
 
                 @if (_teams.Count > 0)
                 {
@@ -203,13 +220,13 @@
                         <div class="season-pass-rows">
                             @foreach (var past in _past)
                             {
-                                <div class="season-pass-row season-pass-row--past">
+                                <a class="season-pass-row season-pass-row--link" href="@($"/season-passes?seasonId={past.SeasonId}")">
                                     <div class="season-pass-row__info">
                                         <span class="season-pass-row__name">@past.SeasonName</span>
                                         <span class="season-pass-row__meta">@PlayersLabel(past.PlayerCount)</span>
                                     </div>
-                                    <span class="season-pass-row__closed">Entry closed</span>
-                                </div>
+                                    <span class="season-pass-row__cta">View <i class="bi bi-chevron-right"></i></span>
+                                </a>
                             }
                         </div>
                     </section>

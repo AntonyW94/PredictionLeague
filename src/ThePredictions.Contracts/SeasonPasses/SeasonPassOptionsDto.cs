@@ -9,4 +9,5 @@ public record SeasonPassOptionsDto(
     decimal? StandardPrice,
     decimal? PremiumPrice,
     bool IsTrialEligible,
-    bool AlreadyHeld);
+    bool AlreadyHeld,
+    bool EntryOpen);
