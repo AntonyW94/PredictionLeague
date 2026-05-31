@@ -126,6 +126,13 @@
     transition: all 0.18s ease;
 }
 
+textarea.form-control {
+    height: auto;
+    line-height: 1.5;
+    padding: 12px 18px;
+    resize: vertical;
+}
+
 select.form-control {
     line-height: normal;
     appearance: none;
