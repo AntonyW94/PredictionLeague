@@ -10,4 +10,6 @@ public record SeasonPassOptionsDto(
     decimal? PremiumPrice,
     bool IsTrialEligible,
     bool AlreadyHeld,
-    bool EntryOpen);
+    bool EntryOpen,
+    int PlayerCount,
+    DateTime? NextEntryDeadlineUtc);

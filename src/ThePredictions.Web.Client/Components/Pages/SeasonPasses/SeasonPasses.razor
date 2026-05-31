@@ -38,33 +38,64 @@
             }
             else
             {
-                <div class="season-pass-intro">
-                    @if (!string.IsNullOrEmpty(_options.CompetitionLogoUrl))
-                    {
-                        <img class="season-pass-logo" src="@_options.CompetitionLogoUrl" alt="@_options.SeasonName logo" />
-                    }
-                    <h2 class="text-center fw-bold mb-2">@_options.SeasonName</h2>
-                    <p class="season-pass-intro__lead text-center">
-                        @if (_options.EntryOpen)
+                <div class="season-pass-hero season-pass-hero--detail">
+                    <span class="season-pass-hero__crest @(string.IsNullOrEmpty(_options.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
+                        @if (!string.IsNullOrEmpty(_options.CompetitionLogoUrl))
                         {
-                            <text>A Season Pass lets you take part in <strong>@_options.SeasonName</strong> - join or create leagues, make predictions, and compete on the leaderboards all season.</text>
+                            <img src="@_options.CompetitionLogoUrl" alt="@_options.SeasonName logo" />
                         }
                         else
                         {
-                            <text>Entry for <strong>@_options.SeasonName</strong> has closed, so you can no longer get a pass. Here's a look at what it involved.</text>
+                            <i class="bi bi-trophy-fill"></i>
+                        }
+                    </span>
+                    <h2 class="season-pass-hero__title">@_options.SeasonName</h2>
+                    <p class="season-pass-hero__lead">
+                        @if (_options.EntryOpen)
+                        {
+                            <text>Your Season Pass to take part - join or create leagues, make predictions and compete on the leaderboards all season.</text>
+                        }
+                        else
+                        {
+                            <text>Entry has closed, so you can no longer get a pass. Here's a look at what it involved.</text>
                         }
                     </p>
+                    <div class="season-pass-chips season-pass-chips--hero">
+                        @if (_options.EntryOpen)
+                        {
+                            <span class="season-pass-chip season-pass-chip--price">@DetailPriceChip</span>
+                            @if (_options.PlayerCount > 0)
+                            {
+                                <span class="season-pass-chip"><i class="bi bi-people-fill"></i> @PlayingLabel(_options.PlayerCount)</span>
+                            }
+                            @if (CountdownLabel(_options.NextEntryDeadlineUtc) is { } countdown)
+                            {
+                                <span class="season-pass-chip"><i class="bi bi-clock-fill"></i> @countdown</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="season-pass-chip">Finished</span>
+                            @if (_options.PlayerCount > 0)
+                            {
+                                <span class="season-pass-chip"><i class="bi bi-people-fill"></i> @PlayedLabel(_options.PlayerCount)</span>
+                            }
+                        }
+                    </div>
+                </div>
 
-                    @if (!string.IsNullOrEmpty(_options.CompetitionDescription))
-                    {
-                        <div class="season-pass-description">
+                @if (!string.IsNullOrEmpty(_options.CompetitionDescription))
+                {
+                    <div class="season-pass-about">
+                        <h3 class="season-pass-about__heading"><i class="bi bi-info-circle-fill"></i> Good to know</h3>
+                        <ul class="season-pass-about__list">
                             @foreach (var line in _options.CompetitionDescription.Split('\n', StringSplitOptions.RemoveEmptyEntries))
                             {
-                                <p>@line.Trim()</p>
+                                <li>@line.Trim()</li>
                             }
-                        </div>
-                    }
-                </div>
+                        </ul>
+                    </div>
+                }
 
                 @if (_options.EntryOpen)
                 {
@@ -117,7 +148,7 @@
                 @if (_teams.Count > 0)
                 {
                     <div class="season-pass-teams season-pass-teams--footnote">
-                        <p class="season-pass-teams__heading">Teams this season</p>
+                        <p class="season-pass-teams__heading">@_teams.Count teams this season</p>
                         <div class="season-pass-teams__grid">
                             @foreach (var team in _teams)
                             {
@@ -396,6 +427,23 @@
 
     private string PremiumPriceLabel =>
         _options?.PremiumPrice is { } price ? price.ToString("C", new CultureInfo("en-GB")) : string.Empty;
+
+    private string DetailPriceChip
+    {
+        get
+        {
+            if (_options is null)
+                return string.Empty;
+
+            if (!_options.RequiresPayment)
+                return "Free";
+
+            if (_options.IsTrialEligible)
+                return "Free trial";
+
+            return _options.StandardPrice!.Value.ToString("C", new CultureInfo("en-GB"));
+        }
+    }
 
     private static string PriceChip(AvailableSeasonPassDto pass)
     {
