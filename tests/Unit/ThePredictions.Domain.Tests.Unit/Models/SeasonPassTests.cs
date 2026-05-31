@@ -16,10 +16,10 @@ public class SeasonPassTests
     public void CreatePurchased_ShouldSetProperties_WhenStandardTier()
     {
         // Act
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Standard, 10m, 0m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Standard, 10m, 0m, "pi_123", _dateTimeProvider);
 
         // Assert
-        pass.UserId.Should().Be(1);
+        pass.UserId.Should().Be("user-1");
         pass.SeasonId.Should().Be(2);
         pass.Tier.Should().Be(SeasonPassTier.Standard);
         pass.Source.Should().Be(SeasonPassSource.Purchased);
@@ -35,7 +35,7 @@ public class SeasonPassTests
     public void CreatePurchased_ShouldAllowSmsFee_WhenPremiumTier()
     {
         // Act
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
 
         // Assert
         pass.Tier.Should().Be(SeasonPassTier.Premium);
@@ -43,44 +43,44 @@ public class SeasonPassTests
     }
 
     [Fact]
-    public void CreatePurchased_ShouldThrow_WhenUserIdNotPositive()
+    public void CreatePurchased_ShouldThrow_WhenUserIdMissing()
     {
-        var act = () => SeasonPass.CreatePurchased(0, 2, SeasonPassTier.Standard, 10m, 0m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased(" ", 2, SeasonPassTier.Standard, 10m, 0m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreatePurchased_ShouldThrow_WhenSeasonIdNotPositive()
     {
-        var act = () => SeasonPass.CreatePurchased(1, 0, SeasonPassTier.Standard, 10m, 0m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased("user-1", 0, SeasonPassTier.Standard, 10m, 0m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreatePurchased_ShouldThrow_WhenAmountPaidNotPositive()
     {
-        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Standard, 0m, 0m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Standard, 0m, 0m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreatePurchased_ShouldThrow_WhenReferenceIsBlank()
     {
-        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Standard, 10m, 0m, " ", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Standard, 10m, 0m, " ", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreatePurchased_ShouldThrow_WhenSmsFeeNegative()
     {
-        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, -1m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, -1m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreatePurchased_ShouldThrow_WhenStandardTierHasSmsFee()
     {
-        var act = () => SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Standard, 10m, 5m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Standard, 10m, 5m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -92,7 +92,7 @@ public class SeasonPassTests
     public void CreateRewardUpgrade_ShouldBePremiumWithNoSmsFee()
     {
         // Act
-        var pass = SeasonPass.CreateRewardUpgrade(1, 2, 10m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreateRewardUpgrade("user-1", 2, 10m, "pi_123", _dateTimeProvider);
 
         // Assert
         pass.Tier.Should().Be(SeasonPassTier.Premium);
@@ -103,30 +103,30 @@ public class SeasonPassTests
     }
 
     [Fact]
-    public void CreateRewardUpgrade_ShouldThrow_WhenUserIdNotPositive()
+    public void CreateRewardUpgrade_ShouldThrow_WhenUserIdMissing()
     {
-        var act = () => SeasonPass.CreateRewardUpgrade(0, 2, 10m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreateRewardUpgrade(" ", 2, 10m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreateRewardUpgrade_ShouldThrow_WhenSeasonIdNotPositive()
     {
-        var act = () => SeasonPass.CreateRewardUpgrade(1, 0, 10m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreateRewardUpgrade("user-1", 0, 10m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreateRewardUpgrade_ShouldThrow_WhenAmountPaidNotPositive()
     {
-        var act = () => SeasonPass.CreateRewardUpgrade(1, 2, 0m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreateRewardUpgrade("user-1", 2, 0m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreateRewardUpgrade_ShouldThrow_WhenReferenceIsBlank()
     {
-        var act = () => SeasonPass.CreateRewardUpgrade(1, 2, 10m, "", _dateTimeProvider);
+        var act = () => SeasonPass.CreateRewardUpgrade("user-1", 2, 10m, "", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -138,7 +138,7 @@ public class SeasonPassTests
     public void CreateTrial_ShouldBeFreeStandardTrial()
     {
         // Act
-        var pass = SeasonPass.CreateTrial(1, 2, _dateTimeProvider);
+        var pass = SeasonPass.CreateTrial("user-1", 2, _dateTimeProvider);
 
         // Assert
         pass.Tier.Should().Be(SeasonPassTier.Standard);
@@ -149,16 +149,16 @@ public class SeasonPassTests
     }
 
     [Fact]
-    public void CreateTrial_ShouldThrow_WhenUserIdNotPositive()
+    public void CreateTrial_ShouldThrow_WhenUserIdMissing()
     {
-        var act = () => SeasonPass.CreateTrial(0, 2, _dateTimeProvider);
+        var act = () => SeasonPass.CreateTrial(" ", 2, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreateTrial_ShouldThrow_WhenSeasonIdNotPositive()
     {
-        var act = () => SeasonPass.CreateTrial(1, 0, _dateTimeProvider);
+        var act = () => SeasonPass.CreateTrial("user-1", 0, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -170,7 +170,7 @@ public class SeasonPassTests
     public void CreateTrialWithSms_ShouldCompStandardAndChargeSmsOnly()
     {
         // Act
-        var pass = SeasonPass.CreateTrialWithSms(1, 2, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreateTrialWithSms("user-1", 2, 5m, "pi_123", _dateTimeProvider);
 
         // Assert
         pass.Tier.Should().Be(SeasonPassTier.Premium);
@@ -181,30 +181,30 @@ public class SeasonPassTests
     }
 
     [Fact]
-    public void CreateTrialWithSms_ShouldThrow_WhenUserIdNotPositive()
+    public void CreateTrialWithSms_ShouldThrow_WhenUserIdMissing()
     {
-        var act = () => SeasonPass.CreateTrialWithSms(0, 2, 5m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreateTrialWithSms(" ", 2, 5m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreateTrialWithSms_ShouldThrow_WhenSeasonIdNotPositive()
     {
-        var act = () => SeasonPass.CreateTrialWithSms(1, 0, 5m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreateTrialWithSms("user-1", 0, 5m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreateTrialWithSms_ShouldThrow_WhenSmsFeeNotPositive()
     {
-        var act = () => SeasonPass.CreateTrialWithSms(1, 2, 0m, "pi_123", _dateTimeProvider);
+        var act = () => SeasonPass.CreateTrialWithSms("user-1", 2, 0m, "pi_123", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreateTrialWithSms_ShouldThrow_WhenReferenceIsBlank()
     {
-        var act = () => SeasonPass.CreateTrialWithSms(1, 2, 5m, " ", _dateTimeProvider);
+        var act = () => SeasonPass.CreateTrialWithSms("user-1", 2, 5m, " ", _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -216,7 +216,7 @@ public class SeasonPassTests
     public void CreateFree_ShouldBeZeroStandardFreeRecord()
     {
         // Act
-        var pass = SeasonPass.CreateFree(1, 2, _dateTimeProvider);
+        var pass = SeasonPass.CreateFree("user-1", 2, _dateTimeProvider);
 
         // Assert
         pass.Tier.Should().Be(SeasonPassTier.Standard);
@@ -227,16 +227,16 @@ public class SeasonPassTests
     }
 
     [Fact]
-    public void CreateFree_ShouldThrow_WhenUserIdNotPositive()
+    public void CreateFree_ShouldThrow_WhenUserIdMissing()
     {
-        var act = () => SeasonPass.CreateFree(0, 2, _dateTimeProvider);
+        var act = () => SeasonPass.CreateFree(" ", 2, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void CreateFree_ShouldThrow_WhenSeasonIdNotPositive()
     {
-        var act = () => SeasonPass.CreateFree(1, 0, _dateTimeProvider);
+        var act = () => SeasonPass.CreateFree("user-1", 0, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -247,28 +247,28 @@ public class SeasonPassTests
     [Fact]
     public void HasSmsReminders_ShouldBeFalse_WhenStandardTier()
     {
-        var pass = SeasonPass.CreateFree(1, 2, _dateTimeProvider);
+        var pass = SeasonPass.CreateFree("user-1", 2, _dateTimeProvider);
         pass.HasSmsReminders.Should().BeFalse();
     }
 
     [Fact]
     public void ShouldSendSms_ShouldBeFalse_WhenStandardTier()
     {
-        var pass = SeasonPass.CreateFree(1, 2, _dateTimeProvider);
+        var pass = SeasonPass.CreateFree("user-1", 2, _dateTimeProvider);
         pass.ShouldSendSms.Should().BeFalse();
     }
 
     [Fact]
     public void ShouldSendSms_ShouldBeTrue_WhenPremiumAndNotPaused()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
         pass.ShouldSendSms.Should().BeTrue();
     }
 
     [Fact]
     public void ShouldSendSms_ShouldBeFalse_WhenPaused()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
 
         pass.PauseSms();
 
@@ -279,7 +279,7 @@ public class SeasonPassTests
     [Fact]
     public void ResumeSms_ShouldReenableSending()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
         pass.PauseSms();
 
         pass.ResumeSms();
@@ -291,7 +291,7 @@ public class SeasonPassTests
     [Fact]
     public void RecordSmsSent_ShouldIncrementCount()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
 
         pass.RecordSmsSent();
         pass.RecordSmsSent();
@@ -306,7 +306,7 @@ public class SeasonPassTests
     [Fact]
     public void MarkRewardRedeemed_ShouldStampSeasonId()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
 
         pass.MarkRewardRedeemed(99);
 
@@ -316,7 +316,7 @@ public class SeasonPassTests
     [Fact]
     public void MarkRewardRedeemed_ShouldThrow_WhenSeasonIdNotPositive()
     {
-        var pass = SeasonPass.CreatePurchased(1, 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
+        var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
 
         var act = () => pass.MarkRewardRedeemed(0);
 
@@ -334,13 +334,13 @@ public class SeasonPassTests
         var createdAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         // Act
-        var pass = new SeasonPass(id: 5, userId: 1, seasonId: 2, tier: SeasonPassTier.Premium,
+        var pass = new SeasonPass(id: 5, userId: "user-1", seasonId: 2, tier: SeasonPassTier.Premium,
             source: SeasonPassSource.Purchased, amountPaid: 15m, smsFeePaid: 5m, stripePaymentReference: "pi_123",
             createdAtUtc: createdAt, smsSentCount: 3, rewardRedeemedForSeasonId: 7, smsPaused: true);
 
         // Assert
         pass.Id.Should().Be(5);
-        pass.UserId.Should().Be(1);
+        pass.UserId.Should().Be("user-1");
         pass.SeasonId.Should().Be(2);
         pass.Tier.Should().Be(SeasonPassTier.Premium);
         pass.Source.Should().Be(SeasonPassSource.Purchased);

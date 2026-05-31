@@ -8,7 +8,7 @@ namespace ThePredictions.Domain.Models;
 public class SeasonPass
 {
     public int Id { get; init; }
-    public int UserId { get; private set; }
+    public string UserId { get; private set; } = string.Empty;
     public int SeasonId { get; private set; }
     public SeasonPassTier Tier { get; private set; }
     public SeasonPassSource Source { get; private set; }
@@ -26,7 +26,7 @@ public class SeasonPass
     [ExcludeFromCodeCoverage]
     private SeasonPass() { }
 
-    public SeasonPass(int id, int userId, int seasonId, SeasonPassTier tier, SeasonPassSource source,
+    public SeasonPass(int id, string userId, int seasonId, SeasonPassTier tier, SeasonPassSource source,
         decimal amountPaid, decimal smsFeePaid, string? stripePaymentReference, DateTime createdAtUtc,
         int smsSentCount, int? rewardRedeemedForSeasonId, bool smsPaused)
     {
@@ -44,10 +44,10 @@ public class SeasonPass
         SmsPaused = smsPaused;
     }
 
-    public static SeasonPass CreatePurchased(int userId, int seasonId, SeasonPassTier tier,
+    public static SeasonPass CreatePurchased(string userId, int seasonId, SeasonPassTier tier,
         decimal amountPaid, decimal smsFeePaid, string stripePaymentReference, IDateTimeProvider dateTimeProvider)
     {
-        Guard.Against.NegativeOrZero(userId);
+        Guard.Against.NullOrWhiteSpace(userId);
         Guard.Against.NegativeOrZero(seasonId);
         Guard.Against.NegativeOrZero(amountPaid);
         Guard.Against.NullOrWhiteSpace(stripePaymentReference);
@@ -70,10 +70,10 @@ public class SeasonPass
     }
 
     // Comped SMS upgrade earned via the early-bird reward: Premium tier, SMS fee 0.
-    public static SeasonPass CreateRewardUpgrade(int userId, int seasonId,
+    public static SeasonPass CreateRewardUpgrade(string userId, int seasonId,
         decimal amountPaid, string stripePaymentReference, IDateTimeProvider dateTimeProvider)
     {
-        Guard.Against.NegativeOrZero(userId);
+        Guard.Against.NullOrWhiteSpace(userId);
         Guard.Against.NegativeOrZero(seasonId);
         Guard.Against.NegativeOrZero(amountPaid);
         Guard.Against.NullOrWhiteSpace(stripePaymentReference);
@@ -92,9 +92,9 @@ public class SeasonPass
     }
 
     // Free first-season trial: Standard comped, no payment.
-    public static SeasonPass CreateTrial(int userId, int seasonId, IDateTimeProvider dateTimeProvider)
+    public static SeasonPass CreateTrial(string userId, int seasonId, IDateTimeProvider dateTimeProvider)
     {
-        Guard.Against.NegativeOrZero(userId);
+        Guard.Against.NullOrWhiteSpace(userId);
         Guard.Against.NegativeOrZero(seasonId);
 
         return new SeasonPass
@@ -111,10 +111,10 @@ public class SeasonPass
     }
 
     // Free first-season trial where the user pays only the SMS uplift on top (Standard comped).
-    public static SeasonPass CreateTrialWithSms(int userId, int seasonId, decimal smsFeePaid,
+    public static SeasonPass CreateTrialWithSms(string userId, int seasonId, decimal smsFeePaid,
         string stripePaymentReference, IDateTimeProvider dateTimeProvider)
     {
-        Guard.Against.NegativeOrZero(userId);
+        Guard.Against.NullOrWhiteSpace(userId);
         Guard.Against.NegativeOrZero(seasonId);
         Guard.Against.NegativeOrZero(smsFeePaid);
         Guard.Against.NullOrWhiteSpace(stripePaymentReference);
@@ -133,9 +133,9 @@ public class SeasonPass
     }
 
     // Free-season participation record: £0, Standard tier — exists so free play burns the free-first-season (ADR 0005).
-    public static SeasonPass CreateFree(int userId, int seasonId, IDateTimeProvider dateTimeProvider)
+    public static SeasonPass CreateFree(string userId, int seasonId, IDateTimeProvider dateTimeProvider)
     {
-        Guard.Against.NegativeOrZero(userId);
+        Guard.Against.NullOrWhiteSpace(userId);
         Guard.Against.NegativeOrZero(seasonId);
 
         return new SeasonPass
