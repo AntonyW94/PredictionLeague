@@ -60,10 +60,8 @@ public class SeasonPass
     public DateTime CreatedAtUtc { get; private set; }
     public int SmsSentCount { get; private set; }          // SMS reminders sent to this user this season
     public int? RewardRedeemedForSeasonId { get; private set; }  // set when this pass's leftover funded a later free SMS season
-    public bool SmsPaused { get; private set; }            // user paused their SMS for this season (in-app toggle)
 
-    public bool HasSmsReminders => Tier == SeasonPassTier.Premium;
-    public bool ShouldSendSms => HasSmsReminders && !SmsPaused;
+    public bool HasSmsReminders => Tier >= SeasonPassTier.Premium;   // per-pass entitlement (SMS pause is a per-user setting, Task 11)
 
     public void RecordSmsSent()                            // called when an SMS reminder is sent
     {
@@ -74,9 +72,6 @@ public class SeasonPass
     {
         RewardRedeemedForSeasonId = redeemedForSeasonId;
     }
-
-    public void PauseSms()  => SmsPaused = true;   // in-app toggle (no refund)
-    public void ResumeSms() => SmsPaused = false;
 
     private SeasonPass() { }              // ORM — [ExcludeFromCodeCoverage]
 
@@ -114,7 +109,7 @@ Mirror `Season.cs` / `League.cs`: private parameterless ctor for ORM (`[ExcludeF
 ## Verification
 
 - [ ] Builds clean.
-- [ ] Unit tests cover all factories (`CreatePurchased`, `CreateRewardUpgrade`, `CreateTrial`, `CreateTrialWithSms`, `CreateFree`), `HasSmsReminders`, `ShouldSendSms`, `RecordSmsSent()`, `MarkRewardRedeemed()`, `PauseSms()/ResumeSms()`, the `Season` price validation, and every guard branch.
+- [ ] Unit tests cover all factories (`CreatePurchased`, `CreateRewardUpgrade`, `CreateTrial`, `CreateTrialWithSms`, `CreateFree`), `HasSmsReminders`, `RecordSmsSent()`, `MarkRewardRedeemed()`, the `Season` price validation, and every guard branch.
 - [ ] `coverage-unit.bat` shows **100% line + branch** on Domain.
 
 ## Edge Cases to Consider

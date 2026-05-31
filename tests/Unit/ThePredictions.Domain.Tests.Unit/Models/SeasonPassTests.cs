@@ -28,7 +28,6 @@ public class SeasonPassTests
         pass.StripePaymentReference.Should().Be("pi_123");
         pass.CreatedAtUtc.Should().Be(_dateTimeProvider.UtcNow);
         pass.SmsSentCount.Should().Be(0);
-        pass.SmsPaused.Should().BeFalse();
     }
 
     [Fact]
@@ -252,40 +251,10 @@ public class SeasonPassTests
     }
 
     [Fact]
-    public void ShouldSendSms_ShouldBeFalse_WhenStandardTier()
-    {
-        var pass = SeasonPass.CreateFree("user-1", 2, _dateTimeProvider);
-        pass.ShouldSendSms.Should().BeFalse();
-    }
-
-    [Fact]
-    public void ShouldSendSms_ShouldBeTrue_WhenPremiumAndNotPaused()
+    public void HasSmsReminders_ShouldBeTrue_WhenPremiumTier()
     {
         var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
-        pass.ShouldSendSms.Should().BeTrue();
-    }
-
-    [Fact]
-    public void ShouldSendSms_ShouldBeFalse_WhenPaused()
-    {
-        var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
-
-        pass.PauseSms();
-
-        pass.ShouldSendSms.Should().BeFalse();
-        pass.SmsPaused.Should().BeTrue();
-    }
-
-    [Fact]
-    public void ResumeSms_ShouldReenableSending()
-    {
-        var pass = SeasonPass.CreatePurchased("user-1", 2, SeasonPassTier.Premium, 15m, 5m, "pi_123", _dateTimeProvider);
-        pass.PauseSms();
-
-        pass.ResumeSms();
-
-        pass.SmsPaused.Should().BeFalse();
-        pass.ShouldSendSms.Should().BeTrue();
+        pass.HasSmsReminders.Should().BeTrue();
     }
 
     [Fact]
@@ -336,7 +305,7 @@ public class SeasonPassTests
         // Act
         var pass = new SeasonPass(id: 5, userId: "user-1", seasonId: 2, tier: SeasonPassTier.Premium,
             source: SeasonPassSource.Purchased, amountPaid: 15m, smsFeePaid: 5m, stripePaymentReference: "pi_123",
-            createdAtUtc: createdAt, smsSentCount: 3, rewardRedeemedForSeasonId: 7, smsPaused: true);
+            createdAtUtc: createdAt, smsSentCount: 3, rewardRedeemedForSeasonId: 7);
 
         // Assert
         pass.Id.Should().Be(5);
@@ -350,8 +319,7 @@ public class SeasonPassTests
         pass.CreatedAtUtc.Should().Be(createdAt);
         pass.SmsSentCount.Should().Be(3);
         pass.RewardRedeemedForSeasonId.Should().Be(7);
-        pass.SmsPaused.Should().BeTrue();
-        pass.ShouldSendSms.Should().BeFalse();
+        pass.HasSmsReminders.Should().BeTrue();
     }
 
     #endregion

@@ -18,17 +18,15 @@ public class SeasonPass
     public DateTime CreatedAtUtc { get; private set; }
     public int SmsSentCount { get; private set; }
     public int? RewardRedeemedForSeasonId { get; private set; }
-    public bool SmsPaused { get; private set; }
 
     public bool HasSmsReminders => Tier >= SeasonPassTier.Premium;
-    public bool ShouldSendSms => HasSmsReminders && !SmsPaused;
 
     [ExcludeFromCodeCoverage]
     private SeasonPass() { }
 
     public SeasonPass(int id, string userId, int seasonId, SeasonPassTier tier, SeasonPassSource source,
         decimal amountPaid, decimal smsFeePaid, string? stripePaymentReference, DateTime createdAtUtc,
-        int smsSentCount, int? rewardRedeemedForSeasonId, bool smsPaused)
+        int smsSentCount, int? rewardRedeemedForSeasonId)
     {
         Id = id;
         UserId = userId;
@@ -41,7 +39,6 @@ public class SeasonPass
         CreatedAtUtc = createdAtUtc;
         SmsSentCount = smsSentCount;
         RewardRedeemedForSeasonId = rewardRedeemedForSeasonId;
-        SmsPaused = smsPaused;
     }
 
     public static SeasonPass CreatePurchased(string userId, int seasonId, SeasonPassTier tier,
@@ -161,7 +158,4 @@ public class SeasonPass
         Guard.Against.NegativeOrZero(redeemedForSeasonId);
         RewardRedeemedForSeasonId = redeemedForSeasonId;
     }
-
-    public void PauseSms() => SmsPaused = true;
-    public void ResumeSms() => SmsPaused = false;
 }

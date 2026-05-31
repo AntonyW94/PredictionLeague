@@ -52,18 +52,18 @@ ALTER TABLE [Seasons] ADD
 
 CREATE TABLE [SeasonPasses] (
     [Id]                       INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [UserId]                   INT NOT NULL,
+    [UserId]                   NVARCHAR(450) NOT NULL,   -- FK to AspNetUsers (string identity id)
     [SeasonId]                 INT NOT NULL,
-    [Tier]                     INT NOT NULL,        -- 0 Standard, 1 Premium
-    [Source]                   INT NOT NULL,        -- 0 Purchased, 1 Trial, 2 Free (3 RewardUpgrade if added)
+    [Tier]                     NVARCHAR(20) NOT NULL,        -- Standard | Premium (enum stored as string, as elsewhere)
+    [Source]                   NVARCHAR(20) NOT NULL,        -- Purchased | Trial | Free
     [AmountPaid]               DECIMAL(10,2) NOT NULL,
-    [SmsFeePaid]               DECIMAL(10,2) NOT NULL DEFAULT (0),  -- SMS uplift actually paid (0 if comped/trial/entry)
+    [SmsFeePaid]               DECIMAL(10,2) NOT NULL DEFAULT (0),  -- SMS uplift actually paid (0 if comped/trial/standard)
     [StripePaymentReference]   NVARCHAR(255) NULL,
     [CreatedAtUtc]             DATETIME2 NOT NULL,
     [SmsSentCount]             INT NOT NULL DEFAULT (0),    -- SMS reminders sent this season (powers reward)
     [RewardRedeemedForSeasonId] INT NULL,                  -- set when this pass's leftover funded a later free SMS season
-    [SmsPaused]                BIT NOT NULL DEFAULT (0),    -- user paused their SMS for this season (in-app toggle)
-    [RefundedAtUtc]            DATETIME2 NULL,              -- set when the pass is refunded (pre-season-start; ADR 0005)
+    -- NOTE: SMS pause is a per-user notification preference (Task 11), NOT a per-pass column.
+    [RefundedAtUtc]            DATETIME2 NULL,              -- set when the pass is refunded (pre-season-start; ADR 0005, Task 17)
     CONSTRAINT [FK_SeasonPasses_Seasons] FOREIGN KEY ([SeasonId]) REFERENCES [Seasons]([Id]),
     CONSTRAINT [FK_SeasonPasses_Users]   FOREIGN KEY ([UserId])   REFERENCES [AspNetUsers]([Id])
 );
