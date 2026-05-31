@@ -66,6 +66,32 @@
     object-fit: contain;
 }
 
+/* Footnote variant: shown below the pricing cards, understated. */
+.season-pass-teams--footnote {
+    max-width: 760px;
+    margin: var(--space-6) auto 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--purple-100);
+    text-align: center;
+}
+
+.season-pass-teams__heading {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--grey-500);
+    margin-bottom: var(--space-3);
+}
+
+.theme-dark .season-pass-teams--footnote {
+    border-top-color: var(--purple-600);
+}
+
+.theme-dark .season-pass-teams__heading {
+    color: var(--white-alpha-50);
+}
+
 .theme-dark .season-pass-intro__lead,
 .theme-dark .season-pass-description p,
 .theme-dark .season-pass-team {

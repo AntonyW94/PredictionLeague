@@ -57,25 +57,6 @@
                             }
                         </div>
                     }
-
-                    @if (_teams.Count > 0)
-                    {
-                        <div class="season-pass-teams">
-                            <h3 class="fw-bold text-center mb-3">Teams this season</h3>
-                            <div class="season-pass-teams__grid">
-                                @foreach (var team in _teams)
-                                {
-                                    <div class="season-pass-team">
-                                        @if (!string.IsNullOrEmpty(team.LogoUrl))
-                                        {
-                                            <img src="@team.LogoUrl" alt="@team.Name" />
-                                        }
-                                        <span>@team.Name</span>
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
                 </div>
 
                 <h3 class="text-center fw-bold mb-3">Get your pass</h3>
@@ -115,6 +96,25 @@
                         </div>
                     }
                 </div>
+
+                @if (_teams.Count > 0)
+                {
+                    <div class="season-pass-teams season-pass-teams--footnote">
+                        <p class="season-pass-teams__heading">Teams this season</p>
+                        <div class="season-pass-teams__grid">
+                            @foreach (var team in _teams)
+                            {
+                                <div class="season-pass-team">
+                                    @if (!string.IsNullOrEmpty(team.LogoUrl))
+                                    {
+                                        <img src="@team.LogoUrl" alt="@team.Name" />
+                                    }
+                                    <span>@team.Name</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
             }
         </div>
     }
