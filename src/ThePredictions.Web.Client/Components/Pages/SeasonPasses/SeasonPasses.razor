@@ -8,7 +8,7 @@
 
 <PageTitle>Season Passes</PageTitle>
 
-<div class="page-container">
+<div class="page-container page-container--top">
     @if (SeasonId.HasValue)
     {
         @* ---------- Per-season acquire view ---------- *@
@@ -123,7 +123,32 @@
         @* ---------- Hub view: held + available ---------- *@
         <div class="season-pass-hub">
             <h2 class="text-center fw-bold mb-2">Season Passes</h2>
-            <p class="season-pass-hub__lead">A Season Pass lets you join a competition's leagues, make predictions and compete on the leaderboards. Grab one for any season below.</p>
+            <p class="season-pass-hub__lead">A Season Pass is your ticket to a competition. With a pass you can join its leagues, make your predictions and compete on the leaderboards all season. You'll need one for each season you want to take part in - most are free.</p>
+
+            <div class="season-pass-steps">
+                <div class="season-pass-step">
+                    <span class="season-pass-step__num">1</span>
+                    <div class="season-pass-step__body">
+                        <span class="season-pass-step__title">Choose a season</span>
+                        <span class="season-pass-step__text">Tap any season below to see what it includes.</span>
+                    </div>
+                </div>
+                <div class="season-pass-step">
+                    <span class="season-pass-step__num">2</span>
+                    <div class="season-pass-step__body">
+                        <span class="season-pass-step__title">Get your pass</span>
+                        <span class="season-pass-step__text">Confirm to add it to your account. No payment needed for free seasons.</span>
+                    </div>
+                </div>
+                <div class="season-pass-step">
+                    <span class="season-pass-step__num">3</span>
+                    <div class="season-pass-step__body">
+                        <span class="season-pass-step__title">Start playing</span>
+                        <span class="season-pass-step__text">Join or create a league and make your first prediction.</span>
+                    </div>
+                </div>
+            </div>
+
             <ApiError Message="@_errorMessage" />
 
             @if (_isLoading)
@@ -158,13 +183,13 @@
                         <div class="season-pass-rows">
                             @foreach (var available in _available)
                             {
-                                <div class="season-pass-row">
+                                <a class="season-pass-row season-pass-row--link" href="@($"/season-passes?seasonId={available.SeasonId}")">
                                     <div class="season-pass-row__info">
                                         <span class="season-pass-row__name">@available.SeasonName</span>
                                         <span class="season-pass-row__meta">@AvailableLabel(available)</span>
                                     </div>
-                                    <a class="btn green-button btn-sm" href="@($"/season-passes?seasonId={available.SeasonId}")">View</a>
-                                </div>
+                                    <span class="season-pass-row__cta">View <i class="bi bi-chevron-right"></i></span>
+                                </a>
                             }
                         </div>
                     </section>

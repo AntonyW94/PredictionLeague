@@ -119,6 +119,64 @@
     margin: 0 auto var(--space-5);
 }
 
+/* "How it works" plain-English explainer */
+.season-pass-steps {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0 auto var(--space-5);
+    max-width: 460px;
+}
+
+.season-pass-step {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.season-pass-step__num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: var(--purple-100);
+    color: var(--purple-800);
+}
+
+.season-pass-step__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.season-pass-step__title {
+    font-weight: 700;
+    color: var(--text-primary, var(--purple-800));
+}
+
+.season-pass-step__text {
+    font-size: 0.85rem;
+    color: var(--grey-500);
+}
+
+.theme-dark .season-pass-step__num {
+    background: var(--purple-600);
+    color: var(--white);
+}
+
+.theme-dark .season-pass-step__title {
+    color: var(--white);
+}
+
+.theme-dark .season-pass-step__text {
+    color: var(--white-alpha-50);
+}
+
 .season-pass-hub__section {
     margin-bottom: var(--space-5);
 }
@@ -179,6 +237,38 @@
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--green-600);
+}
+
+/* Whole-row link variant (Available passes) */
+.season-pass-row--link {
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.season-pass-row--link:hover,
+.season-pass-row--link:focus-visible {
+    border-color: var(--green-600);
+    box-shadow: 0 4px 14px var(--black-alpha-15);
+    transform: translateY(-1px);
+}
+
+.season-pass-row__cta {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--green-600);
+}
+
+.season-pass-row--link:hover .season-pass-row__cta i {
+    transform: translateX(2px);
+}
+
+.season-pass-row__cta i {
+    transition: transform 0.15s ease;
 }
 
 /* Dark mode */
