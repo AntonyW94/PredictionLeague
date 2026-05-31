@@ -80,6 +80,11 @@
                     @if (step.State == "Active")
                     {
                         <span class="onboarding-step__actions">
+                            @if (step.Skippable)
+                            {
+                                <button type="button" class="btn btn-sm onboarding-step__skip" @onclick="() => SkipAsync(step.Key)">Skip</button>
+                            }
+
                             @if (step.Key == OnboardingStepKeys.JoinLeague)
                             {
                                 <button type="button" class="btn green-button btn-sm" @onclick="ShowJoinModalAsync">Join with a code</button>
@@ -88,11 +93,6 @@
                             else
                             {
                                 <a class="btn green-button btn-sm" href="@step.ActionHref">@step.ActionLabel</a>
-                            }
-
-                            @if (step.Skippable)
-                            {
-                                <button type="button" class="btn btn-sm onboarding-step__skip" @onclick="() => SkipAsync(step.Key)">Skip</button>
                             }
                         </span>
                     }
