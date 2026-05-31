@@ -17,7 +17,7 @@ public class GetMySeasonPassesQueryHandler(IApplicationReadDbConnection dbConnec
                 sp.[Tier],
                 sp.[Source],
                 sp.[AmountPaid],
-                CASE WHEN sp.[Tier] = @PremiumTier THEN 1 ELSE 0 END AS HasSmsReminders,
+                CAST(CASE WHEN sp.[Tier] = @PremiumTier THEN 1 ELSE 0 END AS BIT) AS HasSmsReminders,
                 sp.[CreatedAtUtc]
             FROM
                 [SeasonPasses] sp
