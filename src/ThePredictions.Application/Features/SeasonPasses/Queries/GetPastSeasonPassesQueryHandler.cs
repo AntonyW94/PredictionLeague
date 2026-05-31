@@ -14,6 +14,7 @@ public class GetPastSeasonPassesQueryHandler(IApplicationReadDbConnection dbConn
             SELECT
                 s.[Id] AS SeasonId,
                 s.[Name] AS SeasonName,
+                c.[LogoUrl] AS CompetitionLogoUrl,
                 (
                     SELECT COUNT(DISTINCT lm.[UserId])
                     FROM [LeagueMembers] lm
@@ -23,6 +24,8 @@ public class GetPastSeasonPassesQueryHandler(IApplicationReadDbConnection dbConn
                 ) AS PlayerCount
             FROM
                 [Seasons] s
+            JOIN
+                [Competitions] c ON c.[Id] = s.[CompetitionId]
             WHERE
                 s.[IsActive] = 1
                 AND NOT EXISTS (                                        -- not already held

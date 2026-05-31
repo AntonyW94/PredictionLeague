@@ -14,6 +14,7 @@ public class GetMySeasonPassesQueryHandler(IApplicationReadDbConnection dbConnec
             SELECT
                 sp.[SeasonId],
                 s.[Name] AS SeasonName,
+                c.[LogoUrl] AS CompetitionLogoUrl,
                 sp.[Tier],
                 sp.[Source],
                 sp.[AmountPaid],
@@ -23,6 +24,8 @@ public class GetMySeasonPassesQueryHandler(IApplicationReadDbConnection dbConnec
                 [SeasonPasses] sp
             JOIN
                 [Seasons] s ON s.[Id] = sp.[SeasonId]
+            JOIN
+                [Competitions] c ON c.[Id] = s.[CompetitionId]
             WHERE
                 sp.[UserId] = @UserId
             ORDER BY

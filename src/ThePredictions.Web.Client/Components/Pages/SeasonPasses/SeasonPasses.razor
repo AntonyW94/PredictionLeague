@@ -139,8 +139,11 @@
     {
         @* ---------- Hub view: held + available ---------- *@
         <div class="season-pass-hub">
-            <h2 class="text-center fw-bold mb-2">Season Passes</h2>
-            <p class="season-pass-hub__lead">A Season Pass is your ticket to a competition. With a pass you can join its leagues, make your predictions and compete on the leaderboards all season. You'll need one for each season you want to take part in - most are free.</p>
+            <div class="season-pass-hero">
+                <span class="season-pass-hero__icon bi bi-ticket-perforated-fill" aria-hidden="true"></span>
+                <h2 class="season-pass-hero__title">Season Passes</h2>
+                <p class="season-pass-hero__lead">Your ticket to a competition. Join its leagues, make your predictions and compete on the leaderboards all season. You'll need one for each season you want to play - most are free.</p>
+            </div>
 
             <div class="season-pass-steps">
                 <div class="season-pass-step">
@@ -182,6 +185,16 @@
                             @foreach (var pass in _mine)
                             {
                                 <div class="season-pass-row season-pass-row--held">
+                                    <span class="season-pass-crest @(string.IsNullOrEmpty(pass.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
+                                        @if (!string.IsNullOrEmpty(pass.CompetitionLogoUrl))
+                                        {
+                                            <img src="@pass.CompetitionLogoUrl" alt="" />
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-trophy-fill"></i>
+                                        }
+                                    </span>
                                     <div class="season-pass-row__info">
                                         <span class="season-pass-row__name">@pass.SeasonName</span>
                                         <span class="season-pass-row__meta">@pass.Tier@(pass.HasSmsReminders ? " - SMS reminders" : "")</span>
@@ -195,20 +208,74 @@
 
                 @if (_available.Count > 0)
                 {
+                    var feature = _available[0];
+                    var rest = _available.Skip(1).ToList();
                     <section class="season-pass-hub__section">
                         <h3 class="season-pass-hub__heading">Available</h3>
-                        <div class="season-pass-rows">
-                            @foreach (var available in _available)
-                            {
-                                <a class="season-pass-row season-pass-row--link" href="@($"/season-passes?seasonId={available.SeasonId}")">
-                                    <div class="season-pass-row__info">
-                                        <span class="season-pass-row__name">@available.SeasonName</span>
-                                        <span class="season-pass-row__meta">@AvailableLabel(available)</span>
-                                    </div>
-                                    <span class="season-pass-row__cta">View <i class="bi bi-chevron-right"></i></span>
-                                </a>
-                            }
-                        </div>
+
+                        <a class="season-pass-feature" href="@($"/season-passes?seasonId={feature.SeasonId}")">
+                            <span class="season-pass-feature__crest @(string.IsNullOrEmpty(feature.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
+                                @if (!string.IsNullOrEmpty(feature.CompetitionLogoUrl))
+                                {
+                                    <img src="@feature.CompetitionLogoUrl" alt="" />
+                                }
+                                else
+                                {
+                                    <i class="bi bi-trophy-fill"></i>
+                                }
+                            </span>
+                            <div class="season-pass-feature__body">
+                                <div class="season-pass-chips">
+                                    <span class="season-pass-chip season-pass-chip--price">@PriceChip(feature)</span>
+                                    @if (feature.PlayerCount > 0)
+                                    {
+                                        <span class="season-pass-chip"><i class="bi bi-people-fill"></i> @PlayingLabel(feature.PlayerCount)</span>
+                                    }
+                                    @if (CountdownLabel(feature.NextEntryDeadlineUtc) is { } countdown)
+                                    {
+                                        <span class="season-pass-chip season-pass-chip--urgent"><i class="bi bi-clock-fill"></i> @countdown</span>
+                                    }
+                                </div>
+                                <span class="season-pass-feature__name">@feature.SeasonName</span>
+                                <span class="season-pass-feature__cta">Get your pass <i class="bi bi-arrow-right"></i></span>
+                            </div>
+                        </a>
+
+                        @if (rest.Count > 0)
+                        {
+                            <div class="season-pass-rows">
+                                @foreach (var available in rest)
+                                {
+                                    <a class="season-pass-row season-pass-row--link" href="@($"/season-passes?seasonId={available.SeasonId}")">
+                                        <span class="season-pass-crest @(string.IsNullOrEmpty(available.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
+                                            @if (!string.IsNullOrEmpty(available.CompetitionLogoUrl))
+                                            {
+                                                <img src="@available.CompetitionLogoUrl" alt="" />
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-trophy-fill"></i>
+                                            }
+                                        </span>
+                                        <div class="season-pass-row__info">
+                                            <span class="season-pass-row__name">@available.SeasonName</span>
+                                            <div class="season-pass-chips season-pass-chips--sm">
+                                                <span class="season-pass-chip season-pass-chip--price">@PriceChip(available)</span>
+                                                @if (available.PlayerCount > 0)
+                                                {
+                                                    <span class="season-pass-chip"><i class="bi bi-people-fill"></i> @PlayingLabel(available.PlayerCount)</span>
+                                                }
+                                                @if (CountdownLabel(available.NextEntryDeadlineUtc) is { } countdownRow)
+                                                {
+                                                    <span class="season-pass-chip season-pass-chip--urgent"><i class="bi bi-clock-fill"></i> @countdownRow</span>
+                                                }
+                                            </div>
+                                        </div>
+                                        <span class="season-pass-row__cta">View <i class="bi bi-chevron-right"></i></span>
+                                    </a>
+                                }
+                            </div>
+                        }
                     </section>
                 }
 
@@ -221,9 +288,25 @@
                             @foreach (var past in _past)
                             {
                                 <a class="season-pass-row season-pass-row--link" href="@($"/season-passes?seasonId={past.SeasonId}")">
+                                    <span class="season-pass-crest season-pass-crest--muted @(string.IsNullOrEmpty(past.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
+                                        @if (!string.IsNullOrEmpty(past.CompetitionLogoUrl))
+                                        {
+                                            <img src="@past.CompetitionLogoUrl" alt="" />
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-trophy-fill"></i>
+                                        }
+                                    </span>
                                     <div class="season-pass-row__info">
                                         <span class="season-pass-row__name">@past.SeasonName</span>
-                                        <span class="season-pass-row__meta">@PlayersLabel(past.PlayerCount)</span>
+                                        <div class="season-pass-chips season-pass-chips--sm">
+                                            <span class="season-pass-chip season-pass-chip--finished">Finished</span>
+                                            @if (past.PlayerCount > 0)
+                                            {
+                                                <span class="season-pass-chip"><i class="bi bi-people-fill"></i> @PlayedLabel(past.PlayerCount)</span>
+                                            }
+                                        </div>
                                     </div>
                                     <span class="season-pass-row__cta">View <i class="bi bi-chevron-right"></i></span>
                                 </a>
@@ -311,18 +394,37 @@
     private string PremiumPriceLabel =>
         _options?.PremiumPrice is { } price ? price.ToString("C", new CultureInfo("en-GB")) : string.Empty;
 
-    private static string PlayersLabel(int playerCount) =>
-        playerCount == 1 ? "1 player took part" : $"{playerCount} players took part";
-
-    private static string AvailableLabel(AvailableSeasonPassDto pass)
+    private static string PriceChip(AvailableSeasonPassDto pass)
     {
         if (!pass.RequiresPayment)
             return "Free";
 
         if (pass.IsTrialEligible)
-            return "Free (your first season)";
+            return "Free trial";
 
         return pass.StandardPrice!.Value.ToString("C", new CultureInfo("en-GB"));
+    }
+
+    private static string PlayingLabel(int playerCount) =>
+        playerCount == 1 ? "1 playing" : $"{playerCount} playing";
+
+    private static string PlayedLabel(int playerCount) =>
+        playerCount == 1 ? "1 played" : $"{playerCount} played";
+
+    private static string? CountdownLabel(DateTime? deadlineUtc)
+    {
+        if (deadlineUtc is not { } deadline)
+            return null;
+
+        var remaining = deadline - DateTime.UtcNow;
+        if (remaining <= TimeSpan.Zero)
+            return null;
+
+        if (remaining.TotalDays < 1)
+            return "Closes today";
+
+        var days = (int)remaining.TotalDays;
+        return days == 1 ? "Closes in 1 day" : $"Closes in {days} days";
     }
 
     private async Task AcquireAsync()

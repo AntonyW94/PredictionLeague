@@ -1,6 +1,7 @@
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.SeasonPasses;
+using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.SeasonPasses.Queries;
 
@@ -13,12 +14,28 @@ public class GetAvailableSeasonPassesQueryHandler(IApplicationReadDbConnection d
             SELECT
                 s.[Id] AS SeasonId,
                 s.[Name] AS SeasonName,
+                c.[LogoUrl] AS CompetitionLogoUrl,
                 CAST(CASE WHEN s.[PassStandardPrice] IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS RequiresPayment,
                 s.[PassStandardPrice] AS StandardPrice,
                 s.[PassPremiumPrice] AS PremiumPrice,
-                CAST(CASE WHEN (SELECT COUNT(*) FROM [SeasonPasses] WHERE [UserId] = @UserId) = 0 THEN 1 ELSE 0 END AS BIT) AS IsTrialEligible
+                CAST(CASE WHEN (SELECT COUNT(*) FROM [SeasonPasses] WHERE [UserId] = @UserId) = 0 THEN 1 ELSE 0 END AS BIT) AS IsTrialEligible,
+                (
+                    SELECT COUNT(DISTINCT lm.[UserId])
+                    FROM [LeagueMembers] lm
+                    INNER JOIN [Leagues] l2 ON l2.[Id] = lm.[LeagueId]
+                    WHERE l2.[SeasonId] = s.[Id]
+                        AND lm.[Status] = @ApprovedStatus
+                ) AS PlayerCount,
+                (
+                    SELECT MIN(l3.[EntryDeadlineUtc])
+                    FROM [Leagues] l3
+                    WHERE l3.[SeasonId] = s.[Id]
+                        AND l3.[EntryDeadlineUtc] > GETUTCDATE()
+                ) AS NextEntryDeadlineUtc
             FROM
                 [Seasons] s
+            JOIN
+                [Competitions] c ON c.[Id] = s.[CompetitionId]
             WHERE
                 s.[IsActive] = 1
                 AND NOT EXISTS (
@@ -36,6 +53,9 @@ public class GetAvailableSeasonPassesQueryHandler(IApplicationReadDbConnection d
             ORDER BY
                 s.[StartDateUtc] DESC;";
 
-        return await dbConnection.QueryAsync<AvailableSeasonPassDto>(sql, cancellationToken, new { request.UserId });
+        return await dbConnection.QueryAsync<AvailableSeasonPassDto>(
+            sql,
+            cancellationToken,
+            new { request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
     }
 }
