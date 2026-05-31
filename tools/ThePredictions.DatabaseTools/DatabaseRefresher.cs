@@ -28,6 +28,7 @@ public class DatabaseRefresher(
         "Teams",
         "Competitions",
         "Seasons",
+        "SeasonPasses",
         "TournamentRoundMappings",
         "Rounds",
         "Matches",
@@ -120,6 +121,7 @@ public class DatabaseRefresher(
             Console.WriteLine("[INFO] Anonymising personal data...");
             tableData["AspNetUsers"] = DataAnonymiser.AnonymiseUsers(tableData["AspNetUsers"]);
             tableData["Leagues"] = DataAnonymiser.AnonymiseLeagues(tableData["Leagues"]);
+            tableData["SeasonPasses"] = DataAnonymiser.AnonymiseSeasonPasses(tableData["SeasonPasses"]);
         }
 
         await using var targetConnection = new SqlConnection(targetConnectionString);

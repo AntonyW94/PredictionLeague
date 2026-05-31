@@ -89,6 +89,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
+        services.AddScoped<ISeasonPassRepository, SeasonPassRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<ITournamentRoundMappingRepository, TournamentRoundMappingRepository>();
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
@@ -119,5 +120,6 @@ public static class DependencyInjection
 
         services.AddScoped<ILeagueStatsService, LeagueStatsService>();
         services.AddScoped<ILeagueMembershipService, LeagueMembershipService>();
+        services.AddScoped<ISeasonAccessService, SeasonAccessService>();
     }
 }

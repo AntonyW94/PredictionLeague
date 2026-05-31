@@ -86,6 +86,33 @@ Represents a football season within a competition.
 
 ---
 
+### SeasonPasses
+
+One record per user per season they take part in. A row is written for **every** participation: a purchase, a free first-season trial, or a £0 `Free` record for free-season play. This is the single source of truth for the Season Pass access gate, and existing participation is backfilled so free play "burns" the free-first-season (ADR 0005).
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers (the participating user) |
+| SeasonId | int | NO | | FK to Seasons (the season this pass grants access to) |
+| Tier | nvarchar(20) | NO | | Pass tier (enum name): Standard, Premium |
+| Source | nvarchar(20) | NO | | How the pass arose (enum name): Purchased, Trial, Free |
+| AmountPaid | decimal(10,2) | NO | | Total paid for the pass (0 for trial/free) |
+| SmsFeePaid | decimal(10,2) | NO | | SMS uplift actually paid (0 for Standard, trial, or comped) |
+| StripePaymentReference | nvarchar(255) | YES | | Stripe payment reference; NULL for trial/free |
+| CreatedAtUtc | datetime2 | NO | | When the pass was created |
+| SmsSentCount | int | NO | 0 | SMS reminders sent to this user this season |
+| RewardRedeemedForSeasonId | int | YES | | Set when this pass's reward funded a later free SMS season |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `(UserId, SeasonId)` (`UX_SeasonPasses_User_Season`) - one pass per user per season
+- FK: `UserId` → `AspNetUsers(Id)` (`FK_SeasonPasses_AspNetUsers`)
+- FK: `SeasonId` → `Seasons(Id)` (`FK_SeasonPasses_Seasons`)
+- FK: `RewardRedeemedForSeasonId` → `Seasons(Id)` (`FK_SeasonPasses_Seasons_Reward`)
+
+---
+
 ### Rounds
 
 Represents a gameweek within a season.

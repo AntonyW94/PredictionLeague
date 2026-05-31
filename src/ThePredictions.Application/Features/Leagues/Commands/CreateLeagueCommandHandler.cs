@@ -1,6 +1,7 @@
 using Ardalis.GuardClauses;
 using MediatR;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Guards;
@@ -8,12 +9,14 @@ using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateLeagueCommand, LeagueDto>
+public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, ISeasonAccessService seasonAccessService, IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateLeagueCommand, LeagueDto>
 {
     public async Task<LeagueDto> Handle(CreateLeagueCommand request, CancellationToken cancellationToken)
     {
         var season = await seasonRepository.GetByIdAsync(request.SeasonId, cancellationToken);
         Guard.Against.EntityNotFound(request.SeasonId, season, "Season");
+
+        await seasonAccessService.EnsureCanParticipateAsync(request.CreatingUserId, request.SeasonId, cancellationToken);
 
         var league = League.Create(
              request.SeasonId,

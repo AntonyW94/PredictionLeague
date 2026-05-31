@@ -6,41 +6,47 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Acquire-first model (revised).** A Season Pass is required to take part in **every** season. The **gate** only checks the user already **holds** a pass for the season - it does **not** grant one. Acquisition is a separate, explicit action so users acquire before participating (and before seeing a season's public leagues).
+> **Built (this PR):** the gate (`SeasonAccessService` = pass-exists check, else `SeasonPassRequiredException` → 402) and `AcquireSeasonPassCommand` (free season → £0 `Free`; brand-new user's first paid season → free `Trial`; paid non-trial → needs Stripe, Phase B), with the `SeasonPasses` table/repo/backfill and `SeasonPassRequiredException`→402 mapping (from the original A4 cut).
+> **Follow-up tasks (not in this PR):** the acquire **API endpoint + UI** (the "Get your pass" page / 402 redirect), the **My Passes** + **Available Passes** pages, and **per-season public-league visibility gating**.
+> **Deploy note:** do **not** deploy the gate change until the acquire UI exists, or free-season joining will 402 with no recovery path.
 
 ## Goal
 
-Enforce the Season Pass requirement when joining/creating a league in a pass-required season, and auto-grant a one-time free Standard trial to brand-new players.
+Enforce that a user **holds** a Season Pass before joining/creating a league (the gate), and provide explicit **acquisition** of a free pass (free season = £0; brand-new user's first paid season = free trial). Paid acquisition is via Stripe (Phase B).
 
 ## Files to Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/ThePredictions.Application/Features/...Passes/Services/ISeasonAccessService.cs` | Create | Access decision contract |
-| `...Passes/Services/SeasonAccessService.cs` | Create | Implements the access/trial rule |
+| `...Application/Services/ISeasonAccessService.cs` + `SeasonAccessService.cs` | Create | The gate: does the user hold a pass for the season? |
+| `...Application/Features/SeasonPasses/Commands/AcquireSeasonPassCommand(.Handler).cs` | Create | Explicit acquisition: free season → £0 `Free`; first paid season → `Trial`; paid non-trial → Stripe (Phase B) |
 | `src/ThePredictions.Application/Repositories/ISeasonPassRepository.cs` | Create | Read/write passes (commands) |
 | `src/ThePredictions.Infrastructure/Repositories/SeasonPassRepository.cs` | Create | Dapper implementation |
 | `src/ThePredictions.Application/Features/Leagues/Commands/JoinLeagueCommandHandler.cs` | Modify | Gate before `AddMember` |
 | `src/ThePredictions.Application/Features/Leagues/Commands/CreateLeagueCommandHandler.cs` | Modify | Gate before create |
-| Contracts/Domain exception | Create | e.g. `SeasonPassRequiredException` for API mapping |
+| Domain exception | Create | `SeasonPassRequiredException` for API mapping (402) |
 
 ## Implementation Steps
 
-### Step 1: Access decision (authoritative rule — see README)
+### Step 1: The gate (holds-a-pass check)
 
 ```
-allowed if:
-  pass exists for (userId, seasonId)            -> allow (already participating this season)
-  free season (PassStandardPrice IS NULL)              -> create £0 Free pass (burns the freebie) + allow
-  else (paid season):
-    user has ZERO SeasonPass records            -> grant free Trial pass (£0; first season free) + allow
-    else                                        -> deny (purchase required)
+EnsureCanParticipateAsync(userId, seasonId):
+  pass exists for (userId, seasonId)  -> allow
+  else                                -> throw SeasonPassRequiredException(seasonId)   (client routes to acquire)
 ```
 
-- `SeasonAccessService.EnsureCanParticipateAsync(userId, seasonId)`:
-  - If a pass exists for `(userId, seasonId)`, return.
-  - If the season is **free** (`Season.RequiresPayment` is false, i.e. `PassStandardPrice IS NULL`), **create a £0 `Free` pass** (`SeasonPass.CreateFree`) and return — this records participation so a free season **burns the freebie**.
-  - Else (paid): if the user has **zero `SeasonPass` records** (`COUNT(*) == 0`), **grant a free `Trial` pass** (`SeasonPass.CreateTrial`) — first season free — and return; otherwise throw `SeasonPassRequiredException(seasonId)`.
+- `SeasonAccessService.EnsureCanParticipateAsync(userId, seasonId)` does **only** the existence check above. It never creates a pass.
+
+### Step 1b: Acquisition (explicit, separate)
+
+`AcquireSeasonPassCommand(userId, seasonId)`:
+  - pass already exists → return (idempotent).
+  - **free season** (`!Season.RequiresPayment`, i.e. `PassStandardPrice IS NULL`) → create a £0 `Free` pass (`SeasonPass.CreateFree`) — records participation so a free season **burns the freebie**.
+  - Else (**paid**): if the user has **zero `SeasonPass` records** (`COUNT(*) == 0`), **grant a free `Trial` pass** (`SeasonPass.CreateTrial`) — first season free; otherwise it must be paid for → **Stripe checkout (Phase B)**, not this free-acquire path.
   - **Late entry needs no handling here:** the existing per-league entry-deadline rules already block joining once entry has closed (paid and free seasons alike) — ADR 0005.
 
 ### Step 2: Wire into Join
@@ -57,18 +63,19 @@ In `CreateLeagueCommandHandler`, gate before creating the league for the chosen 
 
 ### Step 4: API surface
 
-- Map `SeasonPassRequiredException` to a response the client can act on (e.g. 402/409 + seasonId) so the UI redirects to the purchase page (Task 10).
+- `SeasonPassRequiredException` maps to **402** + `seasonId` in `ErrorHandlingMiddleware` so the client redirects to the acquire page.
+- **Follow-up (next task):** an acquire endpoint (`POST` calling `AcquireSeasonPassCommand` with the current user) + the acquire UI; the **My/Available Passes** pages; and **per-season public-league visibility gating** (a season's public-league list is only shown once the user holds a pass for it). Joining a **private league by code** is already gated (same `JoinLeagueCommandHandler`).
 - Late/closed entry is reported by the **existing** join-deadline handling — no new exception needed.
 
 ## Code Patterns to Follow
 
 - Commands use **repositories** (not `IApplicationReadDbConnection`).
 - Use `IDateTimeProvider` for trial timestamps.
-- Logging: `"Season pass trial granted for user (ID: {UserId}) in season (ID: {SeasonId})"`.
 
 ## Verification
 
-- [ ] All branches covered (already-has-pass / free-season creates £0 Free pass / paid-season trial when 0 records / paid-season deny when ≥1 record).
+- [ ] Gate: holds-pass → allow; no pass → `SeasonPassRequiredException` (402); it never creates a pass.
+- [ ] Acquire: already-has-pass → idempotent; free season → £0 `Free`; paid + 0 records → `Trial`; paid + ≥1 records → needs Stripe (Phase B).
 - [ ] Worked examples in README all behave correctly.
 - [ ] Free trial granted exactly once (only when 0 records on a paid season); never again once any record exists.
 - [ ] Free-season (e.g. World Cup) play **creates a £0 `Free` record** and therefore **burns the freebie**.
