@@ -75,7 +75,7 @@ Represents a football season within a competition.
 | PassStandardPrice | decimal(10,2) | YES | | Admin-set Standard price (> 0) for a pass-required season; NULL for a free season |
 | PassPremiumPrice | decimal(10,2) | YES | | Admin-set full price of the Premium tier (>= PassStandardPrice); NULL for a free season |
 
-> There is no stored `RequiresPass` column: a season is pass-required exactly when it has prices (`PassStandardPrice IS NOT NULL`). The `Season.RequiresPass` domain property is computed from that.
+> Every season requires a Season Pass to take part; "free" seasons simply have no prices, so the pass is acquired for £0 (no payment step). The computed `Season.RequiresPayment` (`PassStandardPrice IS NOT NULL`) only indicates whether acquiring the pass costs money - there is no stored column.
 
 > `ApiLeagueId` and `CompetitionType` previously lived here; both moved to `Competitions` (ADR 0009). The provider id and competition type are now resolved via the season's `Competition` at sync time, and `IsTournament` reads `Competition.Type`.
 

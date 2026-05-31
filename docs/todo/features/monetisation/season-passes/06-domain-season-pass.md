@@ -8,17 +8,17 @@
 
 Not Started | In Progress | **Complete**
 
-> Domain only: `Season` gained `PassStandardPrice`/`PassPremiumPrice` (with validation) plus a **computed** `RequiresPass => PassStandardPrice.HasValue` (no stored column - a season is pass-required exactly when it has prices), and `SeasonPass` + the `SeasonPassTier`/`SeasonPassSource` enums were added. The `SeasonPasses` **table** stays in Task 07 (no reads/writes until the access gate, Task 08); only the additive `Seasons` price columns are migrated (presented as SQL in chat, no committed file). Season create always makes a free season; update preserves existing pricing - admin pricing UI is Task 15.
+> Domain only: `Season` gained `PassStandardPrice`/`PassPremiumPrice` (with validation) plus a **computed** `RequiresPayment => PassStandardPrice.HasValue` (no stored column - a season is pass-required exactly when it has prices), and `SeasonPass` + the `SeasonPassTier`/`SeasonPassSource` enums were added. The `SeasonPasses` **table** stays in Task 07 (no reads/writes until the access gate, Task 08); only the additive `Seasons` price columns are migrated (presented as SQL in chat, no committed file). Season create always makes a free season; update preserves existing pricing - admin pricing UI is Task 15.
 
 ## Goal
 
-Add admin-set prices to `Season` (with `RequiresPass` derived from them), and introduce the `SeasonPass` domain entity (with SMS usage + reward tracking) and supporting enums.
+Add admin-set prices to `Season` (with `RequiresPayment` derived from them), and introduce the `SeasonPass` domain entity (with SMS usage + reward tracking) and supporting enums.
 
 ## Files to Modify
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `src/ThePredictions.Domain/Models/Season.cs` | Modify | Add prices and `CompetitionId` (FK) plus a computed `RequiresPass`; **drop `ApiLeagueId` and `CompetitionType`** (both move to `Competitions`, ADR 0009) |
+| `src/ThePredictions.Domain/Models/Season.cs` | Modify | Add prices and `CompetitionId` (FK) plus a computed `RequiresPayment`; **drop `ApiLeagueId` and `CompetitionType`** (both move to `Competitions`, ADR 0009) |
 | `src/ThePredictions.Domain/Models/SeasonPass.cs` | Create | New entity |
 | `src/ThePredictions.Domain/Common/Enumerations/SeasonPassTier.cs` | Create | `Standard`, `Premium` |
 | `src/ThePredictions.Domain/Common/Enumerations/SeasonPassSource.cs` | Create | `Purchased`, `Trial`, `Free` (free-season participation) |
@@ -27,9 +27,9 @@ Add admin-set prices to `Season` (with `RequiresPass` derived from them), and in
 
 ## Implementation Steps
 
-### Step 1: Add prices to `Season` (RequiresPass derived)
+### Step 1: Add prices to `Season` (RequiresPayment derived)
 
-- Add a **computed** `public bool RequiresPass => PassStandardPrice.HasValue;` (no stored column - a season is pass-required exactly when it has prices).
+- Add a **computed** `public bool RequiresPayment => PassStandardPrice.HasValue;` (no stored column - a season is pass-required exactly when it has prices).
 - Add admin-set prices: `public decimal? PassStandardPrice { get; private set; }` and `public decimal? PassPremiumPrice { get; private set; }` (full price of the +SMS tier). Null for free seasons.
 - Add `public int CompetitionId { get; private set; }` (FK to the `Competitions` reference table, ADR 0009 / Task 16) — the **stable internal competition identity** used for the reward's same-competition match (Task 13) and comparable-season pricing (Task 15). **Remove both `ApiLeagueId` and `CompetitionType` from `Season`** — the provider id and competition type now live on `Competition` (resolved at sync time). The existing `Season.IsTournament` helper moves to read `Competition.Type` (update its callers — Task 16).
 - Thread through the public constructor, `Create(...)`, and `UpdateDetails(...)` (default-false keeps all existing seasons free).

@@ -285,7 +285,7 @@ public class SeasonTests
 
     #endregion
 
-    #region Pricing & RequiresPass
+    #region Pricing & RequiresPayment
 
     [Fact]
     public void Create_ShouldBeFreeSeason_WhenNoPrices()
@@ -296,11 +296,11 @@ public class SeasonTests
         // Assert
         season.PassStandardPrice.Should().BeNull();
         season.PassPremiumPrice.Should().BeNull();
-        season.RequiresPass.Should().BeFalse();
+        season.RequiresPayment.Should().BeFalse();
     }
 
     [Fact]
-    public void Create_ShouldRequirePass_WhenPricesSet()
+    public void Create_ShouldRequirePayment_WhenPricesSet()
     {
         // Act
         var season = CreateSeasonViaFactory(passStandardPrice: 10m, passPremiumPrice: 15m);
@@ -308,7 +308,7 @@ public class SeasonTests
         // Assert
         season.PassStandardPrice.Should().Be(10m);
         season.PassPremiumPrice.Should().Be(15m);
-        season.RequiresPass.Should().BeTrue();
+        season.RequiresPayment.Should().BeTrue();
     }
 
     [Fact]
@@ -385,7 +385,7 @@ public class SeasonTests
         season.CompetitionId.Should().Be(99);
         season.PassStandardPrice.Should().Be(10m);
         season.PassPremiumPrice.Should().Be(15m);
-        season.RequiresPass.Should().BeTrue();
+        season.RequiresPayment.Should().BeTrue();
     }
 
     [Fact]

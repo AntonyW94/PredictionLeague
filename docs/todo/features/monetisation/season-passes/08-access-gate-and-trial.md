@@ -39,7 +39,7 @@ allowed if:
 
 - `SeasonAccessService.EnsureCanParticipateAsync(userId, seasonId)`:
   - If a pass exists for `(userId, seasonId)`, return.
-  - If the season is **free** (`Season.RequiresPass` is false, i.e. `PassStandardPrice IS NULL`), **create a £0 `Free` pass** (`SeasonPass.CreateFree`) and return — this records participation so a free season **burns the freebie**.
+  - If the season is **free** (`Season.RequiresPayment` is false, i.e. `PassStandardPrice IS NULL`), **create a £0 `Free` pass** (`SeasonPass.CreateFree`) and return — this records participation so a free season **burns the freebie**.
   - Else (paid): if the user has **zero `SeasonPass` records** (`COUNT(*) == 0`), **grant a free `Trial` pass** (`SeasonPass.CreateTrial`) — first season free — and return; otherwise throw `SeasonPassRequiredException(seasonId)`.
   - **Late entry needs no handling here:** the existing per-league entry-deadline rules already block joining once entry has closed (paid and free seasons alike) — ADR 0005.
 

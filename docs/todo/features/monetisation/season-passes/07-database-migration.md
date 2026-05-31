@@ -10,7 +10,7 @@
 
 ## Goal
 
-Add the `Seasons` price columns (`PassStandardPrice`/`PassPremiumPrice` - there is no stored `RequiresPass`; it is derived from price presence), the `SeasonPasses` table, and the `RunningCosts` table (Task 14), and keep schema docs + DatabaseTools in sync (mandatory per CLAUDE.md). Note: the `Seasons.PassStandardPrice`/`PassPremiumPrice` columns were already added in the Task 06 stage; this task adds the remaining tables.
+Add the `Seasons` price columns (`PassStandardPrice`/`PassPremiumPrice` - there is no stored `RequiresPayment`; it is derived from price presence), the `SeasonPasses` table, and the `RunningCosts` table (Task 14), and keep schema docs + DatabaseTools in sync (mandatory per CLAUDE.md). Note: the `Seasons.PassStandardPrice`/`PassPremiumPrice` columns were already added in the Task 06 stage; this task adds the remaining tables.
 
 ## Files to Modify
 
@@ -41,7 +41,7 @@ CREATE UNIQUE INDEX [UX_Competitions_Code] ON [Competitions]([Code]);
 
 -- NOTE: [PassStandardPrice]/[PassPremiumPrice]/[CompetitionId] were already added in earlier stages
 -- (CompetitionId in the Competitions refactor; prices in the Season pass domain stage).
--- There is no [RequiresPass] column - a season is pass-required when [PassStandardPrice] IS NOT NULL.
+-- There is no [RequiresPayment] column - a season is pass-required when [PassStandardPrice] IS NOT NULL.
 ALTER TABLE [Seasons] ADD
     [PassStandardPrice]    DECIMAL(10,2) NULL,           -- admin-set entry price (> 0) for a paid season; NULL = free
     [PassPremiumPrice]      DECIMAL(10,2) NULL,           -- admin-set full price of the +SMS tier (>= PassStandardPrice); NULL = free
@@ -122,7 +122,7 @@ CREATE UNIQUE INDEX [UX_LeaguePayouts_League_User] ON [LeaguePayouts]([LeagueId]
 
 ### Step 2: Update schema docs
 
-- Add `PassStandardPrice`/`PassPremiumPrice` to the Seasons section (no `RequiresPass` column - note it is derived), and full `SeasonPasses` and `RunningCosts` sections in `docs/guides/database-schema.md`.
+- Add `PassStandardPrice`/`PassPremiumPrice` to the Seasons section (no `RequiresPayment` column - note it is derived), and full `SeasonPasses` and `RunningCosts` sections in `docs/guides/database-schema.md`.
 
 ### Step 3: Update DatabaseTools
 

@@ -40,7 +40,7 @@ Result surfaced as *"Recommended: £X Standard · £Y +SMS (breaks even at ~N pl
 
 ### Step 1: Season price fields + validation
 
-- `PassStandardPrice` / `PassPremiumPrice` on `Season` (Task 06): both set for a paid season (`PassStandardPrice > 0`, `PassPremiumPrice >= PassStandardPrice`) or both null when free. Setting prices is what makes a season pass-required (`RequiresPass` is derived from `PassStandardPrice`).
+- `PassStandardPrice` / `PassPremiumPrice` on `Season` (Task 06): both set for a paid season (`PassStandardPrice > 0`, `PassPremiumPrice >= PassStandardPrice`) or both null when free. Setting prices is what makes a season pass-required (`RequiresPayment` is derived from `PassStandardPrice`).
 
 ### Step 2: Calculator service
 

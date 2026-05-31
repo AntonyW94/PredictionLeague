@@ -15,8 +15,9 @@ public class Season
     public decimal? PassStandardPrice { get; private set; }
     public decimal? PassPremiumPrice { get; private set; }
 
-    // A season requires a Season Pass when it has a price; free seasons have no prices.
-    public bool RequiresPass => PassStandardPrice.HasValue;
+    // Every season requires a Season Pass to take part. A season requires *payment* only
+    // when it has a price; "free" seasons have no prices, so the pass is acquired for £0.
+    public bool RequiresPayment => PassStandardPrice.HasValue;
 
     private Season() { }
 
