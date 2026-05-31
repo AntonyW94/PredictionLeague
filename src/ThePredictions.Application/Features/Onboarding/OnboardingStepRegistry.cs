@@ -25,8 +25,8 @@ public static class OnboardingStepRegistry
                 Completed: getPassDone, PrerequisiteMet: true, "Get pass", "/season-passes"),
             new StepDefinition(OnboardingStepKeys.JoinLeague, "Join or create a league", Required: true, Skippable: false,
                 Completed: joinLeagueDone, PrerequisiteMet: getPassDone, "Find a league", "/dashboard"),
-            new StepDefinition(OnboardingStepKeys.AddMobile, "Add your mobile number for SMS reminders", Required: false, Skippable: true,
-                Completed: addMobileDone, PrerequisiteMet: true, "Add", "/account/details")
+            new StepDefinition(OnboardingStepKeys.AddMobile, "Complete your profile", Required: false, Skippable: true,
+                Completed: addMobileDone, PrerequisiteMet: true, "Complete", "/account/details")
         };
 
         var steps = definitions.Select(definition => ToDto(definition, skippedKeys)).ToList();
