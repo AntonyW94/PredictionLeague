@@ -38,15 +38,23 @@
             @if (onboardingTakeover)
             {
                 <div class="dashboard-container">
-                    <OnboardingChecklist />
                     @if (onboardingHasPass)
                     {
+                        <OnboardingChecklist />
                         <div class="row">
                             <div class="col-lg-6 mb-4">
                                 <MyLeaguesTile />
                             </div>
                             <div class="col-lg-6 mb-4">
                                 <AvailableLeaguesTile />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row justify-content-center">
+                            <div class="col-lg-4">
+                                <OnboardingChecklist />
                             </div>
                         </div>
                     }
