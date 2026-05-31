@@ -210,10 +210,12 @@
         gap: 0;
     }
 
+    .season-pass-step {
+        padding: 0 var(--space-4);
+    }
+
     .season-pass-step:not(:first-child) {
         border-left: 1px solid var(--purple-100);
-        padding-left: var(--space-5);
-        margin-left: var(--space-5);
     }
 }
 
