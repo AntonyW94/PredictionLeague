@@ -110,6 +110,7 @@
     width: 100%;
     max-width: 720px;
     margin: 0 auto;
+    padding-bottom: var(--space-6);
 }
 
 /* Branded hero banner behind the page title */
