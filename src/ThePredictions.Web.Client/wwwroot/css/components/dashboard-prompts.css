@@ -4,19 +4,19 @@
 .dashboard-prompts {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-2);
-    margin-bottom: var(--spacing-4);
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
 }
 
 .dashboard-prompt {
     display: flex;
     align-items: center;
-    gap: var(--spacing-3);
-    padding: var(--spacing-3) var(--spacing-4);
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
     background: var(--white);
     border: 1px solid var(--purple-100);
     border-left: 4px solid var(--green-600);
-    border-radius: var(--radius-md);
+    border-radius: var(--bs-border-radius);
     box-shadow: 0 2px 8px var(--black-alpha-15);
 }
 
@@ -35,12 +35,12 @@
 .dashboard-prompt__action {
     flex-shrink: 0;
     display: inline-block;
-    padding: var(--spacing-2) var(--spacing-4);
+    padding: var(--space-2) var(--space-4);
     background: var(--green-600);
     color: var(--white);
     font-weight: 700;
     text-decoration: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--bs-border-radius);
     white-space: nowrap;
 }
 

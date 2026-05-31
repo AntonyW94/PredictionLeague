@@ -17,7 +17,6 @@
     </Authorizing>
     <Authorized>
         <div class="page-container page-container--fits-content">
-            <DashboardPrompts Prompts="DashboardState.Prompts" />
             @{
                 var showPendingMembers = !DashboardState.IsPendingMembersLoading && DashboardState.IsAdminOfOpenLeague;
                 var showPendingRequests = DashboardState.PendingRequests.Any() || DashboardState.IsPendingRequestsLoading;
@@ -31,6 +30,7 @@
             }
 
             <div class="dashboard-container dashboard--tab-@_activeTab">
+                <DashboardPrompts Prompts="DashboardState.Prompts" />
                 <div class="dashboard-tabs d-lg-none">
                     <button type="button" class="dashboard-tab @(_activeTab == "play" ? "dashboard-tab--active" : "")" @onclick='() => _activeTab = "play"'>
                         <span class="bi bi-lightning-fill"></span>

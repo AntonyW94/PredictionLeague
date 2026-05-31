@@ -27,6 +27,12 @@ public class GetAvailableSeasonPassesQueryHandler(IApplicationReadDbConnection d
                     WHERE sp.[UserId] = @UserId
                         AND sp.[SeasonId] = s.[Id]
                 )
+                AND EXISTS (                                            -- only offer a pass while entry is still open (a league you could still join)
+                    SELECT 1
+                    FROM [Leagues] l
+                    WHERE l.[SeasonId] = s.[Id]
+                        AND l.[EntryDeadlineUtc] > GETUTCDATE()
+                )
             ORDER BY
                 s.[StartDateUtc] DESC;";
 
