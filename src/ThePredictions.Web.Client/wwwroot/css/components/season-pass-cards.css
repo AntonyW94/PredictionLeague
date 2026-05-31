@@ -1,0 +1,106 @@
+/* Season Pass acquire cards - centered 1 or 2 pricing cards (Standard / Premium). */
+
+.season-pass-cards {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+    align-items: stretch;
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .season-pass-cards {
+        flex-direction: row;
+        justify-content: center;
+        align-items: stretch;
+        max-width: 760px;
+    }
+
+    .season-pass-cards .season-pass-card {
+        flex: 1 1 0;
+        max-width: 360px;
+    }
+}
+
+.season-pass-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-6) var(--spacing-5);
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--radius-lg, 16px);
+    box-shadow: 0 4px 16px var(--black-alpha-15);
+    text-align: center;
+}
+
+.season-pass-card--premium {
+    border-color: var(--green-600);
+    border-width: 2px;
+}
+
+.season-pass-card__badge {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: var(--spacing-1) var(--spacing-3);
+    background: var(--green-600);
+    color: var(--white);
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: var(--radius-md);
+    white-space: nowrap;
+}
+
+.season-pass-card__tier {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--purple-800);
+}
+
+.season-pass-card__price {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--green-600);
+    margin: var(--spacing-2) 0 var(--spacing-4);
+}
+
+.season-pass-card__features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--spacing-5);
+    text-align: left;
+    flex: 1 1 auto;
+}
+
+.season-pass-card__features li {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    padding: var(--spacing-1) 0;
+    color: var(--text-primary, var(--purple-800));
+}
+
+.season-pass-card__features i {
+    color: var(--green-600);
+}
+
+/* Dark mode */
+.theme-dark .season-pass-card {
+    background: var(--purple-800);
+    border-color: var(--purple-600);
+}
+
+.theme-dark .season-pass-card--premium {
+    border-color: var(--green-600);
+}
+
+.theme-dark .season-pass-card__tier {
+    color: var(--white);
+}
+
+.theme-dark .season-pass-card__features li {
+    color: var(--white);
+}

@@ -16,6 +16,15 @@ public class SeasonPassService(HttpClient httpClient) : ISeasonPassService
         return await httpClient.GetFromJsonAsync<List<AvailableSeasonPassDto>>("api/seasonpasses/available") ?? [];
     }
 
+    public async Task<SeasonPassOptionsDto?> GetOptionsAsync(int seasonId)
+    {
+        var response = await httpClient.GetAsync($"api/seasonpasses/options?seasonId={seasonId}");
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<SeasonPassOptionsDto>();
+    }
+
     public async Task<(bool Success, string? ErrorMessage)> AcquireAsync(int seasonId)
     {
         var response = await httpClient.PostAsJsonAsync("api/seasonpasses/acquire", new AcquireSeasonPassRequest { SeasonId = seasonId });

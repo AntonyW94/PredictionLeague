@@ -24,6 +24,13 @@ public class SeasonPassesController(IMediator mediator) : ApiControllerBase
         return Ok(await mediator.Send(new GetAvailableSeasonPassesQuery(CurrentUserId), cancellationToken));
     }
 
+    [HttpGet("options")]
+    public async Task<ActionResult<SeasonPassOptionsDto>> GetOptionsAsync([FromQuery] int seasonId, CancellationToken cancellationToken)
+    {
+        var options = await mediator.Send(new GetSeasonPassOptionsQuery(CurrentUserId, seasonId), cancellationToken);
+        return options is null ? NotFound() : Ok(options);
+    }
+
     [HttpPost("acquire")]
     public async Task<IActionResult> AcquireAsync([FromBody] AcquireSeasonPassRequest request, CancellationToken cancellationToken)
     {
