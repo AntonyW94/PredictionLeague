@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> Delivered: `SeasonPasses` table (manual SQL, additive) + £0 `Free` backfill for existing Approved memberships; `ISeasonPassRepository` + Dapper impl; `ISeasonAccessService`/`SeasonAccessService` enforcing the rule (existing pass -> allow; free season -> £0 Free + allow; paid + 0 records -> Trial + allow; else `SeasonPassRequiredException`); wired into `JoinLeagueCommandHandler` and `CreateLeagueCommandHandler`; `SeasonPassRequiredException` mapped to **402** + `seasonId` in `ErrorHandlingMiddleware`. Schema doc + DatabaseTools (copy order, anonymiser, verifier) updated. Domain 100%.
 
 ## Goal
 

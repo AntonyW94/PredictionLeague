@@ -3,6 +3,7 @@ using MediatR;
 using NSubstitute;
 using ThePredictions.Application.Features.Leagues.Commands;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Exceptions;
 using ThePredictions.Domain.Models;
 using ThePredictions.Tests.Shared.Helpers;
@@ -13,13 +14,14 @@ namespace ThePredictions.Application.Tests.Unit.Features.Leagues.Commands;
 public class JoinLeagueCommandHandlerTests
 {
     private readonly ILeagueRepository _leagueRepository = Substitute.For<ILeagueRepository>();
+    private readonly ISeasonAccessService _seasonAccessService = Substitute.For<ISeasonAccessService>();
     private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
     private readonly JoinLeagueCommandHandler _handler;
 
     public JoinLeagueCommandHandlerTests()
     {
-        _handler = new JoinLeagueCommandHandler(_leagueRepository, _mediator, _dateTimeProvider);
+        _handler = new JoinLeagueCommandHandler(_leagueRepository, _seasonAccessService, _mediator, _dateTimeProvider);
     }
 
     private League CreateLeague(int id = 1, string administratorUserId = "admin-user", DateTime? entryDeadlineUtc = null)

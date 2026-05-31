@@ -1,19 +1,22 @@
 using Ardalis.GuardClauses;
 using MediatR;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Guards;
 using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<JoinLeagueCommand>
+public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonAccessService seasonAccessService, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<JoinLeagueCommand>
 {
     public async Task Handle(JoinLeagueCommand request, CancellationToken cancellationToken)
     {
         var league = await FetchLeagueAsync(request, cancellationToken);
 
         Guard.Against.EntityNotFound(request.LeagueId ?? 0, league, "League");
+
+        await seasonAccessService.EnsureCanParticipateAsync(request.JoiningUserId, league!.SeasonId, cancellationToken);
 
         league.AddMember(request.JoiningUserId, dateTimeProvider);
 

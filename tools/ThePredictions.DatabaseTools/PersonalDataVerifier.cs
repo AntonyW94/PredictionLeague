@@ -15,6 +15,7 @@ public class PersonalDataVerifier(SqlConnection connection)
         await VerifyPasswordResetTokensEmptyAsync(failures);
         await VerifyUserLoginsAsync(failures);
         await VerifyUserTokensEmptyAsync(failures);
+        await VerifySeasonPassReferencesClearedAsync(failures);
 
         if (failures.Count > 0)
         {
@@ -118,5 +119,13 @@ public class PersonalDataVerifier(SqlConnection connection)
         var count = await connection.QueryFirstOrDefaultAsync<int>("SELECT COUNT(*) FROM [AspNetUserTokens]");
         if (count > 0)
             failures.Add($"AspNetUserTokens table is not empty ({count} rows)");
+    }
+
+    private async Task VerifySeasonPassReferencesClearedAsync(List<string> failures)
+    {
+        var count = await connection.QueryFirstOrDefaultAsync<int>(
+            "SELECT COUNT(*) FROM [SeasonPasses] WHERE [StripePaymentReference] IS NOT NULL");
+        if (count > 0)
+            failures.Add($"SeasonPasses contains {count} row(s) with a non-null StripePaymentReference");
     }
 }

@@ -18,6 +18,11 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
             logger.LogWarning("Not Found Error: {Message}", ex.Message);
             await HandleKnownExceptionAsync(context, HttpStatusCode.NotFound, new { message = ex.Message });
         }
+        catch (SeasonPassRequiredException ex)
+        {
+            logger.LogWarning("Season Pass Required: {Message}", ex.Message);
+            await HandleKnownExceptionAsync(context, HttpStatusCode.PaymentRequired, new { message = ex.Message, seasonId = ex.SeasonId });
+        }
         catch (ArgumentException ex)
         {
             logger.LogWarning("Invalid Argument/Business Rule Error: {Message}", ex.Message);

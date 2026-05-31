@@ -104,6 +104,32 @@ public class DataAnonymiser
         return anonymised;
     }
 
+    public static IEnumerable<dynamic> AnonymiseSeasonPasses(IEnumerable<dynamic> seasonPasses)
+    {
+        var anonymised = new List<dynamic>();
+        var counter = 0;
+
+        foreach (var seasonPass in seasonPasses)
+        {
+            var dict = (IDictionary<string, object?>)seasonPass;
+            IDictionary<string, object?> result = new ExpandoObject();
+
+            foreach (var kvp in dict)
+            {
+                result[kvp.Key] = kvp.Value;
+            }
+
+            // Strip the real Stripe payment reference; it must never reach a dev copy.
+            result["StripePaymentReference"] = null;
+
+            anonymised.Add(result);
+            counter++;
+        }
+
+        Console.WriteLine($"[INFO] Anonymised {counter} season passes");
+        return anonymised;
+    }
+
     private static string GenerateRandomEntryCode(Faker faker)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
