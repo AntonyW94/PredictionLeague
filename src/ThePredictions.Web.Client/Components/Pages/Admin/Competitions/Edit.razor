@@ -71,6 +71,13 @@
                         <InputText id="logoUrl" class="form-control" @bind-Value="_model.LogoUrl" placeholder="https://..." />
                         <StyledValidationMessage For="@(() => _model.LogoUrl!)" />
                     </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description (optional)</label>
+                        <InputTextArea id="description" class="form-control" rows="4" @bind-Value="_model.Description"
+                                       placeholder="Format and scoring rules shown on the Season Pass page (e.g. group stages then knockouts; scored on the result after 90 minutes plus injury time)." />
+                        <StyledValidationMessage For="@(() => _model.Description!)" />
+                    </div>
                 </ChildContent>
             </BaseFormComponent>
         }
@@ -95,6 +102,7 @@
                 Name = competition.Name,
                 Type = competition.Type,
                 LogoUrl = competition.LogoUrl,
+                Description = competition.Description,
                 ApiLeagueId = competition.ApiLeagueId
             };
             _seasonCount = competition.SeasonCount;

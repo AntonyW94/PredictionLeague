@@ -1,3 +1,83 @@
+/* Season Pass acquire page - intro (logo, blurb, format/rules, teams) + pricing cards. */
+
+.season-pass-intro {
+    max-width: 760px;
+    margin: 0 auto var(--space-6);
+    text-align: center;
+}
+
+.season-pass-logo {
+    max-height: 80px;
+    max-width: 160px;
+    object-fit: contain;
+    margin-bottom: var(--space-3);
+}
+
+.season-pass-intro__lead {
+    color: var(--text-primary, var(--purple-800));
+    max-width: 600px;
+    margin: 0 auto var(--space-4);
+}
+
+.season-pass-description {
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+    padding: var(--space-4);
+    text-align: left;
+    margin: 0 auto var(--space-5);
+}
+
+.season-pass-description p {
+    margin-bottom: var(--space-2);
+    color: var(--text-primary, var(--purple-800));
+}
+
+.season-pass-description p:last-child {
+    margin-bottom: 0;
+}
+
+.season-pass-teams {
+    margin-bottom: var(--space-5);
+}
+
+.season-pass-teams__grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.season-pass-team {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+    font-size: 0.85rem;
+    color: var(--text-primary, var(--purple-800));
+}
+
+.season-pass-team img {
+    height: 20px;
+    width: 20px;
+    object-fit: contain;
+}
+
+.theme-dark .season-pass-intro__lead,
+.theme-dark .season-pass-description p,
+.theme-dark .season-pass-team {
+    color: var(--white);
+}
+
+.theme-dark .season-pass-description,
+.theme-dark .season-pass-team {
+    background: var(--purple-800);
+    border-color: var(--purple-600);
+}
+
 /* Season Pass acquire cards - centered 1 or 2 pricing cards (Standard / Premium). */
 
 .season-pass-cards {

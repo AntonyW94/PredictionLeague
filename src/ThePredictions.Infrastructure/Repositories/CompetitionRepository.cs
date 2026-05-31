@@ -19,6 +19,7 @@ public class CompetitionRepository(IDbConnectionFactory connectionFactory, IDbTr
                     [Name],
                     [Type],
                     [LogoUrl],
+                    [Description],
                     [ApiLeagueId],
                     [CreatedAtUtc]
                 )
@@ -29,6 +30,7 @@ public class CompetitionRepository(IDbConnectionFactory connectionFactory, IDbTr
                     @Name,
                     @Type,
                     @LogoUrl,
+                    @Description,
                     @ApiLeagueId,
                     @CreatedAtUtc
                 );";
@@ -56,6 +58,7 @@ public class CompetitionRepository(IDbConnectionFactory connectionFactory, IDbTr
                     c.[Name],
                     c.[Type],
                     c.[LogoUrl],
+                    c.[Description],
                     c.[ApiLeagueId],
                     c.[CreatedAtUtc]
                 FROM [Competitions] c
@@ -80,6 +83,7 @@ public class CompetitionRepository(IDbConnectionFactory connectionFactory, IDbTr
                     c.[Name],
                     c.[Type],
                     c.[LogoUrl],
+                    c.[Description],
                     c.[ApiLeagueId],
                     c.[CreatedAtUtc]
                 FROM [Competitions] c
@@ -127,6 +131,7 @@ public class CompetitionRepository(IDbConnectionFactory connectionFactory, IDbTr
                     [Name] = @Name,
                     [Type] = @Type,
                     [LogoUrl] = @LogoUrl,
+                    [Description] = @Description,
                     [ApiLeagueId] = @ApiLeagueId
                 WHERE [Id] = @Id;";
 

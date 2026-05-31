@@ -6,6 +6,7 @@ public record CompetitionDto(
     string Name,
     int Type,
     string? LogoUrl,
+    string? Description,
     int? ApiLeagueId,
     int SeasonCount
 );

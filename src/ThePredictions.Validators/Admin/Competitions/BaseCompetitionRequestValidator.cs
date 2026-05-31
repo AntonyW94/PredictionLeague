@@ -34,6 +34,10 @@ public abstract class BaseCompetitionRequestValidator<T> : AbstractValidator<T> 
         RuleFor(x => x.ApiLeagueId)
             .GreaterThan(0).WithMessage("The API league id must be a positive number.")
             .When(x => x.ApiLeagueId.HasValue);
+
+        RuleFor(x => x.Description)
+            .MaximumLength(2000).WithMessage("The description must be 2000 characters or fewer.")
+            .When(x => !string.IsNullOrEmpty(x.Description));
     }
 
     private static bool BeAValidUrl(string? url)

@@ -38,9 +38,47 @@
             }
             else
             {
-                <h2 class="text-center fw-bold mb-1">@_options.SeasonName</h2>
-                <p class="text-center text-muted mb-4">Get your Season Pass to take part</p>
+                <div class="season-pass-intro">
+                    @if (!string.IsNullOrEmpty(_options.CompetitionLogoUrl))
+                    {
+                        <img class="season-pass-logo" src="@_options.CompetitionLogoUrl" alt="@_options.SeasonName logo" />
+                    }
+                    <h2 class="text-center fw-bold mb-2">@_options.SeasonName</h2>
+                    <p class="season-pass-intro__lead text-center">
+                        A Season Pass lets you take part in <strong>@_options.SeasonName</strong> - join or create leagues, make predictions, and compete on the leaderboards all season.
+                    </p>
 
+                    @if (!string.IsNullOrEmpty(_options.CompetitionDescription))
+                    {
+                        <div class="season-pass-description">
+                            @foreach (var line in _options.CompetitionDescription.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <p>@line.Trim()</p>
+                            }
+                        </div>
+                    }
+
+                    @if (_teams.Count > 0)
+                    {
+                        <div class="season-pass-teams">
+                            <h3 class="fw-bold text-center mb-3">Teams this season</h3>
+                            <div class="season-pass-teams__grid">
+                                @foreach (var team in _teams)
+                                {
+                                    <div class="season-pass-team">
+                                        @if (!string.IsNullOrEmpty(team.LogoUrl))
+                                        {
+                                            <img src="@team.LogoUrl" alt="@team.Name" />
+                                        }
+                                        <span>@team.Name</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <h3 class="text-center fw-bold mb-3">Get your pass</h3>
                 <div class="season-pass-cards">
                     <div class="season-pass-card">
                         <div class="season-pass-card__tier">Standard</div>
@@ -150,6 +188,7 @@
     private string? _errorMessage;
 
     private SeasonPassOptionsDto? _options;
+    private List<SeasonTeamDto> _teams = [];
     private List<MySeasonPassDto> _mine = [];
     private List<AvailableSeasonPassDto> _available = [];
 
@@ -164,6 +203,7 @@
             if (SeasonId.HasValue)
             {
                 _options = await SeasonPassService.GetOptionsAsync(SeasonId.Value);
+                _teams = _options is null ? [] : await SeasonPassService.GetSeasonTeamsAsync(SeasonId.Value);
             }
             else
             {

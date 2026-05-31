@@ -7,5 +7,6 @@ public interface ISeasonPassService
     Task<List<MySeasonPassDto>> GetMyPassesAsync();
     Task<List<AvailableSeasonPassDto>> GetAvailablePassesAsync();
     Task<SeasonPassOptionsDto?> GetOptionsAsync(int seasonId);
+    Task<List<SeasonTeamDto>> GetSeasonTeamsAsync(int seasonId);
     Task<(bool Success, string? ErrorMessage)> AcquireAsync(int seasonId);
 }

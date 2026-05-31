@@ -15,9 +15,10 @@ public class CompetitionTests
         string name = "Premier League",
         CompetitionType type = CompetitionType.League,
         string? logoUrl = "https://cdn.example.com/epl.png",
+        string? description = "Top-flight English league.",
         int? apiLeagueId = 39)
     {
-        return Competition.Create(code, name, type, logoUrl, apiLeagueId, _dateTimeProvider);
+        return Competition.Create(code, name, type, logoUrl, description, apiLeagueId, _dateTimeProvider);
     }
 
     #region Create — Happy Path
@@ -33,6 +34,7 @@ public class CompetitionTests
         competition.Name.Should().Be("Premier League");
         competition.Type.Should().Be(CompetitionType.League);
         competition.LogoUrl.Should().Be("https://cdn.example.com/epl.png");
+        competition.Description.Should().Be("Top-flight English league.");
         competition.ApiLeagueId.Should().Be(39);
         competition.CreatedAtUtc.Should().Be(_dateTimeProvider.UtcNow);
     }
@@ -136,13 +138,14 @@ public class CompetitionTests
         var competition = CreateViaFactory();
 
         // Act
-        competition.UpdateDetails("WORLD_CUP", "World Cup", CompetitionType.Tournament, "https://cdn.example.com/wc.png", 1);
+        competition.UpdateDetails("WORLD_CUP", "World Cup", CompetitionType.Tournament, "https://cdn.example.com/wc.png", "Group stages then knockouts.", 1);
 
         // Assert
         competition.Code.Should().Be("WORLD_CUP");
         competition.Name.Should().Be("World Cup");
         competition.Type.Should().Be(CompetitionType.Tournament);
         competition.LogoUrl.Should().Be("https://cdn.example.com/wc.png");
+        competition.Description.Should().Be("Group stages then knockouts.");
         competition.ApiLeagueId.Should().Be(1);
     }
 
@@ -153,7 +156,7 @@ public class CompetitionTests
         var competition = CreateViaFactory(apiLeagueId: 39);
 
         // Act
-        competition.UpdateDetails("EPL", "Premier League", CompetitionType.League, null, null);
+        competition.UpdateDetails("EPL", "Premier League", CompetitionType.League, null, null, null);
 
         // Assert
         competition.ApiLeagueId.Should().BeNull();
@@ -165,10 +168,10 @@ public class CompetitionTests
     {
         // Arrange — public constructor so we can set Id + CreatedAtUtc
         var createdAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        var competition = new Competition(id: 5, code: "EPL", name: "Premier League", type: CompetitionType.League, logoUrl: null, apiLeagueId: 39, createdAtUtc: createdAt);
+        var competition = new Competition(id: 5, code: "EPL", name: "Premier League", type: CompetitionType.League, logoUrl: null, description: null, apiLeagueId: 39, createdAtUtc: createdAt);
 
         // Act
-        competition.UpdateDetails("EPL", "English Premier League", CompetitionType.League, null, 39);
+        competition.UpdateDetails("EPL", "English Premier League", CompetitionType.League, null, null, 39);
 
         // Assert
         competition.Id.Should().Be(5);
@@ -183,7 +186,7 @@ public class CompetitionTests
         var competition = CreateViaFactory();
 
         // Act
-        var act = () => competition.UpdateDetails(" ", "Premier League", CompetitionType.League, null, 39);
+        var act = () => competition.UpdateDetails(" ", "Premier League", CompetitionType.League, null, null, 39);
 
         // Assert
         act.Should().Throw<ArgumentException>();
@@ -196,7 +199,7 @@ public class CompetitionTests
         var competition = CreateViaFactory();
 
         // Act
-        var act = () => competition.UpdateDetails("EPL", " ", CompetitionType.League, null, 39);
+        var act = () => competition.UpdateDetails("EPL", " ", CompetitionType.League, null, null, 39);
 
         // Assert
         act.Should().Throw<ArgumentException>();

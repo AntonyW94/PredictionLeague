@@ -13,6 +13,8 @@ public class GetSeasonPassOptionsQueryHandler(IApplicationReadDbConnection dbCon
             SELECT
                 s.[Id] AS SeasonId,
                 s.[Name] AS SeasonName,
+                c.[LogoUrl] AS CompetitionLogoUrl,
+                c.[Description] AS CompetitionDescription,
                 CAST(CASE WHEN s.[PassStandardPrice] IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS RequiresPayment,
                 s.[PassStandardPrice] AS StandardPrice,
                 s.[PassPremiumPrice] AS PremiumPrice,
@@ -20,6 +22,8 @@ public class GetSeasonPassOptionsQueryHandler(IApplicationReadDbConnection dbCon
                 CAST(CASE WHEN EXISTS (SELECT 1 FROM [SeasonPasses] sp WHERE sp.[UserId] = @UserId AND sp.[SeasonId] = s.[Id]) THEN 1 ELSE 0 END AS BIT) AS AlreadyHeld
             FROM
                 [Seasons] s
+            JOIN
+                [Competitions] c ON c.[Id] = s.[CompetitionId]
             WHERE
                 s.[Id] = @SeasonId;";
 

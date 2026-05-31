@@ -50,6 +50,7 @@ Reference data for a competition: the stable, provider-independent identity that
 | Name | nvarchar(200) | NO | | Competition name (e.g., "Premier League") |
 | Type | int | NO | | Type of competition (0 = League, 1 = Tournament) |
 | LogoUrl | nvarchar(500) | YES | | External logo URL (admin-entered) |
+| Description | nvarchar(max) | YES | | Admin-entered format/rules blurb shown on the Season Pass acquire page |
 | ApiLeagueId | int | YES | | External API league identifier (admin-editable) |
 | CreatedAtUtc | datetime2 | NO | | When the competition was created |
 

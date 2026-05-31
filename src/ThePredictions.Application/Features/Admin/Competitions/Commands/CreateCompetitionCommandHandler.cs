@@ -20,7 +20,7 @@ public class CreateCompetitionCommandHandler(
         if (existing != null)
             throw new InvalidOperationException($"A competition with code '{request.Code}' already exists.");
 
-        var competition = Competition.Create(request.Code, request.Name, request.Type, request.LogoUrl, request.ApiLeagueId, dateTimeProvider);
+        var competition = Competition.Create(request.Code, request.Name, request.Type, request.LogoUrl, request.Description, request.ApiLeagueId, dateTimeProvider);
 
         var createdCompetition = await competitionRepository.CreateAsync(competition, cancellationToken);
 
@@ -30,6 +30,7 @@ public class CreateCompetitionCommandHandler(
             createdCompetition.Name,
             (int)createdCompetition.Type,
             createdCompetition.LogoUrl,
+            createdCompetition.Description,
             createdCompetition.ApiLeagueId,
             0);
     }

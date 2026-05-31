@@ -11,6 +11,7 @@ public class Competition
     public string Name { get; private set; } = string.Empty;
     public CompetitionType Type { get; private set; }
     public string? LogoUrl { get; private set; }
+    public string? Description { get; private set; }
     public int? ApiLeagueId { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
@@ -20,18 +21,19 @@ public class Competition
     {
     }
 
-    public Competition(int id, string code, string name, CompetitionType type, string? logoUrl, int? apiLeagueId, DateTime createdAtUtc)
+    public Competition(int id, string code, string name, CompetitionType type, string? logoUrl, string? description, int? apiLeagueId, DateTime createdAtUtc)
     {
         Id = id;
         Code = code;
         Name = name;
         Type = type;
         LogoUrl = logoUrl;
+        Description = description;
         ApiLeagueId = apiLeagueId;
         CreatedAtUtc = createdAtUtc;
     }
 
-    public static Competition Create(string code, string name, CompetitionType type, string? logoUrl, int? apiLeagueId, IDateTimeProvider dateTimeProvider)
+    public static Competition Create(string code, string name, CompetitionType type, string? logoUrl, string? description, int? apiLeagueId, IDateTimeProvider dateTimeProvider)
     {
         Validate(code, name);
 
@@ -41,12 +43,13 @@ public class Competition
             Name = name,
             Type = type,
             LogoUrl = logoUrl,
+            Description = description,
             ApiLeagueId = apiLeagueId,
             CreatedAtUtc = dateTimeProvider.UtcNow
         };
     }
 
-    public void UpdateDetails(string code, string name, CompetitionType type, string? logoUrl, int? apiLeagueId)
+    public void UpdateDetails(string code, string name, CompetitionType type, string? logoUrl, string? description, int? apiLeagueId)
     {
         Validate(code, name);
 
@@ -54,6 +57,7 @@ public class Competition
         Name = name;
         Type = type;
         LogoUrl = logoUrl;
+        Description = description;
         ApiLeagueId = apiLeagueId;
     }
 
