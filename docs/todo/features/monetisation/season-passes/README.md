@@ -67,15 +67,19 @@ Prices are **not hardcoded**. Each pass-required season stores an admin-set **St
 
 ## Access & Trial Rule (authoritative definition)
 
-A user may take part in a season (join or create a league in it) if **any** of:
+**Acquire-first.** A Season Pass is required to take part in **every** season; the user **acquires** a pass (free or paid) **before** they can see/join that season's public leagues. Two distinct steps:
 
-1. A `SeasonPass` exists for `(UserId, SeasonId)` → **allow** (already participating this season), **or**
-2. Free season (`Season.RequiresPayment` is false, i.e. `PassStandardPrice IS NULL`) → **create a £0 `Free` pass** (records participation — burns the freebie) and **allow**, **or**
-3. Paid season + the user has **zero `SeasonPass` records** (`COUNT == 0`) → **grant a free `Trial` pass** (their first season is free) and **allow**.
+**The gate** (on join/create, and on viewing a season's public leagues):
+- A `SeasonPass` exists for `(UserId, SeasonId)` → **allow**.
+- Otherwise → **block** (`SeasonPassRequiredException` → 402) and **redirect to the acquire page** for that season.
 
-Otherwise (paid season, ≥1 record) → **block, redirect to purchase page.**
+**Acquisition** (the explicit "Get your pass" action — `AcquireSeasonPassCommand`):
+1. Pass already exists → **idempotent** (nothing to do), **or**
+2. **Free season** (`!Season.RequiresPayment`, i.e. `PassStandardPrice IS NULL`) → grant a **£0 `Free` pass** (records participation — burns the freebie), **or**
+3. **Paid season + zero `SeasonPass` records** (`COUNT == 0`) → grant a **free `Trial` pass** (first season free), **or**
+4. **Paid season + ≥1 record** → **payment required → Stripe checkout** (Phase B).
 
-Eligibility is a single `COUNT`/`EXISTS` on `SeasonPasses` — **no `LeagueMember` history check**. **Every participation writes a record** (free → £0 `Free`), so **free play burns the freebie**. Late entry is handled by the existing per-league entry-deadline rules (ADR 0005).
+Eligibility for the trial is a single `COUNT`/`EXISTS` on `SeasonPasses` — **no `LeagueMember` history check**. **Every acquisition writes a record** (free → £0 `Free`), so **free play burns the freebie**. Late entry is handled by the existing per-league entry-deadline rules (ADR 0005).
 
 **Worked examples:**
 
@@ -149,7 +153,8 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 | A1 | 16 | [Competitions management](./16-competitions-management.md) | Foundational — `Competitions` table + `Season.CompetitionId`; refactors existing sync. Do first. |
 | A2 | 6 | [Domain model](./06-domain-season-pass.md) | `Season` changes, `SeasonPass`, enums. |
 | A3 | 7 | [Database & schema](./07-database-migration.md) | All new tables/columns, backfills, schema doc, DatabaseTools. |
-| A4 | 8 | [Access gate & trial](./08-access-gate-and-trial.md) | Free-first trial; gate Join/Create. |
+| A4 | 8 | [Access gate & trial](./08-access-gate-and-trial.md) | **Acquire-first (backend):** gate = holds-a-pass check on Join/Create (else 402); `AcquireSeasonPassCommand` grants free (free season) / trial (first paid season). |
+| A4b | 8 | Acquire UI + passes pages + visibility gating | **Follow-up to A4:** acquire endpoint + "Get your pass" page (handles the 402 redirect; free = 1-click £0), **My Passes** + **Available Passes** pages, and per-season **public-league visibility gating**. Free path is Phase A; the paid acquire is Stripe (Phase B). **Deploy gate: A4's block must not go live until this UI exists.** |
 | A5 | 19 | [Entry-fee settlement](./19-entry-fee-settlement.md) | Encryption service + admin bank details + join/pay flow (peer-to-peer, no Stripe). |
 | A6 | 20 | [Payouts](./20-payouts.md) | Player payout details + payouts list + mark-as-paid (manual, no Stripe). |
 | A7 | 14 | [Admin running costs](./14-admin-running-costs.md) | Running-costs CRUD page. |
