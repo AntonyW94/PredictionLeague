@@ -28,12 +28,12 @@ Let a user buy a Season Pass via a one-off Stripe Checkout session, and create t
 ### Step 1: Config
 
 - Stripe **secret key** + **webhook signing secret** from **Key Vault** (never `appsettings.json`).
-- **No Price-ID map** — amounts come from the season's admin-set `EntryPrice` / `SmsPrice` (Tasks 06–07, 15), passed to Stripe as dynamic `price_data`.
+- **No Price-ID map** — amounts come from the season's admin-set `PassStandardPrice` / `PassPremiumPrice` (Tasks 06–07, 15), passed to Stripe as dynamic `price_data`.
 
 ### Step 2: Create Checkout session
 
 - `StripePaymentService.CreateCheckoutSessionAsync(userId, seasonId, tier)`:
-  - Look up the season's price for the chosen tier (`EntryPrice` for Entry, `SmsPrice` for Entry + SMS). If the user is **reward-eligible** (Task 13), the SMS tier is offered at `EntryPrice` (uplift comped).
+  - Look up the season's price for the chosen tier (`PassStandardPrice` for Standard, `PassPremiumPrice` for Premium). If the user is **reward-eligible** (Task 13), the SMS tier is offered at `PassStandardPrice` (uplift comped).
   - Mode = **`payment`** (one-off).
   - Line item = dynamic **`price_data`** in GBP with `unit_amount` = the DB price (in pence). No pre-created Price object.
   - `client_reference_id` / `metadata` = `userId`, `seasonId`, `tier`, and the computed `smsFeePaid` (so the webhook can fulfil and record the SMS uplift paid).

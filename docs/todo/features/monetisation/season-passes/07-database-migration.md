@@ -10,7 +10,7 @@
 
 ## Goal
 
-Add the `Seasons.RequiresPass` + price columns, the `SeasonPasses` table, and the `RunningCosts` table (Task 14), and keep schema docs + DatabaseTools in sync (mandatory per CLAUDE.md).
+Add the `Seasons` price columns (`PassStandardPrice`/`PassPremiumPrice` - there is no stored `RequiresPayment`; it is derived from price presence), the `SeasonPasses` table, and the `RunningCosts` table (Task 14), and keep schema docs + DatabaseTools in sync (mandatory per CLAUDE.md). Note: the `Seasons.PassStandardPrice`/`PassPremiumPrice` columns were already added in the Task 06 stage; this task adds the remaining tables.
 
 ## Files to Modify
 
@@ -39,10 +39,12 @@ CREATE TABLE [Competitions] (
 );
 CREATE UNIQUE INDEX [UX_Competitions_Code] ON [Competitions]([Code]);
 
+-- NOTE: [PassStandardPrice]/[PassPremiumPrice]/[CompetitionId] were already added in earlier stages
+-- (CompetitionId in the Competitions refactor; prices in the Season pass domain stage).
+-- There is no [RequiresPayment] column - a season is pass-required when [PassStandardPrice] IS NOT NULL.
 ALTER TABLE [Seasons] ADD
-    [RequiresPass]  BIT NOT NULL DEFAULT (0),
-    [EntryPrice]    DECIMAL(10,2) NULL,           -- admin-set; required when RequiresPass = 1
-    [SmsPrice]      DECIMAL(10,2) NULL,           -- admin-set full price of the +SMS tier
+    [PassStandardPrice]    DECIMAL(10,2) NULL,           -- admin-set entry price (> 0) for a paid season; NULL = free
+    [PassPremiumPrice]      DECIMAL(10,2) NULL,           -- admin-set full price of the +SMS tier (>= PassStandardPrice); NULL = free
     [CompetitionId] INT NULL;                     -- FK to Competitions (ADR 0009); backfill then enforce NOT NULL
 -- after backfill: ADD CONSTRAINT [FK_Seasons_Competitions] FOREIGN KEY ([CompetitionId]) REFERENCES [Competitions]([Id]);
 -- after backfill: ALTER TABLE [Seasons] DROP COLUMN [ApiLeagueId];      -- provider id now lives on Competitions
@@ -50,18 +52,18 @@ ALTER TABLE [Seasons] ADD
 
 CREATE TABLE [SeasonPasses] (
     [Id]                       INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [UserId]                   INT NOT NULL,
+    [UserId]                   NVARCHAR(450) NOT NULL,   -- FK to AspNetUsers (string identity id)
     [SeasonId]                 INT NOT NULL,
-    [Tier]                     INT NOT NULL,        -- 0 Entry, 1 EntryPlusSms
-    [Source]                   INT NOT NULL,        -- 0 Purchased, 1 Trial, 2 Free (3 RewardUpgrade if added)
+    [Tier]                     NVARCHAR(20) NOT NULL,        -- Standard | Premium (enum stored as string, as elsewhere)
+    [Source]                   NVARCHAR(20) NOT NULL,        -- Purchased | Trial | Free
     [AmountPaid]               DECIMAL(10,2) NOT NULL,
-    [SmsFeePaid]               DECIMAL(10,2) NOT NULL DEFAULT (0),  -- SMS uplift actually paid (0 if comped/trial/entry)
+    [SmsFeePaid]               DECIMAL(10,2) NOT NULL DEFAULT (0),  -- SMS uplift actually paid (0 if comped/trial/standard)
     [StripePaymentReference]   NVARCHAR(255) NULL,
     [CreatedAtUtc]             DATETIME2 NOT NULL,
     [SmsSentCount]             INT NOT NULL DEFAULT (0),    -- SMS reminders sent this season (powers reward)
     [RewardRedeemedForSeasonId] INT NULL,                  -- set when this pass's leftover funded a later free SMS season
-    [SmsPaused]                BIT NOT NULL DEFAULT (0),    -- user paused their SMS for this season (in-app toggle)
-    [RefundedAtUtc]            DATETIME2 NULL,              -- set when the pass is refunded (pre-season-start; ADR 0005)
+    -- NOTE: SMS pause is a per-user notification preference (Task 11), NOT a per-pass column.
+    [RefundedAtUtc]            DATETIME2 NULL,              -- set when the pass is refunded (pre-season-start; ADR 0005, Task 17)
     CONSTRAINT [FK_SeasonPasses_Seasons] FOREIGN KEY ([SeasonId]) REFERENCES [Seasons]([Id]),
     CONSTRAINT [FK_SeasonPasses_Users]   FOREIGN KEY ([UserId])   REFERENCES [AspNetUsers]([Id])
 );
@@ -113,14 +115,14 @@ CREATE UNIQUE INDEX [UX_LeaguePayouts_League_User] ON [LeaguePayouts]([LeagueId]
 - Unique index enforces **one pass per user per season** — and because rows are per-(user, season), a user can hold **multiple concurrent passes for overlapping seasons** (e.g. World Cup + Premier League) with no extra modelling.
 - **Every participation has a record:** free seasons store a **£0 `Free`** pass; paid seasons store `Purchased`/`Trial`. This is what makes free play **burn the free-first-season** (ADR 0005).
 - **Backfill (ADR 0005):** for every existing approved `(user, season)` membership, insert a **£0 `Free`** `SeasonPass` (Source 2), so existing players already have records and pay for their first paid season. One-time migration query.
-- `DEFAULT (0)` on `RequiresPass` grandfathers every existing season as free; prices stay NULL on those.
+- Existing seasons have NULL `PassStandardPrice`/`PassPremiumPrice`, so they are all grandfathered as free (a season is paid only once priced).
 - **Competition migration (ADR 0009):** insert a `Competitions` row per distinct existing `Season.ApiLeagueId` (set `Code`/`Name`/`ApiLeagueId`, and `Type` from the seasons' existing `CompetitionType`; logo added later), add `Seasons.CompetitionId` nullable, **backfill** it, add the FK, make it `NOT NULL`, then **drop `Seasons.ApiLeagueId` and `Seasons.CompetitionType`**. Update the existing season-sync handler and any `Season.ApiLeagueId` / `Season.CompetitionType` / `Season.IsTournament` readers to go via the season's `Competition` — see Task 16.
 - `RunningCosts` has **no personal data** — copy as-is in the refresh (no anonymisation), but include it in `TableCopyOrder`.
 - **Encrypted bank details (ADR 0010):** `Leagues` (admin receiving details) and `UserPayoutDetails` (player payout details) hold **ciphertext only** (app-level AES, key in Key Vault — never plaintext in the DB). `DataAnonymiser` must replace them with dummy values on dev refresh and `PersonalDataVerifier` must assert no real values survive. **`LeaguePayouts`** holds one **aggregated total per (league, user)** with `PaidAtUtc` — the admin marks the **single total** paid, not each individual `Winnings` row (no personal data beyond `UserId`/amount, so copied as-is). The Round/Monthly/Overall **breakdown is NOT stored here** — it stays **computed live from `Winnings`** (the source of truth) for the dashboard and payouts list. **Mark-as-paid is only enabled once the season is complete** (all rounds done). Build/UX in **Tasks 19 & 20**.
 
 ### Step 2: Update schema docs
 
-- Add `RequiresPass`/`EntryPrice`/`SmsPrice` to the Seasons section, and full `SeasonPasses` and `RunningCosts` sections in `docs/guides/database-schema.md`.
+- Add `PassStandardPrice`/`PassPremiumPrice` to the Seasons section (no `RequiresPayment` column - note it is derived), and full `SeasonPasses` and `RunningCosts` sections in `docs/guides/database-schema.md`.
 
 ### Step 3: Update DatabaseTools
 

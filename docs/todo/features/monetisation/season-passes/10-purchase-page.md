@@ -10,7 +10,7 @@
 
 ## Goal
 
-Build the Blazor Season Pass purchase page from the mockup: two tiers (Entry / Entry + SMS), launches Stripe Checkout, and shows a free-trial state for eligible users.
+Build the Blazor Season Pass purchase page from the mockup: two tiers (Standard / Premium), launches Stripe Checkout, and shows a free-trial state for eligible users.
 
 ## Files to Modify
 
@@ -31,9 +31,9 @@ Build the Blazor Season Pass purchase page from the mockup: two tiers (Entry / E
 
 ### Step 2: Page UI (match mockup)
 
-- Two cards: **Season Entry** and **Season Entry + SMS** ("Best value" badge), feature lists, prices, CTA buttons.
-- If **trial-eligible**: show a "Your first season is on us — join free" state. The **Entry** CTA proceeds free without payment; an optional **"add SMS for £{uplift}"** choice routes through Checkout for the uplift only (creates a `CreateTrialWithSms` pass).
-- If **reward-eligible** (Task 13): offer Entry + SMS at the Entry price with a "you earned free SMS" message.
+- Two cards: **Season Standard** and **Season Premium** ("Best value" badge), feature lists, prices, CTA buttons.
+- If **trial-eligible**: show a "Your first season is on us — join free" state. The **Standard** CTA proceeds free without payment; an optional **"add SMS for £{uplift}"** choice routes through Checkout for the uplift only (creates a `CreateTrialWithSms` pass).
+- If **reward-eligible** (Task 13): offer Premium at the Standard price with a "you earned free SMS" message.
 
 ### Step 2b: No late entry
 
@@ -41,9 +41,9 @@ Build the Blazor Season Pass purchase page from the mockup: two tiers (Entry / E
 
 ### Step 2a: Require a valid UK mobile before SMS purchase
 
-- The **Entry + SMS** option (and the trial SMS add-on) is **blocked until the user has a valid UK mobile** on their account.
+- The **Premium** option (and the trial SMS add-on) is **blocked until the user has a valid UK mobile** on their account.
 - Validate with **`libphonenumber-csharp`**: parse region `"GB"`, require `IsValidNumber` **and** `NumberType == Mobile`; store the **E.164** form. (Add a reusable phone validator in the Validators project.)
-- If no/invalid number, prompt to add one inline before allowing the SMS purchase. Email-only Entry needs no phone. UK-only — non-UK mobiles are not offered SMS (ADR 0007).
+- If no/invalid number, prompt to add one inline before allowing the SMS purchase. Email-only Standard needs no phone. UK-only — non-UK mobiles are not offered SMS (ADR 0007).
 - Also require a **confirmed email** before any purchase (ADR 0009 / Task 18).
 - Follow Web.Client `CLAUDE.md`: state-service + `OnStateChange`/`IDisposable`, design tokens, **mobile-first `min-width`** media queries, verify **light + dark** mode.
 
@@ -58,7 +58,7 @@ State-service + component pattern from `src/ThePredictions.Web.Client/CLAUDE.md`
 ## Verification
 
 - [ ] Renders correctly in light and dark mode, mobile and desktop.
-- [ ] Entry / Entry + SMS launch Checkout with the correct tier.
+- [ ] Standard / Premium launch Checkout with the correct tier.
 - [ ] Trial-eligible users see the free state and never reach Checkout.
 - [ ] Production CSS bundling includes the new file (`dotnet publish` check).
 

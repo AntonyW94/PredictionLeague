@@ -45,8 +45,8 @@ SMS therefore **only ever fires in the final window (6h/1h)**, **only if predict
 ### Step 2: Add the extra SMS (final window only)
 
 - After the email step, at the **6h and 1h** milestones, additionally send an **SMS** to a user when **all** hold:
-  1. they hold a `SeasonPass` with `Tier == EntryPlusSms` for the round's season,
-  2. they have **not paused** SMS for the season (`SeasonPass.SmsPaused == false`),
+  1. they hold a `SeasonPass` with `Tier == Premium` for the round's season (`SeasonPass.HasSmsReminders`),
+  2. they have **not paused** SMS (the **per-user** toggle below is off),
   3. they have a valid mobile number, and
   4. they still haven't submitted predictions for the round.
 - Identify eligible recipients via `IApplicationReadDbConnection` (query side), joining `SeasonPasses` to the users missing predictions for the upcoming round.
@@ -55,14 +55,15 @@ SMS therefore **only ever fires in the final window (6h/1h)**, **only if predict
 # existing email path runs first, unchanged, for everyone
 
 if milestone is in final window (6h / 1h):
-    for each SMS-tier user, not paused, still missing predictions, with a valid phone:
+    for each SMS-tier user (HasSmsReminders), not paused (per-user setting), still missing predictions, with a valid phone:
         send SMS via ISmsService          (short, transactional text + link)
         pass.RecordSmsSent()              (increment SeasonPass.SmsSentCount, persist via repository)
 ```
 
 ### Step 4: In-app "pause SMS" toggle (in scope for v1)
 
-- Add a per-season toggle on the user's notification/account settings: **"Pause SMS reminders for this season"**, setting `SeasonPass.SmsPaused`.
+- Add a **per-user** toggle on the user's notification/account settings: **"Pause SMS reminders"**, stored as a **user-level** preference (e.g. a column on `AspNetUsers` such as `SmsRemindersPaused`). It is **not** per-season - a user either wants the texts or doesn't. This column is added as part of this task (it does not exist yet).
+- The send check (Step 2) combines the per-pass entitlement (`SeasonPass.HasSmsReminders`) with this per-user pause flag.
 - Paused users still receive **all emails**; no refund (the SMS tier is non-refundable — ADR 0007). They can un-pause at any time.
 - This replaces inbound STOP handling (we don't do two-way SMS).
 
@@ -91,9 +92,9 @@ Mirror the existing email reminder flow and `IEmailService` wiring. UK date form
 
 - SMS-tier user with no/invalid phone → still gets all emails; no SMS, no `SmsSentCount` increment; prompt to add a number.
 - Free-season rounds (World Cup): no SMS tier exists → email only (unchanged).
-- Trial (Entry) users: email only (the extra SMS requires the SMS tier).
+- Trial (Standard) users: email only (the extra SMS requires the SMS tier).
 - A round whose deadline is created <6h away: the first milestone is already in the final window → the extra SMS applies immediately for eligible SMS-tier holders.
 
 ## Notes
 
-Optional in-app "pause SMS this season" toggle (README Open Question) would short-circuit SMS for that user without a refund or inbound STOP.
+The per-user in-app "pause SMS reminders" toggle short-circuits SMS for that user (across all their seasons) without a refund or inbound STOP.

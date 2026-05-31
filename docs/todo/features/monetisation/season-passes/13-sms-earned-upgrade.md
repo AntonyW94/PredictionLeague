@@ -57,7 +57,7 @@ When a season runs, the next season often isn't created yet, so we can't read it
 
 ### Step 2: Apply at purchase (ties into Task 09)
 
-- If `IsFree`, the Checkout session for the SMS tier uses `unit_amount = EntryPrice` (uplift comped); fulfilment creates `SeasonPass.CreateRewardUpgrade(...)` and calls `MarkRewardRedeemed(seasonY)` on the funding pass.
+- If `IsFree`, the Checkout session for the SMS tier uses `unit_amount = PassStandardPrice` (uplift comped); fulfilment creates `SeasonPass.CreateRewardUpgrade(...)` and calls `MarkRewardRedeemed(seasonY)` on the funding pass.
 
 ### Step 3: Display (ties into Task 10)
 
@@ -90,7 +90,7 @@ All on `SeasonPass` (Tasks 06–07):
 
 - Mid-season per-message rate change: evaluate with the **current** `ppm` at purchase (conservative).
 - No prior paying SMS season → not eligible (nothing has been paid to fund it).
-- Reward comps **only** the SMS uplift, never the Entry fee.
+- Reward comps **only** the SMS uplift, never the Standard fee.
 
 ## Notes
 

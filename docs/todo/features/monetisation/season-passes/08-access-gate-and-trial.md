@@ -10,7 +10,7 @@
 
 ## Goal
 
-Enforce the Season Pass requirement when joining/creating a league in a pass-required season, and auto-grant a one-time free Entry trial to brand-new players.
+Enforce the Season Pass requirement when joining/creating a league in a pass-required season, and auto-grant a one-time free Standard trial to brand-new players.
 
 ## Files to Modify
 
@@ -31,7 +31,7 @@ Enforce the Season Pass requirement when joining/creating a league in a pass-req
 ```
 allowed if:
   pass exists for (userId, seasonId)            -> allow (already participating this season)
-  season.RequiresPass == false                  -> create £0 Free pass (burns the freebie) + allow
+  free season (PassStandardPrice IS NULL)              -> create £0 Free pass (burns the freebie) + allow
   else (paid season):
     user has ZERO SeasonPass records            -> grant free Trial pass (£0; first season free) + allow
     else                                        -> deny (purchase required)
@@ -39,7 +39,7 @@ allowed if:
 
 - `SeasonAccessService.EnsureCanParticipateAsync(userId, seasonId)`:
   - If a pass exists for `(userId, seasonId)`, return.
-  - If the season is **free** (`RequiresPass == false`), **create a £0 `Free` pass** (`SeasonPass.CreateFree`) and return — this records participation so a free season **burns the freebie**.
+  - If the season is **free** (`Season.RequiresPayment` is false, i.e. `PassStandardPrice IS NULL`), **create a £0 `Free` pass** (`SeasonPass.CreateFree`) and return — this records participation so a free season **burns the freebie**.
   - Else (paid): if the user has **zero `SeasonPass` records** (`COUNT(*) == 0`), **grant a free `Trial` pass** (`SeasonPass.CreateTrial`) — first season free — and return; otherwise throw `SeasonPassRequiredException(seasonId)`.
   - **Late entry needs no handling here:** the existing per-league entry-deadline rules already block joining once entry has closed (paid and free seasons alike) — ADR 0005.
 

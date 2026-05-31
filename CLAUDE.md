@@ -25,6 +25,13 @@ Any new tables must also be added to the database refresh tool in [`tools/ThePre
 - If the table contains personal data, add anonymisation rules to `DataAnonymiser.cs`
 - If the table contains sensitive tokens, add verification to `PersonalDataVerifier.cs`
 
+### Migration SQL — present in chat, never write a file
+
+Until a proper migration tool exists, **do NOT create `.sql` files anywhere in the repository** (no `tools/sql/`, no migration scripts on disk). When a change needs SQL run against a database, **present the SQL directly in the chat window** in a fenced code block for the user to copy and run manually. The user applies migrations out of band.
+
+- State whether the migration is **additive** (new tables, new nullable/`DEFAULT`-ed columns — safe to apply ahead of the code deploy) or **destructive** (drop/rename/retype — must ship with or after the matching deploy).
+- Still update `docs/guides/database-schema.md` and `DatabaseTools` as above; just don't commit the migration script itself.
+
 ### CQRS Data Access
 
 | Operation | Use | NEVER Use |
@@ -175,6 +182,7 @@ Significant product, business, legal, and technical decisions are recorded in [`
 7. **NEVER use US English spelling** - Use UK English
 8. **NEVER make database changes without updating `docs/guides/database-schema.md`** and the refresh tool in `tools/ThePredictions.DatabaseTools/`
 9. **NEVER leave code coverage below 100%** - Write tests or add `[ExcludeFromCodeCoverage]` for untestable code
+10. **NEVER create `.sql` files in the repository** - present migration SQL in the chat for the user to run manually (until a migration tool exists)
 
 ## Quick Reference
 

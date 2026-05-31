@@ -6,7 +6,7 @@
 
 ## Summary
 
-Introduce a paid, one-off **Season Pass** that gates participation in pass-required seasons (e.g. Premier League 2026/27). A pass is a **one-off charge for access to the software/service** — explicitly **not** a stake, bet, or entry into any prize fund — sold in two tiers: **Entry** and **Entry + SMS reminders**. Free seasons (e.g. World Cup 2026) and all existing seasons stay free. **First-time players get their first season free** as a trial. The Predictions never holds prize money; paid-league entry fees remain a private, peer-to-peer matter between members.
+Introduce a paid, one-off **Season Pass** that gates participation in pass-required seasons (e.g. Premier League 2026/27). A pass is a **one-off charge for access to the software/service** — explicitly **not** a stake, bet, or entry into any prize fund — sold in two tiers: **Standard** and **Premium** (Premium adds SMS deadline reminders). Free seasons (e.g. World Cup 2026) and all existing seasons stay free. **First-time players get their first season free** as a trial. The Predictions never holds prize money; paid-league entry fees remain a private, peer-to-peer matter between members.
 
 ## User Story
 
@@ -30,13 +30,13 @@ External mockup: `season-pass-mockup.html` (delivered separately). Two pricing c
 │      [ Premier League 2026/27 ] [ World Cup 2026 ]        │
 │                                                           │
 │  ┌─────────────────────┐   ┌─────────────────────────┐    │
-│  │  Season Entry       │   │  Season Entry + SMS  ★   │    │
+│  │  Season Standard       │   │  Season Premium  ★   │    │
 │  │  £10  one-off       │   │  £15  one-off            │    │
-│  │  ✓ Join all leagues │   │  ✓ Everything in Entry   │    │
+│  │  ✓ Join all leagues │   │  ✓ Everything in Standard   │    │
 │  │  ✓ Predictions      │   │  ✦ SMS deadline reminders│    │
 │  │  ✓ Leaderboards     │   │                          │    │
 │  │  ✓ Email reminders  │   │                          │    │
-│  │  [ Get Entry ]      │   │  [ Get Entry + SMS ]     │    │
+│  │  [ Get Standard ]      │   │  [ Get Premium ]     │    │
 │  └─────────────────────┘   └─────────────────────────┘    │
 │   🔒 Secure payment via Stripe · one-off, no auto-renewal  │
 └──────────────────────────────────────────────────────────┘
@@ -46,7 +46,7 @@ Trial-eligible (brand-new) users see a "Your first season is on us" state instea
 
 ## Pricing Model (admin-configurable, calculator-suggested)
 
-Prices are **not hardcoded**. Each pass-required season stores an admin-set **Entry price** and **Entry + SMS price** (DB-backed, editable in admin, sent to Stripe as **dynamic amounts** so no fixed Stripe Prices are created by hand). During season creation the admin sees a **recommended price** from the running-costs calculator (Tasks 14–15), which they can override.
+Prices are **not hardcoded**. Each pass-required season stores an admin-set **Standard price** and **Premium price** (DB-backed, editable in admin, sent to Stripe as **dynamic amounts** so no fixed Stripe Prices are created by hand). During season creation the admin sees a **recommended price** from the running-costs calculator (Tasks 14–15), which they can override.
 
 **Calculator rules (confirmed with owner):**
 
@@ -54,8 +54,8 @@ Prices are **not hardcoded**. Each pass-required season stores an admin-set **En
 - **Cost apportionment:** annual running costs are split across the year's paid seasons **weighted by season length** (rounds/duration) — a long Premier League season carries more than a short cup.
 - **Denominator = expected players:** the **distinct participant count of the last completed season of the same competition**, i.e. recommend a price that **breaks even at roughly last season's player numbers**.
 - **Business-borne costs only:** costs still paid from the owner's **personal** account are **excluded until their renewal date**, when they move to the business and enter the calculation. (Owner migrates each cost to the business bank as it renews.)
-- **Free seasons:** World Cup 2026 is `RequiresPass = false`, run at a **deliberate one-off loss**. **After it, all seasons are paid**, so no ongoing free-season subsidy logic is needed.
-- Entry recommendation is grossed up for **Stripe fees**; the **SMS uplift** reflects expected SMS cost per SMS-user over the season (Task 04 rate) + buffer.
+- **Free seasons:** World Cup 2026 is free (no prices set), run at a **deliberate one-off loss**. **After it, all seasons are paid**, so no ongoing free-season subsidy logic is needed.
+- Standard recommendation is grossed up for **Stripe fees**; the **SMS uplift** reflects expected SMS cost per SMS-user over the season (Task 04 rate) + buffer.
 - **Always an editable, pre-filled info box** on the create-season page — never enforced. If there's **no comparable prior season** to derive player numbers, leave it **blank with explanatory wording**. Apply a **small minimum floor** (covers Stripe fees + a little), still editable below.
 - Running costs are stored with **cost type, price, and start/end dates** so apportionment/proration can be done any way in future (Task 14).
 
@@ -70,7 +70,7 @@ Prices are **not hardcoded**. Each pass-required season stores an admin-set **En
 A user may take part in a season (join or create a league in it) if **any** of:
 
 1. A `SeasonPass` exists for `(UserId, SeasonId)` → **allow** (already participating this season), **or**
-2. `Season.RequiresPass == false` (free season) → **create a £0 `Free` pass** (records participation — burns the freebie) and **allow**, **or**
+2. Free season (`Season.RequiresPayment` is false, i.e. `PassStandardPrice IS NULL`) → **create a £0 `Free` pass** (records participation — burns the freebie) and **allow**, **or**
 3. Paid season + the user has **zero `SeasonPass` records** (`COUNT == 0`) → **grant a free `Trial` pass** (their first season is free) and **allow**.
 
 Otherwise (paid season, ≥1 record) → **block, redirect to purchase page.**
@@ -88,7 +88,7 @@ Eligibility is a single `COUNT`/`EXISTS` on `SeasonPasses` — **no `LeagueMembe
 | User who already has any pass tries a later paid season | ≥1 record → **must purchase** ✓ |
 | User who bought then refunded, tries a later season | Refunded record still counts → **must purchase** (no re-trial) ✓ |
 
-Trial is **once per user, lifetime**. The **Entry portion is free**; a trial user who wants SMS may **pay just the SMS uplift** on top (the trial only comps Entry).
+Trial is **once per user, lifetime**. The **Standard portion is free**; a trial user who wants SMS may **pay just the SMS uplift** on top (the trial only comps Standard).
 
 ## SMS Reminder Behaviour & Early-Bird Reward
 
@@ -114,13 +114,13 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 ## Acceptance Criteria
 
 - [ ] Sole trader registered; Monzo Business + Stripe live in the business name.
-- [ ] `Season.RequiresPass` flag exists; all existing seasons + World Cup 2026 = `false`; PL 2026/27 = `true`.
+- [ ] Pass-required is derived from price (`Season.PassStandardPrice IS NOT NULL`); all existing seasons + World Cup 2026 are free (no prices); PL 2026/27 is priced.
 - [ ] A user with no pass cannot join/create a league in a pass-required season unless trial-eligible.
-- [ ] Brand-new users are auto-granted a free Entry trial on first participation in a pass-required season.
-- [ ] Per-season **Entry** and **Entry + SMS** prices are admin-configurable (DB-backed); Stripe charges those exact amounts (dynamic).
+- [ ] Brand-new users are auto-granted a free Standard trial on first participation in a pass-required season.
+- [ ] Per-season **Standard** and **Premium** prices are admin-configurable (DB-backed); Stripe charges those exact amounts (dynamic).
 - [ ] Admin **Running Costs** page records costs, renewal dates, and payer status (business vs personal-until-renewal).
 - [ ] Season creation shows a **recommended price** from the calculator (15% buffer, length-weighted apportionment, break-even at last comparable season's player count, business-borne costs only).
-- [ ] Users can buy Entry or Entry + SMS via Stripe Checkout (one-off, Apple/Google Pay enabled).
+- [ ] Users can buy Standard or Premium via Stripe Checkout (one-off, Apple/Google Pay enabled).
 - [ ] A `SeasonPass` is created reliably on successful payment (webhook-driven).
 - [ ] Everyone (incl. SMS-tier) keeps all emails at every milestone; SMS is an **additional** 6h/1h nudge for unsubmitted SMS-tier holders.
 - [ ] Per-season SMS count tracked per user (`SmsSentCount`).
@@ -201,13 +201,13 @@ These were decided this session (see `docs/decisions/`):
 - **Final-window milestones** → **2** (6h + 1h) for both reminders and reward maths (ADR 0007).
 - **Recommended price** → always an **editable, pre-filled info box**; **blank + explanatory wording** when no comparable prior season; **small minimum floor** (ADR 0006).
 - **Running-cost data** → store **cost type, price, start/end dates** for flexible future apportionment (ADR 0006, Task 14).
-- **Free trial = zero `SeasonPass` records** → a user's first season is free (a `Trial` pass on the first *paid* season). **Every participation writes a record** — free seasons get a £0 `Free` record — so **free play burns the freebie**; existing free play is **backfilled** so existing players pay for their first paid season (ADR 0005). Trial comps **Entry only**; user may **pay the SMS uplift** on top.
+- **Free trial = zero `SeasonPass` records** → a user's first season is free (a `Trial` pass on the first *paid* season). **Every participation writes a record** — free seasons get a £0 `Free` record — so **free play burns the freebie**; existing free play is **backfilled** so existing players pay for their first paid season (ADR 0005). Trial comps **Standard only**; user may **pay the SMS uplift** on top.
 - **Pause-SMS toggle** → **build now** (in scope), not deferred (ADR 0007).
 - **Refunds** → passes (incl. SMS) refundable **before the season starts**, non-refundable after; covers cancellation (ADR 0005, Task 17).
 - **Email verification** → finish it and **normalise emails (strip `+` alias)** to stop multi-account trial abuse (ADR 0009, Task 18).
 - **SMS = UK mobiles only**, required and validated (libphonenumber → E.164) **at purchase** (ADR 0007, Task 10).
 - **No late entry** → handled by the **existing per-league entry-deadline rules** (paid seasons inherit them); no new access-gate mechanism, just don't offer purchase once entry has closed. No late/pro-rata pricing (ADR 0005, Task 10).
-- **Overlapping seasons** → already supported: `SeasonPasses` holds **one row per (user, season)** with a unique index, so a user can hold concurrent passes (e.g. World Cup + Premier League). **No new table needed.** Free/grandfathered seasons **do** get a £0 `Free` record (and existing ones are backfilled) so free play burns the free-first-season — this is the chosen approach over a no-record/`RequiresPass`-only gate.
+- **Overlapping seasons** → already supported: `SeasonPasses` holds **one row per (user, season)** with a unique index, so a user can hold concurrent passes (e.g. World Cup + Premier League). **No new table needed.** Free/grandfathered seasons **do** get a £0 `Free` record (and existing ones are backfilled) so free play burns the free-first-season — this is the chosen approach over a no-record/`RequiresPayment`-only gate.
 - **Entry-fee settlement (peer-to-peer)** → admins can store **bank details (encrypted at rest)** on a league; the entry code is shared freely, players see the details + amount + reference on requesting to join, and the **admin accepts once paid**. The software never touches the money (ADR 0010, 0003; Task 19).
 - **Payouts (peer-to-peer)** → players may **optionally** store **encrypted payout details** (visible only to the named admin(s) of leagues they're in; deletable; manual fallback if not provided; a **join-time warning** names the admin who'll gain visibility, with a remove button). The admin gets a **payouts list** showing **one aggregated total per winner** (tracked in `LeaguePayouts`) with the Round/Monthly/Overall **breakdown computed live from `Winnings`** (source of truth — not duplicated). **Mark-as-paid is only available once the season is complete** (all rounds done), then it's a clean seam to automate later only with legal sign-off (ADR 0010, 0008; Task 20).
 - **Comparable season / "same competition"** = matched on `Season.CompetitionId`, a FK to a new **`Competitions` reference table** (ADR 0009), **not** `ApiLeagueId`. The table carries a **hosted logo**, a **`Type`** (League/Tournament, moved off `Season`), and an **admin-editable API league id**; `Season` **drops `ApiLeagueId` and `CompetitionType`** and the sync/type resolve from the competition (Task 16). Switching fixture provider is a no-deploy admin edit that never invalidates free-SMS entitlements or price comparables.

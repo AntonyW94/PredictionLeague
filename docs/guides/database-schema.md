@@ -72,6 +72,10 @@ Represents a football season within a competition.
 | CompetitionId | int | NO | | FK to Competitions (the competition this season belongs to) |
 | StartDateUtc | datetime2 | NO | | Season start date |
 | EndDateUtc | datetime2 | NO | | Season end date |
+| PassStandardPrice | decimal(10,2) | YES | | Admin-set Standard price (> 0) for a pass-required season; NULL for a free season |
+| PassPremiumPrice | decimal(10,2) | YES | | Admin-set full price of the Premium tier (>= PassStandardPrice); NULL for a free season |
+
+> Every season requires a Season Pass to take part; "free" seasons simply have no prices, so the pass is acquired for £0 (no payment step). The computed `Season.RequiresPayment` (`PassStandardPrice IS NOT NULL`) only indicates whether acquiring the pass costs money - there is no stored column.
 
 > `ApiLeagueId` and `CompetitionType` previously lived here; both moved to `Competitions` (ADR 0009). The provider id and competition type are now resolved via the season's `Competition` at sync time, and `IsTournament` reads `Competition.Type`.
 
@@ -188,7 +192,7 @@ User-created prediction leagues.
 | SeasonId | int | NO | | FK to Seasons |
 | AdministratorUserId | nvarchar(450) | NO | | FK to AspNetUsers (league owner) |
 | EntryCode | nvarchar(10) | YES | | 6-char code to join league |
-| Price | decimal(18,2) | NO | 0 | Entry fee |
+| Price | decimal(18,2) | NO | 0 | Standard fee |
 | IsFree | bit | NO | 0 | Whether league is free to join |
 | HasPrizes | bit | NO | 1 | Whether league has prizes |
 | PrizeFundOverride | decimal(18,2) | YES | | Override calculated prize fund |

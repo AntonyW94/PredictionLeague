@@ -12,15 +12,15 @@ Introducing a paid model onto a previously-free site needs clear rules for: whic
 ## Decision
 
 ### a) Which seasons are paid
-`Season` gains a `RequiresPass` flag (default `false`).
-- All **existing/past seasons** stay free (grandfathered).
-- **World Cup 2026** is **free for everyone**.
-- **Premier League 2026/27 onward** require a pass.
+**Every season requires a Season Pass to take part** - the user always acquires a pass before participating. A season requires **payment** only when it has prices; `Season` exposes a **computed** `RequiresPayment => PassStandardPrice.HasValue` (no stored flag/column). "Free" seasons have no prices, so the pass is acquired for **£0** with no payment step (the user still explicitly acquires it).
+- All **existing/past seasons** stay free (no prices → £0 pass).
+- **World Cup 2026** is **free for everyone** (Standard tier, £0).
+- **Premier League 2026/27 onward** require **payment** for the pass.
 
 World Cup is free because **its costs were already paid from the owner's personal account and will never be booked to the business** — there is nothing for the business to recover (not a business loss), and a free tournament builds the base. After it, **all seasons are paid**.
 
 ### b) First season free (zero-pass trial; free play burns it)
-A user's **first season is free**, with eligibility = **zero `SeasonPass` records** (`COUNT == 0`). **Every participation writes a record** (one per user/season): paid → `Purchased`/`Trial`; **free season → a £0 `Free` record**. So **free play burns the freebie** (a World Cup player has a record → pays for PL). Existing free participation is **backfilled** with £0 `Free` records so existing players pay for their first paid season. The trial comps **Entry only**; the SMS uplift is payable on top.
+A user's **first season is free**, with eligibility = **zero `SeasonPass` records** (`COUNT == 0`). **Every participation writes a record** (one per user/season): paid → `Purchased`/`Trial`; **free season → a £0 `Free` record**. So **free play burns the freebie** (a World Cup player has a record → pays for PL). Existing free participation is **backfilled** with £0 `Free` records so existing players pay for their first paid season. The trial comps **Standard only**; the SMS uplift is payable on top.
 
 ### c) Refunds — before the season starts
 A pass (incl. any SMS uplift) is **fully refundable until the season's first round deadline**; after that, non-refundable. Refunds go via Stripe and **revoke the entitlement**. A refunded pass **still counts as a record** (no fresh free trial). If a season is ever cancelled, affected paid users are refunded regardless.
@@ -31,7 +31,7 @@ A pass (incl. any SMS uplift) is **fully refundable until the season's first rou
 ## Consequences
 
 **For / positive**
-- Grandfathering is automatic (default-`false` flag), risk-free for existing data.
+- Grandfathering is automatic (existing seasons have no prices → £0 pass), risk-free for existing data.
 - Trial eligibility is a single cheap `COUNT`/`EXISTS` on `SeasonPasses` — no `LeagueMember` history logic — and free play correctly burns the freebie.
 - Refunds give goodwill (change-of-mind, cancellation) with a simple cut-off shared with entry.
 - No late-entry logic to build.

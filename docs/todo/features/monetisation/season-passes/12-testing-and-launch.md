@@ -16,8 +16,8 @@ Configure seasons, validate the whole flow in Stripe test mode, then go live for
 
 ### Step 1: Season configuration
 
-- All existing seasons + **World Cup 2026**: `RequiresPass = false` (free).
-- **Premier League 2026/27**: `RequiresPass = true`.
+- All existing seasons + **World Cup 2026**: free (no `PassStandardPrice`/`PassPremiumPrice`).
+- **Premier League 2026/27**: priced (`PassStandardPrice`/`PassPremiumPrice` set), which makes it pass-required.
 - Map PL 2026/27 tiers to the Stripe Price IDs from Task 03.
 
 ### Step 2: End-to-end test (Stripe TEST mode)
@@ -26,7 +26,7 @@ Configure seasons, validate the whole flow in Stripe test mode, then go live for
 |----------|----------|
 | Brand-new user joins a PL league | Free trial granted; can join; no Checkout |
 | World-Cup-only user joins PL | Blocked → purchase page → pays (test card) → pass created → can join |
-| Buy Entry + SMS | Pass tier = `EntryPlusSms` |
+| Buy Premium | Pass tier = `Premium` |
 | SMS-tier user, submits early (>6h before) | Gets all emails (incl. 6h/1h); **no SMS**; `SmsSentCount` unchanged |
 | SMS-tier user, still unsubmitted at 6h/1h | Gets the email **plus** an extra SMS; `SmsSentCount` +1 each milestone |
 | Apple/Google Pay | Wallet buttons appear in test Checkout |

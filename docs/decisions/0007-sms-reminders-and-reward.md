@@ -12,11 +12,11 @@ SMS deadline reminders are a paid extra over the free email reminders. SMS costs
 ## Decision
 
 ### a) Sold as a season-pass tier
-Two products per pass-required season — **"Entry"** and **"Entry + SMS"** — chosen at a single checkout. Modelled as **one `SeasonPass` with an SMS flag** (`Tier = Entry | EntryPlusSms`), two dynamic price points.
+Two products per pass-required season — **"Standard"** and **"Premium"** — chosen at a single checkout. Modelled as **one `SeasonPass` with an SMS flag** (`Tier = Standard | Premium`), two dynamic price points.
 
 ### b) Additive, final-window, transactional-only, UK mobiles
 - **Additive:** everyone keeps **all** email reminders at every milestone; SMS-tier holders get an **extra** text **only at the final window (6h and 1h)** and **only if still unsubmitted**.
-- Content is **strictly transactional** (deadline only) → **no legal opt-out required** (PECR). **No inbound STOP**; instead an in-app **"pause SMS" toggle** (in scope for v1).
+- Content is **strictly transactional** (deadline only) → **no legal opt-out required** (PECR). **No inbound STOP**; instead a **per-user** in-app **"pause SMS reminders" toggle** (a user-level notification preference, **not** per-season; in scope for v1, built with Task 11).
 - Refunds follow the pass rule (0005); pausing is **not** a refund.
 - **UK mobiles only**, **required and validated at purchase** via `libphonenumber-csharp` (region GB, type Mobile), stored as **E.164**. Non-UK numbers aren't offered SMS.
 - Final-window milestones = **2** (6h + 1h), configurable.
