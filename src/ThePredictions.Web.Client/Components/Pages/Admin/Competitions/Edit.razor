@@ -11,32 +11,29 @@
 <PageTitle>Edit Competition</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="form-container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold mb-0">Edit Competition</h3>
-            @if (_model != null)
-            {
-                <button type="button" class="btn red-button" @onclick="DeleteCompetitionAsync" disabled="@(_isDeleting || _seasonCount > 0)" title="@(_seasonCount > 0 ? "Cannot delete — seasons exist" : "Delete this competition")">
-                    <span class="bi bi-trash-fill me-1"></span>Delete
-                </button>
-            }
-        </div>
-        <ApiError Message="@_deleteError" />
-
-        @if (_model == null)
-        {
-            <p class="text-center text-white"><em>Loading competition...</em></p>
-        }
-        else
-        {
-            <BaseFormComponent TModel="UpdateCompetitionRequest"
-                               Model="_model"
-                               SubmitAction="HandleUpdateCompetitionAsync"
-                               SuccessRedirectUrl="/admin/competitions"
-                               BackUrl="/admin/competitions"
-                               SuccessAlertMessage="Competition updated successfully!"
-                               BusyText="Saving...">
-                <ChildContent>
+    @if (_model == null)
+    {
+        <p class="text-center text-white"><em>Loading competition...</em></p>
+    }
+    else
+    {
+        <BaseFormComponent TModel="UpdateCompetitionRequest"
+                           Model="_model"
+                           SubmitAction="HandleUpdateCompetitionAsync"
+                           SuccessRedirectUrl="/admin/competitions"
+                           BackUrl="/admin/competitions"
+                           SuccessAlertMessage="Competition updated successfully!"
+                           BusyText="Saving...">
+            <Header>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold mb-0">Edit Competition</h3>
+                    <button type="button" class="btn red-button" @onclick="DeleteCompetitionAsync" disabled="@(_isDeleting || _seasonCount > 0)" title="@(_seasonCount > 0 ? "Cannot delete — seasons exist" : "Delete this competition")">
+                        <span class="bi bi-trash-fill me-1"></span>Delete
+                    </button>
+                </div>
+                <ApiError Message="@_deleteError" />
+            </Header>
+            <ChildContent>
                     <div class="row">
                         <div class="col-md-8 mb-3">
                             <label for="name" class="form-label">Competition Name</label>
@@ -78,10 +75,9 @@
                                        placeholder="Format and scoring rules shown on the Season Pass page (e.g. group stages then knockouts; scored on the result after 90 minutes plus injury time)." />
                         <StyledValidationMessage For="@(() => _model.Description!)" />
                     </div>
-                </ChildContent>
-            </BaseFormComponent>
-        }
-    </div>
+            </ChildContent>
+        </BaseFormComponent>
+    }
 </div>
 
 @code {

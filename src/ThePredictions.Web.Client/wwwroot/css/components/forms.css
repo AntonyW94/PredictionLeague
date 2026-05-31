@@ -10,6 +10,27 @@
     max-width: 600px;
 }
 
+/* Shared form wrapper: centres and sizes the card + action bar.
+   The card holds the fields; BackAndSaveButtons sits as a sibling below it. */
+.base-form {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.base-form--wide {
+    max-width: 900px;
+}
+
+.base-form--extra-wide {
+    max-width: 1200px;
+}
+
+/* Inside the shared wrapper the card fills the wrapper; width is controlled by .base-form */
+.base-form .form-container {
+    max-width: none;
+}
+
 /* Auth page logo */
 .auth-logo {
     height: 3.75rem;

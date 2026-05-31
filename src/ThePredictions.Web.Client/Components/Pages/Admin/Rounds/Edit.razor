@@ -12,27 +12,27 @@
 <PageTitle>Edit Round</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="form-container extra-wide">
-        <ApiError Message="@_errorMessage"></ApiError>
+    <ApiError Message="@_errorMessage"></ApiError>
 
-        @if (_model == null)
-        {
-            <div class="d-flex justify-content-center align-items-center h-100">
-                <div class="spinner-border text-white" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
+    @if (_model == null)
+    {
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border text-white" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
-        }
-        else
-        {
-            <BaseFormComponent TModel="UpdateRoundRequest"
-                               Model="_model"
-                               SubmitAction="HandleUpdateRoundAsync"
-                               SuccessRedirectUrl="@($"/admin/seasons/{_seasonId}/rounds")"
-                               BackUrl="@($"/admin/seasons/{_seasonId}/rounds")"
-                               SuccessAlertMessage="Round updated successfully!"
-                               BusyText="Saving...">
-                <ChildContent>
+        </div>
+    }
+    else
+    {
+        <BaseFormComponent TModel="UpdateRoundRequest"
+                           Model="_model"
+                           SubmitAction="HandleUpdateRoundAsync"
+                           SuccessRedirectUrl="@($"/admin/seasons/{_seasonId}/rounds")"
+                           BackUrl="@($"/admin/seasons/{_seasonId}/rounds")"
+                           SuccessAlertMessage="Round updated successfully!"
+                           BusyText="Saving..."
+                           ContainerClass="extra-wide">
+            <ChildContent>
                     <!-- Round Header - Title + Metadata -->
                     <div class="admin-light-header">
                         <h3 class="fw-bold">Edit Round</h3>
@@ -160,10 +160,9 @@
                             </div>
                         }
                     </div>
-                </ChildContent>
-            </BaseFormComponent>
-        }
-    </div>
+            </ChildContent>
+        </BaseFormComponent>
+    }
 </div>
 
 @code {

@@ -9,16 +9,17 @@
 <PageTitle>Create Competition</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="form-container">
-        <h3 class="text-center fw-bold mb-4">Create New Competition</h3>
-        <BaseFormComponent TModel="CreateCompetitionRequest"
-                           Model="_model"
-                           SubmitAction="HandleCreateCompetitionAsync"
-                           SuccessRedirectUrl="/admin/competitions"
-                           BackUrl="/admin/competitions"
-                           SuccessAlertMessage="Competition created successfully!"
-                           BusyText="Creating Competition...">
-            <ChildContent>
+    <BaseFormComponent TModel="CreateCompetitionRequest"
+                       Model="_model"
+                       SubmitAction="HandleCreateCompetitionAsync"
+                       SuccessRedirectUrl="/admin/competitions"
+                       BackUrl="/admin/competitions"
+                       SuccessAlertMessage="Competition created successfully!"
+                       BusyText="Creating Competition...">
+        <Header>
+            <h3 class="text-center fw-bold mb-4">Create New Competition</h3>
+        </Header>
+        <ChildContent>
                 <div class="row">
                     <div class="col-md-8 mb-3">
                         <label for="name" class="form-label">Competition Name</label>
@@ -60,9 +61,8 @@
                                    placeholder="Format and scoring rules shown on the Season Pass page (e.g. group stages then knockouts; scored on the result after 90 minutes plus injury time)." />
                     <StyledValidationMessage For="@(() => _model.Description!)" />
                 </div>
-            </ChildContent>
-        </BaseFormComponent>
-    </div>
+        </ChildContent>
+    </BaseFormComponent>
 </div>
 
 @code {

@@ -9,23 +9,23 @@
 <PageTitle>Create League</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="form-container">
-        <h3 class="text-center fw-bold mb-4">Create New League</h3>
-        
-        @if (_pageData == null)
-        {
-            <p class="text-center text-white"><em>Loading Create League...</em></p>
-        }
-        else
-        {
-            <BaseFormComponent TModel="CreateLeagueRequest"
-                               Model="_model"
-                               SubmitAction="HandleCreateLeagueAsync"
-                               SuccessRedirectUrl="/leagues"
-                               BackUrl="/leagues"
-                               SuccessAlertMessage="League created successfully!"
-                               BusyText="Creating League...">
-                <ChildContent>
+    @if (_pageData == null)
+    {
+        <p class="text-center text-white"><em>Loading Create League...</em></p>
+    }
+    else
+    {
+        <BaseFormComponent TModel="CreateLeagueRequest"
+                           Model="_model"
+                           SubmitAction="HandleCreateLeagueAsync"
+                           SuccessRedirectUrl="/leagues"
+                           BackUrl="/leagues"
+                           SuccessAlertMessage="League created successfully!"
+                           BusyText="Creating League...">
+            <Header>
+                <h3 class="text-center fw-bold mb-4">Create New League</h3>
+            </Header>
+            <ChildContent>
                     <div class="mb-3">
                         <label for="season" class="form-label">Season</label>
                         <InputSelect id="season" class="form-control" @bind-Value="_model.SeasonId" @onchange="OnSeasonSelected">
@@ -83,10 +83,9 @@
                             <StyledValidationMessage For="@(() => _model.PointsForCorrectResult)" />
                         </div>
                     </div>
-                </ChildContent>
-            </BaseFormComponent>
-        }
-    </div>
+            </ChildContent>
+        </BaseFormComponent>
+    }
 </div>
 
 @code {

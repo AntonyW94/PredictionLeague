@@ -14,32 +14,29 @@
 <PageTitle>Edit Season</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="form-container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold mb-0">Edit Season</h3>
-            @if (_model != null)
-            {
-                <button type="button" class="btn red-button" @onclick="DeleteSeasonAsync" disabled="@(_isDeleting || _hasPredictions)" title="@(_hasPredictions ? "Cannot delete — predictions exist" : "Delete this season")">
-                    <span class="bi bi-trash-fill me-1"></span>Delete
-                </button>
-            }
-        </div>
-        <ApiError Message="@_deleteError" />
-
-        @if (_model == null)
-        {
-            <p class="text-center text-white"><em>Loading season...</em></p>
-        }
-        else
-        {
-            <BaseFormComponent TModel="UpdateSeasonRequest"
-                               Model="_model"
-                               SubmitAction="HandleUpdateSeasonAsync"
-                               SuccessRedirectUrl="/admin/seasons"
-                               BackUrl="/admin/seasons"
-                               SuccessAlertMessage="Season updated successfully!"
-                               BusyText="Saving...">
-                <ChildContent>
+    @if (_model == null)
+    {
+        <p class="text-center text-white"><em>Loading season...</em></p>
+    }
+    else
+    {
+        <BaseFormComponent TModel="UpdateSeasonRequest"
+                           Model="_model"
+                           SubmitAction="HandleUpdateSeasonAsync"
+                           SuccessRedirectUrl="/admin/seasons"
+                           BackUrl="/admin/seasons"
+                           SuccessAlertMessage="Season updated successfully!"
+                           BusyText="Saving...">
+            <Header>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="fw-bold mb-0">Edit Season</h3>
+                    <button type="button" class="btn red-button" @onclick="DeleteSeasonAsync" disabled="@(_isDeleting || _hasPredictions)" title="@(_hasPredictions ? "Cannot delete — predictions exist" : "Delete this season")">
+                        <span class="bi bi-trash-fill me-1"></span>Delete
+                    </button>
+                </div>
+                <ApiError Message="@_deleteError" />
+            </Header>
+            <ChildContent>
                     <div class="row">
                         <div class="col-md-5 mb-3">
                             <label for="competition" class="form-label">Competition</label>
@@ -257,10 +254,9 @@
                             }
                         </div>
                     }
-                </ChildContent>
-            </BaseFormComponent>
-        }
-    </div>
+            </ChildContent>
+        </BaseFormComponent>
+    }
 </div>
 
 @code {

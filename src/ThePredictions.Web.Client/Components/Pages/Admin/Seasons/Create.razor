@@ -12,19 +12,19 @@
 <PageTitle>Create Season</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="form-container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="fw-bold mb-0">Create New Season</h3>
-        </div>
-
-        <BaseFormComponent TModel="CreateSeasonRequest"
-                           Model="_model"
-                           SubmitAction="HandleCreateSeasonAsync"
-                           SuccessRedirectUrl="/admin/seasons"
-                           BackUrl="/admin/seasons"
-                           SuccessAlertMessage="Season created successfully!"
-                           BusyText="Creating Season...">
-            <ChildContent>
+    <BaseFormComponent TModel="CreateSeasonRequest"
+                       Model="_model"
+                       SubmitAction="HandleCreateSeasonAsync"
+                       SuccessRedirectUrl="/admin/seasons"
+                       BackUrl="/admin/seasons"
+                       SuccessAlertMessage="Season created successfully!"
+                       BusyText="Creating Season...">
+        <Header>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold mb-0">Create New Season</h3>
+            </div>
+        </Header>
+        <ChildContent>
                 <div class="row">
                     <div class="col-md-5 mb-3">
                         <label for="competition" class="form-label">Competition</label>
@@ -174,9 +174,8 @@
                         }
                     </div>
                 }
-            </ChildContent>
-        </BaseFormComponent>
-    </div>
+        </ChildContent>
+    </BaseFormComponent>
 </div>
 
 @code {

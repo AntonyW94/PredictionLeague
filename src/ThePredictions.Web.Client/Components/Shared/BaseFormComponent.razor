@@ -1,13 +1,16 @@
-﻿@typeparam TModel
+@typeparam TModel
 @inject NavigationManager NavigationManager
 
-<EditForm Model="Model" OnValidSubmit="HandleSubmitAsync">
+<EditForm Model="Model" OnValidSubmit="HandleSubmitAsync" class="@($"base-form {SizeClass}".Trim())">
     <FluentValidationValidator />
 
-    <ApiError Message="@ErrorMessage" />
-    <ApiSuccess Message="@SuccessMessage" />
+    <div class="form-container @ContainerClass">
+        <ApiError Message="@ErrorMessage" />
+        <ApiSuccess Message="@SuccessMessage" />
 
-    @ChildContent
+        @Header
+        @ChildContent
+    </div>
 
     <BackAndSaveButtons OnBackClick="Back"
                         IsBusy="IsBusy"
@@ -21,7 +24,9 @@
     [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
     [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = null!;
     [Parameter, EditorRequired] public Func<Task<HttpResponseMessage>> SubmitAction { get; set; } = null!;
-    [Parameter] public bool IsSaveDisabled { get; set; } 
+    [Parameter] public RenderFragment? Header { get; set; }
+    [Parameter] public string? ContainerClass { get; set; }
+    [Parameter] public bool IsSaveDisabled { get; set; }
     [Parameter] public string SuccessRedirectUrl { get; set; } = "/";
     [Parameter] public string BackUrl { get; set; } = "/";
     [Parameter] public string SuccessAlertMessage { get; set; } = "Saved successfully!";
@@ -33,6 +38,13 @@
     protected bool IsBusy { get; private set; }
     private string? ErrorMessage { get; set; }
     private string? SuccessMessage { get; set; }
+
+    private string SizeClass => ContainerClass switch
+    {
+        "wide" => "base-form--wide",
+        "extra-wide" => "base-form--extra-wide",
+        _ => string.Empty
+    };
 
     private async Task HandleSubmitAsync()
     {
@@ -68,7 +80,6 @@
                     {
                         ErrorMessage = errorContent?["message"]?.ToString();
                     }
-                    //ErrorMessage = errorContent?["errors"]?.ToString() ?? errorContent?["message"]?.ToString();
                 }
                 catch
                 {

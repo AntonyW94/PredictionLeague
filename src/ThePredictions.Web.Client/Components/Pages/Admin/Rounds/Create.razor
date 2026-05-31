@@ -11,29 +11,30 @@
 <PageTitle>Create Round</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="form-container extra-wide">
-        <h3 class="text-center fw-bold mb-4">Create Round</h3>
-
-        <ApiError Message="@_errorMessage" />
-
-        @if (_model == null)
-        {
-            <div class="d-flex justify-content-center align-items-center h-100">
-                <div class="spinner-border text-light" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
+    @if (_model == null)
+    {
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
-        }
-        else
-        {
-            <BaseFormComponent TModel="CreateRoundRequest"
-                               Model="_model"
-                               SubmitAction="HandleCreateRoundAsync"
-                               SuccessRedirectUrl="@($"/admin/seasons/{SeasonId}/rounds")"
-                               BackUrl="@($"/admin/seasons/{SeasonId}/rounds")"
-                               SuccessAlertMessage="Round created successfully!"
-                               BusyText="Creating Round...">
-                <ChildContent>
+        </div>
+    }
+    else
+    {
+        <BaseFormComponent TModel="CreateRoundRequest"
+                           Model="_model"
+                           SubmitAction="HandleCreateRoundAsync"
+                           SuccessRedirectUrl="@($"/admin/seasons/{SeasonId}/rounds")"
+                           BackUrl="@($"/admin/seasons/{SeasonId}/rounds")"
+                           SuccessAlertMessage="Round created successfully!"
+                           BusyText="Creating Round..."
+                           ContainerClass="extra-wide">
+            <Header>
+                <h3 class="text-center fw-bold mb-4">Create Round</h3>
+
+                <ApiError Message="@_errorMessage" />
+            </Header>
+            <ChildContent>
                   
                     <div class="row">
                         <div class="col-md-2 mb-3">
@@ -152,10 +153,9 @@
                             </div>
                         </div>
                     }
-                </ChildContent>
-            </BaseFormComponent>
-        }
-    </div>
+            </ChildContent>
+        </BaseFormComponent>
+    }
 </div>
 
 @code {
