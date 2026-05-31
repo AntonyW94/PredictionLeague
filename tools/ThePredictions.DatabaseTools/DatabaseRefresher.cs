@@ -29,6 +29,7 @@ public class DatabaseRefresher(
         "Competitions",
         "Seasons",
         "SeasonPasses",
+        "UserOnboardingSkips",
         "TournamentRoundMappings",
         "Rounds",
         "Matches",

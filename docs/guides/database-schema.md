@@ -114,6 +114,22 @@ One record per user per season they take part in. A row is written for **every**
 
 ---
 
+### UserOnboardingSkips
+
+Records which onboarding-checklist steps a user has skipped (or had skipped in bulk via "Dismiss"). The steps themselves are defined in code (`OnboardingStepRegistry`) and their completion is derived live from data - this table only stores skips, keyed by the stable string step key. A new step added in code is shown to everyone automatically (no row here, completion derived); nothing about the step set lives in the DB.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers |
+| StepKey | nvarchar(100) | NO | | Stable onboarding step key (e.g. `add-mobile`) |
+| SkippedAtUtc | datetime2 | NO | | When the step was skipped |
+
+**Constraints:**
+- PK: `(UserId, StepKey)`
+- FK: `UserId` → `AspNetUsers(Id)` (`FK_UserOnboardingSkips_AspNetUsers`)
+
+---
+
 ### Rounds
 
 Represents a gameweek within a season.
