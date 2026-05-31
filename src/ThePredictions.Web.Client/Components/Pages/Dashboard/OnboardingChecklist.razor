@@ -17,35 +17,38 @@
     var stepNumber = 0;
 
     <div class="onboarding-card">
-        <div class="onboarding-card__header">
-            <div class="onboarding-card__hero">
-                @if (checklist.RequiredComplete)
-                {
-                    <h3 class="onboarding-card__title">You're all set</h3>
-                    <p class="onboarding-card__subtitle">Nice one@(string.IsNullOrWhiteSpace(_firstName) ? "" : $", {_firstName}") - you're in the game. Finish these optional extras whenever you fancy.</p>
-                }
-                else
-                {
-                    <h3 class="onboarding-card__title">Welcome@(string.IsNullOrWhiteSpace(_firstName) ? "" : $", {_firstName}")</h3>
-                    <p class="onboarding-card__subtitle">Predict the scores, beat your mates, climb the table. Let's get you playing - it only takes a minute.</p>
-                }
-            </div>
+        <div class="onboarding-card__banner">
             @if (checklist.RequiredComplete)
             {
                 <button type="button" class="onboarding-card__dismiss" @onclick="DismissAsync" aria-label="Dismiss">
                     <span class="bi bi-x-lg"></span>
                 </button>
             }
-        </div>
-
-        <div class="onboarding-progress">
-            <div class="onboarding-progress__track">
-                <div class="onboarding-progress__fill" style="width: @(percent)%"></div>
+            <div class="onboarding-card__banner-top">
+                <span class="onboarding-card__badge bi @(checklist.RequiredComplete ? "bi-trophy-fill" : "bi-rocket-takeoff-fill")" aria-hidden="true"></span>
+                <div class="onboarding-card__heading">
+                    @if (checklist.RequiredComplete)
+                    {
+                        <h3 class="onboarding-card__title">You're all set</h3>
+                        <p class="onboarding-card__subtitle">Nice one@(string.IsNullOrWhiteSpace(_firstName) ? "" : $", {_firstName}") - you're in the game. Finish these optional extras whenever you fancy.</p>
+                    }
+                    else
+                    {
+                        <h3 class="onboarding-card__title">Welcome@(string.IsNullOrWhiteSpace(_firstName) ? "" : $", {_firstName}")</h3>
+                        <p class="onboarding-card__subtitle">Predict the scores, beat your mates, climb the table. Let's get you playing - it only takes a minute.</p>
+                    }
+                </div>
             </div>
-            <span class="onboarding-progress__label">@doneCount of @visibleSteps.Count done</span>
+
+            <div class="onboarding-progress">
+                <div class="onboarding-progress__track">
+                    <div class="onboarding-progress__fill" style="width: @(percent)%"></div>
+                </div>
+                <span class="onboarding-progress__label">@doneCount of @visibleSteps.Count done</span>
+            </div>
         </div>
 
-        <ul class="onboarding-steps">
+        <ul class="onboarding-steps onboarding-card__body">
             @foreach (var step in visibleSteps)
             {
                 stepNumber++;

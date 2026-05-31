@@ -5,56 +5,82 @@
     border: 1px solid var(--purple-100);
     border-radius: var(--bs-border-radius);
     box-shadow: 0 2px 8px var(--black-alpha-15);
-    padding: var(--space-5) var(--space-5);
+    overflow: hidden;
     margin-bottom: var(--space-4);
 }
 
-.onboarding-card__header {
+/* Gradient welcome banner at the top of the card */
+.onboarding-card__banner {
+    position: relative;
+    padding: var(--space-5);
+    background: linear-gradient(135deg, var(--purple-800), var(--purple-600));
+    color: var(--white);
+}
+
+.onboarding-card__banner-top {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    align-items: center;
     gap: var(--space-3);
     margin-bottom: var(--space-4);
 }
 
-.onboarding-card__hero {
+.onboarding-card__badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--white-alpha-15);
+    color: var(--white);
+    font-size: 1.3rem;
+}
+
+.onboarding-card__heading {
     min-width: 0;
 }
 
 .onboarding-card__title {
     margin: 0 0 var(--space-1);
     font-weight: 800;
+    color: var(--white);
 }
 
 .onboarding-card__subtitle {
     margin: 0;
-    color: var(--grey-500);
+    color: var(--white-alpha-50);
     font-size: 0.95rem;
     line-height: 1.45;
 }
 
 .onboarding-card__dismiss {
-    flex-shrink: 0;
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
     background: none;
     border: none;
-    color: var(--grey-500);
+    color: var(--white-alpha-50);
     cursor: pointer;
     font-size: 1rem;
     line-height: 1;
 }
 
-/* Progress bar */
+.onboarding-steps.onboarding-card__body {
+    padding: var(--space-5);
+}
+
+/* Progress bar (sits on the gradient banner) */
 .onboarding-progress {
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    margin-bottom: var(--space-5);
 }
 
 .onboarding-progress__track {
     flex: 1 1 auto;
     height: 8px;
-    background: var(--purple-100);
+    background: var(--white-alpha-15);
     border-radius: 999px;
     overflow: hidden;
 }
@@ -68,7 +94,7 @@
 
 .onboarding-progress__label {
     flex-shrink: 0;
-    color: var(--grey-500);
+    color: var(--white-alpha-50);
     font-size: 0.8rem;
     font-weight: 700;
     white-space: nowrap;
@@ -188,21 +214,14 @@
     box-shadow: 0 0 40px var(--purple-200-alpha-15);
 }
 
-.theme-dark .onboarding-card__title,
 .theme-dark .onboarding-step__title {
     color: var(--white);
 }
 
-.theme-dark .onboarding-card__subtitle,
-.theme-dark .onboarding-progress__label,
 .theme-dark .onboarding-step__hint,
 .theme-dark .onboarding-step--completed .onboarding-step__title,
 .theme-dark .onboarding-step--locked .onboarding-step__title {
     color: var(--white-alpha-50);
-}
-
-.theme-dark .onboarding-progress__track {
-    background: var(--purple-600);
 }
 
 .theme-dark .onboarding-step__marker {
