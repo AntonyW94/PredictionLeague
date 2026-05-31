@@ -23,15 +23,20 @@ public class GetAvailableLeaguesQueryHandler(IApplicationReadDbConnection dbConn
                 [Leagues] l
             JOIN 
                 [Seasons] s ON l.[SeasonId] = s.[Id]
-            WHERE 
-                l.[EntryCode] IS NULL                                   
-                AND l.[EntryDeadlineUtc] > GETUTCDATE()                    
-                AND NOT EXISTS (                                        
-                    SELECT 1 
-                    FROM [LeagueMembers] lm 
+            WHERE
+                l.[EntryCode] IS NULL
+                AND l.[EntryDeadlineUtc] > GETUTCDATE()
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM [LeagueMembers] lm
                     WHERE lm.[LeagueId] = l.[Id] AND lm.[UserId] = @UserId
                 )
-            ORDER BY 
+                AND EXISTS (                                            -- acquire-first: only show leagues for seasons the user holds a pass for
+                    SELECT 1
+                    FROM [SeasonPasses] sp
+                    WHERE sp.[UserId] = @UserId AND sp.[SeasonId] = l.[SeasonId]
+                )
+            ORDER BY
                 s.[StartDateUtc] DESC, 
                 l.[Name];";
 
