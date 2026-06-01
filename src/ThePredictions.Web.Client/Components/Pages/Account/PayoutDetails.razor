@@ -28,21 +28,22 @@
                 <FluentValidationValidator />
 
                 <div class="mb-3">
-                    <label for="accountName" class="form-label">Account name</label>
+                    <label for="accountName" class="form-label">Account holder name</label>
                     <InputText id="accountName" class="form-control" @bind-Value="_model.AccountName" />
+                    <div class="form-text text-white-50">The name your bank account is in (not the bank's name).</div>
                     <StyledValidationMessage For="@(() => _model.AccountName)" />
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="sortCode" class="form-label">Sort code</label>
-                        <InputText id="sortCode" class="form-control" @bind-Value="_model.SortCode" placeholder="12-34-56" />
+                        <DigitsInput Id="sortCode" @bind-Value="_model.SortCode" MaxDigits="6" GroupSize="2" Placeholder="12-34-56" />
                         <StyledValidationMessage For="@(() => _model.SortCode)" />
                     </div>
 
                     <div class="col-md-6 mb-3">
                         <label for="accountNumber" class="form-label">Account number</label>
-                        <InputText id="accountNumber" class="form-control" @bind-Value="_model.AccountNumber" placeholder="12345678" />
+                        <DigitsInput Id="accountNumber" @bind-Value="_model.AccountNumber" MaxDigits="8" Placeholder="12345678" />
                         <StyledValidationMessage For="@(() => _model.AccountNumber)" />
                     </div>
                 </div>

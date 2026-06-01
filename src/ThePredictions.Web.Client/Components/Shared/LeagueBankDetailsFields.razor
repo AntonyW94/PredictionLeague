@@ -7,21 +7,22 @@
 </p>
 
 <div class="mb-3">
-    <label for="bankAccountName" class="form-label">Account name</label>
+    <label for="bankAccountName" class="form-label">Account holder name</label>
     <InputText id="bankAccountName" class="form-control" @bind-Value="Model.BankAccountName" />
+    <div class="form-text text-white-50">The name the bank account is in (not the bank's name).</div>
     <StyledValidationMessage For="@(() => Model.BankAccountName)" />
 </div>
 
 <div class="row">
     <div class="col-md-6 mb-3">
         <label for="bankSortCode" class="form-label">Sort code</label>
-        <InputText id="bankSortCode" class="form-control" @bind-Value="Model.BankSortCode" placeholder="12-34-56" />
+        <DigitsInput Id="bankSortCode" @bind-Value="Model.BankSortCode" MaxDigits="6" GroupSize="2" Placeholder="12-34-56" />
         <StyledValidationMessage For="@(() => Model.BankSortCode)" />
     </div>
 
     <div class="col-md-6 mb-3">
         <label for="bankAccountNumber" class="form-label">Account number</label>
-        <InputText id="bankAccountNumber" class="form-control" @bind-Value="Model.BankAccountNumber" placeholder="12345678" />
+        <DigitsInput Id="bankAccountNumber" @bind-Value="Model.BankAccountNumber" MaxDigits="8" Placeholder="12345678" />
         <StyledValidationMessage For="@(() => Model.BankAccountNumber)" />
     </div>
 </div>
