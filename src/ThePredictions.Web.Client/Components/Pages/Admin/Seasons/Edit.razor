@@ -368,7 +368,15 @@
 
                 _model.StartDateUtc = result.StartDateUtc;
                 _model.EndDateUtc = result.EndDateUtc;
-                _model.NumberOfRounds = result.RoundCount;
+
+                // Tournaments routinely expose fewer rounds in the API than the real
+                // competition has (knockout stages aren't drawn yet), so never let a
+                // lookup reduce the admin's configured round count - only raise it.
+                // Leagues take the API count as authoritative.
+                _model.NumberOfRounds = IsTournament
+                    ? Math.Max(_model.NumberOfRounds, result.RoundCount)
+                    : result.RoundCount;
+
                 _teamCount = result.TeamCount;
 
                 if (IsTournament)
