@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using ThePredictions.Application.Features.Authentication.Commands.ConfirmEmail;
 using ThePredictions.Application.Features.Authentication.Commands.Login;
 using ThePredictions.Application.Features.Authentication.Commands.Logout;
+using ThePredictions.Application.Features.Authentication.Commands.ResendConfirmation;
 using ThePredictions.Application.Features.Authentication.Commands.RefreshToken;
 using ThePredictions.Application.Features.Authentication.Commands.Register;
 using ThePredictions.Application.Features.Authentication.Commands.RequestPasswordReset;
@@ -32,12 +34,15 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         [FromBody, SwaggerParameter("Registration details including email, password, first name, and last name", Required = true)] RegisterRequest request,
         CancellationToken cancellationToken)
     {
+        var confirmUrlBase = $"{Request.Headers["Origin"]}/authentication/confirm-email";
+
         var command = new RegisterCommand(
             request.FirstName,
             request.LastName,
             request.Email,
             request.Password,
-            request.MarketingOptIn);
+            request.MarketingOptIn,
+            confirmUrlBase);
         var result = await mediator.Send(command, cancellationToken);
 
         if (result is not SuccessfulAuthenticationResponse success)
@@ -46,6 +51,36 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         SetTokenCookie(success.RefreshTokenForCookie);
         return Ok(success);
 
+    }
+
+    [HttpPost("confirm-email")]
+    [AllowAnonymous]
+    [SwaggerOperation(
+        Summary = "Confirm an email address using the token from the confirmation email",
+        Description = "Validates the confirmation token and marks the email as verified. Tokens expire after 72 hours.")]
+    [SwaggerResponse(200, "Email confirmed")]
+    [SwaggerResponse(400, "Token invalid or expired")]
+    public async Task<IActionResult> ConfirmEmailAsync(
+        [FromBody, SwaggerParameter("Confirmation token from the email link", Required = true)] ConfirmEmailRequest request,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new ConfirmEmailCommand(request.Token), cancellationToken);
+        return Ok(new { message = "Your email address has been confirmed. Thanks!" });
+    }
+
+    [HttpPost("resend-confirmation")]
+    [Authorize]
+    [SwaggerOperation(
+        Summary = "Resend the email-confirmation link to the current user",
+        Description = "Issues a fresh confirmation link if the user's email is not yet verified. Rate limited; always returns success.")]
+    [SwaggerResponse(200, "Request processed")]
+    [SwaggerResponse(401, "Not authenticated")]
+    public async Task<IActionResult> ResendConfirmationAsync(CancellationToken cancellationToken)
+    {
+        var confirmUrlBase = $"{Request.Headers["Origin"]}/authentication/confirm-email";
+
+        await mediator.Send(new ResendConfirmationCommand(CurrentUserId, confirmUrlBase), cancellationToken);
+        return Ok(new { message = "If your email still needs confirming, a new link is on its way." });
     }
 
     [HttpPost("login")]

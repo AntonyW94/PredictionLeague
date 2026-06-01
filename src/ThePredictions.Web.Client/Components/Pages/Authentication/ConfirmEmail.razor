@@ -1,0 +1,110 @@
+@page "/authentication/confirm-email"
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@using System.Net
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.WebUtilities
+@using ThePredictions.Contracts.Authentication
+
+<PageTitle>Confirm Email</PageTitle>
+
+<div class="page-container">
+    <div class="form-container shadow">
+        <div class="text-center mb-4 mt-2">
+            <img src="/images/logo.png" alt="The Predictions Logo" class="auth-logo" />
+        </div>
+
+        @if (_state == State.Confirming)
+        {
+            <h3 class="text-center fw-bold text-purple-1000">Confirming your email...</h3>
+            <div class="d-flex justify-content-center my-4">
+                <span class="spinner-border" role="status" aria-hidden="true"></span>
+            </div>
+        }
+        else if (_state == State.Success)
+        {
+            <h3 class="text-center fw-bold text-purple-1000">Email confirmed</h3>
+            <p class="text-center text-white mb-4">Thanks - your email address is verified. You're all set to take part.</p>
+            <div class="d-grid mt-4">
+                <NavLink href="/dashboard" class="btn green-button input-height text-center d-flex align-items-center justify-content-center">
+                    Go to dashboard
+                </NavLink>
+            </div>
+        }
+        else
+        {
+            <h3 class="text-center fw-bold text-purple-1000">Link invalid or expired</h3>
+            <p class="text-center text-white mb-4">
+                This confirmation link is invalid or has expired. If you're logged in, you can send a fresh one.
+            </p>
+
+            <ApiError Message="@_errorMessage" />
+            <ApiSuccess Message="@_resendMessage" />
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="button" class="btn green-button input-height" @onclick="ResendAsync" disabled="@_isResending">
+                    @(_isResending ? "Sending..." : "Resend confirmation email")
+                </button>
+                <NavLink href="/authentication/login" class="btn purple-accent-button input-height text-center d-flex align-items-center justify-content-center">
+                    Go to login
+                </NavLink>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private enum State { Confirming, Success, Failed }
+
+    private State _state = State.Confirming;
+    private string? _errorMessage;
+    private string? _resendMessage;
+    private bool _isResending;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var query = QueryHelpers.ParseQuery(new Uri(NavigationManager.Uri).Query);
+        if (!query.TryGetValue("token", out var token) || string.IsNullOrWhiteSpace(token))
+        {
+            _state = State.Failed;
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/authentication/confirm-email", new ConfirmEmailRequest { Token = token! });
+            _state = response.IsSuccessStatusCode ? State.Success : State.Failed;
+        }
+        catch
+        {
+            _state = State.Failed;
+        }
+    }
+
+    private async Task ResendAsync()
+    {
+        _isResending = true;
+        _errorMessage = null;
+        _resendMessage = null;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/authentication/resend-confirmation", new { });
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                _errorMessage = "Please log in first, then try resending.";
+            else if (response.IsSuccessStatusCode)
+                _resendMessage = "If your email still needs confirming, a new link is on its way.";
+            else
+                _errorMessage = "Could not resend right now. Please try again shortly.";
+        }
+        catch
+        {
+            _errorMessage = "Could not resend right now. Please try again shortly.";
+        }
+
+        _isResending = false;
+    }
+}

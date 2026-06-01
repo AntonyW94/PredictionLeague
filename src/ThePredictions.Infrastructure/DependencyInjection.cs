@@ -73,6 +73,9 @@ public static class DependencyInjection
             .AddSignInManager<SignInManager<ApplicationUser>>()
             .AddDefaultTokenProviders();
 
+        // Canonicalise emails (strip +alias) so plus-aliases collide on the unique email index (ADR 0009).
+        services.AddScoped<ILookupNormalizer, CanonicalEmailLookupNormalizer>();
+
         services.ConfigureApplicationCookie(options =>
         {
             options.Events.OnRedirectToLogin = context =>
@@ -94,6 +97,7 @@ public static class DependencyInjection
         services.AddScoped<ILeagueMemberRepository, LeagueMemberRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
+        services.AddScoped<IEmailConfirmationTokenRepository, EmailConfirmationTokenRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<ISeasonPassRepository, SeasonPassRepository>();
@@ -132,5 +136,6 @@ public static class DependencyInjection
         services.AddScoped<ILeagueMembershipService, LeagueMembershipService>();
         services.AddScoped<ISeasonAccessService, SeasonAccessService>();
         services.AddScoped<ISeasonPriceRecommendationService, SeasonPriceRecommendationService>();
+        services.AddScoped<IEmailConfirmationSender, EmailConfirmationSender>();
     }
 }

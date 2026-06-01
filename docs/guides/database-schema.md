@@ -701,6 +701,26 @@ Password reset tokens for email-based password recovery.
 
 ---
 
+### EmailConfirmationTokens
+
+Email verification tokens issued on registration (and resends). Mirrors `PasswordResetTokens`; transient data, skipped by the dev refresh tool.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Token | nvarchar(128) | NO | | PK - confirmation token value |
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers |
+| CreatedAtUtc | datetime2 | NO | | When token was created |
+| ExpiresAtUtc | datetime2 | NO | | When token expires (72h after creation) |
+
+**Constraints:**
+- PK: `Token`
+- FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
+
+**Indexes:**
+- `IX_EmailConfirmationTokens_UserId` on `UserId` (for user lookups / rate limiting)
+
+---
+
 ### RefreshTokens
 
 JWT refresh tokens for authentication.
