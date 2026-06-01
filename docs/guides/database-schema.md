@@ -60,6 +60,27 @@ Reference data for a competition: the stable, provider-independent identity that
 
 ---
 
+### RunningCosts
+
+Admin-recorded website running costs (hosting, fixture API, SMS, etc.) used by the recommended-price calculator. Start/end dates and payer are stored so costs can be apportioned/prorated flexibly; `PersonalUntilRenewal` costs are excluded from pricing until their end/renewal date (ADR 0006). `Frequency` and `Payer` are persisted as enum-name strings.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| Name | nvarchar(150) | NO | | Cost name (e.g. "Fasthosts hosting") |
+| Amount | decimal(18,2) | NO | | Cost amount (GBP) |
+| Frequency | nvarchar(20) | NO | | `Monthly`, `Annual` or `OneOff` |
+| StartDateUtc | datetime2 | NO | | When this cost period begins |
+| EndDateUtc | datetime2 | YES | | End / next renewal (null = ongoing) |
+| Payer | nvarchar(30) | NO | | `Business` or `PersonalUntilRenewal` |
+| Notes | nvarchar(500) | YES | | Optional notes |
+| CreatedAtUtc | datetime2 | NO | | Creation timestamp |
+
+**Constraints:**
+- PK: `Id`
+
+---
+
 ### Seasons
 
 Represents a football season within a competition.
