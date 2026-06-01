@@ -7,6 +7,7 @@ using ThePredictions.Web.Client.Services.Consent;
 using ThePredictions.Web.Client.Services.Dashboard;
 using ThePredictions.Web.Client.Services.Leagues;
 using ThePredictions.Web.Client.Services.Onboarding;
+using ThePredictions.Web.Client.Services.Payouts;
 using ThePredictions.Web.Client.Services.PricingSettings;
 using ThePredictions.Web.Client.Services.RunningCosts;
 using ThePredictions.Web.Client.Services.SeasonPasses;
@@ -28,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<ISeasonPassService, SeasonPassService>();
         services.AddScoped<IOnboardingService, OnboardingService>();
+        services.AddScoped<IPayoutService, PayoutService>();
         services.AddScoped<IRunningCostService, RunningCostService>();
         services.AddScoped<IPricingSettingsService, PricingSettingsService>();
         services.AddScoped<IServiceFeeService, ServiceFeeService>();

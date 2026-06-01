@@ -182,6 +182,47 @@ Records which onboarding-checklist steps a user has skipped (or had skipped in b
 
 ---
 
+### UserPayoutDetails
+
+Optional, player-provided bank details for receiving peer-to-peer prize **payouts**. One row per user. The account fields hold **AES-GCM ciphertext** (encrypted via `IFieldEncryptionService`); decrypted only for the player and the admins of prize leagues they're an approved member of. The platform never moves money.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| UserId | nvarchar(450) | NO | | PK, FK to AspNetUsers |
+| AccountName | nvarchar(512) | YES | | Payout account name, **AES-GCM ciphertext** |
+| SortCode | nvarchar(512) | YES | | Payout sort code, **AES-GCM ciphertext** |
+| AccountNumber | nvarchar(512) | YES | | Payout account number, **AES-GCM ciphertext** |
+| CreatedAtUtc | datetime2 | NO | | When first saved |
+| UpdatedAtUtc | datetime2 | NO | | When last updated |
+
+**Constraints:**
+- PK: `UserId`
+- FK: `UserId` → `AspNetUsers(Id)` ON DELETE CASCADE (`FK_UserPayoutDetails_AspNetUsers`)
+
+---
+
+### LeaguePayouts
+
+End-of-league settlement tracking: **one aggregated row per (league, winner)** holding the **sum** of that user's `Winnings` for the league and a manual **PaidAtUtc**. Rows are created idempotently once the season is complete (final prize processing done). `Winnings` remains the source of truth - the Round/Monthly/Overall breakdown is computed live from it, never duplicated here.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| LeagueId | int | NO | | FK to Leagues |
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers (the winner) |
+| TotalAmount | decimal(18,2) | NO | | Sum of the user's winnings in the league at finalisation |
+| PaidAtUtc | datetime2 | YES | | When the admin marked this winner paid (null = outstanding) |
+| CreatedAtUtc | datetime2 | NO | | When the payout row was created |
+| UpdatedAtUtc | datetime2 | NO | | When the total was last refreshed |
+
+**Constraints:**
+- PK: `Id`
+- Unique: `(LeagueId, UserId)` (`UQ_LeaguePayouts_League_User`)
+- FK: `LeagueId` → `Leagues(Id)` ON DELETE CASCADE (`FK_LeaguePayouts_Leagues`)
+- FK: `UserId` → `AspNetUsers(Id)` (`FK_LeaguePayouts_AspNetUsers`)
+
+---
+
 ### Rounds
 
 Represents a gameweek within a season.

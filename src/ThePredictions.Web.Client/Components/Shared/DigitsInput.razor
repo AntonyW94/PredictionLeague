@@ -1,0 +1,47 @@
+@* Digits-only text input. Strips any non-digit (typed or pasted), caps the length,
+   and optionally groups with hyphens (e.g. sort code 12-34-56). Two-way binds via @bind-Value. *@
+
+<input id="@Id"
+       class="@CssClass"
+       type="text"
+       inputmode="numeric"
+       autocomplete="off"
+       maxlength="@MaxLength"
+       placeholder="@Placeholder"
+       value="@Value"
+       @oninput="OnInputAsync" />
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string CssClass { get; set; } = "form-control";
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Maximum number of digits allowed.</summary>
+    [Parameter] public int MaxDigits { get; set; } = 8;
+
+    /// <summary>Insert a hyphen after every N digits (0 = no grouping).</summary>
+    [Parameter] public int GroupSize { get; set; }
+
+    private int MaxLength => GroupSize > 0 ? MaxDigits + (MaxDigits - 1) / GroupSize : MaxDigits;
+
+    private async Task OnInputAsync(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString() ?? string.Empty;
+        var digits = new string(raw.Where(char.IsDigit).Take(MaxDigits).ToArray());
+        var formatted = GroupSize > 0 ? Group(digits) : digits;
+
+        Value = formatted;
+        await ValueChanged.InvokeAsync(formatted);
+    }
+
+    private string Group(string digits)
+    {
+        var parts = new List<string>();
+        for (var i = 0; i < digits.Length; i += GroupSize)
+            parts.Add(digits.Substring(i, Math.Min(GroupSize, digits.Length - i)));
+
+        return string.Join("-", parts);
+    }
+}

@@ -17,6 +17,7 @@ public class PersonalDataVerifier(SqlConnection connection)
         await VerifyUserTokensEmptyAsync(failures);
         await VerifySeasonPassReferencesClearedAsync(failures);
         await VerifyLeagueBankDetailsClearedAsync(failures);
+        await VerifyUserPayoutDetailsClearedAsync(failures);
 
         if (failures.Count > 0)
         {
@@ -139,5 +140,16 @@ public class PersonalDataVerifier(SqlConnection connection)
                  OR [BankAccountNumber] IS NOT NULL");
         if (count > 0)
             failures.Add($"Leagues contains {count} row(s) with non-null bank details");
+    }
+
+    private async Task VerifyUserPayoutDetailsClearedAsync(List<string> failures)
+    {
+        var count = await connection.QueryFirstOrDefaultAsync<int>(
+            @"SELECT COUNT(*) FROM [UserPayoutDetails]
+              WHERE [AccountName] IS NOT NULL
+                 OR [SortCode] IS NOT NULL
+                 OR [AccountNumber] IS NOT NULL");
+        if (count > 0)
+            failures.Add($"UserPayoutDetails contains {count} row(s) with non-null payout details");
     }
 }
