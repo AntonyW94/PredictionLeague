@@ -11,13 +11,14 @@ namespace ThePredictions.Application.Features.Onboarding;
 public static class OnboardingStepRegistry
 {
     /// <summary>Optional steps a user may skip (and that "Dismiss" skips in bulk).</summary>
-    public static readonly IReadOnlyList<string> OptionalKeys = new[] { OnboardingStepKeys.AddMobile };
+    public static readonly IReadOnlyList<string> OptionalKeys = new[] { OnboardingStepKeys.AddMobile, OnboardingStepKeys.AddPayoutDetails };
 
     public static OnboardingChecklistDto Build(OnboardingUserState state, ISet<string> skippedKeys)
     {
         var getPassDone = state.PassCount > 0;
         var joinLeagueDone = state.LeagueCount > 0;
         var addMobileDone = state.HasMobile;
+        var addPayoutDetailsDone = state.HasPayoutDetails;
 
         var definitions = new[]
         {
@@ -26,7 +27,9 @@ public static class OnboardingStepRegistry
             new StepDefinition(OnboardingStepKeys.JoinLeague, "Join or create a league", Required: true, Skippable: false,
                 Completed: joinLeagueDone, PrerequisiteMet: getPassDone, "Find a league", "/dashboard"),
             new StepDefinition(OnboardingStepKeys.AddMobile, "Complete your profile", Required: false, Skippable: true,
-                Completed: addMobileDone, PrerequisiteMet: true, "Complete", "/account/details")
+                Completed: addMobileDone, PrerequisiteMet: true, "Complete", "/account/details"),
+            new StepDefinition(OnboardingStepKeys.AddPayoutDetails, "Add payout details", Required: false, Skippable: true,
+                Completed: addPayoutDetailsDone, PrerequisiteMet: true, "Add details", "/account/payout-details")
         };
 
         var steps = definitions.Select(definition => ToDto(definition, skippedKeys)).ToList();
