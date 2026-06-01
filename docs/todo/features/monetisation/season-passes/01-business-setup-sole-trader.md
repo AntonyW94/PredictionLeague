@@ -2,11 +2,13 @@
 
 **Parent Feature:** [README.md](./README.md)
 
-> **Readiness:** ⛔ Phase B — offline; HMRC sole-trader registration (Monday).
+> **Readiness:** ⛔ Phase B — offline; HMRC sole-trader registration.
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Update (June 2026):** Registered for Self Assessment as self-employed (sole trader) on the gov.uk website; Government Gateway access confirmed. **Awaiting the UTR by post (up to 28 days).** Once it arrives, store it securely and add it to Stripe/accounts if requested. Everything else here is done; this task closes when the UTR is received and filed.
 
 ## Goal
 
@@ -62,9 +64,9 @@ After registering you'll receive a **Unique Taxpayer Reference (UTR)** by post (
 
 ## Verification
 
-- [ ] Registered for Self Assessment as self-employed; Government Gateway access confirmed.
-- [ ] UTR received and stored securely.
-- [ ] Record-keeping method decided (Monzo Business categorisation).
+- [x] Registered for Self Assessment as self-employed; Government Gateway access confirmed.
+- [ ] UTR received and stored securely. *(In the post - up to 28 days.)*
+- [x] Record-keeping method decided (Monzo Business categorisation).
 
 ## Notes
 

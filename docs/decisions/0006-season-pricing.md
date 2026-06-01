@@ -15,6 +15,8 @@ Different seasons warrant different prices (a 38-week league vs a short cup), pr
 Each pass-required season stores admin-set **`PassStandardPrice`** and **`PassPremiumPrice`** (DB-backed, editable in admin). Stripe Checkout uses **dynamic `price_data`** read from the DB at session creation — **no pre-created Stripe Price objects**. Validation: a season is either free (both prices null) or paid (both prices set, `PassStandardPrice > 0`, `PassPremiumPrice ≥ PassStandardPrice`). `RequiresPayment` is **derived** from price presence, not a stored flag.
 
 ### b) Recommended-price calculator (a suggestion, never enforced)
+> **Amendment (June 2026):** the **Payer / `PersonalUntilRenewal`** distinction below was **dropped** once the business bank account opened. Running costs no longer record who pays; the calculator sums **every recorded cost** (point 1's "business-borne only" rule no longer applies). The SMS uplift in point 5 is also deferred (Standard-only launch). The rest of the model stands.
+
 During season creation, show a **pre-filled, editable info box**:
 1. **Business-borne costs only** — sum annualised running costs that are business-paid as at season start (personal-card costs excluded until their renewal date).
 2. **Apportion by season length** (weight = this season's rounds/duration ÷ all paid seasons' length).
