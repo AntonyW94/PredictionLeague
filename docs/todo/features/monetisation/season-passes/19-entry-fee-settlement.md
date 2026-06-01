@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Done (A5).** AES-GCM field-encryption service (key in Key Vault), encrypted `Leagues` bank details, `GetLeaguePaymentInfo` query, admin bank-details UI (edit-prefill), and the player join/pay flow (join modal + pending-request panel). Peer-to-peer; the software never holds or moves money.
 
 ## Goal
 

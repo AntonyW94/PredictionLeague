@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Done (June 2026).** All schema is live: `Seasons` price columns, `Competitions`, `SeasonPasses`, `RunningCosts`, `PricingSettings`, `ServiceFees`, encrypted `Leagues` bank columns, `UserPayoutDetails`, `LeaguePayouts`, and `EmailConfirmationTokens` - with `docs/guides/database-schema.md` and `DatabaseTools` kept in sync. Applied via manual SQL migrations as each PR landed (no migration tool yet). Note: `RunningCosts` shipped without the `Payer` column and `PricingSettings` was split (provider fees moved to `ServiceFees`) - see Tasks 14/15.
 
 ## Goal
 

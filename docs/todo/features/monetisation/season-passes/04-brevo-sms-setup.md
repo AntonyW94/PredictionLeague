@@ -8,6 +8,8 @@
 
 **Not Started** | In Progress | Complete
 
+> **Deferred - SMS/Premium is out of the first-launch scope (June 2026).** Not started; revisit when the Premium (SMS) tier is added. (Brevo *email* is already configured and in use.)
+
 ## Type
 
 **Offline** (Brevo dashboard) — enables the SMS channel Task 11 uses.

@@ -6,7 +6,9 @@
 
 ## Status
 
-Not Started | **In Progress** | Complete
+Not Started | In Progress | **Complete**
+
+> **Done (A4 + A4b).** Gate + acquisition + acquire UI + My/Available passes pages + per-season public-league visibility gating all shipped. Acquisition now also requires a confirmed email (Task 18). Paid (non-trial) acquisition still routes to Stripe checkout, which is Phase B (Task 09).
 
 > **Acquire-first model (revised).** A Season Pass is required to take part in **every** season. The **gate** only checks the user already **holds** a pass for the season - it does **not** grant one. Acquisition is a separate, explicit action so users acquire before participating (and before seeing a season's public leagues).
 > **Built (this PR):** the gate (`SeasonAccessService` = pass-exists check, else `SeasonPassRequiredException` → 402) and `AcquireSeasonPassCommand` (free season → £0 `Free`; brand-new user's first paid season → free `Trial`; paid non-trial → needs Stripe, Phase B), with the `SeasonPasses` table/repo/backfill and `SeasonPassRequiredException`→402 mapping (from the original A4 cut).

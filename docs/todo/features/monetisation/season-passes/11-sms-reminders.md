@@ -8,6 +8,8 @@
 
 **Not Started** | In Progress | Complete
 
+> **Deferred - SMS/Premium is out of the first-launch scope (June 2026).** Not started; revisit when the Premium (SMS) tier is added. Email reminders are unchanged and continue to work.
+
 ## Goal
 
 Layer SMS **on top of** the existing emails: **everyone keeps every email at every milestone**, and SMS-tier holders *additionally* get a text at the 6h and 1h milestones **only if they still haven't submitted**. Track how many SMS each user is sent per season.

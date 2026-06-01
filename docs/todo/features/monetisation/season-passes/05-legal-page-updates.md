@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Built best-effort (June 2026); NOT solicitor-reviewed.** Terms now describe paid Season Passes, Stripe, refund-before-season-start, the strengthened peer-to-peer private-league clause and a Consumer Rights Act 2015 line; Privacy adds Stripe as a processor, payment data, the payment lawful basis and ~6-year retention. SMS-specific clauses were omitted (SMS/Premium deferred). The `@* solicitor review *@` flags are retained - a full review is deferred until charging beyond friends & family.
 
 ## Goal
 

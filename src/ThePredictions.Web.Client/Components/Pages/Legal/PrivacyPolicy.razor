@@ -1,7 +1,8 @@
-@* TODO: solicitor review — this content is hand-authored boilerplate to satisfy
-       basic UK GDPR/PECR transparency requirements. It must be reviewed by a
-       qualified solicitor before being treated as a final, legally binding
-       privacy notice. Update LastUpdated whenever content materially changes. *@
+@* TODO: solicitor review — this content is hand-authored, best-effort boilerplate to satisfy
+       basic UK GDPR/PECR transparency requirements for a service that now takes payments via Stripe.
+       It has NOT been reviewed by a qualified solicitor and must be before it is treated as a final,
+       legally binding privacy notice (a full review is planned once we charge beyond friends &
+       family). Update LastUpdated whenever content materially changes. *@
 @page "/privacy"
 
 <PageTitle>Privacy Policy — The Predictions</PageTitle>
@@ -14,7 +15,7 @@
         <section>
             <h2>1. Who we are</h2>
             <p>
-                The Predictions ("we", "us", "our") is a free, hobby football-prediction game aimed at UK-based players.
+                The Predictions ("we", "us", "our") is a football-prediction game aimed at UK-based players.
                 For the purposes of UK data protection law (the UK GDPR and the Data Protection Act 2018) we are the
                 data controller for the personal data described in this notice.
             </p>
@@ -31,6 +32,8 @@
                 <li><strong>Account details:</strong> your name, email address, and (optionally) a phone number.</li>
                 <li><strong>Authentication data:</strong> a hashed password, or, if you sign in with Google, the limited profile information Google returns to us (name, email, profile picture).</li>
                 <li><strong>Gameplay data:</strong> the predictions you submit, the leagues you join, and the boosts you use.</li>
+                <li><strong>Payment data:</strong> if you buy a Season Pass, our payment processor <strong>Stripe</strong> handles your card details — we never see or store your card number. We keep only a Stripe payment reference and the amount, date and what it was for.</li>
+                <li><strong>Optional bank details (peer-to-peer league payments):</strong> entirely optional, and only if you choose to use the entry-fee or prize features of a private league. A league organiser may save their <strong>receiving</strong> bank details (account name, sort code, account number) so members can pay an entry fee directly; a player may save their <strong>payout</strong> bank details so a league organiser can pay out winnings. These are stored <strong>encrypted</strong> (we keep the key separately in a secure vault), are shown only to the relevant people (see section 4), and you can remove them at any time. We never take, hold, escrow, or move this money — it is paid <strong>directly between members</strong>.</li>
                 <li><strong>Technical data:</strong> server logs containing your IP address, browser type, and the actions you take, used for security and debugging.</li>
                 <li><strong>Cookies:</strong> we currently set only essential cookies needed to keep you logged in. We do not use advertising or analytics cookies.</li>
             </ul>
@@ -50,6 +53,18 @@
                     secure, and in some cases performance of a contract.
                 </li>
                 <li>
+                    <strong>Taking payment for Season Passes</strong> — processing your payment through Stripe and keeping a
+                    record of it. <em>Lawful basis: performance of a contract</em> (providing the pass), and
+                    <em>legal obligation</em> (keeping transaction records for UK tax and accounting law).
+                </li>
+                <li>
+                    <strong>Storing optional bank details for peer-to-peer league payments</strong> — only if you choose to
+                    enter them, so a league organiser can be paid an entry fee or can pay out winnings. We store these
+                    encrypted and only show them to the relevant people. <em>Lawful basis: legitimate interest</em> in
+                    offering this optional convenience to members who choose to use it; you provide them voluntarily and can
+                    remove them at any time.
+                </li>
+                <li>
                     <strong>Optional marketing emails</strong> (for example, news about new features) — only if we add this in
                     future and only after you have opted in. <em>Lawful basis: your consent</em>, which you can withdraw at any time.
                 </li>
@@ -66,9 +81,15 @@
             <ul>
                 <li><strong>Microsoft Azure</strong> — hosting and database storage (data stored in the UK / EEA).</li>
                 <li><strong>Google</strong> — only if you choose to sign in with Google, in which case Google authenticates you and returns the basic profile information described above.</li>
-                <li><strong>Brevo</strong> — sending transactional emails such as password resets.</li>
+                <li><strong>Brevo</strong> — sending transactional emails such as password resets and email confirmations.</li>
+                <li><strong>Stripe</strong> — payment processing for Season Passes (Stripe Payments Europe). Stripe handles your card details directly under its own privacy policy.</li>
                 <li><strong>Datadog</strong> — collecting application logs and error reports so that we can keep the service running.</li>
             </ul>
+            <p>
+                <strong>Optional bank details</strong> are not shared with any of the providers above. A league organiser's
+                receiving details are shown only to members of that league when they ask to pay; a player's payout details are
+                shown only to the organiser(s) of leagues that player is in. We do not pass them to anyone else.
+            </p>
             <p>
                 We may also disclose your information if we are required to do so by law, or if we need to protect our rights,
                 property, or the safety of our users.
@@ -91,6 +112,16 @@
                 we will remove or anonymise your personal data within a reasonable period, except where we are required to
                 keep certain information for legal, security, or fraud-prevention reasons. Server logs are retained for a
                 short, rolling period for operational and security purposes.
+            </p>
+            <p>
+                <strong>Payment and transaction records</strong> (for example, what you paid, when, and the Stripe
+                reference) are kept for around <strong>six years</strong> to meet UK tax and accounting law, even after an
+                account is closed.
+            </p>
+            <p>
+                <strong>Optional bank details</strong> are kept (encrypted) only while you choose to keep them. You can remove
+                them at any time, and we delete a league organiser's saved details when the relevant league is deleted and a
+                player's payout details when their account is closed.
             </p>
         </section>
 
@@ -143,5 +174,5 @@
 </div>
 
 @code {
-    private const string LastUpdated = "28 April 2026";
+    private const string LastUpdated = "1 June 2026";
 }

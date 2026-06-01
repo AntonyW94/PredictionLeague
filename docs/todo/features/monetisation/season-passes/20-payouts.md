@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Done (A6).** Optional encrypted player payout details (visible only to the named admin(s) of leagues they're in), the admin end-of-league payouts list (one aggregated total per winner, breakdown computed live from `Winnings`), and manual mark-as-paid gated on season completion. Join-time warning naming the admin who gains visibility. Peer-to-peer; the software never moves money.
 
 ## Goal
 
