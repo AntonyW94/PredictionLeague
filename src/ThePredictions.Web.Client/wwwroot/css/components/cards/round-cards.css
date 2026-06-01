@@ -39,9 +39,11 @@
 }
 
 .match-preview-vs {
-    color: var(--grey-300);
+    /* Light mode: a muted grey that still reads clearly on the white card.
+       Dark mode keeps the lighter, lower-opacity treatment (see dark.css). */
+    color: var(--grey-500);
     font-size: 0.75rem;
-    opacity: 0.7;
+    opacity: 1;
 }
 
 /* Match Outcome Backgrounds */
