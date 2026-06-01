@@ -31,6 +31,7 @@ public class DatabaseRefresher(
         "Seasons",
         "SeasonPasses",
         "UserOnboardingSkips",
+        "UserPayoutDetails",
         "TournamentRoundMappings",
         "Rounds",
         "Matches",
@@ -45,7 +46,8 @@ public class DatabaseRefresher(
         "RoundResults",
         "LeagueRoundResults",
         "UserBoostUsages",
-        "Winnings"
+        "Winnings",
+        "LeaguePayouts"
     ];
 
     private static readonly string[] AllTables = TableCopyOrder
@@ -124,6 +126,7 @@ public class DatabaseRefresher(
             tableData["AspNetUsers"] = DataAnonymiser.AnonymiseUsers(tableData["AspNetUsers"]);
             tableData["Leagues"] = DataAnonymiser.AnonymiseLeagues(tableData["Leagues"]);
             tableData["SeasonPasses"] = DataAnonymiser.AnonymiseSeasonPasses(tableData["SeasonPasses"]);
+            tableData["UserPayoutDetails"] = DataAnonymiser.AnonymiseUserPayoutDetails(tableData["UserPayoutDetails"]);
         }
 
         await using var targetConnection = new SqlConnection(targetConnectionString);

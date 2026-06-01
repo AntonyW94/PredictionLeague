@@ -10,6 +10,24 @@ namespace ThePredictions.Infrastructure.Repositories;
 public class WinningsRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext)
     : RepositoryBase(connectionFactory, transactionContext), IWinningsRepository
 {
+    public async Task<decimal> GetUserLeagueTotalAsync(int leagueId, string userId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                COALESCE(SUM(w.[Amount]), 0)
+            FROM
+                [Winnings] w
+            INNER JOIN
+                [LeaguePrizeSettings] lps ON lps.[Id] = w.[LeaguePrizeSettingId]
+            WHERE
+                lps.[LeagueId] = @LeagueId
+                AND w.[UserId] = @UserId;";
+
+        var command = new CommandDefinition(sql, new { LeagueId = leagueId, UserId = userId }, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return await Connection.ExecuteScalarAsync<decimal>(command);
+    }
+
     public async Task AddWinningsAsync(IEnumerable<Winning> winnings, CancellationToken cancellationToken)
     {
         if (!winnings.Any())

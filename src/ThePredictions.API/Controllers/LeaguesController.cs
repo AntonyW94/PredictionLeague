@@ -8,6 +8,7 @@ using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Contracts.Boosts;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Contracts.Payouts;
 using ThePredictions.Domain.Common.Enumerations;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -419,6 +420,38 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
     {
         var bankDetails = await mediator.Send(new GetLeagueBankDetailsQuery(leagueId, CurrentUserId), cancellationToken);
         return Ok(bankDetails);
+    }
+
+    [HttpGet("{leagueId:int}/payouts")]
+    [SwaggerOperation(
+        Summary = "Get the league's end-of-season payouts",
+        Description = "Returns one row per winner (total + live breakdown), their shared payout details if any, and paid state. League administrator only; mark-as-paid is available once the season is complete.")]
+    [SwaggerResponse(200, "Payouts returned", typeof(LeaguePayoutsDto))]
+    [SwaggerResponse(401, "Not authenticated, or not the league administrator")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<LeaguePayoutsDto>> GetLeaguePayoutsAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var payouts = await mediator.Send(new GetLeaguePayoutsQuery(leagueId, CurrentUserId), cancellationToken);
+        return Ok(payouts);
+    }
+
+    [HttpPost("{leagueId:int}/payouts/{winnerUserId}/mark-paid")]
+    [SwaggerOperation(
+        Summary = "Mark a winner's payout as paid",
+        Description = "Records that the league administrator has paid a winner their winnings. Only available once the season is complete.")]
+    [SwaggerResponse(204, "Payout marked as paid")]
+    [SwaggerResponse(400, "Season not complete, or the player has no winnings")]
+    [SwaggerResponse(401, "Not authenticated, or not the league administrator")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<IActionResult> MarkLeaguePayoutPaidAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        [SwaggerParameter("Winner's user id")] string winnerUserId,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new MarkLeaguePayoutPaidCommand(leagueId, winnerUserId, CurrentUserId), cancellationToken);
+        return NoContent();
     }
 
     [HttpPost("join")]

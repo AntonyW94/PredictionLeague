@@ -137,6 +137,34 @@ public class DataAnonymiser
         return anonymised;
     }
 
+    public static IEnumerable<dynamic> AnonymiseUserPayoutDetails(IEnumerable<dynamic> payoutDetails)
+    {
+        var anonymised = new List<dynamic>();
+        var counter = 0;
+
+        foreach (var detail in payoutDetails)
+        {
+            var dict = (IDictionary<string, object?>)detail;
+            IDictionary<string, object?> result = new ExpandoObject();
+
+            foreach (var kvp in dict)
+            {
+                result[kvp.Key] = kvp.Value;
+            }
+
+            // Scrub the encrypted payout bank details - real (encrypted) details must never reach a dev copy.
+            result["AccountName"] = null;
+            result["SortCode"] = null;
+            result["AccountNumber"] = null;
+
+            anonymised.Add(result);
+            counter++;
+        }
+
+        Console.WriteLine($"[INFO] Anonymised {counter} user payout details");
+        return anonymised;
+    }
+
     private static string GenerateRandomEntryCode(Faker faker)
     {
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
