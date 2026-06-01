@@ -9,4 +9,8 @@ public record UpdateLeagueCommand(
     DateTime EntryDeadlineUtc,
     int PointsForExactScore,
     int PointsForCorrectResult,
-    string UserId) : IRequest;
+    string UserId,
+    string? BankAccountName = null,
+    string? BankSortCode = null,
+    string? BankAccountNumber = null,
+    string? PaymentReferenceTemplate = null) : IRequest;

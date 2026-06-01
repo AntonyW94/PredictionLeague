@@ -9,7 +9,7 @@ using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, ISeasonAccessService seasonAccessService, IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateLeagueCommand, LeagueDto>
+public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, ISeasonAccessService seasonAccessService, IFieldEncryptionService fieldEncryptionService, IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateLeagueCommand, LeagueDto>
 {
     public async Task<LeagueDto> Handle(CreateLeagueCommand request, CancellationToken cancellationToken)
     {
@@ -38,6 +38,12 @@ public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
 
         league.SetEntryCode(entryCode);
 
+        league.SetBankDetails(
+            fieldEncryptionService.Encrypt(NullIfBlank(request.BankAccountName)),
+            fieldEncryptionService.Encrypt(NullIfBlank(request.BankSortCode)),
+            fieldEncryptionService.Encrypt(NullIfBlank(request.BankAccountNumber)),
+            NullIfBlank(request.PaymentReferenceTemplate));
+
         var createdLeague = await leagueRepository.CreateAsync(league, cancellationToken);
 
         return new LeagueDto(
@@ -59,4 +65,6 @@ public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
         var random = new Random();
         return new string(Enumerable.Repeat(chars, 6).Select(s => s[random.Next(s.Length)]).ToArray());
     }
+
+    private static string? NullIfBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
