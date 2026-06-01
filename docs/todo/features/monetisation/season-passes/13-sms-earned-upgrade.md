@@ -8,6 +8,8 @@
 
 **Not Started** | In Progress | Complete
 
+> **Deferred - SMS/Premium is out of the first-launch scope (June 2026).** Not started; revisit when the Premium (SMS) tier is added.
+
 ## Type
 
 **Code (follow-on)** — needs at least one completed paid SMS season of data, so it goes live from the **second** paid season onward (not PL 2026/27).

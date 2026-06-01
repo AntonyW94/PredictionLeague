@@ -8,6 +8,8 @@
 
 **Not Started** | In Progress | Complete
 
+> **Deferred until Stripe is set up (June 2026).** Decided to build the purchase page in one go alongside the Stripe Checkout integration (Task 09) rather than half now / half later. Not started. Standard-only (no Premium/SMS card).
+
 ## Goal
 
 Build the Blazor Season Pass purchase page from the mockup: two tiers (Standard / Premium), launches Stripe Checkout, and shows a free-trial state for eligible users.

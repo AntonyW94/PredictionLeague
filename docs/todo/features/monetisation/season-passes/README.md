@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Progress (June 2026):** All build-now Phase A work is done - Competitions refactor, Season-pass domain, DB/schema, access gate + acquire UI, entry-fee settlement, payouts, running costs, configurable prices + calculator, email verification, and best-effort legal pages. **Remaining is the Stripe-dependent slice** (Stripe account, Checkout integration, refunds, purchase page) plus final testing/launch. **SMS / Premium tier is deferred** out of the first launch. See the per-task list below and the "What's left" summary at the foot of this section.
 
 ## Summary
 
@@ -118,26 +120,26 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 ## Acceptance Criteria
 
 - [ ] Sole trader registered; Monzo Business + Stripe live in the business name.
-- [ ] Pass-required is derived from price (`Season.PassStandardPrice IS NOT NULL`); all existing seasons + World Cup 2026 are free (no prices); PL 2026/27 is priced.
-- [ ] A user with no pass cannot join/create a league in a pass-required season unless trial-eligible.
-- [ ] Brand-new users are auto-granted a free Standard trial on first participation in a pass-required season.
-- [ ] Per-season **Standard** and **Premium** prices are admin-configurable (DB-backed); Stripe charges those exact amounts (dynamic).
-- [ ] Admin **Running Costs** page records costs (name, amount, frequency, start/end dates, notes).
-- [ ] Season creation shows a **recommended price** from the calculator (15% buffer, length-weighted apportionment, break-even at last comparable season's player count, based on recorded running costs).
+- [x] Pass-required is derived from price (`Season.PassStandardPrice IS NOT NULL`); all existing seasons + World Cup 2026 are free (no prices); PL 2026/27 is priced.
+- [x] A user with no pass cannot join/create a league in a pass-required season unless trial-eligible.
+- [x] Brand-new users are auto-granted a free Standard trial on first participation in a pass-required season.
+- [~] Per-season **Standard** price is admin-configurable (DB-backed). *(Premium deferred; Stripe charging the amount is Phase B.)*
+- [x] Admin **Running Costs** page records costs (name, amount, frequency, start/end dates, notes).
+- [x] Season creation shows a **recommended price** from the calculator (15% buffer, length-weighted apportionment, break-even at last comparable season's player count, based on recorded running costs).
 - [ ] Users can buy Standard or Premium via Stripe Checkout (one-off, Apple/Google Pay enabled).
 - [ ] A `SeasonPass` is created reliably on successful payment (webhook-driven).
 - [ ] Everyone (incl. SMS-tier) keeps all emails at every milestone; SMS is an **additional** 6h/1h nudge for unsubmitted SMS-tier holders.
 - [ ] Per-season SMS count tracked per user (`SmsSentCount`).
 - [ ] Self-funding reward: a paying low-usage SMS season earns the next SMS season free when the leftover fee covers that season's worst-case SMS cost.
 - [ ] Passes (incl. SMS) are refundable before the season starts (Stripe refund + entitlement revoked); non-refundable after.
-- [ ] Email verification completed: unconfirmed users can't purchase/take part; `+`-alias emails are rejected as duplicates.
-- [ ] SMS purchase requires a valid UK mobile (libphonenumber, E.164); blocked until one is added.
-- [ ] Terms & Privacy updated and flagged for solicitor review; refund/consumer-rights wording added.
-- [ ] Domain project at 100% line + branch coverage; schema docs + DatabaseTools updated.
+- [x] Email verification completed: unconfirmed users can't purchase/take part; `+`-alias emails are rejected as duplicates. *(Brevo template id still to be set.)*
+- [ ] ~~SMS purchase requires a valid UK mobile~~ — **deferred (SMS out of launch scope).**
+- [x] Terms & Privacy updated with paid-service / Stripe / refund / consumer-rights wording; flagged as **not yet solicitor-reviewed**.
+- [x] Domain project at 100% line + branch coverage; schema docs + DatabaseTools updated.
 
 ## Build Phases & Readiness
 
-> **How to use this plan:** this branch contains the **plan only** (no feature code yet). Execution happens in a separate session — work **Phase A top-down** (none of it needs any account), then **Phase B** once the business accounts exist. Each task file carries its own **Readiness** line.
+> **How to use this plan:** work **Phase A top-down** (none of it needs any account), then **Phase B** once the business accounts exist. Each task file carries its own **Readiness** line and a **Status** marker. **Most of Phase A is now built** (see the ✅ markers below); what remains is the Stripe-dependent work and launch.
 
 Work is split by what needs a **business entity / live accounts** (sole trader → Monzo Business → Stripe → Brevo SMS) and what doesn't.
 
@@ -148,36 +150,54 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 
 ### Phase A — do now (no business accounts required)
 
-| Order | # | Task | Notes |
-|-------|---|------|-------|
-| A1 | 16 | [Competitions management](./16-competitions-management.md) | Foundational — `Competitions` table + `Season.CompetitionId`; refactors existing sync. Do first. |
-| A2 | 6 | [Domain model](./06-domain-season-pass.md) | `Season` changes, `SeasonPass`, enums. |
-| A3 | 7 | [Database & schema](./07-database-migration.md) | All new tables/columns, backfills, schema doc, DatabaseTools. |
-| A4 | 8 | [Access gate & trial](./08-access-gate-and-trial.md) | **Acquire-first (backend):** gate = holds-a-pass check on Join/Create (else 402); `AcquireSeasonPassCommand` grants free (free season) / trial (first paid season). |
-| A4b | 8 | Acquire UI + passes pages + visibility gating | **Follow-up to A4:** acquire endpoint + "Get your pass" page (handles the 402 redirect; free = 1-click £0), **My Passes** + **Available Passes** pages, and per-season **public-league visibility gating**. Free path is Phase A; the paid acquire is Stripe (Phase B). **Deploy gate: A4's block must not go live until this UI exists.** |
-| A5 | 19 | [Entry-fee settlement](./19-entry-fee-settlement.md) | Encryption service + admin bank details + join/pay flow (peer-to-peer, no Stripe). |
-| A6 | 20 | [Payouts](./20-payouts.md) | Player payout details + payouts list + mark-as-paid (manual, no Stripe). |
-| A7 | 14 | [Admin running costs](./14-admin-running-costs.md) | Running-costs CRUD page. |
-| A8 | 15 | [Configurable prices & calculator](./15-configurable-prices-and-calculator.md) | Per-season prices + recommended-price calculator (maths only; uses fee constants). |
-| A9 | 18 | [Email verification & identity](./18-email-verification-and-identity.md) | Finish confirmation + `+`-alias normalisation (existing Brevo email). |
-| ~~A10~~ | 13 | ~~[SMS early-bird reward](./13-sms-earned-upgrade.md)~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
-| ~~A11~~ | 11 | ~~[SMS reminders](./11-sms-reminders.md)~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
-| A12 | 10 | [Purchase page](./10-purchase-page.md) | **Partial, Standard-only:** build the page + trial/closed states now (no Premium card, no SMS); the **Stripe Checkout redirect** needs Stripe (→ Phase B). |
-| A13 | 5 | [Legal page updates](./05-legal-page-updates.md) | **Best-effort, no solicitor review before launch (June 2026).** Draft Terms/Privacy/refund wording; flag clearly as un-reviewed; full solicitor review deferred until charging beyond friends & family. |
+| Order | # | Status | Task | Notes |
+|-------|---|--------|------|-------|
+| A1 | 16 | ✅ Done | [Competitions management](./16-competitions-management.md) | Foundational — `Competitions` table + `Season.CompetitionId`; refactors existing sync. Do first. |
+| A2 | 6 | ✅ Done | [Domain model](./06-domain-season-pass.md) | `Season` changes, `SeasonPass`, enums. |
+| A3 | 7 | ✅ Done | [Database & schema](./07-database-migration.md) | All new tables/columns, backfills, schema doc, DatabaseTools. |
+| A4 | 8 | ✅ Done | [Access gate & trial](./08-access-gate-and-trial.md) | **Acquire-first (backend):** gate = holds-a-pass check on Join/Create (else 402); `AcquireSeasonPassCommand` grants free (free season) / trial (first paid season). |
+| A4b | 8 | ✅ Done | Acquire UI + passes pages + visibility gating | Acquire page (402 redirect; free = 1-click £0), **My Passes** + **Available Passes** pages, per-season public-league visibility gating. Paid acquire is Stripe (Phase B). |
+| A5 | 19 | ✅ Done | [Entry-fee settlement](./19-entry-fee-settlement.md) | Encryption service + admin bank details + join/pay flow (peer-to-peer, no Stripe). |
+| A6 | 20 | ✅ Done | [Payouts](./20-payouts.md) | Player payout details + payouts list + mark-as-paid (manual, no Stripe). |
+| A7 | 14 | ✅ Done | [Admin running costs](./14-admin-running-costs.md) | Running-costs CRUD page (built without the `Payer` field). |
+| A8 | 15 | ✅ Done | [Configurable prices & calculator](./15-configurable-prices-and-calculator.md) | Standard price + recommended-price calculator; admin-editable buffer/floor + provider fees (`ServiceFees`). |
+| A9 | 18 | ✅ Done* | [Email verification & identity](./18-email-verification-and-identity.md) | Confirmation flow + `+`-alias normalisation. *Code done; needs the Brevo template id set (external).* |
+| ~~A10~~ | 13 | ⛔ Deferred | ~~[SMS early-bird reward](./13-sms-earned-upgrade.md)~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
+| ~~A11~~ | 11 | ⛔ Deferred | ~~[SMS reminders](./11-sms-reminders.md)~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
+| A12 | 10 | 🟡 Deferred | [Purchase page](./10-purchase-page.md) | **Deferred until Stripe is set up** — build the page in one go with the Checkout integration (B5) rather than half now. Standard-only. |
+| A13 | 5 | ✅ Done | [Legal page updates](./05-legal-page-updates.md) | Best-effort Terms/Privacy/refund wording; **not solicitor-reviewed** (deferred until charging beyond friends & family). |
 
 ### Phase B — needs business setup / live accounts
 
-| Order | # | Task | Blocked on |
-|-------|---|------|------------|
-| B1 | 1 | [Business setup (sole trader)](./01-business-setup-sole-trader.md) | 🟡 **In progress** — registered with HMRC; **UTR in the post (up to 28 days)**. |
-| B2 | 2 | [Monzo Business account](./02-monzo-business-account.md) | ✅ **Done** — account open. |
-| B3 | 3 | [Stripe account & products](./03-stripe-account-products.md) | 🟢 **Unblocked** — Monzo open; **UTR not required to register**. Can start now. |
-| B4 | 4 | [Brevo SMS setup](./04-brevo-sms-setup.md) | Offline config (not blocked on the sole trader — can be done anytime, but enables Phase-B SMS). |
-| B5 | 9 | [Stripe Checkout integration](./09-stripe-checkout-integration.md) | Stripe keys/account. |
-| B6 | 17 | [Refunds](./17-refunds.md) | Stripe (refund API). |
-| B7 | 10 | Purchase page — finish | Wire the Stripe Checkout redirect (rest built in A12). |
-| ~~B8~~ | 11 | ~~SMS reminders — go live~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
-| B9 | 12 | [Testing & launch](./12-testing-and-launch.md) | Live Stripe; **no Brevo SMS, no solicitor sign-off** for this launch (June 2026 decision). |
+| Order | # | Status | Task | Blocked on |
+|-------|---|--------|------|------------|
+| B1 | 1 | 🟡 In progress | [Business setup (sole trader)](./01-business-setup-sole-trader.md) | Registered with HMRC; **UTR in the post (up to 28 days)**. |
+| B2 | 2 | ✅ Done | [Monzo Business account](./02-monzo-business-account.md) | Account open. |
+| B3 | 3 | ⬜ Not started | [Stripe account & products](./03-stripe-account-products.md) | 🟢 Unblocked — Monzo open; UTR not required to register. Can start now. |
+| B4 | 4 | ⛔ Deferred | [Brevo SMS setup](./04-brevo-sms-setup.md) | SMS out of launch scope. |
+| B5 | 9 | ⬜ Not started | [Stripe Checkout integration](./09-stripe-checkout-integration.md) | Stripe keys/account (B3). |
+| B6 | 17 | ⬜ Not started | [Refunds](./17-refunds.md) | Stripe refund API (B3/B5). |
+| B7 | 10 | ⬜ Not started | Purchase page (build + wire Checkout) | Build the page and wire the Stripe redirect together (was split A12/B7; now one job). |
+| ~~B8~~ | 11 | ⛔ Deferred | ~~SMS reminders — go live~~ | SMS out of launch scope. |
+| B9 | 12 | ⬜ Not started | [Testing & launch](./12-testing-and-launch.md) | Live Stripe; no Brevo SMS, no solicitor sign-off for this launch (June 2026 decision). |
+
+### What's left (both phases)
+
+**Build work still to do (code):**
+- **B5 — Stripe Checkout integration** (one-off `payment` mode; webhook creates the `SeasonPass`). Needs the Stripe account (B3).
+- **B7 — Purchase page** (Standard-only): the per-season buy page + the Stripe redirect, built together. Needs B5.
+- **B6 — Refunds** (refund-before-season-start via Stripe + entitlement revoke). Needs Stripe.
+- **B9 — Testing & launch** (end-to-end in Stripe test mode, then go-live).
+
+**Offline / external (yours):**
+- **B1** — receive the HMRC UTR (in the post).
+- **B3** — create the Stripe account (free; can start now).
+- **Email confirmation template** (Task 18) — create the Brevo "Email confirmation" template and set `Brevo:Templates:EmailConfirmation`.
+
+**Deferred out of first launch (not needed now):**
+- **A10 / A11 / B8 / B4** — all SMS / Premium-tier work (SMS reminders, the early-bird reward, Brevo SMS setup).
+- **A12** is folded into **B7** (build the purchase page with the Stripe work, not before).
+- **Solicitor review** of Terms & Privacy (best-effort wording is live; full review deferred until charging beyond friends & family).
 
 ## Dependencies
 
