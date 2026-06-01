@@ -168,7 +168,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         var command = new LogoutCommand(CurrentUserId);
         await mediator.Send(command, cancellationToken);
 
-        Response.Cookies.Delete("refreshToken");
+        DeleteTokenCookie();
 
         return NoContent();
     }

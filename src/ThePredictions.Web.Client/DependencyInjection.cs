@@ -23,7 +23,9 @@ public static class DependencyInjection
         services.AddAuthorizationCore();
         services.AddBlazoredLocalStorage();
         services.AddTransient<CookieHandler>();
-      
+        services.AddTransient<AuthorizationMessageHandler>();
+
+        services.AddScoped<SessionState>();
         services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ILeagueService, LeagueService>();

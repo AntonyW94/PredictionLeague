@@ -1,8 +1,18 @@
-﻿@inject NavigationManager NavigationManager
+@inject NavigationManager NavigationManager
+@inject ThePredictions.Web.Client.Authentication.SessionState SessionState
 
 @code {
     protected override void OnInitialized()
     {
-        NavigationManager.NavigateTo("/authentication/login");
+        // If the session ended (rather than the user simply not being logged in),
+        // surface the one-shot message on the login page.
+        var message = SessionState.LogoutMessage;
+        SessionState.LogoutMessage = null;
+
+        var loginUrl = "/authentication/login";
+        if (!string.IsNullOrEmpty(message))
+            loginUrl += $"?error={Uri.EscapeDataString(message)}";
+
+        NavigationManager.NavigateTo(loginUrl);
     }
 }
