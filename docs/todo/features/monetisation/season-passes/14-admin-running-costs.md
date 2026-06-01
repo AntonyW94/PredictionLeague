@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Built without the `Payer` field (June 2026).** The `CostPayer` / `PersonalUntilRenewal` concept and the `IsBusinessBorneOn` rule were **dropped** for simplicity now that the business bank account is open: the admin records only costs the business actually pays, and the calculator treats **every recorded cost** as a real cost. The references below to `Payer`, `IsBusinessBorneOn` and "business-borne" are superseded - only `Name, Amount, Frequency, StartDateUtc, EndDateUtc?, Notes` are stored. Start/end dates are retained for future proration.
 
 ## Goal
 

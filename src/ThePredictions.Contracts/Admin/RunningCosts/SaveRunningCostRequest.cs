@@ -9,6 +9,5 @@ public class SaveRunningCostRequest
     public CostFrequency Frequency { get; set; }
     public DateTime StartDateUtc { get; set; }
     public DateTime? EndDateUtc { get; set; }
-    public CostPayer Payer { get; set; }
     public string? Notes { get; set; }
 }

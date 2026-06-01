@@ -9,5 +9,4 @@ public record CreateRunningCostCommand(
     CostFrequency Frequency,
     DateTime StartDateUtc,
     DateTime? EndDateUtc,
-    CostPayer Payer,
     string? Notes) : IRequest;

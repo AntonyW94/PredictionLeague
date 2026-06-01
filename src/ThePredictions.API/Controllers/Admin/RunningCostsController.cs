@@ -32,7 +32,7 @@ public class RunningCostsController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var command = new CreateRunningCostCommand(
-            request.Name, request.Amount, request.Frequency, request.StartDateUtc, request.EndDateUtc, request.Payer, request.Notes);
+            request.Name, request.Amount, request.Frequency, request.StartDateUtc, request.EndDateUtc, request.Notes);
         await mediator.Send(command, cancellationToken);
 
         return NoContent();
@@ -49,7 +49,7 @@ public class RunningCostsController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var command = new UpdateRunningCostCommand(
-            id, request.Name, request.Amount, request.Frequency, request.StartDateUtc, request.EndDateUtc, request.Payer, request.Notes);
+            id, request.Name, request.Amount, request.Frequency, request.StartDateUtc, request.EndDateUtc, request.Notes);
         await mediator.Send(command, cancellationToken);
 
         return NoContent();

@@ -122,8 +122,8 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 - [ ] A user with no pass cannot join/create a league in a pass-required season unless trial-eligible.
 - [ ] Brand-new users are auto-granted a free Standard trial on first participation in a pass-required season.
 - [ ] Per-season **Standard** and **Premium** prices are admin-configurable (DB-backed); Stripe charges those exact amounts (dynamic).
-- [ ] Admin **Running Costs** page records costs, renewal dates, and payer status (business vs personal-until-renewal).
-- [ ] Season creation shows a **recommended price** from the calculator (15% buffer, length-weighted apportionment, break-even at last comparable season's player count, business-borne costs only).
+- [ ] Admin **Running Costs** page records costs (name, amount, frequency, start/end dates, notes).
+- [ ] Season creation shows a **recommended price** from the calculator (15% buffer, length-weighted apportionment, break-even at last comparable season's player count, based on recorded running costs).
 - [ ] Users can buy Standard or Premium via Stripe Checkout (one-off, Apple/Google Pay enabled).
 - [ ] A `SeasonPass` is created reliably on successful payment (webhook-driven).
 - [ ] Everyone (incl. SMS-tier) keeps all emails at every milestone; SMS is an **additional** 6h/1h nudge for unsubmitted SMS-tier holders.

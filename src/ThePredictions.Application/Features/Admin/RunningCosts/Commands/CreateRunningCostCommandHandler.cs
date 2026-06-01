@@ -16,7 +16,6 @@ public class CreateRunningCostCommandHandler(IRunningCostRepository runningCostR
             request.Frequency,
             request.StartDateUtc,
             request.EndDateUtc,
-            request.Payer,
             request.Notes,
             dateTimeProvider);
 
