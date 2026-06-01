@@ -15,12 +15,12 @@ public class UpdatePricingSettingsCommandHandler(IPricingSettingsRepository pric
         {
             // No row seeded yet - create one from the defaults, then apply the requested values.
             settings = DomainPricingSettings.CreateDefault();
-            settings.Update(request.BufferRate, request.StripePercent, request.StripeFixedFee, request.MinimumFloor);
+            settings.Update(request.BufferRate, request.MinimumFloor);
             await pricingSettingsRepository.AddAsync(settings, cancellationToken);
             return;
         }
 
-        settings.Update(request.BufferRate, request.StripePercent, request.StripeFixedFee, request.MinimumFloor);
+        settings.Update(request.BufferRate, request.MinimumFloor);
         await pricingSettingsRepository.UpdateAsync(settings, cancellationToken);
     }
 }

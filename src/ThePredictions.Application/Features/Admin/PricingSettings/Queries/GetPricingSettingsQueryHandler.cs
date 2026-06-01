@@ -13,8 +13,6 @@ public class GetPricingSettingsQueryHandler(IApplicationReadDbConnection dbConne
         const string sql = @"
             SELECT TOP 1
                 ps.[BufferRate],
-                ps.[StripePercent],
-                ps.[StripeFixedFee],
                 ps.[MinimumFloor]
             FROM
                 [PricingSettings] ps
@@ -28,6 +26,6 @@ public class GetPricingSettingsQueryHandler(IApplicationReadDbConnection dbConne
             return settings;
 
         var defaults = DomainPricingSettings.CreateDefault();
-        return new PricingSettingsDto(defaults.BufferRate, defaults.StripePercent, defaults.StripeFixedFee, defaults.MinimumFloor);
+        return new PricingSettingsDto(defaults.BufferRate, defaults.MinimumFloor);
     }
 }

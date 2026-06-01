@@ -14,8 +14,6 @@ public class PricingSettingsRepository(IDbConnectionFactory connectionFactory, I
             SELECT TOP 1
                 [Id],
                 [BufferRate],
-                [StripePercent],
-                [StripeFixedFee],
                 [MinimumFloor]
             FROM
                 [PricingSettings]
@@ -33,15 +31,11 @@ public class PricingSettingsRepository(IDbConnectionFactory connectionFactory, I
             INSERT INTO [PricingSettings]
             (
                 [BufferRate],
-                [StripePercent],
-                [StripeFixedFee],
                 [MinimumFloor]
             )
             VALUES
             (
                 @BufferRate,
-                @StripePercent,
-                @StripeFixedFee,
                 @MinimumFloor
             );";
 
@@ -57,8 +51,6 @@ public class PricingSettingsRepository(IDbConnectionFactory connectionFactory, I
                 [PricingSettings]
             SET
                 [BufferRate] = @BufferRate,
-                [StripePercent] = @StripePercent,
-                [StripeFixedFee] = @StripeFixedFee,
                 [MinimumFloor] = @MinimumFloor
             WHERE
                 [Id] = @Id;";

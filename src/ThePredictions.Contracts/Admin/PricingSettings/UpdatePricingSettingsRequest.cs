@@ -1,13 +1,11 @@
 namespace ThePredictions.Contracts.Admin.PricingSettings;
 
 /// <summary>
-/// Update for the recommended-price calculator inputs. Rates are fractions
-/// (0.15 = 15%, 0.015 = 1.5%); the fixed fee and floor are GBP amounts.
+/// Update for the global calculator knobs. BufferRate is a fraction (0.15 = 15%);
+/// MinimumFloor is a GBP amount.
 /// </summary>
 public class UpdatePricingSettingsRequest
 {
     public decimal BufferRate { get; set; }
-    public decimal StripePercent { get; set; }
-    public decimal StripeFixedFee { get; set; }
     public decimal MinimumFloor { get; set; }
 }

@@ -31,8 +31,7 @@ public class PricingSettingsController(IMediator mediator) : ApiControllerBase
         [FromBody] UpdatePricingSettingsRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new UpdatePricingSettingsCommand(
-            request.BufferRate, request.StripePercent, request.StripeFixedFee, request.MinimumFloor);
+        var command = new UpdatePricingSettingsCommand(request.BufferRate, request.MinimumFloor);
         await mediator.Send(command, cancellationToken);
 
         return NoContent();

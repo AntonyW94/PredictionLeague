@@ -3,8 +3,10 @@
 @attribute [Authorize(Roles = RoleNames.Administrator)]
 
 @using ThePredictions.Contracts.Admin.PricingSettings
+@using ThePredictions.Contracts.Admin.ServiceFees
 @using ThePredictions.Web.Client.Services.PricingSettings
 @inject IPricingSettingsService PricingSettingsService
+@inject IServiceFeeService ServiceFeeService
 
 <PageTitle>Pricing settings</PageTitle>
 
@@ -25,7 +27,8 @@
         }
         else
         {
-            <div class="form-container">
+            <div class="form-container mb-4">
+                <h5 class="fw-bold mb-3">Calculator</h5>
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="buffer" class="form-label">Buffer (%)</label>
@@ -38,25 +41,44 @@
                         <div class="form-text">The lowest price the calculator will ever suggest.</div>
                     </div>
                 </div>
+            </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="stripePercent" class="form-label">Stripe percentage fee (%)</label>
-                        <InputNumber id="stripePercent" class="form-control" @bind-Value="_stripePercent" />
-                        <div class="form-text">Stripe's % per transaction (UK cards are ~1.5).</div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="stripeFixed" class="form-label">Stripe fixed fee (£)</label>
-                        <InputNumber id="stripeFixed" class="form-control" @bind-Value="_stripeFixedFee" />
-                        <div class="form-text">Stripe's fixed amount per transaction (UK cards are ~0.20).</div>
-                    </div>
-                </div>
+            <div class="form-container">
+                <h5 class="fw-bold mb-1">Provider fees</h5>
+                <p class="form-text text-white-50 mb-3">
+                    What each provider charges us per transaction. The percentage applies to card payments (Stripe);
+                    flat-rate providers (SMS, email) just use the fixed fee.
+                </p>
 
-                <div class="d-flex justify-content-end">
-                    <button type="button" class="btn green-button" @onclick="SaveAsync" disabled="@_isBusy">
-                        @(_isBusy ? "Saving..." : "Save settings")
-                    </button>
-                </div>
+                @if (_fees.Count == 0)
+                {
+                    <p class="text-white-50">No provider fees recorded yet.</p>
+                }
+                else
+                {
+                    @foreach (var fee in _fees)
+                    {
+                        <div class="row align-items-end">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">@FriendlyProvider(fee.Provider)</label>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Percentage fee (%)</label>
+                                <InputNumber class="form-control" @bind-Value="fee.PercentInput" />
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fixed fee (£)</label>
+                                <InputNumber class="form-control" @bind-Value="fee.FixedFee" />
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="d-flex justify-content-end mt-3">
+                <button type="button" class="btn green-button" @onclick="SaveAsync" disabled="@_isBusy">
+                    @(_isBusy ? "Saving..." : "Save settings")
+                </button>
             </div>
         }
     </div>
@@ -64,9 +86,8 @@
 
 @code {
     private decimal _bufferPercent;
-    private decimal _stripePercent;
-    private decimal _stripeFixedFee;
     private decimal _minimumFloor;
+    private List<FeeRow> _fees = [];
 
     private bool _isLoading = true;
     private bool _isBusy;
@@ -79,10 +100,16 @@
         if (settings is not null)
         {
             _bufferPercent = settings.BufferRate * 100;
-            _stripePercent = settings.StripePercent * 100;
-            _stripeFixedFee = settings.StripeFixedFee;
             _minimumFloor = settings.MinimumFloor;
         }
+
+        var fees = await ServiceFeeService.GetAllAsync();
+        _fees = fees.Select(f => new FeeRow
+        {
+            Provider = f.Provider,
+            PercentInput = f.PercentFee * 100,
+            FixedFee = f.FixedFee
+        }).ToList();
 
         _isLoading = false;
     }
@@ -93,21 +120,52 @@
         _errorMessage = null;
         _successMessage = null;
 
-        var request = new UpdatePricingSettingsRequest
+        var settingsRequest = new UpdatePricingSettingsRequest
         {
             BufferRate = _bufferPercent / 100,
-            StripePercent = _stripePercent / 100,
-            StripeFixedFee = _stripeFixedFee,
             MinimumFloor = _minimumFloor
         };
 
-        var (success, error) = await PricingSettingsService.UpdateAsync(request);
+        var (settingsOk, settingsError) = await PricingSettingsService.UpdateAsync(settingsRequest);
+        if (!settingsOk)
+        {
+            _errorMessage = settingsError;
+            _isBusy = false;
+            return;
+        }
 
-        if (success)
-            _successMessage = "Pricing settings saved.";
-        else
-            _errorMessage = error;
+        foreach (var fee in _fees)
+        {
+            var (feeOk, feeError) = await ServiceFeeService.UpdateAsync(fee.Provider, new UpdateServiceFeeRequest
+            {
+                PercentFee = fee.PercentInput / 100,
+                FixedFee = fee.FixedFee
+            });
 
+            if (!feeOk)
+            {
+                _errorMessage = feeError;
+                _isBusy = false;
+                return;
+            }
+        }
+
+        _successMessage = "Pricing settings saved.";
         _isBusy = false;
+    }
+
+    private static string FriendlyProvider(string provider) => provider switch
+    {
+        "Stripe" => "Stripe (card payments)",
+        "Sms" => "SMS",
+        "Email" => "Email",
+        _ => provider
+    };
+
+    private sealed class FeeRow
+    {
+        public string Provider { get; init; } = string.Empty;
+        public decimal PercentInput { get; set; }
+        public decimal FixedFee { get; set; }
     }
 }

@@ -30,6 +30,7 @@ public static class DependencyInjection
         services.AddScoped<IOnboardingService, OnboardingService>();
         services.AddScoped<IRunningCostService, RunningCostService>();
         services.AddScoped<IPricingSettingsService, PricingSettingsService>();
+        services.AddScoped<IServiceFeeService, ServiceFeeService>();
         services.AddScoped<IDashboardStateService, DashboardStateService>();
         services.AddScoped<IBrowserService, BrowserService>();
         services.AddScoped<IThemeService, ThemeService>();

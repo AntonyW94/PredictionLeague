@@ -24,6 +24,7 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
         Guard.Against.Default(startDateUtc);
 
         var settings = await GetPricingSettingsAsync(cancellationToken);
+        var stripeFee = await GetStripeFeeAsync(cancellationToken);
         var annualRunningCost = await GetAnnualRunningCostAsync(cancellationToken);
         var otherPaidRounds = await GetOtherPaidRoundsInHorizonAsync(startDateUtc, seasonId, cancellationToken);
         var expectedPlayers = await GetLastComparableSeasonPlayerCountAsync(competitionId, seasonId, cancellationToken);
@@ -34,8 +35,8 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
             totalPaidRoundsInHorizon: numberOfRounds + otherPaidRounds,
             expectedPlayers: expectedPlayers,
             bufferRate: settings.BufferRate,
-            stripePercent: settings.StripePercent,
-            stripeFixedFee: settings.StripeFixedFee,
+            stripePercent: stripeFee.PercentFee,
+            stripeFixedFee: stripeFee.FixedFee,
             minimumFloor: settings.MinimumFloor,
             roundingIncrement: RoundingIncrement);
     }
@@ -46,8 +47,6 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
             SELECT TOP 1
                 ps.[Id],
                 ps.[BufferRate],
-                ps.[StripePercent],
-                ps.[StripeFixedFee],
                 ps.[MinimumFloor]
             FROM
                 [PricingSettings] ps
@@ -58,6 +57,26 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
 
         // Fall back to built-in defaults if no row has been seeded yet.
         return settings ?? PricingSettings.CreateDefault();
+    }
+
+    private async Task<ServiceFee> GetStripeFeeAsync(CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                sf.[Id],
+                sf.[Provider],
+                sf.[PercentFee],
+                sf.[FixedFee]
+            FROM
+                [ServiceFees] sf
+            WHERE
+                sf.[Provider] = @Provider;";
+
+        var fee = await dbConnection.QuerySingleOrDefaultAsync<ServiceFee>(
+            sql, cancellationToken, new { Provider = nameof(ServiceFeeProvider.Stripe) });
+
+        // Fall back to the built-in Stripe default if no row has been seeded yet.
+        return fee ?? ServiceFee.CreateDefault(ServiceFeeProvider.Stripe);
     }
 
     private async Task<decimal> GetAnnualRunningCostAsync(CancellationToken cancellationToken)
