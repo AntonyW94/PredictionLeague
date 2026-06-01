@@ -17,7 +17,6 @@ public class GetRunningCostsQueryHandler(IApplicationReadDbConnection dbConnecti
                 [Frequency],
                 [StartDateUtc],
                 [EndDateUtc],
-                [Payer],
                 [Notes]
             FROM
                 [RunningCosts]

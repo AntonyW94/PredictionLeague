@@ -75,8 +75,7 @@ CREATE TABLE [RunningCosts] (
     [Amount]        DECIMAL(10,2) NOT NULL,        -- the price
     [Frequency]     INT NOT NULL,                 -- cost type: 0 Monthly, 1 Annual, 2 OneOff
     [StartDateUtc]  DATETIME2 NOT NULL,           -- when this cost (period) begins
-    [EndDateUtc]    DATETIME2 NULL,               -- end / next renewal (null = ongoing)
-    [Payer]         INT NOT NULL,                 -- 0 Business, 1 PersonalUntilRenewal
+    [EndDateUtc]    DATETIME2 NULL,               -- end date (null = ongoing)
     [Notes]         NVARCHAR(500) NULL,
     [CreatedAtUtc]  DATETIME2 NOT NULL
 );

@@ -19,7 +19,6 @@ public class UpdateRunningCostCommandHandler(IRunningCostRepository runningCostR
             request.Frequency,
             request.StartDateUtc,
             request.EndDateUtc,
-            request.Payer,
             request.Notes);
 
         await runningCostRepository.UpdateAsync(runningCost, cancellationToken);

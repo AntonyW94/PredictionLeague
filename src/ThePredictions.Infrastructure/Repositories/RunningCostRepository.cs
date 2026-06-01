@@ -18,7 +18,6 @@ public class RunningCostRepository(IDbConnectionFactory connectionFactory, IDbTr
                 [Frequency],
                 [StartDateUtc],
                 [EndDateUtc],
-                [Payer],
                 [Notes],
                 [CreatedAtUtc]
             FROM
@@ -41,7 +40,6 @@ public class RunningCostRepository(IDbConnectionFactory connectionFactory, IDbTr
                 [Frequency],
                 [StartDateUtc],
                 [EndDateUtc],
-                [Payer],
                 [Notes],
                 [CreatedAtUtc]
             )
@@ -52,7 +50,6 @@ public class RunningCostRepository(IDbConnectionFactory connectionFactory, IDbTr
                 @Frequency,
                 @StartDateUtc,
                 @EndDateUtc,
-                @Payer,
                 @Notes,
                 @CreatedAtUtc
             );";
@@ -73,7 +70,6 @@ public class RunningCostRepository(IDbConnectionFactory connectionFactory, IDbTr
                 [Frequency] = @Frequency,
                 [StartDateUtc] = @StartDateUtc,
                 [EndDateUtc] = @EndDateUtc,
-                [Payer] = @Payer,
                 [Notes] = @Notes
             WHERE
                 [Id] = @Id;";
@@ -101,7 +97,6 @@ public class RunningCostRepository(IDbConnectionFactory connectionFactory, IDbTr
         Frequency = runningCost.Frequency.ToString(),
         runningCost.StartDateUtc,
         runningCost.EndDateUtc,
-        Payer = runningCost.Payer.ToString(),
         runningCost.Notes,
         runningCost.CreatedAtUtc
     };

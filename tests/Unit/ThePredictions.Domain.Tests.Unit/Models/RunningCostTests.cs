@@ -16,21 +16,19 @@ public class RunningCostTests
         decimal amount = 120m,
         CostFrequency frequency = CostFrequency.Annual,
         DateTime? endDateUtc = null,
-        CostPayer payer = CostPayer.Business,
         string? notes = "Renews yearly")
-        => RunningCost.Create(name, amount, frequency, _start, endDateUtc, payer, notes, _dateTimeProvider);
+        => RunningCost.Create(name, amount, frequency, _start, endDateUtc, notes, _dateTimeProvider);
 
     [Fact]
     public void Create_ShouldSetPropertiesAndTrim()
     {
-        var cost = RunningCost.Create("  Brevo  ", 9.99m, CostFrequency.Monthly, _start, null, CostPayer.Business, "  email  ", _dateTimeProvider);
+        var cost = RunningCost.Create("  Brevo  ", 9.99m, CostFrequency.Monthly, _start, null, "  email  ", _dateTimeProvider);
 
         cost.Name.Should().Be("Brevo");
         cost.Amount.Should().Be(9.99m);
         cost.Frequency.Should().Be(CostFrequency.Monthly);
         cost.StartDateUtc.Should().Be(_start);
         cost.EndDateUtc.Should().BeNull();
-        cost.Payer.Should().Be(CostPayer.Business);
         cost.Notes.Should().Be("email");
         cost.CreatedAtUtc.Should().Be(_dateTimeProvider.UtcNow);
     }
@@ -58,21 +56,21 @@ public class RunningCostTests
     [Fact]
     public void Create_ShouldThrow_WhenStartDateDefault()
     {
-        var act = () => RunningCost.Create("x", 10m, CostFrequency.Annual, default, null, CostPayer.Business, null, _dateTimeProvider);
+        var act = () => RunningCost.Create("x", 10m, CostFrequency.Annual, default, null, null, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void Create_ShouldThrow_WhenEndBeforeStart()
     {
-        var act = () => RunningCost.Create("x", 10m, CostFrequency.Annual, _start, _start.AddDays(-1), CostPayer.Business, null, _dateTimeProvider);
+        var act = () => RunningCost.Create("x", 10m, CostFrequency.Annual, _start, _start.AddDays(-1), null, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void Create_ShouldAllow_EndEqualToStart()
     {
-        var act = () => RunningCost.Create("x", 10m, CostFrequency.Annual, _start, _start, CostPayer.Business, null, _dateTimeProvider);
+        var act = () => RunningCost.Create("x", 10m, CostFrequency.Annual, _start, _start, null, _dateTimeProvider);
         act.Should().NotThrow();
     }
 
@@ -86,44 +84,16 @@ public class RunningCostTests
     }
 
     [Fact]
-    public void IsBusinessBorneOn_ShouldBeTrue_WhenPayerIsBusiness()
-    {
-        CreateCost(payer: CostPayer.Business).IsBusinessBorneOn(_dateTimeProvider.UtcNow).Should().BeTrue();
-    }
-
-    [Fact]
-    public void IsBusinessBorneOn_ShouldBeFalse_WhenPersonalWithNoEndDate()
-    {
-        CreateCost(payer: CostPayer.PersonalUntilRenewal, endDateUtc: null)
-            .IsBusinessBorneOn(_dateTimeProvider.UtcNow).Should().BeFalse();
-    }
-
-    [Fact]
-    public void IsBusinessBorneOn_ShouldBeFalse_WhenPersonalAndRenewalInFuture()
-    {
-        CreateCost(payer: CostPayer.PersonalUntilRenewal, endDateUtc: _dateTimeProvider.UtcNow.AddMonths(1))
-            .IsBusinessBorneOn(_dateTimeProvider.UtcNow).Should().BeFalse();
-    }
-
-    [Fact]
-    public void IsBusinessBorneOn_ShouldBeTrue_WhenPersonalAndRenewalReached()
-    {
-        CreateCost(payer: CostPayer.PersonalUntilRenewal, endDateUtc: _dateTimeProvider.UtcNow)
-            .IsBusinessBorneOn(_dateTimeProvider.UtcNow).Should().BeTrue();
-    }
-
-    [Fact]
     public void Update_ShouldReplaceValues()
     {
         var cost = CreateCost();
         var newEnd = _start.AddYears(1);
 
-        cost.Update("api-sports.io", 200m, CostFrequency.Annual, _start, newEnd, CostPayer.PersonalUntilRenewal, "fixtures");
+        cost.Update("api-sports.io", 200m, CostFrequency.Annual, _start, newEnd, "fixtures");
 
         cost.Name.Should().Be("api-sports.io");
         cost.Amount.Should().Be(200m);
         cost.EndDateUtc.Should().Be(newEnd);
-        cost.Payer.Should().Be(CostPayer.PersonalUntilRenewal);
         cost.Notes.Should().Be("fixtures");
     }
 
@@ -132,7 +102,7 @@ public class RunningCostTests
     {
         var cost = CreateCost(notes: "original");
 
-        cost.Update("api-sports.io", 200m, CostFrequency.Annual, _start, null, CostPayer.Business, "  ");
+        cost.Update("api-sports.io", 200m, CostFrequency.Annual, _start, null, "  ");
 
         cost.Notes.Should().BeNull();
     }
@@ -141,7 +111,7 @@ public class RunningCostTests
     public void Update_ShouldThrow_WhenInvalid()
     {
         var cost = CreateCost();
-        var act = () => cost.Update("", 10m, CostFrequency.Annual, _start, null, CostPayer.Business, null);
+        var act = () => cost.Update("", 10m, CostFrequency.Annual, _start, null, null);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -151,12 +121,11 @@ public class RunningCostTests
         var created = new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc);
         var end = new DateTime(2027, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        var cost = new RunningCost(7, "Fasthosts", 120m, CostFrequency.Annual, _start, end, CostPayer.PersonalUntilRenewal, "note", created);
+        var cost = new RunningCost(7, "Fasthosts", 120m, CostFrequency.Annual, _start, end, "note", created);
 
         cost.Id.Should().Be(7);
         cost.Name.Should().Be("Fasthosts");
         cost.EndDateUtc.Should().Be(end);
-        cost.Payer.Should().Be(CostPayer.PersonalUntilRenewal);
         cost.CreatedAtUtc.Should().Be(created);
     }
 }

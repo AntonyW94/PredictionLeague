@@ -7,5 +7,4 @@ public record RunningCostDto(
     string Frequency,
     DateTime StartDateUtc,
     DateTime? EndDateUtc,
-    string Payer,
     string? Notes);

@@ -14,8 +14,8 @@
     <div class="admin-table-container">
         <h3 class="fw-bold mb-2">Running costs</h3>
         <p class="form-text text-white-50 mb-4">
-            Record the website's running costs so the recommended-price calculator can base suggestions on real, business-borne costs.
-            Mark a cost as <strong>Personal (until renewal)</strong> if you're paying it personally for now - it moves to the business, and into pricing, from its renewal date.
+            Record the website's running costs so the recommended-price calculator can base suggestions on real costs.
+            Set an end date if a cost is one-off or stops on a known date.
         </p>
 
         <ApiError Message="@_errorMessage" />
@@ -54,22 +54,15 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="startDate" class="form-label">Start date</label>
                             <InputDate id="startDate" class="form-control" @bind-Value="_model.StartDateUtc" />
                             <StyledValidationMessage For="@(() => _model.StartDateUtc)" />
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="endDate" class="form-label">Renewal / end date (optional)</label>
+                        <div class="col-md-6 mb-3">
+                            <label for="endDate" class="form-label">End date (optional)</label>
                             <InputDate id="endDate" class="form-control" @bind-Value="_model.EndDateUtc" />
                             <StyledValidationMessage For="@(() => _model.EndDateUtc)" />
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="payer" class="form-label">Who pays</label>
-                            <InputSelect id="payer" class="form-control" @bind-Value="_model.Payer">
-                                <option value="@CostPayer.Business">Business</option>
-                                <option value="@CostPayer.PersonalUntilRenewal">Personal (until renewal)</option>
-                            </InputSelect>
                         </div>
                     </div>
 
@@ -103,8 +96,7 @@
                             <th>Name</th>
                             <th>Amount</th>
                             <th>Frequency</th>
-                            <th>Renewal / end</th>
-                            <th>Who pays</th>
+                            <th>End date</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -116,7 +108,6 @@
                                 <td>@cost.Amount.ToString("C", Uk)</td>
                                 <td>@FormatFrequency(cost.Frequency)</td>
                                 <td>@(cost.EndDateUtc is { } end ? end.ToString("d MMM yyyy") : "Ongoing")</td>
-                                <td>@FormatPayer(cost.Payer)</td>
                                 <td class="text-end">
                                     <button class="btn btn-sm green-button me-1" @onclick="() => StartEdit(cost)">Edit</button>
                                     <button class="btn btn-sm red-button" @onclick="() => DeleteAsync(cost.Id)" disabled="@_isBusy">Delete</button>
@@ -148,7 +139,6 @@
     private static SaveRunningCostRequest NewModel() => new()
     {
         Frequency = CostFrequency.Annual,
-        Payer = CostPayer.Business,
         StartDateUtc = DateTime.UtcNow.Date
     };
 
@@ -193,7 +183,6 @@
             Frequency = Enum.Parse<CostFrequency>(cost.Frequency),
             StartDateUtc = cost.StartDateUtc,
             EndDateUtc = cost.EndDateUtc,
-            Payer = Enum.Parse<CostPayer>(cost.Payer),
             Notes = cost.Notes
         };
         _successMessage = null;
@@ -231,11 +220,5 @@
     {
         nameof(CostFrequency.OneOff) => "One-off",
         _ => frequency
-    };
-
-    private static string FormatPayer(string payer) => payer switch
-    {
-        nameof(CostPayer.PersonalUntilRenewal) => "Personal (until renewal)",
-        _ => payer
     };
 }

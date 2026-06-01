@@ -20,9 +20,6 @@ public class SaveRunningCostRequestValidator : AbstractValidator<SaveRunningCost
         RuleFor(x => x.Frequency)
             .IsInEnum().WithMessage("Select a valid frequency.");
 
-        RuleFor(x => x.Payer)
-            .IsInEnum().WithMessage("Select who pays this cost.");
-
         RuleFor(x => x.StartDateUtc)
             .NotEmpty().WithMessage("Enter the start date.");
 

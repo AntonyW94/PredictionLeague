@@ -7,7 +7,7 @@ namespace ThePredictions.Domain.Models;
 
 /// <summary>
 /// A website running cost (e.g. hosting, fixture API, SMS), used by the recommended-price calculator.
-/// Stores start/end dates and payer so costs can be apportioned/prorated flexibly (ADR 0006).
+/// Stores start/end dates so costs can be apportioned/prorated flexibly (ADR 0006).
 /// </summary>
 public class RunningCost
 {
@@ -17,7 +17,6 @@ public class RunningCost
     public CostFrequency Frequency { get; private set; }
     public DateTime StartDateUtc { get; private set; }
     public DateTime? EndDateUtc { get; private set; }
-    public CostPayer Payer { get; private set; }
     public string? Notes { get; private set; }
     public DateTime CreatedAtUtc { get; private set; }
 
@@ -29,19 +28,11 @@ public class RunningCost
         _ => Amount
     };
 
-    /// <summary>
-    /// Whether the business bears this cost as at the given date. Personal-until-renewal costs move to the
-    /// business (and into pricing) on/after their end/renewal date.
-    /// </summary>
-    public bool IsBusinessBorneOn(DateTime dateUtc)
-        => Payer == CostPayer.Business
-           || (EndDateUtc.HasValue && EndDateUtc.Value <= dateUtc);
-
     [ExcludeFromCodeCoverage]
     private RunningCost() { }
 
     public RunningCost(int id, string name, decimal amount, CostFrequency frequency, DateTime startDateUtc,
-        DateTime? endDateUtc, CostPayer payer, string? notes, DateTime createdAtUtc)
+        DateTime? endDateUtc, string? notes, DateTime createdAtUtc)
     {
         Id = id;
         Name = name;
@@ -49,13 +40,12 @@ public class RunningCost
         Frequency = frequency;
         StartDateUtc = startDateUtc;
         EndDateUtc = endDateUtc;
-        Payer = payer;
         Notes = notes;
         CreatedAtUtc = createdAtUtc;
     }
 
     public static RunningCost Create(string name, decimal amount, CostFrequency frequency, DateTime startDateUtc,
-        DateTime? endDateUtc, CostPayer payer, string? notes, IDateTimeProvider dateTimeProvider)
+        DateTime? endDateUtc, string? notes, IDateTimeProvider dateTimeProvider)
     {
         Validate(name, amount, startDateUtc, endDateUtc);
 
@@ -66,14 +56,13 @@ public class RunningCost
             Frequency = frequency,
             StartDateUtc = startDateUtc,
             EndDateUtc = endDateUtc,
-            Payer = payer,
             Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
             CreatedAtUtc = dateTimeProvider.UtcNow
         };
     }
 
     public void Update(string name, decimal amount, CostFrequency frequency, DateTime startDateUtc,
-        DateTime? endDateUtc, CostPayer payer, string? notes)
+        DateTime? endDateUtc, string? notes)
     {
         Validate(name, amount, startDateUtc, endDateUtc);
 
@@ -82,7 +71,6 @@ public class RunningCost
         Frequency = frequency;
         StartDateUtc = startDateUtc;
         EndDateUtc = endDateUtc;
-        Payer = payer;
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
     }
 
