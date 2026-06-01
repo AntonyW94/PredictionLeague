@@ -43,7 +43,7 @@
                         <OnboardingChecklist />
                         <div class="row">
                             <div class="col-lg-6 mb-4">
-                                <MyLeaguesTile />
+                                <MyLeaguesTile IsHalfWidth="true" />
                             </div>
                             <div class="col-lg-6 mb-4">
                                 <AvailableLeaguesTile />
@@ -128,7 +128,7 @@
 
                         <div class="row">
                             <div class="@myLeaguesClass" data-tab="leagues">
-                                <MyLeaguesTile />
+                                <MyLeaguesTile IsHalfWidth="showAvailableLeagues" />
                             </div>
 
                             @if (showAvailableLeagues)

@@ -11,14 +11,19 @@
 
 <AuthorizeView>
     <Authorized>
-        <div class="page-container">
+        <div class="page-container page-container--top">
             @if (_isLoading)
             {
                 <p class="text-center text-white"><em>Loading your details...</em></p>
             }
             else if (_model != null)
             {
-                <BaseFormComponent TModel="UserDetailsViewModel"
+                <div class="base-form">
+                    <PageHero Title="My Details" Icon="bi-person-fill">
+                        Update the name and contact details on your account. Your email address is used to sign in and can't be changed here.
+                    </PageHero>
+
+                    <BaseFormComponent TModel="UserDetailsViewModel"
                                    Model = "_model"
                                    SubmitAction="HandleUpdateDetailsAsync"
                                    SuccessRedirectUrl="/dashboard"
@@ -26,9 +31,6 @@
                                    SuccessAlertMessage="Your details have been successfully updated"
                                    ErrorAlertMessage="There was an error updating your details."
                                    BusyText="Saving...">
-                    <Header>
-                        <h3 class="text-center fw-bold text-white mb-4">My Details</h3>
-                    </Header>
                     <ChildContent>
                             <div class="mb-3">
                                 <label for="email" class="form-label text-white">Email Address</label>
@@ -55,6 +57,7 @@
                             </div>
                     </ChildContent>
                 </BaseFormComponent>
+                </div>
             }
             else
             {

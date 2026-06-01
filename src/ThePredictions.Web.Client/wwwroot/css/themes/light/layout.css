@@ -22,7 +22,7 @@
     box-shadow: 0 1px 3px var(--black-alpha-15);
     padding: var(--space-8) var(--space-6);
     margin-top: var(--space-6);
-    margin-bottom: 5rem;
+    margin-bottom: 0;
 }
 
 /* Edit Round page has its own card structure, so make container transparent */
@@ -41,6 +41,20 @@
     width: 100%;
     max-width: 87.5rem;
     margin: 0 auto;
+}
+
+/* On a form whose first element is a card, the card's own top margin provides
+   the gap below the navbar. When the first element is a bare heading instead
+   (e.g. the pricing settings page), give it the same top gap so it isn't flush
+   against the navbar. */
+.admin-light .base-form > :first-child:not(.form-container) {
+    margin-top: var(--space-6);
+}
+
+/* The hero already provides the gap below it, so the first card after it
+   shouldn't add its own top margin on top. */
+.admin-light .page-hero + .form-container {
+    margin-top: 0;
 }
 
 .admin-light .admin-content-container {
@@ -104,25 +118,9 @@ main:has(.admin-light) .navbar-logo {
     color: var(--purple-300) !important;
 }
 
-/* Sticky action bar for Back/Save buttons.
-   Sticks to the viewport bottom while the form is being scrolled through, then
-   scrolls up naturally so the page footer can sit beneath it at the end of the page. */
-.admin-light form > .d-flex:last-child {
-    position: sticky;
-    bottom: 0;
-    background: var(--white);
-    border-top: 1px solid var(--grey-200);
-    padding: var(--space-3) var(--space-4);
-    margin-top: var(--space-4);
-    z-index: 100;
-    box-shadow: 0 -2px 8px var(--black-alpha-15);
-}
-
-@media (min-width: 768px) {
-    .admin-light form > .d-flex:last-child {
-        padding: var(--space-3) var(--space-6);
-    }
-}
+/* Form action buttons (Back/Save) render as a plain row beneath the cards,
+   matching the non-admin forms (e.g. My Details). Spacing comes from the
+   markup (BackAndSaveButtons carries its own top margin). */
 
 /* Page header card */
 .admin-light-header {

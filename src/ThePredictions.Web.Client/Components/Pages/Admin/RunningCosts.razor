@@ -7,16 +7,16 @@
 @using ThePredictions.Domain.Common.Enumerations
 @using ThePredictions.Web.Client.Services.RunningCosts
 @inject IRunningCostService RunningCostService
+@inject IJSRuntime JsRuntime
 
 <PageTitle>Running costs</PageTitle>
 
 <div class="page-container admin-light">
     <div class="admin-table-container">
-        <h3 class="fw-bold mb-2">Running costs</h3>
-        <p class="form-text text-white-50 mb-4">
+        <PageHero Title="Running costs" Icon="bi-receipt">
             Record the website's running costs so the recommended-price calculator can base suggestions on real costs.
             Set an end date if a cost is one-off or stops on a known date.
-        </p>
+        </PageHero>
 
         <ApiError Message="@_errorMessage" />
         <ApiSuccess Message="@_successMessage" />
@@ -27,23 +27,82 @@
         }
         else
         {
-            <div class="form-container mb-4">
-                <h5 class="fw-bold mb-3">@(_editingId is null ? "Add a cost" : "Edit cost")</h5>
-                <EditForm Model="_model" OnValidSubmit="HandleSaveAsync">
-                    <FluentValidationValidator />
+            <div class="d-flex justify-content-end mb-3">
+                <button class="btn d-flex align-items-center green-button" @onclick="ShowAddModalAsync">
+                    <span class="bi bi-plus-circle-fill"></span>
+                    <span class="d-none d-md-inline ms-2">Add cost</span>
+                </button>
+            </div>
+
+            @if (_costs.Count == 0)
+            {
+                <div class="empty-state">
+                    <span class="bi bi-receipt empty-state-icon"></span>
+                    <p class="empty-state-title">No running costs yet</p>
+                    <p class="empty-state-text">Add a cost so the recommended-price calculator can base suggestions on real figures.</p>
+                </div>
+            }
+            else
+            {
+                <div class="member-list">
+                @foreach (var cost in _costs)
+                {
+                    <div class="member-row">
+                        <div class="member-info">
+                            <span class="member-name text-truncate">@cost.Name</span>
+                            @if (!string.IsNullOrWhiteSpace(cost.Notes))
+                            {
+                                <span class="member-date">@cost.Notes</span>
+                            }
+                        </div>
+                        <div class="d-flex flex-column align-items-end text-end flex-shrink-0">
+                            <span class="member-name">@cost.Amount.ToString("C", Uk)</span>
+                            <span class="member-date">@FormatFrequency(cost.Frequency) · @(cost.EndDateUtc is { } end ? end.ToString("d MMM yyyy") : "Ongoing")</span>
+                        </div>
+                        <div class="member-actions">
+                            <button class="btn btn-sm green-button" @onclick="() => ShowEditModalAsync(cost)" title="Edit">
+                                <span class="bi bi-pencil-fill"></span>
+                                <span class="d-none d-md-inline ms-1">Edit</span>
+                            </button>
+                            <button class="btn btn-sm red-button" @onclick="() => DeleteAsync(cost)" disabled="@_isBusy" title="Delete">
+                                <span class="bi bi-trash-fill"></span>
+                                <span class="d-none d-md-inline ms-1">Delete</span>
+                            </button>
+                        </div>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="runningCostModal" tabindex="-1" aria-labelledby="runningCostModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-white">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="runningCostModalLabel">@(_editingId is null ? "Add a cost" : "Edit cost")</h5>
+                <button type="button" class="btn-close" @onclick="CloseModalAsync" aria-label="Close"></button>
+            </div>
+            <EditForm Model="_model" OnValidSubmit="HandleSaveAsync">
+                <FluentValidationValidator />
+
+                <div class="modal-body">
+                    <ApiError Message="@_modalError" />
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="_model.Name" placeholder="e.g. Fasthosts hosting" />
+                        <StyledValidationMessage For="@(() => _model.Name)" />
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="name" class="form-label">Name</label>
-                            <InputText id="name" class="form-control" @bind-Value="_model.Name" placeholder="e.g. Fasthosts hosting" />
-                            <StyledValidationMessage For="@(() => _model.Name)" />
-                        </div>
-                        <div class="col-md-3 mb-3">
                             <label for="amount" class="form-label">Amount (£)</label>
                             <InputNumber id="amount" class="form-control" @bind-Value="_model.Amount" />
                             <StyledValidationMessage For="@(() => _model.Amount)" />
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="frequency" class="form-label">Frequency</label>
                             <InputSelect id="frequency" class="form-control" @bind-Value="_model.Frequency">
                                 <option value="@CostFrequency.Monthly">Monthly</option>
@@ -66,62 +125,37 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-1">
                         <label for="notes" class="form-label">Notes (optional)</label>
                         <InputText id="notes" class="form-control" @bind-Value="_model.Notes" />
                         <StyledValidationMessage For="@(() => _model.Notes)" />
                     </div>
+                </div>
 
-                    <div class="d-flex justify-content-end gap-2">
-                        @if (_editingId is not null)
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn red-button" @onclick="CloseModalAsync">
+                        <span class="bi bi-x-circle me-2"></span>Cancel
+                    </button>
+                    <button type="submit" class="btn green-button" disabled="@_isBusy">
+                        @if (_isBusy)
                         {
-                            <button type="button" class="btn red-button" @onclick="CancelEdit">Cancel</button>
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span>Saving...</span>
                         }
-                        <button type="submit" class="btn green-button" disabled="@_isBusy">
-                            @(_isBusy ? "Saving..." : _editingId is null ? "Add cost" : "Save changes")
-                        </button>
-                    </div>
-                </EditForm>
-            </div>
-
-            @if (_costs.Count == 0)
-            {
-                <p class="text-center text-white-50 py-3">No running costs recorded yet.</p>
-            }
-            else
-            {
-                <table class="table align-middle">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Amount</th>
-                            <th>Frequency</th>
-                            <th>End date</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var cost in _costs)
+                        else
                         {
-                            <tr>
-                                <td>@cost.Name @(string.IsNullOrWhiteSpace(cost.Notes) ? "" : $"({cost.Notes})")</td>
-                                <td>@cost.Amount.ToString("C", Uk)</td>
-                                <td>@FormatFrequency(cost.Frequency)</td>
-                                <td>@(cost.EndDateUtc is { } end ? end.ToString("d MMM yyyy") : "Ongoing")</td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm green-button me-1" @onclick="() => StartEdit(cost)">Edit</button>
-                                    <button class="btn btn-sm red-button" @onclick="() => DeleteAsync(cost.Id)" disabled="@_isBusy">Delete</button>
-                                </td>
-                            </tr>
+                            <span class="bi bi-check-circle me-2"></span>
+                            <span>@(_editingId is null ? "Add cost" : "Save changes")</span>
                         }
-                    </tbody>
-                </table>
-            }
-        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
     </div>
 </div>
 
 @code {
+    private const string ModalId = "runningCostModal";
     private static readonly CultureInfo Uk = new("en-GB");
     private List<RunningCostDto> _costs = [];
     private SaveRunningCostRequest _model = NewModel();
@@ -130,6 +164,7 @@
     private bool _isBusy;
     private string? _errorMessage;
     private string? _successMessage;
+    private string? _modalError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -149,31 +184,15 @@
         _isLoading = false;
     }
 
-    private async Task HandleSaveAsync()
+    private async Task ShowAddModalAsync()
     {
-        _isBusy = true;
-        _errorMessage = null;
-        _successMessage = null;
-
-        var (success, error) = _editingId is null
-            ? await RunningCostService.CreateAsync(_model)
-            : await RunningCostService.UpdateAsync(_editingId.Value, _model);
-
-        if (success)
-        {
-            _successMessage = _editingId is null ? "Cost added." : "Cost updated.";
-            CancelEdit();
-            await LoadAsync();
-        }
-        else
-        {
-            _errorMessage = error;
-        }
-
-        _isBusy = false;
+        _editingId = null;
+        _model = NewModel();
+        _modalError = null;
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", ModalId);
     }
 
-    private void StartEdit(RunningCostDto cost)
+    private async Task ShowEditModalAsync(RunningCostDto cost)
     {
         _editingId = cost.Id;
         _model = new SaveRunningCostRequest
@@ -185,27 +204,61 @@
             EndDateUtc = cost.EndDateUtc,
             Notes = cost.Notes
         };
-        _successMessage = null;
-        _errorMessage = null;
+        _modalError = null;
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", ModalId);
     }
 
-    private void CancelEdit()
+    private async Task CloseModalAsync()
     {
+        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", ModalId);
         _editingId = null;
         _model = NewModel();
+        _modalError = null;
     }
 
-    private async Task DeleteAsync(int id)
+    private async Task HandleSaveAsync()
     {
+        _isBusy = true;
+        _modalError = null;
+
+        var (success, error) = _editingId is null
+            ? await RunningCostService.CreateAsync(_model)
+            : await RunningCostService.UpdateAsync(_editingId.Value, _model);
+
+        if (success)
+        {
+            _successMessage = _editingId is null ? "Cost added." : "Cost updated.";
+            _errorMessage = null;
+            await CloseModalAsync();
+            await LoadAsync();
+        }
+        else
+        {
+            _modalError = error;
+        }
+
+        _isBusy = false;
+    }
+
+    private async Task DeleteAsync(RunningCostDto cost)
+    {
+        var confirmed = await JsRuntime.InvokeAsync<bool>(
+            "blazorInterop.showConfirm",
+            $"Delete '{cost.Name}'?",
+            "This cannot be undone.",
+            "Delete",
+            "Cancel");
+
+        if (!confirmed)
+            return;
+
         _isBusy = true;
         _errorMessage = null;
         _successMessage = null;
 
-        if (await RunningCostService.DeleteAsync(id))
+        if (await RunningCostService.DeleteAsync(cost.Id))
         {
-            if (_editingId == id)
-                CancelEdit();
-
+            _successMessage = "Cost deleted.";
             await LoadAsync();
         }
         else

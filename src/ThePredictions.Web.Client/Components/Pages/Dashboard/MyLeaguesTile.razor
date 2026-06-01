@@ -107,9 +107,9 @@
     }
     else
     {
-        <div class="carousel-wrapper carousel--multi-item">
+        <div class="carousel-wrapper @(_showTwoItems ? "carousel--multi-item" : "")">
             <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
-                @if (_showTwoItems && VisibleLeagues.Count > 2)
+                @if (NumberOfDots > 1)
                 {
                     <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentIndex == 0)">
                         <span class="bi bi-chevron-left"></span>
@@ -405,7 +405,7 @@
                     </div>
                 </div>
 
-                @if (_showTwoItems && VisibleLeagues.Count > 2)
+                @if (NumberOfDots > 1)
                 {
                     <button class="carousel-btn" @onclick="ShowNext" disabled="@IsAtEnd()">
                         <span class="bi bi-chevron-right"></span>
@@ -449,8 +449,17 @@
     private int _currentIndex;
     private double _touchStartX;
     private string _trackStyle = "transform: translateX(0%);";
-    private bool _showTwoItems;
+    private bool _isTabletOrAbove;
+    private bool _isDesktop;
     private bool _showArchived;
+
+    [Parameter] public bool IsHalfWidth { get; set; }
+
+    // Two cards fit side by side only when the tile is wide enough. It's wide on any
+    // tablet+ screen, except when it shares the lg row with Available Leagues: there it
+    // stacks to full width below lg (two cards fit) but is genuinely half width on
+    // desktop (lg+), where only one full-width card should show.
+    private bool _showTwoItems => IsHalfWidth ? (_isTabletOrAbove && !_isDesktop) : _isTabletOrAbove;
 
     private List<MyLeagueDto> VisibleLeagues =>
         _showArchived
@@ -462,7 +471,8 @@
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
-        _showTwoItems = await BrowserService.IsTabletOrAbove();
+        _isTabletOrAbove = await BrowserService.IsTabletOrAbove();
+        _isDesktop = await BrowserService.IsDesktop();
 
         if (!DashboardState.MyLeagues.Any())
             await DashboardState.LoadMyLeaguesAsync();

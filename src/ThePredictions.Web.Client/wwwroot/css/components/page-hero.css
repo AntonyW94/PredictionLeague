@@ -1,0 +1,49 @@
+/* Purple hero header shown at the top of settings/admin pages.
+   Mirrors the season passes hero so the look is consistent across the app. */
+.page-hero {
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: var(--space-6) var(--space-5);
+    margin-bottom: var(--space-5);
+    border-radius: var(--bs-border-radius);
+    background: linear-gradient(135deg, var(--purple-800), var(--purple-600));
+    box-shadow: 0 8px 24px var(--black-alpha-25);
+}
+
+.page-hero::after {
+    content: "";
+    position: absolute;
+    right: -40px;
+    bottom: -60px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: var(--white-alpha-08);
+    pointer-events: none;
+}
+
+.page-hero__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--white-alpha-15);
+    color: var(--white);
+    font-size: 1.4rem;
+    margin-bottom: var(--space-3);
+}
+
+.page-hero__title {
+    color: var(--white);
+    font-weight: 800;
+    margin: 0 0 var(--space-2);
+}
+
+.page-hero__lead {
+    color: var(--white-alpha-50);
+    max-width: 540px;
+    margin: 0 auto;
+}

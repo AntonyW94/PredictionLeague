@@ -24,7 +24,7 @@
 .theme-dark .form-container {
     background-color: var(--purple-800);
     border: 1px solid transparent;
-    box-shadow: 0 0 40px var(--purple-200-alpha-15);
+    box-shadow: 0 8px 24px var(--black-alpha-25);
 }
 
 /* ============================================
@@ -785,18 +785,13 @@ main.theme-dark:has(.admin-light) .navbar-logo {
 .theme-dark .admin-light .form-container {
     background: var(--purple-800);
     border: 1px solid transparent;
-    box-shadow: 0 8px 20px var(--black-alpha-35), inset 0 0 0 1px var(--white-alpha-05);
+    box-shadow: 0 8px 24px var(--black-alpha-25);
 }
 
 .theme-dark .admin-light .form-container.extra-wide {
     background: transparent;
 }
 
-.theme-dark .admin-light form > .d-flex:last-child {
-    background: var(--purple-1000);
-    border-top-color: var(--white-alpha-08);
-    box-shadow: 0 -2px 8px var(--black-alpha-35);
-}
 
 .theme-dark .admin-light-header {
     background: var(--purple-800);

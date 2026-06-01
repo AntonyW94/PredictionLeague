@@ -5,27 +5,29 @@
 @using ThePredictions.Contracts.Payouts
 @using ThePredictions.Web.Client.Services.Payouts
 @inject IPayoutService PayoutService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Payout details</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="form-container">
-        <h3 class="fw-bold mb-2">Payout details</h3>
-        <p class="form-text text-white-50 mb-4">
+    <EditForm Model="_model" OnValidSubmit="HandleSaveAsync" class="base-form">
+        <FluentValidationValidator />
+
+        <PageHero Title="Payout details" Icon="bi-cash-stack">
             Add your bank details so league admins can pay you any winnings directly. They're stored encrypted and shown only to the admins of prize leagues you've joined - The Predictions never holds or moves the money. This is optional: if you don't add them and you win, the admin will simply message you for them.
-        </p>
+        </PageHero>
 
         @if (_isLoading)
         {
-            <div class="d-flex justify-content-center py-4"><div class="spinner-border" role="status"></div></div>
+            <div class="form-container">
+                <div class="d-flex justify-content-center py-4"><div class="spinner-border" role="status"></div></div>
+            </div>
         }
         else
         {
-            <ApiError Message="@_errorMessage" />
-            <ApiSuccess Message="@_successMessage" />
-
-            <EditForm Model="_model" OnValidSubmit="HandleSaveAsync">
-                <FluentValidationValidator />
+            <div class="form-container">
+                <ApiError Message="@_errorMessage" />
+                <ApiSuccess Message="@_successMessage" />
 
                 <div class="mb-3">
                     <label for="accountName" class="form-label">Account holder name</label>
@@ -59,23 +61,23 @@
                     <p class="form-text text-white-50 mb-3">No league admins can see your details at the moment - you're not in any prize leagues yet.</p>
                 }
 
-                <div class="d-flex justify-content-between align-items-center mt-4">
-                    <a class="btn red-button d-flex align-items-center" href="/account/details">
-                        <span class="bi bi-arrow-left-circle-fill me-2"></span>Back
-                    </a>
-                    <div class="d-flex gap-2">
-                        @if (_hasDetails)
-                        {
-                            <button type="button" class="btn red-outline-button" @onclick="HandleDeleteAsync" disabled="@_isBusy">Delete</button>
-                        }
-                        <button type="submit" class="btn green-button" disabled="@_isBusy">
-                            @(_isBusy ? "Saving..." : "Save details")
+                @if (_hasDetails)
+                {
+                    <div class="mt-4 border-top" style="padding-top: var(--space-8);">
+                        <button type="button" class="btn red-outline-button d-flex align-items-center" @onclick="HandleDeleteAsync" disabled="@_isBusy">
+                            <span class="bi bi-trash-fill me-2"></span>Delete Stored Details
                         </button>
                     </div>
-                </div>
-            </EditForm>
+                }
+            </div>
+
+            <BackAndSaveButtons OnBackClick="HandleBack"
+                                IsBusy="_isBusy"
+                                BackText="Back"
+                                SubmitText="Save details"
+                                BusyText="Saving..." />
         }
-    </div>
+    </EditForm>
 </div>
 
 @code {
@@ -104,6 +106,8 @@
 
         _isLoading = false;
     }
+
+    private void HandleBack() => NavigationManager.NavigateTo("/account/details");
 
     private async Task HandleSaveAsync()
     {

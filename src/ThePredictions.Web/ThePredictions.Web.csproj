@@ -126,6 +126,7 @@ System.IO.File.WriteAllText(FilePath, content);
             <CssFilesToBundle Include="$(PublishCssDir)components\detail-list.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\dashboard-prompts.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\season-pass-cards.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\page-hero.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\onboarding.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\payment-panel.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\payouts.css" />
