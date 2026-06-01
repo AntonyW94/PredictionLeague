@@ -9,4 +9,5 @@ public class TemplateSettings
     public long PredictionsMissing { get; set; }
     public long PasswordReset { get; set; }
     public long PasswordResetGoogleUser { get; set; }
+    public long EmailConfirmation { get; set; }
 }

@@ -10,6 +10,7 @@ namespace ThePredictions.Application.Features.Authentication.Commands.Register;
 public class RegisterCommandHandler(
     IUserManager userManager,
     IAuthenticationTokenService tokenService,
+    IEmailConfirmationSender emailConfirmationSender,
     IDateTimeProvider dateTimeProvider)
     : IRequestHandler<RegisterCommand, AuthenticationResponse>
 {
@@ -32,6 +33,9 @@ public class RegisterCommandHandler(
             throw new Common.Exceptions.IdentityUpdateException(result.Errors);
 
         await userManager.AddToRoleAsync(newUser, nameof(ApplicationUserRole.Player));
+
+        // Issue + email a confirmation link. Resilient: never blocks registration on email delivery.
+        await emailConfirmationSender.SendAsync(newUser, request.ConfirmUrlBase, cancellationToken);
 
         var (accessToken, refreshToken, expiresAtUtc) = await tokenService.GenerateTokensAsync(newUser, cancellationToken);
 

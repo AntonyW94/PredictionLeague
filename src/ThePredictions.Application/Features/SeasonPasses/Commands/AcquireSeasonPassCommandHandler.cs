@@ -1,7 +1,9 @@
 using Ardalis.GuardClauses;
 using MediatR;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common;
+using ThePredictions.Domain.Common.Exceptions;
 using ThePredictions.Domain.Common.Guards;
 using ThePredictions.Domain.Models;
 
@@ -10,12 +12,19 @@ namespace ThePredictions.Application.Features.SeasonPasses.Commands;
 public class AcquireSeasonPassCommandHandler(
     ISeasonRepository seasonRepository,
     ISeasonPassRepository seasonPassRepository,
+    IUserManager userManager,
     IDateTimeProvider dateTimeProvider) : IRequestHandler<AcquireSeasonPassCommand>
 {
     public async Task Handle(AcquireSeasonPassCommand request, CancellationToken cancellationToken)
     {
         Guard.Against.NullOrWhiteSpace(request.UserId);
         Guard.Against.NegativeOrZero(request.SeasonId);
+
+        // A verified email is required to take part (ADR 0009).
+        var user = await userManager.FindByIdAsync(request.UserId);
+        Guard.Against.EntityNotFound(request.UserId, user, nameof(ApplicationUser));
+        if (!user!.EmailConfirmed)
+            throw new EmailNotConfirmedException();
 
         // Idempotent: the user already holds a pass for this season.
         if (await seasonPassRepository.ExistsForUserSeasonAsync(request.UserId, request.SeasonId, cancellationToken))

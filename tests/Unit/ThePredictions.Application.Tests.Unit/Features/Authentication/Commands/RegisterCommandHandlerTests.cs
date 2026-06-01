@@ -18,16 +18,17 @@ public class RegisterCommandHandlerTests
 
     private readonly IUserManager _userManager = Substitute.For<IUserManager>();
     private readonly IAuthenticationTokenService _tokenService = Substitute.For<IAuthenticationTokenService>();
+    private readonly IEmailConfirmationSender _emailConfirmationSender = Substitute.For<IEmailConfirmationSender>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(FixedNowUtc);
     private readonly RegisterCommandHandler _handler;
 
     public RegisterCommandHandlerTests()
     {
-        _handler = new RegisterCommandHandler(_userManager, _tokenService, _dateTimeProvider);
+        _handler = new RegisterCommandHandler(_userManager, _tokenService, _emailConfirmationSender, _dateTimeProvider);
     }
 
     private static RegisterCommand BuildCommand(string email = "john@example.com", bool marketingOptIn = false) =>
-        new("John", "Doe", email, "Password123!", marketingOptIn);
+        new("John", "Doe", email, "Password123!", marketingOptIn, "https://app/authentication/confirm-email");
 
     [Fact]
     public async Task Handle_ShouldReturnSuccessfulResponse_WhenRegistrationIsValid()
@@ -151,6 +152,31 @@ public class RegisterCommandHandlerTests
         // Assert
         await _tokenService.Received(1).GenerateTokensAsync(
             Arg.Any<ApplicationUser>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSendConfirmationEmail_WhenRegistrationSucceeds()
+    {
+        // Arrange
+        var command = BuildCommand();
+        var expiresAtUtc = new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc);
+
+        _userManager.FindByEmailAsync(command.Email).Returns((ApplicationUser?)null);
+        _userManager.CreateAsync(Arg.Any<ApplicationUser>(), command.Password)
+            .Returns(UserManagerResult.Success());
+        _userManager.AddToRoleAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>())
+            .Returns(UserManagerResult.Success());
+        _tokenService.GenerateTokensAsync(Arg.Any<ApplicationUser>(), Arg.Any<CancellationToken>())
+            .Returns(("access-token", "refresh-token", expiresAtUtc));
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await _emailConfirmationSender.Received(1).SendAsync(
+            Arg.Any<ApplicationUser>(),
+            command.ConfirmUrlBase,
             Arg.Any<CancellationToken>());
     }
 

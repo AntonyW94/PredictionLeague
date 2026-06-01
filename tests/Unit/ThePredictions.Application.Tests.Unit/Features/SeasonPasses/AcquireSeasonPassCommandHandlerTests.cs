@@ -2,6 +2,7 @@ using FluentAssertions;
 using NSubstitute;
 using ThePredictions.Application.Features.SeasonPasses.Commands;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Common.Exceptions;
 using ThePredictions.Domain.Models;
@@ -14,6 +15,7 @@ public class AcquireSeasonPassCommandHandlerTests
 {
     private readonly ISeasonRepository _seasonRepository = Substitute.For<ISeasonRepository>();
     private readonly ISeasonPassRepository _seasonPassRepository = Substitute.For<ISeasonPassRepository>();
+    private readonly IUserManager _userManager = Substitute.For<IUserManager>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
     private readonly AcquireSeasonPassCommandHandler _handler;
 
@@ -22,7 +24,10 @@ public class AcquireSeasonPassCommandHandlerTests
 
     public AcquireSeasonPassCommandHandlerTests()
     {
-        _handler = new AcquireSeasonPassCommandHandler(_seasonRepository, _seasonPassRepository, _dateTimeProvider);
+        // Default: a confirmed user exists.
+        _userManager.FindByIdAsync(UserId).Returns(new ApplicationUser { Id = UserId, EmailConfirmed = true });
+
+        _handler = new AcquireSeasonPassCommandHandler(_seasonRepository, _seasonPassRepository, _userManager, _dateTimeProvider);
     }
 
     private Season FreeSeason() =>
@@ -107,6 +112,33 @@ public class AcquireSeasonPassCommandHandlerTests
         // Arrange
         _seasonPassRepository.ExistsForUserSeasonAsync(UserId, SeasonId, Arg.Any<CancellationToken>()).Returns(false);
         _seasonRepository.GetByIdAsync(SeasonId, Arg.Any<CancellationToken>()).Returns((Season?)null);
+
+        // Act
+        var act = () => _handler.Handle(new AcquireSeasonPassCommand(UserId, SeasonId), CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<EntityNotFoundException>();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrowEmailNotConfirmed_WhenUserEmailUnconfirmed()
+    {
+        // Arrange
+        _userManager.FindByIdAsync(UserId).Returns(new ApplicationUser { Id = UserId, EmailConfirmed = false });
+
+        // Act
+        var act = () => _handler.Handle(new AcquireSeasonPassCommand(UserId, SeasonId), CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<EmailNotConfirmedException>();
+        await _seasonPassRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrowEntityNotFound_WhenUserMissing()
+    {
+        // Arrange
+        _userManager.FindByIdAsync(UserId).Returns((ApplicationUser?)null);
 
         // Act
         var act = () => _handler.Handle(new AcquireSeasonPassCommand(UserId, SeasonId), CancellationToken.None);

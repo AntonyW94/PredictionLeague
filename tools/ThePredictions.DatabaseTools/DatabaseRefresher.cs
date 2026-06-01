@@ -14,7 +14,8 @@ public class DatabaseRefresher(
     [
         "AspNetUserTokens",
         "RefreshTokens",
-        "PasswordResetTokens"
+        "PasswordResetTokens",
+        "EmailConfirmationTokens"
     ];
 
     private static readonly string[] TableCopyOrder =

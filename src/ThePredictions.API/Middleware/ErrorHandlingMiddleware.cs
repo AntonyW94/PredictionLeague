@@ -23,6 +23,11 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
             logger.LogWarning("Season Pass Required: {Message}", ex.Message);
             await HandleKnownExceptionAsync(context, HttpStatusCode.PaymentRequired, new { message = ex.Message, seasonId = ex.SeasonId });
         }
+        catch (EmailNotConfirmedException ex)
+        {
+            logger.LogWarning("Email Not Confirmed: {Message}", ex.Message);
+            await HandleKnownExceptionAsync(context, HttpStatusCode.Forbidden, new { message = ex.Message, emailNotConfirmed = true });
+        }
         catch (ArgumentException ex)
         {
             logger.LogWarning("Invalid Argument/Business Rule Error: {Message}", ex.Message);
