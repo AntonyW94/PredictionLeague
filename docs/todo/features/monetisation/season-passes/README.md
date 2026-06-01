@@ -160,10 +160,10 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 | A7 | 14 | [Admin running costs](./14-admin-running-costs.md) | Running-costs CRUD page. |
 | A8 | 15 | [Configurable prices & calculator](./15-configurable-prices-and-calculator.md) | Per-season prices + recommended-price calculator (maths only; uses fee constants). |
 | A9 | 18 | [Email verification & identity](./18-email-verification-and-identity.md) | Finish confirmation + `+`-alias normalisation (existing Brevo email). |
-| A10 | 13 | [SMS early-bird reward](./13-sms-earned-upgrade.md) | Reward eligibility logic (no live SMS needed to build). |
-| A11 | 11 | [SMS reminders](./11-sms-reminders.md) | **Partial:** build the job split + `ISmsService`/`BrevoSmsService` + unit tests now; **live sending** needs Brevo SMS (→ Phase B). |
-| A12 | 10 | [Purchase page](./10-purchase-page.md) | **Partial:** build the page + trial/reward/closed states now; the **Stripe Checkout redirect** needs Stripe (→ Phase B). |
-| A13 | 5 | [Legal page updates](./05-legal-page-updates.md) | Draft the Terms/Privacy edits now; **solicitor review** is a go-live gate (Phase B). |
+| ~~A10~~ | 13 | ~~[SMS early-bird reward](./13-sms-earned-upgrade.md)~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
+| ~~A11~~ | 11 | ~~[SMS reminders](./11-sms-reminders.md)~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
+| A12 | 10 | [Purchase page](./10-purchase-page.md) | **Partial, Standard-only:** build the page + trial/closed states now (no Premium card, no SMS); the **Stripe Checkout redirect** needs Stripe (→ Phase B). |
+| A13 | 5 | [Legal page updates](./05-legal-page-updates.md) | **Best-effort, no solicitor review before launch (June 2026).** Draft Terms/Privacy/refund wording; flag clearly as un-reviewed; full solicitor review deferred until charging beyond friends & family. |
 
 ### Phase B — needs business setup / live accounts
 
@@ -176,8 +176,8 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 | B5 | 9 | [Stripe Checkout integration](./09-stripe-checkout-integration.md) | Stripe keys/account. |
 | B6 | 17 | [Refunds](./17-refunds.md) | Stripe (refund API). |
 | B7 | 10 | Purchase page — finish | Wire the Stripe Checkout redirect (rest built in A12). |
-| B8 | 11 | SMS reminders — go live | Enable live sending + Brevo credits (code built in A11). |
-| B9 | 12 | [Testing & launch](./12-testing-and-launch.md) | Live Stripe + Brevo; solicitor sign-off on Terms. |
+| ~~B8~~ | 11 | ~~SMS reminders — go live~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
+| B9 | 12 | [Testing & launch](./12-testing-and-launch.md) | Live Stripe; **no Brevo SMS, no solicitor sign-off** for this launch (June 2026 decision). |
 
 ## Dependencies
 
@@ -202,7 +202,12 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 
 ## Resolved Decisions
 
-These were decided this session (see `docs/decisions/`):
+**Launch scope (June 2026):**
+
+- **SMS / Premium tier deferred.** First launch sells **Standard only**. The `SeasonPass` tier model stays in place (already built) but Premium is not offered and no Premium prices are set; SMS reminders, `SmsSentCount`, the early-bird reward, libphonenumber and Brevo SMS are all out of scope for now. Re-adding Premium later is purely additive. (Drops A10, A11, B8; simplifies A8 and A12.)
+- **No solicitor review before this launch.** Terms/Privacy/refund wording is best-effort and explicitly flagged as un-reviewed. A full solicitor review is deferred until charging beyond friends & family. (Affects A13, B9.)
+
+Earlier decisions (see `docs/decisions/`):
 
 - **Reward eligibility** → **same competition only**, worst case assumes the next same-competition season ≈ the current one's length (ADR 0007).
 - **Final-window milestones** → **2** (6h + 1h) for both reminders and reward maths (ADR 0007).
