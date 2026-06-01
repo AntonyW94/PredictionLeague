@@ -1,9 +1,11 @@
 @inject ILeagueService LeagueService
 @inject IDashboardStateService DashboardState
+@inject IPayoutService PayoutService
 
 @using ThePredictions.Contracts.Leagues
 @using ThePredictions.Web.Client.Services.Dashboard
 @using ThePredictions.Web.Client.Services.Leagues
+@using ThePredictions.Web.Client.Services.Payouts
 
 <div class="modal fade" id="joinPrivateLeagueModal" tabindex="-1" aria-labelledby="joinPrivateLeagueModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -53,6 +55,15 @@
 
                     <LeaguePaymentPanel LeagueId="_joinedLeagueId.Value" />
 
+                    @if (_hasPayoutDetails)
+                    {
+                        <div class="message-box-solid warning mt-3">
+                            You have saved payout details. If this league pays prizes, its admin will be able to see them
+                            to pay your winnings once you're approved. You can review or remove them on your
+                            <a href="/account/payout-details">Payout details</a> page.
+                        </div>
+                    }
+
                     <div class="d-flex justify-content-end mt-3">
                         <button type="button" class="btn green-button" @onclick="Close">Done</button>
                     </div>
@@ -71,6 +82,7 @@
     private bool _isBusy;
     private string? _errorMessage;
     private int? _joinedLeagueId;
+    private bool _hasPayoutDetails;
 
     [Parameter] public EventCallback OnClose { get; set; }
 
@@ -88,7 +100,13 @@
             // Keep the modal open to show how to pay; if no id came back, just close.
             _joinedLeagueId = leagueId;
             if (_joinedLeagueId is null)
+            {
                 await Close();
+            }
+            else
+            {
+                _hasPayoutDetails = (await PayoutService.GetMyPayoutDetailsAsync())?.HasDetails ?? false;
+            }
         }
         else
         {
@@ -104,6 +122,7 @@
         _errorMessage = null;
         _isBusy = false;
         _joinedLeagueId = null;
+        _hasPayoutDetails = false;
         await OnClose.InvokeAsync();
     }
 }
