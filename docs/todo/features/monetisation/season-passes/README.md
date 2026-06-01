@@ -169,9 +169,9 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 
 | Order | # | Task | Blocked on |
 |-------|---|------|------------|
-| B1 | 1 | [Business setup (sole trader)](./01-business-setup-sole-trader.md) | Offline — HMRC registration (**Monday**). |
-| B2 | 2 | [Monzo Business account](./02-monzo-business-account.md) | Offline — needs sole trader. |
-| B3 | 3 | [Stripe account & products](./03-stripe-account-products.md) | Offline — needs business + bank. |
+| B1 | 1 | [Business setup (sole trader)](./01-business-setup-sole-trader.md) | 🟡 **In progress** — registered with HMRC; **UTR in the post (up to 28 days)**. |
+| B2 | 2 | [Monzo Business account](./02-monzo-business-account.md) | ✅ **Done** — account open. |
+| B3 | 3 | [Stripe account & products](./03-stripe-account-products.md) | 🟢 **Unblocked** — Monzo open; **UTR not required to register**. Can start now. |
 | B4 | 4 | [Brevo SMS setup](./04-brevo-sms-setup.md) | Offline config (not blocked on the sole trader — can be done anytime, but enables Phase-B SMS). |
 | B5 | 9 | [Stripe Checkout integration](./09-stripe-checkout-integration.md) | Stripe keys/account. |
 | B6 | 17 | [Refunds](./17-refunds.md) | Stripe (refund API). |
@@ -185,7 +185,9 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 - [x] Brevo configured for email (`IEmailService`)
 - [x] `Season` entity and league join flow (`JoinLeagueCommandHandler`)
 - [x] Terms & Privacy pages (`/terms`, `/privacy`)
-- [ ] **Need:** sole trader registration, Monzo Business, Stripe account, Brevo SMS enabled (Tasks 01–04)
+- [x] **Sole trader** registered with HMRC (UTR in the post, up to 28 days) (Task 01)
+- [x] **Monzo Business** account open (Task 02)
+- [ ] **Need:** Stripe account (unblocked now - UTR not required to register), Brevo SMS enabled (Tasks 03-04)
 - [ ] **Need:** solicitor review of legal pages before go-live
 
 ## Technical Notes

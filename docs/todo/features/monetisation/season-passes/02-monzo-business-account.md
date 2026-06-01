@@ -2,11 +2,13 @@
 
 **Parent Feature:** [README.md](./README.md)
 
-> **Readiness:** ⛔ Phase B — offline; needs the sole trader.
+> **Readiness:** ✅ Phase B — offline; done.
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Update (June 2026):** Monzo Business account applied for and **open** in the business name. This unblocks Stripe (Task 03), which uses the Monzo sort code + account number for payouts. Remaining items below (tax pot, transaction categories) are optional bookkeeping housekeeping, not blockers.
 
 ## Type
 
@@ -48,9 +50,9 @@ Open a free Monzo Business Lite account in the business name to receive Stripe p
 
 ## Verification
 
-- [ ] Monzo Business Lite account open in the business name.
-- [ ] Sort code + account number recorded (for Stripe payout setup).
-- [ ] Tax pot + categorisation enabled.
+- [x] Monzo Business Lite account open in the business name.
+- [ ] Sort code + account number recorded (for Stripe payout setup). *(To hand when creating the Stripe account.)*
+- [ ] Tax pot + categorisation enabled. *(Optional bookkeeping; not a blocker.)*
 
 ## Notes
 
