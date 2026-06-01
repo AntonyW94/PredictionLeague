@@ -16,6 +16,7 @@ public class PersonalDataVerifier(SqlConnection connection)
         await VerifyUserLoginsAsync(failures);
         await VerifyUserTokensEmptyAsync(failures);
         await VerifySeasonPassReferencesClearedAsync(failures);
+        await VerifyLeagueBankDetailsClearedAsync(failures);
 
         if (failures.Count > 0)
         {
@@ -127,5 +128,16 @@ public class PersonalDataVerifier(SqlConnection connection)
             "SELECT COUNT(*) FROM [SeasonPasses] WHERE [StripePaymentReference] IS NOT NULL");
         if (count > 0)
             failures.Add($"SeasonPasses contains {count} row(s) with a non-null StripePaymentReference");
+    }
+
+    private async Task VerifyLeagueBankDetailsClearedAsync(List<string> failures)
+    {
+        var count = await connection.QueryFirstOrDefaultAsync<int>(
+            @"SELECT COUNT(*) FROM [Leagues]
+              WHERE [BankAccountName] IS NOT NULL
+                 OR [BankSortCode] IS NOT NULL
+                 OR [BankAccountNumber] IS NOT NULL");
+        if (count > 0)
+            failures.Add($"Leagues contains {count} row(s) with non-null bank details");
     }
 }

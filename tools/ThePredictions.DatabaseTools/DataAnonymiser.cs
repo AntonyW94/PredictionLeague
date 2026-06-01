@@ -98,6 +98,11 @@ public class DataAnonymiser
             // Only randomise real join codes; public leagues have no code (NULL) and must stay public.
             result["EntryCode"] = dict["EntryCode"] is null ? null : GenerateRandomEntryCode(faker);
 
+            // Scrub peer-to-peer bank details - real (encrypted) bank info must never reach a dev copy.
+            result["BankAccountName"] = null;
+            result["BankSortCode"] = null;
+            result["BankAccountNumber"] = null;
+
             anonymised.Add(result);
             counter++;
         }
