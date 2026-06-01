@@ -28,6 +28,8 @@ public class DatabaseRefresher(
         "Teams",
         "Competitions",
         "RunningCosts",
+        "PricingSettings",
+        "ServiceFees",
         "Seasons",
         "SeasonPasses",
         "UserOnboardingSkips",

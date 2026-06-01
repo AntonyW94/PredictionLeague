@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Built Standard-only (June 2026).** The SMS/Premium tier is deferred, so the calculator and UI suggest and store a **Standard** price only (no SMS uplift / Premium recommendation). A paid season needs only `PassStandardPrice`; `PassPremiumPrice` stays null. Re-adding the Premium uplift later is additive. The pure calculator (`PriceRecommendationCalculator`) lives in the Domain with 100% coverage; the data-fetch lives in `SeasonPriceRecommendationService` (Application).
 
 ## Goal
 

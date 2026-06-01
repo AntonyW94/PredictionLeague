@@ -12,4 +12,5 @@ public record CreateSeasonCommand(
     bool IsActive,
     int NumberOfRounds,
     int CompetitionId,
+    decimal? PassStandardPrice,
     List<TournamentRoundMappingDto> TournamentRoundMappings) : IRequest<SeasonDto>, ITransactionalRequest;

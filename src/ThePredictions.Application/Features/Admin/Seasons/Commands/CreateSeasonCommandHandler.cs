@@ -186,6 +186,10 @@ public class CreateSeasonCommandHandler(
         return stages[^1];
     }
 
+    // A blank or non-positive price means "free" - store NULL so RequiresPayment stays false.
+    private static decimal? NormalisePrice(decimal? price)
+        => price is > 0 ? price : null;
+
     private static Season CreateSeasonEntity(CreateSeasonCommand request)
     {
         return Season.Create(
@@ -195,7 +199,7 @@ public class CreateSeasonCommandHandler(
             request.IsActive,
             request.NumberOfRounds,
             request.CompetitionId,
-            passStandardPrice: null,
+            passStandardPrice: NormalisePrice(request.PassStandardPrice),
             passPremiumPrice: null);
     }
 
@@ -225,7 +229,9 @@ public class CreateSeasonCommandHandler(
             competition.Name,
             (int)competition.Type,
             competition.ApiLeagueId,
-            0, 0, 0, 0, 0
+            0, 0, 0, 0, 0,
+            createdSeason.PassStandardPrice,
+            createdSeason.PassPremiumPrice
         );
     }
 }

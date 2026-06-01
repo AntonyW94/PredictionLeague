@@ -11,4 +11,5 @@ public record UpdateSeasonCommand(
     bool IsActive,
     int NumberOfRounds,
     int CompetitionId,
+    decimal? PassStandardPrice,
     List<TournamentRoundMappingDto> TournamentRoundMappings) : IRequest;

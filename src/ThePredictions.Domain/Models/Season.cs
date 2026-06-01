@@ -85,16 +85,18 @@ public class Season
 
     private static void ValidatePassPricing(decimal? passStandardPrice, decimal? passPremiumPrice)
     {
+        // A free season has no prices. A paid season requires a Standard price; the
+        // Premium (SMS) tier is optional and, when present, must not be cheaper than Standard.
         if (passStandardPrice is null && passPremiumPrice is null)
             return;
 
-        if (passStandardPrice is null || passPremiumPrice is null)
-            throw new ArgumentException("A paid season must have both a Standard price and a Premium price.", nameof(passStandardPrice));
+        if (passStandardPrice is null)
+            throw new ArgumentException("A Premium price cannot be set without a Standard price.", nameof(passStandardPrice));
 
         if (passStandardPrice <= 0)
             throw new ArgumentException("The Standard price must be greater than zero.", nameof(passStandardPrice));
 
-        if (passPremiumPrice < passStandardPrice)
+        if (passPremiumPrice is not null && passPremiumPrice < passStandardPrice)
             throw new ArgumentException("The Premium price must be greater than or equal to the Standard price.", nameof(passPremiumPrice));
     }
 }

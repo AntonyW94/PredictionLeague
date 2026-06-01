@@ -80,6 +80,38 @@ Admin-recorded website running costs (hosting, fixture API, etc.) used by the re
 
 ---
 
+### PricingSettings
+
+Single-row, admin-editable global knobs for the recommended-price calculator (ADR 0006): the buffer added on top of costs and the minimum price floor. Provider fees live in `ServiceFees`. Stored so the figures can be tuned without a code deploy. `BufferRate` is a fraction (`0.15` = 15%). Seeded with one row; the calculator falls back to built-in defaults if the row is absent.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| BufferRate | decimal(6,4) | NO | | Buffer added on top of costs (fraction, e.g. 0.15) |
+| MinimumFloor | decimal(10,2) | NO | | Smallest price the calculator will suggest (GBP) |
+
+**Constraints:**
+- PK: `Id`
+
+---
+
+### ServiceFees
+
+Per-transaction fees charged by third parties (ADR 0006), one row per provider so new providers need no schema change. Stripe takes a percentage + fixed fee on each pass sale; SMS/email providers charge a flat fee per message (`PercentFee` 0). `Provider` is persisted as the enum name. `PercentFee` is a fraction (`0.015` = 1.5%). Seeded with the Stripe row; the calculator falls back to the built-in Stripe default if absent.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| Provider | nvarchar(20) | NO | | `Stripe`, `Sms` or `Email` (enum name) |
+| PercentFee | decimal(6,4) | NO | | Percentage fee (fraction, e.g. 0.015); 0 for flat-rate providers |
+| FixedFee | decimal(10,2) | NO | | Fixed fee per transaction/message (GBP) |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `Provider`
+
+---
+
 ### Seasons
 
 Represents a football season within a competition.
