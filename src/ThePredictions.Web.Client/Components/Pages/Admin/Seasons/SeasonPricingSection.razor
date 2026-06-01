@@ -35,7 +35,7 @@
                     </button>
                 </div>
                 <ul class="mb-0 ps-3 text-sm">
-                    <li>Business-borne running costs: @Money(_recommendation.BusinessBorneAnnualCost) / year</li>
+                    <li>Running costs: @Money(_recommendation.AnnualRunningCost) / year</li>
                     <li>This season's share: @Percent(_recommendation.Weight) (@_recommendation.SeasonRounds of @_recommendation.TotalPaidRoundsInHorizon paid rounds) = @Money(_recommendation.ApportionedCost)</li>
                     <li>Plus @Percent(_recommendation.BufferRate) buffer = @Money(_recommendation.TargetWithBuffer) to recover</li>
                     <li>Across ~@_recommendation.ExpectedPlayers players, grossed up for card fees@(_recommendation.FloorApplied ? ", lifted to the minimum floor" : "")</li>

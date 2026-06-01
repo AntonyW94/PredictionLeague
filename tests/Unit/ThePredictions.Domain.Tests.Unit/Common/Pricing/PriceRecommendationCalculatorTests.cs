@@ -16,13 +16,13 @@ public class PriceRecommendationCalculatorTests
     [Fact]
     public void Recommend_ShouldComputeSuggestion_ForSinglePaidSeason()
     {
-        // Arrange: £240/yr business-borne, only paid season (weight 1), 20 expected players.
+        // Arrange: £240/yr running costs, only paid season (weight 1), 20 expected players.
         // target = 240 * 1.15 = 276; perPlayer = 13.80; grossed = 14.00 / 0.985 = 14.213...;
         // ceil to nearest 0.50 => 14.50.
 
         // Act
         var result = PriceRecommendationCalculator.Recommend(
-            businessBorneAnnualCost: 240m,
+            annualRunningCost:240m,
             seasonRounds: 38,
             totalPaidRoundsInHorizon: 38,
             expectedPlayers: 20,
@@ -51,7 +51,7 @@ public class PriceRecommendationCalculatorTests
 
         // Act
         var result = PriceRecommendationCalculator.Recommend(
-            businessBorneAnnualCost: 520m,
+            annualRunningCost:520m,
             seasonRounds: 38,
             totalPaidRoundsInHorizon: 52,
             expectedPlayers: 50,
@@ -72,12 +72,12 @@ public class PriceRecommendationCalculatorTests
     [Fact]
     public void Recommend_ShouldApplyFloor_WhenComputedPriceIsBelowFloor()
     {
-        // Arrange: no business-borne costs yet => computed price is just the grossed-up fixed fee (~0.20),
+        // Arrange: no running costs yet => computed price is just the grossed-up fixed fee (~0.20),
         // so the floor lifts it to 1.00.
 
         // Act
         var result = PriceRecommendationCalculator.Recommend(
-            businessBorneAnnualCost: 0m,
+            annualRunningCost:0m,
             seasonRounds: 38,
             totalPaidRoundsInHorizon: 38,
             expectedPlayers: 10,
@@ -97,7 +97,7 @@ public class PriceRecommendationCalculatorTests
     {
         // Act
         var result = PriceRecommendationCalculator.Recommend(
-            businessBorneAnnualCost: 240m,
+            annualRunningCost:240m,
             seasonRounds: 38,
             totalPaidRoundsInHorizon: 38,
             expectedPlayers: null,
@@ -122,7 +122,7 @@ public class PriceRecommendationCalculatorTests
     {
         // Act
         var result = PriceRecommendationCalculator.Recommend(
-            businessBorneAnnualCost: 240m,
+            annualRunningCost:240m,
             seasonRounds: 38,
             totalPaidRoundsInHorizon: 38,
             expectedPlayers: 0,
@@ -145,7 +145,7 @@ public class PriceRecommendationCalculatorTests
     {
         // Act
         var act = () => PriceRecommendationCalculator.Recommend(
-            businessBorneAnnualCost: cost,
+            annualRunningCost:cost,
             seasonRounds: rounds,
             totalPaidRoundsInHorizon: horizon,
             expectedPlayers: 20,
@@ -169,7 +169,7 @@ public class PriceRecommendationCalculatorTests
     {
         // Act
         var act = () => PriceRecommendationCalculator.Recommend(
-            businessBorneAnnualCost: 240m,
+            annualRunningCost:240m,
             seasonRounds: 38,
             totalPaidRoundsInHorizon: 38,
             expectedPlayers: 20,

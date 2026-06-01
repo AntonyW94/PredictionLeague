@@ -5,7 +5,7 @@ namespace ThePredictions.Domain.Common.Pricing;
 /// <summary>
 /// Pure calculator for the recommended Standard Season Pass price (ADR 0006).
 ///
-/// Recommended price = this season's apportioned share of the business-borne annual running costs,
+/// Recommended price = this season's apportioned share of the annual running costs,
 /// plus a buffer, divided by the expected number of players (break-even at the last comparable
 /// season's participant count), grossed up for Stripe fees, lifted to a small floor and rounded up
 /// to a tidy figure. All inputs are supplied by the caller so this stays deterministic and testable.
@@ -15,7 +15,7 @@ public static class PriceRecommendationCalculator
     public const string NoComparableSeasonReason =
         "Not enough history to suggest a price yet - there's no completed prior season for this competition to estimate player numbers from. Set a price manually.";
 
-    /// <param name="businessBorneAnnualCost">Annual running costs currently borne by the business (>= 0).</param>
+    /// <param name="annualRunningCost">Total annual running costs (>= 0).</param>
     /// <param name="seasonRounds">Number of rounds in the season being priced (>= 1).</param>
     /// <param name="totalPaidRoundsInHorizon">Sum of rounds across all paid seasons sharing the cost horizon, including this season (>= seasonRounds).</param>
     /// <param name="expectedPlayers">Distinct approved players of the last comparable season; null/0 when there is no comparable season.</param>
@@ -25,7 +25,7 @@ public static class PriceRecommendationCalculator
     /// <param name="minimumFloor">Smallest price to suggest, covering fees plus a little (>= 0).</param>
     /// <param name="roundingIncrement">Increment to round the suggestion up to, e.g. 0.50 (> 0).</param>
     public static PriceRecommendation Recommend(
-        decimal businessBorneAnnualCost,
+        decimal annualRunningCost,
         int seasonRounds,
         int totalPaidRoundsInHorizon,
         int? expectedPlayers,
@@ -35,7 +35,7 @@ public static class PriceRecommendationCalculator
         decimal minimumFloor,
         decimal roundingIncrement)
     {
-        Guard.Against.Negative(businessBorneAnnualCost);
+        Guard.Against.Negative(annualRunningCost);
         Guard.Against.NegativeOrZero(seasonRounds);
         Guard.Against.OutOfRange(totalPaidRoundsInHorizon, nameof(totalPaidRoundsInHorizon), seasonRounds, int.MaxValue);
         Guard.Against.Negative(bufferRate);
@@ -45,7 +45,7 @@ public static class PriceRecommendationCalculator
         Guard.Against.NegativeOrZero(roundingIncrement);
 
         var weight = (decimal)seasonRounds / totalPaidRoundsInHorizon;
-        var apportionedCost = businessBorneAnnualCost * weight;
+        var apportionedCost = annualRunningCost * weight;
         var targetWithBuffer = apportionedCost * (1 + bufferRate);
 
         if (expectedPlayers is null or <= 0)
@@ -53,7 +53,7 @@ public static class PriceRecommendationCalculator
             return new PriceRecommendation(
                 suggestedStandardPrice: null,
                 unavailableReason: NoComparableSeasonReason,
-                businessBorneAnnualCost: businessBorneAnnualCost,
+                annualRunningCost: annualRunningCost,
                 seasonRounds: seasonRounds,
                 totalPaidRoundsInHorizon: totalPaidRoundsInHorizon,
                 weight: weight,
@@ -76,7 +76,7 @@ public static class PriceRecommendationCalculator
         return new PriceRecommendation(
             suggestedStandardPrice: suggested,
             unavailableReason: null,
-            businessBorneAnnualCost: businessBorneAnnualCost,
+            annualRunningCost: annualRunningCost,
             seasonRounds: seasonRounds,
             totalPaidRoundsInHorizon: totalPaidRoundsInHorizon,
             weight: weight,

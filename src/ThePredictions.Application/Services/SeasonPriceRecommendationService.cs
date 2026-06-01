@@ -27,12 +27,12 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
         Guard.Against.NegativeOrZero(numberOfRounds);
         Guard.Against.Default(startDateUtc);
 
-        var businessBorneAnnualCost = await GetBusinessBorneAnnualCostAsync(startDateUtc, cancellationToken);
+        var annualRunningCost = await GetAnnualRunningCostAsync(cancellationToken);
         var otherPaidRounds = await GetOtherPaidRoundsInHorizonAsync(startDateUtc, seasonId, cancellationToken);
         var expectedPlayers = await GetLastComparableSeasonPlayerCountAsync(competitionId, seasonId, cancellationToken);
 
         return PriceRecommendationCalculator.Recommend(
-            businessBorneAnnualCost: businessBorneAnnualCost,
+            annualRunningCost: annualRunningCost,
             seasonRounds: numberOfRounds,
             totalPaidRoundsInHorizon: numberOfRounds + otherPaidRounds,
             expectedPlayers: expectedPlayers,
@@ -43,32 +43,28 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
             roundingIncrement: RoundingIncrement);
     }
 
-    private async Task<decimal> GetBusinessBorneAnnualCostAsync(DateTime asAtUtc, CancellationToken cancellationToken)
+    private async Task<decimal> GetAnnualRunningCostAsync(CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT
                 rc.[Amount],
-                rc.[Frequency],
-                rc.[StartDateUtc],
-                rc.[EndDateUtc],
-                rc.[Payer]
+                rc.[Frequency]
             FROM
                 [RunningCosts] rc;";
 
         var rows = await dbConnection.QueryAsync<CostRow>(sql, cancellationToken);
 
+        // Reuse the domain's annualisation (Monthly x12, Annual/OneOff as-is) for every recorded cost.
         return rows
             .Select(row => new RunningCost(
                 0,
                 "cost",
                 row.Amount,
                 Enum.Parse<CostFrequency>(row.Frequency),
-                row.StartDateUtc,
-                row.EndDateUtc,
-                Enum.Parse<CostPayer>(row.Payer),
+                DateTime.UnixEpoch,
                 null,
-                row.StartDateUtc))
-            .Where(cost => cost.IsBusinessBorneOn(asAtUtc))
+                null,
+                DateTime.UnixEpoch))
             .Sum(cost => cost.AnnualisedAmount);
     }
 
@@ -143,8 +139,5 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
     {
         public decimal Amount { get; init; }
         public string Frequency { get; init; } = string.Empty;
-        public DateTime StartDateUtc { get; init; }
-        public DateTime? EndDateUtc { get; init; }
-        public string Payer { get; init; } = string.Empty;
     }
 }

@@ -19,7 +19,7 @@ public class GetSeasonPriceRecommendationQueryHandler(ISeasonPriceRecommendation
         return new PriceRecommendationDto(
             recommendation.SuggestedStandardPrice,
             recommendation.UnavailableReason,
-            recommendation.BusinessBorneAnnualCost,
+            recommendation.AnnualRunningCost,
             recommendation.SeasonRounds,
             recommendation.TotalPaidRoundsInHorizon,
             recommendation.Weight,

@@ -8,7 +8,7 @@ namespace ThePredictions.Contracts.Admin.Seasons;
 public record PriceRecommendationDto(
     decimal? SuggestedStandardPrice,
     string? UnavailableReason,
-    decimal BusinessBorneAnnualCost,
+    decimal AnnualRunningCost,
     int SeasonRounds,
     int TotalPaidRoundsInHorizon,
     decimal Weight,

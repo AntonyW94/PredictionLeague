@@ -14,7 +14,7 @@ public class PriceRecommendation
     public PriceRecommendation(
         decimal? suggestedStandardPrice,
         string? unavailableReason,
-        decimal businessBorneAnnualCost,
+        decimal annualRunningCost,
         int seasonRounds,
         int totalPaidRoundsInHorizon,
         decimal weight,
@@ -28,7 +28,7 @@ public class PriceRecommendation
     {
         SuggestedStandardPrice = suggestedStandardPrice;
         UnavailableReason = unavailableReason;
-        BusinessBorneAnnualCost = businessBorneAnnualCost;
+        AnnualRunningCost = annualRunningCost;
         SeasonRounds = seasonRounds;
         TotalPaidRoundsInHorizon = totalPaidRoundsInHorizon;
         Weight = weight;
@@ -47,8 +47,8 @@ public class PriceRecommendation
     /// <summary>Explanation shown when no price could be suggested; null when a price is suggested.</summary>
     public string? UnavailableReason { get; }
 
-    /// <summary>Total annual running cost currently borne by the business (personal-until-renewal costs excluded).</summary>
-    public decimal BusinessBorneAnnualCost { get; }
+    /// <summary>Total annual running cost across all recorded costs.</summary>
+    public decimal AnnualRunningCost { get; }
 
     public int SeasonRounds { get; }
 
@@ -58,7 +58,7 @@ public class PriceRecommendation
     /// <summary>This season's share of the annual cost (SeasonRounds / TotalPaidRoundsInHorizon).</summary>
     public decimal Weight { get; }
 
-    /// <summary>BusinessBorneAnnualCost x Weight.</summary>
+    /// <summary>AnnualRunningCost x Weight.</summary>
     public decimal ApportionedCost { get; }
 
     public decimal BufferRate { get; }
