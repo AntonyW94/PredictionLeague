@@ -39,7 +39,11 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
             CurrentUserId,
             request.EntryDeadlineUtc,
             request.PointsForExactScore,
-            request.PointsForCorrectResult);
+            request.PointsForCorrectResult,
+            request.BankAccountName,
+            request.BankSortCode,
+            request.BankAccountNumber,
+            request.PaymentReferenceTemplate);
 
         var newLeague = await mediator.Send(command, cancellationToken);
 
@@ -376,11 +380,30 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
             request.EntryDeadlineUtc,
             request.PointsForExactScore,
             request.PointsForCorrectResult,
-            CurrentUserId);
+            CurrentUserId,
+            request.BankAccountName,
+            request.BankSortCode,
+            request.BankAccountNumber,
+            request.PaymentReferenceTemplate);
 
         await mediator.Send(command, cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpGet("{leagueId:int}/payment-info")]
+    [SwaggerOperation(
+        Summary = "Get peer-to-peer entry-fee payment details",
+        Description = "Returns the league's bank details, the entry amount and a payment reference for the requesting user. Available only to the league administrator and its members; the platform never handles the money.")]
+    [SwaggerResponse(200, "Payment information returned", typeof(LeaguePaymentInfoDto))]
+    [SwaggerResponse(401, "Not authenticated, or not the administrator/a member of the league")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<LeaguePaymentInfoDto>> GetLeaguePaymentInfoAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var paymentInfo = await mediator.Send(new GetLeaguePaymentInfoQuery(leagueId, CurrentUserId), cancellationToken);
+        return Ok(paymentInfo);
     }
 
     [HttpPost("join")]

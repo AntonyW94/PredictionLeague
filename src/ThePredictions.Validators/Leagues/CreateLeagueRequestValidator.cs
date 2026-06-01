@@ -30,5 +30,7 @@ public class CreateLeagueRequestValidator : AbstractValidator<CreateLeagueReques
 
         RuleFor(x => x.PointsForCorrectResult)
             .InclusiveBetween(1, 100).WithMessage("Points for correct result must be between 1 and 100.");
+
+        this.AddBankDetailRules();
     }
 }
