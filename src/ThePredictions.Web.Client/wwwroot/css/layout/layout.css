@@ -94,4 +94,7 @@ dd {
    defined after the media query so it wins on source order). */
 .page-container--top {
     align-items: flex-start;
+    /* Match the action-button gap used on admin-light form pages so the Back/Save
+       row clears the footer by the same amount (its top gap comes from mt-4). */
+    padding-bottom: var(--space-6);
 }
