@@ -39,7 +39,11 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
             CurrentUserId,
             request.EntryDeadlineUtc,
             request.PointsForExactScore,
-            request.PointsForCorrectResult);
+            request.PointsForCorrectResult,
+            request.BankAccountName,
+            request.BankSortCode,
+            request.BankAccountNumber,
+            request.PaymentReferenceTemplate);
 
         var newLeague = await mediator.Send(command, cancellationToken);
 
@@ -376,46 +380,80 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
             request.EntryDeadlineUtc,
             request.PointsForExactScore,
             request.PointsForCorrectResult,
-            CurrentUserId);
+            CurrentUserId,
+            request.BankAccountName,
+            request.BankSortCode,
+            request.BankAccountNumber,
+            request.PaymentReferenceTemplate);
 
         await mediator.Send(command, cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpGet("{leagueId:int}/payment-info")]
+    [SwaggerOperation(
+        Summary = "Get peer-to-peer entry-fee payment details",
+        Description = "Returns the league's bank details, the entry amount and a payment reference for the requesting user. Available only to the league administrator and its members; the platform never handles the money.")]
+    [SwaggerResponse(200, "Payment information returned", typeof(LeaguePaymentInfoDto))]
+    [SwaggerResponse(401, "Not authenticated, or not the administrator/a member of the league")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<LeaguePaymentInfoDto>> GetLeaguePaymentInfoAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var paymentInfo = await mediator.Send(new GetLeaguePaymentInfoQuery(leagueId, CurrentUserId), cancellationToken);
+        return Ok(paymentInfo);
+    }
+
+    [HttpGet("{leagueId:int}/bank-details")]
+    [SwaggerOperation(
+        Summary = "Get decrypted bank details for editing",
+        Description = "Returns the league's decrypted bank details to pre-fill the edit form. League administrator only.")]
+    [SwaggerResponse(200, "Bank details returned", typeof(LeagueBankDetailsDto))]
+    [SwaggerResponse(401, "Not authenticated, or not the league administrator")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<LeagueBankDetailsDto>> GetLeagueBankDetailsAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var bankDetails = await mediator.Send(new GetLeagueBankDetailsQuery(leagueId, CurrentUserId), cancellationToken);
+        return Ok(bankDetails);
     }
 
     [HttpPost("join")]
     [SwaggerOperation(
         Summary = "Join league with entry code",
         Description = "Submits a request to join a private league using a 6-character entry code. For public leagues, membership is instant. For private leagues, the request is pending until approved by an administrator.")]
-    [SwaggerResponse(204, "Join request submitted successfully")]
+    [SwaggerResponse(200, "Join request submitted successfully", typeof(JoinLeagueResultDto))]
     [SwaggerResponse(400, "Invalid entry code or already a member")]
     [SwaggerResponse(401, "Not authenticated")]
-    public async Task<IActionResult> JoinLeagueAsync(
+    public async Task<ActionResult<JoinLeagueResultDto>> JoinLeagueAsync(
         [FromBody, SwaggerParameter("Entry code for the league", Required = true)] JoinLeagueRequest request,
         CancellationToken cancellationToken)
     {
         var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, null, request.EntryCode);
-        await mediator.Send(command, cancellationToken);
+        var leagueId = await mediator.Send(command, cancellationToken);
 
-        return NoContent();
+        return Ok(new JoinLeagueResultDto(leagueId));
     }
 
     [HttpPost("{leagueId:int}/join")]
     [SwaggerOperation(
         Summary = "Join public league directly",
         Description = "Joins a public league directly without an entry code. Only works for public leagues.")]
-    [SwaggerResponse(204, "Joined league successfully")]
+    [SwaggerResponse(200, "Joined league successfully", typeof(JoinLeagueResultDto))]
     [SwaggerResponse(400, "League is private or already a member")]
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(404, "League not found")]
-    public async Task<IActionResult> JoinPublicLeagueAsync(
+    public async Task<ActionResult<JoinLeagueResultDto>> JoinPublicLeagueAsync(
         [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, leagueId, null);
-        await mediator.Send(command, cancellationToken);
+        var joinedLeagueId = await mediator.Send(command, cancellationToken);
 
-        return NoContent();
+        return Ok(new JoinLeagueResultDto(joinedLeagueId));
     }
 
     [HttpPost("{leagueId:int}/members/{memberId}/status")]

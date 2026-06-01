@@ -83,6 +83,11 @@
                             <StyledValidationMessage For="@(() => _model.PointsForCorrectResult)" />
                         </div>
                     </div>
+
+                    @if (_model.Price > 0)
+                    {
+                        <LeagueBankDetailsFields Model="_model" />
+                    }
             </ChildContent>
         </BaseFormComponent>
     }

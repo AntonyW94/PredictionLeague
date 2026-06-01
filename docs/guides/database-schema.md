@@ -244,6 +244,10 @@ User-created prediction leagues.
 | PointsForCorrectResult | int | NO | 3 | Points for correct result only |
 | CreatedAtUtc | datetime2 | NO | GETUTCDATE() | Creation timestamp |
 | EntryDeadlineUtc | datetime2 | YES | | Deadline to join league |
+| BankAccountName | nvarchar(512) | YES | | Peer-to-peer entry-fee settlement: account name, **AES-GCM ciphertext** |
+| BankSortCode | nvarchar(512) | YES | | Peer-to-peer entry-fee settlement: sort code, **AES-GCM ciphertext** |
+| BankAccountNumber | nvarchar(512) | YES | | Peer-to-peer entry-fee settlement: account number, **AES-GCM ciphertext** |
+| PaymentReferenceTemplate | nvarchar(100) | YES | | Non-sensitive payment-reference hint shown to joiners (plaintext) |
 
 **Constraints:**
 - PK: `Id`

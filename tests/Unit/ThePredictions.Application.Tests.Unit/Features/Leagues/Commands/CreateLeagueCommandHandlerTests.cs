@@ -16,12 +16,13 @@ public class CreateLeagueCommandHandlerTests
     private readonly ILeagueRepository _leagueRepository = Substitute.For<ILeagueRepository>();
     private readonly ISeasonRepository _seasonRepository = Substitute.For<ISeasonRepository>();
     private readonly ISeasonAccessService _seasonAccessService = Substitute.For<ISeasonAccessService>();
+    private readonly IFieldEncryptionService _fieldEncryptionService = Substitute.For<IFieldEncryptionService>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
     private readonly CreateLeagueCommandHandler _handler;
 
     public CreateLeagueCommandHandlerTests()
     {
-        _handler = new CreateLeagueCommandHandler(_leagueRepository, _seasonRepository, _seasonAccessService, _dateTimeProvider);
+        _handler = new CreateLeagueCommandHandler(_leagueRepository, _seasonRepository, _seasonAccessService, _fieldEncryptionService, _dateTimeProvider);
     }
 
     private Season CreateSeason(int id = 1) =>
@@ -69,6 +70,37 @@ public class CreateLeagueCommandHandlerTests
         result.Price.Should().Be(10m);
         result.PointsForExactScore.Should().Be(3);
         result.PointsForCorrectResult.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldEncryptBankDetails_WhenProvided()
+    {
+        // Arrange
+        var season = CreateSeason();
+        var entryDeadlineUtc = _dateTimeProvider.UtcNow.AddMonths(1);
+        var command = new CreateLeagueCommand(
+            "Test League", 1, 10m, "user-1", entryDeadlineUtc, 3, 1,
+            BankAccountName: "Mr A Willson", BankSortCode: "12-34-56",
+            BankAccountNumber: "12345678", PaymentReferenceTemplate: "WC-{Name}");
+
+        _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(season);
+        _leagueRepository.GetByEntryCodeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((League?)null);
+        _fieldEncryptionService.Encrypt(Arg.Any<string?>())
+            .Returns(callInfo => callInfo.Arg<string?>() is { } value ? $"enc:{value}" : null);
+
+        League? captured = null;
+        _leagueRepository.CreateAsync(Arg.Do<League>(l => captured = l), Arg.Any<CancellationToken>())
+            .Returns(callInfo => callInfo.Arg<League>());
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        captured.Should().NotBeNull();
+        captured!.BankAccountName.Should().Be("enc:Mr A Willson");
+        captured.BankSortCode.Should().Be("enc:12-34-56");
+        captured.BankAccountNumber.Should().Be("enc:12345678");
+        captured.PaymentReferenceTemplate.Should().Be("WC-{Name}");
     }
 
     [Fact]

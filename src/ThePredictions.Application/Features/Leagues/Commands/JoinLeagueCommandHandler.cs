@@ -8,9 +8,9 @@ using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonAccessService seasonAccessService, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<JoinLeagueCommand>
+public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonAccessService seasonAccessService, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<JoinLeagueCommand, int>
 {
-    public async Task Handle(JoinLeagueCommand request, CancellationToken cancellationToken)
+    public async Task<int> Handle(JoinLeagueCommand request, CancellationToken cancellationToken)
     {
         var league = await FetchLeagueAsync(request, cancellationToken);
 
@@ -22,6 +22,8 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ISeaso
 
         await leagueRepository.UpdateAsync(league, cancellationToken);
         await NotifyAdminAsync(league, request, cancellationToken);
+
+        return league.Id;
     }
 
     private async Task<League?> FetchLeagueAsync(JoinLeagueCommand request, CancellationToken cancellationToken)

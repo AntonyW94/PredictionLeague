@@ -23,6 +23,15 @@ public partial class League
     public bool HasPrizes { get; private set; }
     public decimal? PrizeFundOverride { get; private set; }
 
+    // Peer-to-peer entry-fee settlement. Bank fields hold ciphertext (encrypted at the command layer);
+    // the platform never touches the money. PaymentReferenceTemplate is a non-sensitive display hint.
+    public string? BankAccountName { get; private set; }
+    public string? BankSortCode { get; private set; }
+    public string? BankAccountNumber { get; private set; }
+    public string? PaymentReferenceTemplate { get; private set; }
+
+    public bool HasBankDetails => BankAccountName is not null && BankSortCode is not null && BankAccountNumber is not null;
+
     public IReadOnlyCollection<LeagueMember> Members => _members.AsReadOnly();
     public IReadOnlyCollection<LeaguePrizeSetting> PrizeSettings => _prizeSettings.AsReadOnly();
 
@@ -46,7 +55,11 @@ public partial class League
         bool hasPrizes,          
         decimal? prizeFundOverride,
         IEnumerable<LeagueMember?>? members,
-        IEnumerable<LeaguePrizeSetting?>? prizeSettings)
+        IEnumerable<LeaguePrizeSetting?>? prizeSettings,
+        string? bankAccountName = null,
+        string? bankSortCode = null,
+        string? bankAccountNumber = null,
+        string? paymentReferenceTemplate = null)
     {
         Id = id;
         Name = name;
@@ -63,6 +76,11 @@ public partial class League
         IsFree = isFree;
         HasPrizes = hasPrizes;
         PrizeFundOverride = prizeFundOverride;
+
+        BankAccountName = bankAccountName;
+        BankSortCode = bankSortCode;
+        BankAccountNumber = bankAccountNumber;
+        PaymentReferenceTemplate = paymentReferenceTemplate;
 
         if (members != null)
             _members.AddRange(members.Where(m => m != null).Select(m => m!));
@@ -167,6 +185,19 @@ public partial class League
         EntryDeadlineUtc = newEntryDeadlineUtc;
         PointsForExactScore = newPointsForExactScore;
         PointsForCorrectResult = newPointsForCorrectResult;
+    }
+
+    /// <summary>
+    /// Sets the league's peer-to-peer entry-fee bank details. Bank values are expected to already be
+    /// encrypted (the command layer encrypts before calling); the payment reference template is a plain hint.
+    /// Pass nulls to clear the details and fall back to manual payment arrangement.
+    /// </summary>
+    public void SetBankDetails(string? bankAccountName, string? bankSortCode, string? bankAccountNumber, string? paymentReferenceTemplate)
+    {
+        BankAccountName = bankAccountName;
+        BankSortCode = bankSortCode;
+        BankAccountNumber = bankAccountNumber;
+        PaymentReferenceTemplate = paymentReferenceTemplate;
     }
 
     public void AddMember(string userId, IDateTimeProvider dateTimeProvider)

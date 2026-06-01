@@ -37,7 +37,11 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                 [PointsForCorrectResult],
                 [IsFree],
                 [HasPrizes],
-                [PrizeFundOverride]
+                [PrizeFundOverride],
+                [BankAccountName],
+                [BankSortCode],
+                [BankAccountNumber],
+                [PaymentReferenceTemplate]
             )
             VALUES
             (
@@ -52,7 +56,11 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                 @PointsForCorrectResult,
                 @IsFree,
                 @HasPrizes,
-                @PrizeFundOverride
+                @PrizeFundOverride,
+                @BankAccountName,
+                @BankSortCode,
+                @BankAccountNumber,
+                @PaymentReferenceTemplate
             );
             SELECT CAST(SCOPE_IDENTITY() as int);";
 
@@ -85,7 +93,11 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             hasPrizes: league.HasPrizes,
             prizeFundOverride: league.PrizeFundOverride,
             members: [adminMember],
-            prizeSettings: null
+            prizeSettings: null,
+            bankAccountName: league.BankAccountName,
+            bankSortCode: league.BankSortCode,
+            bankAccountNumber: league.BankAccountNumber,
+            paymentReferenceTemplate: league.PaymentReferenceTemplate
         );
 
         return newLeague;
@@ -199,7 +211,11 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             league.HasPrizes,
             league.PrizeFundOverride,
             hydratedMembers,
-            prizeSettings
+            prizeSettings,
+            league.BankAccountName,
+            league.BankSortCode,
+            league.BankAccountNumber,
+            league.PaymentReferenceTemplate
         );
     }
 
@@ -270,7 +286,11 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                 [PointsForCorrectResult] = @PointsForCorrectResult,
                 [IsFree] = @IsFree,
                 [HasPrizes] = @HasPrizes,
-                [PrizeFundOverride] = @PrizeFundOverride
+                [PrizeFundOverride] = @PrizeFundOverride,
+                [BankAccountName] = @BankAccountName,
+                [BankSortCode] = @BankSortCode,
+                [BankAccountNumber] = @BankAccountNumber,
+                [PaymentReferenceTemplate] = @PaymentReferenceTemplate
             WHERE
                 [Id] = @Id;";
 
@@ -475,7 +495,11 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                     firstLeague.HasPrizes,
                     firstLeague.PrizeFundOverride,
                     members,
-                    null
+                    null,
+                    firstLeague.BankAccountName,
+                    firstLeague.BankSortCode,
+                    firstLeague.BankAccountNumber,
+                    firstLeague.PaymentReferenceTemplate
                 );
             });
 

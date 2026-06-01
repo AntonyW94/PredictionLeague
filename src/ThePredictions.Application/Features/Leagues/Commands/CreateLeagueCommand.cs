@@ -11,5 +11,9 @@ public record CreateLeagueCommand(
     string CreatingUserId,
     DateTime EntryDeadlineUtc,
     int PointsForExactScore,
-    int PointsForCorrectResult
+    int PointsForCorrectResult,
+    string? BankAccountName = null,
+    string? BankSortCode = null,
+    string? BankAccountNumber = null,
+    string? PaymentReferenceTemplate = null
 ) : IRequest<LeagueDto>, ITransactionalRequest;

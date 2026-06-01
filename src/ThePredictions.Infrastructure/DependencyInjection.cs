@@ -33,6 +33,10 @@ public static class DependencyInjection
             configuration.GetSection(SqlRetryPolicyOptions.SectionName));
         services.AddSingleton<ISqlRetryPolicy, SqlRetryPolicy>();
 
+        services.Configure<FieldEncryptionSettings>(
+            configuration.GetSection(FieldEncryptionSettings.SectionName));
+        services.AddSingleton<IFieldEncryptionService, FieldEncryptionService>();
+
         services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
         services.AddScoped<IDbTransactionContext, DbTransactionContext>();
         services.AddScoped<IApplicationReadDbConnection, DapperReadDbConnection>();

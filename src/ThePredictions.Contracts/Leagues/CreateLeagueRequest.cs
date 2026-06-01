@@ -1,6 +1,6 @@
 namespace ThePredictions.Contracts.Leagues;
 
-public class CreateLeagueRequest
+public class CreateLeagueRequest : IHasBankDetails
 {
     public int SeasonId { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -8,4 +8,10 @@ public class CreateLeagueRequest
     public DateTime EntryDeadlineUtc { get; set; }
     public int PointsForExactScore { get; set; }
     public int PointsForCorrectResult { get; set; }
+
+    // Optional peer-to-peer entry-fee bank details (plaintext in transit; encrypted server-side at rest).
+    public string? BankAccountName { get; set; }
+    public string? BankSortCode { get; set; }
+    public string? BankAccountNumber { get; set; }
+    public string? PaymentReferenceTemplate { get; set; }
 }

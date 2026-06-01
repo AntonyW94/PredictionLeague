@@ -104,6 +104,11 @@
                         </div>
                     </div>
 
+                    @if (_model.Price > 0 && !_isPastDeadline)
+                    {
+                        <LeagueBankDetailsFields Model="_model" />
+                    }
+
             </ChildContent>
         </BaseFormComponent>
     }
@@ -136,6 +141,19 @@
             _isPastDeadline = league.EntryDeadlineUtc < DateTime.UtcNow;
             _isPriceLocked = league.MemberCount > 1;
             _isScoringLocked = league.MemberCount > 1;
+
+            // Pre-fill any existing (decrypted) bank details so saving the form doesn't clear them.
+            if (league.Price > 0)
+            {
+                var bankDetails = await Http.GetFromJsonAsync<LeagueBankDetailsDto>($"api/leagues/{LeagueId}/bank-details");
+                if (bankDetails != null)
+                {
+                    _model.BankAccountName = bankDetails.BankAccountName;
+                    _model.BankSortCode = bankDetails.BankSortCode;
+                    _model.BankAccountNumber = bankDetails.BankAccountNumber;
+                    _model.PaymentReferenceTemplate = bankDetails.PaymentReferenceTemplate;
+                }
+            }
         }
     }
 

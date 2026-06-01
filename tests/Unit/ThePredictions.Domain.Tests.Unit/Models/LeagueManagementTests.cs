@@ -1158,4 +1158,101 @@ public class LeagueManagementTests
     }
 
     #endregion
+
+    #region Bank Details (entry-fee settlement)
+
+    [Fact]
+    public void SetBankDetails_ShouldStoreAllValues_WhenProvided()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+
+        // Act
+        league.SetBankDetails("enc-name", "enc-sort", "enc-account", "{PlayerName}");
+
+        // Assert
+        league.BankAccountName.Should().Be("enc-name");
+        league.BankSortCode.Should().Be("enc-sort");
+        league.BankAccountNumber.Should().Be("enc-account");
+        league.PaymentReferenceTemplate.Should().Be("{PlayerName}");
+    }
+
+    [Fact]
+    public void SetBankDetails_ShouldClearValues_WhenNullsProvided()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+        league.SetBankDetails("enc-name", "enc-sort", "enc-account", "{PlayerName}");
+
+        // Act
+        league.SetBankDetails(null, null, null, null);
+
+        // Assert
+        league.BankAccountName.Should().BeNull();
+        league.BankSortCode.Should().BeNull();
+        league.BankAccountNumber.Should().BeNull();
+        league.PaymentReferenceTemplate.Should().BeNull();
+    }
+
+    [Fact]
+    public void HasBankDetails_ShouldBeTrue_WhenAllBankFieldsSet()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+
+        // Act
+        league.SetBankDetails("enc-name", "enc-sort", "enc-account", null);
+
+        // Assert
+        league.HasBankDetails.Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasBankDetails_ShouldBeFalse_WhenAnyBankFieldMissing()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+
+        // Act — account number left null
+        league.SetBankDetails("enc-name", "enc-sort", null, null);
+
+        // Assert
+        league.HasBankDetails.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasBankDetails_ShouldBeFalse_WhenNoneSet()
+    {
+        // Arrange / Act
+        var league = CreateLeagueWithId();
+
+        // Assert
+        league.HasBankDetails.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Constructor_ShouldHydrateBankDetails_WhenSuppliedFromDatabase()
+    {
+        // Act — database hydration path with bank columns populated
+        var league = new League(
+            id: 1, name: "Test League", seasonId: 1,
+            administratorUserId: "admin-user", entryCode: "ABC123",
+            createdAtUtc: _dateTimeProvider.UtcNow,
+            entryDeadlineUtc: FutureDeadline,
+            pointsForExactScore: 3, pointsForCorrectResult: 1,
+            price: 10, isFree: false, hasPrizes: false,
+            prizeFundOverride: null,
+            members: null, prizeSettings: null,
+            bankAccountName: "enc-name", bankSortCode: "enc-sort",
+            bankAccountNumber: "enc-account", paymentReferenceTemplate: "{PlayerName}");
+
+        // Assert
+        league.BankAccountName.Should().Be("enc-name");
+        league.BankSortCode.Should().Be("enc-sort");
+        league.BankAccountNumber.Should().Be("enc-account");
+        league.PaymentReferenceTemplate.Should().Be("{PlayerName}");
+        league.HasBankDetails.Should().BeTrue();
+    }
+
+    #endregion
 }

@@ -210,4 +210,67 @@ public class CreateLeagueRequestValidatorTests
 
         result.ShouldHaveValidationErrorFor(x => x.PointsForCorrectResult);
     }
+
+    [Fact]
+    public void Validate_ShouldPass_WhenNoBankDetailsProvided()
+    {
+        var request = new CreateLeagueRequestBuilder().Build();
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.BankAccountName);
+        result.ShouldNotHaveValidationErrorFor(x => x.BankSortCode);
+        result.ShouldNotHaveValidationErrorFor(x => x.BankAccountNumber);
+    }
+
+    [Fact]
+    public void Validate_ShouldPass_WhenCompleteBankDetailsProvided()
+    {
+        var request = new CreateLeagueRequestBuilder().Build();
+        request.BankAccountName = "Mr A Willson";
+        request.BankSortCode = "12-34-56";
+        request.BankAccountNumber = "12345678";
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
+    public void Validate_ShouldFail_WhenSortCodeFormatInvalid()
+    {
+        var request = new CreateLeagueRequestBuilder().Build();
+        request.BankAccountName = "Mr A Willson";
+        request.BankSortCode = "1234";
+        request.BankAccountNumber = "12345678";
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.BankSortCode);
+    }
+
+    [Fact]
+    public void Validate_ShouldFail_WhenAccountNumberFormatInvalid()
+    {
+        var request = new CreateLeagueRequestBuilder().Build();
+        request.BankAccountName = "Mr A Willson";
+        request.BankSortCode = "12-34-56";
+        request.BankAccountNumber = "123";
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.BankAccountNumber);
+    }
+
+    [Fact]
+    public void Validate_ShouldFail_WhenBankDetailsPartiallyProvided()
+    {
+        var request = new CreateLeagueRequestBuilder().Build();
+        request.BankAccountName = "Mr A Willson";
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.BankSortCode);
+        result.ShouldHaveValidationErrorFor(x => x.BankAccountNumber);
+    }
 }

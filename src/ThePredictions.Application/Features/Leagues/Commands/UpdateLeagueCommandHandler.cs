@@ -1,12 +1,13 @@
 using Ardalis.GuardClauses;
 using MediatR;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Guards;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateLeagueCommand>
+public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IFieldEncryptionService fieldEncryptionService, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateLeagueCommand>
 {
     public async Task Handle(UpdateLeagueCommand request, CancellationToken cancellationToken)
     {
@@ -34,7 +35,15 @@ public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
             season,
             dateTimeProvider
         );
-        
+
+        league.SetBankDetails(
+            fieldEncryptionService.Encrypt(NullIfBlank(request.BankAccountName)),
+            fieldEncryptionService.Encrypt(NullIfBlank(request.BankSortCode)),
+            fieldEncryptionService.Encrypt(NullIfBlank(request.BankAccountNumber)),
+            NullIfBlank(request.PaymentReferenceTemplate));
+
         await leagueRepository.UpdateAsync(league, cancellationToken);
     }
+
+    private static string? NullIfBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
