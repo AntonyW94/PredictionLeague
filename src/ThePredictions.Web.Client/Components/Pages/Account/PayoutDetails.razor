@@ -1,0 +1,146 @@
+@page "/account/payout-details"
+
+@attribute [Authorize]
+
+@using ThePredictions.Contracts.Payouts
+@using ThePredictions.Web.Client.Services.Payouts
+@inject IPayoutService PayoutService
+
+<PageTitle>Payout details</PageTitle>
+
+<div class="page-container admin-light">
+    <div class="form-container">
+        <h3 class="fw-bold mb-2">Payout details</h3>
+        <p class="form-text text-white-50 mb-4">
+            Add your bank details so league admins can pay you any winnings directly. They're stored encrypted and shown only to the admins of prize leagues you've joined - The Predictions never holds or moves the money. This is optional: if you don't add them and you win, the admin will simply message you for them.
+        </p>
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-content-center py-4"><div class="spinner-border" role="status"></div></div>
+        }
+        else
+        {
+            <ApiError Message="@_errorMessage" />
+            <ApiSuccess Message="@_successMessage" />
+
+            <EditForm Model="_model" OnValidSubmit="HandleSaveAsync">
+                <FluentValidationValidator />
+
+                <div class="mb-3">
+                    <label for="accountName" class="form-label">Account name</label>
+                    <InputText id="accountName" class="form-control" @bind-Value="_model.AccountName" />
+                    <StyledValidationMessage For="@(() => _model.AccountName)" />
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="sortCode" class="form-label">Sort code</label>
+                        <InputText id="sortCode" class="form-control" @bind-Value="_model.SortCode" placeholder="12-34-56" />
+                        <StyledValidationMessage For="@(() => _model.SortCode)" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="accountNumber" class="form-label">Account number</label>
+                        <InputText id="accountNumber" class="form-control" @bind-Value="_model.AccountNumber" placeholder="12345678" />
+                        <StyledValidationMessage For="@(() => _model.AccountNumber)" />
+                    </div>
+                </div>
+
+                @if (_visibleToAdmins.Count > 0)
+                {
+                    <div class="message-box-solid warning mb-3">
+                        <strong>Who can see these:</strong> @string.Join(", ", _visibleToAdmins) - the admin(s) of the prize league(s) you've joined.
+                    </div>
+                }
+                else
+                {
+                    <p class="form-text text-white-50 mb-3">No league admins can see your details at the moment - you're not in any prize leagues yet.</p>
+                }
+
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <a class="btn red-button d-flex align-items-center" href="/account/details">
+                        <span class="bi bi-arrow-left-circle-fill me-2"></span>Back
+                    </a>
+                    <div class="d-flex gap-2">
+                        @if (_hasDetails)
+                        {
+                            <button type="button" class="btn red-outline-button" @onclick="HandleDeleteAsync" disabled="@_isBusy">Delete</button>
+                        }
+                        <button type="submit" class="btn green-button" disabled="@_isBusy">
+                            @(_isBusy ? "Saving..." : "Save details")
+                        </button>
+                    </div>
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    private SetPayoutDetailsRequest _model = new();
+    private List<string> _visibleToAdmins = [];
+    private bool _hasDetails;
+    private bool _isLoading = true;
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var details = await PayoutService.GetMyPayoutDetailsAsync();
+        if (details != null)
+        {
+            _model = new SetPayoutDetailsRequest
+            {
+                AccountName = details.AccountName,
+                SortCode = details.SortCode,
+                AccountNumber = details.AccountNumber
+            };
+            _visibleToAdmins = details.VisibleToAdmins.ToList();
+            _hasDetails = details.HasDetails;
+        }
+
+        _isLoading = false;
+    }
+
+    private async Task HandleSaveAsync()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        var (success, error) = await PayoutService.SetMyPayoutDetailsAsync(_model);
+        if (success)
+        {
+            _successMessage = "Payout details saved.";
+            _hasDetails = true;
+        }
+        else
+        {
+            _errorMessage = error;
+        }
+
+        _isBusy = false;
+    }
+
+    private async Task HandleDeleteAsync()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        if (await PayoutService.DeleteMyPayoutDetailsAsync())
+        {
+            _model = new SetPayoutDetailsRequest();
+            _hasDetails = false;
+            _successMessage = "Payout details removed.";
+        }
+        else
+        {
+            _errorMessage = "Could not remove your payout details. Please try again.";
+        }
+
+        _isBusy = false;
+    }
+}

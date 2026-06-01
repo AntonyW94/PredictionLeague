@@ -128,6 +128,7 @@ System.IO.File.WriteAllText(FilePath, content);
             <CssFilesToBundle Include="$(PublishCssDir)components\season-pass-cards.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\onboarding.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\payment-panel.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\payouts.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\buttons.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\carousel.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\forms.css" />

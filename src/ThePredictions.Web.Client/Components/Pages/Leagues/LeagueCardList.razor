@@ -40,6 +40,9 @@ else
                     <a class="btn btn-sm blue-light-button" href="/leagues/@league.Id/members" title="Members">
                         <span class="bi bi-people-fill"></span><span class="d-none d-lg-inline ms-1">Members</span>
                     </a>
+                    <a class="btn btn-sm purple-accent-button" href="@($"/leagues/{league.Id}/payouts")" title="Payouts">
+                        <span class="bi bi-cash-coin"></span><span class="d-none d-lg-inline ms-1">Payouts</span>
+                    </a>
                     <button class="btn btn-sm green-button" @onclick="() => OnEditLeague.InvokeAsync(league.Id)" title="Edit">
                         <span class="bi bi-pencil-fill"></span><span class="d-none d-lg-inline ms-1">Edit</span>
                     </button>
