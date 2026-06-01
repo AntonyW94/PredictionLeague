@@ -9,11 +9,7 @@ namespace ThePredictions.Application.Services;
 public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbConnection)
     : ISeasonPriceRecommendationService
 {
-    // Pricing assumptions (ADR 0006). Kept as constants for now; can move to config later.
-    private const decimal BufferRate = 0.15m;          // +15% on top of covered costs
-    private const decimal StripePercent = 0.015m;      // UK card fee ~1.5%
-    private const decimal StripeFixedFee = 0.20m;      // UK card fee 20p
-    private const decimal MinimumFloor = 1.00m;        // small floor covering fees + a little
+    // The buffer, Stripe fee and floor are admin-editable (PricingSettings). Rounding stays fixed.
     private const decimal RoundingIncrement = 0.50m;   // round suggestions up to the nearest 50p
 
     public async Task<PriceRecommendation> RecommendAsync(
@@ -27,6 +23,7 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
         Guard.Against.NegativeOrZero(numberOfRounds);
         Guard.Against.Default(startDateUtc);
 
+        var settings = await GetPricingSettingsAsync(cancellationToken);
         var annualRunningCost = await GetAnnualRunningCostAsync(cancellationToken);
         var otherPaidRounds = await GetOtherPaidRoundsInHorizonAsync(startDateUtc, seasonId, cancellationToken);
         var expectedPlayers = await GetLastComparableSeasonPlayerCountAsync(competitionId, seasonId, cancellationToken);
@@ -36,11 +33,31 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
             seasonRounds: numberOfRounds,
             totalPaidRoundsInHorizon: numberOfRounds + otherPaidRounds,
             expectedPlayers: expectedPlayers,
-            bufferRate: BufferRate,
-            stripePercent: StripePercent,
-            stripeFixedFee: StripeFixedFee,
-            minimumFloor: MinimumFloor,
+            bufferRate: settings.BufferRate,
+            stripePercent: settings.StripePercent,
+            stripeFixedFee: settings.StripeFixedFee,
+            minimumFloor: settings.MinimumFloor,
             roundingIncrement: RoundingIncrement);
+    }
+
+    private async Task<PricingSettings> GetPricingSettingsAsync(CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT TOP 1
+                ps.[Id],
+                ps.[BufferRate],
+                ps.[StripePercent],
+                ps.[StripeFixedFee],
+                ps.[MinimumFloor]
+            FROM
+                [PricingSettings] ps
+            ORDER BY
+                ps.[Id];";
+
+        var settings = await dbConnection.QuerySingleOrDefaultAsync<PricingSettings>(sql, cancellationToken);
+
+        // Fall back to built-in defaults if no row has been seeded yet.
+        return settings ?? PricingSettings.CreateDefault();
     }
 
     private async Task<decimal> GetAnnualRunningCostAsync(CancellationToken cancellationToken)

@@ -88,6 +88,7 @@ public static class DependencyInjection
 
         services.AddScoped<ICompetitionRepository, CompetitionRepository>();
         services.AddScoped<IRunningCostRepository, RunningCostRepository>();
+        services.AddScoped<IPricingSettingsRepository, PricingSettingsRepository>();
         services.AddScoped<ILeagueRepository, LeagueRepository>();
         services.AddScoped<ILeagueMemberRepository, LeagueMemberRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();

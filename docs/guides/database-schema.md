@@ -80,6 +80,23 @@ Admin-recorded website running costs (hosting, fixture API, etc.) used by the re
 
 ---
 
+### PricingSettings
+
+Single-row, admin-editable inputs to the recommended-price calculator (ADR 0006): the buffer added on top of costs, the Stripe fee (percentage + fixed) and the minimum price floor. Stored so the figures can be tuned without a code deploy. Rates are fractions (`0.15` = 15%, `0.015` = 1.5%). Seeded with one row; the calculator falls back to built-in defaults if the row is absent.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| BufferRate | decimal(6,4) | NO | | Buffer added on top of costs (fraction, e.g. 0.15) |
+| StripePercent | decimal(6,4) | NO | | Stripe percentage fee (fraction, e.g. 0.015) |
+| StripeFixedFee | decimal(10,2) | NO | | Stripe fixed fee per transaction (GBP, e.g. 0.20) |
+| MinimumFloor | decimal(10,2) | NO | | Smallest price the calculator will suggest (GBP) |
+
+**Constraints:**
+- PK: `Id`
+
+---
+
 ### Seasons
 
 Represents a football season within a competition.

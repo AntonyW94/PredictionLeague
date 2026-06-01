@@ -1,0 +1,113 @@
+@page "/admin/pricing-settings"
+
+@attribute [Authorize(Roles = RoleNames.Administrator)]
+
+@using ThePredictions.Contracts.Admin.PricingSettings
+@using ThePredictions.Web.Client.Services.PricingSettings
+@inject IPricingSettingsService PricingSettingsService
+
+<PageTitle>Pricing settings</PageTitle>
+
+<div class="page-container admin-light">
+    <div class="admin-table-container">
+        <h3 class="fw-bold mb-2">Pricing settings</h3>
+        <p class="form-text text-white-50 mb-4">
+            These feed the recommended-price calculator on the season screens. They're only a starting suggestion -
+            you can always override the price on each season. Rounding is fixed at the nearest 50p.
+        </p>
+
+        <ApiError Message="@_errorMessage" />
+        <ApiSuccess Message="@_successMessage" />
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-content-center py-5"><div class="spinner-border" role="status"></div></div>
+        }
+        else
+        {
+            <div class="form-container">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="buffer" class="form-label">Buffer (%)</label>
+                        <InputNumber id="buffer" class="form-control" @bind-Value="_bufferPercent" />
+                        <div class="form-text">Added on top of costs (e.g. 15 = aim to cover costs +15%).</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="floor" class="form-label">Minimum price floor (£)</label>
+                        <InputNumber id="floor" class="form-control" @bind-Value="_minimumFloor" />
+                        <div class="form-text">The lowest price the calculator will ever suggest.</div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="stripePercent" class="form-label">Stripe percentage fee (%)</label>
+                        <InputNumber id="stripePercent" class="form-control" @bind-Value="_stripePercent" />
+                        <div class="form-text">Stripe's % per transaction (UK cards are ~1.5).</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="stripeFixed" class="form-label">Stripe fixed fee (£)</label>
+                        <InputNumber id="stripeFixed" class="form-control" @bind-Value="_stripeFixedFee" />
+                        <div class="form-text">Stripe's fixed amount per transaction (UK cards are ~0.20).</div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="button" class="btn green-button" @onclick="SaveAsync" disabled="@_isBusy">
+                        @(_isBusy ? "Saving..." : "Save settings")
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private decimal _bufferPercent;
+    private decimal _stripePercent;
+    private decimal _stripeFixedFee;
+    private decimal _minimumFloor;
+
+    private bool _isLoading = true;
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await PricingSettingsService.GetAsync();
+        if (settings is not null)
+        {
+            _bufferPercent = settings.BufferRate * 100;
+            _stripePercent = settings.StripePercent * 100;
+            _stripeFixedFee = settings.StripeFixedFee;
+            _minimumFloor = settings.MinimumFloor;
+        }
+
+        _isLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        var request = new UpdatePricingSettingsRequest
+        {
+            BufferRate = _bufferPercent / 100,
+            StripePercent = _stripePercent / 100,
+            StripeFixedFee = _stripeFixedFee,
+            MinimumFloor = _minimumFloor
+        };
+
+        var (success, error) = await PricingSettingsService.UpdateAsync(request);
+
+        if (success)
+            _successMessage = "Pricing settings saved.";
+        else
+            _errorMessage = error;
+
+        _isBusy = false;
+    }
+}
