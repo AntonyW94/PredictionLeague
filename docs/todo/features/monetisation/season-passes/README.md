@@ -122,8 +122,8 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 - [ ] A user with no pass cannot join/create a league in a pass-required season unless trial-eligible.
 - [ ] Brand-new users are auto-granted a free Standard trial on first participation in a pass-required season.
 - [ ] Per-season **Standard** and **Premium** prices are admin-configurable (DB-backed); Stripe charges those exact amounts (dynamic).
-- [ ] Admin **Running Costs** page records costs, renewal dates, and payer status (business vs personal-until-renewal).
-- [ ] Season creation shows a **recommended price** from the calculator (15% buffer, length-weighted apportionment, break-even at last comparable season's player count, business-borne costs only).
+- [ ] Admin **Running Costs** page records costs (name, amount, frequency, start/end dates, notes).
+- [ ] Season creation shows a **recommended price** from the calculator (15% buffer, length-weighted apportionment, break-even at last comparable season's player count, based on recorded running costs).
 - [ ] Users can buy Standard or Premium via Stripe Checkout (one-off, Apple/Google Pay enabled).
 - [ ] A `SeasonPass` is created reliably on successful payment (webhook-driven).
 - [ ] Everyone (incl. SMS-tier) keeps all emails at every milestone; SMS is an **additional** 6h/1h nudge for unsubmitted SMS-tier holders.
@@ -160,24 +160,24 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 | A7 | 14 | [Admin running costs](./14-admin-running-costs.md) | Running-costs CRUD page. |
 | A8 | 15 | [Configurable prices & calculator](./15-configurable-prices-and-calculator.md) | Per-season prices + recommended-price calculator (maths only; uses fee constants). |
 | A9 | 18 | [Email verification & identity](./18-email-verification-and-identity.md) | Finish confirmation + `+`-alias normalisation (existing Brevo email). |
-| A10 | 13 | [SMS early-bird reward](./13-sms-earned-upgrade.md) | Reward eligibility logic (no live SMS needed to build). |
-| A11 | 11 | [SMS reminders](./11-sms-reminders.md) | **Partial:** build the job split + `ISmsService`/`BrevoSmsService` + unit tests now; **live sending** needs Brevo SMS (→ Phase B). |
-| A12 | 10 | [Purchase page](./10-purchase-page.md) | **Partial:** build the page + trial/reward/closed states now; the **Stripe Checkout redirect** needs Stripe (→ Phase B). |
-| A13 | 5 | [Legal page updates](./05-legal-page-updates.md) | Draft the Terms/Privacy edits now; **solicitor review** is a go-live gate (Phase B). |
+| ~~A10~~ | 13 | ~~[SMS early-bird reward](./13-sms-earned-upgrade.md)~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
+| ~~A11~~ | 11 | ~~[SMS reminders](./11-sms-reminders.md)~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
+| A12 | 10 | [Purchase page](./10-purchase-page.md) | **Partial, Standard-only:** build the page + trial/closed states now (no Premium card, no SMS); the **Stripe Checkout redirect** needs Stripe (→ Phase B). |
+| A13 | 5 | [Legal page updates](./05-legal-page-updates.md) | **Best-effort, no solicitor review before launch (June 2026).** Draft Terms/Privacy/refund wording; flag clearly as un-reviewed; full solicitor review deferred until charging beyond friends & family. |
 
 ### Phase B — needs business setup / live accounts
 
 | Order | # | Task | Blocked on |
 |-------|---|------|------------|
-| B1 | 1 | [Business setup (sole trader)](./01-business-setup-sole-trader.md) | Offline — HMRC registration (**Monday**). |
-| B2 | 2 | [Monzo Business account](./02-monzo-business-account.md) | Offline — needs sole trader. |
-| B3 | 3 | [Stripe account & products](./03-stripe-account-products.md) | Offline — needs business + bank. |
+| B1 | 1 | [Business setup (sole trader)](./01-business-setup-sole-trader.md) | 🟡 **In progress** — registered with HMRC; **UTR in the post (up to 28 days)**. |
+| B2 | 2 | [Monzo Business account](./02-monzo-business-account.md) | ✅ **Done** — account open. |
+| B3 | 3 | [Stripe account & products](./03-stripe-account-products.md) | 🟢 **Unblocked** — Monzo open; **UTR not required to register**. Can start now. |
 | B4 | 4 | [Brevo SMS setup](./04-brevo-sms-setup.md) | Offline config (not blocked on the sole trader — can be done anytime, but enables Phase-B SMS). |
 | B5 | 9 | [Stripe Checkout integration](./09-stripe-checkout-integration.md) | Stripe keys/account. |
 | B6 | 17 | [Refunds](./17-refunds.md) | Stripe (refund API). |
 | B7 | 10 | Purchase page — finish | Wire the Stripe Checkout redirect (rest built in A12). |
-| B8 | 11 | SMS reminders — go live | Enable live sending + Brevo credits (code built in A11). |
-| B9 | 12 | [Testing & launch](./12-testing-and-launch.md) | Live Stripe + Brevo; solicitor sign-off on Terms. |
+| ~~B8~~ | 11 | ~~SMS reminders — go live~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
+| B9 | 12 | [Testing & launch](./12-testing-and-launch.md) | Live Stripe; **no Brevo SMS, no solicitor sign-off** for this launch (June 2026 decision). |
 
 ## Dependencies
 
@@ -185,7 +185,9 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 - [x] Brevo configured for email (`IEmailService`)
 - [x] `Season` entity and league join flow (`JoinLeagueCommandHandler`)
 - [x] Terms & Privacy pages (`/terms`, `/privacy`)
-- [ ] **Need:** sole trader registration, Monzo Business, Stripe account, Brevo SMS enabled (Tasks 01–04)
+- [x] **Sole trader** registered with HMRC (UTR in the post, up to 28 days) (Task 01)
+- [x] **Monzo Business** account open (Task 02)
+- [ ] **Need:** Stripe account (unblocked now - UTR not required to register), Brevo SMS enabled (Tasks 03-04)
 - [ ] **Need:** solicitor review of legal pages before go-live
 
 ## Technical Notes
@@ -200,7 +202,12 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 
 ## Resolved Decisions
 
-These were decided this session (see `docs/decisions/`):
+**Launch scope (June 2026):**
+
+- **SMS / Premium tier deferred.** First launch sells **Standard only**. The `SeasonPass` tier model stays in place (already built) but Premium is not offered and no Premium prices are set; SMS reminders, `SmsSentCount`, the early-bird reward, libphonenumber and Brevo SMS are all out of scope for now. Re-adding Premium later is purely additive. (Drops A10, A11, B8; simplifies A8 and A12.)
+- **No solicitor review before this launch.** Terms/Privacy/refund wording is best-effort and explicitly flagged as un-reviewed. A full solicitor review is deferred until charging beyond friends & family. (Affects A13, B9.)
+
+Earlier decisions (see `docs/decisions/`):
 
 - **Reward eligibility** → **same competition only**, worst case assumes the next same-competition season ≈ the current one's length (ADR 0007).
 - **Final-window milestones** → **2** (6h + 1h) for both reminders and reward maths (ADR 0007).

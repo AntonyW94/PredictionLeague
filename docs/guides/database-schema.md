@@ -60,6 +60,58 @@ Reference data for a competition: the stable, provider-independent identity that
 
 ---
 
+### RunningCosts
+
+Admin-recorded website running costs (hosting, fixture API, etc.) used by the recommended-price calculator. Start/end dates are stored so costs can be apportioned/prorated flexibly (ADR 0006). `Frequency` is persisted as an enum-name string.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| Name | nvarchar(150) | NO | | Cost name (e.g. "Fasthosts hosting") |
+| Amount | decimal(18,2) | NO | | Cost amount (GBP) |
+| Frequency | nvarchar(20) | NO | | `Monthly`, `Annual` or `OneOff` |
+| StartDateUtc | datetime2 | NO | | When this cost period begins |
+| EndDateUtc | datetime2 | YES | | End date (null = ongoing) |
+| Notes | nvarchar(500) | YES | | Optional notes |
+| CreatedAtUtc | datetime2 | NO | | Creation timestamp |
+
+**Constraints:**
+- PK: `Id`
+
+---
+
+### PricingSettings
+
+Single-row, admin-editable global knobs for the recommended-price calculator (ADR 0006): the buffer added on top of costs and the minimum price floor. Provider fees live in `ServiceFees`. Stored so the figures can be tuned without a code deploy. `BufferRate` is a fraction (`0.15` = 15%). Seeded with one row; the calculator falls back to built-in defaults if the row is absent.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| BufferRate | decimal(6,4) | NO | | Buffer added on top of costs (fraction, e.g. 0.15) |
+| MinimumFloor | decimal(10,2) | NO | | Smallest price the calculator will suggest (GBP) |
+
+**Constraints:**
+- PK: `Id`
+
+---
+
+### ServiceFees
+
+Per-transaction fees charged by third parties (ADR 0006), one row per provider so new providers need no schema change. Stripe takes a percentage + fixed fee on each pass sale; SMS/email providers charge a flat fee per message (`PercentFee` 0). `Provider` is persisted as the enum name. `PercentFee` is a fraction (`0.015` = 1.5%). Seeded with the Stripe row; the calculator falls back to the built-in Stripe default if absent.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| Provider | nvarchar(20) | NO | | `Stripe`, `Sms` or `Email` (enum name) |
+| PercentFee | decimal(6,4) | NO | | Percentage fee (fraction, e.g. 0.015); 0 for flat-rate providers |
+| FixedFee | decimal(10,2) | NO | | Fixed fee per transaction/message (GBP) |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `Provider`
+
+---
+
 ### Seasons
 
 Represents a football season within a competition.
@@ -127,6 +179,47 @@ Records which onboarding-checklist steps a user has skipped (or had skipped in b
 **Constraints:**
 - PK: `(UserId, StepKey)`
 - FK: `UserId` → `AspNetUsers(Id)` (`FK_UserOnboardingSkips_AspNetUsers`)
+
+---
+
+### UserPayoutDetails
+
+Optional, player-provided bank details for receiving peer-to-peer prize **payouts**. One row per user. The account fields hold **AES-GCM ciphertext** (encrypted via `IFieldEncryptionService`); decrypted only for the player and the admins of prize leagues they're an approved member of. The platform never moves money.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| UserId | nvarchar(450) | NO | | PK, FK to AspNetUsers |
+| AccountName | nvarchar(512) | YES | | Payout account name, **AES-GCM ciphertext** |
+| SortCode | nvarchar(512) | YES | | Payout sort code, **AES-GCM ciphertext** |
+| AccountNumber | nvarchar(512) | YES | | Payout account number, **AES-GCM ciphertext** |
+| CreatedAtUtc | datetime2 | NO | | When first saved |
+| UpdatedAtUtc | datetime2 | NO | | When last updated |
+
+**Constraints:**
+- PK: `UserId`
+- FK: `UserId` → `AspNetUsers(Id)` ON DELETE CASCADE (`FK_UserPayoutDetails_AspNetUsers`)
+
+---
+
+### LeaguePayouts
+
+End-of-league settlement tracking: **one aggregated row per (league, winner)** holding the **sum** of that user's `Winnings` for the league and a manual **PaidAtUtc**. Rows are created idempotently once the season is complete (final prize processing done). `Winnings` remains the source of truth - the Round/Monthly/Overall breakdown is computed live from it, never duplicated here.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| LeagueId | int | NO | | FK to Leagues |
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers (the winner) |
+| TotalAmount | decimal(18,2) | NO | | Sum of the user's winnings in the league at finalisation |
+| PaidAtUtc | datetime2 | YES | | When the admin marked this winner paid (null = outstanding) |
+| CreatedAtUtc | datetime2 | NO | | When the payout row was created |
+| UpdatedAtUtc | datetime2 | NO | | When the total was last refreshed |
+
+**Constraints:**
+- PK: `Id`
+- Unique: `(LeagueId, UserId)` (`UQ_LeaguePayouts_League_User`)
+- FK: `LeagueId` → `Leagues(Id)` ON DELETE CASCADE (`FK_LeaguePayouts_Leagues`)
+- FK: `UserId` → `AspNetUsers(Id)` (`FK_LeaguePayouts_AspNetUsers`)
 
 ---
 

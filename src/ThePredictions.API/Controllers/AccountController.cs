@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ThePredictions.Application.Features.Account.Commands;
 using ThePredictions.Application.Features.Account.Queries;
 using ThePredictions.Contracts.Account;
+using ThePredictions.Contracts.Payouts;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace ThePredictions.API.Controllers;
@@ -61,6 +62,48 @@ public class AccountController(IMediator mediator) : ApiControllerBase
     {
         var command = new UpdateThemePreferenceCommand(CurrentUserId, theme);
         await mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpGet("payout-details")]
+    [SwaggerOperation(
+        Summary = "Get the current user's payout details",
+        Description = "Returns the user's own (decrypted) payout bank details and the list of prize-league admins who can see them.")]
+    [SwaggerResponse(200, "Payout details retrieved", typeof(MyPayoutDetailsDto))]
+    [SwaggerResponse(401, "Not authenticated")]
+    public async Task<ActionResult<MyPayoutDetailsDto>> GetPayoutDetailsAsync(CancellationToken cancellationToken)
+    {
+        var details = await mediator.Send(new GetMyPayoutDetailsQuery(CurrentUserId), cancellationToken);
+        return Ok(details);
+    }
+
+    [HttpPut("payout-details")]
+    [SwaggerOperation(
+        Summary = "Save the current user's payout details",
+        Description = "Stores the user's payout bank details (encrypted at rest). Used by league admins to pay prize winnings directly; the platform never moves money.")]
+    [SwaggerResponse(204, "Payout details saved")]
+    [SwaggerResponse(400, "Validation failed")]
+    [SwaggerResponse(401, "Not authenticated")]
+    public async Task<IActionResult> SetPayoutDetailsAsync(
+        [FromBody, SwaggerParameter("Payout bank details", Required = true)] SetPayoutDetailsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SetPayoutDetailsCommand(CurrentUserId, request.AccountName, request.SortCode, request.AccountNumber);
+        await mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpDelete("payout-details")]
+    [SwaggerOperation(
+        Summary = "Delete the current user's payout details",
+        Description = "Removes the user's stored payout bank details.")]
+    [SwaggerResponse(204, "Payout details deleted")]
+    [SwaggerResponse(401, "Not authenticated")]
+    public async Task<IActionResult> DeletePayoutDetailsAsync(CancellationToken cancellationToken)
+    {
+        await mediator.Send(new DeletePayoutDetailsCommand(CurrentUserId), cancellationToken);
 
         return NoContent();
     }

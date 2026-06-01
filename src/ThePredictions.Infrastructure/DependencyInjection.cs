@@ -90,6 +90,9 @@ public static class DependencyInjection
         });
 
         services.AddScoped<ICompetitionRepository, CompetitionRepository>();
+        services.AddScoped<IRunningCostRepository, RunningCostRepository>();
+        services.AddScoped<IPricingSettingsRepository, PricingSettingsRepository>();
+        services.AddScoped<IServiceFeeRepository, ServiceFeeRepository>();
         services.AddScoped<ILeagueRepository, LeagueRepository>();
         services.AddScoped<ILeagueMemberRepository, LeagueMemberRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -99,6 +102,8 @@ public static class DependencyInjection
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<ISeasonPassRepository, SeasonPassRepository>();
         services.AddScoped<IOnboardingSkipRepository, OnboardingSkipRepository>();
+        services.AddScoped<IUserPayoutDetailsRepository, UserPayoutDetailsRepository>();
+        services.AddScoped<ILeaguePayoutRepository, LeaguePayoutRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();
         services.AddScoped<ITournamentRoundMappingRepository, TournamentRoundMappingRepository>();
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
@@ -130,6 +135,7 @@ public static class DependencyInjection
         services.AddScoped<ILeagueStatsService, LeagueStatsService>();
         services.AddScoped<ILeagueMembershipService, LeagueMembershipService>();
         services.AddScoped<ISeasonAccessService, SeasonAccessService>();
+        services.AddScoped<ISeasonPriceRecommendationService, SeasonPriceRecommendationService>();
         services.AddScoped<IEmailConfirmationSender, EmailConfirmationSender>();
     }
 }

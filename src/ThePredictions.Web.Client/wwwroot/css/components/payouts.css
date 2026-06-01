@@ -1,0 +1,178 @@
+/* Admin league payouts page - winner settlement list. */
+
+.payout-totals {
+    display: flex;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.payout-total {
+    flex: 1 1 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-3) var(--space-4);
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--bs-border-radius);
+}
+
+.payout-total__label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--grey-500);
+}
+
+.payout-total__value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--purple-1000);
+}
+
+.payout-total__value--paid {
+    color: var(--green-600);
+}
+
+.payout-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.payout-row {
+    padding: var(--space-4);
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--bs-border-radius);
+}
+
+.payout-row--paid {
+    border-color: var(--green-600);
+}
+
+.payout-row__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.payout-row__name {
+    font-weight: 700;
+    color: var(--purple-1000);
+}
+
+.payout-row__breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+
+.payout-chip {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px var(--space-2);
+    border-radius: 999px;
+    background: var(--grey-100);
+    color: var(--grey-500);
+}
+
+.payout-row__amount {
+    flex-shrink: 0;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--green-600);
+    font-variant-numeric: tabular-nums;
+}
+
+.payout-row__notice {
+    margin: var(--space-3) 0 0;
+}
+
+.payout-row__pay {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--grey-200);
+}
+
+.payout-row__details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    font-size: 0.9rem;
+    color: var(--purple-1000);
+}
+
+.payout-row__detail-label {
+    color: var(--grey-500);
+    font-weight: 600;
+    margin-right: var(--space-1);
+}
+
+.payout-row__no-details {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--grey-500);
+}
+
+.payout-row__action {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.payout-row__pending {
+    font-size: 0.85rem;
+    color: var(--grey-500);
+}
+
+.payout-paid-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 700;
+    color: var(--green-600);
+}
+
+/* Dark mode (admin pages follow the theme) */
+.theme-dark .payout-total,
+.theme-dark .payout-row {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-15);
+}
+
+.theme-dark .payout-total__value,
+.theme-dark .payout-row__name,
+.theme-dark .payout-row__details {
+    color: var(--white);
+}
+
+.theme-dark .payout-total__value--paid {
+    color: var(--green-300);
+}
+
+.theme-dark .payout-row__amount {
+    color: var(--green-300);
+}
+
+.theme-dark .payout-chip {
+    background: var(--white-alpha-08);
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .payout-row__detail-label,
+.theme-dark .payout-row__no-details,
+.theme-dark .payout-row__pending {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .payout-row__pay {
+    border-top-color: var(--white-alpha-15);
+}

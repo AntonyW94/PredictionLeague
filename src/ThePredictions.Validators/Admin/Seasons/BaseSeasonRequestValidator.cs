@@ -26,5 +26,9 @@ public abstract class BaseSeasonRequestValidator<T> : AbstractValidator<T> where
 
         RuleFor(x => x.CompetitionId)
             .GreaterThan(0).WithMessage("Please select a competition.");
+
+        RuleFor(x => x.PassStandardPrice)
+            .InclusiveBetween(0m, 1000m).WithMessage("The Standard price must be between £0 and £1,000.")
+            .When(x => x.PassStandardPrice.HasValue);
     }
 }

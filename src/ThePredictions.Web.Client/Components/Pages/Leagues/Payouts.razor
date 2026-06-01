@@ -1,0 +1,170 @@
+@page "/leagues/{LeagueId:int}/payouts"
+
+@attribute [Authorize]
+
+@using System.Globalization
+@using ThePredictions.Contracts.Payouts
+@using ThePredictions.Web.Client.Services.Payouts
+@inject IPayoutService PayoutService
+@inject NavigationManager NavigationManager
+
+<PageTitle>League payouts</PageTitle>
+
+<div class="page-container admin-light">
+    <div class="admin-table-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-bold mb-0">Payouts</h3>
+            <a class="btn red-button btn-sm d-flex align-items-center" href="@($"/leagues/{LeagueId}/dashboard")">
+                <span class="bi bi-arrow-left-circle-fill me-2"></span>Back
+            </a>
+        </div>
+
+        <ApiError Message="@_errorMessage" />
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-content-center py-5"><div class="spinner-border" role="status"></div></div>
+        }
+        else if (_payouts is null)
+        {
+            <div class="empty-state">
+                <i class="bi bi-cash-coin empty-state-icon"></i>
+                <p>Payouts aren't available for this league.</p>
+            </div>
+        }
+        else if (_payouts.Winners.Count == 0)
+        {
+            <div class="empty-state">
+                <i class="bi bi-cash-coin empty-state-icon"></i>
+                <p>No prize winnings have been awarded in this league yet.</p>
+            </div>
+        }
+        else
+        {
+            @if (!_payouts.SeasonComplete)
+            {
+                <div class="message-box-solid warning mb-4">
+                    These totals are provisional. You'll be able to mark winners as paid once the season is complete (all rounds finished).
+                </div>
+            }
+
+            <div class="payout-totals mb-4">
+                <div class="payout-total">
+                    <span class="payout-total__label">Outstanding</span>
+                    <span class="payout-total__value">@_payouts.OutstandingTotal.ToString("C", Uk)</span>
+                </div>
+                <div class="payout-total">
+                    <span class="payout-total__label">Paid</span>
+                    <span class="payout-total__value payout-total__value--paid">@_payouts.PaidTotal.ToString("C", Uk)</span>
+                </div>
+            </div>
+
+            <div class="payout-rows">
+                @foreach (var winner in _payouts.Winners)
+                {
+                    <div class="payout-row @(winner.IsPaid ? "payout-row--paid" : "")">
+                        <div class="payout-row__head">
+                            <div>
+                                <span class="payout-row__name">@winner.UserName</span>
+                                <div class="payout-row__breakdown">
+                                    @foreach (var line in winner.Breakdown)
+                                    {
+                                        <span class="payout-chip">@line.PrizeType: @line.Amount.ToString("C", Uk)</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="payout-row__amount">@winner.TotalAmount.ToString("C", Uk)</div>
+                        </div>
+
+                        @if (winner.HasDiscrepancy)
+                        {
+                            <div class="message-box-solid warning payout-row__notice">
+                                Winnings have changed since this was marked paid - review before paying any difference.
+                            </div>
+                        }
+
+                        <div class="payout-row__pay">
+                            @if (winner.HasSharedDetails)
+                            {
+                                <div class="payout-row__details">
+                                    <div><span class="payout-row__detail-label">Account</span> @winner.AccountName</div>
+                                    <div><span class="payout-row__detail-label">Sort code</span> @winner.SortCode</div>
+                                    <div><span class="payout-row__detail-label">Account no.</span> @winner.AccountNumber</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="payout-row__no-details">No payout details shared - contact this player directly to arrange payment.</p>
+                            }
+
+                            <div class="payout-row__action">
+                                @if (winner.IsPaid)
+                                {
+                                    <span class="payout-paid-badge"><i class="bi bi-check-circle-fill"></i> Paid@(winner.PaidAtUtc is { } d ? $" {d.ToLocalTime():d MMM yyyy}" : "")</span>
+                                }
+                                else if (_payouts.SeasonComplete)
+                                {
+                                    <button class="btn green-button btn-sm" @onclick="() => MarkPaidAsync(winner.UserId)" disabled="@_processingUserIds.Contains(winner.UserId)">
+                                        @(_processingUserIds.Contains(winner.UserId) ? "Saving..." : "Mark as paid")
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="payout-row__pending">Pending season end</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int LeagueId { get; set; }
+
+    private static readonly CultureInfo Uk = new("en-GB");
+    private LeaguePayoutsDto? _payouts;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+    private readonly HashSet<string> _processingUserIds = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            _payouts = await PayoutService.GetLeaguePayoutsAsync(LeagueId);
+        }
+        catch
+        {
+            _errorMessage = "Could not load payouts. Please try again.";
+        }
+
+        _isLoading = false;
+    }
+
+    private async Task MarkPaidAsync(string winnerUserId)
+    {
+        if (!_processingUserIds.Add(winnerUserId))
+            return;
+
+        _errorMessage = null;
+
+        var (success, error) = await PayoutService.MarkPayoutPaidAsync(LeagueId, winnerUserId);
+        if (success)
+            await LoadAsync();
+        else
+            _errorMessage = error;
+
+        _processingUserIds.Remove(winnerUserId);
+    }
+}

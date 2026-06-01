@@ -1,0 +1,171 @@
+@page "/admin/pricing-settings"
+
+@attribute [Authorize(Roles = RoleNames.Administrator)]
+
+@using ThePredictions.Contracts.Admin.PricingSettings
+@using ThePredictions.Contracts.Admin.ServiceFees
+@using ThePredictions.Web.Client.Services.PricingSettings
+@inject IPricingSettingsService PricingSettingsService
+@inject IServiceFeeService ServiceFeeService
+
+<PageTitle>Pricing settings</PageTitle>
+
+<div class="page-container admin-light">
+    <div class="admin-table-container">
+        <h3 class="fw-bold mb-2">Pricing settings</h3>
+        <p class="form-text text-white-50 mb-4">
+            These feed the recommended-price calculator on the season screens. They're only a starting suggestion -
+            you can always override the price on each season. Rounding is fixed at the nearest 50p.
+        </p>
+
+        <ApiError Message="@_errorMessage" />
+        <ApiSuccess Message="@_successMessage" />
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-content-center py-5"><div class="spinner-border" role="status"></div></div>
+        }
+        else
+        {
+            <div class="form-container mb-4">
+                <h5 class="fw-bold mb-3">Calculator</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="buffer" class="form-label">Buffer (%)</label>
+                        <InputNumber id="buffer" class="form-control" @bind-Value="_bufferPercent" />
+                        <div class="form-text">Added on top of costs (e.g. 15 = aim to cover costs +15%).</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="floor" class="form-label">Minimum price floor (£)</label>
+                        <InputNumber id="floor" class="form-control" @bind-Value="_minimumFloor" />
+                        <div class="form-text">The lowest price the calculator will ever suggest.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-container">
+                <h5 class="fw-bold mb-1">Provider fees</h5>
+                <p class="form-text text-white-50 mb-3">
+                    What each provider charges us per transaction. The percentage applies to card payments (Stripe);
+                    flat-rate providers (SMS, email) just use the fixed fee.
+                </p>
+
+                @if (_fees.Count == 0)
+                {
+                    <p class="text-white-50">No provider fees recorded yet.</p>
+                }
+                else
+                {
+                    @foreach (var fee in _fees)
+                    {
+                        <div class="row align-items-end">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">@FriendlyProvider(fee.Provider)</label>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Percentage fee (%)</label>
+                                <InputNumber class="form-control" @bind-Value="fee.PercentInput" />
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fixed fee (£)</label>
+                                <InputNumber class="form-control" @bind-Value="fee.FixedFee" />
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="d-flex justify-content-end mt-3">
+                <button type="button" class="btn green-button" @onclick="SaveAsync" disabled="@_isBusy">
+                    @(_isBusy ? "Saving..." : "Save settings")
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private decimal _bufferPercent;
+    private decimal _minimumFloor;
+    private List<FeeRow> _fees = [];
+
+    private bool _isLoading = true;
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await PricingSettingsService.GetAsync();
+        if (settings is not null)
+        {
+            _bufferPercent = settings.BufferRate * 100;
+            _minimumFloor = settings.MinimumFloor;
+        }
+
+        var fees = await ServiceFeeService.GetAllAsync();
+        _fees = fees.Select(f => new FeeRow
+        {
+            Provider = f.Provider,
+            PercentInput = f.PercentFee * 100,
+            FixedFee = f.FixedFee
+        }).ToList();
+
+        _isLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        var settingsRequest = new UpdatePricingSettingsRequest
+        {
+            BufferRate = _bufferPercent / 100,
+            MinimumFloor = _minimumFloor
+        };
+
+        var (settingsOk, settingsError) = await PricingSettingsService.UpdateAsync(settingsRequest);
+        if (!settingsOk)
+        {
+            _errorMessage = settingsError;
+            _isBusy = false;
+            return;
+        }
+
+        foreach (var fee in _fees)
+        {
+            var (feeOk, feeError) = await ServiceFeeService.UpdateAsync(fee.Provider, new UpdateServiceFeeRequest
+            {
+                PercentFee = fee.PercentInput / 100,
+                FixedFee = fee.FixedFee
+            });
+
+            if (!feeOk)
+            {
+                _errorMessage = feeError;
+                _isBusy = false;
+                return;
+            }
+        }
+
+        _successMessage = "Pricing settings saved.";
+        _isBusy = false;
+    }
+
+    private static string FriendlyProvider(string provider) => provider switch
+    {
+        "Stripe" => "Stripe (card payments)",
+        "Sms" => "SMS",
+        "Email" => "Email",
+        _ => provider
+    };
+
+    private sealed class FeeRow
+    {
+        public string Provider { get; init; } = string.Empty;
+        public decimal PercentInput { get; set; }
+        public decimal FixedFee { get; set; }
+    }
+}

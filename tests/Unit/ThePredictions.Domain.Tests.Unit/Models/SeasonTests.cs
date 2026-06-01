@@ -322,13 +322,15 @@ public class SeasonTests
     }
 
     [Fact]
-    public void Create_ShouldThrow_WhenPassStandardPriceSetButPassPremiumPriceNull()
+    public void Create_ShouldRequirePayment_WhenStandardPriceSetWithoutPremium()
     {
         // Act
-        var act = () => CreateSeasonViaFactory(passStandardPrice: 10m, passPremiumPrice: null);
+        var season = CreateSeasonViaFactory(passStandardPrice: 10m, passPremiumPrice: null);
 
         // Assert
-        act.Should().Throw<ArgumentException>();
+        season.PassStandardPrice.Should().Be(10m);
+        season.PassPremiumPrice.Should().BeNull();
+        season.RequiresPayment.Should().BeTrue();
     }
 
     [Fact]
@@ -534,16 +536,18 @@ public class SeasonTests
     }
 
     [Fact]
-    public void UpdateDetails_ShouldThrowException_WhenPaidWithoutBothPrices()
+    public void UpdateDetails_ShouldAllowStandardOnlyPaidSeason_WhenPremiumNull()
     {
         // Arrange
         var season = CreateSeasonViaFactory();
 
         // Act
-        var act = () => season.UpdateDetails("Test", ValidStart, ValidEnd, true, 38, 1, 10m, null);
+        season.UpdateDetails("Test", ValidStart, ValidEnd, true, 38, 1, 10m, null);
 
         // Assert
-        act.Should().Throw<ArgumentException>();
+        season.PassStandardPrice.Should().Be(10m);
+        season.PassPremiumPrice.Should().BeNull();
+        season.RequiresPayment.Should().BeTrue();
     }
 
     #endregion

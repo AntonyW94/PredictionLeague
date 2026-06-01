@@ -211,4 +211,45 @@ public class CreateSeasonRequestValidatorTests
 
         result.ShouldNotHaveValidationErrorFor(x => x.CompetitionId);
     }
+
+    [Fact]
+    public void Validate_ShouldPass_WhenPassStandardPriceIsNull()
+    {
+        var request = new CreateSeasonRequestBuilder()
+            .WithPassStandardPrice(null)
+            .Build();
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.PassStandardPrice);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    [InlineData(1000)]
+    public void Validate_ShouldPass_WhenPassStandardPriceIsInRange(decimal price)
+    {
+        var request = new CreateSeasonRequestBuilder()
+            .WithPassStandardPrice(price)
+            .Build();
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.PassStandardPrice);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(1001)]
+    public void Validate_ShouldFail_WhenPassStandardPriceIsOutOfRange(decimal price)
+    {
+        var request = new CreateSeasonRequestBuilder()
+            .WithPassStandardPrice(price)
+            .Build();
+
+        var result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.PassStandardPrice);
+    }
 }
