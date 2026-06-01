@@ -13,25 +13,17 @@ public class LoggingErrorBoundary : ErrorBoundary
     [Inject]
     private NavigationManager Navigation { get; set; } = default!;
 
-    [Inject]
-    private SessionState SessionState { get; set; } = default!;
-
     protected override Task OnErrorAsync(Exception exception)
     {
         // A session that ended mid-request shouldn't surface as the generic error
-        // UI - clear the error and send the user to login with a friendly message.
+        // UI. Navigate to login (the message is carried in SessionState and shown
+        // by the login page) and recover so the error UI is cleared. Navigating
+        // first means recovery re-renders the login route rather than the page
+        // that just failed.
         if (exception is SessionExpiredException)
         {
-            var message = SessionState.LogoutMessage;
-            SessionState.LogoutMessage = null;
-
+            Navigation.NavigateTo("/authentication/login");
             Recover();
-
-            var loginUrl = "/authentication/login";
-            if (!string.IsNullOrEmpty(message))
-                loginUrl += $"?error={Uri.EscapeDataString(message)}";
-
-            Navigation.NavigateTo(loginUrl);
             return Task.CompletedTask;
         }
 

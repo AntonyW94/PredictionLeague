@@ -1,18 +1,11 @@
 @inject NavigationManager NavigationManager
-@inject ThePredictions.Web.Client.Authentication.SessionState SessionState
 
 @code {
     protected override void OnInitialized()
     {
-        // If the session ended (rather than the user simply not being logged in),
-        // surface the one-shot message on the login page.
-        var message = SessionState.LogoutMessage;
-        SessionState.LogoutMessage = null;
-
-        var loginUrl = "/authentication/login";
-        if (!string.IsNullOrEmpty(message))
-            loginUrl += $"?error={Uri.EscapeDataString(message)}";
-
-        NavigationManager.NavigateTo(loginUrl);
+        // Plain redirect for the "not logged in" case. When a session has *expired*,
+        // the logout message is carried in SessionState and shown by the login page,
+        // so nothing extra is needed here.
+        NavigationManager.NavigateTo("/authentication/login");
     }
 }

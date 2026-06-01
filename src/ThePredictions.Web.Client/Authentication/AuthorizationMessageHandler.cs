@@ -8,9 +8,10 @@ namespace ThePredictions.Web.Client.Authentication;
 /// <summary>
 /// Attaches a fresh access token to every authenticated API call - refreshing it
 /// first if it is missing or about to expire - so the session is extended on
-/// activity rather than only on a hard reload. On a 401 it makes a single refresh
-/// + retry attempt for safe (bodyless) requests; if the user genuinely can no
-/// longer be authenticated it records a logout message and throws
+/// activity rather than only on a hard reload. On a 401 it tries once to recover
+/// the session with a forced refresh: if that succeeds it replays safe (bodyless)
+/// requests and otherwise returns the 401 without disturbing the session; only if
+/// the refresh itself fails does it record a logout message and throw
 /// <see cref="SessionExpiredException"/> for the error boundary to handle.
 /// </summary>
 public class AuthorizationMessageHandler(
@@ -51,27 +52,29 @@ public class AuthorizationMessageHandler(
         if (response.StatusCode != HttpStatusCode.Unauthorized)
             return response;
 
-        // The token was rejected (e.g. revoked by a concurrent refresh in another
-        // tab). For a request with no body we can safely re-issue it once with a
-        // freshly forced token.
-        if (request.Content is null)
+        // The token was rejected (e.g. expired between sending and arriving, or
+        // revoked). Try once to recover the session with a forced refresh.
+        var refreshedToken = await provider.GetValidAccessTokenAsync(forceRefresh: true);
+
+        if (!string.IsNullOrEmpty(refreshedToken))
         {
-            var refreshedToken = await provider.GetValidAccessTokenAsync(forceRefresh: true);
-            if (!string.IsNullOrEmpty(refreshedToken))
+            // The session is still valid. A 401 means the server rejected the
+            // request before running it, so a bodyless request is safe to replay
+            // with the new token. A request with a body can't be safely re-sent,
+            // so return the 401 and let the caller surface the failure - the
+            // session itself is intact, so we must not log the user out.
+            if (request.Content is null)
             {
                 response.Dispose();
-
-                using var retry = new HttpRequestMessage(request.Method, request.RequestUri);
-                retry.Version = request.Version;
-                retry.Headers.Authorization = new AuthenticationHeaderValue("bearer", refreshedToken);
-
-                response = await base.SendAsync(retry, cancellationToken);
-                if (response.StatusCode != HttpStatusCode.Unauthorized)
-                    return response;
+                using var retry = CloneRequest(request, refreshedToken);
+                return await base.SendAsync(retry, cancellationToken);
             }
+
+            return response;
         }
 
-        logger.LogInformation("Request to {Path} returned 401 and could not be re-authenticated. Logging user out.", request.RequestUri);
+        // The refresh failed, so the session is genuinely over.
+        logger.LogInformation("Request to {Path} returned 401 and the session could not be refreshed. Logging user out.", request.RequestUri);
         response.Dispose();
 
         sessionState.LogoutMessage = LogoutMessage;
@@ -83,5 +86,19 @@ public class AuthorizationMessageHandler(
     {
         var path = request.RequestUri?.AbsolutePath ?? string.Empty;
         return AnonymousPaths.Any(anonymousPath => path.Contains(anonymousPath, StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Builds a fresh copy of a bodyless request (the original cannot be re-sent
+    // once it has been dispatched), preserving its headers and swapping in the
+    // new bearer token. Credentials are re-applied downstream by CookieHandler.
+    private static HttpRequestMessage CloneRequest(HttpRequestMessage request, string accessToken)
+    {
+        var clone = new HttpRequestMessage(request.Method, request.RequestUri) { Version = request.Version };
+
+        foreach (var header in request.Headers)
+            clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
+
+        clone.Headers.Authorization = new AuthenticationHeaderValue("bearer", accessToken);
+        return clone;
     }
 }
