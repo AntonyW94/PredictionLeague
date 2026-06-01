@@ -92,23 +92,26 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
         }
     }
 
-    public async Task<(bool Success, string? ErrorMessage)> JoinPrivateLeagueAsync(string entryCode)
+    public async Task<(bool Success, string? ErrorMessage, int? LeagueId)> JoinPrivateLeagueAsync(string entryCode)
     {
         var request = new JoinLeagueRequest { EntryCode = entryCode };
 
         var response = await httpClient.PostAsJsonAsync("api/leagues/join", request);
         if (response.IsSuccessStatusCode)
-            return (true, null);
+        {
+            var result = await response.Content.ReadFromJsonAsync<JoinLeagueResultDto>();
+            return (true, null, result?.LeagueId);
+        }
 
         try
         {
             var errorContent = await response.Content.ReadFromJsonAsync<JsonNode>();
             var errorMessage = errorContent?["message"]?.ToString() ?? "An unknown error occurred.";
-            return (false, errorMessage);
+            return (false, errorMessage, null);
         }
         catch
         {
-            return (false, "An unexpected error occurred.");
+            return (false, "An unexpected error occurred.", null);
         }
     }
 

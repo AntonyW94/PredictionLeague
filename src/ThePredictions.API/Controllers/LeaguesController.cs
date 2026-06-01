@@ -425,35 +425,35 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
     [SwaggerOperation(
         Summary = "Join league with entry code",
         Description = "Submits a request to join a private league using a 6-character entry code. For public leagues, membership is instant. For private leagues, the request is pending until approved by an administrator.")]
-    [SwaggerResponse(204, "Join request submitted successfully")]
+    [SwaggerResponse(200, "Join request submitted successfully", typeof(JoinLeagueResultDto))]
     [SwaggerResponse(400, "Invalid entry code or already a member")]
     [SwaggerResponse(401, "Not authenticated")]
-    public async Task<IActionResult> JoinLeagueAsync(
+    public async Task<ActionResult<JoinLeagueResultDto>> JoinLeagueAsync(
         [FromBody, SwaggerParameter("Entry code for the league", Required = true)] JoinLeagueRequest request,
         CancellationToken cancellationToken)
     {
         var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, null, request.EntryCode);
-        await mediator.Send(command, cancellationToken);
+        var leagueId = await mediator.Send(command, cancellationToken);
 
-        return NoContent();
+        return Ok(new JoinLeagueResultDto(leagueId));
     }
 
     [HttpPost("{leagueId:int}/join")]
     [SwaggerOperation(
         Summary = "Join public league directly",
         Description = "Joins a public league directly without an entry code. Only works for public leagues.")]
-    [SwaggerResponse(204, "Joined league successfully")]
+    [SwaggerResponse(200, "Joined league successfully", typeof(JoinLeagueResultDto))]
     [SwaggerResponse(400, "League is private or already a member")]
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(404, "League not found")]
-    public async Task<IActionResult> JoinPublicLeagueAsync(
+    public async Task<ActionResult<JoinLeagueResultDto>> JoinPublicLeagueAsync(
         [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
         var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, leagueId, null);
-        await mediator.Send(command, cancellationToken);
+        var joinedLeagueId = await mediator.Send(command, cancellationToken);
 
-        return NoContent();
+        return Ok(new JoinLeagueResultDto(joinedLeagueId));
     }
 
     [HttpPost("{leagueId:int}/members/{memberId}/status")]

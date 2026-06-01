@@ -9,4 +9,4 @@ public record JoinLeagueCommand(
     string JoiningUserLastName,
     int? LeagueId,
     string? EntryCode
-) : IRequest, ITransactionalRequest;
+) : IRequest<int>, ITransactionalRequest;
