@@ -6,8 +6,8 @@ namespace ThePredictions.Contracts.Leagues;
 /// </summary>
 public interface IHasBankDetails
 {
-    string? BankAccountName { get; }
-    string? BankSortCode { get; }
-    string? BankAccountNumber { get; }
-    string? PaymentReferenceTemplate { get; }
+    string? BankAccountName { get; set; }
+    string? BankSortCode { get; set; }
+    string? BankAccountNumber { get; set; }
+    string? PaymentReferenceTemplate { get; set; }
 }

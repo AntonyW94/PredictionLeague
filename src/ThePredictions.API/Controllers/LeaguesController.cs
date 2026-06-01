@@ -406,6 +406,21 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         return Ok(paymentInfo);
     }
 
+    [HttpGet("{leagueId:int}/bank-details")]
+    [SwaggerOperation(
+        Summary = "Get decrypted bank details for editing",
+        Description = "Returns the league's decrypted bank details to pre-fill the edit form. League administrator only.")]
+    [SwaggerResponse(200, "Bank details returned", typeof(LeagueBankDetailsDto))]
+    [SwaggerResponse(401, "Not authenticated, or not the league administrator")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<LeagueBankDetailsDto>> GetLeagueBankDetailsAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var bankDetails = await mediator.Send(new GetLeagueBankDetailsQuery(leagueId, CurrentUserId), cancellationToken);
+        return Ok(bankDetails);
+    }
+
     [HttpPost("join")]
     [SwaggerOperation(
         Summary = "Join league with entry code",
