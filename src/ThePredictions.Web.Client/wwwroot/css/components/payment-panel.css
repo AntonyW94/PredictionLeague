@@ -1,0 +1,98 @@
+/* League entry-fee payment panel - peer-to-peer settlement details shown to members of a paid league. */
+
+.payment-panel {
+    background: var(--white);
+    border: 1px solid var(--green-600);
+    border-radius: var(--bs-border-radius);
+    padding: var(--space-4) var(--space-5);
+    margin-bottom: var(--space-4);
+}
+
+.payment-panel__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-weight: 800;
+    color: var(--text-primary, var(--purple-800));
+    margin-bottom: var(--space-2);
+}
+
+.payment-panel__title .bi {
+    color: var(--green-600);
+}
+
+.payment-panel__lead {
+    color: var(--text-primary, var(--purple-800));
+    margin-bottom: var(--space-3);
+}
+
+.payment-panel__details {
+    margin: 0 0 var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.payment-panel__row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: var(--grey-100);
+    border-radius: var(--bs-border-radius);
+}
+
+.payment-panel__row dt {
+    color: var(--grey-500);
+    font-weight: 600;
+    margin: 0;
+}
+
+.payment-panel__row dd {
+    margin: 0;
+    font-weight: 700;
+    color: var(--text-primary, var(--purple-800));
+    font-variant-numeric: tabular-nums;
+}
+
+.payment-panel__row--reference dd {
+    color: var(--green-600);
+}
+
+.payment-panel__note {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.85rem;
+    color: var(--grey-500);
+    margin: 0;
+}
+
+/* Dark mode */
+.theme-dark .payment-panel {
+    background: var(--purple-800);
+    border-color: var(--green-600);
+    box-shadow: 0 0 40px var(--purple-200-alpha-15);
+}
+
+.theme-dark .payment-panel__title,
+.theme-dark .payment-panel__lead {
+    color: var(--white);
+}
+
+.theme-dark .payment-panel__row {
+    background: var(--white-alpha-08);
+}
+
+.theme-dark .payment-panel__row dt,
+.theme-dark .payment-panel__note {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .payment-panel__row dd {
+    color: var(--white);
+}
+
+.theme-dark .payment-panel__row--reference dd {
+    color: var(--green-300);
+}

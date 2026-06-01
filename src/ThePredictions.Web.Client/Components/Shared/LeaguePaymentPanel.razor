@@ -1,0 +1,64 @@
+@using System.Globalization
+@using ThePredictions.Contracts.Leagues
+@using ThePredictions.Web.Client.Services.Leagues
+@inject ILeagueService LeagueService
+
+@if (_loaded && _info is { Amount: > 0 })
+{
+    <div class="payment-panel">
+        <h5 class="payment-panel__title"><span class="bi bi-cash-coin"></span> Pay your entry fee</h5>
+
+        @if (_info.HasBankDetails)
+        {
+            <p class="payment-panel__lead">
+                Send <strong>@_info.Amount.ToString("C", Uk)</strong> to the league admin using the details below.
+                They'll approve you once the payment arrives.
+            </p>
+
+            <dl class="payment-panel__details">
+                <div class="payment-panel__row">
+                    <dt>Account name</dt>
+                    <dd>@_info.AccountName</dd>
+                </div>
+                <div class="payment-panel__row">
+                    <dt>Sort code</dt>
+                    <dd>@_info.SortCode</dd>
+                </div>
+                <div class="payment-panel__row">
+                    <dt>Account number</dt>
+                    <dd>@_info.AccountNumber</dd>
+                </div>
+                <div class="payment-panel__row payment-panel__row--reference">
+                    <dt>Reference</dt>
+                    <dd>@_info.Reference</dd>
+                </div>
+            </dl>
+
+            <p class="payment-panel__note">
+                <span class="bi bi-shield-lock"></span>
+                The Predictions never handles this payment - it's arranged directly between you and the league admin.
+            </p>
+        }
+        else
+        {
+            <p class="payment-panel__lead">
+                This league has a <strong>@_info.Amount.ToString("C", Uk)</strong> entry fee. The admin hasn't added bank
+                details here, so arrange payment with them directly.
+            </p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public int LeagueId { get; set; }
+
+    private static readonly CultureInfo Uk = new("en-GB");
+    private LeaguePaymentInfoDto? _info;
+    private bool _loaded;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _info = await LeagueService.GetPaymentInfoAsync(LeagueId);
+        _loaded = true;
+    }
+}
