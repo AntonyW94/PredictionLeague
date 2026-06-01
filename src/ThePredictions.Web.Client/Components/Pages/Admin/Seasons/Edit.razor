@@ -128,6 +128,8 @@
                         </div>
                     </div>
 
+                    <SeasonPricingSection Model="_model" SeasonId="SeasonId" />
+
                     @if (IsTournament)
                     {
                         <div class="tournament-structure-section">
@@ -294,7 +296,8 @@
                 EndDateUtc = seasonDto.EndDateUtc,
                 IsActive = seasonDto.IsActive,
                 NumberOfRounds = seasonDto.NumberOfRounds,
-                CompetitionId = seasonDto.CompetitionId
+                CompetitionId = seasonDto.CompetitionId,
+                PassStandardPrice = seasonDto.PassStandardPrice
             };
             _roundCount = seasonDto.RoundCount;
             _seasonYear = seasonDto.StartDateUtc.Year;

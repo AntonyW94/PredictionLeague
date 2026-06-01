@@ -39,6 +39,7 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
             request.IsActive,
             request.NumberOfRounds,
             request.CompetitionId,
+            request.PassStandardPrice,
             request.TournamentRoundMappings
         );
 
@@ -97,6 +98,24 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
         var query = new HasSeasonPredictionsQuery(seasonId);
         var result = await mediator.Send(query, cancellationToken);
         return Ok(result);
+    }
+
+    [HttpGet("price-recommendation")]
+    [SwaggerOperation(
+        Summary = "Get a recommended Standard price",
+        Description = "Computes an advisory Standard Season Pass price for a season draft from the business-borne running costs, length-weighted apportionment, and the last comparable season's player count. The admin can override it.")]
+    [SwaggerResponse(200, "Recommendation computed", typeof(PriceRecommendationDto))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    public async Task<ActionResult<PriceRecommendationDto>> GetPriceRecommendationAsync(
+        [FromQuery, SwaggerParameter("Competition identifier")] int competitionId,
+        [FromQuery, SwaggerParameter("Number of rounds in the season")] int numberOfRounds,
+        [FromQuery, SwaggerParameter("Season start date (UTC)")] DateTime startDateUtc,
+        [FromQuery, SwaggerParameter("Season being edited, excluded from lookups")] int? seasonId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetSeasonPriceRecommendationQuery(competitionId, numberOfRounds, startDateUtc, seasonId);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{seasonId:int}/tournament-mappings")]
@@ -220,6 +239,7 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
             request.IsActive,
             request.NumberOfRounds,
             request.CompetitionId,
+            request.PassStandardPrice,
             request.TournamentRoundMappings);
 
         await mediator.Send(command, cancellationToken);

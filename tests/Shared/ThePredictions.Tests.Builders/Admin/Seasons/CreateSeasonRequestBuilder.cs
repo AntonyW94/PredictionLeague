@@ -9,6 +9,13 @@ public class CreateSeasonRequestBuilder
     private DateTime _endDateUtc = new(2026, 5, 31, 0, 0, 0, DateTimeKind.Utc);
     private int _numberOfRounds = 38;
     private int _competitionId = 1;
+    private decimal? _passStandardPrice;
+
+    public CreateSeasonRequestBuilder WithPassStandardPrice(decimal? passStandardPrice)
+    {
+        _passStandardPrice = passStandardPrice;
+        return this;
+    }
 
     public CreateSeasonRequestBuilder WithName(string name)
     {
@@ -46,6 +53,7 @@ public class CreateSeasonRequestBuilder
         StartDateUtc = _startDateUtc,
         EndDateUtc = _endDateUtc,
         NumberOfRounds = _numberOfRounds,
-        CompetitionId = _competitionId
+        CompetitionId = _competitionId,
+        PassStandardPrice = _passStandardPrice
     };
 }

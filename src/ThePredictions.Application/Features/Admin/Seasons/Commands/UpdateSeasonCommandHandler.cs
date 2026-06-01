@@ -35,7 +35,7 @@ public class UpdateSeasonCommandHandler(
             request.IsActive,
             request.NumberOfRounds,
             request.CompetitionId,
-            season.PassStandardPrice,
+            request.PassStandardPrice is > 0 ? request.PassStandardPrice : null,
             season.PassPremiumPrice
         );
 

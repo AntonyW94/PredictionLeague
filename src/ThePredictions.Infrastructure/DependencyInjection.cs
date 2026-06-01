@@ -127,5 +127,6 @@ public static class DependencyInjection
         services.AddScoped<ILeagueStatsService, LeagueStatsService>();
         services.AddScoped<ILeagueMembershipService, LeagueMembershipService>();
         services.AddScoped<ISeasonAccessService, SeasonAccessService>();
+        services.AddScoped<ISeasonPriceRecommendationService, SeasonPriceRecommendationService>();
     }
 }

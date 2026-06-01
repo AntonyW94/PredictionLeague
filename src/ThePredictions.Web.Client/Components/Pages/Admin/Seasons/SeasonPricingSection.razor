@@ -1,0 +1,94 @@
+@inject HttpClient Http
+
+@using System.Globalization
+@using ThePredictions.Contracts.Admin.Seasons
+
+<div class="mb-2">
+    <h5 class="fw-bold mb-1">Season Pass pricing</h5>
+    <p class="form-text text-white-50 mb-3">
+        Set a Standard price to make this a paid season. Leave it blank (or £0) for a free season.
+        The Premium (SMS) tier isn't offered yet.
+    </p>
+
+    <div class="row align-items-end">
+        <div class="col-md-4 mb-3">
+            <label for="passStandardPrice" class="form-label">Standard price (£)</label>
+            <InputNumber id="passStandardPrice" class="form-control" @bind-Value="Model.PassStandardPrice" placeholder="Free" />
+            <StyledValidationMessage For="@(() => Model.PassStandardPrice)" />
+        </div>
+        <div class="col-md-4 mb-3">
+            <button type="button" class="btn purple-accent-button w-100" @onclick="GetRecommendationAsync" disabled="@(_isLoading || Model.CompetitionId <= 0 || Model.NumberOfRounds <= 0)">
+                <span class="bi bi-calculator me-1"></span>@(_isLoading ? "Calculating..." : "Suggest a price")
+            </button>
+        </div>
+    </div>
+
+    @if (_recommendation is not null)
+    {
+        @if (_recommendation.SuggestedStandardPrice is { } suggested)
+        {
+            <div class="message-box-solid success mb-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                    <strong>Recommended: @Money(suggested) Standard@(_recommendation.ExpectedPlayers is { } players ? $" (breaks even at ~{players} players)" : "")</strong>
+                    <button type="button" class="btn btn-sm green-button" @onclick="() => Model.PassStandardPrice = suggested">
+                        Use @Money(suggested)
+                    </button>
+                </div>
+                <ul class="mb-0 ps-3 text-sm">
+                    <li>Business-borne running costs: @Money(_recommendation.BusinessBorneAnnualCost) / year</li>
+                    <li>This season's share: @Percent(_recommendation.Weight) (@_recommendation.SeasonRounds of @_recommendation.TotalPaidRoundsInHorizon paid rounds) = @Money(_recommendation.ApportionedCost)</li>
+                    <li>Plus @Percent(_recommendation.BufferRate) buffer = @Money(_recommendation.TargetWithBuffer) to recover</li>
+                    <li>Across ~@_recommendation.ExpectedPlayers players, grossed up for card fees@(_recommendation.FloorApplied ? ", lifted to the minimum floor" : "")</li>
+                </ul>
+            </div>
+        }
+        else
+        {
+            <div class="message-box-solid warning mb-3">
+                @_recommendation.UnavailableReason
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private static readonly CultureInfo Uk = new("en-GB");
+
+    [Parameter, EditorRequired]
+    public BaseSeasonRequest Model { get; set; } = default!;
+
+    /// <summary>The season being edited, excluded from the cost-horizon and comparable lookups; null when creating.</summary>
+    [Parameter]
+    public int? SeasonId { get; set; }
+
+    private PriceRecommendationDto? _recommendation;
+    private bool _isLoading;
+
+    private async Task GetRecommendationAsync()
+    {
+        _isLoading = true;
+        _recommendation = null;
+
+        try
+        {
+            var url = $"api/admin/seasons/price-recommendation?competitionId={Model.CompetitionId}" +
+                      $"&numberOfRounds={Model.NumberOfRounds}" +
+                      $"&startDateUtc={Uri.EscapeDataString(Model.StartDateUtc.ToString("o", CultureInfo.InvariantCulture))}" +
+                      (SeasonId.HasValue ? $"&seasonId={SeasonId.Value}" : "");
+
+            _recommendation = await Http.GetFromJsonAsync<PriceRecommendationDto>(url);
+        }
+        catch
+        {
+            _recommendation = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string Money(decimal value) => value.ToString("C2", Uk);
+
+    private static string Percent(decimal fraction) => (fraction * 100).ToString("0.#", Uk) + "%";
+}
