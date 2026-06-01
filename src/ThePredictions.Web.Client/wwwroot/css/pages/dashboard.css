@@ -613,7 +613,7 @@
 .archive-toggle-link:active {
     background: transparent;
     border: none;
-    color: var(--white-alpha-70);
+    color: var(--purple-700);
     font-size: 0.875rem;
     font-weight: 500;
     padding: var(--space-1) var(--space-3);
@@ -625,6 +625,17 @@
 
     .archive-toggle-link:hover,
     .archive-toggle-link:focus {
-        color: var(--white);
+        color: var(--purple-900);
         outline: none;
+    }
+
+/* Dark mode overrides */
+.theme-dark .archive-toggle-link,
+.theme-dark .archive-toggle-link:active {
+    color: var(--white-alpha-70);
+}
+
+    .theme-dark .archive-toggle-link:hover,
+    .theme-dark .archive-toggle-link:focus {
+        color: var(--white);
     }
