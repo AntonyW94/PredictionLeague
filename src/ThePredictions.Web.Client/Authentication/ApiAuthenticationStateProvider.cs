@@ -54,7 +54,13 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
         }
 
         logger.LogInformation("Could not validate or refresh token. User is not authenticated.");
-        await MarkUserAsLoggedOutAsync();
+
+        // Clean up the stale token directly rather than calling
+        // MarkUserAsLoggedOutAsync: we're already inside the auth-state
+        // computation, and notifying here would re-enter GetAuthenticationStateAsync
+        // and spin in a loop (page flicker + repeated refresh calls).
+        await localStorage.RemoveItemAsync(AccessTokenKey);
+        httpClient.DefaultRequestHeaders.Authorization = null;
         return Anonymous();
     }
 
