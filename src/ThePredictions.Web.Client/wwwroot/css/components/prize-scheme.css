@@ -1,22 +1,56 @@
-/* Prize scheme editor, breakdown preview and prospective preview. */
+/* Prize scheme editor, breakdown preview and prospective preview.
+   Light-first: panels match the form card (light surface, dark text). The
+   .theme-dark ancestor (added on the form container in dark mode) flips them. */
 
+/* ---- Section heading / divider ---- */
 .prize-section-divider {
     border: 0;
-    border-top: 1px solid var(--purple-700);
-    margin: var(--spacing-6) 0 var(--spacing-4);
+    border-top: 1px solid var(--grey-200);
+    margin: var(--space-8) 0 var(--space-5);
+}
+
+.theme-dark .prize-section-divider {
+    border-top-color: var(--white-alpha-15);
 }
 
 .prize-section-heading {
-    color: var(--text-primary);
+    margin: 0 0 var(--space-3);
     font-weight: 700;
-    margin-bottom: var(--spacing-2);
 }
 
+.prize-section-intro {
+    margin-bottom: var(--space-4);
+}
+
+/* ---- Shared panel surface (light card, dark-mode adaptive) ---- */
+.prize-category-option,
+.boost-option,
+.prize-breakdown-pot,
+.prize-category,
+.prize-preview-stat,
+.prize-attribution {
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 1px 2px var(--black-alpha-15);
+}
+
+.theme-dark .prize-category-option,
+.theme-dark .boost-option,
+.theme-dark .prize-breakdown-pot,
+.theme-dark .prize-category,
+.theme-dark .prize-preview-stat {
+    background: var(--purple-900);
+    border-color: var(--white-alpha-15);
+    box-shadow: none;
+}
+
+/* ---- Category / boost toggle rows ---- */
 .prize-category-options,
 .boost-options {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-2);
+    gap: var(--space-3);
 }
 
 .prize-category-option,
@@ -25,45 +59,69 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--spacing-2);
-    padding: var(--spacing-3);
-    border: 1px solid var(--purple-700);
-    border-radius: var(--radius-md);
-    background: var(--purple-800);
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
 }
 
 .prize-category-option.is-enabled,
 .boost-option.is-enabled {
-    border-color: var(--blue-500);
+    border-color: var(--green-600);
+    border-width: 2px;
 }
 
 .prize-toggle {
     display: flex;
     align-items: center;
-    gap: var(--spacing-2);
+    gap: var(--space-2);
     margin: 0;
     cursor: pointer;
-    color: var(--text-primary);
+    font-weight: 600;
+    color: var(--purple-1000);
 }
 
+.theme-dark .prize-toggle {
+    color: var(--white);
+}
+
+.prize-toggle input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex: none;
+    accent-color: var(--green-600);
+    cursor: pointer;
+}
+
+/* ---- Per-entry allocation / uses inputs ---- */
 .prize-allocation,
-.boost-uses,
-.prize-preview-controls {
+.boost-uses {
     display: flex;
     align-items: center;
-    gap: var(--spacing-2);
-    color: var(--text-secondary);
+    gap: var(--space-2);
+    color: var(--grey-500);
+    font-size: 0.85rem;
+}
+
+.theme-dark .prize-allocation,
+.theme-dark .boost-uses {
+    color: var(--white-alpha-70);
 }
 
 .prize-allocation-input,
 .boost-uses-input,
 .prize-preview-count {
-    width: 5rem;
+    width: 4.5rem;
+    flex: none;
+    text-align: center;
+}
+
+.prize-allocation-prefix {
+    font-weight: 600;
 }
 
 .prize-allocation-summary {
-    margin-top: var(--spacing-2);
+    margin-top: var(--space-3);
     font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .prize-allocation-summary.is-balanced {
@@ -71,16 +129,37 @@
 }
 
 .prize-allocation-summary.is-unbalanced {
-    color: var(--amber-500, var(--text-secondary));
+    color: var(--red);
 }
 
 .boost-description {
-    width: 100%;
+    flex-basis: 100%;
     font-size: 0.85rem;
-    color: var(--text-secondary);
+    color: var(--grey-500);
 }
 
-/* SVG boost badge (replaces the PNGs) */
+.theme-dark .boost-description {
+    color: var(--white-alpha-70);
+}
+
+/* ---- Live preview controls ---- */
+.prize-preview-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.prize-preview-note {
+    font-size: 0.85rem;
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-preview-note {
+    color: var(--white-alpha-70);
+}
+
+/* ---- SVG boost badge (replaces the PNGs) ---- */
 .boost-icon {
     display: inline-block;
     line-height: 0;
@@ -97,7 +176,7 @@
     stroke: var(--white);
     stroke-width: 4;
     stroke-linejoin: round;
-    filter: drop-shadow(0 2px 3px var(--black-alpha-35, rgba(0, 0, 0, 0.35)));
+    filter: drop-shadow(0 2px 3px var(--black-alpha-35));
     transition: stroke 0.15s ease;
 }
 
@@ -121,62 +200,75 @@
     stroke-linejoin: round;
 }
 
-/* Selected: bright cyan neon glow + border */
 .boost-icon--selected .boost-icon-hex {
-    stroke: var(--blue-300, #67e8f9);
+    stroke: var(--blue-500);
 }
 
 .boost-icon--selected svg {
-    filter: drop-shadow(0 0 3px var(--blue-400, #22d3ee)) drop-shadow(0 0 7px var(--blue-500, #06b6d4));
+    filter: drop-shadow(0 0 3px var(--blue-500)) drop-shadow(0 0 7px var(--blue-700));
 }
 
-/* Disabled: desaturated and dimmed */
 .boost-icon--disabled svg {
     filter: grayscale(1);
-    opacity: 0.45;
+    opacity: 0.5;
 }
 
-/* Breakdown preview */
+/* ---- Breakdown preview ---- */
 .prize-breakdown {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-3);
+    gap: var(--space-3);
 }
 
 .prize-breakdown-pot {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    padding: var(--spacing-3);
-    border-radius: var(--radius-md);
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--purple-100);
+    border-color: var(--purple-200-alpha-15);
+}
+
+.theme-dark .prize-breakdown-pot {
     background: var(--purple-800);
-    border: 1px solid var(--purple-700);
 }
 
 .prize-breakdown-pot-label {
-    color: var(--text-secondary);
+    color: var(--grey-500);
+    font-weight: 600;
+}
+
+.theme-dark .prize-breakdown-pot-label {
+    color: var(--white-alpha-70);
 }
 
 .prize-breakdown-pot-value {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--purple-800);
+}
+
+.theme-dark .prize-breakdown-pot-value {
+    color: var(--white);
 }
 
 .prize-category {
-    padding: var(--spacing-3);
-    border-radius: var(--radius-md);
-    background: var(--purple-800);
-    border: 1px solid var(--purple-700);
+    padding: var(--space-3) var(--space-4);
 }
 
 .prize-category-header {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: var(--spacing-2);
-    font-weight: 600;
-    color: var(--text-primary);
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+    font-weight: 700;
+    color: var(--purple-900);
+}
+
+.theme-dark .prize-category-header {
+    color: var(--white);
 }
 
 .prize-slot-list {
@@ -185,32 +277,43 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-1);
+    gap: var(--space-1);
 }
 
 .prize-slot {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    color: var(--text-secondary);
+    gap: var(--space-3);
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-slot {
+    color: var(--white-alpha-70);
 }
 
 .prize-slot-amount {
     font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--purple-900);
+}
+
+.theme-dark .prize-slot-amount {
+    color: var(--white);
 }
 
 .prize-delta {
-    margin-left: var(--spacing-2);
+    margin-left: var(--space-2);
     color: var(--green-600);
-    font-weight: 600;
+    font-weight: 700;
 }
 
-/* Prospective preview headline */
+/* ---- Prospective preview headline ---- */
 .prize-preview-stats {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--spacing-2);
-    margin-bottom: var(--spacing-4);
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
 }
 
 @media (min-width: 576px) {
@@ -220,29 +323,38 @@
 }
 
 .prize-preview-stat {
-    padding: var(--spacing-3);
-    border-radius: var(--radius-md);
-    background: var(--purple-800);
-    border: 1px solid var(--purple-700);
+    padding: var(--space-3) var(--space-4);
 }
 
 .prize-preview-stat-label {
     display: block;
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-preview-stat-label {
+    color: var(--white-alpha-70);
 }
 
 .prize-preview-stat-value {
     font-size: 1.2rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--purple-900);
+}
+
+.theme-dark .prize-preview-stat-value {
+    color: var(--white);
 }
 
 .prize-attribution {
-    margin-top: var(--spacing-3);
-    padding: var(--spacing-3);
-    border-radius: var(--radius-md);
-    background: var(--green-900, var(--purple-800));
-    border: 1px solid var(--green-600);
-    color: var(--text-primary);
+    margin-top: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--green-600-alpha-15);
+    border-color: var(--green-600);
+    color: var(--purple-1000);
+    font-weight: 600;
+}
+
+.theme-dark .prize-attribution {
+    color: var(--white);
 }

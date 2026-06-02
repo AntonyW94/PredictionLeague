@@ -65,17 +65,18 @@
         </div>
     </div>
 
-    @if (!Disabled)
-    {
-        <div class="prize-preview-controls mt-3">
-            <label class="form-label">Preview at</label>
-            <input type="number" min="1" step="1" class="form-control prize-preview-count"
-                   value="@_previewEntrants" @onchange="e => SetPreviewEntrants(e.Value?.ToString())" />
-            <span>entrants</span>
+    <div class="prize-preview mt-4">
+        <div class="prize-preview-controls mb-3">
+            <h5 class="prize-section-heading mb-0">Projected prizes</h5>
+            @if (!Disabled)
+            {
+                <span class="prize-preview-note">if</span>
+                <input type="number" min="1" step="1" class="form-control prize-preview-count"
+                       value="@_previewEntrants" @onchange="e => SetPreviewEntrants(e.Value?.ToString())" />
+                <span class="prize-preview-note">players join</span>
+            }
         </div>
-    }
 
-    <div class="prize-preview mt-3">
         @if (_previewError is not null)
         {
             <div class="message-box-solid warning">@_previewError</div>
@@ -98,10 +99,15 @@
     [Parameter] public decimal? PrizeFundOverride { get; set; }
     [Parameter] public EventCallback<decimal?> PrizeFundOverrideChanged { get; set; }
 
+    /// <summary>Approved members the league already has (0 at creation); seeds the projection count.</summary>
+    [Parameter] public int CurrentEntrants { get; set; }
+
+    private const int DefaultProjection = 20;
+
     private readonly List<CategoryOption> _options = new();
     private PrizeBreakdownDto? _preview;
     private string? _previewError;
-    private int _previewEntrants = 20;
+    private int _previewEntrants = DefaultProjection;
 
     private int StakePounds => (int)decimal.Truncate(Price);
     private int AdminTopUpPounds => (int)decimal.Truncate(PrizeFundOverride ?? 0m);
@@ -110,6 +116,9 @@
 
     protected override void OnInitialized()
     {
+        // Default the projection to the real membership once it is meaningful, else a sensible figure.
+        _previewEntrants = CurrentEntrants >= 2 ? CurrentEntrants : DefaultProjection;
+
         BuildOptions();
         SyncToScheme();
     }

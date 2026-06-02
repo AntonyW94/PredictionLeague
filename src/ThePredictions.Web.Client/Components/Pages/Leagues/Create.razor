@@ -19,6 +19,7 @@
     {
         <BaseFormComponent TModel="CreateLeagueRequest"
                            Model="_model"
+                           ContainerClass="wide"
                            SubmitAction="HandleCreateLeagueAsync"
                            SuccessRedirectUrl="/leagues"
                            BackUrl="/leagues"
@@ -28,6 +29,8 @@
                 <h3 class="text-center fw-bold mb-4">Create New League</h3>
             </Header>
             <ChildContent>
+                    <h5 class="prize-section-heading">League details</h5>
+
                     <div class="mb-3">
                         <label for="season" class="form-label">Season</label>
                         <InputSelect id="season" class="form-control" @bind-Value="_model.SeasonId" @onchange="OnSeasonSelected">
@@ -70,6 +73,9 @@
                         </div>
                     </div>
 
+                    <hr class="prize-section-divider" />
+                    <h5 class="prize-section-heading">Scoring</h5>
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="pointsForExactScore" class="form-label">Points for Exact Score</label>
@@ -86,11 +92,6 @@
                         </div>
                     </div>
 
-                    @if (_model.Price > 0)
-                    {
-                        <LeagueBankDetailsFields Model="_model" />
-                    }
-
                     @if (_model.SeasonId > 0)
                     {
                         <hr class="prize-section-divider" />
@@ -100,7 +101,14 @@
                                            Price="_model.Price"
                                            IsTournament="_isTournament"
                                            @bind-PrizeFundOverride="_model.PrizeFundOverride" />
+                        <hr class="prize-section-divider" />
                         <LeagueBoostSelector Selections="_boostSelections" />
+                    }
+
+                    @if (_model.Price > 0)
+                    {
+                        <hr class="prize-section-divider" />
+                        <LeagueBankDetailsFields Model="_model" />
                     }
             </ChildContent>
         </BaseFormComponent>

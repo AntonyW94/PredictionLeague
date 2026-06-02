@@ -19,6 +19,7 @@
     {
         <BaseFormComponent TModel="UpdateLeagueRequest"
                            Model="_model"
+                           ContainerClass="wide"
                            SubmitAction="HandleUpdateLeagueAsync"
                            SuccessRedirectUrl="/leagues"
                            BackUrl="/leagues"
@@ -35,6 +36,8 @@
                             This league cannot be edited because the entry deadline has passed.
                         </div>
                     }
+
+                    <h5 class="prize-section-heading">League details</h5>
 
                     <div class="mb-3">
                         <label class="form-label">Season</label>
@@ -84,6 +87,9 @@
                         <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
                     </div>
 
+                    <hr class="prize-section-divider" />
+                    <h5 class="prize-section-heading">Scoring</h5>
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="pointsForExactScore" class="form-label">Points for Exact Score</label>
@@ -106,18 +112,13 @@
                         </div>
                     </div>
 
-                    @if (_model.Price > 0 && !_isPastDeadline)
-                    {
-                        <LeagueBankDetailsFields Model="_model" />
-                    }
-
                     @if (_league is not null)
                     {
                         <hr class="prize-section-divider" />
                         @if (_league.HasPrizeScheme)
                         {
                             <h5 class="prize-section-heading">Prizes & boosts</h5>
-                            <p class="form-text text-white-50">Prizes and boosts are locked once set.</p>
+                            <p class="form-text text-white-50 prize-section-intro">Prizes and boosts are locked once set.</p>
                             <PrizeBreakdownPreview Breakdown="_lockedBreakdown" PotLabel="Projected prize pot" />
                         }
                         else if (!_isPastDeadline)
@@ -126,10 +127,18 @@
                                                SeasonId="_league.SeasonId"
                                                Price="_model.Price"
                                                IsTournament="_league.IsTournament"
+                                               CurrentEntrants="_league.MemberCount"
                                                @bind-PrizeFundOverride="_model.PrizeFundOverride" />
+                            <hr class="prize-section-divider" />
                             <LeagueBoostSelector Selections="_boostSelections" />
-                            <p class="form-text text-white-50">Prizes & boosts can only be set once, then they lock.</p>
+                            <p class="form-text text-white-50">Prizes &amp; boosts can only be set once, then they lock.</p>
                         }
+                    }
+
+                    @if (_model.Price > 0 && !_isPastDeadline)
+                    {
+                        <hr class="prize-section-divider" />
+                        <LeagueBankDetailsFields Model="_model" />
                     }
 
             </ChildContent>
