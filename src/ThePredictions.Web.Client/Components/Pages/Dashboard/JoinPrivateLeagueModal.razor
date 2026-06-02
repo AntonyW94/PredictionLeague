@@ -18,7 +18,20 @@
             <div class="modal-body">
                 <ApiError Message="@_errorMessage" />
 
-                @if (_step == Step.Code)
+                @if (_step == Step.Loading)
+                {
+                    @if (_errorMessage is null)
+                    {
+                        <div class="text-center py-4"><span class="spinner-border" role="status"></span></div>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="button" class="btn neutral-button" @onclick="Close">Close</button>
+                        </div>
+                    }
+                }
+                else if (_step == Step.Code)
                 {
                     <EditForm Model="_model" OnValidSubmit="HandleContinueAsync">
                         <FluentValidationValidator />
@@ -115,8 +128,8 @@
                         }
 
                         <div class="d-flex justify-content-between align-items-center mt-4">
-                            <button type="button" class="btn neutral-button" @onclick="BackToCode" disabled="@_isBusy">
-                                <span class="bi bi-arrow-left-circle me-2"></span>Back
+                            <button type="button" class="btn neutral-button" @onclick="BackAsync" disabled="@_isBusy">
+                                <span class="bi bi-arrow-left-circle me-2"></span>@(IsPublic ? "Cancel" : "Back")
                             </button>
                             <button type="button" class="btn green-button" disabled="@(_isBusy || _preview.DeadlinePassed)" @onclick="ConfirmJoinAsync">
                                 @if (_isBusy)
@@ -164,7 +177,7 @@
 </div>
 
 @code {
-    private enum Step { Code, Confirm, Sent }
+    private enum Step { Loading, Code, Confirm, Sent }
 
     private readonly JoinLeagueRequest _model = new()
     {
@@ -178,14 +191,39 @@
     private int? _joinedLeagueId;
     private bool _hasPayoutDetails;
 
+    /// <summary>When set, the modal joins a public league directly (no entry code) and skips the code step.</summary>
+    [Parameter] public int? LeagueId { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
+
+    private bool IsPublic => LeagueId.HasValue;
 
     private string Title => _step switch
     {
         Step.Confirm => "Confirm and join",
         Step.Sent => "Request sent",
+        Step.Loading => "Join league",
         _ => "Join Private League"
     };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsPublic)
+            return;
+
+        // Public league: fetch the preview straight away (by id) and jump to the confirm step.
+        _step = Step.Loading;
+        var (preview, errorMessage) = await LeagueService.GetJoinPreviewByIdAsync(LeagueId!.Value);
+
+        if (preview is not null)
+        {
+            _preview = preview;
+            _step = Step.Confirm;
+        }
+        else
+        {
+            _errorMessage = errorMessage;
+        }
+    }
 
     private async Task HandleContinueAsync()
     {
@@ -207,8 +245,15 @@
         _isBusy = false;
     }
 
-    private void BackToCode()
+    private async Task BackAsync()
     {
+        // Public joins have no code step to go back to, so Back just closes.
+        if (IsPublic)
+        {
+            await Close();
+            return;
+        }
+
         _step = Step.Code;
         _preview = null;
         _errorMessage = null;
@@ -219,13 +264,29 @@
         _isBusy = true;
         _errorMessage = null;
 
-        var (success, errorMessage, leagueId) = await LeagueService.JoinPrivateLeagueAsync(_model.EntryCode);
+        bool success;
+        string? errorMessage;
+
+        if (IsPublic)
+        {
+            (success, errorMessage) = await LeagueService.JoinPublicLeagueAsync(LeagueId!.Value);
+            if (success)
+                _joinedLeagueId = LeagueId;
+        }
+        else
+        {
+            int? joinedLeagueId;
+            (success, errorMessage, joinedLeagueId) = await LeagueService.JoinPrivateLeagueAsync(_model.EntryCode);
+            if (success)
+                _joinedLeagueId = joinedLeagueId;
+        }
 
         if (success)
         {
             await DashboardState.LoadMyLeaguesAsync();
+            await DashboardState.LoadAvailableLeaguesAsync();
+            await DashboardState.LoadPendingRequestsAsync();
 
-            _joinedLeagueId = leagueId;
             _step = Step.Sent;
             _hasPayoutDetails = (await PayoutService.GetMyPayoutDetailsAsync())?.HasDetails ?? false;
         }

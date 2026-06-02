@@ -30,7 +30,7 @@ public class PrizeFreezeMapperTests
             },
             new()
             {
-                Category = PrizeType.Section, Kind = PrizeCategoryKind.Staged, SubPot = 42,
+                Category = PrizeType.Stages, Kind = PrizeCategoryKind.Staged, SubPot = 42,
                 Slots = new List<PrizeSlotDto>
                 {
                     new() { Label = "Group stage - 1st", Amount = 21, Rank = 1, StageName = "Group stage" },
@@ -68,7 +68,7 @@ public class PrizeFreezeMapperTests
     {
         var settings = PrizeFreezeMapper.ToPrizeSettings(Breakdown(), leagueId: 5);
 
-        var section = settings.Where(s => s.PrizeType == PrizeType.Section).ToList();
+        var section = settings.Where(s => s.PrizeType == PrizeType.Stages).ToList();
         section.Should().HaveCount(2);
         section.Should().Contain(s => s.Stage == "Group stage");
         section.Should().Contain(s => s.Stage == "Knockout stage");

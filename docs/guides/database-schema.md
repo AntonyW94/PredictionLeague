@@ -490,7 +490,7 @@ and an optional per-league override of the places (rank) table.
 |--------|------|----------|---------|-------------|
 | Id | int | NO | IDENTITY | Primary key |
 | LeaguePrizeSchemeId | int | NO | | FK to LeaguePrizeScheme |
-| Category | nvarchar(20) | NO | | Prize category (Overall, Round, Monthly, MostExactScores, Section) |
+| Category | nvarchar(20) | NO | | Prize category (Overall, Round, Monthly, MostExactScores, Stages) |
 | PerEntryPounds | int | NO | | Whole pounds of each entry allocated to this category |
 | RankTableJson | nvarchar(max) | YES | | Optional per-league places-table override (JSON); null uses the product default |
 

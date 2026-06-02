@@ -22,8 +22,8 @@ public class PrizeCategoryRegistryTests
     [InlineData(PrizeType.Overall, true, true)]
     [InlineData(PrizeType.Monthly, false, true)]
     [InlineData(PrizeType.Monthly, true, false)]
-    [InlineData(PrizeType.Section, true, true)]
-    [InlineData(PrizeType.Section, false, false)]
+    [InlineData(PrizeType.Stages, true, true)]
+    [InlineData(PrizeType.Stages, false, false)]
     public void IsAvailable_ShouldGateByCompetitionType(PrizeType category, bool isTournament, bool expected)
     {
         PrizeCategoryRegistry.IsAvailable(category, isTournament).Should().Be(expected);
@@ -34,7 +34,7 @@ public class PrizeCategoryRegistryTests
     {
         var categories = PrizeCategoryRegistry.AvailableCategories(isTournament: true).Select(d => d.Category).ToList();
 
-        categories.Should().Contain(PrizeType.Section);
+        categories.Should().Contain(PrizeType.Stages);
         categories.Should().NotContain(PrizeType.Monthly);
     }
 
@@ -44,7 +44,7 @@ public class PrizeCategoryRegistryTests
         var categories = PrizeCategoryRegistry.AvailableCategories(isTournament: false).Select(d => d.Category).ToList();
 
         categories.Should().Contain(PrizeType.Monthly);
-        categories.Should().NotContain(PrizeType.Section);
+        categories.Should().NotContain(PrizeType.Stages);
     }
 
     [Fact]

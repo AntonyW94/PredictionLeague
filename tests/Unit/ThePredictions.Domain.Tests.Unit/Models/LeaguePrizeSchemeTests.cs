@@ -94,7 +94,7 @@ public class LeaguePrizeSchemeTests
         var entries = new[]
         {
             LeaguePrizeSchemeEntry.Create(PrizeType.Overall, 8),
-            LeaguePrizeSchemeEntry.Create(PrizeType.Section, 5)
+            LeaguePrizeSchemeEntry.Create(PrizeType.Stages, 5)
         };
 
         var act = () => LeaguePrizeScheme.Create(13, entries, "admin-user", isTournament: false, _dateTimeProvider);
@@ -120,7 +120,7 @@ public class LeaguePrizeSchemeTests
         var entries = new[]
         {
             LeaguePrizeSchemeEntry.Create(PrizeType.Overall, 8),
-            LeaguePrizeSchemeEntry.Create(PrizeType.Section, 5)
+            LeaguePrizeSchemeEntry.Create(PrizeType.Stages, 5)
         };
 
         var scheme = LeaguePrizeScheme.Create(13, entries, "admin-user", isTournament: true, _dateTimeProvider);

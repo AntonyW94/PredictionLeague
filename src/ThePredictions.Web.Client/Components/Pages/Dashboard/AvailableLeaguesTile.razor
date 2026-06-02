@@ -68,8 +68,7 @@
                                             </div>
 
                                             <button class="btn purple-accent-button w-100 mt-3"
-                                                    @onclick="() => HandleJoinLeagueAsync(league.Id)"
-                                                    disabled="@_isBusy">
+                                                    @onclick="() => ShowJoinModalAsync(league.Id)">
                                                 Join
                                             </button>
                                         </div>
@@ -111,14 +110,14 @@
     @if (DashboardState.HasAvailablePrivateLeagues)
     {
         <div class="mt-auto pt-4">
-            <button class="btn blue-light-button w-100" @onclick="ShowJoinPrivateLeagueModal">Join Private League with Code</button>
+            <button class="btn blue-light-button w-100" @onclick="() => ShowJoinModalAsync(null)">Join Private League with Code</button>
         </div>
     }
 </div>
 
-@if (_showPrivateLeagueModal)
+@if (_showJoinModal)
 {
-    <JoinPrivateLeagueModal OnClose="HideJoinPrivateLeagueModal" />
+    <JoinPrivateLeagueModal @key="_joinModalLeagueId" LeagueId="_joinModalLeagueId" OnClose="HideJoinModalAsync" />
 }
 
 @code {
@@ -126,8 +125,8 @@
     private double _touchStartX;
     private string _trackStyle = "transform: translateX(0%);";
     private bool _showTwoItems;
-    private bool _isBusy;
-    private bool _showPrivateLeagueModal;
+    private bool _showJoinModal;
+    private int? _joinModalLeagueId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -218,26 +217,19 @@
         return _currentIndex >= DashboardState.AvailableLeagues.Count - 1;
     }
 
-    private async Task ShowJoinPrivateLeagueModal()
+    private async Task ShowJoinModalAsync(int? leagueId)
     {
-        _showPrivateLeagueModal = true;
+        _joinModalLeagueId = leagueId;
+        _showJoinModal = true;
         await Task.Delay(50);
         await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "joinPrivateLeagueModal");
     }
 
-    private async Task HideJoinPrivateLeagueModal()
+    private async Task HideJoinModalAsync()
     {
         await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "joinPrivateLeagueModal");
-        _showPrivateLeagueModal = false;
-    }
-
-    private async Task HandleJoinLeagueAsync(int leagueId)
-    {
-        _isBusy = true;
-
-        await DashboardState.JoinPublicLeagueAsync(leagueId);
-
-        _isBusy = false;
+        _showJoinModal = false;
+        _joinModalLeagueId = null;
     }
 
     public ValueTask DisposeAsync()

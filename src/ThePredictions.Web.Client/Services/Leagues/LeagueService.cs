@@ -93,6 +93,22 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
         }
     }
 
+    public async Task<(PrizePreviewDto? Preview, string? ErrorMessage)> GetJoinPreviewByIdAsync(int leagueId)
+    {
+        try
+        {
+            var response = await httpClient.GetAsync($"api/leagues/{leagueId}/prize-preview");
+            if (response.IsSuccessStatusCode)
+                return (await response.Content.ReadFromJsonAsync<PrizePreviewDto>(), null);
+
+            return (null, "We couldn't load this league. Please try again.");
+        }
+        catch (HttpRequestException)
+        {
+            return (null, "We couldn't reach the server. Please try again.");
+        }
+    }
+
     public async Task<(PrizePreviewDto? Preview, string? ErrorMessage)> GetJoinPreviewAsync(string entryCode)
     {
         try

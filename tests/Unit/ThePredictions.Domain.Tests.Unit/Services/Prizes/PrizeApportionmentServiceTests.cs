@@ -30,7 +30,7 @@ public class PrizeApportionmentServiceTests
         new() { Category = PrizeType.MostExactScores, Kind = PrizeCategoryKind.EndOfSeason, PerEntryPounds = perEntry };
 
     private static PrizeCategoryAllocation Section(int perEntry, RankTable? table = null) =>
-        new() { Category = PrizeType.Section, Kind = PrizeCategoryKind.Staged, PerEntryPounds = perEntry, RankTable = table ?? DefaultTable() };
+        new() { Category = PrizeType.Stages, Kind = PrizeCategoryKind.Staged, PerEntryPounds = perEntry, RankTable = table ?? DefaultTable() };
 
     private static int TotalAllocated(PrizeBreakdown breakdown) => breakdown.Categories.Sum(c => c.SubPotPounds);
 
@@ -111,7 +111,7 @@ public class PrizeApportionmentServiceTests
         breakdown.Categories.Single(c => c.Category == PrizeType.Overall).SubPotPounds.Should().Be(165);
 
         // Each section stage £30 / £15 / £10 (the per-stage odd £1s spilled to Most Exact Scores).
-        var section = breakdown.Categories.Single(c => c.Category == PrizeType.Section);
+        var section = breakdown.Categories.Single(c => c.Category == PrizeType.Stages);
         section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 1 && s.Amount == 30m);
         section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 2 && s.Amount == 15m);
         section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 3 && s.Amount == 10m);
@@ -326,7 +326,7 @@ public class PrizeApportionmentServiceTests
         var breakdown = PrizeApportionmentService.Apportion(request);
 
         // Round sub = 30, 7 rounds -> £4/round, remainder £2 -> Section. sectionSub = 2*10 + 2 = 22.
-        breakdown.Categories.Single(c => c.Category == PrizeType.Section).SubPotPounds.Should().Be(22);
+        breakdown.Categories.Single(c => c.Category == PrizeType.Stages).SubPotPounds.Should().Be(22);
         TotalAllocated(breakdown).Should().Be(50);
     }
 
@@ -428,7 +428,7 @@ public class PrizeApportionmentServiceTests
 
         var breakdown = PrizeApportionmentService.Apportion(request);
 
-        var section = breakdown.Categories.Single(c => c.Category == PrizeType.Section);
+        var section = breakdown.Categories.Single(c => c.Category == PrizeType.Stages);
         // sectionSub = 50 -> 25/25; each stage 1st place (£18 natural) > £5 so rounds [70,30] -> [20,5].
         section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 1 && s.Amount == 20m);
         section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 2 && s.Amount == 5m);
@@ -452,7 +452,7 @@ public class PrizeApportionmentServiceTests
         var breakdown = PrizeApportionmentService.Apportion(request);
 
         // sectionSub = 25 -> 13/12; each stage rounds to £10 (single place), the £5 of spill lands on the group stage.
-        var section = breakdown.Categories.Single(c => c.Category == PrizeType.Section);
+        var section = breakdown.Categories.Single(c => c.Category == PrizeType.Stages);
         section.Slots.Single(s => s.StageName == "Group stage").Amount.Should().Be(15m);
         section.Slots.Single(s => s.StageName == "Knockout stage").Amount.Should().Be(10m);
         section.SubPotPounds.Should().Be(25);
@@ -473,7 +473,7 @@ public class PrizeApportionmentServiceTests
 
         // sectionSub = 25 -> 13/12, each stage rounds to £10 leaving £5 of spill; no Exact, so it flows to Overall.
         // overallSub = 25 + 5 = 30.
-        breakdown.Categories.Single(c => c.Category == PrizeType.Section).SubPotPounds.Should().Be(20);
+        breakdown.Categories.Single(c => c.Category == PrizeType.Stages).SubPotPounds.Should().Be(20);
         breakdown.Categories.Single(c => c.Category == PrizeType.Overall).SubPotPounds.Should().Be(30);
         TotalAllocated(breakdown).Should().Be(50);
     }
@@ -488,13 +488,13 @@ public class PrizeApportionmentServiceTests
             NumberOfRounds = 38,
             Categories = new[]
             {
-                new PrizeCategoryAllocation { Category = PrizeType.Section, Kind = PrizeCategoryKind.Staged, PerEntryPounds = 5, RankTable = null }
+                new PrizeCategoryAllocation { Category = PrizeType.Stages, Kind = PrizeCategoryKind.Staged, PerEntryPounds = 5, RankTable = null }
             }
         };
 
         var breakdown = PrizeApportionmentService.Apportion(request);
 
-        var section = breakdown.Categories.Single(c => c.Category == PrizeType.Section);
+        var section = breakdown.Categories.Single(c => c.Category == PrizeType.Stages);
         section.Slots.Should().HaveCount(2);
         section.Slots.Should().OnlyContain(s => s.Rank == 1);
     }

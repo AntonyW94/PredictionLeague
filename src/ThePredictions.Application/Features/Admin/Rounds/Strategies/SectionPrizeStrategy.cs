@@ -22,7 +22,7 @@ public class SectionPrizeStrategy(
     private const string GroupStageName = "Group stage";
     private const string KnockoutStageName = "Knockout stage";
 
-    public PrizeType PrizeType => PrizeType.Section;
+    public PrizeType PrizeType => PrizeType.Stages;
 
     public async Task AwardPrizes(ProcessPrizesCommand command, CancellationToken cancellationToken)
     {
@@ -38,7 +38,7 @@ public class SectionPrizeStrategy(
         if (league == null)
             return;
 
-        var sectionSettings = league.PrizeSettings.Where(p => p.PrizeType == PrizeType.Section).ToList();
+        var sectionSettings = league.PrizeSettings.Where(p => p.PrizeType == PrizeType.Stages).ToList();
         if (sectionSettings.Count == 0)
             return;
 

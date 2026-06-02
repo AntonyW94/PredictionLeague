@@ -58,7 +58,7 @@ public class LeaguePrizeScheme
 
         foreach (var entry in entryList)
         {
-            if (entry.Category == PrizeType.Section && !isTournament)
+            if (entry.Category == PrizeType.Stages && !isTournament)
                 throw new ArgumentException("Section prizes are only available for tournaments.", nameof(entries));
 
             if (entry.Category == PrizeType.Monthly && isTournament)

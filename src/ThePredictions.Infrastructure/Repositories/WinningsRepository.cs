@@ -163,7 +163,7 @@ public class WinningsRepository(IDbConnectionFactory connectionFactory, IDbTrans
             new
             {
                 LeagueId = leagueId,
-                PrizeType = PrizeType.Section
+                PrizeType = PrizeType.Stages
             },
             transaction: Transaction,
             cancellationToken: cancellationToken

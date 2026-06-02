@@ -79,17 +79,17 @@ public static class PrizeApportionmentService
                 spillToExact += recurringRemainder;
             else if (Enabled(PrizeType.Overall))
                 spillToOverall += recurringRemainder;
-            else if (Enabled(PrizeType.Section))
+            else if (Enabled(PrizeType.Stages))
                 spillToSection += recurringRemainder;
             else
                 AddFinalEventBonus(categories, slots, categoryTotal, recurringRemainder);
         }
 
         // Step 2 - Section (Staged): two stages 50/50, each ranked and £5-rounded like Overall.
-        if (Enabled(PrizeType.Section))
+        if (Enabled(PrizeType.Stages))
         {
-            var sectionAllocation = categories.First(c => c.Category == PrizeType.Section);
-            var sectionSub = subPot[PrizeType.Section] + spillToSection;
+            var sectionAllocation = categories.First(c => c.Category == PrizeType.Stages);
+            var sectionSub = subPot[PrizeType.Stages] + spillToSection;
             var percentages = sectionAllocation.RankTable?.PercentagesFor(n) ?? SinglePlace;
             var stagePots = Distribute(sectionSub, new[] { 1, 1 });
             var stageNames = new[] { GroupStageName, KnockoutStageName };
@@ -113,8 +113,8 @@ public static class PrizeApportionmentService
                     AddRemainderToTopRank(sectionSlots, sectionRemainder);
             }
 
-            slots[PrizeType.Section] = sectionSlots;
-            categoryTotal[PrizeType.Section] = sectionSlots.Sum(s => (int)s.Amount);
+            slots[PrizeType.Stages] = sectionSlots;
+            categoryTotal[PrizeType.Stages] = sectionSlots.Sum(s => (int)s.Amount);
         }
 
         // Step 3 - Overall: ranked places, £5-rounded once a place pays more than £5.
@@ -213,7 +213,7 @@ public static class PrizeApportionmentService
     private static IReadOnlyList<PrizeCategoryBreakdown> BuildCategories(IReadOnlyList<PrizeCategoryAllocation> categories, Dictionary<PrizeType, List<PrizeBreakdownSlot>> slots, Dictionary<PrizeType, int> categoryTotal)
     {
         // Stable display order regardless of the order categories were configured in.
-        var displayOrder = new[] { PrizeType.Overall, PrizeType.Section, PrizeType.Round, PrizeType.Monthly, PrizeType.MostExactScores };
+        var displayOrder = new[] { PrizeType.Overall, PrizeType.Stages, PrizeType.Round, PrizeType.Monthly, PrizeType.MostExactScores };
 
         return displayOrder
             .Where(slots.ContainsKey)

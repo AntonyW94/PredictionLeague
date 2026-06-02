@@ -14,7 +14,7 @@ public static class PrizeCategoryRegistry
     private static readonly IReadOnlyList<PrizeCategoryDefinition> Definitions = new[]
     {
         new PrizeCategoryDefinition(PrizeType.Overall, PrizeCategoryKind.EndOfSeason, 3, CategoryAvailability.All, IsRanked: true, "Overall"),
-        new PrizeCategoryDefinition(PrizeType.Section, PrizeCategoryKind.Staged, 2, CategoryAvailability.TournamentsOnly, IsRanked: true, "Stages"),
+        new PrizeCategoryDefinition(PrizeType.Stages, PrizeCategoryKind.Staged, 2, CategoryAvailability.TournamentsOnly, IsRanked: true, "Stages"),
         new PrizeCategoryDefinition(PrizeType.MostExactScores, PrizeCategoryKind.EndOfSeason, 1, CategoryAvailability.All, IsRanked: false, "Most Exact Scores"),
         new PrizeCategoryDefinition(PrizeType.Round, PrizeCategoryKind.Recurring, 1, CategoryAvailability.All, IsRanked: false, "Round"),
         new PrizeCategoryDefinition(PrizeType.Monthly, PrizeCategoryKind.Recurring, 1, CategoryAvailability.SeasonsOnly, IsRanked: false, "Monthly")

@@ -26,6 +26,7 @@ public interface ILeagueService
     Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus newStatus);
 
     Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId);
+    Task<(PrizePreviewDto? Preview, string? ErrorMessage)> GetJoinPreviewByIdAsync(int leagueId);
     Task<(PrizePreviewDto? Preview, string? ErrorMessage)> GetJoinPreviewAsync(string entryCode);
     Task<(bool Success, string? ErrorMessage, int? LeagueId)> JoinPrivateLeagueAsync(string entryCode);
     Task<(bool Success, string? ErrorMessage)> CancelJoinRequestAsync(int leagueId);
