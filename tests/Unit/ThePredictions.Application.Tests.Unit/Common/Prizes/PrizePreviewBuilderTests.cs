@@ -31,17 +31,23 @@ public class PrizePreviewBuilderTests
     };
 
     [Fact]
-    public void Build_ShouldAttributeEachCategorysPerEntryContribution()
+    public void Build_ShouldShowCurrentPrizes_WithTheSettingsSplitAsTheGreenContribution()
     {
+        var current = _evaluator.Evaluate(Request(16));
         var projected = _evaluator.Evaluate(Request(17));
 
-        var (breakdown, attribution) = PrizePreviewBuilder.Build(projected, PerEntry, 13m);
+        var (breakdown, attribution) = PrizePreviewBuilder.Build(current, projected, PerEntry, 13m);
 
+        // Pot reflects the joiner's projected total; category amounts are the current prizes.
         breakdown.Pot.Should().Be(13 * 17);
+        breakdown.Categories.Sum(c => c.SubPot).Should().Be(13 * 16);
+
+        // Every funded category shows its per-entry split, summing to the entry fee.
         breakdown.Categories.Single(c => c.Category == PrizeType.Overall).Delta.Should().Be(8);
         breakdown.Categories.Single(c => c.Category == PrizeType.Round).Delta.Should().Be(3);
         breakdown.Categories.Single(c => c.Category == PrizeType.MostExactScores).Delta.Should().Be(2);
         breakdown.Categories.Sum(c => c.Delta ?? 0).Should().Be(13m);
+
         attribution.Should().ContainSingle();
         attribution[0].Should().StartWith("Your £13 adds");
     }
@@ -49,9 +55,10 @@ public class PrizePreviewBuilderTests
     [Fact]
     public void Build_ShouldOmitPerSlotDeltas()
     {
+        var current = _evaluator.Evaluate(Request(16));
         var projected = _evaluator.Evaluate(Request(17));
 
-        var (breakdown, _) = PrizePreviewBuilder.Build(projected, PerEntry, 13m);
+        var (breakdown, _) = PrizePreviewBuilder.Build(current, projected, PerEntry, 13m);
 
         breakdown.Categories.SelectMany(c => c.Slots).Should().OnlyContain(s => s.Delta == null);
     }
@@ -59,9 +66,10 @@ public class PrizePreviewBuilderTests
     [Fact]
     public void Build_ShouldReturnNoAttribution_WhenNoCategoryFundedByTheEntry()
     {
-        var projected = _evaluator.Evaluate(Request(10));
+        var current = _evaluator.Evaluate(Request(16));
+        var projected = _evaluator.Evaluate(Request(17));
 
-        var (_, attribution) = PrizePreviewBuilder.Build(projected, new Dictionary<PrizeType, int>(), 13m);
+        var (_, attribution) = PrizePreviewBuilder.Build(current, projected, new Dictionary<PrizeType, int>(), 13m);
 
         attribution.Should().BeEmpty();
     }

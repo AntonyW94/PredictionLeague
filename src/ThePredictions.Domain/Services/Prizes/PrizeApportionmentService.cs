@@ -146,7 +146,7 @@ public static class PrizeApportionmentService
             var exactSub = subPot[PrizeType.MostExactScores] + spillToExact;
             var exactSlots = new List<PrizeBreakdownSlot>();
             if (exactSub > 0)
-                exactSlots.Add(new PrizeBreakdownSlot { Label = "Most exact scores", Amount = exactSub, Rank = 1 });
+                exactSlots.Add(new PrizeBreakdownSlot { Label = "Most Exact Scores", Amount = exactSub, Rank = 1 });
 
             slots[PrizeType.MostExactScores] = exactSlots;
             categoryTotal[PrizeType.MostExactScores] = exactSub;

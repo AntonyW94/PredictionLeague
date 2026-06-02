@@ -367,7 +367,7 @@ input.prize-preview-count {
 
 .prize-breakdown-pot {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
     padding: var(--space-4) var(--space-5);
@@ -425,6 +425,12 @@ input.prize-preview-count {
 
 .theme-dark .prize-category-header {
     color: var(--white);
+}
+
+/* A single-prize category (e.g. Most Exact Scores) hides its lone slot row, leaving only the
+   header - drop the trailing margin so it sits vertically centred in the card. */
+.prize-category-header:last-child {
+    margin-bottom: 0;
 }
 
 .prize-slot-list {

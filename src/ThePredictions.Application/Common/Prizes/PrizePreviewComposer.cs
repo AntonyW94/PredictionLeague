@@ -23,16 +23,18 @@ public static class PrizePreviewComposer
 
         if (hasPrizes)
         {
+            var current = evaluator.Evaluate(inputs.ToEvaluationRequest(inputs.EntrantCount));
+
             if (deadlinePassed)
             {
-                // After the deadline the pot is final - show the current breakdown, no joining delta.
-                breakdown = evaluator.Evaluate(inputs.ToEvaluationRequest(inputs.EntrantCount));
+                // After the deadline the pot is final - show the current breakdown, no joining split.
+                breakdown = current;
             }
             else
             {
                 var projected = evaluator.Evaluate(inputs.ToEvaluationRequest(inputs.EntrantCount + 1));
                 var perEntryByCategory = inputs.Categories.ToDictionary(c => c.Category, c => c.PerEntryPounds);
-                (breakdown, attribution) = PrizePreviewBuilder.Build(projected, perEntryByCategory, inputs.EntryCost);
+                (breakdown, attribution) = PrizePreviewBuilder.Build(current, projected, perEntryByCategory, inputs.EntryCost);
                 projectedPot = projected.Pot;
             }
         }

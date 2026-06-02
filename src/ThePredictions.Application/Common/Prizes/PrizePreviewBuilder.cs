@@ -4,20 +4,21 @@ using ThePredictions.Domain.Common.Enumerations;
 namespace ThePredictions.Application.Common.Prizes;
 
 /// <summary>
-/// Annotates the projected (N+1) breakdown for the prospective-member "+£x" view. The per-category
-/// "+£x" is the joiner's own per-entry allocation to that prize fund (what the admin configured the
-/// entry fee to be split into) - so every funded category reflects the entry, and the figures are
-/// stable rather than lumpy. (The headline prizes themselves still move in clean blocks as the pot
-/// rounds and spillover flows, which is a separate display concern.)
+/// Builds the prospective-member "+£x" view. The displayed prizes are the CURRENT breakdown (the
+/// prizes as they stand now), and the per-category "+£x" is the joiner's per-entry allocation to
+/// that prize fund - the split the admin configured in the league settings. That split is the same
+/// for everyone and never lumpy, unlike the actual rounded prize movement of a single join. The pot
+/// figure is the projected (N+1) total, so current prizes + the split reconcile to "pot if you join".
 /// </summary>
 public static class PrizePreviewBuilder
 {
     public static (PrizeBreakdownDto Breakdown, List<string> Attribution) Build(
+        PrizeBreakdownDto current,
         PrizeBreakdownDto projected,
         IReadOnlyDictionary<PrizeType, int> perEntryByCategory,
         decimal entryCost)
     {
-        var annotatedCategories = projected.Categories.Select(category =>
+        var annotatedCategories = current.Categories.Select(category =>
         {
             var contribution = perEntryByCategory.TryGetValue(category.Category, out var perEntry) ? perEntry : 0;
 
@@ -29,8 +30,7 @@ public static class PrizePreviewBuilder
                 SubPot = category.SubPot,
                 Delta = contribution,
                 // Per-slot deltas are intentionally omitted: with block rounding they are lumpy and
-                // do not map cleanly onto a single joiner's entry. The category contribution is the
-                // honest, stable figure.
+                // do not map cleanly onto a single entry. The category split is the stable figure.
                 Slots = category.Slots.Select(slot => new PrizeSlotDto
                 {
                     Label = slot.Label,
@@ -44,8 +44,9 @@ public static class PrizePreviewBuilder
 
         var annotated = new PrizeBreakdownDto
         {
+            // Headline shows the pot the joiner would create; the category amounts above are current.
             Pot = projected.Pot,
-            EntrantCount = projected.EntrantCount,
+            EntrantCount = current.EntrantCount,
             Categories = annotatedCategories
         };
 
@@ -58,7 +59,7 @@ public static class PrizePreviewBuilder
     {
         var contributions = categories
             .Where(c => c.Delta is > 0)
-            .Select(c => $"£{c.Delta:0} to {c.DisplayName.ToLowerInvariant()}")
+            .Select(c => $"£{c.Delta:0} to {c.DisplayName}")
             .ToList();
 
         if (contributions.Count == 0)

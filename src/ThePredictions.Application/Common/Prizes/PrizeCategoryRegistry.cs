@@ -15,7 +15,7 @@ public static class PrizeCategoryRegistry
     {
         new PrizeCategoryDefinition(PrizeType.Overall, PrizeCategoryKind.EndOfSeason, 3, CategoryAvailability.All, IsRanked: true, "Overall"),
         new PrizeCategoryDefinition(PrizeType.Section, PrizeCategoryKind.Staged, 2, CategoryAvailability.TournamentsOnly, IsRanked: true, "Sections"),
-        new PrizeCategoryDefinition(PrizeType.MostExactScores, PrizeCategoryKind.EndOfSeason, 1, CategoryAvailability.All, IsRanked: false, "Most exact scores"),
+        new PrizeCategoryDefinition(PrizeType.MostExactScores, PrizeCategoryKind.EndOfSeason, 1, CategoryAvailability.All, IsRanked: false, "Most Exact Scores"),
         new PrizeCategoryDefinition(PrizeType.Round, PrizeCategoryKind.Recurring, 1, CategoryAvailability.All, IsRanked: false, "Round"),
         new PrizeCategoryDefinition(PrizeType.Monthly, PrizeCategoryKind.Recurring, 1, CategoryAvailability.SeasonsOnly, IsRanked: false, "Monthly")
     };
