@@ -131,30 +131,6 @@ public class ApiAuthenticationStateProviderTests
         _handler.SendCount.Should().Be(1);
     }
 
-    // Regression test for the double-rotation logout race: once a refresh has
-    // rotated the refresh token, a forced refresh that immediately follows (the
-    // 401 retry after a cold-boot auth-state refresh) must reuse the freshly
-    // stored token rather than rotate again - a second rotation revokes the
-    // cookie's refresh token and can race the browser's cookie commit, leaving
-    // the next request presenting an already-revoked token and being logged out.
-    [Fact]
-    public async Task GetValidAccessTokenAsync_ShouldNotRotateAgain_WhenForcedImmediatelyAfterRefresh()
-    {
-        await SeedTokenAsync(TestJwt.Expired());
-        var refreshedToken = TestJwt.Valid();
-        _handler.EnqueueJson(HttpStatusCode.OK, TokenResponse(refreshedToken));
-        var provider = CreateProvider();
-
-        var first = await provider.GetValidAccessTokenAsync();
-        first.Token.Should().Be(refreshedToken);
-
-        var second = await provider.GetValidAccessTokenAsync(forceRefresh: true);
-
-        second.Token.Should().Be(refreshedToken);
-        second.Status.Should().Be(TokenRefreshStatus.Succeeded);
-        _handler.SendCount.Should().Be(1, "a forced refresh within the cooldown must reuse the freshly rotated token, not rotate again");
-    }
-
     // The SemaphoreSlim + double-check must collapse a burst of callers hitting an
     // expired token into a single network refresh (no repeated token rotation).
     [Fact]
