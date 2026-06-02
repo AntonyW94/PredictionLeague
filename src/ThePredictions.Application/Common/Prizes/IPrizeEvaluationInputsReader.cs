@@ -4,4 +4,7 @@ namespace ThePredictions.Application.Common.Prizes;
 public interface IPrizeEvaluationInputsReader
 {
     Task<PrizeEvaluationInputs?> LoadAsync(int leagueId, CancellationToken cancellationToken);
+
+    /// <summary>Loads inputs by a league's private entry code (used by the prospective-join preview).</summary>
+    Task<PrizeEvaluationInputs?> LoadByEntryCodeAsync(string entryCode, CancellationToken cancellationToken);
 }

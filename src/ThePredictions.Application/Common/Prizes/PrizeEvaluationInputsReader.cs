@@ -10,10 +10,10 @@ namespace ThePredictions.Application.Common.Prizes;
 /// </summary>
 public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnection) : IPrizeEvaluationInputsReader
 {
-    public async Task<PrizeEvaluationInputs?> LoadAsync(int leagueId, CancellationToken cancellationToken)
-    {
-        const string leagueSql = @"
+    // Shared projection; callers append the WHERE predicate (by id or by entry code).
+    private const string LeagueSelectSql = @"
             SELECT
+                l.[Id] AS LeagueId,
                 l.[Name] AS LeagueName,
                 l.[AdministratorUserId],
                 u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS AdministratorName,
@@ -32,9 +32,24 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
             JOIN
                 [AspNetUsers] u ON l.[AdministratorUserId] = u.[Id]
             WHERE
-                l.[Id] = @LeagueId;";
+                ";
 
-        var row = await dbConnection.QuerySingleOrDefaultAsync<LeagueRow>(leagueSql, cancellationToken, new { LeagueId = leagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+    public async Task<PrizeEvaluationInputs?> LoadAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        var sql = LeagueSelectSql + "l.[Id] = @LeagueId;";
+        var row = await dbConnection.QuerySingleOrDefaultAsync<LeagueRow>(sql, cancellationToken, new { LeagueId = leagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+        return await BuildAsync(row, cancellationToken);
+    }
+
+    public async Task<PrizeEvaluationInputs?> LoadByEntryCodeAsync(string entryCode, CancellationToken cancellationToken)
+    {
+        var sql = LeagueSelectSql + "l.[EntryCode] = @EntryCode;";
+        var row = await dbConnection.QuerySingleOrDefaultAsync<LeagueRow>(sql, cancellationToken, new { EntryCode = entryCode, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+        return await BuildAsync(row, cancellationToken);
+    }
+
+    private async Task<PrizeEvaluationInputs?> BuildAsync(LeagueRow? row, CancellationToken cancellationToken)
+    {
         if (row is null)
             return null;
 
@@ -46,7 +61,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
             WHERE
                 lps.[LeagueId] = @LeagueId;";
 
-        var scheme = await dbConnection.QuerySingleOrDefaultAsync<SchemeRow>(schemeSql, cancellationToken, new { LeagueId = leagueId });
+        var scheme = await dbConnection.QuerySingleOrDefaultAsync<SchemeRow>(schemeSql, cancellationToken, new { LeagueId = row.LeagueId });
 
         var categories = new List<PrizeSchemeCategoryInput>();
         if (scheme is not null)
@@ -62,7 +77,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
                 WHERE
                     lps.[LeagueId] = @LeagueId;";
 
-            var entryRows = await dbConnection.QueryAsync<EntryRow>(entriesSql, cancellationToken, new { LeagueId = leagueId });
+            var entryRows = await dbConnection.QueryAsync<EntryRow>(entriesSql, cancellationToken, new { LeagueId = row.LeagueId });
             categories = entryRows
                 .Select(e => new PrizeSchemeCategoryInput { Category = e.Category, PerEntryPounds = e.PerEntryPounds, RankTableJson = e.RankTableJson })
                 .ToList();
@@ -97,6 +112,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
     [ExcludeFromCodeCoverage]
     private sealed class LeagueRow
     {
+        public int LeagueId { get; init; }
         public string LeagueName { get; init; } = string.Empty;
         public string AdministratorUserId { get; init; } = string.Empty;
         public string AdministratorName { get; init; } = string.Empty;

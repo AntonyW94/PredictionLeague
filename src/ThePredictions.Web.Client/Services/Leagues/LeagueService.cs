@@ -2,6 +2,7 @@ using ThePredictions.Contracts.Boosts;
 using ThePredictions.Contracts.Dashboard;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common.Enumerations;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
@@ -89,6 +90,22 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
         catch
         {
             return (false, "An unexpected error occurred.");
+        }
+    }
+
+    public async Task<(PrizePreviewDto? Preview, string? ErrorMessage)> GetJoinPreviewAsync(string entryCode)
+    {
+        try
+        {
+            var response = await httpClient.GetAsync($"api/leagues/join-preview?entryCode={Uri.EscapeDataString(entryCode)}");
+            if (response.IsSuccessStatusCode)
+                return (await response.Content.ReadFromJsonAsync<PrizePreviewDto>(), null);
+
+            return (null, "We couldn't find a league for that code. Check it and try again.");
+        }
+        catch (HttpRequestException)
+        {
+            return (null, "We couldn't reach the server. Please try again.");
         }
     }
 

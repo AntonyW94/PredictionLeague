@@ -564,6 +564,20 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         return Ok(await mediator.Send(new GetPrizePreviewQuery(leagueId, entryCode), cancellationToken));
     }
 
+    [HttpGet("join-preview")]
+    [SwaggerOperation(
+        Summary = "Preview a private league before joining, by entry code",
+        Description = "Resolves a private league from its entry code and returns the join confirmation preview: headline facts, the projected breakdown if you join and the +£x effect of your entry. Shown as a confirm step before the join request is sent.")]
+    [SwaggerResponse(200, "Preview retrieved successfully", typeof(PrizePreviewDto))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(404, "No league found for that entry code")]
+    public async Task<ActionResult<PrizePreviewDto>> GetJoinPreviewByCodeAsync(
+        [FromQuery, SwaggerParameter("Entry code for the private league", Required = true)] string entryCode,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await mediator.Send(new GetPrizePreviewByCodeQuery(entryCode), cancellationToken));
+    }
+
     [HttpPost("evaluate-scheme")]
     [SwaggerOperation(
         Summary = "Preview a draft prize scheme",
