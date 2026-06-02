@@ -43,7 +43,7 @@ public class AuthorizationMessageHandler(
         // this handler. By the time a request flows the chain is already built.
         var provider = (ApiAuthenticationStateProvider)serviceProvider.GetRequiredService<AuthenticationStateProvider>();
 
-        var accessToken = await provider.GetValidAccessTokenAsync();
+        var (accessToken, _) = await provider.GetValidAccessTokenAsync();
         if (!string.IsNullOrEmpty(accessToken))
             request.Headers.Authorization = new AuthenticationHeaderValue("bearer", accessToken);
 
@@ -54,7 +54,7 @@ public class AuthorizationMessageHandler(
 
         // The token was rejected (e.g. expired between sending and arriving, or
         // revoked). Try once to recover the session with a forced refresh.
-        var refreshedToken = await provider.GetValidAccessTokenAsync(forceRefresh: true);
+        var (refreshedToken, status) = await provider.GetValidAccessTokenAsync(forceRefresh: true);
 
         if (!string.IsNullOrEmpty(refreshedToken))
         {
@@ -73,8 +73,14 @@ public class AuthorizationMessageHandler(
             return response;
         }
 
-        // The refresh failed, so the session is genuinely over.
-        logger.LogInformation("Request to {Path} returned 401 and the session could not be refreshed. Logging user out.", request.RequestUri);
+        // Couldn't refresh. Only end the session if the refresh token was
+        // definitively rejected; a transient failure (API restarting during a
+        // deploy, rate limit, network blip) must not log the user out - surface the
+        // 401 for this one call and keep the session for the next attempt.
+        if (status == TokenRefreshStatus.TransientFailure)
+            return response;
+
+        logger.LogInformation("Request to {Path} returned 401 and the session is no longer valid. Logging user out.", request.RequestUri);
         response.Dispose();
 
         sessionState.LogoutMessage = LogoutMessage;

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using ThePredictions.Contracts.Authentication;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -41,11 +42,20 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
 
         try
         {
-            var accessToken = await GetValidAccessTokenAsync();
+            var (accessToken, status) = await GetValidAccessTokenAsync();
             if (!string.IsNullOrEmpty(accessToken))
             {
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", accessToken);
                 return new AuthenticationState(CreateClaimsPrincipalFromToken(accessToken));
+            }
+
+            if (status == TokenRefreshStatus.TransientFailure)
+            {
+                // The refresh endpoint was unreachable (e.g. the API restarting during
+                // a deploy). The refresh token may still be valid, so leave it in place
+                // and stay anonymous for now - a later attempt/reload re-authenticates.
+                logger.LogInformation("Transient refresh failure during auth-state creation; leaving the session intact.");
+                return Anonymous();
             }
         }
         catch (Exception ex)
@@ -73,12 +83,12 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
     /// When true the stored token is treated as stale even if it still looks valid
     /// (used after a 401, where the server has rejected an otherwise in-date token).
     /// </param>
-    public async Task<string?> GetValidAccessTokenAsync(bool forceRefresh = false)
+    public async Task<(string? Token, TokenRefreshStatus Status)> GetValidAccessTokenAsync(bool forceRefresh = false)
     {
         var accessToken = await localStorage.GetItemAsync<string>(AccessTokenKey);
 
         if (!forceRefresh && !string.IsNullOrEmpty(accessToken) && IsTokenValid(accessToken))
-            return accessToken;
+            return (accessToken, TokenRefreshStatus.Succeeded);
 
         return await RefreshAccessTokenAsync(accessToken);
     }
@@ -142,7 +152,7 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
-    private async Task<string?> RefreshAccessTokenAsync(string? knownStaleToken)
+    private async Task<(string? Token, TokenRefreshStatus Status)> RefreshAccessTokenAsync(string? knownStaleToken)
     {
         await _refreshLock.WaitAsync();
 
@@ -153,26 +163,46 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
             // than rotating the refresh token again.
             var current = await localStorage.GetItemAsync<string>(AccessTokenKey);
             if (!string.IsNullOrEmpty(current) && current != knownStaleToken && IsTokenValid(current))
-                return current;
+                return (current, TokenRefreshStatus.Succeeded);
 
-            var emptyContent = new StringContent("", Encoding.UTF8, "application/json");
-            var response = await httpClient.PostAsync("api/authentication/refresh-token", emptyContent);
+            HttpResponseMessage response;
+            try
+            {
+                var emptyContent = new StringContent("", Encoding.UTF8, "application/json");
+                response = await httpClient.PostAsync("api/authentication/refresh-token", emptyContent);
+            }
+            catch (Exception ex)
+            {
+                // Network error / API unreachable (e.g. mid-deploy). The refresh token
+                // may still be valid, so treat this as transient and keep the session.
+                logger.LogWarning(ex, "Transient error reaching the refresh endpoint; keeping the session.");
+                return (null, TokenRefreshStatus.TransientFailure);
+            }
 
-            if (!response.IsSuccessStatusCode)
-                return null;
+            if (response.IsSuccessStatusCode)
+            {
+                var authResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
+                if (authResponse?.AccessToken is null)
+                    return (null, TokenRefreshStatus.TransientFailure);
 
-            var authResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
-            if (authResponse?.AccessToken is null)
-                return null;
+                await localStorage.SetItemAsync(AccessTokenKey, authResponse.AccessToken);
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.AccessToken);
+                return (authResponse.AccessToken, TokenRefreshStatus.Succeeded);
+            }
 
-            await localStorage.SetItemAsync(AccessTokenKey, authResponse.AccessToken);
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.AccessToken);
-            return authResponse.AccessToken;
+            // 400/401 means the refresh token itself was rejected (expired, revoked or
+            // missing) — the session is genuinely over. Anything else (429 rate limit,
+            // 5xx, timeout) is transient and must not log the user out.
+            if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Unauthorized)
+                return (null, TokenRefreshStatus.InvalidSession);
+
+            logger.LogWarning("Transient {StatusCode} from the refresh endpoint; keeping the session.", response.StatusCode);
+            return (null, TokenRefreshStatus.TransientFailure);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "An exception occurred while refreshing the access token.");
-            return null;
+            logger.LogError(ex, "Unexpected error refreshing the access token; keeping the session.");
+            return (null, TokenRefreshStatus.TransientFailure);
         }
         finally
         {

@@ -109,16 +109,30 @@ public class AuthorizationMessageHandlerTests
     }
 
     [Fact]
-    public async Task SendAsync_ShouldThrowSessionExpiredAndLogOut_When401_AndRefreshFails()
+    public async Task SendAsync_ShouldThrowSessionExpiredAndLogOut_When401_AndRefreshTokenRejected()
     {
         await SeedTokenAsync(TestJwt.Valid());
         _apiHandler.EnqueueStatus(HttpStatusCode.Unauthorized);
-        _refreshHandler.EnqueueStatus(HttpStatusCode.Unauthorized);
+        _refreshHandler.EnqueueStatus(HttpStatusCode.BadRequest);   // refresh token rejected => session over
 
         var act = async () => await SendAsync(HttpMethod.Get, "https://localhost/api/leagues");
 
         await act.Should().ThrowAsync<SessionExpiredException>();
         _sessionState.LogoutMessage.Should().NotBeNullOrEmpty();
         (await StoredTokenAsync()).Should().BeNull("the stale token should be cleared on logout");
+    }
+
+    [Fact]
+    public async Task SendAsync_ShouldReturn401WithoutLoggingOut_When401_AndRefreshFailsTransiently()
+    {
+        await SeedTokenAsync(TestJwt.Valid());
+        _apiHandler.EnqueueStatus(HttpStatusCode.Unauthorized);
+        _refreshHandler.EnqueueStatus(HttpStatusCode.ServiceUnavailable);   // API restarting / unreachable
+
+        var response = await SendAsync(HttpMethod.Get, "https://localhost/api/leagues");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        _sessionState.LogoutMessage.Should().BeNull("a transient refresh failure must not log the user out");
+        (await StoredTokenAsync()).Should().NotBeNull("the session must be preserved across a transient failure");
     }
 }

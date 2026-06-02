@@ -112,7 +112,8 @@ public class ApiAuthenticationStateProviderTests
 
         var result = await provider.GetValidAccessTokenAsync();
 
-        result.Should().Be(token);
+        result.Token.Should().Be(token);
+        result.Status.Should().Be(TokenRefreshStatus.Succeeded);
         _handler.SendCount.Should().Be(0);
     }
 
@@ -126,7 +127,7 @@ public class ApiAuthenticationStateProviderTests
 
         var result = await provider.GetValidAccessTokenAsync(forceRefresh: true);
 
-        result.Should().Be(newToken);
+        result.Token.Should().Be(newToken);
         _handler.SendCount.Should().Be(1);
     }
 
@@ -144,8 +145,60 @@ public class ApiAuthenticationStateProviderTests
         var results = await Task.WhenAll(Enumerable.Range(0, 10)
             .Select(_ => provider.GetValidAccessTokenAsync()));
 
-        results.Should().AllSatisfy(token => token.Should().Be(newToken));
+        results.Should().AllSatisfy(result => result.Token.Should().Be(newToken));
         _handler.SendCount.Should().Be(1, "concurrent callers should share a single refresh");
+    }
+
+    [Fact]
+    public async Task GetValidAccessTokenAsync_ShouldReturnTransientFailure_WhenRefreshEndpointUnavailable()
+    {
+        await SeedTokenAsync(TestJwt.Expired());
+        _handler.EnqueueStatus(HttpStatusCode.ServiceUnavailable);
+        var provider = CreateProvider();
+
+        var result = await provider.GetValidAccessTokenAsync();
+
+        result.Token.Should().BeNull();
+        result.Status.Should().Be(TokenRefreshStatus.TransientFailure);
+    }
+
+    [Fact]
+    public async Task GetValidAccessTokenAsync_ShouldReturnInvalidSession_WhenRefreshTokenRejected()
+    {
+        await SeedTokenAsync(TestJwt.Expired());
+        _handler.EnqueueStatus(HttpStatusCode.BadRequest);
+        var provider = CreateProvider();
+
+        var result = await provider.GetValidAccessTokenAsync();
+
+        result.Token.Should().BeNull();
+        result.Status.Should().Be(TokenRefreshStatus.InvalidSession);
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_ShouldKeepStoredToken_WhenRefreshFailsTransiently()
+    {
+        await SeedTokenAsync(TestJwt.Expired());
+        _handler.EnqueueStatus(HttpStatusCode.ServiceUnavailable);
+        var provider = CreateProvider();
+
+        var state = await provider.GetAuthenticationStateAsync();
+
+        state.User.Identity!.IsAuthenticated.Should().BeFalse();
+        (await StoredTokenAsync()).Should().NotBeNull("a transient failure must not wipe the session");
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_ShouldWipeStoredToken_WhenSessionIsInvalid()
+    {
+        await SeedTokenAsync(TestJwt.Expired());
+        _handler.EnqueueStatus(HttpStatusCode.BadRequest);
+        var provider = CreateProvider();
+
+        var state = await provider.GetAuthenticationStateAsync();
+
+        state.User.Identity!.IsAuthenticated.Should().BeFalse();
+        (await StoredTokenAsync()).Should().BeNull("a rejected refresh token ends the session");
     }
 
     [Fact]
