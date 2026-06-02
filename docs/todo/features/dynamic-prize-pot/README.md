@@ -411,16 +411,33 @@ Settled (confirm):
 - **Round / Monthly**: not split — winner-takes-all per event, `floor(subPot ÷ events)`.
 - **Section**: split 50/50 across the 2 stages by default, each using the ladder.
 - **Write-once scheme**: set at creation (locked) for new leagues; settable once
-  via Edit for existing schemeless leagues (World Cup), then locked.
+  via Edit for existing schemeless leagues (World Cup), then locked. **A site
+  admin can override a locked scheme** to fix mistakes (league admins cannot).
+- **Allocation input = pound sliders + live derived-prize preview** (one slider
+  per enabled category, must total the stake).
 - "How many places pay" = the **default threshold table** above, admin-editable.
 
-Still open:
+Still open (minor — defaults proposed):
 - [ ] Confirm the **£5-rounding threshold** value (£100 overall sub-pot?).
 - [ ] Where does the recurring **rounding remainder** go — final event, or 1st overall?
-- [ ] Per-entry split input — pound sliders, or named presets ("Mostly overall" /
-      "Balanced")? Do admins get the "advanced" rank-table editor at launch?
-- [ ] **Site-admin escape hatch** to correct a mistaken (already-locked) scheme?
+- [ ] Does the **"advanced" rank-table editor** ship at launch, or just defaults?
 - [ ] What season-vs-tournament signal gates Section/Monthly (TournamentRoundMappings
       presence vs a Competitions type flag)?
 - [ ] For prospective members of **private** leagues, is entry-code-keyed preview
       the right gate, or do we want a richer pre-join landing page?
+
+## Implementation Plan
+
+See ADR [0011](../../../decisions/0011-dynamic-prize-pot.md) for the decision
+record. Tasks (to be built in order; each is a separate file):
+
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 1 | [Domain: prize scheme & apportionment](./01-domain-scheme-and-apportionment.md) | `PrizeScheme` entity (write-once), pure apportionment + £5-rounding service, 100% coverage | Not Started |
+| 2 | [Evaluation engine & category registry](./02-evaluation-engine-and-registry.md) | Live breakdown from (scheme, pot, N); registry with kinds + gating; threshold table | Not Started |
+| 3 | [Persistence & schema](./03-persistence-and-schema.md) | `LeaguePrizeScheme(+Entries)` tables, repo write path, DatabaseTools + schema doc | Not Started |
+| 4 | [Create/Edit commands & write-once](./04-create-edit-commands.md) | Set-scheme command (write-once + site-admin override), validators, replace deadline lock | Not Started |
+| 5 | [Boost admin configuration](./05-boost-admin-config.md) | Catalogue query + command to write `LeagueBoostRules`/`Windows` (net-new admin path) | Not Started |
+| 6 | [Create/Edit UI](./06-create-edit-ui.md) | "Prizes & Boosts" section: toggles, pound sliders, live preview, boost checkboxes, locked state | Not Started |
+| 7 | [Prospective & member surfacing](./07-surfacing-and-delta.md) | Prize-preview query/endpoint, +£x delta, projected-prizes panel | Not Started |
+| 8 | [Section prize + freeze-at-deadline](./08-section-and-freeze.md) | `Section` PrizeType + strategy; freeze scheme → `LeaguePrizeSettings` at deadline | Not Started |
