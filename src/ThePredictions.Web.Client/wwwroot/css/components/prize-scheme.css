@@ -18,8 +18,16 @@
     font-weight: 700;
 }
 
+/* Shared rhythm for the short explainer line under a section heading. */
 .prize-section-intro {
+    margin-top: 0;
     margin-bottom: var(--space-4);
+}
+
+/* Footer note that closes a section (e.g. "can only be set once") - sits clear of the box above. */
+.prize-section-note {
+    margin-top: var(--space-4);
+    margin-bottom: 0;
 }
 
 /* ---- Shared panel surface (light card, dark-mode adaptive) ---- */
@@ -63,10 +71,17 @@
     padding: var(--space-3) var(--space-4);
 }
 
+/* Selected state: a crisp green ring rather than a 2px border, so toggling does not nudge the
+   contents by a pixel. */
 .prize-category-option.is-enabled,
 .boost-option.is-enabled {
     border-color: var(--green-600);
-    border-width: 2px;
+    box-shadow: 0 0 0 1px var(--green-600), 0 1px 2px var(--black-alpha-15);
+}
+
+.theme-dark .prize-category-option.is-enabled,
+.theme-dark .boost-option.is-enabled {
+    box-shadow: 0 0 0 1px var(--green-600);
 }
 
 .prize-toggle {
