@@ -78,10 +78,14 @@
     private async Task GoToSmartHomepage()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        // Client-side navigation only. A forced reload here reboots the WASM app and
+        // triggers a cold authentication re-init (a refresh-token rotation against the
+        // cookie) on every logo click, which can race itself and log the user out.
         if (authState.User.Identity?.IsAuthenticated ?? false)
-            NavigationManager.NavigateTo("/dashboard", forceLoad: true);
+            NavigationManager.NavigateTo("/dashboard");
         else
-            NavigationManager.NavigateTo("/", forceLoad: true);
+            NavigationManager.NavigateTo("/");
     }
 
     private async Task ToggleTheme()

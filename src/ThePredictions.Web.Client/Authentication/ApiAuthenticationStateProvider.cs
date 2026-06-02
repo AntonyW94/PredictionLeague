@@ -23,6 +23,15 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
     // expired token triggers a single network refresh, not one per caller.
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
+    // A second refresh arriving shortly after a successful one - typically the
+    // 401 retry that immediately follows the cold-boot auth-state refresh - must
+    // reuse the freshly stored token rather than rotate again. Each rotation
+    // revokes the cookie's refresh token, and a second rotation can race the
+    // browser's cookie commit so the next request presents an already-revoked
+    // token and gets logged out. Within this window the stored token is reused.
+    private static readonly TimeSpan RotationCooldown = TimeSpan.FromSeconds(10);
+    private DateTime _lastRotationUtc = DateTime.MinValue;
+
     private AuthenticationState? _cachedAuthenticationState;
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -159,10 +168,14 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
         try
         {
             // A concurrent caller may have refreshed while we were waiting on the
-            // lock; if the stored token has changed and is valid, reuse it rather
-            // than rotating the refresh token again.
+            // lock; if the stored token is valid, reuse it rather than rotating the
+            // refresh token again. We reuse when the token has changed since we
+            // thought it was stale, or when we rotated within the cooldown window
+            // (the latter collapses a cold boot's auth-state refresh and the 401
+            // retry that follows into a single rotation, avoiding the logout race).
             var current = await localStorage.GetItemAsync<string>(AccessTokenKey);
-            if (!string.IsNullOrEmpty(current) && current != knownStaleToken && IsTokenValid(current))
+            if (!string.IsNullOrEmpty(current) && IsTokenValid(current)
+                && (current != knownStaleToken || DateTime.UtcNow - _lastRotationUtc < RotationCooldown))
                 return (current, TokenRefreshStatus.Succeeded);
 
             HttpResponseMessage response;
@@ -187,6 +200,7 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
 
                 await localStorage.SetItemAsync(AccessTokenKey, authResponse.AccessToken);
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.AccessToken);
+                _lastRotationUtc = DateTime.UtcNow;
                 return (authResponse.AccessToken, TokenRefreshStatus.Succeeded);
             }
 
