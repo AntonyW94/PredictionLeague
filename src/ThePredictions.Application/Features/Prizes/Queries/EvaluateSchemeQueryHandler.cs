@@ -29,7 +29,6 @@ public class EvaluateSchemeQueryHandler(IApplicationReadDbConnection dbConnectio
         {
             StakePounds = (int)decimal.Truncate(request.Price),
             AdminTopUpPounds = (int)decimal.Truncate(request.PrizeFundOverride ?? 0m),
-            OverallRoundingThresholdPounds = request.Scheme.OverallRoundingThresholdPounds,
             EntrantCount = request.EntrantCount,
             NumberOfRounds = season.NumberOfRounds,
             NumberOfMonths = CountMonths(season.StartDateUtc, season.EndDateUtc),

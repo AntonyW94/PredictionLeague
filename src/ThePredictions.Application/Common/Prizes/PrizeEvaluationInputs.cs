@@ -18,7 +18,6 @@ public sealed class PrizeEvaluationInputs
 
     public bool HasScheme { get; init; }
     public int AdminTopUpPounds { get; init; }
-    public int OverallRoundingThresholdPounds { get; init; }
     public IReadOnlyList<PrizeSchemeCategoryInput> Categories { get; init; } = [];
 
     public bool IsPrivate => !string.IsNullOrEmpty(EntryCode);
@@ -28,7 +27,6 @@ public sealed class PrizeEvaluationInputs
     {
         StakePounds = (int)decimal.Truncate(EntryCost),
         AdminTopUpPounds = AdminTopUpPounds,
-        OverallRoundingThresholdPounds = OverallRoundingThresholdPounds,
         EntrantCount = entrantCount,
         NumberOfRounds = NumberOfRounds,
         NumberOfMonths = NumberOfMonths,

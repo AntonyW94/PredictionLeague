@@ -12,7 +12,6 @@ public class PrizePreviewBuilderTests
     private static PrizeSchemeEvaluationRequest Request(int entrants) => new()
     {
         StakePounds = 13,
-        OverallRoundingThresholdPounds = 100,
         EntrantCount = entrants,
         NumberOfRounds = 38,
         NumberOfMonths = 9,

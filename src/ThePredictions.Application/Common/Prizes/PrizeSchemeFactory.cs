@@ -19,7 +19,6 @@ public static class PrizeSchemeFactory
 
         return LeaguePrizeScheme.Create(
             stakePounds,
-            request.OverallRoundingThresholdPounds,
             entries,
             setByUserId,
             isTournament,

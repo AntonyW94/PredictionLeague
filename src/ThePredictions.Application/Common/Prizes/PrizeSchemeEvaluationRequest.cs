@@ -10,7 +10,6 @@ public sealed class PrizeSchemeEvaluationRequest
 {
     public int StakePounds { get; init; }
     public int AdminTopUpPounds { get; init; }
-    public int OverallRoundingThresholdPounds { get; init; }
     public int EntrantCount { get; init; }
     public int NumberOfRounds { get; init; }
     public int NumberOfMonths { get; init; }
@@ -24,7 +23,6 @@ public sealed class PrizeSchemeEvaluationRequest
     {
         StakePounds = stakePounds,
         AdminTopUpPounds = adminTopUpPounds,
-        OverallRoundingThresholdPounds = scheme.OverallRoundingThresholdPounds,
         EntrantCount = entrantCount,
         NumberOfRounds = numberOfRounds,
         NumberOfMonths = numberOfMonths,

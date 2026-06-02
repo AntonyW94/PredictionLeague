@@ -23,7 +23,6 @@ public class PrizeEvaluator : IPrizeEvaluator
             EntrantCount = request.EntrantCount,
             StakePounds = request.StakePounds,
             AdminTopUpPounds = request.AdminTopUpPounds,
-            OverallRoundingThresholdPounds = request.OverallRoundingThresholdPounds,
             NumberOfRounds = request.NumberOfRounds,
             NumberOfMonths = request.NumberOfMonths,
             Categories = allocations

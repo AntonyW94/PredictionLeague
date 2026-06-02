@@ -11,18 +11,18 @@ namespace ThePredictions.Domain.Services.Prizes;
 /// Rules (see ADR-0011):
 /// - Pot = StakePounds * N + AdminTopUpPounds. Each category's sub-pot = perEntry * N plus its
 ///   weighted share of the admin top-up.
-/// - Recurring (Round/Monthly): uniform whole-pound prize per event = floor(subPot / events);
-///   the leftover spills OUT of the category (never making per-event prizes uneven).
-/// - Overall: places from the rank table; above the £5 threshold every rank rounds to a clean £5
-///   and the odd £1-£4 spills out; below it, £1-granular top-down.
-/// - Section (Staged): split 50/50 across the two stages, each ranked by the table at £1.
+/// - Placed prizes (Overall, Section): once a place would pay more than £5 the whole category is
+///   distributed in clean £5 chunks (top-down); the odd £1-£4 spills out. Tiny funds (top place
+///   <= £5) stay £1-granular so small/early pots are not distorted.
+/// - Recurring (Round/Monthly): uniform whole-pound prize per event = floor(subPot / events); the
+///   leftover spills OUT of the category (never making per-event prizes uneven).
 /// - Most Exact Scores: a single £1-granular prize and the final spillover "sink".
-/// - Spillover destination priority: Most Exact Scores -> Overall -> Section (forward-flowing,
-///   so no cycles). Overall's own £5 remainder goes to Most Exact Scores, else onto 1st place.
+/// - Spillover destination priority: Most Exact Scores -> Overall -> Section (forward-flowing, so
+///   no cycles); when none can absorb it, the odd pounds fall on 1st place.
 ///
 /// Note: a Recurring category's slot shows the per-event prize, so its
-/// <see cref="PrizeCategoryBreakdown.SubPotPounds"/> (its share of the pot) is tracked separately
-/// from the slot amount. Summing <c>SubPotPounds</c> across categories always equals the pot.
+/// <see cref="PrizeCategoryBreakdown.SubPotPounds"/> is tracked separately from the slot amount.
+/// Summing <c>SubPotPounds</c> across categories always equals the pot.
 /// </summary>
 public static class PrizeApportionmentService
 {
@@ -36,7 +36,6 @@ public static class PrizeApportionmentService
         Guard.Against.Negative(request.EntrantCount);
         Guard.Against.Negative(request.StakePounds);
         Guard.Against.Negative(request.AdminTopUpPounds);
-        Guard.Against.Negative(request.OverallRoundingThresholdPounds);
 
         var categories = request.Categories;
         var n = request.EntrantCount;
@@ -86,49 +85,55 @@ public static class PrizeApportionmentService
                 AddFinalEventBonus(categories, slots, categoryTotal, recurringRemainder);
         }
 
-        // Step 2 - Section (Staged): two stages 50/50, each ranked by the table at £1 granularity.
+        // Step 2 - Section (Staged): two stages 50/50, each ranked and £5-rounded like Overall.
         if (Enabled(PrizeType.Section))
         {
             var sectionAllocation = categories.First(c => c.Category == PrizeType.Section);
             var sectionSub = subPot[PrizeType.Section] + spillToSection;
             var percentages = sectionAllocation.RankTable?.PercentagesFor(n) ?? SinglePlace;
             var stagePots = Distribute(sectionSub, new[] { 1, 1 });
+            var stageNames = new[] { GroupStageName, KnockoutStageName };
 
             var sectionSlots = new List<PrizeBreakdownSlot>();
-            AddStageSlots(sectionSlots, GroupStageName, stagePots[0], percentages);
-            AddStageSlots(sectionSlots, KnockoutStageName, stagePots[1], percentages);
+            var sectionRemainder = 0;
+            for (var stage = 0; stage < stageNames.Length; stage++)
+            {
+                var (amounts, remainder) = ApportionRanked(stagePots[stage], percentages);
+                AddRankSlots(sectionSlots, amounts, stageNames[stage]);
+                sectionRemainder += remainder;
+            }
+
+            if (sectionRemainder > 0)
+            {
+                if (Enabled(PrizeType.MostExactScores))
+                    spillToExact += sectionRemainder;
+                else if (Enabled(PrizeType.Overall))
+                    spillToOverall += sectionRemainder;
+                else
+                    AddRemainderToTopRank(sectionSlots, sectionRemainder);
+            }
 
             slots[PrizeType.Section] = sectionSlots;
-            categoryTotal[PrizeType.Section] = sectionSub;
+            categoryTotal[PrizeType.Section] = sectionSlots.Sum(s => (int)s.Amount);
         }
 
-        // Step 3 - Overall: ranked places, with £5 rounding above the threshold.
+        // Step 3 - Overall: ranked places, £5-rounded once a place pays more than £5.
         if (Enabled(PrizeType.Overall))
         {
             var overallAllocation = categories.First(c => c.Category == PrizeType.Overall);
             var overallSub = subPot[PrizeType.Overall] + spillToOverall;
             var percentages = overallAllocation.RankTable?.PercentagesFor(n) ?? SinglePlace;
+
             var overallSlots = new List<PrizeBreakdownSlot>();
+            var (amounts, remainder) = ApportionRanked(overallSub, percentages);
+            AddRankSlots(overallSlots, amounts);
 
-            if (overallSub >= request.OverallRoundingThresholdPounds && overallSub >= 5)
+            if (remainder > 0)
             {
-                var floored = overallSub - overallSub % 5;
-                var remainder = overallSub - floored;
-                var unitsPerRank = Distribute(floored / 5, percentages);
-                AddRankSlots(overallSlots, unitsPerRank, units => units * 5);
-
-                if (remainder > 0)
-                {
-                    if (Enabled(PrizeType.MostExactScores))
-                        spillToExact += remainder;
-                    else
-                        AddRemainderToTopRank(overallSlots, remainder);
-                }
-            }
-            else
-            {
-                var amountsPerRank = Distribute(overallSub, percentages);
-                AddRankSlots(overallSlots, amountsPerRank, amount => amount);
+                if (Enabled(PrizeType.MostExactScores))
+                    spillToExact += remainder;
+                else
+                    AddRemainderToTopRank(overallSlots, remainder);
             }
 
             slots[PrizeType.Overall] = overallSlots;
@@ -154,34 +159,45 @@ public static class PrizeApportionmentService
         };
     }
 
+    /// <summary>
+    /// Apportions a placed-prize fund across the ranks. Once the top place would pay more than £5
+    /// the whole fund is handed out in clean £5 chunks (top-down) and the odd £1-£4 is returned to
+    /// spill elsewhere; otherwise the fund stays £1-granular (small pots aren't distorted).
+    /// </summary>
+    private static (int[] Amounts, int Remainder) ApportionRanked(int fund, IReadOnlyList<int> percentages)
+    {
+        var natural = Distribute(fund, percentages);
+        if (natural[0] <= 5)
+            return (natural, 0);
+
+        var floored = fund - fund % 5;
+        var unitsPerRank = Distribute(floored / 5, percentages);
+        var amounts = new int[unitsPerRank.Length];
+        for (var i = 0; i < unitsPerRank.Length; i++)
+            amounts[i] = unitsPerRank[i] * 5;
+
+        return (amounts, fund - floored);
+    }
+
     private static string EventLabel(PrizeType category) => category == PrizeType.Monthly ? "Per month" : "Per round";
 
-    private static void AddStageSlots(List<PrizeBreakdownSlot> target, string stageName, int stagePot, IReadOnlyList<int> percentages)
+    private static void AddRankSlots(List<PrizeBreakdownSlot> target, int[] amounts, string? stageName = null)
     {
-        var amounts = Distribute(stagePot, percentages);
         for (var rank = 0; rank < amounts.Length; rank++)
         {
-            if (amounts[rank] > 0)
-                target.Add(new PrizeBreakdownSlot { Label = $"{stageName} - {Ordinal(rank + 1)}", Amount = amounts[rank], Rank = rank + 1, StageName = stageName });
+            if (amounts[rank] <= 0)
+                continue;
+
+            var label = stageName is null ? Ordinal(rank + 1) : $"{stageName} - {Ordinal(rank + 1)}";
+            target.Add(new PrizeBreakdownSlot { Label = label, Amount = amounts[rank], Rank = rank + 1, StageName = stageName });
         }
     }
 
-    private static void AddRankSlots(List<PrizeBreakdownSlot> target, int[] perRank, Func<int, int> toPounds)
+    private static void AddRemainderToTopRank(List<PrizeBreakdownSlot> rankedSlots, int remainder)
     {
-        for (var rank = 0; rank < perRank.Length; rank++)
-        {
-            var amount = toPounds(perRank[rank]);
-            if (amount > 0)
-                target.Add(new PrizeBreakdownSlot { Label = Ordinal(rank + 1), Amount = amount, Rank = rank + 1 });
-        }
-    }
-
-    private static void AddRemainderToTopRank(List<PrizeBreakdownSlot> overallSlots, int remainder)
-    {
-        // Reached only above the £5 threshold, where the floored sub-pot is >= £5, so 1st place
-        // always exists (the top-down leftover lands on it first).
-        var top = overallSlots[0];
-        overallSlots[0] = new PrizeBreakdownSlot { Label = top.Label, Amount = top.Amount + remainder, Rank = top.Rank, StageName = top.StageName };
+        // Reached only when a place already pays >= £5, so 1st place exists (top-down leftover lands on it).
+        var top = rankedSlots[0];
+        rankedSlots[0] = new PrizeBreakdownSlot { Label = top.Label, Amount = top.Amount + remainder, Rank = top.Rank, StageName = top.StageName };
     }
 
     private static void AddFinalEventBonus(IReadOnlyList<PrizeCategoryAllocation> categories, Dictionary<PrizeType, List<PrizeBreakdownSlot>> slots, Dictionary<PrizeType, int> categoryTotal, int remainder)

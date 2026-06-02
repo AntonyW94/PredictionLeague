@@ -20,9 +20,8 @@ public class LeaguePrizeSchemeTests
     [Fact]
     public void Create_ShouldCreateScheme_WhenValid()
     {
-        var scheme = LeaguePrizeScheme.Create(13, 100, SeasonEntries(), "admin-user", isTournament: false, _dateTimeProvider);
+        var scheme = LeaguePrizeScheme.Create(13, SeasonEntries(), "admin-user", isTournament: false, _dateTimeProvider);
 
-        scheme.OverallRoundingThresholdPounds.Should().Be(100);
         scheme.SetByUserId.Should().Be("admin-user");
         scheme.SetAtUtc.Should().Be(_dateTimeProvider.UtcNow);
         scheme.Entries.Should().HaveCount(3);
@@ -37,42 +36,35 @@ public class LeaguePrizeSchemeTests
             LeaguePrizeSchemeEntry.Create(PrizeType.MostExactScores, 0)
         };
 
-        var scheme = LeaguePrizeScheme.Create(0, 100, entries, "admin-user", isTournament: false, _dateTimeProvider);
+        var scheme = LeaguePrizeScheme.Create(0, entries, "admin-user", isTournament: false, _dateTimeProvider);
         scheme.Entries.Should().HaveCount(2);
     }
 
     [Fact]
     public void Create_ShouldThrow_WhenStakeNegative()
     {
-        var act = () => LeaguePrizeScheme.Create(-1, 100, SeasonEntries(), "admin-user", false, _dateTimeProvider);
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void Create_ShouldThrow_WhenThresholdNegative()
-    {
-        var act = () => LeaguePrizeScheme.Create(13, -1, SeasonEntries(), "admin-user", false, _dateTimeProvider);
+        var act = () => LeaguePrizeScheme.Create(-1, SeasonEntries(), "admin-user", false, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void Create_ShouldThrow_WhenSetByUserIdBlank()
     {
-        var act = () => LeaguePrizeScheme.Create(13, 100, SeasonEntries(), "  ", false, _dateTimeProvider);
+        var act = () => LeaguePrizeScheme.Create(13, SeasonEntries(), "  ", false, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void Create_ShouldThrow_WhenEntriesNull()
     {
-        var act = () => LeaguePrizeScheme.Create(13, 100, null!, "admin-user", false, _dateTimeProvider);
+        var act = () => LeaguePrizeScheme.Create(13, null!, "admin-user", false, _dateTimeProvider);
         act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
     public void Create_ShouldThrow_WhenNoEntries()
     {
-        var act = () => LeaguePrizeScheme.Create(0, 100, Array.Empty<LeaguePrizeSchemeEntry>(), "admin-user", false, _dateTimeProvider);
+        var act = () => LeaguePrizeScheme.Create(0, Array.Empty<LeaguePrizeSchemeEntry>(), "admin-user", false, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -85,14 +77,14 @@ public class LeaguePrizeSchemeTests
             LeaguePrizeSchemeEntry.Create(PrizeType.Overall, 7)
         };
 
-        var act = () => LeaguePrizeScheme.Create(13, 100, entries, "admin-user", false, _dateTimeProvider);
+        var act = () => LeaguePrizeScheme.Create(13, entries, "admin-user", false, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void Create_ShouldThrow_WhenAllocationsDoNotSumToStake()
     {
-        var act = () => LeaguePrizeScheme.Create(20, 100, SeasonEntries(), "admin-user", false, _dateTimeProvider);
+        var act = () => LeaguePrizeScheme.Create(20, SeasonEntries(), "admin-user", false, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -105,7 +97,7 @@ public class LeaguePrizeSchemeTests
             LeaguePrizeSchemeEntry.Create(PrizeType.Section, 5)
         };
 
-        var act = () => LeaguePrizeScheme.Create(13, 100, entries, "admin-user", isTournament: false, _dateTimeProvider);
+        var act = () => LeaguePrizeScheme.Create(13, entries, "admin-user", isTournament: false, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -118,7 +110,7 @@ public class LeaguePrizeSchemeTests
             LeaguePrizeSchemeEntry.Create(PrizeType.Monthly, 5)
         };
 
-        var act = () => LeaguePrizeScheme.Create(13, 100, entries, "admin-user", isTournament: true, _dateTimeProvider);
+        var act = () => LeaguePrizeScheme.Create(13, entries, "admin-user", isTournament: true, _dateTimeProvider);
         act.Should().Throw<ArgumentException>();
     }
 
@@ -131,14 +123,14 @@ public class LeaguePrizeSchemeTests
             LeaguePrizeSchemeEntry.Create(PrizeType.Section, 5)
         };
 
-        var scheme = LeaguePrizeScheme.Create(13, 100, entries, "admin-user", isTournament: true, _dateTimeProvider);
+        var scheme = LeaguePrizeScheme.Create(13, entries, "admin-user", isTournament: true, _dateTimeProvider);
         scheme.Entries.Should().HaveCount(2);
     }
 
     [Fact]
     public void AssignToLeague_ShouldSetForeignKey()
     {
-        var scheme = LeaguePrizeScheme.Create(13, 100, SeasonEntries(), "admin-user", false, _dateTimeProvider);
+        var scheme = LeaguePrizeScheme.Create(13, SeasonEntries(), "admin-user", false, _dateTimeProvider);
         scheme.AssignToLeague(7);
         scheme.LeagueId.Should().Be(7);
     }
@@ -146,7 +138,7 @@ public class LeaguePrizeSchemeTests
     [Fact]
     public void AssignToLeague_ShouldThrow_WhenIdZero()
     {
-        var scheme = LeaguePrizeScheme.Create(13, 100, SeasonEntries(), "admin-user", false, _dateTimeProvider);
+        var scheme = LeaguePrizeScheme.Create(13, SeasonEntries(), "admin-user", false, _dateTimeProvider);
         var act = () => scheme.AssignToLeague(0);
         act.Should().Throw<ArgumentException>();
     }
@@ -160,11 +152,10 @@ public class LeaguePrizeSchemeTests
             null
         };
 
-        var scheme = new LeaguePrizeScheme(9, 3, 100, _dateTimeProvider.UtcNow, "admin-user", entries);
+        var scheme = new LeaguePrizeScheme(9, 3, _dateTimeProvider.UtcNow, "admin-user", entries);
 
         scheme.Id.Should().Be(9);
         scheme.LeagueId.Should().Be(3);
-        scheme.OverallRoundingThresholdPounds.Should().Be(100);
         scheme.SetByUserId.Should().Be("admin-user");
         scheme.Entries.Should().ContainSingle();
     }
@@ -172,7 +163,7 @@ public class LeaguePrizeSchemeTests
     [Fact]
     public void HydrationConstructor_ShouldHandleNullEntries()
     {
-        var scheme = new LeaguePrizeScheme(9, 3, 100, _dateTimeProvider.UtcNow, "admin-user", null);
+        var scheme = new LeaguePrizeScheme(9, 3, _dateTimeProvider.UtcNow, "admin-user", null);
         scheme.Entries.Should().BeEmpty();
     }
 }

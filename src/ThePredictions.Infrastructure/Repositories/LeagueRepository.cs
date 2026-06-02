@@ -487,14 +487,12 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             INSERT INTO [LeaguePrizeScheme]
             (
                 [LeagueId],
-                [OverallRoundingThresholdPounds],
                 [SetAtUtc],
                 [SetByUserId]
             )
             VALUES
             (
                 @LeagueId,
-                @OverallRoundingThresholdPounds,
                 @SetAtUtc,
                 @SetByUserId
             );
@@ -505,7 +503,6 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             new
             {
                 LeagueId = leagueId,
-                scheme.OverallRoundingThresholdPounds,
                 scheme.SetAtUtc,
                 scheme.SetByUserId
             },
@@ -588,7 +585,6 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
         return new LeaguePrizeScheme(
             header.Id,
             header.LeagueId,
-            header.OverallRoundingThresholdPounds,
             header.SetAtUtc,
             header.SetByUserId,
             entries);

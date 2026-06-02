@@ -19,7 +19,6 @@ public class PrizeEvaluatorTests
         {
             StakePounds = 13,
             AdminTopUpPounds = 0,
-            OverallRoundingThresholdPounds = 100,
             EntrantCount = 17,
             NumberOfRounds = 38,
             NumberOfMonths = 9,
@@ -49,7 +48,6 @@ public class PrizeEvaluatorTests
         var request = new PrizeSchemeEvaluationRequest
         {
             StakePounds = 10,
-            OverallRoundingThresholdPounds = 1000,
             EntrantCount = 20,
             NumberOfRounds = 38,
             Categories = new[]
@@ -69,7 +67,7 @@ public class PrizeEvaluatorTests
     public void Evaluate_ShouldMatchDomainServiceOutput_ForSavedScheme()
     {
         var scheme = LeaguePrizeScheme.Create(
-            10, 100,
+            10,
             new[]
             {
                 LeaguePrizeSchemeEntry.Create(PrizeType.Overall, 7),

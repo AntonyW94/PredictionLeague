@@ -32,7 +32,6 @@ public class GetPrizePreviewQueryHandlerTests
         NumberOfMonths = 9,
         HasScheme = true,
         AdminTopUpPounds = 0,
-        OverallRoundingThresholdPounds = 100,
         Categories = new[]
         {
             new PrizeSchemeCategoryInput { Category = PrizeType.Overall, PerEntryPounds = 8 },

@@ -54,7 +54,6 @@ public class PrizeApportionmentServiceTests
             EntrantCount = entrants,
             StakePounds = 13,
             AdminTopUpPounds = 0,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             NumberOfMonths = 9,
             Categories = new[] { Overall(8), Round(3), Exact(2) }
@@ -74,7 +73,6 @@ public class PrizeApportionmentServiceTests
             EntrantCount = 30,
             StakePounds = 10,
             AdminTopUpPounds = 57,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             NumberOfMonths = 9,
             Categories = new[] { Overall(5), Round(3), Monthly(0), Exact(2) }
@@ -86,18 +84,59 @@ public class PrizeApportionmentServiceTests
         TotalAllocated(breakdown).Should().Be(breakdown.PotPounds);
     }
 
+    [Fact]
+    public void Apportion_ShouldReproduceTheWorkedExample_ForTournamentWithAllCategories()
+    {
+        // The configuration the product owner verified by hand: N=14, £25 stake split
+        // Overall 12 / Round 3 / Exact 2 / Section 8, 7 rounds, no admin top-up.
+        var request = new PrizeApportionmentRequest
+        {
+            EntrantCount = 14,
+            StakePounds = 25,
+            AdminTopUpPounds = 0,
+            NumberOfRounds = 7,
+            NumberOfMonths = 9,
+            Categories = new[] { Overall(12), Round(3), Exact(2), Section(8) }
+        };
+
+        var breakdown = PrizeApportionmentService.Apportion(request);
+
+        breakdown.PotPounds.Should().Be(350);
+        TotalAllocated(breakdown).Should().Be(350);
+
+        // Overall £165 -> 85 / 50 / 30 (clean fivers; the odd £3 spilled to Most Exact Scores).
+        SlotFor(breakdown, PrizeType.Overall, 1).Should().Be(85m);
+        SlotFor(breakdown, PrizeType.Overall, 2).Should().Be(50m);
+        SlotFor(breakdown, PrizeType.Overall, 3).Should().Be(30m);
+        breakdown.Categories.Single(c => c.Category == PrizeType.Overall).SubPotPounds.Should().Be(165);
+
+        // Each section stage £30 / £15 / £10 (the per-stage odd £1s spilled to Most Exact Scores).
+        var section = breakdown.Categories.Single(c => c.Category == PrizeType.Section);
+        section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 1 && s.Amount == 30m);
+        section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 2 && s.Amount == 15m);
+        section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 3 && s.Amount == 10m);
+        section.Slots.Should().Contain(s => s.StageName == "Knockout stage" && s.Rank == 1 && s.Amount == 30m);
+        section.SubPotPounds.Should().Be(110);
+
+        // Round £6 x 7 = £42 (uniform, no rounding).
+        breakdown.Categories.Single(c => c.Category == PrizeType.Round).Slots.Should().ContainSingle(s => s.Label == "Per round" && s.Amount == 6m);
+        breakdown.Categories.Single(c => c.Category == PrizeType.Round).SubPotPounds.Should().Be(42);
+
+        // Most Exact Scores £33 = £28 stake + £3 overall spill + £2 section spill.
+        breakdown.Categories.Single(c => c.Category == PrizeType.MostExactScores).SubPotPounds.Should().Be(33);
+    }
+
     #endregion
 
     #region Overall - £5 rounding
 
     [Fact]
-    public void Apportion_ShouldRoundEveryOverallRankToCleanFiver_WhenAboveThreshold()
+    public void Apportion_ShouldRoundEveryOverallRankToCleanFiver_WhenTopPlaceAboveFiver()
     {
         var request = new PrizeApportionmentRequest
         {
             EntrantCount = 12,
             StakePounds = 13,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(13) }
         };
@@ -121,7 +160,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 12,
             StakePounds = 13,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(11), Exact(2) }
         };
@@ -141,7 +179,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 12,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(10), Exact(2) }
         };
@@ -154,22 +191,22 @@ public class PrizeApportionmentServiceTests
     }
 
     [Fact]
-    public void Apportion_ShouldUsePoundGranularity_WhenOverallBelowThreshold()
+    public void Apportion_ShouldRoundOverall_WhenTopPlaceAboveFiver_EvenForASmallFund()
     {
         var request = new PrizeApportionmentRequest
         {
             EntrantCount = 8,
             StakePounds = 10,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(10) }
         };
 
         var breakdown = PrizeApportionmentService.Apportion(request);
 
-        // overallSub = 80 (< £100 threshold) -> £1 granular [70,30] -> [56,24].
-        SlotFor(breakdown, PrizeType.Overall, 1).Should().Be(56m);
-        SlotFor(breakdown, PrizeType.Overall, 2).Should().Be(24m);
+        // overallSub = 80, 1st place (£56 natural) > £5 so the whole fund rounds: [70,30] -> [60,20].
+        SlotFor(breakdown, PrizeType.Overall, 1).Should().Be(60m);
+        SlotFor(breakdown, PrizeType.Overall, 2).Should().Be(20m);
+        TotalAllocated(breakdown).Should().Be(80);
     }
 
     [Fact]
@@ -179,14 +216,13 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 3,
             StakePounds = 1,
-            OverallRoundingThresholdPounds = 0,
             NumberOfRounds = 38,
             Categories = new[] { Overall(1) }
         };
 
         var breakdown = PrizeApportionmentService.Apportion(request);
 
-        // Threshold 0 but overallSub = 3 (< £5) so still £1 granular, winner takes all.
+        // overallSub = 3 (top place <= £5) so stays £1 granular, winner takes all.
         SlotFor(breakdown, PrizeType.Overall, 1).Should().Be(3m);
         TotalAllocated(breakdown).Should().Be(3);
     }
@@ -198,14 +234,13 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 11,
             StakePounds = 1,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(1) }
         };
 
         var breakdown = PrizeApportionmentService.Apportion(request);
 
-        // overallSub = 11, table [50,30,20] -> [6,3,2], all > 0... use even smaller to drop.
+        // overallSub = 11 -> 1st natural £6 > £5 so rounds: floored 10 -> [10,0,0]; odd £1 onto 1st = £11.
         var overall = breakdown.Categories.Single(c => c.Category == PrizeType.Overall);
         overall.Slots.Should().OnlyContain(s => s.Amount > 0);
         TotalAllocated(breakdown).Should().Be(11);
@@ -219,7 +254,6 @@ public class PrizeApportionmentServiceTests
             EntrantCount = 11,
             StakePounds = 0,
             AdminTopUpPounds = 1,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(0) }
         };
@@ -243,7 +277,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 7,
             Categories = new[] { Round(3), Exact(2) }
         };
@@ -265,7 +298,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             NumberOfMonths = 4,
             Categories = new[] { Monthly(3), Overall(2) }
@@ -287,7 +319,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 7,
             Categories = new[] { Round(3), Section(2) }
         };
@@ -306,7 +337,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 40,
             StakePounds = 1,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Round(1) }
         };
@@ -328,7 +358,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 1,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             NumberOfMonths = 3,
             Categories = new[] { Monthly(1) }
@@ -349,7 +378,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 1,
             StakePounds = 5,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Round(2), Exact(3) }
         };
@@ -371,7 +399,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 0,
             Categories = new[] { Round(3), Exact(2) }
         };
@@ -395,7 +422,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Section(5) }
         };
@@ -403,33 +429,53 @@ public class PrizeApportionmentServiceTests
         var breakdown = PrizeApportionmentService.Apportion(request);
 
         var section = breakdown.Categories.Single(c => c.Category == PrizeType.Section);
-        // sectionSub = 50 -> 25/25; each stage table [70,30] -> [18,7] (top-down leftover).
-        section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 1 && s.Amount == 18m);
-        section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 2 && s.Amount == 7m);
-        section.Slots.Should().Contain(s => s.StageName == "Knockout stage" && s.Rank == 1 && s.Amount == 18m);
-        section.Slots.Should().Contain(s => s.StageName == "Knockout stage" && s.Rank == 2 && s.Amount == 7m);
+        // sectionSub = 50 -> 25/25; each stage 1st place (£18 natural) > £5 so rounds [70,30] -> [20,5].
+        section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 1 && s.Amount == 20m);
+        section.Slots.Should().Contain(s => s.StageName == "Group stage" && s.Rank == 2 && s.Amount == 5m);
+        section.Slots.Should().Contain(s => s.StageName == "Knockout stage" && s.Rank == 1 && s.Amount == 20m);
+        section.Slots.Should().Contain(s => s.StageName == "Knockout stage" && s.Rank == 2 && s.Amount == 5m);
         section.SubPotPounds.Should().Be(50);
         TotalAllocated(breakdown).Should().Be(50);
     }
 
     [Fact]
-    public void Apportion_ShouldGiveOddSectionPoundToGroupStage()
+    public void Apportion_ShouldLandSectionRemainderOnGroupStage_WhenNoAbsorbingCategory()
     {
         var request = new PrizeApportionmentRequest
         {
             EntrantCount = 5,
             StakePounds = 5,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Section(5) }
         };
 
         var breakdown = PrizeApportionmentService.Apportion(request);
 
-        // sectionSub = 25 -> 13/12 (group stage gets the odd pound, top-down).
+        // sectionSub = 25 -> 13/12; each stage rounds to £10 (single place), the £5 of spill lands on the group stage.
         var section = breakdown.Categories.Single(c => c.Category == PrizeType.Section);
-        section.Slots.Single(s => s.StageName == "Group stage").Amount.Should().Be(13m);
-        section.Slots.Single(s => s.StageName == "Knockout stage").Amount.Should().Be(12m);
+        section.Slots.Single(s => s.StageName == "Group stage").Amount.Should().Be(15m);
+        section.Slots.Single(s => s.StageName == "Knockout stage").Amount.Should().Be(10m);
+        section.SubPotPounds.Should().Be(25);
+    }
+
+    [Fact]
+    public void Apportion_ShouldSpillSectionRemainderToOverall_WhenExactDisabled()
+    {
+        var request = new PrizeApportionmentRequest
+        {
+            EntrantCount = 5,
+            StakePounds = 10,
+            NumberOfRounds = 38,
+            Categories = new[] { Overall(5), Section(5) }
+        };
+
+        var breakdown = PrizeApportionmentService.Apportion(request);
+
+        // sectionSub = 25 -> 13/12, each stage rounds to £10 leaving £5 of spill; no Exact, so it flows to Overall.
+        // overallSub = 25 + 5 = 30.
+        breakdown.Categories.Single(c => c.Category == PrizeType.Section).SubPotPounds.Should().Be(20);
+        breakdown.Categories.Single(c => c.Category == PrizeType.Overall).SubPotPounds.Should().Be(30);
+        TotalAllocated(breakdown).Should().Be(50);
     }
 
     [Fact]
@@ -439,7 +485,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[]
             {
@@ -465,7 +510,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 10,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[]
             {
@@ -492,16 +536,16 @@ public class PrizeApportionmentServiceTests
             EntrantCount = 1,
             StakePounds = 10,
             AdminTopUpPounds = 10,
-            OverallRoundingThresholdPounds = 1000,
             NumberOfRounds = 38,
             Categories = new[] { Overall(8), Exact(2) }
         };
 
         var breakdown = PrizeApportionmentService.Apportion(request);
 
-        // Top-up £10 split 8:2 -> +£8 overall, +£2 exact. overallSub = 8 + 8 = 16, exact = 2 + 2 = 4.
-        breakdown.Categories.Single(c => c.Category == PrizeType.Overall).SubPotPounds.Should().Be(16);
-        breakdown.Categories.Single(c => c.Category == PrizeType.MostExactScores).SubPotPounds.Should().Be(4);
+        // Top-up £10 split 8:2 -> overallSub = 8 + 8 = 16, exactSub = 2 + 2 = 4.
+        // Overall's £16 (1st place > £5) rounds down to £15, the odd £1 spilling to Exact -> £5.
+        breakdown.Categories.Single(c => c.Category == PrizeType.Overall).SubPotPounds.Should().Be(15);
+        breakdown.Categories.Single(c => c.Category == PrizeType.MostExactScores).SubPotPounds.Should().Be(5);
         TotalAllocated(breakdown).Should().Be(20);
     }
 
@@ -512,17 +556,16 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 5,
             StakePounds = 0,
-            AdminTopUpPounds = 11,
-            OverallRoundingThresholdPounds = 1000,
+            AdminTopUpPounds = 10,
             NumberOfRounds = 38,
             Categories = new[] { Overall(0), Exact(0) }
         };
 
         var breakdown = PrizeApportionmentService.Apportion(request);
 
-        // Free league: weights all zero -> equal split with top-down leftover -> £6 overall, £5 exact.
-        breakdown.PotPounds.Should().Be(11);
-        breakdown.Categories.Single(c => c.Category == PrizeType.Overall).SubPotPounds.Should().Be(6);
+        // Free league: weights all zero -> equal split -> £5 overall, £5 exact (both clean, no rounding spill).
+        breakdown.PotPounds.Should().Be(10);
+        breakdown.Categories.Single(c => c.Category == PrizeType.Overall).SubPotPounds.Should().Be(5);
         breakdown.Categories.Single(c => c.Category == PrizeType.MostExactScores).SubPotPounds.Should().Be(5);
     }
 
@@ -534,7 +577,6 @@ public class PrizeApportionmentServiceTests
             EntrantCount = 0,
             StakePounds = 0,
             AdminTopUpPounds = 0,
-            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(0), Exact(0) }
         };
@@ -561,7 +603,6 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 50,
             StakePounds = 200,
-            OverallRoundingThresholdPounds = 100000,
             NumberOfRounds = 38,
             Categories = new[] { Overall(200, thirteenPlaces) }
         };
@@ -603,14 +644,6 @@ public class PrizeApportionmentServiceTests
     public void Apportion_ShouldThrow_WhenAdminTopUpIsNegative()
     {
         var request = new PrizeApportionmentRequest { EntrantCount = 1, StakePounds = 10, AdminTopUpPounds = -1, NumberOfRounds = 38, Categories = new[] { Overall(10) } };
-        var act = () => PrizeApportionmentService.Apportion(request);
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void Apportion_ShouldThrow_WhenThresholdIsNegative()
-    {
-        var request = new PrizeApportionmentRequest { EntrantCount = 1, StakePounds = 10, OverallRoundingThresholdPounds = -1, NumberOfRounds = 38, Categories = new[] { Overall(10) } };
         var act = () => PrizeApportionmentService.Apportion(request);
         act.Should().Throw<ArgumentException>();
     }

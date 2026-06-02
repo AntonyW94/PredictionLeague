@@ -9,9 +9,6 @@ public class PrizeSchemeRequestValidator : AbstractValidator<PrizeSchemeRequest>
 {
     public PrizeSchemeRequestValidator()
     {
-        RuleFor(x => x.OverallRoundingThresholdPounds)
-            .GreaterThanOrEqualTo(0).WithMessage("The £5-rounding threshold must be zero or more.");
-
         RuleFor(x => x.Categories)
             .NotEmpty().WithMessage("Enable at least one prize category.");
 

@@ -6,6 +6,5 @@ namespace ThePredictions.Contracts.Prizes;
 /// </summary>
 public class PrizeSchemeRequest
 {
-    public int OverallRoundingThresholdPounds { get; set; } = 100;
     public List<PrizeSchemeCategoryRequest> Categories { get; set; } = [];
 }

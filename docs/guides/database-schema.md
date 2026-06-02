@@ -466,7 +466,6 @@ frozen into `LeaguePrizeSettings` at the deadline.
 |--------|------|----------|---------|-------------|
 | Id | int | NO | IDENTITY | Primary key |
 | LeagueId | int | NO | | FK to Leagues (one scheme per league) |
-| OverallRoundingThresholdPounds | int | NO | 100 | Overall sub-pot at/above which every Overall rank rounds to a clean £5 |
 | SetAtUtc | datetime2 | NO | | When the scheme was set (write-once marker) |
 | SetByUserId | nvarchar(450) | NO | | FK to AspNetUsers - who set the scheme |
 

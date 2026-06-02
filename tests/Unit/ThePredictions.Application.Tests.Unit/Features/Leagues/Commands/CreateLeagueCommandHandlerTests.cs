@@ -120,7 +120,6 @@ public class CreateLeagueCommandHandlerTests
 
         var scheme = new ThePredictions.Contracts.Prizes.PrizeSchemeRequest
         {
-            OverallRoundingThresholdPounds = 100,
             Categories = new List<ThePredictions.Contracts.Prizes.PrizeSchemeCategoryRequest>
             {
                 new() { Category = PrizeType.Overall, PerEntryPounds = 7 },

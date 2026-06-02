@@ -12,7 +12,6 @@ public class PrizeSchemeRequestValidatorTests
 
     private static PrizeSchemeRequest Valid() => new()
     {
-        OverallRoundingThresholdPounds = 100,
         Categories = new List<PrizeSchemeCategoryRequest>
         {
             new() { Category = PrizeType.Overall, PerEntryPounds = 8 },
@@ -42,15 +41,6 @@ public class PrizeSchemeRequestValidatorTests
         request.Categories.Add(new PrizeSchemeCategoryRequest { Category = PrizeType.Overall, PerEntryPounds = 1 });
 
         _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.Categories);
-    }
-
-    [Fact]
-    public void Validate_ShouldFail_WhenThresholdNegative()
-    {
-        var request = Valid();
-        request.OverallRoundingThresholdPounds = -1;
-
-        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.OverallRoundingThresholdPounds);
     }
 
     [Fact]

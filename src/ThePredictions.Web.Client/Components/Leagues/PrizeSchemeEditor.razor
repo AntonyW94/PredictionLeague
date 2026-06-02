@@ -53,14 +53,7 @@
             <input type="number" min="0" step="1" class="form-control"
                    value="@PrizeFundOverride" disabled="@Disabled"
                    @onchange="e => SetTopUp(e.Value?.ToString())" />
-            <div class="form-text text-white-50">Optional. Sits on top of the entry fees.</div>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Round overall prizes to £5 above (£)</label>
-            <input type="number" min="0" step="5" class="form-control"
-                   value="@Scheme.OverallRoundingThresholdPounds" disabled="@Disabled"
-                   @onchange="e => SetThreshold(e.Value?.ToString())" />
-            <div class="form-text text-white-50">Headline overall prizes round to clean £5s above this.</div>
+            <div class="form-text text-white-50">Optional. Sits on top of the entry fees. Placed prizes over £5 round to clean £5s automatically.</div>
         </div>
     </div>
 
@@ -184,12 +177,6 @@
         var pounds = ParseInt(raw);
         PrizeFundOverride = pounds > 0 ? pounds : null;
         await PrizeFundOverrideChanged.InvokeAsync(PrizeFundOverride);
-        await RefreshPreviewAsync();
-    }
-
-    private async Task SetThreshold(string? raw)
-    {
-        Scheme.OverallRoundingThresholdPounds = ParseInt(raw);
         await RefreshPreviewAsync();
     }
 

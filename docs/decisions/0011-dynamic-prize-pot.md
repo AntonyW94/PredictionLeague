@@ -44,17 +44,20 @@ We will adopt a **block-apportionment** prize scheme (Option C) with these rules
 3. **Places scale with entrants** via an admin-editable **threshold table**
    (default: 1 place ≤5 entrants, 2 at 6–10 [70/30], 3 at 11–20 [50/30/20], 4 at
    21–40 [50/25/15/10], 5 at 41–75, 6 at 76+).
-4. **£5 rounding on Overall prizes only**, above a threshold (default £100 overall
-   sub-pot): floor the overall sub-pot to the nearest £5 so **every** overall prize
-   (1st included) is a clean £5, and **spill the odd £1–£4 into another category's
-   fund** (priority Round → Exact → Monthly → Section; fallback: if Overall is the
-   only category, 1st absorbs it). The spillover is **conserved and stateless** —
-   recomputed from `(scheme, pot, N)` on every change, never stored, so it moves
-   freely between funds during registration and can return; the total across all
-   funds always equals the pot. Only the deadline freeze is permanent. **Round,
-   Monthly, Exact and Section prizes keep natural £1 values** and absorb the
-   spillover cleanly. (Grounded in last season's real prizes: £4/round, £48 exact,
-   £25/month, £220/£120/£90 overall.)
+4. **£5 rounding on placed prizes (Overall and Section)**, triggered **per
+   individual prize**: when a category's top place would naturally pay **more than
+   £5**, the whole category fund is handed out in clean £5 chunks (floored,
+   top-down) so **every** placed prize is a clean £5, and the odd £1–£4 **spills
+   into another category's fund** (priority Most Exact Scores → Overall → Section;
+   fallback: the top place of the same category absorbs it). A Section spills its
+   per-stage remainders the same way. Funds whose top place is **≤ £5 stay
+   £1-granular** so small/early pots are not distorted. **Round, Monthly and Most
+   Exact Scores prizes keep natural £1 values** and absorb the spillover cleanly.
+   The spillover is **conserved and stateless** — recomputed from `(scheme, pot, N)`
+   on every change, never stored, so it moves freely between funds during
+   registration and can return; the total across all funds always equals the pot.
+   Only the deadline freeze is permanent. (Grounded in last season's real prizes:
+   £4/round, £48 exact, £25/month, £220/£120/£90 overall.)
 5. **Category registry**, each entry declaring a default weight, a *kind*
    (`EndOfSeason`, `Recurring`, `Staged`) and an **availability gate**:
    - **Monthly → seasons only** (tournaments are too short); **Section →
@@ -85,8 +88,8 @@ We will adopt a **block-apportionment** prize scheme (Option C) with these rules
 - Pure-integer apportionment is easy to test to the required 100% coverage.
 
 **Against / cost**
-- Prizes constrained to £1 (and Overall to £5 above the threshold); no arbitrary
-  bespoke amounts via the normal path.
+- Prizes constrained to £1 (and placed prizes to £5 once a place exceeds £5); no
+  arbitrary bespoke amounts via the normal path.
 - Per-rank deltas can be lumpy as blocks re-apportion (category-level deltas stay
   stable — that's the headline shown to joiners).
 - Net-new build: scheme storage, evaluation engine, boost admin UI (none today),

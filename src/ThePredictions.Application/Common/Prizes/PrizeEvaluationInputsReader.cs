@@ -40,7 +40,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
 
         const string schemeSql = @"
             SELECT
-                lps.[OverallRoundingThresholdPounds]
+                lps.[Id]
             FROM
                 [LeaguePrizeScheme] lps
             WHERE
@@ -81,7 +81,6 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
             NumberOfMonths = CountMonths(row.SeasonStartDateUtc, row.SeasonEndDateUtc),
             HasScheme = scheme is not null,
             AdminTopUpPounds = (int)decimal.Truncate(row.PrizeFundOverride ?? 0m),
-            OverallRoundingThresholdPounds = scheme?.OverallRoundingThresholdPounds ?? 0,
             Categories = categories
         };
     }
@@ -114,7 +113,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
     [ExcludeFromCodeCoverage]
     private sealed class SchemeRow
     {
-        public int OverallRoundingThresholdPounds { get; init; }
+        public int Id { get; init; }
     }
 
     [ExcludeFromCodeCoverage]

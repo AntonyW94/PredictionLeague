@@ -14,7 +14,6 @@ public class LeaguePrizeScheme
 {
     public int Id { get; init; }
     public int LeagueId { get; private set; }
-    public int OverallRoundingThresholdPounds { get; private set; }
     public DateTime SetAtUtc { get; private set; }
     public string SetByUserId { get; private set; } = string.Empty;
 
@@ -23,11 +22,10 @@ public class LeaguePrizeScheme
 
     private LeaguePrizeScheme() { }
 
-    public LeaguePrizeScheme(int id, int leagueId, int overallRoundingThresholdPounds, DateTime setAtUtc, string setByUserId, IEnumerable<LeaguePrizeSchemeEntry?>? entries)
+    public LeaguePrizeScheme(int id, int leagueId, DateTime setAtUtc, string setByUserId, IEnumerable<LeaguePrizeSchemeEntry?>? entries)
     {
         Id = id;
         LeagueId = leagueId;
-        OverallRoundingThresholdPounds = overallRoundingThresholdPounds;
         SetAtUtc = setAtUtc;
         SetByUserId = setByUserId;
 
@@ -37,14 +35,12 @@ public class LeaguePrizeScheme
 
     public static LeaguePrizeScheme Create(
         int stakePounds,
-        int overallRoundingThresholdPounds,
         IEnumerable<LeaguePrizeSchemeEntry> entries,
         string setByUserId,
         bool isTournament,
         IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.Negative(stakePounds);
-        Guard.Against.Negative(overallRoundingThresholdPounds);
         Guard.Against.NullOrWhiteSpace(setByUserId);
         Guard.Against.Null(entries);
 
@@ -71,7 +67,6 @@ public class LeaguePrizeScheme
 
         var scheme = new LeaguePrizeScheme
         {
-            OverallRoundingThresholdPounds = overallRoundingThresholdPounds,
             SetByUserId = setByUserId,
             SetAtUtc = dateTimeProvider.UtcNow
         };

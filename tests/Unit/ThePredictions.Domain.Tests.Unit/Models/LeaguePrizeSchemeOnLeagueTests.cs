@@ -19,7 +19,7 @@ public class LeaguePrizeSchemeOnLeagueTests
         League.Create(1, "Test League", "admin-user", _dateTimeProvider.UtcNow.AddMonths(1), 3, 1, price, CreateFutureSeason(), _dateTimeProvider);
 
     private LeaguePrizeScheme CreateScheme(int stake) =>
-        LeaguePrizeScheme.Create(stake, 100, new[] { LeaguePrizeSchemeEntry.Create(PrizeType.Overall, stake) }, "admin-user", false, _dateTimeProvider);
+        LeaguePrizeScheme.Create(stake, new[] { LeaguePrizeSchemeEntry.Create(PrizeType.Overall, stake) }, "admin-user", false, _dateTimeProvider);
 
     [Fact]
     public void SetPrizeScheme_ShouldAttachScheme_AndFlagPrizes_WhenPaidLeague()
