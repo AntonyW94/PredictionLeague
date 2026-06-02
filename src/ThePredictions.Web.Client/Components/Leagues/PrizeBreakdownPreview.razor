@@ -25,27 +25,37 @@ else
                         }
                     </span>
                 </div>
-                <ul class="prize-slot-list">
-                    @{ string? lastStage = null; }
-                    @foreach (var slot in category.Slots)
-                    {
-                        @if (slot.StageName is not null && slot.StageName != lastStage)
+                @{
+                    // A lone prize whose label just repeats the category name (e.g. Most exact scores)
+                    // adds nothing over the header total, so hide the row. Round keeps its "Per round"
+                    // slot because that per-event figure differs from the category total.
+                    var slotsRepeatHeader = category.Slots.Count == 1
+                        && string.Equals(category.Slots[0].Label, category.DisplayName, StringComparison.Ordinal);
+                }
+                @if (!slotsRepeatHeader)
+                {
+                    <ul class="prize-slot-list">
+                        @{ string? lastStage = null; }
+                        @foreach (var slot in category.Slots)
                         {
-                            lastStage = slot.StageName;
-                            <li class="prize-stage-heading">@slot.StageName</li>
+                            @if (slot.StageName is not null && slot.StageName != lastStage)
+                            {
+                                lastStage = slot.StageName;
+                                <li class="prize-stage-heading">@slot.StageName</li>
+                            }
+                            <li class="prize-slot @RankClass(slot.Rank)">
+                                <span class="prize-slot-label">@SlotLabel(slot)</span>
+                                <span class="prize-slot-amount">
+                                    @FormatMoney(slot.Amount)
+                                    @if (ShowDeltas && slot.Delta is > 0)
+                                    {
+                                        <span class="prize-delta">+@FormatMoney(slot.Delta.Value)</span>
+                                    }
+                                </span>
+                            </li>
                         }
-                        <li class="prize-slot @RankClass(slot.Rank)">
-                            <span class="prize-slot-label">@SlotLabel(slot)</span>
-                            <span class="prize-slot-amount">
-                                @FormatMoney(slot.Amount)
-                                @if (ShowDeltas && slot.Delta is > 0)
-                                {
-                                    <span class="prize-delta">+@FormatMoney(slot.Delta.Value)</span>
-                                }
-                            </span>
-                        </li>
-                    }
-                </ul>
+                    </ul>
+                }
             </div>
         }
     </div>

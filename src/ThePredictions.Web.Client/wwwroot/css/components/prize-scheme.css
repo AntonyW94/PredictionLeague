@@ -238,7 +238,12 @@ input.prize-preview-count {
 
 .prize-slot--silver .prize-slot-label,
 .prize-slot--silver .prize-slot-amount {
-    color: var(--grey-400);
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-slot--silver .prize-slot-label,
+.theme-dark .prize-slot--silver .prize-slot-amount {
+    color: var(--silver);
 }
 
 .prize-slot--bronze .prize-slot-label,
