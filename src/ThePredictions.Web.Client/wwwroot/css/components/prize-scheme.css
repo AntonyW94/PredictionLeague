@@ -80,6 +80,62 @@
     color: var(--text-secondary);
 }
 
+/* SVG boost badge (replaces the PNGs) */
+.boost-icon {
+    display: inline-block;
+    line-height: 0;
+    flex: none;
+}
+
+.boost-icon svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.boost-icon-hex {
+    stroke: var(--white);
+    stroke-width: 4;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 2px 3px var(--black-alpha-35, rgba(0, 0, 0, 0.35)));
+    transition: stroke 0.15s ease;
+}
+
+.boost-icon-glyph {
+    fill: var(--white);
+    font-weight: 800;
+    text-anchor: middle;
+    dominant-baseline: central;
+    font-family: inherit;
+}
+
+.boost-icon-fill {
+    fill: var(--white);
+}
+
+.boost-icon-tick {
+    fill: none;
+    stroke: var(--white);
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Selected: bright cyan neon glow + border */
+.boost-icon--selected .boost-icon-hex {
+    stroke: var(--blue-300, #67e8f9);
+}
+
+.boost-icon--selected svg {
+    filter: drop-shadow(0 0 3px var(--blue-400, #22d3ee)) drop-shadow(0 0 7px var(--blue-500, #06b6d4));
+}
+
+/* Disabled: desaturated and dimmed */
+.boost-icon--disabled svg {
+    filter: grayscale(1);
+    opacity: 0.45;
+}
+
 /* Breakdown preview */
 .prize-breakdown {
     display: flex;

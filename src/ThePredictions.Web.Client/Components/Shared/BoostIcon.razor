@@ -1,0 +1,57 @@
+@* Reusable SVG boost badge - replaces the heavy PNGs. Hexagon + purple->green gradient,
+   with a white glyph per boost. Selected/disabled are CSS states (no extra assets). *@
+
+<span class="boost-icon @StateClass" style="width:@(Size)px;height:@(Size)px;" role="img" aria-label="@Label">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="@_gradientId" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#7e22ce" />
+                <stop offset="100%" stop-color="#22c55e" />
+            </linearGradient>
+        </defs>
+
+        <polygon class="boost-icon-hex"
+                 points="4,50 27,10.2 73,10.2 96,50 73,89.8 27,89.8"
+                 fill="url(#@_gradientId)" />
+
+        @((MarkupString)GlyphMarkup)
+    </svg>
+</span>
+
+@code {
+    /// <summary>The boost code (e.g. "DoubleUp", "CorrectGoals"), or "None" for the no-boost option.</summary>
+    [Parameter, EditorRequired] public string Code { get; set; } = string.Empty;
+
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public int Size { get; set; } = 64;
+
+    private readonly string _gradientId = $"boost-grad-{Guid.NewGuid():N}";
+
+    private string Label => Name ?? Code;
+
+    private string StateClass => Disabled ? "boost-icon--disabled" : Selected ? "boost-icon--selected" : string.Empty;
+
+    private string GlyphMarkup => NormaliseCode(Code) switch
+    {
+        "doubleup" => Text("x2", 50, 54, 46),
+
+        "correctgoals" =>
+            Text("3-2", 38, 34, 20) +
+            Text("1-4", 34, 64, 20) +
+            "<circle class=\"boost-icon-fill\" cx=\"66\" cy=\"40\" r=\"6\" />" +
+            "<circle class=\"boost-icon-fill\" cx=\"60\" cy=\"52\" r=\"6\" />" +
+            "<circle class=\"boost-icon-fill\" cx=\"72\" cy=\"52\" r=\"6\" />" +
+            "<path class=\"boost-icon-tick\" d=\"M30 70 L44 84 L72 50\" />",
+
+        "none" => Text("X", 50, 55, 50),
+
+        _ => Text(string.IsNullOrEmpty(Code) ? "?" : char.ToUpperInvariant(Code[0]).ToString(), 50, 55, 50)
+    };
+
+    private static string Text(string value, int x, int y, int fontSize) =>
+        $"<text class=\"boost-icon-glyph\" x=\"{x}\" y=\"{y}\" font-size=\"{fontSize}\">{value}</text>";
+
+    private static string NormaliseCode(string code) => new string(code.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+}

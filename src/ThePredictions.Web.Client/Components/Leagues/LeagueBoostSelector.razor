@@ -23,6 +23,7 @@
                     <label class="prize-toggle">
                         <input type="checkbox" checked="@selection.IsEnabled" disabled="@Disabled"
                                @onchange="e => Toggle(selection, (bool)e.Value!)" />
+                        <BoostIcon Code="@boost.Code" Name="@boost.Name" Selected="selection.IsEnabled" Disabled="@Disabled" Size="44" />
                         <span>@boost.Name</span>
                     </label>
                     @if (!string.IsNullOrWhiteSpace(boost.Description))
