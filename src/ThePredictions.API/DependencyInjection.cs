@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using ThePredictions.API.Services;
 using ThePredictions.Application.Common.Behaviours;
 using ThePredictions.Application.Common.Interfaces;
+using ThePredictions.Application.Common.Prizes;
 using ThePredictions.Application.Services;
 using ThePredictions.Infrastructure.Authentication.Settings;
 using ThePredictions.Validators.Authentication;
@@ -212,6 +213,7 @@ public static class DependencyInjection
             services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddSingleton<IPrizeEvaluator, PrizeEvaluator>();
 
             services.AddMediatR(cfg =>
             {
