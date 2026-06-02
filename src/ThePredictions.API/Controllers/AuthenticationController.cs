@@ -19,11 +19,15 @@ namespace ThePredictions.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-[EnableRateLimiting("auth")]
 [SwaggerTag("Authentication - Register, login, logout, and token refresh")]
 public class AuthenticationController(ILogger<AuthenticationController> logger, IConfiguration configuration, IMediator mediator) : AuthControllerBase(configuration)
 {
+    // Rate limiting is applied per-endpoint: the strict "auth" policy guards
+    // credential / email-sending endpoints, while the silent, cookie-authenticated
+    // refresh and logout use the standard "api" policy so a normal session's
+    // periodic refreshes aren't throttled like password-guessing attempts.
     [HttpPost("register")]
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Register a new user account",
@@ -54,6 +58,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("confirm-email")]
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Confirm an email address using the token from the confirmation email",
@@ -69,6 +74,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("resend-confirmation")]
+    [EnableRateLimiting("auth")]
     [Authorize]
     [SwaggerOperation(
         Summary = "Resend the email-confirmation link to the current user",
@@ -84,6 +90,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Authenticate with email and password",
@@ -106,6 +113,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("refresh-token")]
+    [EnableRateLimiting("api")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Refresh an expired access token",
@@ -157,6 +165,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("logout")]
+    [EnableRateLimiting("api")]
     [Authorize]
     [SwaggerOperation(
         Summary = "Log out the current user",
@@ -174,6 +183,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("forgot-password")]
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Request a password reset email",
@@ -197,6 +207,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("reset-password")]
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Reset password using token from email",
