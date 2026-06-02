@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
 using ThePredictions.Application.Features.Authentication.Commands.ConfirmEmail;
 using ThePredictions.Application.Features.Authentication.Commands.Login;
@@ -121,12 +122,18 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     [SwaggerResponse(200, "Token refresh successful - returns new access token and refresh token", typeof(AuthenticationResponse))]
     [SwaggerResponse(400, "Invalid or expired refresh token")]
     public async Task<IActionResult> RefreshTokenAsync(
-        [FromBody, SwaggerParameter("Refresh token request (token can also be read from cookie)", Required = false)] RefreshTokenRequest request,
+        // EmptyBodyBehavior.Allow (and the nullable type) are essential: the normal
+        // silent refresh sends an EMPTY body and carries the token in the HTTP-only
+        // cookie. Without this, [ApiController] rejects the empty body with an
+        // automatic 400 ("A non-empty request body is required") before the action
+        // runs, so the cookie fallback below never executes and every cookie-based
+        // refresh fails - logging the user out when their access token expires.
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow), SwaggerParameter("Refresh token request (token can also be read from cookie)", Required = false)] RefreshTokenRequest? request,
         CancellationToken cancellationToken)
     {
         logger.LogInformation("--- Refresh-Token Endpoint Called ---");
 
-        var refreshToken = request.Token;
+        var refreshToken = request?.Token;
         string tokenSource;
 
         if (!string.IsNullOrEmpty(refreshToken))
