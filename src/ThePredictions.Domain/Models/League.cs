@@ -35,8 +35,11 @@ public partial class League
     public IReadOnlyCollection<LeagueMember> Members => _members.AsReadOnly();
     public IReadOnlyCollection<LeaguePrizeSetting> PrizeSettings => _prizeSettings.AsReadOnly();
 
+    public LeaguePrizeScheme? PrizeScheme => _prizeScheme;
+
     private readonly List<LeagueMember> _members = new();
     private readonly List<LeaguePrizeSetting> _prizeSettings = new();
+    private LeaguePrizeScheme? _prizeScheme;
 
     private League() { }
 
@@ -59,7 +62,8 @@ public partial class League
         string? bankAccountName = null,
         string? bankSortCode = null,
         string? bankAccountNumber = null,
-        string? paymentReferenceTemplate = null)
+        string? paymentReferenceTemplate = null,
+        LeaguePrizeScheme? prizeScheme = null)
     {
         Id = id;
         Name = name;
@@ -87,6 +91,8 @@ public partial class League
 
         if (prizeSettings != null)
             _prizeSettings.AddRange(prizeSettings.Where(p => p != null).Select(p => p!));
+
+        _prizeScheme = prizeScheme;
     }
 
     #region Factory Methods
@@ -240,6 +246,39 @@ public partial class League
     public void SetPrizeFundOverride(decimal? amount)
     {
         PrizeFundOverride = amount;
+    }
+
+    /// <summary>
+    /// Sets the prize scheme once. Throws if a scheme is already set - league admins configure it
+    /// at creation (or once on a schemeless league) and it locks thereafter. Site-admin corrections
+    /// go through <see cref="OverridePrizeScheme"/>.
+    /// </summary>
+    public void SetPrizeScheme(LeaguePrizeScheme scheme)
+    {
+        Guard.Against.Null(scheme);
+
+        if (_prizeScheme is not null)
+            throw new InvalidOperationException("The prize scheme has already been set for this league.");
+
+        ApplyPrizeScheme(scheme);
+    }
+
+    /// <summary>
+    /// Replaces the prize scheme regardless of the write-once lock. Authorisation (site-admin only)
+    /// is enforced in the command handler, not here.
+    /// </summary>
+    public void OverridePrizeScheme(LeaguePrizeScheme scheme)
+    {
+        Guard.Against.Null(scheme);
+        ApplyPrizeScheme(scheme);
+    }
+
+    private void ApplyPrizeScheme(LeaguePrizeScheme scheme)
+    {
+        _prizeScheme = scheme;
+
+        // Free leagues with no admin top-up are informational only - they award no prizes.
+        HasPrizes = Price > 0 || scheme.AdminTopUpPounds > 0;
     }
 
     public void ReassignAdministrator(string newAdministratorUserId)
