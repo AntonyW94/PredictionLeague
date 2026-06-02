@@ -32,6 +32,13 @@
     {
         <div class="carousel-wrapper">
             <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
+                @if (DashboardState.Leaderboards.Count > 1)
+                {
+                    <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentIndex == 0)">
+                        <span class="bi bi-chevron-left"></span>
+                    </button>
+                }
+
                 <div class="carousel-track" style="@_trackStyle">
                     @foreach (var leaderboard in DashboardState.Leaderboards)
                     {
@@ -87,6 +94,13 @@
                         </div>
                     }
                 </div>
+
+                @if (DashboardState.Leaderboards.Count > 1)
+                {
+                    <button class="carousel-btn" @onclick="ShowNext" disabled="@(_currentIndex >= DashboardState.Leaderboards.Count - 1)">
+                        <span class="bi bi-chevron-right"></span>
+                    </button>
+                }
             </div>
 
             @if (DashboardState.Leaderboards.Count > 1)
