@@ -13,6 +13,7 @@ builder.Services.AddHttpClient("API", client =>
     {
         client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress);
     })
+    .AddHttpMessageHandler<AuthorizationMessageHandler>()
     .AddHttpMessageHandler<CookieHandler>();
 
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("API"));

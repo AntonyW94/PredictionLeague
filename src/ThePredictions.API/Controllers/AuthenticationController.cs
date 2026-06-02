@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
 using ThePredictions.Application.Features.Authentication.Commands.ConfirmEmail;
 using ThePredictions.Application.Features.Authentication.Commands.Login;
@@ -19,11 +20,15 @@ namespace ThePredictions.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-[EnableRateLimiting("auth")]
 [SwaggerTag("Authentication - Register, login, logout, and token refresh")]
 public class AuthenticationController(ILogger<AuthenticationController> logger, IConfiguration configuration, IMediator mediator) : AuthControllerBase(configuration)
 {
+    // Rate limiting is applied per-endpoint: the strict "auth" policy guards
+    // credential / email-sending endpoints, while the silent, cookie-authenticated
+    // refresh and logout use the standard "api" policy so a normal session's
+    // periodic refreshes aren't throttled like password-guessing attempts.
     [HttpPost("register")]
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Register a new user account",
@@ -54,6 +59,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("confirm-email")]
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Confirm an email address using the token from the confirmation email",
@@ -69,6 +75,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("resend-confirmation")]
+    [EnableRateLimiting("auth")]
     [Authorize]
     [SwaggerOperation(
         Summary = "Resend the email-confirmation link to the current user",
@@ -84,6 +91,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Authenticate with email and password",
@@ -106,6 +114,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("refresh-token")]
+    [EnableRateLimiting("api")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Refresh an expired access token",
@@ -113,12 +122,18 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     [SwaggerResponse(200, "Token refresh successful - returns new access token and refresh token", typeof(AuthenticationResponse))]
     [SwaggerResponse(400, "Invalid or expired refresh token")]
     public async Task<IActionResult> RefreshTokenAsync(
-        [FromBody, SwaggerParameter("Refresh token request (token can also be read from cookie)", Required = false)] RefreshTokenRequest request,
+        // EmptyBodyBehavior.Allow (and the nullable type) are essential: the normal
+        // silent refresh sends an EMPTY body and carries the token in the HTTP-only
+        // cookie. Without this, [ApiController] rejects the empty body with an
+        // automatic 400 ("A non-empty request body is required") before the action
+        // runs, so the cookie fallback below never executes and every cookie-based
+        // refresh fails - logging the user out when their access token expires.
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow), SwaggerParameter("Refresh token request (token can also be read from cookie)", Required = false)] RefreshTokenRequest? request,
         CancellationToken cancellationToken)
     {
         logger.LogInformation("--- Refresh-Token Endpoint Called ---");
 
-        var refreshToken = request.Token;
+        var refreshToken = request?.Token;
         string tokenSource;
 
         if (!string.IsNullOrEmpty(refreshToken))
@@ -157,6 +172,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("logout")]
+    [EnableRateLimiting("api")]
     [Authorize]
     [SwaggerOperation(
         Summary = "Log out the current user",
@@ -168,12 +184,13 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         var command = new LogoutCommand(CurrentUserId);
         await mediator.Send(command, cancellationToken);
 
-        Response.Cookies.Delete("refreshToken");
+        DeleteTokenCookie();
 
         return NoContent();
     }
 
     [HttpPost("forgot-password")]
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Request a password reset email",
@@ -197,6 +214,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     }
 
     [HttpPost("reset-password")]
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [SwaggerOperation(
         Summary = "Reset password using token from email",

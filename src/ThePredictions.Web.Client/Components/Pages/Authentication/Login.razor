@@ -3,6 +3,7 @@
 @inject IAuthenticationService AuthenticationService
 @inject IConfiguration Configuration
 @inject NavigationManager NavigationManager
+@inject ThePredictions.Web.Client.Authentication.SessionState SessionState
 
 @using Microsoft.AspNetCore.WebUtilities
 @using ThePredictions.Contracts.Authentication
@@ -96,8 +97,18 @@
 
     protected override void OnInitialized()
     {
+        // A session that ended elsewhere (e.g. an expired token) leaves a one-shot
+        // message in SessionState; prefer it over the ?error query that the
+        // external-login flow uses.
+        if (!string.IsNullOrEmpty(SessionState.LogoutMessage))
+        {
+            _errorMessage = SessionState.LogoutMessage;
+            SessionState.LogoutMessage = null;
+            return;
+        }
+
         var uri = new Uri(NavigationManager.Uri);
-        
+
         if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("error", out var errorValue))
             _errorMessage = errorValue;
     }

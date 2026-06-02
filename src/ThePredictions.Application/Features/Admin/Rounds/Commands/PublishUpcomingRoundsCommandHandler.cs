@@ -14,6 +14,36 @@ public class PublishUpcomingRoundsCommandHandler(IRoundRepository roundRepositor
 
         await PublishDraftRoundsAsync(sixWeeksFromNowUtc, cancellationToken);
         await UnpublishDistantRoundsAsync(sixWeeksFromNowUtc, cancellationToken);
+        await UnpublishRoundsWithoutConfirmedFixturesAsync(cancellationToken);
+    }
+
+    private async Task UnpublishRoundsWithoutConfirmedFixturesAsync(CancellationToken cancellationToken)
+    {
+        // A round is published once any of its fixtures has confirmed teams. If sync
+        // later removes those fixtures (e.g. the API drops a knockout draw), the round
+        // can be left showing only TBD placeholders. Revert it to Draft so it isn't
+        // shown to players until its teams are known again. InProgress/Completed
+        // rounds are not affected (this only looks at Published rounds).
+        var publishedRounds = await roundRepository.GetPublishedRoundsAsync(cancellationToken);
+
+        if (!publishedRounds.Any())
+            return;
+
+        var unpublishedCount = 0;
+
+        foreach (var round in publishedRounds.Values)
+        {
+            if (round.HasConfirmedFixtures)
+                continue;
+
+            round.UpdateStatus(RoundStatus.Draft, dateTimeProvider);
+            await roundRepository.UpdateAsync(round, cancellationToken);
+            logger.LogInformation("Unpublished Round (Number: {RoundNumber}, ID: {RoundId}) — no fixtures with confirmed teams", round.RoundNumber, round.Id);
+            unpublishedCount++;
+        }
+
+        if (unpublishedCount > 0)
+            logger.LogInformation("Successfully unpublished Rounds with no confirmed fixtures (Count: {Count})", unpublishedCount);
     }
 
     private async Task PublishDraftRoundsAsync(DateTime cutoffUtc, CancellationToken cancellationToken)

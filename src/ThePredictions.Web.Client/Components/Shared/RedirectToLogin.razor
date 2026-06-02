@@ -1,8 +1,11 @@
-﻿@inject NavigationManager NavigationManager
+@inject NavigationManager NavigationManager
 
 @code {
     protected override void OnInitialized()
     {
+        // Plain redirect for the "not logged in" case. When a session has *expired*,
+        // the logout message is carried in SessionState and shown by the login page,
+        // so nothing extra is needed here.
         NavigationManager.NavigateTo("/authentication/login");
     }
 }

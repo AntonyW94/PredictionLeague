@@ -65,8 +65,8 @@ public class LeaguesController : ControllerBase
 
 | Type | Storage | Expiry | Use |
 |------|---------|--------|-----|
-| JWT Access Token | Client (localStorage) | 60 minutes | API requests (`Authorization: Bearer`) |
-| Refresh Token | HTTP-only cookie | 7 days | Token refresh |
+| JWT Access Token | Client (localStorage) | 15 minutes | API requests (`Authorization: Bearer`) |
+| Refresh Token | HTTP-only cookie | 30 days (sliding) | Token refresh |
 | API Key | Request header | No expiry | Scheduled tasks (`X-Api-Key`) |
 
 ### Auth Attributes

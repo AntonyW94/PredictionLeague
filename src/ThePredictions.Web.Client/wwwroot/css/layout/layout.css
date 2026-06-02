@@ -94,4 +94,11 @@ dd {
    defined after the media query so it wins on source order). */
 .page-container--top {
     align-items: flex-start;
+    /* Match the gap admin-light form pages have above their hero and below their
+       action buttons (1.5rem), so top-pinned pages (My Details, Season Passes)
+       are consistent with Payout Details et al. at every breakpoint. On admin-light
+       the top gap comes from the hero's margin-top and the bottom from padding;
+       here both come from the container padding. */
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
 }

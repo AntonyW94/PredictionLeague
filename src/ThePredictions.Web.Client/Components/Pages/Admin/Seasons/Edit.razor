@@ -302,6 +302,12 @@
             _roundCount = seasonDto.RoundCount;
             _seasonYear = seasonDto.StartDateUtc.Year;
 
+            // Team count isn't stored; derive it from the teams already drawn in the
+            // first round so the match-count calculator works without re-running a
+            // lookup. A fresh season (no rounds yet) falls back to 0 until "Lookup
+            // from API" populates it during setup.
+            _teamCount = seasonDto.TeamCount;
+
             if (seasonDto.CompetitionType == (int)CompetitionType.Tournament)
             {
                 await LoadTournamentMappingsAsync();
@@ -368,7 +374,15 @@
 
                 _model.StartDateUtc = result.StartDateUtc;
                 _model.EndDateUtc = result.EndDateUtc;
-                _model.NumberOfRounds = result.RoundCount;
+
+                // Tournaments routinely expose fewer rounds in the API than the real
+                // competition has (knockout stages aren't drawn yet), so never let a
+                // lookup reduce the admin's configured round count - only raise it.
+                // Leagues take the API count as authoritative.
+                _model.NumberOfRounds = IsTournament
+                    ? Math.Max(_model.NumberOfRounds, result.RoundCount)
+                    : result.RoundCount;
+
                 _teamCount = result.TeamCount;
 
                 if (IsTournament)

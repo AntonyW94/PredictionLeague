@@ -5,13 +5,15 @@
     background: var(--purple-100);
     border-radius: 0;
     min-height: 100vh;
-    padding: 0 var(--space-3);
+    /* Bottom gap matches the action buttons' top margin (mt-4) so the button
+       row clears the footer instead of sitting flush against it on mobile. */
+    padding: 0 var(--space-3) var(--space-6);
     align-items: flex-start;
 }
 
 @media (min-width: 768px) {
     .admin-light {
-        padding: 0 var(--space-6);
+        padding: 0 var(--space-6) var(--space-6);
     }
 }
 
