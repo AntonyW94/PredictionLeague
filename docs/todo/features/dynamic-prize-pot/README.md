@@ -2,12 +2,13 @@
 
 ## Status
 
-**Not Started** (design proposal — options laid out for a decision)
+**Implemented** on branch `dynamic-prize-pot` (Option C - block apportionment, per ADR-0011).
 
-> This is a **thinking document**. It presents the problem, the constraints
-> already baked into the code, and **three candidate designs with pros and
-> cons**, plus a recommendation. Nothing here is built yet. Pick a direction
-> and we'll turn the chosen option into an ADR + task breakdown.
+> Originally a thinking document. The chosen direction (Option C) is now built:
+> domain apportionment engine, evaluation/registry, persistence, create/edit
+> commands with write-once, boost admin, the create/edit UI, prospective
+> surfacing with the +£x delta, and the Section prize + lazy deadline freeze.
+> Migration SQL is applied out of band (see the task notes / chat).
 
 ## Summary
 
@@ -460,11 +461,22 @@ record. Tasks (to be built in order; each is a separate file):
 
 | # | Task | Description | Status |
 |---|------|-------------|--------|
-| 1 | [Domain: prize scheme & apportionment](./01-domain-scheme-and-apportionment.md) | `PrizeScheme` entity (write-once), pure apportionment + £5-rounding service, 100% coverage | Not Started |
-| 2 | [Evaluation engine & category registry](./02-evaluation-engine-and-registry.md) | Live breakdown from (scheme, pot, N); registry with kinds + gating; threshold table | Not Started |
-| 3 | [Persistence & schema](./03-persistence-and-schema.md) | `LeaguePrizeScheme(+Entries)` tables, repo write path, DatabaseTools + schema doc | Not Started |
-| 4 | [Create/Edit commands & write-once](./04-create-edit-commands.md) | Set-scheme command (write-once + site-admin override), validators, replace deadline lock | Not Started |
-| 5 | [Boost admin configuration](./05-boost-admin-config.md) | Catalogue query + command to write `LeagueBoostRules`/`Windows` (net-new admin path) | Not Started |
-| 6 | [Create/Edit UI](./06-create-edit-ui.md) | "Prizes & Boosts" section: toggles, pound sliders, live preview, boost checkboxes, locked state | Not Started |
-| 7 | [Prospective & member surfacing](./07-surfacing-and-delta.md) | Prize-preview query/endpoint, +£x delta, projected-prizes panel | Not Started |
-| 8 | [Section prize + freeze-at-deadline](./08-section-and-freeze.md) | `Section` PrizeType + strategy; freeze scheme → `LeaguePrizeSettings` at deadline | Not Started |
+| 1 | [Domain: prize scheme & apportionment](./01-domain-scheme-and-apportionment.md) | `PrizeScheme` entity (write-once), pure apportionment + £5-rounding service, 100% coverage | Done |
+| 2 | [Evaluation engine & category registry](./02-evaluation-engine-and-registry.md) | Live breakdown from (scheme, pot, N); registry with kinds + gating; threshold table | Done |
+| 3 | [Persistence & schema](./03-persistence-and-schema.md) | `LeaguePrizeScheme(+Entries)` tables, repo write path, DatabaseTools + schema doc | Done |
+| 4 | [Create/Edit commands & write-once](./04-create-edit-commands.md) | Set-scheme command (write-once + site-admin override), validators, replace deadline lock | Done |
+| 5 | [Boost admin configuration](./05-boost-admin-config.md) | Catalogue query + command to write `LeagueBoostRules`/`Windows` (net-new admin path) | Done |
+| 6 | [Create/Edit UI](./06-create-edit-ui.md) | "Prizes & Boosts" section: toggles, pound sliders, live preview, boost checkboxes, locked state | Done (rank-table advanced editor: defaults only - see note) |
+| 7 | [Prospective & member surfacing](./07-surfacing-and-delta.md) | Prize-preview query/endpoint, +£x delta, projected-prizes panel | Done |
+| 8 | [Section prize + freeze-at-deadline](./08-section-and-freeze.md) | `Section` PrizeType + strategy; freeze scheme → `LeaguePrizeSettings` at deadline | Done |
+
+> **Decisions taken during build** (from the owner): recurring-remainder spills to
+> Most Exact Scores (else Overall); the prospective preview is a dedicated screen
+> reached via the entry code, including admin top-up money. The freeze is **lazy**
+> (runs at the first round-processing after the deadline) - no scheduler needed.
+>
+> **Remaining UI polish (follow-up):** the per-league *advanced rank-table editor*
+> ships as defaults-only in the UI for now (the storage column `RankTableJson` and
+> the whole evaluation pipeline already support per-league overrides; only the
+> editor widget is outstanding). Wiring the prospective-preview link into the
+> existing join-by-code entry box is also a small follow-up.
