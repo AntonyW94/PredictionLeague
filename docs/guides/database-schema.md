@@ -447,6 +447,54 @@ Prize configuration per league.
 - `Monthly` - Monthly aggregate prizes
 - `Round` - Weekly round winner prizes
 - `MostExactScores` - Most exact predictions prize
+- `Section` - Best aggregate per tournament stage (group stage vs knockouts)
+
+> `LeaguePrizeSettings` are the **frozen** post-deadline settlement artefacts. From the
+> dynamic-prize-pot feature (ADR-0011) they are produced by freezing a `LeaguePrizeScheme`
+> at the entry deadline; the manual `DefinePrizeStructure` path remains as a site-admin override.
+
+---
+
+### LeaguePrizeScheme
+
+The up-front, write-once prize **scheme** an admin configures before entries close (ADR-0011).
+One row per league. The concrete prize amounts are derived live by the apportionment engine and
+frozen into `LeaguePrizeSettings` at the deadline.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| LeagueId | int | NO | | FK to Leagues (one scheme per league) |
+| AdminTopUpPounds | int | NO | 0 | Whole-pound money the admin adds on top of entry fees |
+| OverallFivePoundThreshold | int | NO | 100 | Overall sub-pot at/above which every Overall rank rounds to a clean £5 |
+| SetAtUtc | datetime2 | NO | | When the scheme was set (write-once marker) |
+| SetByUserId | nvarchar(450) | NO | | FK to AspNetUsers - who set the scheme |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `LeagueId` (one scheme per league)
+- FK: `LeagueId` → `Leagues.Id` (CASCADE DELETE)
+- FK: `SetByUserId` → `AspNetUsers.Id`
+
+---
+
+### LeaguePrizeSchemeEntries
+
+One row per enabled prize category in a scheme: the whole-pound share of each entry that funds it,
+and an optional per-league override of the places (rank) table.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| LeaguePrizeSchemeId | int | NO | | FK to LeaguePrizeScheme |
+| Category | nvarchar(20) | NO | | Prize category (Overall, Round, Monthly, MostExactScores, Section) |
+| PerEntryPounds | int | NO | | Whole pounds of each entry allocated to this category |
+| RankTableJson | nvarchar(max) | YES | | Optional per-league places-table override (JSON); null uses the product default |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `(LeaguePrizeSchemeId, Category)`
+- FK: `LeaguePrizeSchemeId` → `LeaguePrizeScheme.Id` (CASCADE DELETE)
 
 ---
 
