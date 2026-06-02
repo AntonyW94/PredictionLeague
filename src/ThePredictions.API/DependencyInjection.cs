@@ -214,6 +214,7 @@ public static class DependencyInjection
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddSingleton<IPrizeEvaluator, PrizeEvaluator>();
+            services.AddScoped<IPrizeEvaluationInputsReader, PrizeEvaluationInputsReader>();
 
             services.AddMediatR(cfg =>
             {
