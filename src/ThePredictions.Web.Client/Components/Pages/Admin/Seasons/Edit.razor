@@ -302,6 +302,12 @@
             _roundCount = seasonDto.RoundCount;
             _seasonYear = seasonDto.StartDateUtc.Year;
 
+            // Team count isn't stored; derive it from the teams already drawn in the
+            // first round so the match-count calculator works without re-running a
+            // lookup. A fresh season (no rounds yet) falls back to 0 until "Lookup
+            // from API" populates it during setup.
+            _teamCount = seasonDto.TeamCount;
+
             if (seasonDto.CompetitionType == (int)CompetitionType.Tournament)
             {
                 await LoadTournamentMappingsAsync();

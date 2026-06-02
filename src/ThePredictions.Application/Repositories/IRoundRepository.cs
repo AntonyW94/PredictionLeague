@@ -23,6 +23,7 @@ public interface IRoundRepository
     Task<Round?> GetNextRoundForReminderAsync(CancellationToken cancellationToken);
     Task<Dictionary<int, Round>> GetDraftRoundsStartingBeforeAsync(DateTime dateLimitUtc, CancellationToken cancellationToken);
     Task<Dictionary<int, Round>> GetPublishedRoundsStartingAfterAsync(DateTime dateLimitUtc, CancellationToken cancellationToken);
+    Task<Dictionary<int, Round>> GetPublishedRoundsAsync(CancellationToken cancellationToken);
 
     #endregion
 

@@ -297,6 +297,12 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
         return await QueryAndMapRoundsAsync(sql, cancellationToken, new { PublishedStatus = nameof(RoundStatus.Published), DateLimit = dateLimitUtc });
     }
 
+    public async Task<Dictionary<int, Round>> GetPublishedRoundsAsync(CancellationToken cancellationToken)
+    {
+        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Status] = @PublishedStatus";
+        return await QueryAndMapRoundsAsync(sql, cancellationToken, new { PublishedStatus = nameof(RoundStatus.Published) });
+    }
+
     #endregion
 
     #region Update
