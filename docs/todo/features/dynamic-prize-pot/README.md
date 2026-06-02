@@ -187,33 +187,70 @@ out to matter more than "always clean round numbers".
 ### Option C, refined — "block apportionment"
 
 The cleanest concrete form of C. The unit is **not** the whole entry fee but a
-smaller **block** `B` (e.g. £5), so one entry can feed several categories at once.
+smaller **block** `B`, so one entry can feed several categories at once.
+
+**Block size — decided: `B = £1`, fixed (not admin-chosen).** Reasons:
+- Most blocks to play with → tracks the ideal % split closely and lets more
+  places light up on small pots.
+- `£1` divides *any* whole-pound stake → no per-league validation, no admin knob.
+- Keeps the marginal "+£x" perfectly **stable**: with `£1` blocks the per-entry
+  "chips" are literally *the pounds of the stake*, so each entrant adds the exact
+  same whole-pound amount to each category on every join (no rounding drift).
+- Still round — whole pounds, never pence.
+
+Trade-off: amounts look like `£98/£59/£39`, not chunky `£100/£60/£40`. If the
+£5-clean *look* matters, add it later as an optional **cosmetic** "round to
+nearest £5 where the pot allows" pass — do **not** make block size an admin
+setting (extra confusion, starves small leagues of places). Implication:
+**stakes must be whole pounds when prizes are on.**
 
 **Definitions**
-- **Block size `B`** (e.g. £5): the rounding granularity. *Every prize is always
-  a whole number of blocks*, so every prize is a clean round number.
-- **Entry fee `E`** must be a whole multiple of `B`. `blocksPerEntry = E / B`
-  (£25 → 5 blocks).
-- **Per-entry category weights**: the admin assigns each enabled end-of-season
-  category an integer block weight, and **the weights must sum to
-  `blocksPerEntry`**. e.g. £25 fee → 5 blocks → `Overall 3 / Section 1 / Exact 1`.
-  (Watch the arithmetic: `1 + 2 + 3 = 6` blocks is a £30 entry, not £25.)
-  This is the headline "where does my money go" lever — surface it as
-  *"drag your 5 chips onto the categories"*.
+- **Stake `E`** — whole pounds when prizes are on. `blocksPerEntry = E` (in £1s).
+- **Per-entry category split**: the admin allocates the **pounds of each entry**
+  across the enabled categories; the allocation must sum to `E`. e.g. £25 →
+  `Overall £15 / Section £5 / Exact £5`. (Input is pound sliders / % snapped to
+  whole pounds — *not* 25 literal draggable chips.) This is the headline "where
+  does my money go" lever, and what we visualise to prospective members.
+
+**Category registry (extensible — supports "I may add more prize types")**
+
+Categories are a data-driven registry, each declaring a default weight, a
+*kind*, and its split behaviour. Toggling a category recomputes the recommended
+per-entry split by **renormalising the default weights across whatever is
+enabled** (Overall-only → 100% overall; Overall+Exact → 75/25; etc.). Adding a
+new type later = one registry row (+ a strategy if it scores differently) — no
+engine rewrite. This rides on the existing pluggable `IPrizeStrategy`.
+
+| Category | Default weight | Kind | Split behaviour |
+|---|---|---|---|
+| Overall | 3 | EndOfSeason | places-ladder (table below) |
+| Section (groups/knockouts) | 2 | Staged | sub-pot 50/50 across the 2 stages, each stage uses the Overall ladder |
+| Most Exact Scores | 1 | EndOfSeason | places-ladder (often just winner-takes-all at small N) |
+| Round | 1 | Recurring | **not split** — winner-takes-all per round |
+| Monthly | 1 | Recurring | **not split** — winner-takes-all per month |
 
 **Evaluation (live, at any N)**
-1. Category sub-pot (blocks) = `weight × N`. Always exact, always round.
-2. Within a category, split the sub-pot across ranks using the **threshold table**
-   for the current N (below), apportioned by **largest-remainder**: convert each
-   rank's % to blocks, floor, then hand leftover blocks out one at a time by
-   largest fractional remainder (**ties to the higher rank**). Guarantees every
-   rank is a whole number of blocks summing *exactly* to the sub-pot.
-3. **Dynamic winner count** falls out two ways that reinforce: the table sets how
-   many places a band *wants* to pay, and any place that apportions to **0 blocks
+1. Category sub-pot (£) = `perEntryAllocation × N`. Always exact, always whole-£.
+2. **EndOfSeason** categories: split the sub-pot across ranks using the
+   **threshold table** for the current N (below), apportioned by
+   **largest-remainder** (convert each rank's % to £, floor, hand leftover £ out
+   one at a time by largest fractional remainder, **ties to the higher rank**).
+   Every rank is whole pounds and they sum *exactly* to the sub-pot.
+3. **Staged** (Section): there are always exactly 2 stages, so divide the section
+   sub-pot **50/50** between Group stage and Knockouts (admin-adjustable), then
+   rank within each stage using the **same Overall ladder**. Smaller stage pots →
+   fewer places light up automatically.
+4. **Recurring** (Round/Monthly): not split into places. Per-event prize =
+   `floor(categorySubPot ÷ numberOfEvents)` in whole pounds, rising as entrants
+   grow (e.g. £190 round pot ÷ 38 rounds = £5 to each weekly winner). Any small
+   remainder rolls into the final event (or the overall top prize — to confirm).
+   Ties within an event split that event's prize equally.
+5. **Dynamic winner count** falls out two ways that reinforce: the table sets how
+   many places a band *wants* to pay, and any place that apportions to **£0
    simply doesn't exist** — so tiny pots self-limit.
 
 **Default threshold table** (admin-editable behind an "advanced" toggle;
-validated: sums to 100, descending, no prize below one block):
+validated: sums to 100, descending, no prize below £1):
 
 | Entrants | Places | Split (%) |
 |---|---|---|
@@ -224,36 +261,31 @@ validated: sums to 100, descending, no prize below one block):
 | 41–75 | 5 | 40 / 25 / 15 / 12 / 8 |
 | 76+   | 6 | 35 / 22 / 15 / 12 / 9 / 7 |
 
-**Worked example** — `B = £5`, `E = £25` (5 blocks), weights `Overall 3 /
-Section 1 / Exact 1`, growing 12 → 13 entrants:
+**Worked example** — `B = £1`, `E = £25`, split `Overall £15 / Section £5 /
+Exact £5`, growing 12 → 13 entrants:
 
 | Slot | N=12 | N=13 | Joiner adds |
 |---|---|---|---|
-| Overall sub-pot (3 blk/entry) | £180 | £195 | +£15 |
-| → 1st (50%) | £90 | £95 | +£5 |
-| → 2nd (30%) | £55 | £60 | +£5 |
-| → 3rd (20%) | £35 | £40 | +£5 |
-| Section (1 blk/entry) | £60 | £65 | +£5 |
-| Exact scores (1 blk/entry) | £60 | £65 | +£5 |
+| Overall sub-pot (£15/entry) | £180 | £195 | +£15 |
+| → 1st (50%) | £90 | £98 | +£8 |
+| → 2nd (30%) | £54 | £58 | +£4 |
+| → 3rd (20%) | £36 | £39 | +£3 |
+| Section (£5/entry) | £60 | £65 | +£5 |
+| Exact scores (£5/entry) | £60 | £65 | +£5 |
 
-→ prospective-member copy: *"Your £25 adds £15 to the overall prizes (£5 each to
-1st/2nd/3rd), £5 to the section pot, and £5 to exact scores."* The per-rank deltas
-are computed by diffing `breakdown(N)` vs `breakdown(N+1)`; the **category** delta
-is always exactly the weight, so the headline figure is rock-stable.
+→ prospective-member copy: *"Your £25 adds £15 to the overall prizes, £5 to the
+section pot, and £5 to exact scores."* The **category** delta is always exactly
+the per-entry allocation (rock-stable); the per-rank deltas come from diffing
+`breakdown(N)` vs `breakdown(N+1)` and vary by a pound or two as £1 blocks
+re-apportion (the headline category figure does not).
 
 **Leftover-allocation choice** (one product call): largest-remainder (most
 accurate to the %, but a leftover block can occasionally bump 2nd before 1st
 between consecutive joins) vs **top-rank-first** (perfectly monotonic, "1st always
 rounds up", tiny accuracy cost). Lean: largest-remainder, ties to higher rank.
 
-**Categories that need a different rule** (don't force into the apportionment):
-- **Section** (groups vs knockouts) likely *subdivides* into a sub-pot per stage
-  (from `TournamentRoundMappings.Stages`); default each stage to winner-takes-all
-  or a small 70/30.
-- **Round / Monthly** are **recurring** — `weight × N` blocks ÷ 38 rounds doesn't
-  divide cleanly. Use a *per-event* rule instead (admin sets "each round winner
-  gets X blocks") and surface the season-long commitment, separate from the
-  end-of-season Overall/Section/Exact apportionment above.
+(Section and Round/Monthly behaviours are defined in the category registry and
+evaluation steps 3–4 above.)
 
 ---
 
@@ -339,20 +371,26 @@ direction is chosen (likely **0011**). It interacts with:
 
 ## Open Questions
 
-Settled by the "block apportionment" refinement (confirm):
-- "Round number" = a whole number of **blocks** (default `B = £5`). Entry fee must
-  be a whole multiple of `B`; the remainder problem is designed out.
+Settled (confirm):
+- **Block size = £1, fixed.** Stakes must be whole pounds when prizes are on.
+  Prizes are whole pounds; remainder problem designed out.
+- **Toggles drive the recommendation**; default category weights renormalise
+  across whatever is enabled; categories are an extensible registry.
+- **Round / Monthly**: not split — winner-takes-all per event, per-event prize
+  = `floor(subPot ÷ events)`.
+- **Section**: split 50/50 across the 2 stages by default, each stage using the
+  Overall places-ladder.
 - "How many places pay" = the **default threshold table** above, admin-editable.
-- No floating remainder — largest-remainder apportionment allocates every block.
 
 Still open:
-- [ ] Default **block size** — £5? Per-league configurable, or product-fixed?
-- [ ] Leftover-block rule: **largest-remainder (ties to higher rank)** vs
+- [ ] Leftover-£ rule: **largest-remainder (ties to higher rank)** vs
       top-rank-first/monotonic? (Lean: largest-remainder.)
-- [ ] Per-entry **category weights** — fully admin-set ("drag your chips"), or
-      offer presets (e.g. "Mostly overall", "Balanced")?
-- [ ] **Section**: one pot or a sub-pot per stage; winner-takes-all or a ladder?
-- [ ] **Round / Monthly** recurring rule: admin sets blocks-per-event? How shown?
+- [ ] Where does the recurring **rounding remainder** go — final event, or roll
+      to the overall top prize?
+- [ ] Per-entry split input — pound sliders, % snapped to whole £, or named
+      presets ("Mostly overall" / "Balanced")? And do admins get the "advanced"
+      rank-table editor at launch, or just the defaults?
+- [ ] Optional cosmetic **"round to nearest £5"** pass — launch or later?
 - [ ] Can the admin still hand-tune amounts after the deadline (keep
       `DefinePrizeStructure` as an override), or is the scheme the only path?
 - [ ] How locked is the scheme once members join — fully locked, or additive-only?
