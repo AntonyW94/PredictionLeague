@@ -42,7 +42,9 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ISeaso
         if (league.Members.Any(m => m.UserId == request.JoiningUserId))
         {
             await mediator.Send(new NotifyLeagueAdminOfJoinRequestCommand(
-                league.Id,
+                league.AdministratorUserId,
+                league.Name,
+                league.SeasonId,
                 request.JoiningUserFirstName,
                 request.JoiningUserLastName), cancellationToken);
         }

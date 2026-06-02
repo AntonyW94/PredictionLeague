@@ -131,7 +131,9 @@ public class JoinLeagueCommandHandlerTests
         // Assert
         await _mediator.Received(1).Send(
             Arg.Is<NotifyLeagueAdminOfJoinRequestCommand>(n =>
-                n.LeagueId == 5 &&
+                n.AdministratorUserId == "admin-user" &&
+                n.LeagueName == "Test League" &&
+                n.SeasonId == 1 &&
                 n.NewMemberFirstName == "Jane" &&
                 n.NewMemberLastName == "Doe"),
             Arg.Any<CancellationToken>());
