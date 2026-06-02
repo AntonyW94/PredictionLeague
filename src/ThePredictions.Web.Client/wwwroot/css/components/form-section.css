@@ -1,0 +1,43 @@
+/* Standard form-section rhythm: a divider, an accented heading, an optional intro line and a
+   closing note. Owned by the <FormSection> component and reused by section sub-headings, so every
+   form on the site separates its sections identically (and the rhythm cannot drift per page). */
+
+.form-section-divider {
+    border: 0;
+    border-top: 1px solid var(--grey-200);
+    margin: var(--space-8) 0 var(--space-5);
+}
+
+.theme-dark .form-section-divider {
+    border-top-color: var(--white-alpha-15);
+}
+
+.form-section-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 0 var(--space-3);
+    font-weight: 700;
+}
+
+/* A short accent bar before each section title - a consistent, scannable cue across the form. */
+.form-section-heading::before {
+    content: "";
+    width: 4px;
+    height: 1.1em;
+    border-radius: 999px;
+    background: var(--purple-200);
+    flex: none;
+}
+
+/* Shared rhythm for the short explainer line under a section heading. */
+.form-section-intro {
+    margin-top: 0;
+    margin-bottom: var(--space-4);
+}
+
+/* Footer note that closes a section (e.g. "can only be set once") - sits clear of the box above. */
+.form-section-note {
+    margin-top: var(--space-4);
+    margin-bottom: 0;
+}

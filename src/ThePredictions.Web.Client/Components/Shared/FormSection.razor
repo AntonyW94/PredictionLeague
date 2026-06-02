@@ -1,0 +1,36 @@
+@* A standard form section: a divider (except the first), an accented heading, an optional intro
+   line, then the section body. Centralises the form's vertical rhythm so it cannot drift per page.
+   Set ShowDivider="false" on the first section of a form. *@
+
+@if (ShowDivider)
+{
+    <hr class="form-section-divider" />
+}
+
+<h5 class="form-section-heading">@Title</h5>
+
+@if (!string.IsNullOrWhiteSpace(Intro))
+{
+    <p class="form-text text-white-50 form-section-intro">@Intro</p>
+}
+else if (IntroContent is not null)
+{
+    <div class="form-text text-white-50 form-section-intro">@IntroContent</div>
+}
+
+@ChildContent
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Short explainer line shown under the heading. Use <see cref="IntroContent"/> for markup.</summary>
+    [Parameter] public string? Intro { get; set; }
+
+    /// <summary>Rich intro content (overridden by <see cref="Intro"/> when both are set).</summary>
+    [Parameter] public RenderFragment? IntroContent { get; set; }
+
+    /// <summary>The divider sits above the heading; turn it off for the first section of a form.</summary>
+    [Parameter] public bool ShowDivider { get; set; } = true;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

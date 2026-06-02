@@ -29,8 +29,7 @@
                 <h3 class="text-center fw-bold mb-4">Create New League</h3>
             </Header>
             <ChildContent>
-                    <h5 class="prize-section-heading">League details</h5>
-
+                <FormSection Title="League details" ShowDivider="false">
                     <div class="mb-3">
                         <label for="season" class="form-label">Season</label>
                         <InputSelect id="season" class="form-control" @bind-Value="_model.SeasonId" @onchange="OnSeasonSelected">
@@ -83,10 +82,9 @@
                             <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
                         </div>
                     </div>
+                </FormSection>
 
-                    <hr class="prize-section-divider" />
-                    <h5 class="prize-section-heading">Scoring</h5>
-
+                <FormSection Title="Scoring">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="pointsForExactScore" class="form-label">Points for Exact Score</label>
@@ -102,19 +100,18 @@
                             <StyledValidationMessage For="@(() => _model.PointsForCorrectResult)" />
                         </div>
                     </div>
+                </FormSection>
 
-                    @if (_model.SeasonId > 0)
-                    {
-                        <hr class="prize-section-divider" />
-                        <PrizeSchemeEditor @key="_model.SeasonId"
-                                           Scheme="_scheme"
-                                           SeasonId="_model.SeasonId"
-                                           Price="_model.Price"
-                                           IsTournament="_isTournament"
-                                           PrizeFundOverride="_model.PrizeFundOverride" />
-                        <hr class="prize-section-divider" />
-                        <LeagueBoostSelector Selections="_boostSelections" />
-                    }
+                @if (_model.SeasonId > 0)
+                {
+                    <PrizeSchemeEditor @key="_model.SeasonId"
+                                       Scheme="_scheme"
+                                       SeasonId="_model.SeasonId"
+                                       Price="_model.Price"
+                                       IsTournament="_isTournament"
+                                       PrizeFundOverride="_model.PrizeFundOverride" />
+                    <LeagueBoostSelector Selections="_boostSelections" />
+                }
 
                     @if (_model.Price > 0)
                     {

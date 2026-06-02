@@ -38,8 +38,7 @@
                         </div>
                     }
 
-                    <h5 class="prize-section-heading">League details</h5>
-
+                    <FormSection Title="League details" ShowDivider="false">
                     <div class="mb-3">
                         <label class="form-label">Season</label>
                         <div class="form-value">@_seasonName</div>
@@ -100,9 +99,9 @@
                         }
                     </div>
 
-                    <hr class="prize-section-divider" />
-                    <h5 class="prize-section-heading">Scoring</h5>
+                    </FormSection>
 
+                    <FormSection Title="Scoring">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="pointsForExactScore" class="form-label">Points for Exact Score</label>
@@ -124,15 +123,15 @@
                             <StyledValidationMessage For="@(() => _model.PointsForCorrectResult)" />
                         </div>
                     </div>
+                    </FormSection>
 
                     @if (_league is not null)
                     {
-                        <hr class="prize-section-divider" />
                         @if (_league.HasPrizeScheme)
                         {
-                            <h5 class="prize-section-heading">Prizes & boosts</h5>
-                            <p class="form-text text-white-50 prize-section-intro">Prizes and boosts are locked once set.</p>
-                            <PrizeBreakdownPreview Breakdown="_lockedBreakdown" PotLabel="Projected prize pot" />
+                            <FormSection Title="Prizes & boosts" Intro="Prizes and boosts are locked once set.">
+                                <PrizeBreakdownPreview Breakdown="_lockedBreakdown" PotLabel="Projected prize pot" />
+                            </FormSection>
                         }
                         else if (!_isPastDeadline)
                         {
@@ -142,9 +141,8 @@
                                                IsTournament="_league.IsTournament"
                                                CurrentEntrants="_league.MemberCount"
                                                PrizeFundOverride="_model.PrizeFundOverride" />
-                            <hr class="prize-section-divider" />
                             <LeagueBoostSelector Selections="_boostSelections" />
-                            <p class="form-text text-white-50 prize-section-note">Prizes &amp; boosts can only be set once, then they lock.</p>
+                            <p class="form-text text-white-50 form-section-note">Prizes &amp; boosts can only be set once, then they lock.</p>
                         }
                     }
 

@@ -2,19 +2,13 @@
 @using ThePredictions.Domain.Common.Enumerations
 @inject HttpClient Http
 
-<div class="prize-scheme-editor">
-    <h5 class="prize-section-heading">Prizes</h5>
-
+<FormSection Title="Prizes" Intro="@PrizeIntroText">
     @if (StakePounds <= 0 && AdminTopUpPounds <= 0)
     {
         <div class="message-box-solid info mb-3">
             This is a free-to-play league. Prizes are informational only unless you add your own money to the pot below.
         </div>
     }
-
-    <p class="form-text text-white-50 prize-section-intro">
-        Choose which prizes to award, then split each £@StakePounds entry across them. Amounts update live below. Placed prizes over £5 round to clean £5s automatically.
-    </p>
 
     <div class="prize-category-options">
         @foreach (var option in _options)
@@ -53,7 +47,7 @@
     </div>
 
     <div class="prize-preview mt-4">
-        <h5 class="prize-section-heading">Projected prizes</h5>
+        <h5 class="form-section-heading">Projected prizes</h5>
         @if (!Disabled)
         {
             <div class="prize-preview-basis mb-3">
@@ -73,7 +67,7 @@
             <PrizeBreakdownPreview Breakdown="_preview" PotLabel="Projected prize pot" />
         }
     </div>
-</div>
+</FormSection>
 
 @code {
     [Parameter, EditorRequired] public PrizeSchemeRequest Scheme { get; set; } = new();
@@ -97,6 +91,8 @@
     private int _previewEntrants = DefaultProjection;
     private decimal _lastPrice;
     private decimal? _lastPrizeFundOverride;
+
+    private string PrizeIntroText => $"Choose which prizes to award, then split each £{StakePounds} entry across them. Amounts update live below. Placed prizes over £5 round to clean £5s automatically.";
 
     private int StakePounds => (int)decimal.Truncate(Price);
     private int AdminTopUpPounds => (int)decimal.Truncate(PrizeFundOverride ?? 0m);

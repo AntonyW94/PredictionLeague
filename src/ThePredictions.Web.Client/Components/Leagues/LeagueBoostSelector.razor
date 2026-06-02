@@ -1,10 +1,7 @@
 @using ThePredictions.Contracts.Boosts
 @inject HttpClient Http
 
-<div class="boost-selector">
-    <h5 class="prize-section-heading">Boosts</h5>
-    <p class="form-text text-white-50 prize-section-intro">Choose which boosts players can use, and how many times each season.</p>
-
+<FormSection Title="Boosts" Intro="Choose which boosts players can use, and how many times each season.">
     @if (_catalogue is null)
     {
         <p class="text-white-50"><em>Loading boosts...</em></p>
@@ -43,7 +40,7 @@
             }
         </div>
     }
-</div>
+</FormSection>
 
 @code {
     [Parameter, EditorRequired] public List<LeagueBoostSelectionDto> Selections { get; set; } = new();

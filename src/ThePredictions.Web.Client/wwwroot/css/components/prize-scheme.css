@@ -2,46 +2,8 @@
    Light-first: panels match the form card (light surface, dark text). The
    .theme-dark ancestor (added on the form container in dark mode) flips them. */
 
-/* ---- Section heading / divider ---- */
-.prize-section-divider {
-    border: 0;
-    border-top: 1px solid var(--grey-200);
-    margin: var(--space-8) 0 var(--space-5);
-}
-
-.theme-dark .prize-section-divider {
-    border-top-color: var(--white-alpha-15);
-}
-
-.prize-section-heading {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin: 0 0 var(--space-3);
-    font-weight: 700;
-}
-
-/* A short accent bar before each section title - a consistent, scannable cue across the form. */
-.prize-section-heading::before {
-    content: "";
-    width: 4px;
-    height: 1.1em;
-    border-radius: 999px;
-    background: var(--purple-200);
-    flex: none;
-}
-
-/* Shared rhythm for the short explainer line under a section heading. */
-.prize-section-intro {
-    margin-top: 0;
-    margin-bottom: var(--space-4);
-}
-
-/* Footer note that closes a section (e.g. "can only be set once") - sits clear of the box above. */
-.prize-section-note {
-    margin-top: var(--space-4);
-    margin-bottom: 0;
-}
+/* Section heading / divider / intro rhythm now lives in components/form-section.css
+   (the shared <FormSection> component). */
 
 /* ---- Shared panel surface (light card, dark-mode adaptive) ---- */
 .prize-category-option,

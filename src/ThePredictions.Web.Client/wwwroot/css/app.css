@@ -33,6 +33,7 @@
 @import url('components/cards/match-editor-cards.css');
 
 /* Component styles - Other */
+@import url('components/form-section.css');
 @import url('components/badges.css');
 @import url('components/filters.css');
 @import url('components/boosts.css');
