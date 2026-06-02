@@ -9,6 +9,7 @@ using ThePredictions.Contracts.Boosts;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Contracts.Payouts;
+using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common.Enumerations;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -44,7 +45,8 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
             request.BankAccountName,
             request.BankSortCode,
             request.BankAccountNumber,
-            request.PaymentReferenceTemplate);
+            request.PaymentReferenceTemplate,
+            request.PrizeScheme);
 
         var newLeague = await mediator.Send(command, cancellationToken);
 
@@ -526,6 +528,25 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
     {
         var command = new DefinePrizeStructureCommand(leagueId, CurrentUserId, request.PrizeSettings);
         await mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPut("{leagueId:int}/prize-scheme")]
+    [SwaggerOperation(
+        Summary = "Set the league's prize scheme",
+        Description = "Sets the up-front prize scheme (categories and per-entry allocation). Write-once: a league administrator may set it while unset; thereafter only a site administrator can override it.")]
+    [SwaggerResponse(204, "Prize scheme set successfully")]
+    [SwaggerResponse(400, "Invalid scheme, or the scheme is already set")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not permitted to set the scheme")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<IActionResult> SetPrizeSchemeAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        [FromBody, SwaggerParameter("Prize scheme configuration", Required = true)] PrizeSchemeRequest request,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new SetPrizeSchemeCommand(leagueId, CurrentUserId, request), cancellationToken);
 
         return NoContent();
     }

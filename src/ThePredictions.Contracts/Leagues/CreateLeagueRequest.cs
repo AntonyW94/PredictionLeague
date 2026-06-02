@@ -1,3 +1,5 @@
+using ThePredictions.Contracts.Prizes;
+
 namespace ThePredictions.Contracts.Leagues;
 
 public class CreateLeagueRequest : IHasBankDetails
@@ -14,4 +16,7 @@ public class CreateLeagueRequest : IHasBankDetails
     public string? BankSortCode { get; set; }
     public string? BankAccountNumber { get; set; }
     public string? PaymentReferenceTemplate { get; set; }
+
+    // Optional up-front prize scheme (write-once). When supplied it locks at creation.
+    public PrizeSchemeRequest? PrizeScheme { get; set; }
 }

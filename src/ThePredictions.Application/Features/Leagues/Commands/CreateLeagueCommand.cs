@@ -1,6 +1,7 @@
 using MediatR;
 using ThePredictions.Application.Common.Interfaces;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Contracts.Prizes;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
@@ -15,5 +16,6 @@ public record CreateLeagueCommand(
     string? BankAccountName = null,
     string? BankSortCode = null,
     string? BankAccountNumber = null,
-    string? PaymentReferenceTemplate = null
+    string? PaymentReferenceTemplate = null,
+    PrizeSchemeRequest? PrizeScheme = null
 ) : IRequest<LeagueDto>, ITransactionalRequest;

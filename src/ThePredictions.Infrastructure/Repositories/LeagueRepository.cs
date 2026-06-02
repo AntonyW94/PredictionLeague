@@ -547,6 +547,18 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             entryRows,
             transaction: Transaction,
             cancellationToken: cancellationToken));
+
+        // Keep the league's HasPrizes flag in step with the scheme (used by prize processing and
+        // pot displays) without going through UpdateAsync, which would rewrite members/prize settings.
+        var hasPrizes = scheme.AdminTopUpPounds > 0 || scheme.Entries.Any(e => e.PerEntryPounds > 0);
+
+        const string updateHasPrizesSql = "UPDATE [Leagues] SET [HasPrizes] = @HasPrizes WHERE [Id] = @LeagueId;";
+
+        await Connection.ExecuteAsync(new CommandDefinition(
+            updateHasPrizesSql,
+            new { HasPrizes = hasPrizes, LeagueId = leagueId },
+            transaction: Transaction,
+            cancellationToken: cancellationToken));
     }
 
     private async Task<LeaguePrizeScheme?> LoadPrizeSchemeAsync(int leagueId, CancellationToken cancellationToken)
