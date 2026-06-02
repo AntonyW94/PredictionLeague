@@ -133,20 +133,13 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!DashboardState.Leaderboards.Any())
-            return;
-
-        if (firstRender)
+        if (firstRender && DashboardState.Leaderboards.Any())
         {
             foreach (var leaderboard in DashboardState.Leaderboards)
             {
                 await JsRuntime.InvokeVoidAsync("blazorInterop.scrollToUserRow", $"leaderboard-scroll-{leaderboard.LeagueId}");
             }
         }
-
-        // Size the (overflow-hidden) carousel wrapper to the current slide, so the standings table
-        // is fully visible. Runs on first load and after each navigation re-render.
-        await JsRuntime.InvokeVoidAsync("blazorInterop.updateCarouselHeight", "leaderboards-track-wrapper", _currentIndex, 1);
     }
 
     private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;

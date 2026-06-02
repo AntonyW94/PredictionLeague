@@ -181,6 +181,15 @@
         height: 100%;
     }
 
+/* Standings tile: clip the slide horizontally only, so the leaderboard table keeps its natural
+   height (the shared .carousel-track-wrapper clips both axes, which collapsed the table). The id
+   beats the base class; height stays auto so the tallest leaderboard is always fully readable. */
+#leaderboards-track-wrapper {
+    overflow-x: hidden;
+    overflow-y: visible;
+    height: auto;
+}
+
 .pending-member-row {
     display: flex;
     align-items: center;
