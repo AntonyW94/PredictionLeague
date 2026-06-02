@@ -745,3 +745,109 @@
 .theme-dark .season-pass-card__features li {
     color: var(--white);
 }
+
+/* ---- Pass acquired / already held: celebratory success card ---- */
+.season-pass-success {
+    max-width: 540px;
+    margin: var(--space-8) auto;
+    background: var(--white);
+    border: 1px solid var(--purple-100);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 2px 12px var(--black-alpha-15);
+    overflow: hidden;
+}
+
+.season-pass-success__banner {
+    padding: var(--space-8) var(--space-6) var(--space-6);
+    text-align: center;
+    background: linear-gradient(135deg, var(--green-600), var(--blue-700));
+    color: var(--white);
+}
+
+.season-pass-success__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    margin-bottom: var(--space-4);
+    border-radius: 50%;
+    background: var(--white-alpha-15);
+    border: 3px solid var(--white);
+    font-size: 2.25rem;
+    box-shadow: 0 4px 14px var(--black-alpha-25);
+}
+
+.season-pass-success__title {
+    margin: 0 0 var(--space-2);
+    font-weight: 800;
+}
+
+.season-pass-success__subtitle {
+    margin: 0;
+    color: var(--white-alpha-70);
+}
+
+.season-pass-success__subtitle strong {
+    color: var(--white);
+}
+
+.season-pass-success__body {
+    padding: var(--space-6);
+}
+
+.season-pass-success__heading {
+    margin: 0 0 var(--space-3);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--grey-500);
+}
+
+.season-pass-success__list {
+    list-style: none;
+    margin: 0 0 var(--space-6);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.season-pass-success__list li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--purple-1000);
+    font-weight: 600;
+}
+
+.season-pass-success__list li i {
+    color: var(--green-600);
+    font-size: 1.1rem;
+    flex: none;
+}
+
+.season-pass-success__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.season-pass-success__actions .btn {
+    flex: 1 1 auto;
+}
+
+.theme-dark .season-pass-success {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-15);
+    box-shadow: 0 0 40px var(--purple-200-alpha-15);
+}
+
+.theme-dark .season-pass-success__heading {
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .season-pass-success__list li {
+    color: var(--white);
+}

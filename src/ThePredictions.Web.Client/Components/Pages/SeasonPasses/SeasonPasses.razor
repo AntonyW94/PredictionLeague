@@ -29,11 +29,26 @@
             }
             else if (_options.AlreadyHeld || _justAcquired)
             {
-                <div class="empty-state">
-                    <i class="bi bi-check-circle-fill empty-state-icon text-green-600"></i>
-                    <h3 class="fw-bold">You're all set</h3>
-                    <p>You have your <strong>@_options.SeasonName</strong> pass - you can now join its leagues.</p>
-                    <a class="btn green-button" href="/dashboard">Go to dashboard</a>
+                <div class="season-pass-success">
+                    <div class="season-pass-success__banner">
+                        <span class="season-pass-success__badge bi bi-check-lg" aria-hidden="true"></span>
+                        <h2 class="season-pass-success__title">You're all set</h2>
+                        <p class="season-pass-success__subtitle">
+                            Your <strong>@_options.SeasonName</strong> pass is ready. Time to get in the game.
+                        </p>
+                    </div>
+                    <div class="season-pass-success__body">
+                        <h3 class="season-pass-success__heading">What you can do now</h3>
+                        <ul class="season-pass-success__list">
+                            <li><i class="bi bi-people-fill"></i> Join or create unlimited leagues</li>
+                            <li><i class="bi bi-pencil-square"></i> Make predictions every round</li>
+                            <li><i class="bi bi-lightning-charge-fill"></i> Use boosts to climb the table faster</li>
+                        </ul>
+                        <div class="season-pass-success__actions">
+                            <a class="btn green-button" href="/dashboard">Go to dashboard</a>
+                            <a class="btn blue-light-button" href="/leagues/create">Create a league</a>
+                        </div>
+                    </div>
                 </div>
             }
             else
