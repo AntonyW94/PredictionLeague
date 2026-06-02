@@ -99,6 +99,8 @@
     gap: var(--space-2);
     color: var(--grey-500);
     font-size: 0.85rem;
+    flex: none;
+    white-space: nowrap;
 }
 
 .theme-dark .prize-allocation,
@@ -106,22 +108,54 @@
     color: var(--white-alpha-70);
 }
 
-.prize-allocation-input,
-.boost-uses-input,
-.prize-preview-count {
-    width: 4.5rem;
+/* input. prefix raises specificity above .form-control { width: 100% } so these stay compact. */
+input.prize-allocation-input,
+input.boost-uses-input,
+input.prize-preview-count {
+    width: 4rem;
     flex: none;
     text-align: center;
 }
 
-.prize-allocation-prefix {
+.prize-allocation-prefix,
+.prize-allocation-suffix,
+.boost-uses-suffix {
     font-weight: 600;
+    white-space: nowrap;
+}
+
+.prize-alloc-progress {
+    margin-top: var(--space-3);
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--grey-200);
+    overflow: hidden;
+}
+
+.theme-dark .prize-alloc-progress {
+    background: var(--white-alpha-15);
+}
+
+.prize-alloc-progress-bar {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--green-600);
+    transition: width 0.25s ease, background-color 0.2s ease;
+}
+
+.prize-alloc-progress-bar.is-unbalanced {
+    background: var(--red);
 }
 
 .prize-allocation-summary {
-    margin-top: var(--space-3);
+    margin-top: var(--space-2);
     font-size: 0.9rem;
     font-weight: 600;
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-allocation-summary {
+    color: var(--white-alpha-70);
 }
 
 .prize-allocation-summary.is-balanced {
@@ -130,6 +164,68 @@
 
 .prize-allocation-summary.is-unbalanced {
     color: var(--red);
+}
+
+/* Projected-prizes "basis" control */
+.prize-preview-basis {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    color: var(--grey-500);
+    font-size: 0.9rem;
+}
+
+.theme-dark .prize-preview-basis {
+    color: var(--white-alpha-70);
+}
+
+.prize-preview-basis .form-label {
+    margin: 0;
+}
+
+/* Section stage sub-heading + medal colours in the breakdown */
+.prize-stage-heading {
+    list-style: none;
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px dashed var(--grey-300);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-stage-heading {
+    border-top-color: var(--white-alpha-15);
+    color: var(--white-alpha-70);
+}
+
+.prize-stage-heading:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.prize-slot--gold .prize-slot-label,
+.prize-slot--gold .prize-slot-amount {
+    color: var(--gold);
+}
+
+.prize-slot--silver .prize-slot-label,
+.prize-slot--silver .prize-slot-amount {
+    color: var(--grey-400);
+}
+
+.prize-slot--bronze .prize-slot-label,
+.prize-slot--bronze .prize-slot-amount {
+    color: var(--bronze);
+}
+
+.theme-dark .prize-slot--bronze .prize-slot-label,
+.theme-dark .prize-slot--bronze .prize-slot-amount {
+    color: #c9893f;
 }
 
 .boost-description {
@@ -190,6 +286,18 @@
 
 .boost-icon-fill {
     fill: var(--white);
+}
+
+.boost-icon-gloss {
+    fill: var(--white);
+    opacity: 0.12;
+    pointer-events: none;
+}
+
+.boost-icon-shard {
+    fill: var(--white);
+    opacity: 0.16;
+    pointer-events: none;
 }
 
 .boost-icon-tick {

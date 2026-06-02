@@ -26,10 +26,16 @@ else
                     </span>
                 </div>
                 <ul class="prize-slot-list">
+                    @{ string? lastStage = null; }
                     @foreach (var slot in category.Slots)
                     {
-                        <li class="prize-slot">
-                            <span class="prize-slot-label">@slot.Label</span>
+                        @if (slot.StageName is not null && slot.StageName != lastStage)
+                        {
+                            lastStage = slot.StageName;
+                            <li class="prize-stage-heading">@slot.StageName</li>
+                        }
+                        <li class="prize-slot @RankClass(slot.Rank)">
+                            <span class="prize-slot-label">@SlotLabel(slot)</span>
                             <span class="prize-slot-amount">
                                 @FormatMoney(slot.Amount)
                                 @if (ShowDeltas && slot.Delta is > 0)
@@ -54,4 +60,18 @@ else
     [Parameter] public string PotLabel { get; set; } = "Total prize pot";
 
     private static string FormatMoney(decimal amount) => $"£{amount:0}";
+
+    // Within a stage heading the stage name is shown once, so strip the "Stage - " prefix off the slot label.
+    private static string SlotLabel(PrizeSlotDto slot) =>
+        slot.StageName is not null && slot.Label.StartsWith($"{slot.StageName} - ", StringComparison.Ordinal)
+            ? slot.Label[(slot.StageName.Length + 3)..]
+            : slot.Label;
+
+    private static string RankClass(int? rank) => rank switch
+    {
+        1 => "prize-slot--gold",
+        2 => "prize-slot--silver",
+        3 => "prize-slot--bronze",
+        _ => string.Empty
+    };
 }

@@ -40,12 +40,11 @@
         }
     </div>
 
+    <div class="prize-alloc-progress">
+        <div class="prize-alloc-progress-bar @(IsBalanced ? string.Empty : "is-unbalanced")" style="width:@(AllocationPercent)%;"></div>
+    </div>
     <div class="prize-allocation-summary @(IsBalanced ? "is-balanced" : "is-unbalanced")">
-        Allocated £@AllocatedPounds of £@StakePounds
-        @if (!IsBalanced && StakePounds > 0)
-        {
-            <span>(must total the entry fee)</span>
-        }
+        Allocated £@AllocatedPounds of £@StakePounds@(!IsBalanced && StakePounds > 0 ? " - must total the entry fee" : string.Empty)
     </div>
 
     <div class="row g-3 mt-1">
@@ -66,16 +65,16 @@
     </div>
 
     <div class="prize-preview mt-4">
-        <div class="prize-preview-controls mb-3">
-            <h5 class="prize-section-heading mb-0">Projected prizes</h5>
-            @if (!Disabled)
-            {
-                <span class="prize-preview-note">if</span>
+        <h5 class="prize-section-heading">Projected prizes</h5>
+        @if (!Disabled)
+        {
+            <div class="prize-preview-basis mb-3">
+                <label class="form-label">Showing prizes for</label>
                 <input type="number" min="1" step="1" class="form-control prize-preview-count"
                        value="@_previewEntrants" @onchange="e => SetPreviewEntrants(e.Value?.ToString())" />
-                <span class="prize-preview-note">players join</span>
-            }
-        </div>
+                <span>players</span>
+            </div>
+        }
 
         @if (_previewError is not null)
         {
@@ -113,6 +112,7 @@
     private int AdminTopUpPounds => (int)decimal.Truncate(PrizeFundOverride ?? 0m);
     private int AllocatedPounds => _options.Where(o => o.Enabled).Sum(o => o.PerEntryPounds);
     private bool IsBalanced => StakePounds == 0 || AllocatedPounds == StakePounds;
+    private int AllocationPercent => StakePounds <= 0 ? 0 : Math.Min(100, (int)Math.Round(AllocatedPounds * 100.0 / StakePounds));
 
     protected override void OnInitialized()
     {

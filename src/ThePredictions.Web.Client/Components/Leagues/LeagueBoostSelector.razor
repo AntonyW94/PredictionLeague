@@ -36,7 +36,7 @@
                             <input type="number" min="1" step="1" class="form-control boost-uses-input"
                                    value="@selection.TotalUsesPerSeason" disabled="@Disabled"
                                    @onchange="e => SetUses(selection, e.Value?.ToString())" />
-                            <span>uses per season</span>
+                            <span class="boost-uses-suffix">uses per season</span>
                         </div>
                     }
                 </div>
