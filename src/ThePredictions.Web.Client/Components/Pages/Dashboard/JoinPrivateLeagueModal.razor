@@ -62,10 +62,13 @@
                                 <span class="prize-preview-stat-label">Players so far</span>
                                 <span class="prize-preview-stat-value">@_preview.EntrantCount</span>
                             </div>
-                            <div class="prize-preview-stat">
-                                <span class="prize-preview-stat-label">@(_preview.DeadlinePassed ? "Prize pot" : "Prize pot if you join")</span>
-                                <span class="prize-preview-stat-value">£@_preview.ProjectedPrizePot.ToString("0")</span>
-                            </div>
+                            @if (_preview.EntryCost > 0)
+                            {
+                                <div class="prize-preview-stat">
+                                    <span class="prize-preview-stat-label">Current prize pot</span>
+                                    <span class="prize-preview-stat-value">£@_preview.CurrentPrizePot.ToString("0")</span>
+                                </div>
+                            }
                             <div class="prize-preview-stat">
                                 <span class="prize-preview-stat-label">Entry deadline</span>
                                 <span class="prize-preview-stat-value">@_preview.EntryDeadlineUtc.ToLocalTime().ToString("d MMM yyyy, HH:mm")</span>
