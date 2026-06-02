@@ -332,7 +332,7 @@ User-created prediction leagues.
 | Price | decimal(18,2) | NO | 0 | Standard fee |
 | IsFree | bit | NO | 0 | Whether league is free to join |
 | HasPrizes | bit | NO | 1 | Whether league has prizes |
-| PrizeFundOverride | decimal(18,2) | YES | | Override calculated prize fund |
+| PrizeFundOverride | decimal(18,2) | YES | | Admin money added on top of entry fees (additive: pot = Price x ApprovedMembers + this) |
 | PointsForExactScore | int | NO | 5 | Points for exact score prediction |
 | PointsForCorrectResult | int | NO | 3 | Points for correct result only |
 | CreatedAtUtc | datetime2 | NO | GETUTCDATE() | Creation timestamp |
@@ -466,10 +466,13 @@ frozen into `LeaguePrizeSettings` at the deadline.
 |--------|------|----------|---------|-------------|
 | Id | int | NO | IDENTITY | Primary key |
 | LeagueId | int | NO | | FK to Leagues (one scheme per league) |
-| AdminTopUpPounds | int | NO | 0 | Whole-pound money the admin adds on top of entry fees |
-| OverallFivePoundThreshold | int | NO | 100 | Overall sub-pot at/above which every Overall rank rounds to a clean £5 |
+| OverallRoundingThresholdPounds | int | NO | 100 | Overall sub-pot at/above which every Overall rank rounds to a clean £5 |
 | SetAtUtc | datetime2 | NO | | When the scheme was set (write-once marker) |
 | SetByUserId | nvarchar(450) | NO | | FK to AspNetUsers - who set the scheme |
+
+> Admin top-up money (money the admin puts up on top of the entry fees) is **not** stored here -
+> it is the league's existing `Leagues.PrizeFundOverride`, which the dynamic-pot feature treats as
+> **additive**: pot = `Price x ApprovedMembers + PrizeFundOverride`.
 
 **Constraints:**
 - PK: `Id`

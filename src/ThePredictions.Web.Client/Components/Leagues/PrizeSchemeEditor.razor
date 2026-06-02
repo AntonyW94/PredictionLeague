@@ -5,7 +5,7 @@
 <div class="prize-scheme-editor">
     <h5 class="prize-section-heading">Prizes</h5>
 
-    @if (StakePounds <= 0 && Scheme.AdminTopUpPounds <= 0)
+    @if (StakePounds <= 0 && AdminTopUpPounds <= 0)
     {
         <div class="message-box-solid info mb-3">
             This is a free-to-play league. Prizes are informational only unless you add your own money to the pot below.
@@ -52,14 +52,14 @@
         <div class="col-md-6">
             <label class="form-label">Add your own money to the pot (£)</label>
             <input type="number" min="0" step="1" class="form-control"
-                   value="@Scheme.AdminTopUpPounds" disabled="@Disabled"
+                   value="@PrizeFundOverride" disabled="@Disabled"
                    @onchange="e => SetTopUp(e.Value?.ToString())" />
             <div class="form-text text-white-50">Optional. Sits on top of the entry fees.</div>
         </div>
         <div class="col-md-6">
             <label class="form-label">Round overall prizes to £5 above (£)</label>
             <input type="number" min="0" step="5" class="form-control"
-                   value="@Scheme.OverallFivePoundThreshold" disabled="@Disabled"
+                   value="@Scheme.OverallRoundingThresholdPounds" disabled="@Disabled"
                    @onchange="e => SetThreshold(e.Value?.ToString())" />
             <div class="form-text text-white-50">Headline overall prizes round to clean £5s above this.</div>
         </div>
@@ -94,12 +94,17 @@
     [Parameter] public bool IsTournament { get; set; }
     [Parameter] public bool Disabled { get; set; }
 
+    // The admin top-up lives on the league (PrizeFundOverride), bound from the parent form.
+    [Parameter] public decimal? PrizeFundOverride { get; set; }
+    [Parameter] public EventCallback<decimal?> PrizeFundOverrideChanged { get; set; }
+
     private readonly List<CategoryOption> _options = new();
     private PrizeBreakdownDto? _preview;
     private string? _previewError;
     private int _previewEntrants = 20;
 
     private int StakePounds => (int)decimal.Truncate(Price);
+    private int AdminTopUpPounds => (int)decimal.Truncate(PrizeFundOverride ?? 0m);
     private int AllocatedPounds => _options.Where(o => o.Enabled).Sum(o => o.PerEntryPounds);
     private bool IsBalanced => StakePounds == 0 || AllocatedPounds == StakePounds;
 
@@ -167,13 +172,15 @@
 
     private async Task SetTopUp(string? raw)
     {
-        Scheme.AdminTopUpPounds = ParseInt(raw);
+        var pounds = ParseInt(raw);
+        PrizeFundOverride = pounds > 0 ? pounds : null;
+        await PrizeFundOverrideChanged.InvokeAsync(PrizeFundOverride);
         await RefreshPreviewAsync();
     }
 
     private async Task SetThreshold(string? raw)
     {
-        Scheme.OverallFivePoundThreshold = ParseInt(raw);
+        Scheme.OverallRoundingThresholdPounds = ParseInt(raw);
         await RefreshPreviewAsync();
     }
 
@@ -235,6 +242,7 @@
         {
             SeasonId = SeasonId,
             Price = Price,
+            PrizeFundOverride = PrizeFundOverride,
             EntrantCount = _previewEntrants,
             Scheme = Scheme
         };

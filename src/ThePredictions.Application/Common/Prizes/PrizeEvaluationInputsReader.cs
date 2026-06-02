@@ -19,6 +19,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
                 u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS AdministratorName,
                 l.[EntryCode],
                 l.[Price] AS EntryCost,
+                l.[PrizeFundOverride],
                 l.[EntryDeadlineUtc],
                 s.[StartDateUtc] AS SeasonStartDateUtc,
                 s.[EndDateUtc] AS SeasonEndDateUtc,
@@ -39,8 +40,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
 
         const string schemeSql = @"
             SELECT
-                lps.[AdminTopUpPounds],
-                lps.[OverallFivePoundThreshold]
+                lps.[OverallRoundingThresholdPounds]
             FROM
                 [LeaguePrizeScheme] lps
             WHERE
@@ -80,8 +80,8 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
             NumberOfRounds = row.NumberOfRounds,
             NumberOfMonths = CountMonths(row.SeasonStartDateUtc, row.SeasonEndDateUtc),
             HasScheme = scheme is not null,
-            AdminTopUpPounds = scheme?.AdminTopUpPounds ?? 0,
-            OverallFivePoundThreshold = scheme?.OverallFivePoundThreshold ?? 0,
+            AdminTopUpPounds = (int)decimal.Truncate(row.PrizeFundOverride ?? 0m),
+            OverallRoundingThresholdPounds = scheme?.OverallRoundingThresholdPounds ?? 0,
             Categories = categories
         };
     }
@@ -103,6 +103,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
         public string AdministratorName { get; init; } = string.Empty;
         public string? EntryCode { get; init; }
         public decimal EntryCost { get; init; }
+        public decimal? PrizeFundOverride { get; init; }
         public DateTime EntryDeadlineUtc { get; init; }
         public DateTime SeasonStartDateUtc { get; init; }
         public DateTime SeasonEndDateUtc { get; init; }
@@ -113,8 +114,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
     [ExcludeFromCodeCoverage]
     private sealed class SchemeRow
     {
-        public int AdminTopUpPounds { get; init; }
-        public int OverallFivePoundThreshold { get; init; }
+        public int OverallRoundingThresholdPounds { get; init; }
     }
 
     [ExcludeFromCodeCoverage]

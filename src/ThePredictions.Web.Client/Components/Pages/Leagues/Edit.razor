@@ -125,7 +125,8 @@
                             <PrizeSchemeEditor Scheme="_scheme"
                                                SeasonId="_league.SeasonId"
                                                Price="_model.Price"
-                                               IsTournament="_league.IsTournament" />
+                                               IsTournament="_league.IsTournament"
+                                               @bind-PrizeFundOverride="_model.PrizeFundOverride" />
                             <LeagueBoostSelector Selections="_boostSelections" />
                             <p class="form-text text-white-50">Prizes & boosts can only be set once, then they lock.</p>
                         }
@@ -196,7 +197,7 @@
         // Set the prize scheme / boosts once, only on a schemeless league.
         if (_league is { HasPrizeScheme: false })
         {
-            if ((_model!.Price > 0 || _scheme.AdminTopUpPounds > 0) && _scheme.Categories.Any())
+            if ((_model!.Price > 0 || (_model.PrizeFundOverride ?? 0) > 0) && _scheme.Categories.Any())
                 await Http.PutAsJsonAsync($"api/leagues/{LeagueId}/prize-scheme", _scheme);
 
             var enabledBoosts = _boostSelections.Where(b => b.IsEnabled).ToList();

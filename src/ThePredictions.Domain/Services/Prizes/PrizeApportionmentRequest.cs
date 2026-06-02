@@ -19,7 +19,7 @@ public sealed class PrizeApportionmentRequest
     public int AdminTopUpPounds { get; init; }
 
     /// <summary>When the Overall sub-pot reaches this, every Overall rank rounds to a clean £5.</summary>
-    public int OverallFivePoundThreshold { get; init; }
+    public int OverallRoundingThresholdPounds { get; init; }
 
     /// <summary>Number of prediction rounds in the season (the Round category's event count).</summary>
     public int NumberOfRounds { get; init; }

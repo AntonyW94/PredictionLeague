@@ -8,13 +8,13 @@ namespace ThePredictions.Domain.Models;
 /// A league's up-front prize configuration (write-once). It declares which categories pay out and
 /// how each entry's stake is split across them; the concrete amounts are derived live by the
 /// apportionment engine and frozen into <see cref="LeaguePrizeSetting"/>s at the deadline.
+/// Any admin top-up money lives on the league (<see cref="League.PrizeFundOverride"/>), not here.
 /// </summary>
 public class LeaguePrizeScheme
 {
     public int Id { get; init; }
     public int LeagueId { get; private set; }
-    public int AdminTopUpPounds { get; private set; }
-    public int OverallFivePoundThreshold { get; private set; }
+    public int OverallRoundingThresholdPounds { get; private set; }
     public DateTime SetAtUtc { get; private set; }
     public string SetByUserId { get; private set; } = string.Empty;
 
@@ -23,12 +23,11 @@ public class LeaguePrizeScheme
 
     private LeaguePrizeScheme() { }
 
-    public LeaguePrizeScheme(int id, int leagueId, int adminTopUpPounds, int overallFivePoundThreshold, DateTime setAtUtc, string setByUserId, IEnumerable<LeaguePrizeSchemeEntry?>? entries)
+    public LeaguePrizeScheme(int id, int leagueId, int overallRoundingThresholdPounds, DateTime setAtUtc, string setByUserId, IEnumerable<LeaguePrizeSchemeEntry?>? entries)
     {
         Id = id;
         LeagueId = leagueId;
-        AdminTopUpPounds = adminTopUpPounds;
-        OverallFivePoundThreshold = overallFivePoundThreshold;
+        OverallRoundingThresholdPounds = overallRoundingThresholdPounds;
         SetAtUtc = setAtUtc;
         SetByUserId = setByUserId;
 
@@ -38,16 +37,14 @@ public class LeaguePrizeScheme
 
     public static LeaguePrizeScheme Create(
         int stakePounds,
-        int adminTopUpPounds,
-        int overallFivePoundThreshold,
+        int overallRoundingThresholdPounds,
         IEnumerable<LeaguePrizeSchemeEntry> entries,
         string setByUserId,
         bool isTournament,
         IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.Negative(stakePounds);
-        Guard.Against.Negative(adminTopUpPounds);
-        Guard.Against.Negative(overallFivePoundThreshold);
+        Guard.Against.Negative(overallRoundingThresholdPounds);
         Guard.Against.NullOrWhiteSpace(setByUserId);
         Guard.Against.Null(entries);
 
@@ -74,8 +71,7 @@ public class LeaguePrizeScheme
 
         var scheme = new LeaguePrizeScheme
         {
-            AdminTopUpPounds = adminTopUpPounds,
-            OverallFivePoundThreshold = overallFivePoundThreshold,
+            OverallRoundingThresholdPounds = overallRoundingThresholdPounds,
             SetByUserId = setByUserId,
             SetAtUtc = dateTimeProvider.UtcNow
         };

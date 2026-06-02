@@ -487,16 +487,14 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             INSERT INTO [LeaguePrizeScheme]
             (
                 [LeagueId],
-                [AdminTopUpPounds],
-                [OverallFivePoundThreshold],
+                [OverallRoundingThresholdPounds],
                 [SetAtUtc],
                 [SetByUserId]
             )
             VALUES
             (
                 @LeagueId,
-                @AdminTopUpPounds,
-                @OverallFivePoundThreshold,
+                @OverallRoundingThresholdPounds,
                 @SetAtUtc,
                 @SetByUserId
             );
@@ -507,8 +505,7 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             new
             {
                 LeagueId = leagueId,
-                scheme.AdminTopUpPounds,
-                scheme.OverallFivePoundThreshold,
+                scheme.OverallRoundingThresholdPounds,
                 scheme.SetAtUtc,
                 scheme.SetByUserId
             },
@@ -548,15 +545,18 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             transaction: Transaction,
             cancellationToken: cancellationToken));
 
-        // Keep the league's HasPrizes flag in step with the scheme (used by prize processing and
-        // pot displays) without going through UpdateAsync, which would rewrite members/prize settings.
-        var hasPrizes = scheme.AdminTopUpPounds > 0 || scheme.Entries.Any(e => e.PerEntryPounds > 0);
-
-        const string updateHasPrizesSql = "UPDATE [Leagues] SET [HasPrizes] = @HasPrizes WHERE [Id] = @LeagueId;";
+        // Keep the league's HasPrizes flag in step (a scheme means it awards prizes whenever the
+        // pot is non-zero: a paid entry fee or admin top-up money). Done here rather than via
+        // UpdateAsync, which would rewrite members/prize settings. Derived from the league's own
+        // columns so it's correct regardless of call order.
+        const string updateHasPrizesSql = @"
+            UPDATE [Leagues]
+            SET [HasPrizes] = CASE WHEN [Price] > 0 OR ISNULL([PrizeFundOverride], 0) > 0 THEN 1 ELSE 0 END
+            WHERE [Id] = @LeagueId;";
 
         await Connection.ExecuteAsync(new CommandDefinition(
             updateHasPrizesSql,
-            new { HasPrizes = hasPrizes, LeagueId = leagueId },
+            new { LeagueId = leagueId },
             transaction: Transaction,
             cancellationToken: cancellationToken));
     }
@@ -588,8 +588,7 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
         return new LeaguePrizeScheme(
             header.Id,
             header.LeagueId,
-            header.AdminTopUpPounds,
-            header.OverallFivePoundThreshold,
+            header.OverallRoundingThresholdPounds,
             header.SetAtUtc,
             header.SetByUserId,
             entries);

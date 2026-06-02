@@ -36,7 +36,7 @@ public static class PrizeApportionmentService
         Guard.Against.Negative(request.EntrantCount);
         Guard.Against.Negative(request.StakePounds);
         Guard.Against.Negative(request.AdminTopUpPounds);
-        Guard.Against.Negative(request.OverallFivePoundThreshold);
+        Guard.Against.Negative(request.OverallRoundingThresholdPounds);
 
         var categories = request.Categories;
         var n = request.EntrantCount;
@@ -110,7 +110,7 @@ public static class PrizeApportionmentService
             var percentages = overallAllocation.RankTable?.PercentagesFor(n) ?? SinglePlace;
             var overallSlots = new List<PrizeBreakdownSlot>();
 
-            if (overallSub >= request.OverallFivePoundThreshold && overallSub >= 5)
+            if (overallSub >= request.OverallRoundingThresholdPounds && overallSub >= 5)
             {
                 var floored = overallSub - overallSub % 5;
                 var remainder = overallSub - floored;

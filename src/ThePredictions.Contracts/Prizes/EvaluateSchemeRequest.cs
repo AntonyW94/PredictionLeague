@@ -5,6 +5,10 @@ public class EvaluateSchemeRequest
 {
     public int SeasonId { get; set; }
     public decimal Price { get; set; }
+
+    /// <summary>Admin money on top of entry fees (added to the pot), for the live preview.</summary>
+    public decimal? PrizeFundOverride { get; set; }
+
     public int EntrantCount { get; set; }
     public PrizeSchemeRequest Scheme { get; set; } = new();
 }

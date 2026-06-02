@@ -50,10 +50,11 @@ public class ProcessPrizesCommandHandler(
             return;
 
         var stakePounds = (int)decimal.Truncate(league.Price);
+        var adminTopUpPounds = (int)decimal.Truncate(league.PrizeFundOverride ?? 0m);
         var entrantCount = league.Members.Count;
         var numberOfMonths = CountMonths(season.StartDateUtc, season.EndDateUtc);
 
-        var evaluationRequest = PrizeSchemeEvaluationRequest.FromScheme(league.PrizeScheme, stakePounds, entrantCount, season.NumberOfRounds, numberOfMonths);
+        var evaluationRequest = PrizeSchemeEvaluationRequest.FromScheme(league.PrizeScheme, stakePounds, adminTopUpPounds, entrantCount, season.NumberOfRounds, numberOfMonths);
         var breakdown = prizeEvaluator.Evaluate(evaluationRequest);
 
         var settings = PrizeFreezeMapper.ToPrizeSettings(breakdown, league.Id);

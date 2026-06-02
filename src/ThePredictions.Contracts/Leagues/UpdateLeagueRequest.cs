@@ -8,6 +8,9 @@ public class UpdateLeagueRequest : IHasBankDetails
     public int PointsForExactScore { get; set; }
     public int PointsForCorrectResult { get; set; }
 
+    // Optional money the admin puts up on top of the entry fees (added to the pot: Price x N + this).
+    public decimal? PrizeFundOverride { get; set; }
+
     // Optional peer-to-peer entry-fee bank details (plaintext in transit; encrypted server-side at rest).
     public string? BankAccountName { get; set; }
     public string? BankSortCode { get; set; }

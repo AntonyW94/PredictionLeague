@@ -45,6 +45,9 @@ public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
             fieldEncryptionService.Encrypt(NullIfBlank(request.BankAccountNumber)),
             NullIfBlank(request.PaymentReferenceTemplate));
 
+        // Admin top-up money sits on the league (added to the pot); set before the scheme so HasPrizes is correct.
+        league.SetPrizeFundOverride(request.PrizeFundOverride);
+
         if (request.PrizeScheme is not null)
         {
             var competition = await competitionRepository.GetByIdAsync(season.CompetitionId, cancellationToken);

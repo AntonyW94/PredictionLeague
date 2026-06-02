@@ -19,7 +19,7 @@ public class PrizeEvaluatorTests
         {
             StakePounds = 13,
             AdminTopUpPounds = 0,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             EntrantCount = 17,
             NumberOfRounds = 38,
             NumberOfMonths = 9,
@@ -49,7 +49,7 @@ public class PrizeEvaluatorTests
         var request = new PrizeSchemeEvaluationRequest
         {
             StakePounds = 10,
-            OverallFivePoundThreshold = 1000,
+            OverallRoundingThresholdPounds = 1000,
             EntrantCount = 20,
             NumberOfRounds = 38,
             Categories = new[]
@@ -69,7 +69,7 @@ public class PrizeEvaluatorTests
     public void Evaluate_ShouldMatchDomainServiceOutput_ForSavedScheme()
     {
         var scheme = LeaguePrizeScheme.Create(
-            10, 0, 100,
+            10, 100,
             new[]
             {
                 LeaguePrizeSchemeEntry.Create(PrizeType.Overall, 7),
@@ -77,7 +77,7 @@ public class PrizeEvaluatorTests
             },
             "admin-user", isTournament: false, _dateTimeProvider);
 
-        var request = PrizeSchemeEvaluationRequest.FromScheme(scheme, stakePounds: 10, entrantCount: 25, numberOfRounds: 38, numberOfMonths: 9);
+        var request = PrizeSchemeEvaluationRequest.FromScheme(scheme, stakePounds: 10, adminTopUpPounds: 0, entrantCount: 25, numberOfRounds: 38, numberOfMonths: 9);
         var breakdown = _evaluator.Evaluate(request);
 
         breakdown.Pot.Should().Be(250);

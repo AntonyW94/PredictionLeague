@@ -12,8 +12,7 @@ public class PrizeSchemeRequestValidatorTests
 
     private static PrizeSchemeRequest Valid() => new()
     {
-        AdminTopUpPounds = 0,
-        OverallFivePoundThreshold = 100,
+        OverallRoundingThresholdPounds = 100,
         Categories = new List<PrizeSchemeCategoryRequest>
         {
             new() { Category = PrizeType.Overall, PerEntryPounds = 8 },
@@ -46,21 +45,12 @@ public class PrizeSchemeRequestValidatorTests
     }
 
     [Fact]
-    public void Validate_ShouldFail_WhenAdminTopUpNegative()
-    {
-        var request = Valid();
-        request.AdminTopUpPounds = -5;
-
-        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.AdminTopUpPounds);
-    }
-
-    [Fact]
     public void Validate_ShouldFail_WhenThresholdNegative()
     {
         var request = Valid();
-        request.OverallFivePoundThreshold = -1;
+        request.OverallRoundingThresholdPounds = -1;
 
-        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.OverallFivePoundThreshold);
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.OverallRoundingThresholdPounds);
     }
 
     [Fact]

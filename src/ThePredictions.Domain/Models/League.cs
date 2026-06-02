@@ -277,8 +277,8 @@ public partial class League
     {
         _prizeScheme = scheme;
 
-        // Free leagues with no admin top-up are informational only - they award no prizes.
-        HasPrizes = Price > 0 || scheme.AdminTopUpPounds > 0;
+        // Free leagues with no admin top-up (PrizeFundOverride) are informational only - no prizes.
+        HasPrizes = Price > 0 || (PrizeFundOverride ?? 0) > 0;
     }
 
     public void ReassignAdministrator(string newAdministratorUserId)

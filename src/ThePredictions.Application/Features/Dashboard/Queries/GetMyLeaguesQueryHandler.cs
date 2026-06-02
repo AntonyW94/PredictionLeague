@@ -154,8 +154,8 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             ISNULL(ar.[CompletedCount], 0) AS CompletedCount,
 
             lc.[UserWinnings] AS PrizeMoneyWon,
-            (COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) - lc.[TotalPaidOut]) AS PrizeMoneyRemaining,
-            COALESCE(l.[PrizeFundOverride], l.[Price] * lc.[MemberCount]) AS TotalPrizeFund,
+            (l.[Price] * lc.[MemberCount] + ISNULL(l.[PrizeFundOverride], 0) - lc.[TotalPaidOut]) AS PrizeMoneyRemaining,
+            (l.[Price] * lc.[MemberCount] + ISNULL(l.[PrizeFundOverride], 0)) AS TotalPrizeFund,
             l.[Price] AS EntryFee,
             l.[IsFree],
 

@@ -39,12 +39,11 @@ public class SetPrizeSchemeCommandHandlerTests
             3, 1, price, false, scheme is not null, null, members: null, prizeSettings: null, prizeScheme: scheme);
 
     private LeaguePrizeScheme ExistingScheme() =>
-        LeaguePrizeScheme.Create(10, 0, 100, new[] { LeaguePrizeSchemeEntry.Create(PrizeType.Overall, 10) }, "admin-user", false, _dateTimeProvider);
+        LeaguePrizeScheme.Create(10, 100, new[] { LeaguePrizeSchemeEntry.Create(PrizeType.Overall, 10) }, "admin-user", false, _dateTimeProvider);
 
     private static PrizeSchemeRequest Request() => new()
     {
-        AdminTopUpPounds = 0,
-        OverallFivePoundThreshold = 100,
+        OverallRoundingThresholdPounds = 100,
         Categories = new List<PrizeSchemeCategoryRequest>
         {
             new() { Category = PrizeType.Overall, PerEntryPounds = 7 },

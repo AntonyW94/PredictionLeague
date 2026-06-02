@@ -13,4 +13,5 @@ public record UpdateLeagueCommand(
     string? BankAccountName = null,
     string? BankSortCode = null,
     string? BankAccountNumber = null,
-    string? PaymentReferenceTemplate = null) : IRequest;
+    string? PaymentReferenceTemplate = null,
+    decimal? PrizeFundOverride = null) : IRequest;

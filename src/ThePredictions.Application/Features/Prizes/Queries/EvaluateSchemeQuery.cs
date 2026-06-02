@@ -11,5 +11,6 @@ public record EvaluateSchemeQuery(
     int SeasonId,
     decimal Price,
     int EntrantCount,
-    PrizeSchemeRequest Scheme
+    PrizeSchemeRequest Scheme,
+    decimal? PrizeFundOverride = null
 ) : IRequest<PrizeBreakdownDto>;

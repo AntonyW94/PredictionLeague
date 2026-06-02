@@ -17,5 +17,6 @@ public record CreateLeagueCommand(
     string? BankSortCode = null,
     string? BankAccountNumber = null,
     string? PaymentReferenceTemplate = null,
-    PrizeSchemeRequest? PrizeScheme = null
+    PrizeSchemeRequest? PrizeScheme = null,
+    decimal? PrizeFundOverride = null
 ) : IRequest<LeagueDto>, ITransactionalRequest;

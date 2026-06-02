@@ -9,10 +9,7 @@ public class PrizeSchemeRequestValidator : AbstractValidator<PrizeSchemeRequest>
 {
     public PrizeSchemeRequestValidator()
     {
-        RuleFor(x => x.AdminTopUpPounds)
-            .GreaterThanOrEqualTo(0).WithMessage("The admin top-up must be zero or more whole pounds.");
-
-        RuleFor(x => x.OverallFivePoundThreshold)
+        RuleFor(x => x.OverallRoundingThresholdPounds)
             .GreaterThanOrEqualTo(0).WithMessage("The £5-rounding threshold must be zero or more.");
 
         RuleFor(x => x.Categories)

@@ -54,7 +54,7 @@ public class PrizeApportionmentServiceTests
             EntrantCount = entrants,
             StakePounds = 13,
             AdminTopUpPounds = 0,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             NumberOfMonths = 9,
             Categories = new[] { Overall(8), Round(3), Exact(2) }
@@ -74,7 +74,7 @@ public class PrizeApportionmentServiceTests
             EntrantCount = 30,
             StakePounds = 10,
             AdminTopUpPounds = 57,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             NumberOfMonths = 9,
             Categories = new[] { Overall(5), Round(3), Monthly(0), Exact(2) }
@@ -97,7 +97,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 12,
             StakePounds = 13,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(13) }
         };
@@ -121,7 +121,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 12,
             StakePounds = 13,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(11), Exact(2) }
         };
@@ -141,7 +141,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 12,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(10), Exact(2) }
         };
@@ -160,7 +160,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 8,
             StakePounds = 10,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(10) }
         };
@@ -179,7 +179,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 3,
             StakePounds = 1,
-            OverallFivePoundThreshold = 0,
+            OverallRoundingThresholdPounds = 0,
             NumberOfRounds = 38,
             Categories = new[] { Overall(1) }
         };
@@ -198,7 +198,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 11,
             StakePounds = 1,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(1) }
         };
@@ -219,7 +219,7 @@ public class PrizeApportionmentServiceTests
             EntrantCount = 11,
             StakePounds = 0,
             AdminTopUpPounds = 1,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(0) }
         };
@@ -243,7 +243,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 7,
             Categories = new[] { Round(3), Exact(2) }
         };
@@ -265,7 +265,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             NumberOfMonths = 4,
             Categories = new[] { Monthly(3), Overall(2) }
@@ -287,7 +287,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 7,
             Categories = new[] { Round(3), Section(2) }
         };
@@ -306,7 +306,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 40,
             StakePounds = 1,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Round(1) }
         };
@@ -328,7 +328,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 1,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             NumberOfMonths = 3,
             Categories = new[] { Monthly(1) }
@@ -349,7 +349,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 1,
             StakePounds = 5,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Round(2), Exact(3) }
         };
@@ -371,7 +371,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 0,
             Categories = new[] { Round(3), Exact(2) }
         };
@@ -395,7 +395,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Section(5) }
         };
@@ -419,7 +419,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 5,
             StakePounds = 5,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Section(5) }
         };
@@ -439,7 +439,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 5,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[]
             {
@@ -465,7 +465,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 10,
             StakePounds = 10,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[]
             {
@@ -492,7 +492,7 @@ public class PrizeApportionmentServiceTests
             EntrantCount = 1,
             StakePounds = 10,
             AdminTopUpPounds = 10,
-            OverallFivePoundThreshold = 1000,
+            OverallRoundingThresholdPounds = 1000,
             NumberOfRounds = 38,
             Categories = new[] { Overall(8), Exact(2) }
         };
@@ -513,7 +513,7 @@ public class PrizeApportionmentServiceTests
             EntrantCount = 5,
             StakePounds = 0,
             AdminTopUpPounds = 11,
-            OverallFivePoundThreshold = 1000,
+            OverallRoundingThresholdPounds = 1000,
             NumberOfRounds = 38,
             Categories = new[] { Overall(0), Exact(0) }
         };
@@ -534,7 +534,7 @@ public class PrizeApportionmentServiceTests
             EntrantCount = 0,
             StakePounds = 0,
             AdminTopUpPounds = 0,
-            OverallFivePoundThreshold = 100,
+            OverallRoundingThresholdPounds = 100,
             NumberOfRounds = 38,
             Categories = new[] { Overall(0), Exact(0) }
         };
@@ -561,7 +561,7 @@ public class PrizeApportionmentServiceTests
         {
             EntrantCount = 50,
             StakePounds = 200,
-            OverallFivePoundThreshold = 100000,
+            OverallRoundingThresholdPounds = 100000,
             NumberOfRounds = 38,
             Categories = new[] { Overall(200, thirteenPlaces) }
         };
@@ -610,7 +610,7 @@ public class PrizeApportionmentServiceTests
     [Fact]
     public void Apportion_ShouldThrow_WhenThresholdIsNegative()
     {
-        var request = new PrizeApportionmentRequest { EntrantCount = 1, StakePounds = 10, OverallFivePoundThreshold = -1, NumberOfRounds = 38, Categories = new[] { Overall(10) } };
+        var request = new PrizeApportionmentRequest { EntrantCount = 1, StakePounds = 10, OverallRoundingThresholdPounds = -1, NumberOfRounds = 38, Categories = new[] { Overall(10) } };
         var act = () => PrizeApportionmentService.Apportion(request);
         act.Should().Throw<ArgumentException>();
     }

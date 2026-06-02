@@ -98,7 +98,8 @@
                                            Scheme="_scheme"
                                            SeasonId="_model.SeasonId"
                                            Price="_model.Price"
-                                           IsTournament="_isTournament" />
+                                           IsTournament="_isTournament"
+                                           @bind-PrizeFundOverride="_model.PrizeFundOverride" />
                         <LeagueBoostSelector Selections="_boostSelections" />
                     }
             </ChildContent>
@@ -170,7 +171,7 @@
     private async Task<HttpResponseMessage> HandleCreateLeagueAsync()
     {
         // Attach the prize scheme only when the league actually awards prizes.
-        _model.PrizeScheme = (_model.Price > 0 || _scheme.AdminTopUpPounds > 0) && _scheme.Categories.Any()
+        _model.PrizeScheme = (_model.Price > 0 || (_model.PrizeFundOverride ?? 0) > 0) && _scheme.Categories.Any()
             ? _scheme
             : null;
 

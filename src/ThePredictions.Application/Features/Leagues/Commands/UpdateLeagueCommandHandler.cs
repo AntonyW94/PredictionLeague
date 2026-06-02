@@ -42,6 +42,8 @@ public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
             fieldEncryptionService.Encrypt(NullIfBlank(request.BankAccountNumber)),
             NullIfBlank(request.PaymentReferenceTemplate));
 
+        league.SetPrizeFundOverride(request.PrizeFundOverride);
+
         await leagueRepository.UpdateAsync(league, cancellationToken);
     }
 

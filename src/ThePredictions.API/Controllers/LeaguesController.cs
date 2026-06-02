@@ -47,7 +47,8 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
             request.BankSortCode,
             request.BankAccountNumber,
             request.PaymentReferenceTemplate,
-            request.PrizeScheme);
+            request.PrizeScheme,
+            request.PrizeFundOverride);
 
         var newLeague = await mediator.Send(command, cancellationToken);
 
@@ -574,7 +575,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         [FromBody, SwaggerParameter("Draft scheme and context", Required = true)] EvaluateSchemeRequest request,
         CancellationToken cancellationToken)
     {
-        var query = new EvaluateSchemeQuery(request.SeasonId, request.Price, request.EntrantCount, request.Scheme);
+        var query = new EvaluateSchemeQuery(request.SeasonId, request.Price, request.EntrantCount, request.Scheme, request.PrizeFundOverride);
         return Ok(await mediator.Send(query, cancellationToken));
     }
 

@@ -21,7 +21,7 @@ public class GetPendingRequestsQueryHandler(IApplicationReadDbConnection dbConne
                 u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [AdminName],
                 (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) AS [MemberCount],
                 l.[Price] AS [EntryFee],
-                COALESCE(l.[PrizeFundOverride], l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus)) AS [PotValue]
+                (l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) + ISNULL(l.[PrizeFundOverride], 0)) AS [PotValue]
             FROM
                 [LeagueMembers] lm
             JOIN

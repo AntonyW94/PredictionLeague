@@ -18,8 +18,8 @@ public class LeaguePrizeSchemeOnLeagueTests
     private League CreateLeague(decimal price) =>
         League.Create(1, "Test League", "admin-user", _dateTimeProvider.UtcNow.AddMonths(1), 3, 1, price, CreateFutureSeason(), _dateTimeProvider);
 
-    private LeaguePrizeScheme CreateScheme(int stake, int topUp = 0) =>
-        LeaguePrizeScheme.Create(stake, topUp, 100, new[] { LeaguePrizeSchemeEntry.Create(PrizeType.Overall, stake) }, "admin-user", false, _dateTimeProvider);
+    private LeaguePrizeScheme CreateScheme(int stake) =>
+        LeaguePrizeScheme.Create(stake, 100, new[] { LeaguePrizeSchemeEntry.Create(PrizeType.Overall, stake) }, "admin-user", false, _dateTimeProvider);
 
     [Fact]
     public void SetPrizeScheme_ShouldAttachScheme_AndFlagPrizes_WhenPaidLeague()
@@ -48,7 +48,8 @@ public class LeaguePrizeSchemeOnLeagueTests
     public void SetPrizeScheme_ShouldFlagPrizes_WhenFreeLeagueHasAdminTopUp()
     {
         var league = CreateLeague(0m);
-        var scheme = CreateScheme(0, topUp: 50);
+        league.SetPrizeFundOverride(50m); // admin tops the pot up - now it awards prizes
+        var scheme = CreateScheme(0);
 
         league.SetPrizeScheme(scheme);
 
