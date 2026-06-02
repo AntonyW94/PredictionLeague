@@ -38,9 +38,14 @@ round-number prize breakdown.
 
 Implements the rules from the feature README:
 - `categorySubPot = perEntryPounds × N`.
-- **EndOfSeason (Overall, Exact):** apply the places threshold table for `N`;
-  below the £5 threshold split at £1, above it round 2nd+ to £5 and put the odd
-  £1–£4 on 1st; ranks sum exactly. A place resolving to £0 is dropped.
+- **EndOfSeason (Overall, Exact):** apply the places threshold table for `N`.
+  Below the £5 threshold split at £1. Above it, **floor the overall sub-pot to £5**
+  (every rank clean £5, top-down leftover) and emit the `S mod 5` remainder as a
+  **spillover amount** to be added to another category (the receiving category is
+  chosen by the engine in task 2, not here — the service just reports the spill).
+  A place resolving to £0 is dropped. The result must satisfy: sum of all category
+  amounts (after spill) == pot, exactly. Pure function of `(scheme, pot, N)` — no
+  stored state, so the spill recomputes (and can reverse) as `N` changes.
 - **Recurring (Round/Monthly):** `floor(subPot ÷ events)` per event; remainder to
   the agreed home (final event / 1st overall — see open question).
 - **Staged (Section):** 50/50 across two stages, each ranked by the ladder.
@@ -74,9 +79,11 @@ public void OverridePrizeScheme(LeaguePrizeScheme scheme) => _prizeScheme = sche
 
 - [ ] `dotnet build` clean with `/p:TreatWarningsAsErrors=true`.
 - [ ] `tools\Test Coverage\coverage-unit.bat` shows **100% line & branch**.
-- [ ] Apportionment unit tests cover: £5 threshold boundary, 1st-absorbs-remainder,
-      place dropped at £0, ties, single-place small pots, recurring division
-      remainder, section 50/50.
+- [ ] Apportionment unit tests cover: £5 threshold boundary, overall floored so
+      all ranks are clean £5, spillover amount = `S mod 5`, spillover fallback to
+      1st when Overall is the only category, conservation (all funds sum to pot at
+      every N), place dropped at £0, ties, single-place small pots, recurring
+      division remainder, section 50/50.
 
 ## Edge Cases to Consider
 

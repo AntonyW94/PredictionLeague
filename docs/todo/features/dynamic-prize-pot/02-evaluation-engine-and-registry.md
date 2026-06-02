@@ -32,6 +32,9 @@ availability gates, places table).
 - One entry per category: `Overall`, `Round`, `MostExactScores`, `Section`,
   `Monthly`, each with `Kind`, `DefaultWeight`, `AvailableFor`
   (All / SeasonsOnly / TournamentsOnly), and a default places table.
+- A **spillover priority** order (Round → MostExactScores → Monthly → Section): the
+  evaluator routes the overall floor-to-£5 remainder to the first enabled category
+  in this order, else back to 1st overall. Recomputed each call (never persisted).
 - `RecommendedAllocation(enabledCategories, stake)` → renormalise default weights
   across the enabled set and convert to **whole-pound** per-entry amounts that sum
   to the stake (largest-remainder on the renormalisation).

@@ -198,23 +198,36 @@ whole pounds (no pence) so blocks stay whole.
 last season (17 players) the prizes were `38 × £4` round, `£48` exact, `£25`/month,
 and `£220/£120/£90` overall — i.e. only the **headline overall** prizes were
 £5-clean; everything else kept its natural £1 value. So:
-- **Overall**: if the overall sub-pot `S ≥ £x` (suggest **£100**), round ranks
-  2nd-and-below to clean £5s (via the table, top-down leftover) and let **1st
-  absorb the odd £1–£4** so the ranks still sum *exactly* to `S`. So 2nd/3rd are
-  always £5-clean; 1st is usually £5-clean, occasionally e.g. £222. Below `£x`,
-  stay at £1 (don't distort small pots).
+- **Overall**: if the overall sub-pot `S ≥ £x` (suggest **£100**), **floor `S` to
+  the nearest £5** so *every* overall rank (1st included) is a clean £5, then
+  apportion that £5-multiple across ranks via the table (top-down leftover). The
+  odd **£1–£4** (`S mod 5`) **spills into another category's fund** (see below).
+  Below `£x`, stay at £1 (don't distort small pots).
 - **Round / Monthly / Exact / Section**: keep natural **£1** values (the £4, £25,
-  £48 above) — no £5 rounding.
+  £48 above) — no £5 rounding; these also **receive** the overall spillover.
 
 > Supersedes the earlier `B = £5` proposal. £5 blocks guaranteed every prize was
 > £5-clean and summed exactly, but were too coarse to fund multiple categories
 > from small stakes. £1 blocks + overall-only £5 rounding match how prizes are
 > actually set (only the headline figures are "pretty").
 
-**Leftover/remainder rule — top-down (1st rounds up / absorbs the odd bit).**
-When apportioning £5 blocks across overall ranks, hand leftover blocks out by rank
-order (1st first); the sub-£5 remainder lands on 1st. Top prize never rounds down;
-growth is monotonic; the total is always fully paid out.
+**Remainder rule — spill the odd £1–£4 out of Overall into another fund.** Rather
+than dumping the remainder on 1st (which left it looking like £222), the
+floor-to-£5 leftover moves into a £1-granular category, which absorbs it naturally:
+- **Conserved & stateless**: the breakdown is a *pure recompute* from
+  `(scheme, pot, N)` — the spillover is **never stored**. As entrants change during
+  registration the odd pounds move freely between funds and **can come back**;
+  only the deadline freeze is permanent. The sum across *all* categories always
+  equals the pot exactly — spillover only changes *which bucket* holds the odd
+  £1–£4, never creating or losing money.
+- **Target priority** (deterministic): Round → Most Exact Scores → Monthly →
+  Section. **Fallback**: if **Overall is the only category**, there is nowhere to
+  spill, so 1st absorbs the remainder (the old rule).
+- **Expected to oscillate** ("on and off") as `N` changes — biggest when the
+  per-entry overall allocation isn't a multiple of £5; ≈0 when it is. Always
+  truthful and always sums to the pot.
+- Within Overall, leftover £5 blocks are still handed out **top-down** (1st first)
+  so growth is monotonic and the top prize never rounds down.
 
 **Definitions**
 - **Stake `E`** — whole pounds when prizes are on. `blocksPerEntry = E` (in £1s).
@@ -239,7 +252,7 @@ differently) — no engine rewrite. Rides on the existing pluggable `IPrizeStrat
 
 | Category | Weight | Kind | Available for | Split behaviour |
 |---|---|---|---|---|
-| Overall | 3 | EndOfSeason | all | places-ladder + £5 rounding (above £x) |
+| Overall | 3 | EndOfSeason | all | places-ladder + floor-to-£5 (above £x); odd £1–£4 spills out |
 | Section (groups/knockouts) | 2 | Staged | **tournaments only** | sub-pot 50/50 across the 2 stages, each uses the Overall ladder; £1 |
 | Most Exact Scores | 1 | EndOfSeason | all | single prize (or top few); £1 |
 | Round | 1 | Recurring | all | **not split** — winner-takes-all per round; £1 |
@@ -247,9 +260,11 @@ differently) — no engine rewrite. Rides on the existing pluggable `IPrizeStrat
 
 **Evaluation (live, at any N)**
 1. Category sub-pot (£) = `perEntryAllocation × N`. Always exact, whole pounds.
-2. **Overall**: split `S` across ranks by the **threshold table** for the current
-   N. At £1 granularity below `£x`; above `£x`, round 2nd+ to £5 and put the odd
-   £1–£4 on 1st. Ranks always sum exactly to `S`.
+2. **Overall**: below `£x`, split `S` at £1 granularity by the **threshold table**.
+   Above `£x`, floor `S` to the nearest £5, apportion that £5-multiple across ranks
+   (all ranks clean £5, top-down leftover), and **spill the `S mod 5` remainder**
+   into the next category by priority (Round → Exact → Monthly → Section; fallback
+   1st if Overall is the only category).
 3. **Staged** (Section): exactly 2 stages → divide the section sub-pot **50/50**
    (admin-adjustable), then rank within each stage using the **same ladder**.
    Smaller stage pots → fewer places light up automatically. £1 granularity.
@@ -274,25 +289,32 @@ validated: sums to 100, descending, no prize below £1):
 | 41–75 | 5 | 40 / 25 / 15 / 12 / 8 |
 | 76+   | 6 | 35 / 22 / 15 / 12 / 9 / 7 |
 
-**Worked example** — `B = £1`, `E = £25`, split `Overall £15 / Section £5 /
-Exact £5`, growing 12 → 13 entrants (Overall 50/30/20, £5 rounding as `S ≥ £100`):
+**Worked example** — `B = £1`, `E = £13`, split `Overall £8 / Round £3 / Exact £2`
+(non-£5 overall allocation, so spillover oscillates), 12 → 13 entrants
+(Overall 50/30/20, rounding on — illustrative threshold £50 — spillover → Round):
 
-| Slot | N=12 (S=£180) | N=13 (S=£195) | Joiner adds |
+| Slot | N=12 | N=13 | Joiner adds |
 |---|---|---|---|
-| Overall → 1st (50%, abs. remainder) | £90 | £95 | +£5 |
-| → 2nd (30% → £5) | £55 | £60 | +£5 |
-| → 3rd (20% → £5) | £35 | £40 | +£5 |
-| Section (£5/entry) | £60 | £65 | +£5 |
-| Exact scores (£5/entry) | £60 | £65 | +£5 |
+| Overall raw `S` | £96 | £104 | — |
+| → floored to £5 | £95 | £100 | — |
+| → 1st (50%) | £50 | £50 | +£0 |
+| → 2nd (30%) | £30 | £30 | +£0 |
+| → 3rd (20%) | £15 | £20 | +£5 |
+| **Spill → Round fund** | **+£1** (96 mod 5) | **+£4** (104 mod 5) | +£3 |
+| Round fund (£3/entry + spill) | £37 | £43 | +£6 |
+| Exact fund (£2/entry) | £24 | £26 | +£2 |
 
-2nd/3rd are clean £5; 1st carries any odd remainder; overall ranks sum exactly to
-`S`. The **category** delta (+£15 overall / +£5 section / +£5 exact) is exact and
-stable — that's the headline a joiner sees.
+Every overall prize is a clean £5; the odd £1/£4 lands in the Round fund (which is
+£1-granular, so it just nudges the per-round prize). The **total** across all funds
+is exactly the pot (£156, £169). The spill "comes and goes" with `N` — nothing is
+stored, so it can move back. The pot-level delta a joiner adds is always exactly
+their stake (£13), just distributed across buckets.
 
-→ prospective-member copy: *"Your £25 adds £15 to the overall prizes, £5 to the
-section pot, and £5 to exact scores."* The category delta is always exactly the
-per-entry allocation (rock-stable); per-rank deltas come from diffing
-`breakdown(N)` vs `breakdown(N+1)`.
+→ prospective-member copy: *"Your £13 adds £8 to the overall prizes and £5 to the
+weekly round prizes."* The **pot-level** delta is always exactly the stake (money
+is conserved); per-category and per-rank deltas come from diffing `breakdown(N)`
+vs `breakdown(N+1)` and may shift as the £5 spillover comes and goes — always
+truthful, always summing to the stake.
 
 (Block size £1, overall-only £5 rounding, leftover rule top-down, category gating
 and the Section / Round / Monthly
@@ -401,10 +423,14 @@ direction is chosen (likely **0011**). It interacts with:
 Settled (confirm):
 - **Block size = £1, fixed.** Stakes are whole pounds. £1 granularity so a small
   stake can still fund several categories.
-- **£5 rounding on Overall only, above a threshold `£x` (suggest £100)**; 1st
-  absorbs the odd £1–£4 so ranks sum exactly. Round/Monthly/Exact/Section stay £1.
-- **Leftover/remainder goes top-down** (1st rounds up / absorbs the odd bit);
-  monotonic prize growth.
+- **£5 rounding on Overall only, above a threshold `£x` (suggest £100)**: floor `S`
+  to £5 so every overall prize is clean, and **spill the odd £1–£4 into another
+  category** (priority Round → Exact → Monthly → Section; fallback 1st if Overall
+  is the only category). Round/Monthly/Exact/Section stay £1.
+- **Spillover is conserved & stateless** — recomputed each `N`, never stored, so it
+  moves freely and can come back; the total across all funds always equals the
+  pot. Within Overall, leftover £5 blocks go top-down (monotonic, 1st never rounds
+  down).
 - **Toggles drive the recommendation**; default category weights renormalise
   across whatever is enabled; categories are an extensible registry.
 - **Category gating**: Section → tournaments only; Monthly → seasons only.
@@ -419,6 +445,7 @@ Settled (confirm):
 
 Still open (minor — defaults proposed):
 - [ ] Confirm the **£5-rounding threshold** value (£100 overall sub-pot?).
+- [ ] Confirm the **spillover target priority** (Round → Exact → Monthly → Section?).
 - [ ] Where does the recurring **rounding remainder** go — final event, or 1st overall?
 - [ ] Does the **"advanced" rank-table editor** ship at launch, or just defaults?
 - [ ] What season-vs-tournament signal gates Section/Monthly (TournamentRoundMappings
