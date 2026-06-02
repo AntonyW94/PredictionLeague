@@ -661,4 +661,57 @@ public class LeagueWinnersAndRankingsTests
     }
 
     #endregion
+
+    #region GetStageRankings
+
+    [Fact]
+    public void GetStageRankings_ShouldReturnEmptyList_WhenNoMembers()
+    {
+        var league = CreateEmptyLeague();
+
+        var rankings = league.GetStageRankings(new[] { 1, 2 });
+
+        rankings.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetStageRankings_ShouldReturnEmptyList_WhenNoRoundIdsProvided()
+    {
+        var league = CreateLeagueWithMembers(("user-a", [(1, 10, 0)]));
+
+        var rankings = league.GetStageRankings(Array.Empty<int>());
+
+        rankings.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetStageRankings_ShouldRankByAggregateOverStageRoundsOnly()
+    {
+        // Stage = rounds 1,2. Round 3 is a different stage and must be ignored.
+        var league = CreateLeagueWithMembers(
+            ("user-a", [(1, 5, 0), (2, 5, 0), (3, 100, 0)]),
+            ("user-b", [(1, 8, 0), (2, 8, 0), (3, 0, 0)]));
+
+        var rankings = league.GetStageRankings(new[] { 1, 2 });
+
+        // B has 16 over the stage, A has 10 - so B is 1st despite A's huge round-3 score.
+        rankings[0].Members.Should().ContainSingle(m => m.UserId == "user-b");
+        rankings[1].Members.Should().ContainSingle(m => m.UserId == "user-a");
+    }
+
+    [Fact]
+    public void GetStageRankings_ShouldGroupTiedMembers()
+    {
+        var league = CreateLeagueWithMembers(
+            ("user-a", [(1, 7, 0)]),
+            ("user-b", [(1, 7, 0)]));
+
+        var rankings = league.GetStageRankings(new[] { 1 });
+
+        rankings.Should().ContainSingle();
+        rankings[0].Rank.Should().Be(1);
+        rankings[0].Members.Should().HaveCount(2);
+    }
+
+    #endregion
 }

@@ -144,4 +144,31 @@ public class WinningsRepository(IDbConnectionFactory connectionFactory, IDbTrans
 
         await Connection.ExecuteAsync(command);
     }
+
+    public async Task DeleteWinningsForSectionAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            DELETE
+                w
+            FROM
+                [Winnings] w
+            INNER JOIN
+                [LeaguePrizeSettings] lps ON w.[LeaguePrizeSettingId] = lps.[Id]
+            WHERE
+                lps.[LeagueId] = @LeagueId
+                AND lps.[PrizeType] = @PrizeType;";
+
+        var command = new CommandDefinition(
+            sql,
+            new
+            {
+                LeagueId = leagueId,
+                PrizeType = PrizeType.Section
+            },
+            transaction: Transaction,
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(command);
+    }
 }

@@ -13,9 +13,15 @@ public class LeaguePrizeSetting
     public int Rank { get; private set; }
     public decimal PrizeAmount { get; private set; }
 
+    /// <summary>Optional display label (e.g. "1st", "Per round", "Group stage - 1st").</summary>
+    public string? PrizeDescription { get; private set; }
+
+    /// <summary>The tournament stage this prize belongs to (Section prizes only); otherwise null.</summary>
+    public string? Stage { get; private set; }
+
     private LeaguePrizeSetting() { }
 
-    public static LeaguePrizeSetting Create(int leagueId, PrizeType prizeType, int rank, decimal prizeAmount)
+    public static LeaguePrizeSetting Create(int leagueId, PrizeType prizeType, int rank, decimal prizeAmount, string? stage = null, string? prizeDescription = null)
     {
         Guard.Against.NegativeOrZero(leagueId);
         Guard.Against.NegativeOrZero(rank);
@@ -26,7 +32,9 @@ public class LeaguePrizeSetting
             LeagueId = leagueId,
             PrizeType = prizeType,
             Rank = rank,
-            PrizeAmount = prizeAmount
+            PrizeAmount = prizeAmount,
+            Stage = stage,
+            PrizeDescription = prizeDescription
         };
     }
 }

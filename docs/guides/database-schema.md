@@ -437,6 +437,7 @@ Prize configuration per league.
 | Rank | int | NO | | Prize position (1st, 2nd, 3rd, etc.) |
 | PrizeAmount | money | NO | | Prize amount |
 | PrizeDescription | nvarchar(255) | YES | | Display text (e.g., "1st Place") |
+| Stage | nvarchar(50) | YES | | Tournament stage for Section prizes ("Group stage" / "Knockout stage"); null otherwise |
 
 **Constraints:**
 - PK: `Id`

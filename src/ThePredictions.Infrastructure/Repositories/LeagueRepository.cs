@@ -330,11 +330,11 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             const string insertPrizeSql = @"
             INSERT INTO [LeaguePrizeSettings]
             (
-                [LeagueId], [PrizeType], [Rank], [PrizeAmount], [PrizeDescription]
+                [LeagueId], [PrizeType], [Rank], [PrizeAmount], [PrizeDescription], [Stage]
             )
             VALUES
             (
-                @LeagueId, @PrizeType, @Rank, @PrizeAmount, @PrizeDescription
+                @LeagueId, @PrizeType, @Rank, @PrizeAmount, @PrizeDescription, @Stage
             );";
 
             var insertPrizesCommand = new CommandDefinition(

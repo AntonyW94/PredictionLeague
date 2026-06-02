@@ -116,6 +116,7 @@ public static class DependencyInjection
         services.AddScoped<IPrizeStrategy, MonthlyPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, OverallPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, MostExactScoresPrizeStrategy>();
+        services.AddScoped<IPrizeStrategy, SectionPrizeStrategy>();
 
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<PredictionDomainService>();

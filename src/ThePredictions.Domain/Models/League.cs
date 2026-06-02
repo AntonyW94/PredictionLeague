@@ -361,6 +361,40 @@ public partial class League
         return rankings;
     }
 
+    /// <summary>
+    /// Ranks members by their aggregate score across a specific set of rounds (a tournament stage),
+    /// grouping ties at the same rank - the same tie semantics as <see cref="GetOverallRankings"/>.
+    /// </summary>
+    public List<OverallRanking> GetStageRankings(IEnumerable<int> roundIdsInStage)
+    {
+        var stageRoundIds = roundIdsInStage.ToHashSet();
+
+        if (!_members.Any() || stageRoundIds.Count == 0)
+            return new List<OverallRanking>();
+
+        var scoresByGroup = _members
+            .Select(m => new
+            {
+                Member = m,
+                TotalScore = m.RoundResults.Where(r => stageRoundIds.Contains(r.RoundId)).Sum(r => r.BoostedPoints)
+            })
+            .GroupBy(x => x.TotalScore)
+            .OrderByDescending(g => g.Key)
+            .ToList();
+
+        var rankings = new List<OverallRanking>();
+        var currentRank = 1;
+
+        foreach (var scoreGroup in scoresByGroup)
+        {
+            var membersInGroup = scoreGroup.Select(x => x.Member).ToList();
+            rankings.Add(new OverallRanking(currentRank, membersInGroup));
+            currentRank += membersInGroup.Count;
+        }
+
+        return rankings;
+    }
+
     public List<LeagueMember> GetMostExactScoresWinners()
     {
         if (!_members.Any())
