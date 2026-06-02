@@ -9,6 +9,13 @@ public class PrizePreviewBuilderTests
 {
     private readonly PrizeEvaluator _evaluator = new();
 
+    private static readonly Dictionary<PrizeType, int> PerEntry = new()
+    {
+        [PrizeType.Overall] = 8,
+        [PrizeType.Round] = 3,
+        [PrizeType.MostExactScores] = 2
+    };
+
     private static PrizeSchemeEvaluationRequest Request(int entrants) => new()
     {
         StakePounds = 13,
@@ -24,38 +31,37 @@ public class PrizePreviewBuilderTests
     };
 
     [Fact]
-    public void Build_ShouldAnnotateCategoryDeltasSummingToStake()
+    public void Build_ShouldAttributeEachCategorysPerEntryContribution()
     {
-        var current = _evaluator.Evaluate(Request(16));
         var projected = _evaluator.Evaluate(Request(17));
 
-        var (breakdown, attribution) = PrizePreviewBuilder.Build(current, projected, 13m);
+        var (breakdown, attribution) = PrizePreviewBuilder.Build(projected, PerEntry, 13m);
 
         breakdown.Pot.Should().Be(13 * 17);
+        breakdown.Categories.Single(c => c.Category == PrizeType.Overall).Delta.Should().Be(8);
+        breakdown.Categories.Single(c => c.Category == PrizeType.Round).Delta.Should().Be(3);
+        breakdown.Categories.Single(c => c.Category == PrizeType.MostExactScores).Delta.Should().Be(2);
         breakdown.Categories.Sum(c => c.Delta ?? 0).Should().Be(13m);
         attribution.Should().ContainSingle();
         attribution[0].Should().StartWith("Your £13 adds");
     }
 
     [Fact]
-    public void Build_ShouldGiveNewlyLitSlotItsFullAmountAsDelta()
+    public void Build_ShouldOmitPerSlotDeltas()
     {
-        // From 1 entrant (single place) to 11 (three places) more Overall ranks light up.
-        var current = _evaluator.Evaluate(Request(1));
-        var projected = _evaluator.Evaluate(Request(11));
+        var projected = _evaluator.Evaluate(Request(17));
 
-        var (breakdown, _) = PrizePreviewBuilder.Build(current, projected, 13m);
+        var (breakdown, _) = PrizePreviewBuilder.Build(projected, PerEntry, 13m);
 
-        var overall = breakdown.Categories.Single(c => c.Category == PrizeType.Overall);
-        overall.Slots.Should().OnlyContain(s => s.Delta.HasValue);
+        breakdown.Categories.SelectMany(c => c.Slots).Should().OnlyContain(s => s.Delta == null);
     }
 
     [Fact]
-    public void Build_ShouldReturnNoAttribution_WhenNoCategoryGrows()
+    public void Build_ShouldReturnNoAttribution_WhenNoCategoryFundedByTheEntry()
     {
-        var current = _evaluator.Evaluate(Request(10));
+        var projected = _evaluator.Evaluate(Request(10));
 
-        var (_, attribution) = PrizePreviewBuilder.Build(current, current, 13m);
+        var (_, attribution) = PrizePreviewBuilder.Build(projected, new Dictionary<PrizeType, int>(), 13m);
 
         attribution.Should().BeEmpty();
     }

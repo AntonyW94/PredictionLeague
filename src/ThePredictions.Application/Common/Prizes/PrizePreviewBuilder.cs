@@ -1,43 +1,44 @@
 using ThePredictions.Contracts.Prizes;
+using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Common.Prizes;
 
 /// <summary>
-/// Diffs the breakdown at N against N+1 to produce the prospective-member "+£x" view: the
-/// projected (N+1) breakdown annotated with per-slot and per-category deltas, plus attribution copy.
+/// Annotates the projected (N+1) breakdown for the prospective-member "+£x" view. The per-category
+/// "+£x" is the joiner's own per-entry allocation to that prize fund (what the admin configured the
+/// entry fee to be split into) - so every funded category reflects the entry, and the figures are
+/// stable rather than lumpy. (The headline prizes themselves still move in clean blocks as the pot
+/// rounds and spillover flows, which is a separate display concern.)
 /// </summary>
 public static class PrizePreviewBuilder
 {
-    public static (PrizeBreakdownDto Breakdown, List<string> Attribution) Build(PrizeBreakdownDto current, PrizeBreakdownDto projected, decimal entryCost)
+    public static (PrizeBreakdownDto Breakdown, List<string> Attribution) Build(
+        PrizeBreakdownDto projected,
+        IReadOnlyDictionary<PrizeType, int> perEntryByCategory,
+        decimal entryCost)
     {
-        var currentCategories = current.Categories.ToDictionary(c => c.Category);
-
-        var annotatedCategories = projected.Categories.Select(projectedCategory =>
+        var annotatedCategories = projected.Categories.Select(category =>
         {
-            currentCategories.TryGetValue(projectedCategory.Category, out var currentCategory);
-            var currentSlots = (currentCategory?.Slots ?? []).ToDictionary(SlotKey);
+            var contribution = perEntryByCategory.TryGetValue(category.Category, out var perEntry) ? perEntry : 0;
 
-            var annotatedSlots = projectedCategory.Slots.Select(slot =>
+            return new PrizeCategoryBreakdownDto
             {
-                var previousAmount = currentSlots.TryGetValue(SlotKey(slot), out var previous) ? previous.Amount : 0m;
-                return new PrizeSlotDto
+                Category = category.Category,
+                DisplayName = category.DisplayName,
+                Kind = category.Kind,
+                SubPot = category.SubPot,
+                Delta = contribution,
+                // Per-slot deltas are intentionally omitted: with block rounding they are lumpy and
+                // do not map cleanly onto a single joiner's entry. The category contribution is the
+                // honest, stable figure.
+                Slots = category.Slots.Select(slot => new PrizeSlotDto
                 {
                     Label = slot.Label,
                     Amount = slot.Amount,
                     Rank = slot.Rank,
                     StageName = slot.StageName,
-                    Delta = slot.Amount - previousAmount
-                };
-            }).ToList();
-
-            return new PrizeCategoryBreakdownDto
-            {
-                Category = projectedCategory.Category,
-                DisplayName = projectedCategory.DisplayName,
-                Kind = projectedCategory.Kind,
-                SubPot = projectedCategory.SubPot,
-                Delta = projectedCategory.SubPot - (currentCategory?.SubPot ?? 0m),
-                Slots = annotatedSlots
+                    Delta = null
+                }).ToList()
             };
         }).ToList();
 
@@ -57,7 +58,7 @@ public static class PrizePreviewBuilder
     {
         var contributions = categories
             .Where(c => c.Delta is > 0)
-            .Select(c => $"£{c.Delta:0} to the {c.DisplayName.ToLowerInvariant()} prize{(c.Slots.Count > 1 ? "s" : string.Empty)}")
+            .Select(c => $"£{c.Delta:0} to {c.DisplayName.ToLowerInvariant()}")
             .ToList();
 
         if (contributions.Count == 0)
@@ -73,6 +74,4 @@ public static class PrizePreviewBuilder
 
         return string.Join(", ", parts.Take(parts.Count - 1)) + " and " + parts[^1];
     }
-
-    private static string SlotKey(PrizeSlotDto slot) => $"{slot.Rank}|{slot.StageName}|{slot.Label}";
 }

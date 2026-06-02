@@ -50,7 +50,10 @@
 }
 
 @code {
-    [Parameter, EditorRequired] public int LeagueId { get; set; }
+    [Parameter] public int LeagueId { get; set; }
+
+    /// <summary>Pre-loaded payment info (e.g. from the join preview). When set, no fetch is made.</summary>
+    [Parameter] public LeaguePaymentInfoDto? Info { get; set; }
 
     private static readonly CultureInfo Uk = new("en-GB");
     private LeaguePaymentInfoDto? _info;
@@ -58,7 +61,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _info = await LeagueService.GetPaymentInfoAsync(LeagueId);
+        _info = Info ?? await LeagueService.GetPaymentInfoAsync(LeagueId);
         _loaded = true;
     }
 }

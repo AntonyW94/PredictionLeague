@@ -85,6 +85,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
 
         return new PrizeEvaluationInputs
         {
+            LeagueId = row.LeagueId,
             LeagueName = row.LeagueName,
             AdministratorName = row.AdministratorName,
             AdministratorUserId = row.AdministratorUserId,

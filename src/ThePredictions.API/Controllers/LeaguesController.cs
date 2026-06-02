@@ -575,7 +575,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         [FromQuery, SwaggerParameter("Entry code for the private league", Required = true)] string entryCode,
         CancellationToken cancellationToken)
     {
-        return Ok(await mediator.Send(new GetPrizePreviewByCodeQuery(entryCode), cancellationToken));
+        return Ok(await mediator.Send(new GetPrizePreviewByCodeQuery(entryCode, CurrentUserId), cancellationToken));
     }
 
     [HttpPost("evaluate-scheme")]

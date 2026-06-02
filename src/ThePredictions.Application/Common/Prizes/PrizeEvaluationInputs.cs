@@ -6,6 +6,7 @@ namespace ThePredictions.Application.Common.Prizes;
 /// </summary>
 public sealed class PrizeEvaluationInputs
 {
+    public int LeagueId { get; init; }
     public string LeagueName { get; init; } = string.Empty;
     public string AdministratorName { get; init; } = string.Empty;
     public string AdministratorUserId { get; init; } = string.Empty;

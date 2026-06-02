@@ -1,3 +1,5 @@
+using ThePredictions.Contracts.Leagues;
+
 namespace ThePredictions.Contracts.Prizes;
 
 /// <summary>
@@ -7,6 +9,7 @@ namespace ThePredictions.Contracts.Prizes;
 /// </summary>
 public class PrizePreviewDto
 {
+    public int LeagueId { get; init; }
     public string LeagueName { get; init; } = string.Empty;
     public string AdministratorName { get; init; } = string.Empty;
     public int EntrantCount { get; init; }
@@ -22,4 +25,7 @@ public class PrizePreviewDto
 
     /// <summary>Plain-English attribution lines, e.g. "Your £13 adds £8 to the overall prizes".</summary>
     public List<string> Attribution { get; init; } = [];
+
+    /// <summary>How to pay the entry fee (bank details or the manual-arrangement fallback). Null for free leagues or when not resolved.</summary>
+    public LeaguePaymentInfoDto? Payment { get; init; }
 }

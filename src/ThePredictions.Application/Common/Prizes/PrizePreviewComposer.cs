@@ -1,3 +1,4 @@
+using ThePredictions.Contracts.Leagues;
 using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common;
 
@@ -10,7 +11,7 @@ namespace ThePredictions.Application.Common.Prizes;
 /// </summary>
 public static class PrizePreviewComposer
 {
-    public static PrizePreviewDto Compose(PrizeEvaluationInputs inputs, IPrizeEvaluator evaluator, IDateTimeProvider dateTimeProvider)
+    public static PrizePreviewDto Compose(PrizeEvaluationInputs inputs, IPrizeEvaluator evaluator, IDateTimeProvider dateTimeProvider, LeaguePaymentInfoDto? payment = null)
     {
         var deadlinePassed = inputs.EntryDeadlineUtc < dateTimeProvider.UtcNow;
         var hasPrizes = inputs.HasScheme && (inputs.EntryCost > 0 || inputs.AdminTopUpPounds > 0);
@@ -22,23 +23,23 @@ public static class PrizePreviewComposer
 
         if (hasPrizes)
         {
-            var current = evaluator.Evaluate(inputs.ToEvaluationRequest(inputs.EntrantCount));
-
             if (deadlinePassed)
             {
                 // After the deadline the pot is final - show the current breakdown, no joining delta.
-                breakdown = current;
+                breakdown = evaluator.Evaluate(inputs.ToEvaluationRequest(inputs.EntrantCount));
             }
             else
             {
                 var projected = evaluator.Evaluate(inputs.ToEvaluationRequest(inputs.EntrantCount + 1));
-                (breakdown, attribution) = PrizePreviewBuilder.Build(current, projected, inputs.EntryCost);
+                var perEntryByCategory = inputs.Categories.ToDictionary(c => c.Category, c => c.PerEntryPounds);
+                (breakdown, attribution) = PrizePreviewBuilder.Build(projected, perEntryByCategory, inputs.EntryCost);
                 projectedPot = projected.Pot;
             }
         }
 
         return new PrizePreviewDto
         {
+            LeagueId = inputs.LeagueId,
             LeagueName = inputs.LeagueName,
             AdministratorName = inputs.AdministratorName,
             EntrantCount = inputs.EntrantCount,
@@ -49,7 +50,8 @@ public static class PrizePreviewComposer
             DeadlinePassed = deadlinePassed,
             HasPrizes = hasPrizes,
             Breakdown = breakdown,
-            Attribution = attribution
+            Attribution = attribution,
+            Payment = payment
         };
     }
 }

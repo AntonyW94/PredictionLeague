@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MediatR;
 using NSubstitute;
 using ThePredictions.Application.Common.Prizes;
 using ThePredictions.Application.Features.Leagues.Queries;
@@ -12,12 +13,13 @@ namespace ThePredictions.Application.Tests.Unit.Features.Leagues.Queries;
 public class GetPrizePreviewByCodeQueryHandlerTests
 {
     private readonly IPrizeEvaluationInputsReader _reader = Substitute.For<IPrizeEvaluationInputsReader>();
+    private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 6, 2, 10, 0, 0, DateTimeKind.Utc));
     private readonly GetPrizePreviewByCodeQueryHandler _handler;
 
     public GetPrizePreviewByCodeQueryHandlerTests()
     {
-        _handler = new GetPrizePreviewByCodeQueryHandler(_reader, new PrizeEvaluator(), _dateTimeProvider);
+        _handler = new GetPrizePreviewByCodeQueryHandler(_reader, new PrizeEvaluator(), _dateTimeProvider, _mediator);
     }
 
     private PrizeEvaluationInputs Inputs(decimal entryCost = 13m, int entrants = 16) => new()
@@ -46,7 +48,7 @@ public class GetPrizePreviewByCodeQueryHandlerTests
     {
         _reader.LoadByEntryCodeAsync("8G6T4N", Arg.Any<CancellationToken>()).Returns(Inputs());
 
-        var preview = await _handler.Handle(new GetPrizePreviewByCodeQuery("8G6T4N"), CancellationToken.None);
+        var preview = await _handler.Handle(new GetPrizePreviewByCodeQuery("8G6T4N", "user-1"), CancellationToken.None);
 
         preview.LeagueName.Should().Be("Test League");
         preview.CurrentPrizePot.Should().Be(13 * 16);
@@ -60,7 +62,7 @@ public class GetPrizePreviewByCodeQueryHandlerTests
     {
         _reader.LoadByEntryCodeAsync("NOPE12", Arg.Any<CancellationToken>()).Returns((PrizeEvaluationInputs?)null);
 
-        var act = () => _handler.Handle(new GetPrizePreviewByCodeQuery("NOPE12"), CancellationToken.None);
+        var act = () => _handler.Handle(new GetPrizePreviewByCodeQuery("NOPE12", "user-1"), CancellationToken.None);
 
         await act.Should().ThrowAsync<EntityNotFoundException>();
     }
