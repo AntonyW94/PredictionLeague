@@ -5,6 +5,8 @@
 @inject HttpClient Http
 
 @using ThePredictions.Contracts.Leagues
+@using ThePredictions.Contracts.Boosts
+@using ThePredictions.Contracts.Prizes
 
 <PageTitle>Edit League</PageTitle>
 
@@ -109,6 +111,26 @@
                         <LeagueBankDetailsFields Model="_model" />
                     }
 
+                    @if (_league is not null)
+                    {
+                        <hr class="prize-section-divider" />
+                        @if (_league.HasPrizeScheme)
+                        {
+                            <h5 class="prize-section-heading">Prizes & boosts</h5>
+                            <p class="form-text text-white-50">Prizes and boosts are locked once set.</p>
+                            <PrizeBreakdownPreview Breakdown="_lockedBreakdown" PotLabel="Projected prize pot" />
+                        }
+                        else if (!_isPastDeadline)
+                        {
+                            <PrizeSchemeEditor Scheme="_scheme"
+                                               SeasonId="_league.SeasonId"
+                                               Price="_model.Price"
+                                               IsTournament="_league.IsTournament" />
+                            <LeagueBoostSelector Selections="_boostSelections" />
+                            <p class="form-text text-white-50">Prizes & boosts can only be set once, then they lock.</p>
+                        }
+                    }
+
             </ChildContent>
         </BaseFormComponent>
     }
@@ -117,6 +139,10 @@
 @code {
     [Parameter] public int LeagueId { get; set; }
     private UpdateLeagueRequest? _model;
+    private LeagueDto? _league;
+    private PrizeSchemeRequest _scheme = new();
+    private readonly List<LeagueBoostSelectionDto> _boostSelections = new();
+    private PrizeBreakdownDto? _lockedBreakdown;
     private string? _entryCodeForDisplay;
     private string? _seasonName;
     private bool _isPastDeadline;
@@ -128,6 +154,7 @@
         var league = await Http.GetFromJsonAsync<LeagueDto>($"api/leagues/{LeagueId}");
         if (league != null)
         {
+            _league = league;
             _model = new UpdateLeagueRequest
             {
                 Name = league.Name,
@@ -141,6 +168,9 @@
             _isPastDeadline = league.EntryDeadlineUtc < DateTime.UtcNow;
             _isPriceLocked = league.MemberCount > 1;
             _isScoringLocked = league.MemberCount > 1;
+
+            if (league.HasPrizeScheme)
+                _lockedBreakdown = await Http.GetFromJsonAsync<PrizeBreakdownDto>($"api/leagues/{LeagueId}/prize-breakdown");
 
             // Pre-fill any existing (decrypted) bank details so saving the form doesn't clear them.
             if (league.Price > 0)
@@ -157,8 +187,23 @@
         }
     }
 
-    private Task<HttpResponseMessage> HandleUpdateLeagueAsync()
+    private async Task<HttpResponseMessage> HandleUpdateLeagueAsync()
     {
-        return Http.PutAsJsonAsync($"api/leagues/{LeagueId}/update", _model);
+        var response = await Http.PutAsJsonAsync($"api/leagues/{LeagueId}/update", _model);
+        if (!response.IsSuccessStatusCode)
+            return response;
+
+        // Set the prize scheme / boosts once, only on a schemeless league.
+        if (_league is { HasPrizeScheme: false })
+        {
+            if ((_model!.Price > 0 || _scheme.AdminTopUpPounds > 0) && _scheme.Categories.Any())
+                await Http.PutAsJsonAsync($"api/leagues/{LeagueId}/prize-scheme", _scheme);
+
+            var enabledBoosts = _boostSelections.Where(b => b.IsEnabled).ToList();
+            if (enabledBoosts.Any())
+                await Http.PutAsJsonAsync($"api/boosts/league/{LeagueId}/rules", new SetLeagueBoostRulesRequest { Selections = enabledBoosts });
+        }
+
+        return response;
     }
 }

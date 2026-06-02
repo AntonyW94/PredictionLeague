@@ -1,0 +1,81 @@
+@using ThePredictions.Contracts.Boosts
+@inject HttpClient Http
+
+<div class="boost-selector">
+    <h5 class="prize-section-heading">Boosts</h5>
+    <p class="form-text text-white-50">Choose which boosts players can use, and how many times each season.</p>
+
+    @if (_catalogue is null)
+    {
+        <p class="text-white-50"><em>Loading boosts...</em></p>
+    }
+    else if (_catalogue.Count == 0)
+    {
+        <p class="text-white-50">No boosts are available.</p>
+    }
+    else
+    {
+        <div class="boost-options">
+            @foreach (var boost in _catalogue)
+            {
+                var selection = GetSelection(boost.Code);
+                <div class="boost-option @(selection.IsEnabled ? "is-enabled" : string.Empty)">
+                    <label class="prize-toggle">
+                        <input type="checkbox" checked="@selection.IsEnabled" disabled="@Disabled"
+                               @onchange="e => Toggle(selection, (bool)e.Value!)" />
+                        <span>@boost.Name</span>
+                    </label>
+                    @if (!string.IsNullOrWhiteSpace(boost.Description))
+                    {
+                        <div class="boost-description">@boost.Description</div>
+                    }
+                    @if (selection.IsEnabled)
+                    {
+                        <div class="boost-uses">
+                            <input type="number" min="1" step="1" class="form-control boost-uses-input"
+                                   value="@selection.TotalUsesPerSeason" disabled="@Disabled"
+                                   @onchange="e => SetUses(selection, e.Value?.ToString())" />
+                            <span>uses per season</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public List<LeagueBoostSelectionDto> Selections { get; set; } = new();
+    [Parameter] public bool Disabled { get; set; }
+
+    private List<BoostCatalogueItemDto>? _catalogue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _catalogue = await Http.GetFromJsonAsync<List<BoostCatalogueItemDto>>("api/boosts/catalogue") ?? new();
+    }
+
+    private LeagueBoostSelectionDto GetSelection(string boostCode)
+    {
+        var selection = Selections.FirstOrDefault(s => s.BoostCode == boostCode);
+        if (selection is null)
+        {
+            selection = new LeagueBoostSelectionDto { BoostCode = boostCode, IsEnabled = false, TotalUsesPerSeason = 1 };
+            Selections.Add(selection);
+        }
+
+        return selection;
+    }
+
+    private void Toggle(LeagueBoostSelectionDto selection, bool enabled)
+    {
+        selection.IsEnabled = enabled;
+        if (enabled && selection.TotalUsesPerSeason < 1)
+            selection.TotalUsesPerSeason = 1;
+    }
+
+    private void SetUses(LeagueBoostSelectionDto selection, string? raw)
+    {
+        selection.TotalUsesPerSeason = int.TryParse(raw, out var value) && value > 0 ? value : 1;
+    }
+}

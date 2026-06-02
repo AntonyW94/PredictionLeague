@@ -123,6 +123,7 @@ System.IO.File.WriteAllText(FilePath, content);
             <CssFilesToBundle Include="$(PublishCssDir)components\badges.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\filters.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\boosts.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\prize-scheme.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\detail-list.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\dashboard-prompts.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\season-pass-cards.css" />

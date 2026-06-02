@@ -9,5 +9,8 @@ public record LeagueDto(
     string EntryCode,
     DateTime EntryDeadlineUtc,
     int PointsForExactScore,
-    int PointsForCorrectResult
+    int PointsForCorrectResult,
+    int SeasonId = 0,
+    bool IsTournament = false,
+    bool HasPrizeScheme = false
 );

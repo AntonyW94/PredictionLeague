@@ -14,8 +14,10 @@ public class GetCreateLeaguePageDataQueryHandler(IApplicationReadDbConnection db
             SELECT
                 s.[Id],
                 s.[Name],
-                s.[StartDateUtc]
+                s.[StartDateUtc],
+                CAST(CASE WHEN c.[Type] = 1 THEN 1 ELSE 0 END AS bit) AS IsTournament
             FROM [Seasons] s
+            JOIN [Competitions] c ON s.[CompetitionId] = c.[Id]
             WHERE s.[IsActive] = 1
             ORDER BY s.[StartDateUtc] DESC;";
 

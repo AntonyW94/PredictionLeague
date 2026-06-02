@@ -1,0 +1,57 @@
+@using ThePredictions.Contracts.Prizes
+
+@if (Breakdown is null || !Breakdown.Categories.Any())
+{
+    <p class="text-white-50 mb-0">No prizes to show yet.</p>
+}
+else
+{
+    <div class="prize-breakdown">
+        <div class="prize-breakdown-pot">
+            <span class="prize-breakdown-pot-label">@PotLabel</span>
+            <span class="prize-breakdown-pot-value">@FormatMoney(Breakdown.Pot)</span>
+        </div>
+
+        @foreach (var category in Breakdown.Categories.Where(c => c.Slots.Any()))
+        {
+            <div class="prize-category">
+                <div class="prize-category-header">
+                    <span class="prize-category-name">@category.DisplayName</span>
+                    <span class="prize-category-subpot">
+                        @FormatMoney(category.SubPot)
+                        @if (ShowDeltas && category.Delta is > 0)
+                        {
+                            <span class="prize-delta">+@FormatMoney(category.Delta.Value)</span>
+                        }
+                    </span>
+                </div>
+                <ul class="prize-slot-list">
+                    @foreach (var slot in category.Slots)
+                    {
+                        <li class="prize-slot">
+                            <span class="prize-slot-label">@slot.Label</span>
+                            <span class="prize-slot-amount">
+                                @FormatMoney(slot.Amount)
+                                @if (ShowDeltas && slot.Delta is > 0)
+                                {
+                                    <span class="prize-delta">+@FormatMoney(slot.Delta.Value)</span>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public PrizeBreakdownDto? Breakdown { get; set; }
+
+    /// <summary>When true, renders the green "+£x" joining deltas next to affected prizes.</summary>
+    [Parameter] public bool ShowDeltas { get; set; }
+
+    [Parameter] public string PotLabel { get; set; } = "Total prize pot";
+
+    private static string FormatMoney(decimal amount) => $"£{amount:0}";
+}

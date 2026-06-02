@@ -1,6 +1,7 @@
 namespace ThePredictions.Contracts.Admin.Seasons;
 
 public record SeasonLookupDto(
-    int Id, 
+    int Id,
     string Name,
-    DateTime StartDateUtc);
+    DateTime StartDateUtc,
+    bool IsTournament = false);

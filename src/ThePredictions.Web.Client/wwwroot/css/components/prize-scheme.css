@@ -1,0 +1,192 @@
+/* Prize scheme editor, breakdown preview and prospective preview. */
+
+.prize-section-divider {
+    border: 0;
+    border-top: 1px solid var(--purple-700);
+    margin: var(--spacing-6) 0 var(--spacing-4);
+}
+
+.prize-section-heading {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-bottom: var(--spacing-2);
+}
+
+.prize-category-options,
+.boost-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+}
+
+.prize-category-option,
+.boost-option {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-2);
+    padding: var(--spacing-3);
+    border: 1px solid var(--purple-700);
+    border-radius: var(--radius-md);
+    background: var(--purple-800);
+}
+
+.prize-category-option.is-enabled,
+.boost-option.is-enabled {
+    border-color: var(--blue-500);
+}
+
+.prize-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin: 0;
+    cursor: pointer;
+    color: var(--text-primary);
+}
+
+.prize-allocation,
+.boost-uses,
+.prize-preview-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    color: var(--text-secondary);
+}
+
+.prize-allocation-input,
+.boost-uses-input,
+.prize-preview-count {
+    width: 5rem;
+}
+
+.prize-allocation-summary {
+    margin-top: var(--spacing-2);
+    font-size: 0.9rem;
+}
+
+.prize-allocation-summary.is-balanced {
+    color: var(--green-600);
+}
+
+.prize-allocation-summary.is-unbalanced {
+    color: var(--amber-500, var(--text-secondary));
+}
+
+.boost-description {
+    width: 100%;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Breakdown preview */
+.prize-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-3);
+}
+
+.prize-breakdown-pot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: var(--spacing-3);
+    border-radius: var(--radius-md);
+    background: var(--purple-800);
+    border: 1px solid var(--purple-700);
+}
+
+.prize-breakdown-pot-label {
+    color: var(--text-secondary);
+}
+
+.prize-breakdown-pot-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.prize-category {
+    padding: var(--spacing-3);
+    border-radius: var(--radius-md);
+    background: var(--purple-800);
+    border: 1px solid var(--purple-700);
+}
+
+.prize-category-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-2);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.prize-slot-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.prize-slot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    color: var(--text-secondary);
+}
+
+.prize-slot-amount {
+    font-variant-numeric: tabular-nums;
+}
+
+.prize-delta {
+    margin-left: var(--spacing-2);
+    color: var(--green-600);
+    font-weight: 600;
+}
+
+/* Prospective preview headline */
+.prize-preview-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+}
+
+@media (min-width: 576px) {
+    .prize-preview-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.prize-preview-stat {
+    padding: var(--spacing-3);
+    border-radius: var(--radius-md);
+    background: var(--purple-800);
+    border: 1px solid var(--purple-700);
+}
+
+.prize-preview-stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.prize-preview-stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.prize-attribution {
+    margin-top: var(--spacing-3);
+    padding: var(--spacing-3);
+    border-radius: var(--radius-md);
+    background: var(--green-900, var(--purple-800));
+    border: 1px solid var(--green-600);
+    color: var(--text-primary);
+}

@@ -1,0 +1,268 @@
+@using ThePredictions.Contracts.Prizes
+@using ThePredictions.Domain.Common.Enumerations
+@inject HttpClient Http
+
+<div class="prize-scheme-editor">
+    <h5 class="prize-section-heading">Prizes</h5>
+
+    @if (StakePounds <= 0 && Scheme.AdminTopUpPounds <= 0)
+    {
+        <div class="message-box-solid info mb-3">
+            This is a free-to-play league. Prizes are informational only unless you add your own money to the pot below.
+        </div>
+    }
+
+    <p class="form-text text-white-50">
+        Choose which prizes to award, then split each £@StakePounds entry across them. Amounts update live below.
+    </p>
+
+    <div class="prize-category-options">
+        @foreach (var option in _options)
+        {
+            <div class="prize-category-option @(option.Enabled ? "is-enabled" : string.Empty)">
+                <label class="prize-toggle">
+                    <input type="checkbox" checked="@option.Enabled" disabled="@Disabled"
+                           @onchange="e => ToggleCategory(option, (bool)e.Value!)" />
+                    <span>@option.Label</span>
+                </label>
+
+                @if (option.Enabled)
+                {
+                    <div class="prize-allocation">
+                        <span class="prize-allocation-prefix">£</span>
+                        <input type="number" min="0" step="1" class="form-control prize-allocation-input"
+                               value="@option.PerEntryPounds" disabled="@Disabled"
+                               @onchange="e => SetAllocation(option, e.Value?.ToString())" />
+                        <span class="prize-allocation-suffix">per entry</span>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="prize-allocation-summary @(IsBalanced ? "is-balanced" : "is-unbalanced")">
+        Allocated £@AllocatedPounds of £@StakePounds
+        @if (!IsBalanced && StakePounds > 0)
+        {
+            <span>(must total the entry fee)</span>
+        }
+    </div>
+
+    <div class="row g-3 mt-1">
+        <div class="col-md-6">
+            <label class="form-label">Add your own money to the pot (£)</label>
+            <input type="number" min="0" step="1" class="form-control"
+                   value="@Scheme.AdminTopUpPounds" disabled="@Disabled"
+                   @onchange="e => SetTopUp(e.Value?.ToString())" />
+            <div class="form-text text-white-50">Optional. Sits on top of the entry fees.</div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Round overall prizes to £5 above (£)</label>
+            <input type="number" min="0" step="5" class="form-control"
+                   value="@Scheme.OverallFivePoundThreshold" disabled="@Disabled"
+                   @onchange="e => SetThreshold(e.Value?.ToString())" />
+            <div class="form-text text-white-50">Headline overall prizes round to clean £5s above this.</div>
+        </div>
+    </div>
+
+    @if (!Disabled)
+    {
+        <div class="prize-preview-controls mt-3">
+            <label class="form-label">Preview at</label>
+            <input type="number" min="1" step="1" class="form-control prize-preview-count"
+                   value="@_previewEntrants" @onchange="e => SetPreviewEntrants(e.Value?.ToString())" />
+            <span>entrants</span>
+        </div>
+    }
+
+    <div class="prize-preview mt-3">
+        @if (_previewError is not null)
+        {
+            <div class="message-box-solid warning">@_previewError</div>
+        }
+        else
+        {
+            <PrizeBreakdownPreview Breakdown="_preview" PotLabel="Projected prize pot" />
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PrizeSchemeRequest Scheme { get; set; } = new();
+    [Parameter] public int SeasonId { get; set; }
+    [Parameter] public decimal Price { get; set; }
+    [Parameter] public bool IsTournament { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private readonly List<CategoryOption> _options = new();
+    private PrizeBreakdownDto? _preview;
+    private string? _previewError;
+    private int _previewEntrants = 20;
+
+    private int StakePounds => (int)decimal.Truncate(Price);
+    private int AllocatedPounds => _options.Where(o => o.Enabled).Sum(o => o.PerEntryPounds);
+    private bool IsBalanced => StakePounds == 0 || AllocatedPounds == StakePounds;
+
+    protected override void OnInitialized()
+    {
+        BuildOptions();
+        SyncToScheme();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // First render with a valid season/price - draw the initial preview.
+        if (_preview is null && !Disabled)
+            await RefreshPreviewAsync();
+    }
+
+    private void BuildOptions()
+    {
+        _options.Clear();
+
+        AddOption(PrizeType.Overall, "Overall", weight: 3);
+        AddOption(PrizeType.Round, "Round (per week)", weight: 1);
+        AddOption(PrizeType.MostExactScores, "Most exact scores", weight: 1);
+
+        if (IsTournament)
+            AddOption(PrizeType.Section, "Sections (groups & knockouts)", weight: 2);
+        else
+            AddOption(PrizeType.Monthly, "Monthly", weight: 1);
+
+        // Seed from an existing scheme (edit/locked), otherwise default to Overall enabled.
+        if (Scheme.Categories.Any())
+        {
+            foreach (var option in _options)
+            {
+                var existing = Scheme.Categories.FirstOrDefault(c => c.Category == option.Category);
+                option.Enabled = existing is not null;
+                option.PerEntryPounds = existing?.PerEntryPounds ?? 0;
+            }
+        }
+        else
+        {
+            var overall = _options.First(o => o.Category == PrizeType.Overall);
+            overall.Enabled = true;
+            overall.PerEntryPounds = StakePounds;
+        }
+    }
+
+    private void AddOption(PrizeType category, string label, int weight) =>
+        _options.Add(new CategoryOption { Category = category, Label = label, Weight = weight });
+
+    private async Task ToggleCategory(CategoryOption option, bool enabled)
+    {
+        option.Enabled = enabled;
+        Recommend();
+        SyncToScheme();
+        await RefreshPreviewAsync();
+    }
+
+    private async Task SetAllocation(CategoryOption option, string? raw)
+    {
+        option.PerEntryPounds = ParseInt(raw);
+        SyncToScheme();
+        await RefreshPreviewAsync();
+    }
+
+    private async Task SetTopUp(string? raw)
+    {
+        Scheme.AdminTopUpPounds = ParseInt(raw);
+        await RefreshPreviewAsync();
+    }
+
+    private async Task SetThreshold(string? raw)
+    {
+        Scheme.OverallFivePoundThreshold = ParseInt(raw);
+        await RefreshPreviewAsync();
+    }
+
+    private async Task SetPreviewEntrants(string? raw)
+    {
+        _previewEntrants = Math.Max(1, ParseInt(raw));
+        await RefreshPreviewAsync();
+    }
+
+    /// <summary>Renormalise the default weights across the enabled categories into whole-pound amounts.</summary>
+    private void Recommend()
+    {
+        var enabled = _options.Where(o => o.Enabled).ToList();
+        foreach (var option in _options.Where(o => !o.Enabled))
+            option.PerEntryPounds = 0;
+
+        if (enabled.Count == 0 || StakePounds <= 0)
+            return;
+
+        var weightSum = enabled.Sum(o => o.Weight);
+        var allocated = 0;
+        foreach (var option in enabled)
+        {
+            option.PerEntryPounds = StakePounds * option.Weight / weightSum;
+            allocated += option.PerEntryPounds;
+        }
+
+        // Hand any leftover pounds out top-down (highest weight first).
+        var leftover = StakePounds - allocated;
+        var ordered = enabled.OrderByDescending(o => o.Weight).ToList();
+        var index = 0;
+        while (leftover > 0)
+        {
+            ordered[index % ordered.Count].PerEntryPounds += 1;
+            leftover--;
+            index++;
+        }
+    }
+
+    private void SyncToScheme()
+    {
+        Scheme.Categories = _options
+            .Where(o => o.Enabled)
+            .Select(o => new PrizeSchemeCategoryRequest { Category = o.Category, PerEntryPounds = o.PerEntryPounds })
+            .ToList();
+    }
+
+    private async Task RefreshPreviewAsync()
+    {
+        _previewError = null;
+
+        if (SeasonId <= 0)
+        {
+            _preview = null;
+            return;
+        }
+
+        var request = new EvaluateSchemeRequest
+        {
+            SeasonId = SeasonId,
+            Price = Price,
+            EntrantCount = _previewEntrants,
+            Scheme = Scheme
+        };
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/leagues/evaluate-scheme", request);
+            _preview = response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<PrizeBreakdownDto>()
+                : null;
+
+            if (!response.IsSuccessStatusCode)
+                _previewError = "Could not preview prizes for this configuration.";
+        }
+        catch (HttpRequestException)
+        {
+            _previewError = "Could not reach the server to preview prizes.";
+        }
+    }
+
+    private static int ParseInt(string? raw) => int.TryParse(raw, out var value) && value > 0 ? value : 0;
+
+    private sealed class CategoryOption
+    {
+        public PrizeType Category { get; init; }
+        public string Label { get; init; } = string.Empty;
+        public int Weight { get; init; }
+        public bool Enabled { get; set; }
+        public int PerEntryPounds { get; set; }
+    }
+}
