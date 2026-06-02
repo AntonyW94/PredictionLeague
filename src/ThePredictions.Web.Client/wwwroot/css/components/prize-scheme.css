@@ -108,13 +108,16 @@
     color: var(--white-alpha-70);
 }
 
-/* input. prefix raises specificity above .form-control { width: 100% } so these stay compact. */
+/* input. prefix raises specificity above .form-control { width: 100% } so these stay compact.
+   Wide enough for 3 digits plus the number spinner without clipping. */
 input.prize-allocation-input,
 input.boost-uses-input,
 input.prize-preview-count {
-    width: 4rem;
+    width: 5.5rem;
     flex: none;
     text-align: center;
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
 }
 
 .prize-allocation-prefix,

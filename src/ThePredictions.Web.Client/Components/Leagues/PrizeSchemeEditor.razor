@@ -13,7 +13,7 @@
     }
 
     <p class="form-text text-white-50">
-        Choose which prizes to award, then split each £@StakePounds entry across them. Amounts update live below.
+        Choose which prizes to award, then split each £@StakePounds entry across them. Amounts update live below. Placed prizes over £5 round to clean £5s automatically.
     </p>
 
     <div class="prize-category-options">
@@ -47,16 +47,6 @@
         Allocated £@AllocatedPounds of £@StakePounds@(!IsBalanced && StakePounds > 0 ? " - must total the entry fee" : string.Empty)
     </div>
 
-    <div class="row g-3 mt-1">
-        <div class="col-md-6">
-            <label class="form-label">Add your own money to the pot (£)</label>
-            <input type="number" min="0" step="1" class="form-control"
-                   value="@PrizeFundOverride" disabled="@Disabled"
-                   @onchange="e => SetTopUp(e.Value?.ToString())" />
-            <div class="form-text text-white-50">Optional. Sits on top of the entry fees. Placed prizes over £5 round to clean £5s automatically.</div>
-        </div>
-    </div>
-
     <div class="prize-preview mt-4">
         <h5 class="prize-section-heading">Projected prizes</h5>
         @if (!Disabled)
@@ -87,9 +77,9 @@
     [Parameter] public bool IsTournament { get; set; }
     [Parameter] public bool Disabled { get; set; }
 
-    // The admin top-up lives on the league (PrizeFundOverride), bound from the parent form.
+    // The admin top-up lives on the league (PrizeFundOverride); the parent form owns the input,
+    // we only read it here to fold into the projected pot.
     [Parameter] public decimal? PrizeFundOverride { get; set; }
-    [Parameter] public EventCallback<decimal?> PrizeFundOverrideChanged { get; set; }
 
     /// <summary>Approved members the league already has (0 at creation); seeds the projection count.</summary>
     [Parameter] public int CurrentEntrants { get; set; }
@@ -100,6 +90,8 @@
     private PrizeBreakdownDto? _preview;
     private string? _previewError;
     private int _previewEntrants = DefaultProjection;
+    private decimal _lastPrice;
+    private decimal? _lastPrizeFundOverride;
 
     private int StakePounds => (int)decimal.Truncate(Price);
     private int AdminTopUpPounds => (int)decimal.Truncate(PrizeFundOverride ?? 0m);
@@ -118,9 +110,16 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        // First render with a valid season/price - draw the initial preview.
-        if (_preview is null && !Disabled)
+        if (Disabled)
+            return;
+
+        // Redraw on the first render and whenever the parent-owned entry fee or admin top-up changes.
+        if (_preview is null || Price != _lastPrice || PrizeFundOverride != _lastPrizeFundOverride)
+        {
+            _lastPrice = Price;
+            _lastPrizeFundOverride = PrizeFundOverride;
             await RefreshPreviewAsync();
+        }
     }
 
     private void BuildOptions()
@@ -169,14 +168,6 @@
     {
         option.PerEntryPounds = ParseInt(raw);
         SyncToScheme();
-        await RefreshPreviewAsync();
-    }
-
-    private async Task SetTopUp(string? raw)
-    {
-        var pounds = ParseInt(raw);
-        PrizeFundOverride = pounds > 0 ? pounds : null;
-        await PrizeFundOverrideChanged.InvokeAsync(PrizeFundOverride);
         await RefreshPreviewAsync();
     }
 

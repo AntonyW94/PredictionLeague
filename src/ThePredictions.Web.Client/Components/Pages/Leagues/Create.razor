@@ -61,6 +61,17 @@
                             <StyledValidationMessage For="@(() => _model.Price)" />
                         </div>
 
+                        @if (_model.SeasonId > 0)
+                        {
+                            <div class="col-md-6 mb-3">
+                                <label for="prizeFundOverride" class="form-label">Add your own money to the pot (£)</label>
+                                <InputNumber id="prizeFundOverride" class="form-control" @bind-Value="_model.PrizeFundOverride" placeholder="0" />
+                                <div class="form-text text-white-50">Optional. Sits on top of the entry fees.</div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="entryDeadline" class="form-label">Entry Deadline</label>
                             <UtcInputDate id="entryDeadline"
@@ -100,7 +111,7 @@
                                            SeasonId="_model.SeasonId"
                                            Price="_model.Price"
                                            IsTournament="_isTournament"
-                                           @bind-PrizeFundOverride="_model.PrizeFundOverride" />
+                                           PrizeFundOverride="_model.PrizeFundOverride" />
                         <hr class="prize-section-divider" />
                         <LeagueBoostSelector Selections="_boostSelections" />
                     }

@@ -62,9 +62,28 @@
                             }
                             <StyledValidationMessage For="@(() => _model.Price)" />
                         </div>
+                        @if (_canEditPrizes)
+                        {
+                            <div class="col-md-6 mb-3">
+                                <label for="prizeFundOverride" class="form-label">Add your own money to the pot (£)</label>
+                                <InputNumber id="prizeFundOverride" class="form-control" @bind-Value="_model.PrizeFundOverride" placeholder="0" />
+                                <div class="form-text text-white-50">Optional. Sits on top of the entry fees.</div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6 mb-3">
-                            @if (_entryCodeForDisplay != "Public")
-                            {
+                            <label for="entryDeadline" class="form-label">Entry Deadline</label>
+                            <UtcInputDate id="entryDeadline"
+                                          @bind-Value="_model.EntryDeadlineUtc"
+                                          Class="form-control"
+                                          Disabled="@_isPastDeadline" />
+                            <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
+                        </div>
+                        @if (_entryCodeForDisplay != "Public")
+                        {
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Entry Code</label>
                                 <div class="entry-code-display">
                                     <div class="pin-digits">
@@ -74,17 +93,8 @@
                                         }
                                     </div>
                                 </div>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="entryDeadline" class="form-label">Entry Deadline</label>
-                        <UtcInputDate id="entryDeadline"
-                                      @bind-Value="_model.EntryDeadlineUtc"
-                                      Class="form-control"
-                                      Disabled="@_isPastDeadline" />
-                        <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
+                            </div>
+                        }
                     </div>
 
                     <hr class="prize-section-divider" />
@@ -128,7 +138,7 @@
                                                Price="_model.Price"
                                                IsTournament="_league.IsTournament"
                                                CurrentEntrants="_league.MemberCount"
-                                               @bind-PrizeFundOverride="_model.PrizeFundOverride" />
+                                               PrizeFundOverride="_model.PrizeFundOverride" />
                             <hr class="prize-section-divider" />
                             <LeagueBoostSelector Selections="_boostSelections" />
                             <p class="form-text text-white-50">Prizes &amp; boosts can only be set once, then they lock.</p>
@@ -157,6 +167,9 @@
     private bool _isPastDeadline;
     private bool _isPriceLocked;
     private bool _isScoringLocked;
+
+    // Prizes (and so the admin top-up) are editable only while the scheme is unset and entries are open.
+    private bool _canEditPrizes => _league is { HasPrizeScheme: false } && !_isPastDeadline;
 
     protected override async Task OnInitializedAsync()
     {
