@@ -12,6 +12,7 @@ This folder contains feature plans organised by category.
 | [user-experience](user-experience/) | UI/UX, accessibility, mobile, gamification |
 | [admin-moderation](admin-moderation/) | Admin tools, user management, moderation |
 | [monetisation](monetisation/) | Revenue features — season passes, payments (non-gambling, service-based) |
+| [dynamic-prize-pot](dynamic-prize-pot/) | Live prize-pot visibility & configurable prize scheme (design proposal — options for review) |
 
 ## Priority Guide
 
