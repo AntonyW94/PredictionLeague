@@ -5,8 +5,8 @@
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
         <defs>
             <linearGradient id="@_gradientId" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#7e22ce" />
-                <stop offset="100%" stop-color="#22c55e" />
+                <stop offset="0%" stop-color="@(IsNone ? "#64748b" : "#7e22ce")" />
+                <stop offset="100%" stop-color="@(IsNone ? "#334155" : "#22c55e")" />
             </linearGradient>
         </defs>
 
@@ -45,10 +45,12 @@
             "<circle class=\"boost-icon-fill\" cx=\"72\" cy=\"52\" r=\"6\" />" +
             "<path class=\"boost-icon-tick\" d=\"M30 70 L44 84 L72 50\" />",
 
-        "none" => Text("X", 50, 55, 50),
+        "none" => Text("None", 50, 53, 24),
 
         _ => Text(string.IsNullOrEmpty(Code) ? "?" : char.ToUpperInvariant(Code[0]).ToString(), 50, 55, 50)
     };
+
+    private bool IsNone => NormaliseCode(Code) == "none";
 
     private static string Text(string value, int x, int y, int fontSize) =>
         $"<text class=\"boost-icon-glyph\" x=\"{x}\" y=\"{y}\" font-size=\"{fontSize}\">{value}</text>";
