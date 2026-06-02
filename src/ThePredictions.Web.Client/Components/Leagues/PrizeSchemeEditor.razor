@@ -44,7 +44,12 @@
         <div class="prize-alloc-progress-bar @(IsBalanced ? string.Empty : "is-unbalanced")" style="width:@(AllocationPercent)%;"></div>
     </div>
     <div class="prize-allocation-summary @(IsBalanced ? "is-balanced" : "is-unbalanced")">
-        Allocated £@AllocatedPounds of £@StakePounds@(!IsBalanced && StakePounds > 0 ? " - must total the entry fee" : string.Empty)
+        <span>Allocated £@AllocatedPounds of £@StakePounds</span>
+        @if (StakePounds > 0 && !IsBalanced)
+        {
+            var difference = StakePounds - AllocatedPounds;
+            <span class="prize-allocation-remaining">@(difference > 0 ? $"£{difference} left to allocate" : $"£{-difference} over the entry fee")</span>
+        }
     </div>
 
     <div class="prize-preview mt-4">

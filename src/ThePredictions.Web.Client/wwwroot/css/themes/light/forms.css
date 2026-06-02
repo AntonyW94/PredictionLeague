@@ -39,6 +39,40 @@
     flex-shrink: 1;
 }
 
+/* Plain read-only value (no input chrome) - used for fixed fields like the season. */
+.admin-light .form-value {
+    color: var(--purple-1000);
+    font-weight: 600;
+    padding: var(--space-2) 0;
+}
+
+/* Copy-to-clipboard pill beside the entry-code tiles. */
+.entry-code-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--grey-300);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--purple-300);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.entry-code-copy:hover {
+    background: var(--purple-100);
+    border-color: var(--purple-300);
+    color: var(--purple-1000);
+}
+
+.entry-code-copy.is-copied {
+    border-color: var(--green-600);
+    color: var(--green-600);
+}
+
 .admin-light .form-label {
     color: var(--purple-300);
     font-size: 0.8rem;

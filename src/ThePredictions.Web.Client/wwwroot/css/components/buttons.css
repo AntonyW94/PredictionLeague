@@ -14,6 +14,22 @@
         color: var(--green-600);
     }
 
+.neutral-button,
+.neutral-button:disabled,
+.neutral-button:active {
+    background-color: var(--grey-100);
+    border: 1px solid var(--grey-300);
+    color: var(--purple-1000);
+    font-weight: bold;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+    .neutral-button:not(.badge):hover {
+        background-color: var(--grey-200);
+        border-color: var(--grey-500);
+        color: var(--purple-1000);
+    }
+
 .red-button,
 .red-button:disabled,
 .red-button:active {

@@ -14,8 +14,21 @@
 }
 
 .prize-section-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
     margin: 0 0 var(--space-3);
     font-weight: 700;
+}
+
+/* A short accent bar before each section title - a consistent, scannable cue across the form. */
+.prize-section-heading::before {
+    content: "";
+    width: 4px;
+    height: 1.1em;
+    border-radius: 999px;
+    background: var(--purple-200);
+    flex: none;
 }
 
 /* Shared rhythm for the short explainer line under a section heading. */
@@ -176,12 +189,42 @@ input.prize-preview-count {
     color: var(--white-alpha-70);
 }
 
+.prize-allocation-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+}
+
 .prize-allocation-summary.is-balanced {
     color: var(--green-600);
 }
 
 .prize-allocation-summary.is-unbalanced {
     color: var(--red);
+}
+
+.prize-allocation-remaining::before {
+    content: "\00B7";
+    margin-right: var(--space-2);
+}
+
+/* Hide the native number spinners on the compact pound/uses inputs - they vary across browsers
+   and crowd the value. Values are still typed or stepped with the keyboard. */
+input.prize-allocation-input::-webkit-outer-spin-button,
+input.prize-allocation-input::-webkit-inner-spin-button,
+input.boost-uses-input::-webkit-outer-spin-button,
+input.boost-uses-input::-webkit-inner-spin-button,
+input.prize-preview-count::-webkit-outer-spin-button,
+input.prize-preview-count::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input.prize-allocation-input,
+input.boost-uses-input,
+input.prize-preview-count {
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 /* Projected-prizes "basis" control */
@@ -249,7 +292,16 @@ input.prize-preview-count {
 .boost-description {
     flex-basis: 100%;
     font-size: 0.85rem;
+    line-height: 1.4;
     color: var(--grey-500);
+}
+
+/* Indent the description under the boost name (past the checkbox + icon) so the row reads as a
+   clear name-then-detail hierarchy. */
+@media (min-width: 576px) {
+    .boost-description {
+        padding-left: 3.75rem;
+    }
 }
 
 .theme-dark .boost-description {
@@ -351,13 +403,24 @@ input.prize-preview-count {
     align-items: baseline;
     justify-content: space-between;
     gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    background: var(--purple-100);
-    border-color: var(--purple-200-alpha-15);
+    padding: var(--space-4) var(--space-5);
+    background: linear-gradient(135deg, var(--purple-800), var(--purple-600));
+    border-color: transparent;
+    box-shadow: 0 4px 14px var(--black-alpha-25);
 }
 
 .theme-dark .prize-breakdown-pot {
-    background: var(--purple-800);
+    background: linear-gradient(135deg, var(--purple-700), var(--purple-600));
+    box-shadow: 0 4px 14px var(--black-alpha-35);
+}
+
+.prize-breakdown-pot .prize-breakdown-pot-label {
+    color: var(--white-alpha-70);
+}
+
+.prize-breakdown-pot .prize-breakdown-pot-value {
+    color: var(--white);
+    font-size: 1.875rem;
 }
 
 .prize-breakdown-pot-label {

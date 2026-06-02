@@ -3,6 +3,7 @@
 @attribute [Authorize]
 
 @inject HttpClient Http
+@inject IJSRuntime JS
 
 @using ThePredictions.Contracts.Leagues
 @using ThePredictions.Contracts.Boosts
@@ -41,9 +42,7 @@
 
                     <div class="mb-3">
                         <label class="form-label">Season</label>
-                        <div class="form-control readonly-field">
-                            @_seasonName
-                        </div>
+                        <div class="form-value">@_seasonName</div>
                     </div>
 
                     <div class="mb-3">
@@ -92,6 +91,10 @@
                                             <span class="pin-digit">@ch</span>
                                         }
                                     </div>
+                                    <button type="button" class="entry-code-copy @(_codeCopied ? "is-copied" : string.Empty)" @onclick="CopyEntryCodeAsync" title="Copy entry code">
+                                        <span class="bi @(_codeCopied ? "bi-check-lg" : "bi-clipboard")"></span>
+                                        <span>@(_codeCopied ? "Copied" : "Copy")</span>
+                                    </button>
                                 </div>
                             </div>
                         }
@@ -167,9 +170,24 @@
     private bool _isPastDeadline;
     private bool _isPriceLocked;
     private bool _isScoringLocked;
+    private bool _codeCopied;
 
     // Prizes (and so the admin top-up) are editable only while the scheme is unset and entries are open.
     private bool _canEditPrizes => _league is { HasPrizeScheme: false } && !_isPastDeadline;
+
+    private async Task CopyEntryCodeAsync()
+    {
+        if (string.IsNullOrEmpty(_entryCodeForDisplay))
+            return;
+
+        _codeCopied = await JS.InvokeAsync<bool>("blazorInterop.copyText", _entryCodeForDisplay);
+        if (!_codeCopied)
+            return;
+
+        StateHasChanged();
+        await Task.Delay(2000);
+        _codeCopied = false;
+    }
 
     protected override async Task OnInitializedAsync()
     {
