@@ -32,8 +32,8 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
     public async Task Handle_ShouldSendEmail_WhenAdminIsFound()
     {
         // Arrange
-        var command = new NotifyLeagueAdminOfJoinRequestCommand(1, "Jane", "Doe");
-        var adminDto = new LeagueAdminDto("admin@example.com", "Admin", "Test League", "2025/26");
+        var command = new NotifyLeagueAdminOfJoinRequestCommand("admin-user", "Test League", 1, "Jane", "Doe");
+        var adminDto = new LeagueAdminDto("admin@example.com", "Admin", "2025/26");
 
         _dbConnection.QuerySingleOrDefaultAsync<LeagueAdminDto>(
                 Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object>())
@@ -51,7 +51,7 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
     public async Task Handle_ShouldNotSendEmail_WhenAdminNotFound()
     {
         // Arrange
-        var command = new NotifyLeagueAdminOfJoinRequestCommand(1, "Jane", "Doe");
+        var command = new NotifyLeagueAdminOfJoinRequestCommand("admin-user", "Test League", 1, "Jane", "Doe");
 
         _dbConnection.QuerySingleOrDefaultAsync<LeagueAdminDto>(
                 Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object>())
@@ -72,7 +72,7 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
         var settingsWithoutTemplates = new BrevoSettings { Templates = null };
         var options = Options.Create(settingsWithoutTemplates);
         var handler = new NotifyLeagueAdminOfJoinRequestCommandHandler(_dbConnection, _emailService, options);
-        var command = new NotifyLeagueAdminOfJoinRequestCommand(1, "Jane", "Doe");
+        var command = new NotifyLeagueAdminOfJoinRequestCommand("admin-user", "Test League", 1, "Jane", "Doe");
 
         // Act
         await handler.Handle(command, CancellationToken.None);

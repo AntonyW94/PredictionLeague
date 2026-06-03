@@ -3,23 +3,37 @@
 @inject IPayoutService PayoutService
 
 @using ThePredictions.Contracts.Leagues
+@using ThePredictions.Contracts.Prizes
 @using ThePredictions.Web.Client.Services.Dashboard
 @using ThePredictions.Web.Client.Services.Leagues
 @using ThePredictions.Web.Client.Services.Payouts
 
 <div class="modal fade" id="joinPrivateLeagueModal" tabindex="-1" aria-labelledby="joinPrivateLeagueModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content bg-white">
+    <div class="modal-dialog modal-dialog-centered @(_step == Step.Confirm ? "modal-lg" : string.Empty)">
+        <div class="modal-content themed-modal">
             <div class="modal-header border-bottom">
-                <h5 class="modal-title fw-bold" id="joinPrivateLeagueModalLabel">@(_joinedLeagueId is null ? "Join Private League" : "Request sent")</h5>
+                <h5 class="modal-title fw-bold" id="joinPrivateLeagueModalLabel">@Title</h5>
                 <button type="button" class="btn-close" @onclick="Close" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <ApiError Message="@_errorMessage" />
 
-                @if (_joinedLeagueId is null)
+                @if (_step == Step.Loading)
                 {
-                    <EditForm Model="_model" OnValidSubmit="HandleJoinAsync">
+                    @if (_errorMessage is null)
+                    {
+                        <div class="text-center py-4"><span class="spinner-border" role="status"></span></div>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="button" class="btn neutral-button" @onclick="Close">Close</button>
+                        </div>
+                    }
+                }
+                else if (_step == Step.Code)
+                {
+                    <EditForm Model="_model" OnValidSubmit="HandleContinueAsync">
                         <FluentValidationValidator />
                         <div class="mb-3">
                             <label for="entryCode" class="form-label">Entry Code</label>
@@ -28,23 +42,116 @@
                         </div>
 
                         <div class="d-flex justify-content-end align-items-center mt-4">
-                            <button type="button" class="btn red-button me-2" @onclick="Close">
+                            <button type="button" class="btn neutral-button me-2" @onclick="Close">
                                 <span class="bi bi-x-circle me-2"></span>Cancel
                             </button>
                             <button type="submit" class="btn green-button" disabled="@_isBusy">
                                 @if (_isBusy)
                                 {
                                     <span class="spinner-border spinner-border-sm me-2"></span>
-                                    <span>Joining...</span>
+                                    <span>Finding league...</span>
                                 }
                                 else
                                 {
-                                    <span class="bi bi-check-circle me-2"></span>
-                                    <span>Join League</span>
+                                    <span>Continue</span>
+                                    <span class="bi bi-arrow-right-circle ms-2"></span>
                                 }
                             </button>
                         </div>
                     </EditForm>
+                }
+                else if (_step == Step.Confirm && _preview is not null)
+                {
+                    <div class="join-preview">
+                        <h4 class="fw-bold mb-1">@_preview.LeagueName</h4>
+                        <p class="text-muted mb-3">Run by @_preview.AdministratorName</p>
+
+                        <div class="prize-preview-stats">
+                            <div class="prize-preview-stat">
+                                <span class="prize-preview-stat-label">Entry fee</span>
+                                <span class="prize-preview-stat-value">@(_preview.EntryCost > 0 ? $"£{_preview.EntryCost:0}" : "Free")</span>
+                            </div>
+                            <div class="prize-preview-stat">
+                                <span class="prize-preview-stat-label">Players so far</span>
+                                <span class="prize-preview-stat-value">@_preview.EntrantCount</span>
+                            </div>
+                            @if (_preview.EntryCost > 0)
+                            {
+                                <div class="prize-preview-stat">
+                                    <span class="prize-preview-stat-label">Current prize pot</span>
+                                    <span class="prize-preview-stat-value">£@_preview.CurrentPrizePot.ToString("0")</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="prize-preview-stat">
+                                    <span class="prize-preview-stat-label">Season</span>
+                                    <span class="prize-preview-stat-value">@_preview.SeasonName</span>
+                                </div>
+                            }
+                            <div class="prize-preview-stat">
+                                <span class="prize-preview-stat-label">Entry deadline</span>
+                                <span class="prize-preview-stat-value">@_preview.EntryDeadlineUtc.ToLocalTime().ToString("d MMM yyyy, HH:mm")</span>
+                            </div>
+                        </div>
+
+                        @if (_preview.DeadlinePassed)
+                        {
+                            <div class="message-box-solid warning mb-3">The entry deadline for this league has passed, so you can no longer join.</div>
+                        }
+
+                        @if (_preview.HasPrizes)
+                        {
+                            <PrizeBreakdownPreview Breakdown="_preview.Breakdown"
+                                                   ShowDeltas="!_preview.DeadlinePassed"
+                                                   PotLabel="@(_preview.DeadlinePassed ? "Prize pot" : "Prize pot if you join")" />
+
+                            @if (!_preview.DeadlinePassed && _preview.Attribution.Any())
+                            {
+                                <div class="prize-attribution mt-3">
+                                    @foreach (var line in _preview.Attribution)
+                                    {
+                                        <div>@line</div>
+                                    }
+                                </div>
+                            }
+                        }
+                        else if (_preview.EntryCost > 0)
+                        {
+                            <div class="message-box-solid info">
+                                This league has a <strong>£@_preview.EntryCost.ToString("0")</strong> entry fee but no prize split set, so arrange any prizes with the admin directly.
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">This is a free-to-play league - just for the bragging rights.</p>
+                        }
+
+                        @if (_preview.Payment is not null)
+                        {
+                            <div class="mt-3">
+                                <LeaguePaymentPanel Info="_preview.Payment" />
+                            </div>
+                        }
+
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <button type="button" class="btn neutral-button" @onclick="BackAsync" disabled="@_isBusy">
+                                <span class="bi bi-arrow-left-circle me-2"></span>@(IsPublic ? "Cancel" : "Back")
+                            </button>
+                            <button type="button" class="btn green-button" disabled="@(_isBusy || _preview.DeadlinePassed)" @onclick="ConfirmJoinAsync">
+                                @if (_isBusy)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Requesting...</span>
+                                }
+                                else
+                                {
+                                    <span class="bi bi-check-circle me-2"></span>
+                                    <span>Confirm &amp; request to join</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
                 }
                 else
                 {
@@ -53,7 +160,10 @@
                         Your request to join has been sent to the league admin.
                     </p>
 
-                    <LeaguePaymentPanel LeagueId="_joinedLeagueId.Value" />
+                    @if (_joinedLeagueId is not null)
+                    {
+                        <LeaguePaymentPanel LeagueId="_joinedLeagueId.Value" AlreadyPaidHint="true" />
+                    }
 
                     @if (_hasPayoutDetails)
                     {
@@ -74,39 +184,118 @@
 </div>
 
 @code {
+    private enum Step { Loading, Code, Confirm, Sent }
+
     private readonly JoinLeagueRequest _model = new()
     {
         EntryCode = string.Empty
     };
 
+    private Step _step = Step.Code;
     private bool _isBusy;
     private string? _errorMessage;
+    private PrizePreviewDto? _preview;
     private int? _joinedLeagueId;
     private bool _hasPayoutDetails;
 
+    /// <summary>When set, the modal joins a public league directly (no entry code) and skips the code step.</summary>
+    [Parameter] public int? LeagueId { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 
-    private async Task HandleJoinAsync()
+    private bool IsPublic => LeagueId.HasValue;
+
+    private string Title => _step switch
+    {
+        Step.Confirm => "Confirm and join",
+        Step.Sent => "Request sent",
+        Step.Loading => "Join league",
+        _ => "Join Private League"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsPublic)
+            return;
+
+        // Public league: fetch the preview straight away (by id) and jump to the confirm step.
+        _step = Step.Loading;
+        var (preview, errorMessage) = await LeagueService.GetJoinPreviewByIdAsync(LeagueId!.Value);
+
+        if (preview is not null)
+        {
+            _preview = preview;
+            _step = Step.Confirm;
+        }
+        else
+        {
+            _errorMessage = errorMessage;
+        }
+    }
+
+    private async Task HandleContinueAsync()
     {
         _isBusy = true;
         _errorMessage = null;
 
-        var (success, errorMessage, leagueId) = await LeagueService.JoinPrivateLeagueAsync(_model.EntryCode);
+        var (preview, errorMessage) = await LeagueService.GetJoinPreviewAsync(_model.EntryCode);
+
+        if (preview is not null)
+        {
+            _preview = preview;
+            _step = Step.Confirm;
+        }
+        else
+        {
+            _errorMessage = errorMessage;
+        }
+
+        _isBusy = false;
+    }
+
+    private async Task BackAsync()
+    {
+        // Public joins have no code step to go back to, so Back just closes.
+        if (IsPublic)
+        {
+            await Close();
+            return;
+        }
+
+        _step = Step.Code;
+        _preview = null;
+        _errorMessage = null;
+    }
+
+    private async Task ConfirmJoinAsync()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+
+        bool success;
+        string? errorMessage;
+
+        if (IsPublic)
+        {
+            (success, errorMessage) = await LeagueService.JoinPublicLeagueAsync(LeagueId!.Value);
+            if (success)
+                _joinedLeagueId = LeagueId;
+        }
+        else
+        {
+            int? joinedLeagueId;
+            (success, errorMessage, joinedLeagueId) = await LeagueService.JoinPrivateLeagueAsync(_model.EntryCode);
+            if (success)
+                _joinedLeagueId = joinedLeagueId;
+        }
 
         if (success)
         {
             await DashboardState.LoadMyLeaguesAsync();
+            await DashboardState.LoadAvailableLeaguesAsync();
+            await DashboardState.LoadPendingRequestsAsync();
 
-            // Keep the modal open to show how to pay; if no id came back, just close.
-            _joinedLeagueId = leagueId;
-            if (_joinedLeagueId is null)
-            {
-                await Close();
-            }
-            else
-            {
-                _hasPayoutDetails = (await PayoutService.GetMyPayoutDetailsAsync())?.HasDetails ?? false;
-            }
+            _step = Step.Sent;
+            _hasPayoutDetails = (await PayoutService.GetMyPayoutDetailsAsync())?.HasDetails ?? false;
         }
         else
         {
@@ -121,6 +310,8 @@
         _model.EntryCode = string.Empty;
         _errorMessage = null;
         _isBusy = false;
+        _step = Step.Code;
+        _preview = null;
         _joinedLeagueId = null;
         _hasPayoutDetails = false;
         await OnClose.InvokeAsync();

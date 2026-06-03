@@ -110,11 +110,13 @@ public static class DependencyInjection
         services.AddScoped<IWinningsRepository, WinningsRepository>();
         services.AddScoped<IBoostReadRepository, BoostReadRepository>();
         services.AddScoped<IBoostWriteRepository, BoostWriteRepository>();
+        services.AddScoped<ILeagueBoostRuleRepository, LeagueBoostRuleRepository>();
         services.AddScoped<ILeagueStatsRepository, LeagueStatsRepository>();
         services.AddScoped<IPrizeStrategy, RoundPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, MonthlyPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, OverallPrizeStrategy>();
         services.AddScoped<IPrizeStrategy, MostExactScoresPrizeStrategy>();
+        services.AddScoped<IPrizeStrategy, SectionPrizeStrategy>();
 
         services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
         services.AddScoped<PredictionDomainService>();

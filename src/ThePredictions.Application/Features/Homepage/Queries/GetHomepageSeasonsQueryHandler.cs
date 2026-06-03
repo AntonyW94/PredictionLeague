@@ -35,7 +35,7 @@ public class GetHomepageSeasonsQueryHandler(IApplicationReadDbConnection dbConne
                 SELECT
                     lf.[SeasonId],
                     COUNT(DISTINCT lf.[Id]) AS LeagueCount,
-                    SUM(COALESCE(lf.[PrizeFundOverride], lf.[Price] * lf.[MemberCount])) AS TotalPrizeFund
+                    SUM(lf.[Price] * lf.[MemberCount] + ISNULL(lf.[PrizeFundOverride], 0)) AS TotalPrizeFund
                 FROM (
                     SELECT
                         l.[Id],

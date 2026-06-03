@@ -15,22 +15,24 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConn
         if (_brevoSettings.Templates == null)
             return;
         
+        // Read only the admin (AspNetUsers) and the season (Seasons) - the league name is supplied by
+        // the caller, which already holds the aggregate. This deliberately avoids touching [Leagues],
+        // whose row the in-flight join transaction has locked; reading it here on a separate connection
+        // would block until that transaction commits (the request never gets that far) and time out.
         const string sql = @"
-                SELECT 
+                SELECT
                     u.[Email],
-                    u.[FirstName], 
-                    l.[Name] AS LeagueName,
+                    u.[FirstName],
                     s.[Name] AS SeasonName
-                FROM 
-                    [AspNetUsers] u 
-                JOIN 
-                    [Leagues] l ON u.[Id] = l.[AdministratorUserId]
-                JOIN 
-                    [Seasons] s ON l.[SeasonId] = s.[Id]
-                WHERE 
-                    l.[Id] = @LeagueId;";
+                FROM
+                    [AspNetUsers] u
+                CROSS JOIN
+                    [Seasons] s
+                WHERE
+                    u.[Id] = @AdministratorUserId
+                    AND s.[Id] = @SeasonId;";
 
-        var admin = await dbConnection.QuerySingleOrDefaultAsync<LeagueAdminDto>(sql, cancellationToken, new { request.LeagueId });
+        var admin = await dbConnection.QuerySingleOrDefaultAsync<LeagueAdminDto>(sql, cancellationToken, new { request.AdministratorUserId, request.SeasonId });
         if (admin != null)
         {
             var templateId = _brevoSettings.Templates.JoinLeagueRequest;
@@ -39,7 +41,7 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConn
             {
                 FIRST_NAME = request.NewMemberFirstName,
                 LAST_NAME = request.NewMemberLastName,
-                LEAGUE_NAME = admin.LeagueName,
+                LEAGUE_NAME = request.LeagueName,
                 SEASON_NAME = admin.SeasonName,
                 ADMIN_NAME = admin.FirstName
             };
@@ -49,4 +51,4 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConn
     }
 }
 
-public record LeagueAdminDto(string Email, string FirstName, string LeagueName, string SeasonName);
+public record LeagueAdminDto(string Email, string FirstName, string SeasonName);

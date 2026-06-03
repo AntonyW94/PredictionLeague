@@ -18,7 +18,7 @@ public class GetAvailableLeaguesQueryHandler(IApplicationReadDbConnection dbConn
                 l.[Price],
                 l.[EntryDeadlineUtc],
                 (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) AS MemberCount,
-                COALESCE(l.[PrizeFundOverride], l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus)) AS EstPot
+                (l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) + ISNULL(l.[PrizeFundOverride], 0)) AS EstPot
             FROM
                 [Leagues] l
             JOIN 

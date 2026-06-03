@@ -1,0 +1,54 @@
+using FluentValidation.TestHelper;
+using ThePredictions.Contracts.Prizes;
+using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Validators.Prizes;
+using Xunit;
+
+namespace ThePredictions.Validators.Tests.Unit.Prizes;
+
+public class PrizeSchemeRequestValidatorTests
+{
+    private readonly PrizeSchemeRequestValidator _validator = new();
+
+    private static PrizeSchemeRequest Valid() => new()
+    {
+        Categories = new List<PrizeSchemeCategoryRequest>
+        {
+            new() { Category = PrizeType.Overall, PerEntryPounds = 8 },
+            new() { Category = PrizeType.Round, PerEntryPounds = 2 }
+        }
+    };
+
+    [Fact]
+    public void Validate_ShouldPass_WhenValid()
+    {
+        _validator.TestValidate(Valid()).ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Fact]
+    public void Validate_ShouldFail_WhenNoCategories()
+    {
+        var request = Valid();
+        request.Categories.Clear();
+
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.Categories);
+    }
+
+    [Fact]
+    public void Validate_ShouldFail_WhenDuplicateCategory()
+    {
+        var request = Valid();
+        request.Categories.Add(new PrizeSchemeCategoryRequest { Category = PrizeType.Overall, PerEntryPounds = 1 });
+
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor(x => x.Categories);
+    }
+
+    [Fact]
+    public void Validate_ShouldFail_WhenPerEntryPoundsNegative()
+    {
+        var request = Valid();
+        request.Categories[0].PerEntryPounds = -1;
+
+        _validator.TestValidate(request).ShouldHaveValidationErrorFor("Categories[0].PerEntryPounds");
+    }
+}

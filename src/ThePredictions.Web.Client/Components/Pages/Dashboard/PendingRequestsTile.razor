@@ -89,16 +89,9 @@
                                                         @if (request.EntryFee > 0)
                                                         {
                                                             <button class="btn blue-light-button w-100 mt-3"
-                                                                    @onclick="() => TogglePayment(request.LeagueId)">
-                                                                @(_expandedPaymentLeagueIds.Contains(request.LeagueId) ? "Hide payment details" : "How to pay")
+                                                                    @onclick="() => ShowPaymentAsync(request.LeagueId, request.LeagueName)">
+                                                                How to pay
                                                             </button>
-
-                                                            @if (_expandedPaymentLeagueIds.Contains(request.LeagueId))
-                                                            {
-                                                                <div class="mt-3 text-start">
-                                                                    <LeaguePaymentPanel LeagueId="request.LeagueId" />
-                                                                </div>
-                                                            }
                                                         }
 
                                                         <button class="btn red-outline-button w-100 mt-2"
@@ -170,13 +163,22 @@
     </div>
 }
 
+@if (_paymentLeagueId is not null)
+{
+    <LeaguePaymentModal @key="_paymentLeagueId"
+                        LeagueId="_paymentLeagueId.Value"
+                        LeagueName="@_paymentLeagueName"
+                        OnClose="HidePaymentAsync" />
+}
+
 @code {
     private int _currentIndex;
     private double _touchStartX;
     private string _trackStyle = "transform: translateX(0%);";
     private bool _showArrows;
     private readonly HashSet<int> _processingIds = [];
-    private readonly HashSet<int> _expandedPaymentLeagueIds = [];
+    private int? _paymentLeagueId;
+    private string _paymentLeagueName = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -267,10 +269,19 @@
         return _currentIndex >= DashboardState.PendingRequests.Count - 1;
     }
 
-    private void TogglePayment(int leagueId)
+    private async Task ShowPaymentAsync(int leagueId, string leagueName)
     {
-        if (!_expandedPaymentLeagueIds.Remove(leagueId))
-            _expandedPaymentLeagueIds.Add(leagueId);
+        _paymentLeagueId = leagueId;
+        _paymentLeagueName = leagueName;
+        await Task.Delay(50);
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "leaguePaymentModal");
+    }
+
+    private async Task HidePaymentAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "leaguePaymentModal");
+        _paymentLeagueId = null;
+        _paymentLeagueName = string.Empty;
     }
 
     private async Task CancelRequest(int leagueId)

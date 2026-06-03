@@ -35,8 +35,11 @@ public partial class League
     public IReadOnlyCollection<LeagueMember> Members => _members.AsReadOnly();
     public IReadOnlyCollection<LeaguePrizeSetting> PrizeSettings => _prizeSettings.AsReadOnly();
 
+    public LeaguePrizeScheme? PrizeScheme => _prizeScheme;
+
     private readonly List<LeagueMember> _members = new();
     private readonly List<LeaguePrizeSetting> _prizeSettings = new();
+    private LeaguePrizeScheme? _prizeScheme;
 
     private League() { }
 
@@ -59,7 +62,8 @@ public partial class League
         string? bankAccountName = null,
         string? bankSortCode = null,
         string? bankAccountNumber = null,
-        string? paymentReferenceTemplate = null)
+        string? paymentReferenceTemplate = null,
+        LeaguePrizeScheme? prizeScheme = null)
     {
         Id = id;
         Name = name;
@@ -87,6 +91,8 @@ public partial class League
 
         if (prizeSettings != null)
             _prizeSettings.AddRange(prizeSettings.Where(p => p != null).Select(p => p!));
+
+        _prizeScheme = prizeScheme;
     }
 
     #region Factory Methods
@@ -242,6 +248,39 @@ public partial class League
         PrizeFundOverride = amount;
     }
 
+    /// <summary>
+    /// Sets the prize scheme once. Throws if a scheme is already set - league admins configure it
+    /// at creation (or once on a schemeless league) and it locks thereafter. Site-admin corrections
+    /// go through <see cref="OverridePrizeScheme"/>.
+    /// </summary>
+    public void SetPrizeScheme(LeaguePrizeScheme scheme)
+    {
+        Guard.Against.Null(scheme);
+
+        if (_prizeScheme is not null)
+            throw new InvalidOperationException("The prize scheme has already been set for this league.");
+
+        ApplyPrizeScheme(scheme);
+    }
+
+    /// <summary>
+    /// Replaces the prize scheme regardless of the write-once lock. Authorisation (site-admin only)
+    /// is enforced in the command handler, not here.
+    /// </summary>
+    public void OverridePrizeScheme(LeaguePrizeScheme scheme)
+    {
+        Guard.Against.Null(scheme);
+        ApplyPrizeScheme(scheme);
+    }
+
+    private void ApplyPrizeScheme(LeaguePrizeScheme scheme)
+    {
+        _prizeScheme = scheme;
+
+        // Free leagues with no admin top-up (PrizeFundOverride) are informational only - no prizes.
+        HasPrizes = Price > 0 || (PrizeFundOverride ?? 0) > 0;
+    }
+
     public void ReassignAdministrator(string newAdministratorUserId)
     {
         Guard.Against.NullOrWhiteSpace(newAdministratorUserId);
@@ -304,6 +343,40 @@ public partial class League
             {
                 Member = m,
                 TotalScore = m.RoundResults.Sum(r => r.BoostedPoints)
+            })
+            .GroupBy(x => x.TotalScore)
+            .OrderByDescending(g => g.Key)
+            .ToList();
+
+        var rankings = new List<OverallRanking>();
+        var currentRank = 1;
+
+        foreach (var scoreGroup in scoresByGroup)
+        {
+            var membersInGroup = scoreGroup.Select(x => x.Member).ToList();
+            rankings.Add(new OverallRanking(currentRank, membersInGroup));
+            currentRank += membersInGroup.Count;
+        }
+
+        return rankings;
+    }
+
+    /// <summary>
+    /// Ranks members by their aggregate score across a specific set of rounds (a tournament stage),
+    /// grouping ties at the same rank - the same tie semantics as <see cref="GetOverallRankings"/>.
+    /// </summary>
+    public List<OverallRanking> GetStageRankings(IEnumerable<int> roundIdsInStage)
+    {
+        var stageRoundIds = roundIdsInStage.ToHashSet();
+
+        if (!_members.Any() || stageRoundIds.Count == 0)
+            return new List<OverallRanking>();
+
+        var scoresByGroup = _members
+            .Select(m => new
+            {
+                Member = m,
+                TotalScore = m.RoundResults.Where(r => stageRoundIds.Contains(r.RoundId)).Sum(r => r.BoostedPoints)
             })
             .GroupBy(x => x.TotalScore)
             .OrderByDescending(g => g.Key)

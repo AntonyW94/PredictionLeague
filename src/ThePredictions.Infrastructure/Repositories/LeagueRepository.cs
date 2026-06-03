@@ -78,6 +78,9 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
 
         await AddMemberAsync(adminMember, cancellationToken);
 
+        if (league.PrizeScheme is not null)
+            await PersistPrizeSchemeAsync(newLeagueId, league.PrizeScheme, cancellationToken);
+
         var newLeague = new League(
             id: newLeagueId,
             name: league.Name,
@@ -97,7 +100,8 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             bankAccountName: league.BankAccountName,
             bankSortCode: league.BankSortCode,
             bankAccountNumber: league.BankAccountNumber,
-            paymentReferenceTemplate: league.PaymentReferenceTemplate
+            paymentReferenceTemplate: league.PaymentReferenceTemplate,
+            prizeScheme: league.PrizeScheme
         );
 
         return newLeague;
@@ -134,7 +138,12 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
     {
         const string sql = $"{GetLeaguesWithMembersSql} WHERE l.[Id] = @Id;";
 
-        return (await QueryAndMapLeaguesAsync(sql, cancellationToken, new { Id = id })).FirstOrDefault();
+        var league = (await QueryAndMapLeaguesAsync(sql, cancellationToken, new { Id = id })).FirstOrDefault();
+        if (league is null)
+            return null;
+
+        var scheme = await LoadPrizeSchemeAsync(id, cancellationToken);
+        return scheme is null ? league : WithPrizeScheme(league, scheme);
     }
 
     public async Task<League?> GetByEntryCodeAsync(string? entryCode, CancellationToken cancellationToken)
@@ -180,6 +189,8 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
         var prizeSettings = (await multi.ReadAsync<LeaguePrizeSetting>()).ToList();
         var roundResultsLookup = (await multi.ReadAsync<LeagueRoundResult>()).ToLookup(p => p.UserId);
 
+        var prizeScheme = await LoadPrizeSchemeAsync(id, cancellationToken);
+
         var hydratedMembers = membersData.Select(member =>
         {
             var memberRoundResults = roundResultsLookup[member.UserId].ToList();
@@ -215,7 +226,8 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             league.BankAccountName,
             league.BankSortCode,
             league.BankAccountNumber,
-            league.PaymentReferenceTemplate
+            league.PaymentReferenceTemplate,
+            prizeScheme
         );
     }
 
@@ -318,11 +330,11 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             const string insertPrizeSql = @"
             INSERT INTO [LeaguePrizeSettings]
             (
-                [LeagueId], [PrizeType], [Rank], [PrizeAmount], [PrizeDescription]
+                [LeagueId], [PrizeType], [Rank], [PrizeAmount], [PrizeDescription], [Stage]
             )
             VALUES
             (
-                @LeagueId, @PrizeType, @Rank, @PrizeAmount, @PrizeDescription
+                @LeagueId, @PrizeType, @Rank, @PrizeAmount, @PrizeDescription, @Stage
             );";
 
             var insertPrizesCommand = new CommandDefinition(
@@ -456,7 +468,150 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
 
     #endregion
 
+    public Task SavePrizeSchemeAsync(int leagueId, LeaguePrizeScheme scheme, CancellationToken cancellationToken) =>
+        PersistPrizeSchemeAsync(leagueId, scheme, cancellationToken);
+
     #region Private Helper Methods
+
+    private async Task PersistPrizeSchemeAsync(int leagueId, LeaguePrizeScheme scheme, CancellationToken cancellationToken)
+    {
+        const string deleteSchemeSql = "DELETE FROM [LeaguePrizeScheme] WHERE [LeagueId] = @LeagueId;";
+
+        await Connection.ExecuteAsync(new CommandDefinition(
+            deleteSchemeSql,
+            new { LeagueId = leagueId },
+            transaction: Transaction,
+            cancellationToken: cancellationToken));
+
+        const string insertSchemeSql = @"
+            INSERT INTO [LeaguePrizeScheme]
+            (
+                [LeagueId],
+                [SetAtUtc],
+                [SetByUserId]
+            )
+            VALUES
+            (
+                @LeagueId,
+                @SetAtUtc,
+                @SetByUserId
+            );
+            SELECT CAST(SCOPE_IDENTITY() as int);";
+
+        var schemeId = await Connection.ExecuteScalarAsync<int>(new CommandDefinition(
+            insertSchemeSql,
+            new
+            {
+                LeagueId = leagueId,
+                scheme.SetAtUtc,
+                scheme.SetByUserId
+            },
+            transaction: Transaction,
+            cancellationToken: cancellationToken));
+
+        if (!scheme.Entries.Any())
+            return;
+
+        const string insertEntrySql = @"
+            INSERT INTO [LeaguePrizeSchemeEntries]
+            (
+                [LeaguePrizeSchemeId],
+                [Category],
+                [PerEntryPounds],
+                [RankTableJson]
+            )
+            VALUES
+            (
+                @LeaguePrizeSchemeId,
+                @Category,
+                @PerEntryPounds,
+                @RankTableJson
+            );";
+
+        var entryRows = scheme.Entries.Select(e => new
+        {
+            LeaguePrizeSchemeId = schemeId,
+            Category = e.Category.ToString(),
+            e.PerEntryPounds,
+            e.RankTableJson
+        });
+
+        await Connection.ExecuteAsync(new CommandDefinition(
+            insertEntrySql,
+            entryRows,
+            transaction: Transaction,
+            cancellationToken: cancellationToken));
+
+        // Keep the league's HasPrizes flag in step (a scheme means it awards prizes whenever the
+        // pot is non-zero: a paid entry fee or admin top-up money). Done here rather than via
+        // UpdateAsync, which would rewrite members/prize settings. Derived from the league's own
+        // columns so it's correct regardless of call order.
+        const string updateHasPrizesSql = @"
+            UPDATE [Leagues]
+            SET [HasPrizes] = CASE WHEN [Price] > 0 OR ISNULL([PrizeFundOverride], 0) > 0 THEN 1 ELSE 0 END
+            WHERE [Id] = @LeagueId;";
+
+        await Connection.ExecuteAsync(new CommandDefinition(
+            updateHasPrizesSql,
+            new { LeagueId = leagueId },
+            transaction: Transaction,
+            cancellationToken: cancellationToken));
+    }
+
+    private async Task<LeaguePrizeScheme?> LoadPrizeSchemeAsync(int leagueId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT lps.* FROM [LeaguePrizeScheme] lps
+            WHERE lps.[LeagueId] = @LeagueId;
+
+            SELECT lpse.* FROM [LeaguePrizeSchemeEntries] lpse
+            INNER JOIN [LeaguePrizeScheme] lps ON lps.[Id] = lpse.[LeaguePrizeSchemeId]
+            WHERE lps.[LeagueId] = @LeagueId;";
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { LeagueId = leagueId },
+            transaction: Transaction,
+            cancellationToken: cancellationToken);
+
+        await using var multi = await Connection.QueryMultipleAsync(command);
+
+        var header = (await multi.ReadAsync<LeaguePrizeScheme>()).FirstOrDefault();
+        if (header is null)
+            return null;
+
+        var entries = (await multi.ReadAsync<LeaguePrizeSchemeEntry>()).ToList();
+
+        return new LeaguePrizeScheme(
+            header.Id,
+            header.LeagueId,
+            header.SetAtUtc,
+            header.SetByUserId,
+            entries);
+    }
+
+    private static League WithPrizeScheme(League league, LeaguePrizeScheme scheme) =>
+        new(
+            league.Id,
+            league.Name,
+            league.SeasonId,
+            league.AdministratorUserId,
+            league.EntryCode,
+            league.CreatedAtUtc,
+            league.EntryDeadlineUtc,
+            league.PointsForExactScore,
+            league.PointsForCorrectResult,
+            league.Price,
+            league.IsFree,
+            league.HasPrizes,
+            league.PrizeFundOverride,
+            league.Members,
+            league.PrizeSettings,
+            league.BankAccountName,
+            league.BankSortCode,
+            league.BankAccountNumber,
+            league.PaymentReferenceTemplate,
+            scheme);
 
     private async Task<IEnumerable<League>> QueryAndMapLeaguesAsync(string sql, CancellationToken cancellationToken, object? param = null)
     {
@@ -515,6 +670,7 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
         const string sql = @"
         DELETE FROM [LeagueMembers] WHERE [LeagueId] = @LeagueId;
         DELETE FROM [LeaguePrizeSettings] WHERE [LeagueId] = @LeagueId;
+        DELETE FROM [LeaguePrizeScheme] WHERE [LeagueId] = @LeagueId;
         DELETE FROM [Winnings] WHERE [LeagueId] = @LeagueId;
         DELETE FROM [Leagues] WHERE [Id] = @LeagueId;";
 

@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using MediatR;
+using ThePredictions.Application.Common.Prizes;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
@@ -9,7 +10,7 @@ using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, ISeasonAccessService seasonAccessService, IFieldEncryptionService fieldEncryptionService, IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateLeagueCommand, LeagueDto>
+public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, ICompetitionRepository competitionRepository, ISeasonAccessService seasonAccessService, IFieldEncryptionService fieldEncryptionService, IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateLeagueCommand, LeagueDto>
 {
     public async Task<LeagueDto> Handle(CreateLeagueCommand request, CancellationToken cancellationToken)
     {
@@ -43,6 +44,18 @@ public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
             fieldEncryptionService.Encrypt(NullIfBlank(request.BankSortCode)),
             fieldEncryptionService.Encrypt(NullIfBlank(request.BankAccountNumber)),
             NullIfBlank(request.PaymentReferenceTemplate));
+
+        // Admin top-up money sits on the league (added to the pot); set before the scheme so HasPrizes is correct.
+        league.SetPrizeFundOverride(request.PrizeFundOverride);
+
+        if (request.PrizeScheme is not null)
+        {
+            var competition = await competitionRepository.GetByIdAsync(season.CompetitionId, cancellationToken);
+            Guard.Against.EntityNotFound(season.CompetitionId, competition, "Competition");
+
+            var scheme = PrizeSchemeFactory.Build(request.PrizeScheme, PrizeSchemeFactory.ToWholePounds(request.Price), request.CreatingUserId, competition.IsTournament, dateTimeProvider);
+            league.SetPrizeScheme(scheme);
+        }
 
         var createdLeague = await leagueRepository.CreateAsync(league, cancellationToken);
 

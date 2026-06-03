@@ -5,5 +5,6 @@ public enum PrizeType
     Overall,
     Monthly,
     Round,
-    MostExactScores
+    MostExactScores,
+    Stages
 }

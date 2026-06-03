@@ -1,0 +1,551 @@
+/* Prize scheme editor, breakdown preview and prospective preview.
+   Light-first: panels match the form card (light surface, dark text). The
+   .theme-dark ancestor (added on the form container in dark mode) flips them. */
+
+/* Section heading / divider / intro rhythm now lives in components/form-section.css
+   (the shared <FormSection> component). */
+
+/* ---- Shared panel surface (light card, dark-mode adaptive) ---- */
+.prize-category-option,
+.boost-option,
+.prize-breakdown-pot,
+.prize-category,
+.prize-preview-stat,
+.prize-attribution {
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 1px 2px var(--black-alpha-15);
+}
+
+.theme-dark .prize-category-option,
+.theme-dark .boost-option,
+.theme-dark .prize-breakdown-pot,
+.theme-dark .prize-category,
+.theme-dark .prize-preview-stat {
+    background: var(--purple-900);
+    border-color: var(--white-alpha-15);
+    box-shadow: none;
+}
+
+/* ---- Category / boost toggle rows ---- */
+.prize-category-options,
+.boost-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.prize-category-option,
+.boost-option {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+}
+
+/* Selected state: a crisp green ring rather than a 2px border, so toggling does not nudge the
+   contents by a pixel. */
+.prize-category-option.is-enabled,
+.boost-option.is-enabled {
+    border-color: var(--green-600);
+    box-shadow: 0 0 0 1px var(--green-600), 0 1px 2px var(--black-alpha-15);
+}
+
+.theme-dark .prize-category-option.is-enabled,
+.theme-dark .boost-option.is-enabled {
+    box-shadow: 0 0 0 1px var(--green-600);
+}
+
+.prize-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--purple-1000);
+}
+
+.theme-dark .prize-toggle {
+    color: var(--white);
+}
+
+.prize-toggle input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex: none;
+    accent-color: var(--green-600);
+    cursor: pointer;
+}
+
+/* ---- Per-entry allocation / uses inputs ---- */
+.prize-allocation,
+.boost-uses {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--grey-500);
+    font-size: 0.85rem;
+    flex: none;
+    white-space: nowrap;
+}
+
+.theme-dark .prize-allocation,
+.theme-dark .boost-uses {
+    color: var(--white-alpha-70);
+}
+
+/* input. prefix raises specificity above .form-control { width: 100% } so these stay compact.
+   Wide enough for 3 digits plus the number spinner without clipping. */
+input.prize-allocation-input,
+input.boost-uses-input,
+input.prize-preview-count {
+    width: 5.5rem;
+    flex: none;
+    text-align: center;
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
+}
+
+.prize-allocation-prefix,
+.prize-allocation-suffix,
+.boost-uses-suffix {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.prize-alloc-progress {
+    margin-top: var(--space-3);
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--grey-200);
+    overflow: hidden;
+}
+
+.theme-dark .prize-alloc-progress {
+    background: var(--white-alpha-15);
+}
+
+.prize-alloc-progress-bar {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--green-600);
+    transition: width 0.25s ease, background-color 0.2s ease;
+}
+
+.prize-alloc-progress-bar.is-unbalanced {
+    background: var(--red);
+}
+
+.prize-allocation-summary {
+    margin-top: var(--space-2);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-allocation-summary {
+    color: var(--white-alpha-70);
+}
+
+.prize-allocation-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+}
+
+.prize-allocation-summary.is-balanced {
+    color: var(--green-600);
+}
+
+.prize-allocation-summary.is-unbalanced {
+    color: var(--red);
+}
+
+.prize-allocation-remaining::before {
+    content: "\00B7";
+    margin-right: var(--space-2);
+}
+
+/* Hide the native number spinners on the compact pound/uses inputs - they vary across browsers
+   and crowd the value. Values are still typed or stepped with the keyboard. */
+input.prize-allocation-input::-webkit-outer-spin-button,
+input.prize-allocation-input::-webkit-inner-spin-button,
+input.boost-uses-input::-webkit-outer-spin-button,
+input.boost-uses-input::-webkit-inner-spin-button,
+input.prize-preview-count::-webkit-outer-spin-button,
+input.prize-preview-count::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input.prize-allocation-input,
+input.boost-uses-input,
+input.prize-preview-count {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* Projected-prizes "basis" control */
+.prize-preview-basis {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    color: var(--grey-500);
+    font-size: 0.9rem;
+}
+
+.theme-dark .prize-preview-basis {
+    color: var(--white-alpha-70);
+}
+
+.prize-preview-basis .form-label {
+    margin: 0;
+}
+
+/* Section stage sub-heading + medal colours in the breakdown */
+.prize-stage-heading {
+    list-style: none;
+    margin-top: var(--space-2);
+    padding-top: var(--space-2);
+    border-top: 1px dashed var(--grey-300);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-stage-heading {
+    border-top-color: var(--white-alpha-15);
+    color: var(--white-alpha-70);
+}
+
+.prize-stage-heading:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.prize-slot--gold .prize-slot-label,
+.prize-slot--gold .prize-slot-amount {
+    color: var(--gold);
+}
+
+.prize-slot--silver .prize-slot-label,
+.prize-slot--silver .prize-slot-amount {
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-slot--silver .prize-slot-label,
+.theme-dark .prize-slot--silver .prize-slot-amount {
+    color: var(--silver);
+}
+
+.prize-slot--bronze .prize-slot-label,
+.prize-slot--bronze .prize-slot-amount {
+    color: var(--bronze);
+}
+
+.theme-dark .prize-slot--bronze .prize-slot-label,
+.theme-dark .prize-slot--bronze .prize-slot-amount {
+    color: #c9893f;
+}
+
+.boost-description {
+    flex-basis: 100%;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--grey-500);
+}
+
+/* Indent the description under the boost name (past the checkbox + icon) so the row reads as a
+   clear name-then-detail hierarchy. */
+@media (min-width: 576px) {
+    .boost-description {
+        padding-left: 3.75rem;
+    }
+}
+
+.theme-dark .boost-description {
+    color: var(--white-alpha-70);
+}
+
+/* ---- Live preview controls ---- */
+.prize-preview-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.prize-preview-note {
+    font-size: 0.85rem;
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-preview-note {
+    color: var(--white-alpha-70);
+}
+
+/* ---- SVG boost badge (replaces the PNGs) ---- */
+.boost-icon {
+    display: inline-block;
+    line-height: 0;
+    flex: none;
+}
+
+.boost-icon svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.boost-icon-hex {
+    stroke: var(--white);
+    stroke-width: 4;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 2px 3px var(--black-alpha-35));
+    transition: stroke 0.15s ease;
+}
+
+.boost-icon-glyph {
+    fill: var(--white);
+    font-weight: 800;
+    text-anchor: middle;
+    dominant-baseline: central;
+    font-family: inherit;
+}
+
+.boost-icon-fill {
+    fill: var(--white);
+}
+
+.boost-icon-gloss {
+    fill: var(--white);
+    opacity: 0.12;
+    pointer-events: none;
+}
+
+.boost-icon-shard {
+    fill: var(--white);
+    opacity: 0.16;
+    pointer-events: none;
+}
+
+.boost-icon-tick {
+    fill: none;
+    stroke: var(--white);
+    stroke-width: 7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.boost-icon--selected .boost-icon-hex {
+    stroke: var(--blue-500);
+}
+
+.boost-icon--selected svg {
+    filter: drop-shadow(0 0 3px var(--blue-500)) drop-shadow(0 0 7px var(--blue-700));
+}
+
+.boost-icon--disabled svg {
+    filter: grayscale(1);
+    opacity: 0.5;
+}
+
+/* ---- Breakdown preview ---- */
+.prize-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.prize-breakdown-pot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-5);
+    background: linear-gradient(135deg, var(--purple-800), var(--purple-600));
+    border-color: transparent;
+    box-shadow: 0 4px 14px var(--black-alpha-25);
+}
+
+.theme-dark .prize-breakdown-pot {
+    background: linear-gradient(135deg, var(--purple-700), var(--purple-600));
+    box-shadow: 0 4px 14px var(--black-alpha-35);
+}
+
+.prize-breakdown-pot .prize-breakdown-pot-label {
+    color: var(--white-alpha-70);
+}
+
+.prize-breakdown-pot .prize-breakdown-pot-value {
+    color: var(--white);
+    font-size: 1.875rem;
+}
+
+.prize-breakdown-pot-label {
+    color: var(--grey-500);
+    font-weight: 600;
+}
+
+.theme-dark .prize-breakdown-pot-label {
+    color: var(--white-alpha-70);
+}
+
+.prize-breakdown-pot-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--purple-800);
+}
+
+.theme-dark .prize-breakdown-pot-value {
+    color: var(--white);
+}
+
+.prize-category {
+    padding: var(--space-3) var(--space-4);
+}
+
+.prize-category-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+    font-weight: 700;
+    color: var(--purple-900);
+}
+
+.theme-dark .prize-category-header {
+    color: var(--white);
+}
+
+/* A single-prize category (e.g. Most Exact Scores) hides its lone slot row, leaving only the
+   header - drop the trailing margin so it sits vertically centred in the card. */
+.prize-category-header:last-child {
+    margin-bottom: 0;
+}
+
+.prize-slot-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.prize-slot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-slot {
+    color: var(--white-alpha-70);
+}
+
+.prize-slot-amount {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--purple-900);
+}
+
+.theme-dark .prize-slot-amount {
+    color: var(--white);
+}
+
+.prize-delta {
+    margin-left: var(--space-2);
+    color: var(--green-600);
+    font-weight: 700;
+}
+
+/* ---- Prospective preview headline ---- */
+.prize-preview-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+@media (min-width: 576px) {
+    .prize-preview-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.prize-preview-stat {
+    padding: var(--space-3) var(--space-4);
+}
+
+.prize-preview-stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--grey-500);
+}
+
+.theme-dark .prize-preview-stat-label {
+    color: var(--white-alpha-70);
+}
+
+.prize-preview-stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--purple-900);
+}
+
+.theme-dark .prize-preview-stat-value {
+    color: var(--white);
+}
+
+.prize-attribution {
+    margin-top: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--green-600-alpha-15);
+    border-color: var(--green-600);
+    color: var(--purple-1000);
+    font-weight: 600;
+}
+
+.theme-dark .prize-attribution {
+    color: var(--white);
+}
+
+/* ---- League join / payment modals: theme-aware surface ----
+   These modals embed the (theme-aware) prize and payment panels. A forced-white modal in dark
+   mode would leave dark panels sitting on white; instead the modal adopts the dark surface so the
+   whole popup stays consistent. */
+.themed-modal {
+    background: var(--white);
+}
+
+.theme-dark .themed-modal {
+    background: var(--purple-800);
+    color: var(--white);
+}
+
+.theme-dark .themed-modal .modal-title {
+    color: var(--white);
+}
+
+.theme-dark .themed-modal .text-muted {
+    color: var(--white-alpha-70) !important;
+}
+
+.theme-dark .themed-modal .modal-header {
+    border-bottom-color: var(--white-alpha-15) !important;
+}
+
+.theme-dark .themed-modal .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}

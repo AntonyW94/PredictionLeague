@@ -1,0 +1,101 @@
+using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Services.Prizes;
+
+namespace ThePredictions.Application.Common.Prizes;
+
+/// <summary>
+/// The extensible catalogue of prize categories. Adding a future prize type is one row here (plus a
+/// strategy in the settlement engine if it scores differently). It also owns the product-default
+/// places table and the recommended per-entry split (renormalised default weights across whatever
+/// categories are enabled).
+/// </summary>
+public static class PrizeCategoryRegistry
+{
+    private static readonly IReadOnlyList<PrizeCategoryDefinition> Definitions = new[]
+    {
+        new PrizeCategoryDefinition(PrizeType.Overall, PrizeCategoryKind.EndOfSeason, 3, CategoryAvailability.All, IsRanked: true, "Overall"),
+        new PrizeCategoryDefinition(PrizeType.Stages, PrizeCategoryKind.Staged, 2, CategoryAvailability.TournamentsOnly, IsRanked: true, "Stages"),
+        new PrizeCategoryDefinition(PrizeType.MostExactScores, PrizeCategoryKind.EndOfSeason, 1, CategoryAvailability.All, IsRanked: false, "Most Exact Scores"),
+        new PrizeCategoryDefinition(PrizeType.Round, PrizeCategoryKind.Recurring, 1, CategoryAvailability.All, IsRanked: false, "Round"),
+        new PrizeCategoryDefinition(PrizeType.Monthly, PrizeCategoryKind.Recurring, 1, CategoryAvailability.SeasonsOnly, IsRanked: false, "Monthly")
+    };
+
+    /// <summary>The product-default places table (ADR-0011). Used unless a league overrides it.</summary>
+    public static readonly RankTable DefaultRankTable = new(new[]
+    {
+        new RankBand(2, 5, new[] { 100 }),
+        new RankBand(6, 10, new[] { 70, 30 }),
+        new RankBand(11, 20, new[] { 50, 30, 20 }),
+        new RankBand(21, 40, new[] { 50, 25, 15, 10 }),
+        new RankBand(41, 75, new[] { 40, 25, 15, 12, 8 }),
+        new RankBand(76, null, new[] { 35, 22, 15, 12, 9, 7 })
+    });
+
+    public static IReadOnlyList<PrizeCategoryDefinition> All => Definitions;
+
+    public static PrizeCategoryDefinition Definition(PrizeType category) =>
+        Definitions.FirstOrDefault(d => d.Category == category)
+        ?? throw new ArgumentOutOfRangeException(nameof(category), category, "No prize category definition is registered for this type.");
+
+    public static bool IsAvailable(PrizeType category, bool isTournament)
+    {
+        var availability = Definition(category).AvailableFor;
+        return availability switch
+        {
+            CategoryAvailability.All => true,
+            CategoryAvailability.SeasonsOnly => !isTournament,
+            CategoryAvailability.TournamentsOnly => isTournament,
+            _ => false
+        };
+    }
+
+    public static IReadOnlyList<PrizeCategoryDefinition> AvailableCategories(bool isTournament) =>
+        Definitions.Where(d => IsAvailable(d.Category, isTournament)).ToList();
+
+    /// <summary>
+    /// Renormalises the default weights across the enabled categories and converts them into
+    /// whole-pound per-entry amounts that sum to the stake (leftover handed out top-down by weight).
+    /// </summary>
+    public static IReadOnlyDictionary<PrizeType, int> RecommendedAllocation(IEnumerable<PrizeType> enabledCategories, int stakePounds)
+    {
+        var enabled = enabledCategories.Distinct().ToList();
+        if (enabled.Count == 0)
+            return new Dictionary<PrizeType, int>();
+
+        var weights = enabled.Select(c => Definition(c).DefaultWeight).ToList();
+        var amounts = AllocateByWeight(stakePounds, weights);
+
+        var result = new Dictionary<PrizeType, int>();
+        for (var i = 0; i < enabled.Count; i++)
+            result[enabled[i]] = amounts[i];
+
+        return result;
+    }
+
+    private static int[] AllocateByWeight(int total, IReadOnlyList<int> weights)
+    {
+        var count = weights.Count;
+        var result = new int[count];
+        if (total <= 0)
+            return result;
+
+        var weightSum = weights.Sum();
+        var allocated = 0;
+        for (var i = 0; i < count; i++)
+        {
+            result[i] = (int)((long)total * weights[i] / weightSum);
+            allocated += result[i];
+        }
+
+        var leftover = total - allocated;
+        var index = 0;
+        while (leftover > 0)
+        {
+            result[index] += 1;
+            leftover -= 1;
+            index = (index + 1) % count;
+        }
+
+        return result;
+    }
+}

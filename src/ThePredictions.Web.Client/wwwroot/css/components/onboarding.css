@@ -218,6 +218,11 @@
 @media (min-width: 576px) {
     .onboarding-step__actions {
         margin-left: auto;
+        flex-wrap: nowrap;
+    }
+
+    .onboarding-step__actions .btn {
+        white-space: nowrap;
     }
 }
 

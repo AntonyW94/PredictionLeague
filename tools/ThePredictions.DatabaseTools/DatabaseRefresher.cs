@@ -45,6 +45,8 @@ public class DatabaseRefresher(
         "LeagueBoostRules",
         "LeagueBoostWindows",
         "LeaguePrizeSettings",
+        "LeaguePrizeScheme",
+        "LeaguePrizeSchemeEntries",
         "UserPredictions",
         "RoundResults",
         "LeagueRoundResults",

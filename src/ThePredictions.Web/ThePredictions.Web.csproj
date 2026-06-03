@@ -120,9 +120,11 @@ System.IO.File.WriteAllText(FilePath, content);
             <CssFilesToBundle Include="$(PublishCssDir)components\cards\member-cards.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\cards\round-cards.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\cards\match-editor-cards.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\form-section.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\badges.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\filters.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\boosts.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\prize-scheme.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\detail-list.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\dashboard-prompts.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\season-pass-cards.css" />

@@ -3,8 +3,11 @@
 @attribute [Authorize]
 
 @inject HttpClient Http
+@inject IJSRuntime JS
 
 @using ThePredictions.Contracts.Leagues
+@using ThePredictions.Contracts.Boosts
+@using ThePredictions.Contracts.Prizes
 
 <PageTitle>Edit League</PageTitle>
 
@@ -17,6 +20,7 @@
     {
         <BaseFormComponent TModel="UpdateLeagueRequest"
                            Model="_model"
+                           ContainerClass="wide"
                            SubmitAction="HandleUpdateLeagueAsync"
                            SuccessRedirectUrl="/leagues"
                            BackUrl="/leagues"
@@ -34,11 +38,10 @@
                         </div>
                     }
 
+                    <FormSection Title="League details" ShowDivider="false">
                     <div class="mb-3">
                         <label class="form-label">Season</label>
-                        <div class="form-control readonly-field">
-                            @_seasonName
-                        </div>
+                        <div class="form-value">@_seasonName</div>
                     </div>
 
                     <div class="mb-3">
@@ -57,9 +60,28 @@
                             }
                             <StyledValidationMessage For="@(() => _model.Price)" />
                         </div>
+                        @if (_canEditPrizes)
+                        {
+                            <div class="col-md-6 mb-3">
+                                <label for="prizeFundOverride" class="form-label">Add your own money to the pot (£)</label>
+                                <InputNumber id="prizeFundOverride" class="form-control" @bind-Value="_model.PrizeFundOverride" placeholder="0" />
+                                <div class="form-text text-white-50">Optional. Sits on top of the entry fees.</div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6 mb-3">
-                            @if (_entryCodeForDisplay != "Public")
-                            {
+                            <label for="entryDeadline" class="form-label">Entry Deadline</label>
+                            <UtcInputDate id="entryDeadline"
+                                          @bind-Value="_model.EntryDeadlineUtc"
+                                          Class="form-control"
+                                          Disabled="@_isPastDeadline" />
+                            <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
+                        </div>
+                        @if (_entryCodeForDisplay != "Public")
+                        {
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">Entry Code</label>
                                 <div class="entry-code-display">
                                     <div class="pin-digits">
@@ -68,20 +90,18 @@
                                             <span class="pin-digit">@ch</span>
                                         }
                                     </div>
+                                    <button type="button" class="entry-code-copy @(_codeCopied ? "is-copied" : string.Empty)" @onclick="CopyEntryCodeAsync" title="Copy entry code">
+                                        <span class="bi @(_codeCopied ? "bi-check-lg" : "bi-clipboard")"></span>
+                                        <span>@(_codeCopied ? "Copied" : "Copy")</span>
+                                    </button>
                                 </div>
-                            }
-                        </div>
+                            </div>
+                        }
                     </div>
 
-                    <div class="mb-3">
-                        <label for="entryDeadline" class="form-label">Entry Deadline</label>
-                        <UtcInputDate id="entryDeadline"
-                                      @bind-Value="_model.EntryDeadlineUtc"
-                                      Class="form-control"
-                                      Disabled="@_isPastDeadline" />
-                        <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
-                    </div>
+                    </FormSection>
 
+                    <FormSection Title="Scoring">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="pointsForExactScore" class="form-label">Points for Exact Score</label>
@@ -103,6 +123,28 @@
                             <StyledValidationMessage For="@(() => _model.PointsForCorrectResult)" />
                         </div>
                     </div>
+                    </FormSection>
+
+                    @if (_league is not null)
+                    {
+                        @if (_league.HasPrizeScheme)
+                        {
+                            <FormSection Title="Prizes & boosts" Intro="Prizes and boosts are locked once set.">
+                                <PrizeBreakdownPreview Breakdown="_lockedBreakdown" PotLabel="Projected prize pot" />
+                            </FormSection>
+                        }
+                        else if (!_isPastDeadline)
+                        {
+                            <PrizeSchemeEditor Scheme="_scheme"
+                                               SeasonId="_league.SeasonId"
+                                               Price="_model.Price"
+                                               IsTournament="_league.IsTournament"
+                                               CurrentEntrants="_league.MemberCount"
+                                               PrizeFundOverride="_model.PrizeFundOverride" />
+                            <LeagueBoostSelector Selections="_boostSelections" />
+                            <p class="form-text text-white-50 form-section-note">Prizes &amp; boosts can only be set once, then they lock.</p>
+                        }
+                    }
 
                     @if (_model.Price > 0 && !_isPastDeadline)
                     {
@@ -117,17 +159,40 @@
 @code {
     [Parameter] public int LeagueId { get; set; }
     private UpdateLeagueRequest? _model;
+    private LeagueDto? _league;
+    private PrizeSchemeRequest _scheme = new();
+    private readonly List<LeagueBoostSelectionDto> _boostSelections = new();
+    private PrizeBreakdownDto? _lockedBreakdown;
     private string? _entryCodeForDisplay;
     private string? _seasonName;
     private bool _isPastDeadline;
     private bool _isPriceLocked;
     private bool _isScoringLocked;
+    private bool _codeCopied;
+
+    // Prizes (and so the admin top-up) are editable only while the scheme is unset and entries are open.
+    private bool _canEditPrizes => _league is { HasPrizeScheme: false } && !_isPastDeadline;
+
+    private async Task CopyEntryCodeAsync()
+    {
+        if (string.IsNullOrEmpty(_entryCodeForDisplay))
+            return;
+
+        _codeCopied = await JS.InvokeAsync<bool>("blazorInterop.copyText", _entryCodeForDisplay);
+        if (!_codeCopied)
+            return;
+
+        StateHasChanged();
+        await Task.Delay(2000);
+        _codeCopied = false;
+    }
 
     protected override async Task OnInitializedAsync()
     {
         var league = await Http.GetFromJsonAsync<LeagueDto>($"api/leagues/{LeagueId}");
         if (league != null)
         {
+            _league = league;
             _model = new UpdateLeagueRequest
             {
                 Name = league.Name,
@@ -141,6 +206,9 @@
             _isPastDeadline = league.EntryDeadlineUtc < DateTime.UtcNow;
             _isPriceLocked = league.MemberCount > 1;
             _isScoringLocked = league.MemberCount > 1;
+
+            if (league.HasPrizeScheme)
+                _lockedBreakdown = await Http.GetFromJsonAsync<PrizeBreakdownDto>($"api/leagues/{LeagueId}/prize-breakdown");
 
             // Pre-fill any existing (decrypted) bank details so saving the form doesn't clear them.
             if (league.Price > 0)
@@ -157,8 +225,23 @@
         }
     }
 
-    private Task<HttpResponseMessage> HandleUpdateLeagueAsync()
+    private async Task<HttpResponseMessage> HandleUpdateLeagueAsync()
     {
-        return Http.PutAsJsonAsync($"api/leagues/{LeagueId}/update", _model);
+        var response = await Http.PutAsJsonAsync($"api/leagues/{LeagueId}/update", _model);
+        if (!response.IsSuccessStatusCode)
+            return response;
+
+        // Set the prize scheme / boosts once, only on a schemeless league.
+        if (_league is { HasPrizeScheme: false })
+        {
+            if ((_model!.Price > 0 || (_model.PrizeFundOverride ?? 0) > 0) && _scheme.Categories.Any())
+                await Http.PutAsJsonAsync($"api/leagues/{LeagueId}/prize-scheme", _scheme);
+
+            var enabledBoosts = _boostSelections.Where(b => b.IsEnabled).ToList();
+            if (enabledBoosts.Any())
+                await Http.PutAsJsonAsync($"api/boosts/league/{LeagueId}/rules", new SetLeagueBoostRulesRequest { Selections = enabledBoosts });
+        }
+
+        return response;
     }
 }

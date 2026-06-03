@@ -2,6 +2,8 @@ using MediatR;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public record NotifyLeagueAdminOfJoinRequestCommand(int LeagueId,
+public record NotifyLeagueAdminOfJoinRequestCommand(string AdministratorUserId,
+    string LeagueName,
+    int SeasonId,
     string NewMemberFirstName,
     string NewMemberLastName) : IRequest;

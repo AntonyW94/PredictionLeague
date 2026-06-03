@@ -15,6 +15,7 @@ public class CreateLeagueCommandHandlerTests
 {
     private readonly ILeagueRepository _leagueRepository = Substitute.For<ILeagueRepository>();
     private readonly ISeasonRepository _seasonRepository = Substitute.For<ISeasonRepository>();
+    private readonly ICompetitionRepository _competitionRepository = Substitute.For<ICompetitionRepository>();
     private readonly ISeasonAccessService _seasonAccessService = Substitute.For<ISeasonAccessService>();
     private readonly IFieldEncryptionService _fieldEncryptionService = Substitute.For<IFieldEncryptionService>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
@@ -22,7 +23,7 @@ public class CreateLeagueCommandHandlerTests
 
     public CreateLeagueCommandHandlerTests()
     {
-        _handler = new CreateLeagueCommandHandler(_leagueRepository, _seasonRepository, _seasonAccessService, _fieldEncryptionService, _dateTimeProvider);
+        _handler = new CreateLeagueCommandHandler(_leagueRepository, _seasonRepository, _competitionRepository, _seasonAccessService, _fieldEncryptionService, _dateTimeProvider);
     }
 
     private Season CreateSeason(int id = 1) =>
@@ -101,6 +102,41 @@ public class CreateLeagueCommandHandlerTests
         captured.BankSortCode.Should().Be("enc:12-34-56");
         captured.BankAccountNumber.Should().Be("enc:12345678");
         captured.PaymentReferenceTemplate.Should().Be("WC-{Name}");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldAttachPrizeScheme_WhenSchemeProvided()
+    {
+        // Arrange
+        var season = CreateSeason();
+        _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(season);
+        _competitionRepository.GetByIdAsync(1, Arg.Any<CancellationToken>())
+            .Returns(new Competition(1, "EPL", "Premier League", CompetitionType.League, null, null, null, _dateTimeProvider.UtcNow));
+        _leagueRepository.GetByEntryCodeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((League?)null);
+
+        League? captured = null;
+        _leagueRepository.CreateAsync(Arg.Do<League>(l => captured = l), Arg.Any<CancellationToken>())
+            .Returns(callInfo => callInfo.Arg<League>());
+
+        var scheme = new ThePredictions.Contracts.Prizes.PrizeSchemeRequest
+        {
+            Categories = new List<ThePredictions.Contracts.Prizes.PrizeSchemeCategoryRequest>
+            {
+                new() { Category = PrizeType.Overall, PerEntryPounds = 7 },
+                new() { Category = PrizeType.Round, PerEntryPounds = 3 }
+            }
+        };
+
+        var command = new CreateLeagueCommand("Test League", 1, 10m, "user-1", _dateTimeProvider.UtcNow.AddMonths(1), 3, 1, PrizeScheme: scheme);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        captured.Should().NotBeNull();
+        captured!.PrizeScheme.Should().NotBeNull();
+        captured.PrizeScheme!.Entries.Should().HaveCount(2);
+        captured.HasPrizes.Should().BeTrue();
     }
 
     [Fact]

@@ -1,0 +1,30 @@
+@using ThePredictions.Contracts.Leagues
+
+@* Entry-fee payment details shown in a popup, so the league name makes clear which league the
+   bank details and amount are for. Rendered as a fixed-position modal so it is never clipped by
+   the dashboard carousel. *@
+<div class="modal fade" id="leaguePaymentModal" tabindex="-1" aria-labelledby="leaguePaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content themed-modal">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="leaguePaymentModalLabel">@LeagueName</h5>
+                <button type="button" class="btn-close" @onclick="Close" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <LeaguePaymentPanel LeagueId="LeagueId" AlreadyPaidHint="true" />
+
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="button" class="btn green-button" @onclick="Close">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public int LeagueId { get; set; }
+    [Parameter] public string LeagueName { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private async Task Close() => await OnClose.InvokeAsync();
+}

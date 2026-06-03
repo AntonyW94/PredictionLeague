@@ -66,16 +66,36 @@ public class DefinePrizeStructureCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldDefinePrizesAndUpdate_WhenValidRequestByAdministrator()
+    public async Task Handle_ShouldDefinePrizesAndUpdate_WhenSiteAdmin()
     {
-        // Arrange
+        // Arrange - DefinePrizeStructure is now a site-admin-only manual override (ADR-0011).
         var league = CreateLeagueWithMembers(price: 10m, memberCount: 3); // Total pot = 30
         var season = CreateSeason();
         var prizeSettings = new List<DefinePrizeSettingDto>
         {
             new() { PrizeType = PrizeType.Overall, Rank = 1, PrizeAmount = 30m, Multiplier = 1 }
         };
-        var command = new DefinePrizeStructureCommand(1, "admin-user", prizeSettings);
+        var command = new DefinePrizeStructureCommand(1, "site-admin", prizeSettings);
+
+        _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
+        _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(season);
+        _userManager.FindByIdAsync("site-admin").Returns(new ApplicationUser { Id = "site-admin" });
+        _userManager.IsInRoleAsync(Arg.Any<ApplicationUser>(), RoleNames.Administrator).Returns(true);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await _leagueRepository.Received(1).UpdateAsync(league, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrowUnauthorizedAccessException_WhenLeagueAdministratorIsNotSiteAdmin()
+    {
+        // Arrange - the league admin can no longer set prizes manually; only a site admin can.
+        var league = CreateLeagueWithMembers(administratorUserId: "admin-user");
+        var season = CreateSeason();
+        var command = new DefinePrizeStructureCommand(1, "admin-user", new List<DefinePrizeSettingDto>());
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
         _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(season);
@@ -83,10 +103,11 @@ public class DefinePrizeStructureCommandHandlerTests
         _userManager.IsInRoleAsync(Arg.Any<ApplicationUser>(), RoleNames.Administrator).Returns(false);
 
         // Act
-        await _handler.Handle(command, CancellationToken.None);
+        var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await _leagueRepository.Received(1).UpdateAsync(league, Arg.Any<CancellationToken>());
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("*site administrator*");
     }
 
     [Fact]
@@ -106,7 +127,7 @@ public class DefinePrizeStructureCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowUnauthorizedAccessException_WhenUserIsNotAdministratorOrSiteAdmin()
+    public async Task Handle_ShouldThrowUnauthorizedAccessException_WhenUserIsNotSiteAdmin()
     {
         // Arrange
         var league = CreateLeagueWithMembers(administratorUserId: "admin-user");
@@ -123,7 +144,7 @@ public class DefinePrizeStructureCommandHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>()
-            .WithMessage("*league administrator*");
+            .WithMessage("*site administrator*");
     }
 
     [Fact]
@@ -159,12 +180,12 @@ public class DefinePrizeStructureCommandHandlerTests
             memberCount: 3,
             entryDeadlineUtc: FixedNow.AddDays(1)); // Deadline in the future
         var season = CreateSeason();
-        var command = new DefinePrizeStructureCommand(1, "admin-user", new List<DefinePrizeSettingDto>());
+        var command = new DefinePrizeStructureCommand(1, "site-admin", new List<DefinePrizeSettingDto>());
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
         _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(season);
-        _userManager.FindByIdAsync("admin-user").Returns(new ApplicationUser { Id = "admin-user" });
-        _userManager.IsInRoleAsync(Arg.Any<ApplicationUser>(), RoleNames.Administrator).Returns(false);
+        _userManager.FindByIdAsync("site-admin").Returns(new ApplicationUser { Id = "site-admin" });
+        _userManager.IsInRoleAsync(Arg.Any<ApplicationUser>(), RoleNames.Administrator).Returns(true);
 
         // Act
         var act = () => _handler.Handle(command, CancellationToken.None);
@@ -184,12 +205,12 @@ public class DefinePrizeStructureCommandHandlerTests
         {
             new() { PrizeType = PrizeType.Overall, Rank = 1, PrizeAmount = 20m, Multiplier = 1 } // Only 20, not 30
         };
-        var command = new DefinePrizeStructureCommand(1, "admin-user", prizeSettings);
+        var command = new DefinePrizeStructureCommand(1, "site-admin", prizeSettings);
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
         _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(season);
-        _userManager.FindByIdAsync("admin-user").Returns(new ApplicationUser { Id = "admin-user" });
-        _userManager.IsInRoleAsync(Arg.Any<ApplicationUser>(), RoleNames.Administrator).Returns(false);
+        _userManager.FindByIdAsync("site-admin").Returns(new ApplicationUser { Id = "site-admin" });
+        _userManager.IsInRoleAsync(Arg.Any<ApplicationUser>(), RoleNames.Administrator).Returns(true);
 
         // Act
         var act = () => _handler.Handle(command, CancellationToken.None);

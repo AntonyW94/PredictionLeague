@@ -1,6 +1,7 @@
 using FluentValidation;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Validators.Common;
+using ThePredictions.Validators.Prizes;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Validators.Leagues;
@@ -32,5 +33,14 @@ public class CreateLeagueRequestValidator : AbstractValidator<CreateLeagueReques
             .InclusiveBetween(1, 100).WithMessage("Points for correct result must be between 1 and 100.");
 
         this.AddBankDetailRules();
+
+        When(x => x.PrizeScheme is not null, () =>
+        {
+            RuleFor(x => x.Price)
+                .Must(price => price == decimal.Truncate(price)).WithMessage("The entry fee must be a whole number of pounds when prizes are enabled.");
+
+            RuleFor(x => x.PrizeScheme!)
+                .SetValidator(new PrizeSchemeRequestValidator());
+        });
     }
 }

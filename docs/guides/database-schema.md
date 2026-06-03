@@ -332,7 +332,7 @@ User-created prediction leagues.
 | Price | decimal(18,2) | NO | 0 | Standard fee |
 | IsFree | bit | NO | 0 | Whether league is free to join |
 | HasPrizes | bit | NO | 1 | Whether league has prizes |
-| PrizeFundOverride | decimal(18,2) | YES | | Override calculated prize fund |
+| PrizeFundOverride | decimal(18,2) | YES | | Admin money added on top of entry fees (additive: pot = Price x ApprovedMembers + this) |
 | PointsForExactScore | int | NO | 5 | Points for exact score prediction |
 | PointsForCorrectResult | int | NO | 3 | Points for correct result only |
 | CreatedAtUtc | datetime2 | NO | GETUTCDATE() | Creation timestamp |
@@ -437,6 +437,7 @@ Prize configuration per league.
 | Rank | int | NO | | Prize position (1st, 2nd, 3rd, etc.) |
 | PrizeAmount | money | NO | | Prize amount |
 | PrizeDescription | nvarchar(255) | YES | | Display text (e.g., "1st Place") |
+| Stage | nvarchar(50) | YES | | Tournament stage for Section prizes ("Group stage" / "Knockout stage"); null otherwise |
 
 **Constraints:**
 - PK: `Id`
@@ -447,6 +448,56 @@ Prize configuration per league.
 - `Monthly` - Monthly aggregate prizes
 - `Round` - Weekly round winner prizes
 - `MostExactScores` - Most exact predictions prize
+- `Section` - Best aggregate per tournament stage (group stage vs knockouts)
+
+> `LeaguePrizeSettings` are the **frozen** post-deadline settlement artefacts. From the
+> dynamic-prize-pot feature (ADR-0011) they are produced by freezing a `LeaguePrizeScheme`
+> at the entry deadline; the manual `DefinePrizeStructure` path remains as a site-admin override.
+
+---
+
+### LeaguePrizeScheme
+
+The up-front, write-once prize **scheme** an admin configures before entries close (ADR-0011).
+One row per league. The concrete prize amounts are derived live by the apportionment engine and
+frozen into `LeaguePrizeSettings` at the deadline.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| LeagueId | int | NO | | FK to Leagues (one scheme per league) |
+| SetAtUtc | datetime2 | NO | | When the scheme was set (write-once marker) |
+| SetByUserId | nvarchar(450) | NO | | FK to AspNetUsers - who set the scheme |
+
+> Admin top-up money (money the admin puts up on top of the entry fees) is **not** stored here -
+> it is the league's existing `Leagues.PrizeFundOverride`, which the dynamic-pot feature treats as
+> **additive**: pot = `Price x ApprovedMembers + PrizeFundOverride`.
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `LeagueId` (one scheme per league)
+- FK: `LeagueId` → `Leagues.Id` (CASCADE DELETE)
+- FK: `SetByUserId` → `AspNetUsers.Id`
+
+---
+
+### LeaguePrizeSchemeEntries
+
+One row per enabled prize category in a scheme: the whole-pound share of each entry that funds it,
+and an optional per-league override of the places (rank) table.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| LeaguePrizeSchemeId | int | NO | | FK to LeaguePrizeScheme |
+| Category | nvarchar(20) | NO | | Prize category (Overall, Round, Monthly, MostExactScores, Stages) |
+| PerEntryPounds | int | NO | | Whole pounds of each entry allocated to this category |
+| RankTableJson | nvarchar(max) | YES | | Optional per-league places-table override (JSON); null uses the product default |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `(LeaguePrizeSchemeId, Category)`
+- FK: `LeaguePrizeSchemeId` → `LeaguePrizeScheme.Id` (CASCADE DELETE)
 
 ---
 

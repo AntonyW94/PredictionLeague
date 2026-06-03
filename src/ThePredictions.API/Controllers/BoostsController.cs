@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ThePredictions.Application.Features.Boosts.Commands;
 using ThePredictions.Application.Features.Boosts.Queries;
 using ThePredictions.Application.Services.Boosts;
 using ThePredictions.Contracts.Boosts;
@@ -61,6 +62,36 @@ public class BoostsController(IBoostService boostService, IMediator mediator) : 
         CancellationToken cancellationToken)
     {
         await boostService.DeleteUserBoostUsageAsync(CurrentUserId, leagueId, roundId, cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpGet("catalogue")]
+    [SwaggerOperation(
+        Summary = "Get the boost catalogue",
+        Description = "Returns every boost definition, for use as selectable options when configuring a league's prizes and boosts.")]
+    [SwaggerResponse(200, "Catalogue retrieved successfully", typeof(List<BoostCatalogueItemDto>))]
+    [SwaggerResponse(401, "Not authenticated")]
+    public async Task<ActionResult<List<BoostCatalogueItemDto>>> GetCatalogueAsync(CancellationToken cancellationToken)
+    {
+        return Ok(await mediator.Send(new GetBoostCatalogueQuery(), cancellationToken));
+    }
+
+    [HttpPut("league/{leagueId:int}/rules")]
+    [SwaggerOperation(
+        Summary = "Set a league's boost selection",
+        Description = "Sets which boosts a league offers and their per-season caps / windows. Write-once: a league administrator may set it while unset; thereafter only a site administrator can override it.")]
+    [SwaggerResponse(204, "Boost selection saved successfully")]
+    [SwaggerResponse(400, "Invalid selection, or boosts are already set")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not permitted to set the league's boosts")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<IActionResult> SetLeagueBoostRulesAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        [FromBody, SwaggerParameter("Boost selection", Required = true)] SetLeagueBoostRulesRequest request,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new SetLeagueBoostRulesCommand(leagueId, CurrentUserId, request.Selections), cancellationToken);
 
         return NoContent();
     }

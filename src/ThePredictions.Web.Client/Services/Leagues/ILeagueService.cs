@@ -2,6 +2,7 @@ using ThePredictions.Contracts.Boosts;
 using ThePredictions.Contracts.Dashboard;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Web.Client.Services.Leagues;
@@ -25,6 +26,8 @@ public interface ILeagueService
     Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus newStatus);
 
     Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId);
+    Task<(PrizePreviewDto? Preview, string? ErrorMessage)> GetJoinPreviewByIdAsync(int leagueId);
+    Task<(PrizePreviewDto? Preview, string? ErrorMessage)> GetJoinPreviewAsync(string entryCode);
     Task<(bool Success, string? ErrorMessage, int? LeagueId)> JoinPrivateLeagueAsync(string entryCode);
     Task<(bool Success, string? ErrorMessage)> CancelJoinRequestAsync(int leagueId);
     Task<(bool Success, string? ErrorMessage)> DismissAlertAsync(int leagueId);

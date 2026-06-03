@@ -28,6 +28,13 @@ public interface ILeagueRepository
     Task UpdateLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken);
     Task UpdateLeagueRoundBoostsAsync(IEnumerable<LeagueRoundBoostUpdate> updates, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Replaces the league's prize scheme (delete then insert). The write-once rule is enforced in
+    /// the domain/handler; this just persists. Kept separate from <see cref="UpdateAsync"/> so that
+    /// ordinary league edits (and joins, admin re-assignment) never disturb the scheme.
+    /// </summary>
+    Task SavePrizeSchemeAsync(int leagueId, LeaguePrizeScheme scheme, CancellationToken cancellationToken);
+
     #endregion
 
     #region Delete

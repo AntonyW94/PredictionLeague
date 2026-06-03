@@ -5,6 +5,8 @@
 @inject HttpClient Http
 
 @using ThePredictions.Contracts.Leagues
+@using ThePredictions.Contracts.Boosts
+@using ThePredictions.Contracts.Prizes
 
 <PageTitle>Create League</PageTitle>
 
@@ -17,6 +19,7 @@
     {
         <BaseFormComponent TModel="CreateLeagueRequest"
                            Model="_model"
+                           ContainerClass="wide"
                            SubmitAction="HandleCreateLeagueAsync"
                            SuccessRedirectUrl="/leagues"
                            BackUrl="/leagues"
@@ -26,6 +29,7 @@
                 <h3 class="text-center fw-bold mb-4">Create New League</h3>
             </Header>
             <ChildContent>
+                <FormSection Title="League details" ShowDivider="false">
                     <div class="mb-3">
                         <label for="season" class="form-label">Season</label>
                         <InputSelect id="season" class="form-control" @bind-Value="_model.SeasonId" @onchange="OnSeasonSelected">
@@ -56,6 +60,17 @@
                             <StyledValidationMessage For="@(() => _model.Price)" />
                         </div>
 
+                        @if (_model.SeasonId > 0)
+                        {
+                            <div class="col-md-6 mb-3">
+                                <label for="prizeFundOverride" class="form-label">Add your own money to the pot (£)</label>
+                                <InputNumber id="prizeFundOverride" class="form-control" @bind-Value="_model.PrizeFundOverride" placeholder="0" />
+                                <div class="form-text text-white-50">Optional. Sits on top of the entry fees.</div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="entryDeadline" class="form-label">Entry Deadline</label>
                             <UtcInputDate id="entryDeadline"
@@ -67,7 +82,9 @@
                             <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
                         </div>
                     </div>
+                </FormSection>
 
+                <FormSection Title="Scoring">
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="pointsForExactScore" class="form-label">Points for Exact Score</label>
@@ -83,6 +100,18 @@
                             <StyledValidationMessage For="@(() => _model.PointsForCorrectResult)" />
                         </div>
                     </div>
+                </FormSection>
+
+                @if (_model.SeasonId > 0)
+                {
+                    <PrizeSchemeEditor @key="_model.SeasonId"
+                                       Scheme="_scheme"
+                                       SeasonId="_model.SeasonId"
+                                       Price="_model.Price"
+                                       IsTournament="_isTournament"
+                                       PrizeFundOverride="_model.PrizeFundOverride" />
+                    <LeagueBoostSelector Selections="_boostSelections" />
+                }
 
                     @if (_model.Price > 0)
                     {
@@ -96,9 +125,12 @@
 @code {
     private CreateLeaguePageData? _pageData;
     private readonly CreateLeagueRequest _model = new();
+    private PrizeSchemeRequest _scheme = new();
+    private readonly List<LeagueBoostSelectionDto> _boostSelections = new();
+    private bool _isTournament;
     private bool ShouldDisableFields => _pageData?.Seasons.Count != 1 && _model.SeasonId == 0;
     private string? MaxDate { get; set; }
-   
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -113,6 +145,7 @@
             {
                 var singleSeason = _pageData.Seasons.First();
                 _model.SeasonId = singleSeason.Id;
+                _isTournament = singleSeason.IsTournament;
 
                 UpdateDeadlineAndMaxDate(singleSeason.StartDateUtc);
             }
@@ -124,11 +157,17 @@
         var selectedSeasonId = int.Parse(e.Value?.ToString() ?? "0");
         _model.SeasonId = selectedSeasonId;
 
+        // The competition type changes which prize categories are valid, so reset the draft scheme.
+        _scheme = new PrizeSchemeRequest();
+
         if (selectedSeasonId > 0 && _pageData != null)
         {
             var selectedSeason = _pageData.Seasons.FirstOrDefault(s => s.Id == selectedSeasonId);
             if (selectedSeason != null)
+            {
+                _isTournament = selectedSeason.IsTournament;
                 UpdateDeadlineAndMaxDate(selectedSeason.StartDateUtc);
+            }
         }
         else
         {
@@ -144,8 +183,26 @@
         MaxDate = deadlineUtc.ToString("yyyy-MM-ddTHH:mm");
     }
 
-    private Task<HttpResponseMessage> HandleCreateLeagueAsync()
+    private async Task<HttpResponseMessage> HandleCreateLeagueAsync()
     {
-        return Http.PostAsJsonAsync("api/leagues/create", _model);
+        // Attach the prize scheme only when the league actually awards prizes.
+        _model.PrizeScheme = (_model.Price > 0 || (_model.PrizeFundOverride ?? 0) > 0) && _scheme.Categories.Any()
+            ? _scheme
+            : null;
+
+        var response = await Http.PostAsJsonAsync("api/leagues/create", _model);
+        if (!response.IsSuccessStatusCode)
+            return response;
+
+        // Boosts are configured per league after creation; only send them if any were enabled.
+        var enabledBoosts = _boostSelections.Where(b => b.IsEnabled).ToList();
+        if (enabledBoosts.Any())
+        {
+            var created = await response.Content.ReadFromJsonAsync<LeagueDto>();
+            if (created != null)
+                await Http.PutAsJsonAsync($"api/boosts/league/{created.Id}/rules", new SetLeagueBoostRulesRequest { Selections = enabledBoosts });
+        }
+
+        return response;
     }
 }

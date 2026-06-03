@@ -39,6 +39,7 @@
                     </button>
                 }
 
+                <div class="carousel-track-wrapper" id="leaderboards-track-wrapper">
                 <div class="carousel-track" style="@_trackStyle">
                     @foreach (var leaderboard in DashboardState.Leaderboards)
                     {
@@ -93,6 +94,7 @@
                             </div>
                         </div>
                     }
+                </div>
                 </div>
 
                 @if (DashboardState.Leaderboards.Count > 1)

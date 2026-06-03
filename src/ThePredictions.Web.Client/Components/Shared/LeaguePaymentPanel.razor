@@ -11,7 +11,14 @@
         @if (_info.HasBankDetails)
         {
             <p class="payment-panel__lead">
-                Send <strong>@_info.Amount.ToString("C", Uk)</strong> to the league admin using the details below.
+                @if (AlreadyPaidHint)
+                {
+                    <text>If you haven't already paid, send </text>
+                }
+                else
+                {
+                    <text>Send </text>
+                }<strong>@_info.Amount.ToString("C", Uk)</strong> to the league admin using the details below.
                 They'll approve you once the payment arrives.
             </p>
 
@@ -42,15 +49,28 @@
         else
         {
             <p class="payment-panel__lead">
-                This league has a <strong>@_info.Amount.ToString("C", Uk)</strong> entry fee. The admin hasn't added bank
-                details here, so arrange payment with them directly.
+                This league has a <strong>@_info.Amount.ToString("C", Uk)</strong> entry fee.
+                @if (AlreadyPaidHint)
+                {
+                    <text>If you haven't already paid, arrange it with the admin directly - they haven't added bank details here.</text>
+                }
+                else
+                {
+                    <text>The admin hasn't added bank details here, so arrange payment with them directly.</text>
+                }
             </p>
         }
     </div>
 }
 
 @code {
-    [Parameter, EditorRequired] public int LeagueId { get; set; }
+    [Parameter] public int LeagueId { get; set; }
+
+    /// <summary>Pre-loaded payment info (e.g. from the join preview). When set, no fetch is made.</summary>
+    [Parameter] public LeaguePaymentInfoDto? Info { get; set; }
+
+    /// <summary>Softens the copy to "if you haven't already paid" - for contexts after the request was sent.</summary>
+    [Parameter] public bool AlreadyPaidHint { get; set; }
 
     private static readonly CultureInfo Uk = new("en-GB");
     private LeaguePaymentInfoDto? _info;
@@ -58,7 +78,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _info = await LeagueService.GetPaymentInfoAsync(LeagueId);
+        _info = Info ?? await LeagueService.GetPaymentInfoAsync(LeagueId);
         _loaded = true;
     }
 }

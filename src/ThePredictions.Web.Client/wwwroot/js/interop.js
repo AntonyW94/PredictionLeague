@@ -21,6 +21,27 @@ window.blazorInterop = {
     getWindowWidth: function () {
         return window.innerWidth;
     },
+    copyText: function (text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
+        }
+
+        // Fallback for browsers/contexts without the async clipboard API.
+        try {
+            const helper = document.createElement('textarea');
+            helper.value = text;
+            helper.setAttribute('readonly', '');
+            helper.style.position = 'absolute';
+            helper.style.left = '-9999px';
+            document.body.appendChild(helper);
+            helper.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(helper);
+            return ok;
+        } catch {
+            return false;
+        }
+    },
     showConfirm: function (title, text, confirmButtonText, cancelButtonText) {
         return new Promise((resolve) => {
             Swal.fire({

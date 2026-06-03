@@ -14,6 +14,7 @@ public class GetLeaguePaymentInfoQueryHandler(IApplicationReadDbConnection dbCon
             SELECT
                 l.[Name] AS LeagueName,
                 l.[Price] AS Amount,
+                l.[EntryCode] AS EntryCode,
                 l.[BankAccountName] AS EncryptedAccountName,
                 l.[BankSortCode] AS EncryptedSortCode,
                 l.[BankAccountNumber] AS EncryptedAccountNumber,
@@ -42,7 +43,11 @@ public class GetLeaguePaymentInfoQueryHandler(IApplicationReadDbConnection dbCon
         if (row is null)
             throw new KeyNotFoundException($"League with ID {request.LeagueId} not found.");
 
-        if (!row.IsAdmin && !row.IsMember)
+        // A prospective joiner holding the matching entry code is authorised alongside admins/members.
+        var hasValidEntryCode = !string.IsNullOrWhiteSpace(request.EntryCode)
+            && string.Equals(row.EntryCode, request.EntryCode, StringComparison.OrdinalIgnoreCase);
+
+        if (!row.IsAdmin && !row.IsMember && !hasValidEntryCode)
             throw new UnauthorizedAccessException("Only the league administrator or its members can view payment details.");
 
         var accountName = fieldEncryptionService.Decrypt(row.EncryptedAccountName);
@@ -68,6 +73,7 @@ public class GetLeaguePaymentInfoQueryHandler(IApplicationReadDbConnection dbCon
     private sealed record PaymentInfoRow(
         string LeagueName,
         decimal Amount,
+        string? EntryCode,
         string? EncryptedAccountName,
         string? EncryptedSortCode,
         string? EncryptedAccountNumber,

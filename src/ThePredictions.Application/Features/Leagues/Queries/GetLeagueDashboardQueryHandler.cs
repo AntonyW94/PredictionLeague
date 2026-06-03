@@ -33,7 +33,7 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
                 c.[Type] AS CompetitionType,
                 s.[StartDateUtc],
                 (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus) AS MemberCount,
-                COALESCE(l.[PrizeFundOverride], l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus)) AS TotalPrizeFund,
+                (l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus) + ISNULL(l.[PrizeFundOverride], 0)) AS TotalPrizeFund,
                 l.[IsFree],
                 CAST(CASE
                     WHEN (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id] AND r.[Status] = @CompletedStatus) >= s.[NumberOfRounds]

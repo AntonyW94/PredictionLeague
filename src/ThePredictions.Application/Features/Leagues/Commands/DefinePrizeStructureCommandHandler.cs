@@ -22,8 +22,10 @@ public class DefinePrizeStructureCommandHandler(ILeagueRepository leagueReposito
         var definingUser = await userManager.FindByIdAsync(request.DefiningUserId);
         var isSiteAdmin = definingUser != null && await userManager.IsInRoleAsync(definingUser, RoleNames.Administrator);
 
-        if (league.AdministratorUserId != request.DefiningUserId && !isSiteAdmin)
-            throw new UnauthorizedAccessException("Only the league administrator can define the prize structure.");
+        // Superseded by the prize scheme + deadline freeze (ADR-0011); retained only as a
+        // site-admin manual override for edge cases, not the primary path.
+        if (!isSiteAdmin)
+            throw new UnauthorizedAccessException("The prize structure is now derived from the prize scheme; only a site administrator can set it manually.");
 
         if (league.EntryDeadlineUtc > dateTimeProvider.UtcNow)
             throw new InvalidOperationException("The prize structure cannot be defined until after the entry deadline has passed.");

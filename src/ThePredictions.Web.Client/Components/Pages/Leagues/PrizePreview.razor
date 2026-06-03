@@ -1,0 +1,167 @@
+@page "/leagues/{LeagueId:int}/preview"
+
+@attribute [Authorize]
+
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+@using ThePredictions.Contracts.Leagues
+@using ThePredictions.Contracts.Prizes
+
+<PageTitle>League preview</PageTitle>
+
+<div class="page-container admin-light">
+    @if (_loading)
+    {
+        <p class="text-center text-white"><em>Loading preview...</em></p>
+    }
+    else if (_error is not null)
+    {
+        <div class="message-box-solid warning">@_error</div>
+    }
+    else if (_preview is not null)
+    {
+        <div class="form-container">
+            <h3 class="text-center fw-bold mb-1">@_preview.LeagueName</h3>
+            <p class="text-center text-white-50 mb-4">Run by @_preview.AdministratorName</p>
+
+            <div class="prize-preview-stats">
+                <div class="prize-preview-stat">
+                    <span class="prize-preview-stat-label">Entrants so far</span>
+                    <span class="prize-preview-stat-value">@_preview.EntrantCount</span>
+                </div>
+                <div class="prize-preview-stat">
+                    <span class="prize-preview-stat-label">Prize pot so far</span>
+                    <span class="prize-preview-stat-value">£@_preview.CurrentPrizePot.ToString("0")</span>
+                </div>
+                <div class="prize-preview-stat">
+                    <span class="prize-preview-stat-label">Entry fee</span>
+                    <span class="prize-preview-stat-value">@(_preview.EntryCost > 0 ? $"£{_preview.EntryCost:0}" : "Free")</span>
+                </div>
+                <div class="prize-preview-stat">
+                    <span class="prize-preview-stat-label">Entry deadline</span>
+                    <span class="prize-preview-stat-value">@_preview.EntryDeadlineUtc.ToLocalTime().ToString("d MMM yyyy, HH:mm")</span>
+                </div>
+            </div>
+
+            @if (_preview.DeadlinePassed)
+            {
+                <div class="message-box-solid warning mb-3">The entry deadline for this league has passed.</div>
+            }
+
+            @if (_preview.HasPrizes)
+            {
+                <PrizeBreakdownPreview Breakdown="_preview.Breakdown"
+                                       ShowDeltas="!_preview.DeadlinePassed"
+                                       PotLabel="@(_preview.DeadlinePassed ? "Prize pot" : "Prize pot if you join")" />
+
+                @if (!_preview.DeadlinePassed && _preview.Attribution.Any())
+                {
+                    <div class="prize-attribution">
+                        @foreach (var line in _preview.Attribution)
+                        {
+                            <div>@line</div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-white-50">This is a free-to-play league - no prize money.</p>
+            }
+
+            @if (!_preview.DeadlinePassed)
+            {
+                <div class="d-flex justify-content-center gap-3 mt-4">
+                    <button class="btn btn-primary" disabled="@_joining" @onclick="JoinAsync">
+                        @(_joining ? "Joining..." : "Join this league")
+                    </button>
+                    <a class="btn btn-outline-light" href="/leagues">Not now</a>
+                </div>
+                @if (_joinError is not null)
+                {
+                    <div class="message-box-solid warning mt-3">@_joinError</div>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int LeagueId { get; set; }
+
+    private PrizePreviewDto? _preview;
+    private bool _loading = true;
+    private bool _joining;
+    private string? _error;
+    private string? _joinError;
+    private string? _entryCode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _entryCode = GetQueryValue(Navigation.ToAbsoluteUri(Navigation.Uri).Query, "code");
+
+        try
+        {
+            var url = $"api/leagues/{LeagueId}/prize-preview";
+            if (!string.IsNullOrWhiteSpace(_entryCode))
+                url += $"?entryCode={Uri.EscapeDataString(_entryCode)}";
+
+            var response = await Http.GetAsync(url);
+            if (response.IsSuccessStatusCode)
+                _preview = await response.Content.ReadFromJsonAsync<PrizePreviewDto>();
+            else
+                _error = "This league preview is not available. Check your entry code and try again.";
+        }
+        catch (HttpRequestException)
+        {
+            _error = "Could not load the league preview.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static string? GetQueryValue(string query, string key)
+    {
+        query = query.TrimStart('?');
+        if (string.IsNullOrEmpty(query))
+            return null;
+
+        foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = pair.Split('=', 2);
+            if (parts.Length == 2 && string.Equals(parts[0], key, StringComparison.OrdinalIgnoreCase))
+                return Uri.UnescapeDataString(parts[1]);
+        }
+
+        return null;
+    }
+
+    private async Task JoinAsync()
+    {
+        _joining = true;
+        _joinError = null;
+
+        try
+        {
+            var response = string.IsNullOrWhiteSpace(_entryCode)
+                ? await Http.PostAsJsonAsync($"api/leagues/{LeagueId}/join", new { })
+                : await Http.PostAsJsonAsync("api/leagues/join", new JoinLeagueRequest { EntryCode = _entryCode });
+
+            if (response.IsSuccessStatusCode)
+                Navigation.NavigateTo("/leagues", forceLoad: true);
+            else
+                _joinError = "Could not join this league. You may already be a member, or the deadline has passed.";
+        }
+        catch (HttpRequestException)
+        {
+            _joinError = "Could not reach the server to join.";
+        }
+        finally
+        {
+            _joining = false;
+        }
+    }
+}

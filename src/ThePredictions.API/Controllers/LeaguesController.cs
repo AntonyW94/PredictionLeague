@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using ThePredictions.Application.Features.Leagues.Commands;
 using ThePredictions.Application.Features.Boosts.Queries;
 using ThePredictions.Application.Features.Leagues.Queries;
+using ThePredictions.Application.Features.Prizes.Queries;
 using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Contracts.Boosts;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Contracts.Payouts;
+using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common.Enumerations;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -44,7 +46,9 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
             request.BankAccountName,
             request.BankSortCode,
             request.BankAccountNumber,
-            request.PaymentReferenceTemplate);
+            request.PaymentReferenceTemplate,
+            request.PrizeScheme,
+            request.PrizeFundOverride);
 
         var newLeague = await mediator.Send(command, cancellationToken);
 
@@ -526,6 +530,84 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
     {
         var command = new DefinePrizeStructureCommand(leagueId, CurrentUserId, request.PrizeSettings);
         await mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpGet("{leagueId:int}/prize-breakdown")]
+    [SwaggerOperation(
+        Summary = "Get the live projected prize breakdown",
+        Description = "Returns the projected, round-number prize breakdown at the current entrant count. Members and the administrator only. Finalises at the entry deadline.")]
+    [SwaggerResponse(200, "Breakdown retrieved successfully", typeof(PrizeBreakdownDto))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not a member of this league")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<PrizeBreakdownDto>> GetPrizeBreakdownAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await mediator.Send(new GetLeaguePrizeBreakdownQuery(leagueId, CurrentUserId), cancellationToken));
+    }
+
+    [HttpGet("{leagueId:int}/prize-preview")]
+    [SwaggerOperation(
+        Summary = "Preview a league's prizes before joining",
+        Description = "Returns headline facts, the projected breakdown if you join, and the attributed +£x effect of your own entry. Numbers and the organiser's name only. Private leagues require the entry code.")]
+    [SwaggerResponse(200, "Preview retrieved successfully", typeof(PrizePreviewDto))]
+    [SwaggerResponse(401, "Not authenticated, or a valid entry code is required")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<PrizePreviewDto>> GetPrizePreviewAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        [FromQuery, SwaggerParameter("Entry code (required for private leagues)")] string? entryCode,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await mediator.Send(new GetPrizePreviewQuery(leagueId, entryCode), cancellationToken));
+    }
+
+    [HttpGet("join-preview")]
+    [SwaggerOperation(
+        Summary = "Preview a private league before joining, by entry code",
+        Description = "Resolves a private league from its entry code and returns the join confirmation preview: headline facts, the projected breakdown if you join and the +£x effect of your entry. Shown as a confirm step before the join request is sent.")]
+    [SwaggerResponse(200, "Preview retrieved successfully", typeof(PrizePreviewDto))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(404, "No league found for that entry code")]
+    public async Task<ActionResult<PrizePreviewDto>> GetJoinPreviewByCodeAsync(
+        [FromQuery, SwaggerParameter("Entry code for the private league", Required = true)] string entryCode,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await mediator.Send(new GetPrizePreviewByCodeQuery(entryCode, CurrentUserId), cancellationToken));
+    }
+
+    [HttpPost("evaluate-scheme")]
+    [SwaggerOperation(
+        Summary = "Preview a draft prize scheme",
+        Description = "Evaluates a draft scheme at a hypothetical entrant count, for the create/edit editor's live derived-prize preview.")]
+    [SwaggerResponse(200, "Breakdown computed successfully", typeof(PrizeBreakdownDto))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(404, "Season not found")]
+    public async Task<ActionResult<PrizeBreakdownDto>> EvaluateSchemeAsync(
+        [FromBody, SwaggerParameter("Draft scheme and context", Required = true)] EvaluateSchemeRequest request,
+        CancellationToken cancellationToken)
+    {
+        var query = new EvaluateSchemeQuery(request.SeasonId, request.Price, request.EntrantCount, request.Scheme, request.PrizeFundOverride);
+        return Ok(await mediator.Send(query, cancellationToken));
+    }
+
+    [HttpPut("{leagueId:int}/prize-scheme")]
+    [SwaggerOperation(
+        Summary = "Set the league's prize scheme",
+        Description = "Sets the up-front prize scheme (categories and per-entry allocation). Write-once: a league administrator may set it while unset; thereafter only a site administrator can override it.")]
+    [SwaggerResponse(204, "Prize scheme set successfully")]
+    [SwaggerResponse(400, "Invalid scheme, or the scheme is already set")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not permitted to set the scheme")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<IActionResult> SetPrizeSchemeAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        [FromBody, SwaggerParameter("Prize scheme configuration", Required = true)] PrizeSchemeRequest request,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new SetPrizeSchemeCommand(leagueId, CurrentUserId, request), cancellationToken);
 
         return NoContent();
     }
