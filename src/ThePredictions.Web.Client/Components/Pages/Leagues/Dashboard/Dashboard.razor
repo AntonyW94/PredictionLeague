@@ -38,7 +38,7 @@
                         {
                             <div class="dashboard-waiting__countdown mt-3">
                                 <div class="dashboard-waiting__unit">
-                                    <span class="dashboard-waiting__value">@_timeRemaining.Value.Days</span>
+                                    <span class="dashboard-waiting__value">@_timeRemaining.Value.Days.ToString("D2")</span>
                                     <span class="dashboard-waiting__label">Days</span>
                                 </div>
                                 <span class="dashboard-waiting__separator">:</span>
@@ -77,10 +77,43 @@
                                 </div>
                             }
                         </div>
+                    </div>
+                </div>
+
+                <div class="row justify-content-center">
+                    <div class="col-lg-6">
+                        @if (State.PrizeBreakdown?.Categories.Any() == true)
+                        {
+                            <div class="section mb-4">
+                                <h3 class="text-white text-center fw-bold mb-3">Prize Breakdown</h3>
+                                <PrizeBreakdownPreview Breakdown="State.PrizeBreakdown" PotLabel="Estimated prize pot" />
+                                <p class="prize-preview-note mt-3 mb-0">Estimated - the pot grows as players join. Prizes are confirmed once entries close.</p>
+                            </div>
+                        }
+
+                        @if (State.ViewableRounds.Any())
+                        {
+                            <div class="section mb-4">
+                                <h3 class="text-white text-center fw-bold mb-3">Round Structure</h3>
+                                <div class="dashboard-waiting__members-table">
+                                    @foreach (var round in State.ViewableRounds.OrderBy(r => r.RoundNumber))
+                                    {
+                                        <div class="dashboard-waiting__member-row">
+                                            <span class="text-white fw-bold">@(string.IsNullOrWhiteSpace(round.ApiRoundName) ? $"Round {round.RoundNumber}" : round.ApiRoundName)</span>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <small class="text-white-50">@round.StartDateUtc.ToString("dd MMM yyyy")</small>
+                                                <span class="text-white-50 fw-bold">@round.MatchCount @(round.MatchCount == 1 ? "match" : "matches")</span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
 
                         @if (State.Members.Any())
                         {
-                            <div class="dashboard-waiting__members mt-5">
+                            <div class="section">
+                                <h3 class="text-white text-center fw-bold mb-3">Players (@State.Members.Count)</h3>
                                 <div class="dashboard-waiting__members-table">
                                     @foreach (var member in State.Members)
                                     {
@@ -107,19 +140,6 @@
                         }
                     </div>
                 </div>
-
-                @if (State.PrizeBreakdown?.Categories.Any() == true)
-                {
-                    <div class="row justify-content-center mt-4">
-                        <div class="col-lg-6">
-                            <div class="section">
-                                <h3 class="text-white text-center fw-bold mb-3">Prize Breakdown</h3>
-                                <PrizeBreakdownPreview Breakdown="State.PrizeBreakdown" PotLabel="Estimated prize pot" />
-                                <p class="prize-preview-note mt-3 mb-0">Estimated - the pot grows as players join. Prizes are confirmed once entries close.</p>
-                            </div>
-                        </div>
-                    </div>
-                }
             }
             else
             {
