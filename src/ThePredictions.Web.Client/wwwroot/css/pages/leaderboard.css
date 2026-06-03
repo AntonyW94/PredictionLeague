@@ -78,6 +78,20 @@
         overflow: hidden;
     }
 
+    /* The base .carousel-container centres its children vertically, so the track
+       wrapper is only as tall as its content. That leaves the height:100% chain
+       below (track -> card) with no definite parent to resolve against, so the
+       card body - which is flex-basis:0 with overflow-y:auto - collapses to zero
+       and clips the leaderboard table. Stretch the track wrapper to the column
+       height to anchor the chain, and keep the nav chevrons vertically centred. */
+    .section--constrained .carousel-container {
+        align-items: stretch;
+    }
+
+    .section--constrained .carousel-btn {
+        align-self: center;
+    }
+
     .section--constrained .carousel-wrapper,
     .section--constrained .carousel-container,
     .section--constrained .carousel-track-wrapper {
