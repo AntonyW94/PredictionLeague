@@ -264,18 +264,16 @@
                                                     </div>
                                                 </div>
 
-                                                @if (!league.IsFree && _topPrizes.TryGetValue(league.Id, out var topPrize) && topPrize > 0)
+                                                @if (!league.IsFree && _breakdowns.TryGetValue(league.Id, out var breakdown))
                                                 {
-                                                    <div class="glass-panel financial-row mb-3">
-                                                        <div class="financial-col">
-                                                            <small class="d-block text-uppercase fw-bold text-2xs">Top Prize</small>
-                                                            <div class="fw-bold text-green-600 fs-5">@((MarkupString)$"&pound;{topPrize:0.00}")</div>
-                                                        </div>
-
-                                                        <div class="financial-col">
-                                                            <small class="d-block text-uppercase fw-bold text-2xs">Entry Fee</small>
-                                                            <div class="fw-bold text-white fs-5">@((MarkupString)$"&pound;{league.EntryFee:0.00}")</div>
-                                                        </div>
+                                                    <div class="glass-panel preseason-card-prizes mb-3">
+                                                        @foreach (var category in breakdown.Categories.Where(c => c.SubPot > 0))
+                                                        {
+                                                            <div class="preseason-card-prize-row">
+                                                                <small class="text-white-50 text-uppercase fw-bold text-2xs">@category.DisplayName</small>
+                                                                <span class="fw-bold text-green-600">@((MarkupString)$"&pound;{category.SubPot:0}")</span>
+                                                            </div>
+                                                        }
                                                     </div>
                                                 }
                                             }
@@ -527,7 +525,7 @@
     private bool _isDesktop;
     private bool _showArchived;
     private System.Timers.Timer? _countdownTimer;
-    private readonly Dictionary<int, decimal> _topPrizes = new();
+    private readonly Dictionary<int, PrizeBreakdownDto> _breakdowns = new();
 
     [Parameter] public bool IsHalfWidth { get; set; }
 
@@ -553,27 +551,26 @@
         if (!DashboardState.MyLeagues.Any())
             await DashboardState.LoadMyLeaguesAsync();
 
-        await LoadTopPrizesAsync();
+        await LoadPrizeBreakdownsAsync();
         StartCountdown();
     }
 
     private static bool IsPreDeadline(MyLeagueDto league) =>
         !league.IsFinished && league.EntryDeadlineUtc is { } deadline && DateTime.UtcNow < deadline;
 
-    private async Task LoadTopPrizesAsync()
+    private async Task LoadPrizeBreakdownsAsync()
     {
         foreach (var league in DashboardState.MyLeagues.Where(l => IsPreDeadline(l) && !l.IsFree))
         {
             try
             {
                 var breakdown = await Http.GetFromJsonAsync<PrizeBreakdownDto>($"api/leagues/{league.Id}/prize-breakdown");
-                var top = breakdown?.Categories.SelectMany(c => c.Slots).Select(s => s.Amount).DefaultIfEmpty(0m).Max() ?? 0m;
-                if (top > 0)
-                    _topPrizes[league.Id] = top;
+                if (breakdown is not null && breakdown.Categories.Any(c => c.SubPot > 0))
+                    _breakdowns[league.Id] = breakdown;
             }
             catch
             {
-                // No top-prize teaser if the breakdown can't be loaded.
+                // No prize summary if the breakdown can't be loaded.
             }
         }
 

@@ -132,6 +132,20 @@
     font-weight: 700;
 }
 
+/* Category headline totals (Overall / Stages / Round / Most Exact Scores) on
+   pre-deadline My Leagues cards */
+.preseason-card-prizes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.preseason-card-prize-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 /* Round-structure / players rows: evenly separated columns that fill the card.
    Mobile shows name + trailing value; tablet+ adds the centred middle column. */
 .preseason-row {
