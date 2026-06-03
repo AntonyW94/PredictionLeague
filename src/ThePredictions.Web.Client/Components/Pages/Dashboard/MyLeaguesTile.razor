@@ -276,6 +276,30 @@
                                                         }
                                                     </div>
                                                 }
+                                                else if (league.IsFree)
+                                                {
+                                                    <div class="glass-panel preseason-card-prizes mb-3">
+                                                        @if (league.SeasonStartDateUtc.HasValue)
+                                                        {
+                                                            <div class="preseason-card-prize-row">
+                                                                <small class="text-white-50 text-uppercase fw-bold text-2xs">Kicks Off</small>
+                                                                <span class="fw-bold text-white">@league.SeasonStartDateUtc.Value.ToString("dd MMM yyyy")</span>
+                                                            </div>
+                                                        }
+                                                        <div class="preseason-card-prize-row">
+                                                            <small class="text-white-50 text-uppercase fw-bold text-2xs">Format</small>
+                                                            <span class="fw-bold text-white">@(league.CompetitionType == 1 ? "Tournament" : "League")</span>
+                                                        </div>
+                                                        <div class="preseason-card-prize-row">
+                                                            <small class="text-white-50 text-uppercase fw-bold text-2xs">Entry Fee</small>
+                                                            <span class="fw-bold text-white">Free</span>
+                                                        </div>
+                                                        <div class="preseason-card-prize-row">
+                                                            <small class="text-white-50 text-uppercase fw-bold text-2xs">Playing For</small>
+                                                            <span class="fw-bold text-white">Bragging rights</span>
+                                                        </div>
+                                                    </div>
+                                                }
                                             }
                                             else if (league.CurrentRound is null)
                                             {
