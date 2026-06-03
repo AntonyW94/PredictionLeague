@@ -91,16 +91,39 @@
     margin-bottom: 1rem;
 }
 
-/* Members table */
-.dashboard-waiting__members-table {
-    max-width: 500px;
+/* Pre-deadline layout - centre the hero and the cards in a single column */
+.preseason-layout {
+    max-width: 44rem;
     margin: 0 auto;
-    text-align: left;
 }
 
-/* Inside a section card (round structure / players lists) fill the full width */
-.section .dashboard-waiting__members-table {
-    max-width: none;
+/* Round-structure / players rows: evenly separated columns that fill the card.
+   Mobile shows name + trailing value; tablet+ adds the centred middle column. */
+.preseason-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--grey-200);
+}
+
+.preseason-row:last-child {
+    border-bottom: none;
+}
+
+.preseason-row > :last-child {
+    text-align: right;
+}
+
+@media (min-width: 768px) {
+    .preseason-row {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .preseason-row__mid {
+        text-align: center;
+    }
 }
 
 .dashboard-waiting__member-row {

@@ -28,116 +28,108 @@
 
             @if (!State.IsFinished && (isPreDeadline || !State.ViewableRounds.Any()))
             {
-                <div class="dashboard-waiting text-center">
-                    <div class="dashboard-waiting__content">
-                        <i class="bi bi-hourglass-split dashboard-waiting__icon"></i>
-                        <h4 class="fw-bold text-white mt-3">The competition hasn't started yet</h4>
+                <div class="preseason-layout">
+                    <div class="dashboard-waiting text-center">
+                        <div class="dashboard-waiting__content">
+                            <i class="bi bi-hourglass-split dashboard-waiting__icon"></i>
+                            <h4 class="fw-bold text-white mt-3">The competition hasn't started yet</h4>
 
-                        @if (State.SeasonStartDateUtc.HasValue && _timeRemaining.HasValue && _timeRemaining.Value.TotalSeconds > 0)
-                        {
-                            <div class="dashboard-waiting__countdown mt-3">
-                                <div class="dashboard-waiting__unit">
-                                    <span class="dashboard-waiting__value">@_timeRemaining.Value.Days.ToString("D2")</span>
-                                    <span class="dashboard-waiting__label">Days</span>
-                                </div>
-                                <span class="dashboard-waiting__separator">:</span>
-                                <div class="dashboard-waiting__unit">
-                                    <span class="dashboard-waiting__value">@_timeRemaining.Value.Hours.ToString("D2")</span>
-                                    <span class="dashboard-waiting__label">Hours</span>
-                                </div>
-                                <span class="dashboard-waiting__separator">:</span>
-                                <div class="dashboard-waiting__unit">
-                                    <span class="dashboard-waiting__value">@_timeRemaining.Value.Minutes.ToString("D2")</span>
-                                    <span class="dashboard-waiting__label">Mins</span>
-                                </div>
-                                <span class="dashboard-waiting__separator">:</span>
-                                <div class="dashboard-waiting__unit">
-                                    <span class="dashboard-waiting__value">@_timeRemaining.Value.Seconds.ToString("D2")</span>
-                                    <span class="dashboard-waiting__label">Secs</span>
-                                </div>
-                            </div>
-                            <p class="text-white-50 mt-2 mb-0">Kicks off @State.SeasonStartDateUtc.Value.ToString("dd MMMM yyyy")</p>
-                        }
-                        else if (State.SeasonStartDateUtc.HasValue)
-                        {
-                            <p class="text-white-50 fs-5 mt-2">Kicks off on @State.SeasonStartDateUtc.Value.ToString("dd MMMM yyyy")</p>
-                        }
-
-                        <div class="d-flex justify-content-center gap-5 mt-4">
-                            <div>
-                                <div class="fw-bold text-white fs-3">@State.MemberCount</div>
-                                <small class="text-white-50 text-uppercase fw-bold">Players</small>
-                            </div>
-                            @if (State.TotalPrizeFund > 0)
+                            @if (State.SeasonStartDateUtc.HasValue && _timeRemaining.HasValue && _timeRemaining.Value.TotalSeconds > 0)
                             {
+                                <div class="dashboard-waiting__countdown mt-3">
+                                    <div class="dashboard-waiting__unit">
+                                        <span class="dashboard-waiting__value">@_timeRemaining.Value.Days.ToString("D2")</span>
+                                        <span class="dashboard-waiting__label">Days</span>
+                                    </div>
+                                    <span class="dashboard-waiting__separator">:</span>
+                                    <div class="dashboard-waiting__unit">
+                                        <span class="dashboard-waiting__value">@_timeRemaining.Value.Hours.ToString("D2")</span>
+                                        <span class="dashboard-waiting__label">Hours</span>
+                                    </div>
+                                    <span class="dashboard-waiting__separator">:</span>
+                                    <div class="dashboard-waiting__unit">
+                                        <span class="dashboard-waiting__value">@_timeRemaining.Value.Minutes.ToString("D2")</span>
+                                        <span class="dashboard-waiting__label">Mins</span>
+                                    </div>
+                                    <span class="dashboard-waiting__separator">:</span>
+                                    <div class="dashboard-waiting__unit">
+                                        <span class="dashboard-waiting__value">@_timeRemaining.Value.Seconds.ToString("D2")</span>
+                                        <span class="dashboard-waiting__label">Secs</span>
+                                    </div>
+                                </div>
+                                <p class="text-white-50 mt-2 mb-0">Kicks off @State.SeasonStartDateUtc.Value.ToString("dd MMMM yyyy")</p>
+                            }
+                            else if (State.SeasonStartDateUtc.HasValue)
+                            {
+                                <p class="text-white-50 fs-5 mt-2">Kicks off on @State.SeasonStartDateUtc.Value.ToString("dd MMMM yyyy")</p>
+                            }
+
+                            <div class="d-flex justify-content-center gap-5 mt-4">
                                 <div>
-                                    <div class="fw-bold text-green-600 fs-3">@((MarkupString)$"&pound;{State.TotalPrizeFund:0.00}")</div>
-                                    <small class="text-white-50 text-uppercase fw-bold">Prize Pot</small>
+                                    <div class="fw-bold text-white fs-3">@State.MemberCount</div>
+                                    <small class="text-white-50 text-uppercase fw-bold">Players</small>
+                                </div>
+                                @if (State.TotalPrizeFund > 0)
+                                {
+                                    <div>
+                                        <div class="fw-bold text-green-600 fs-3">@((MarkupString)$"&pound;{State.TotalPrizeFund:0.00}")</div>
+                                        <small class="text-white-50 text-uppercase fw-bold">Prize Pot</small>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (State.PrizeBreakdown?.Categories.Any() == true)
+                    {
+                        <div class="section mb-4">
+                            <h3 class="text-white text-center fw-bold mb-3">Prize Breakdown</h3>
+                            <PrizeBreakdownPreview Breakdown="State.PrizeBreakdown" PotLabel="Estimated prize pot" />
+                            <p class="prize-preview-note mt-3 mb-0">Estimated - the pot grows as players join. Prizes are confirmed once entries close.</p>
+                        </div>
+                    }
+
+                    @if (State.ViewableRounds.Any())
+                    {
+                        <div class="section mb-4">
+                            <h3 class="text-white text-center fw-bold mb-3">Round Structure</h3>
+                            @foreach (var round in State.ViewableRounds.OrderBy(r => r.RoundNumber))
+                            {
+                                <div class="preseason-row">
+                                    <span class="text-white fw-bold">@(string.IsNullOrWhiteSpace(round.ApiRoundName) ? $"Round {round.RoundNumber}" : round.ApiRoundName)</span>
+                                    <span class="preseason-row__mid text-white-50 d-none d-md-block">@(round.Status == RoundStatus.Draft ? "TBD" : round.StartDateUtc.ToString("dd MMM yyyy"))</span>
+                                    <span class="text-white-50 fw-bold">@round.MatchCount @(round.MatchCount == 1 ? "match" : "matches")</span>
                                 </div>
                             }
                         </div>
-                    </div>
-                </div>
+                    }
 
-                <div class="row justify-content-center">
-                    <div class="col-lg-6">
-                        @if (State.PrizeBreakdown?.Categories.Any() == true)
-                        {
-                            <div class="section mb-4">
-                                <h3 class="text-white text-center fw-bold mb-3">Prize Breakdown</h3>
-                                <PrizeBreakdownPreview Breakdown="State.PrizeBreakdown" PotLabel="Estimated prize pot" />
-                                <p class="prize-preview-note mt-3 mb-0">Estimated - the pot grows as players join. Prizes are confirmed once entries close.</p>
-                            </div>
-                        }
-
-                        @if (State.ViewableRounds.Any())
-                        {
-                            <div class="section mb-4">
-                                <h3 class="text-white text-center fw-bold mb-3">Round Structure</h3>
-                                <div class="dashboard-waiting__members-table">
-                                    @foreach (var round in State.ViewableRounds.OrderBy(r => r.RoundNumber))
-                                    {
-                                        <div class="dashboard-waiting__member-row">
-                                            <span class="text-white fw-bold">@(string.IsNullOrWhiteSpace(round.ApiRoundName) ? $"Round {round.RoundNumber}" : round.ApiRoundName)</span>
-                                            <div class="d-flex align-items-center gap-3">
-                                                <small class="text-white-50">@(round.Status == RoundStatus.Draft ? "TBD" : round.StartDateUtc.ToString("dd MMM yyyy"))</small>
-                                                <span class="text-white-50 fw-bold">@round.MatchCount @(round.MatchCount == 1 ? "match" : "matches")</span>
-                                            </div>
-                                        </div>
-                                    }
+                    @if (State.Members.Any())
+                    {
+                        <div class="section">
+                            <h3 class="text-white text-center fw-bold mb-3">Players <span class="match-count-badge">@State.Members.Count</span></h3>
+                            @foreach (var member in State.Members)
+                            {
+                                <div class="preseason-row">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <UserAvatar FullName="@member.FullName" />
+                                        <span class="text-white fw-bold">@member.FullName</span>
+                                    </div>
+                                    <span class="preseason-row__mid text-white-50 d-none d-md-block">@member.JoinedAtUtc.ToString("dd MMM yyyy")</span>
+                                    <div>
+                                        @if (member.Status == "Approved")
+                                        {
+                                            <span class="member-status-pill member-status-approved">Approved</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="member-status-pill member-status-pending">Pending</span>
+                                        }
+                                    </div>
                                 </div>
-                            </div>
-                        }
-
-                        @if (State.Members.Any())
-                        {
-                            <div class="section">
-                                <h3 class="text-white text-center fw-bold mb-3">Players <span class="match-count-badge">@State.Members.Count</span></h3>
-                                <div class="dashboard-waiting__members-table">
-                                    @foreach (var member in State.Members)
-                                    {
-                                        <div class="dashboard-waiting__member-row">
-                                            <div class="d-flex align-items-center gap-3">
-                                                <UserAvatar FullName="@member.FullName" />
-                                                <span class="text-white fw-bold">@member.FullName</span>
-                                            </div>
-                                            <div class="d-flex align-items-center gap-3">
-                                                <small class="text-white-50 d-none d-md-inline">@member.JoinedAtUtc.ToString("dd MMM yyyy")</small>
-                                                @if (member.Status == "Approved")
-                                                {
-                                                    <span class="member-status-pill member-status-approved">Approved</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="member-status-pill member-status-pending">Pending</span>
-                                                }
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    </div>
+                            }
+                        </div>
+                    }
                 </div>
             }
             else

@@ -422,15 +422,10 @@
    DASHBOARD
    ============================================ */
 
-.theme-dark .dashboard-waiting__label {
-    color: var(--white-alpha-30);
-}
+/* The pre-deadline hero is purple in both themes, so its countdown labels and
+   separators keep their base colours - no dark-mode dimming. */
 
-.theme-dark .dashboard-waiting__separator {
-    color: var(--white-alpha-15);
-}
-
-.theme-dark .dashboard-waiting__member-row {
+.theme-dark .preseason-row {
     border-bottom-color: var(--white-alpha-05);
 }
 
