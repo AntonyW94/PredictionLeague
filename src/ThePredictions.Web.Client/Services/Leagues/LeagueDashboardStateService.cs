@@ -1,5 +1,6 @@
 using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common.Enumerations;
 using System.Net.Http.Json;
 
@@ -12,6 +13,7 @@ public class LeagueDashboardStateService(HttpClient httpClient)
     public string? LeagueName { get; private set; }
     public int CompetitionType { get; private set; }
     public DateTime? SeasonStartDateUtc { get; private set; }
+    public DateTime? EntryDeadlineUtc { get; private set; }
     public int MemberCount { get; private set; }
     public decimal TotalPrizeFund { get; private set; }
     public bool IsFinished { get; private set; }
@@ -22,6 +24,7 @@ public class LeagueDashboardStateService(HttpClient httpClient)
     public List<MatchInRoundDto> CurrentRoundMatches { get; private set; } = [];
     public SeasonRecapDto? SeasonRecap { get; private set; }
     public LeagueRecordsDto? LeagueRecords { get; private set; }
+    public PrizeBreakdownDto? PrizeBreakdown { get; private set; }
 
     public int? SelectedRoundId { get; set; }
 
@@ -50,12 +53,16 @@ public class LeagueDashboardStateService(HttpClient httpClient)
                 LeagueName = data.LeagueName;
                 CompetitionType = data.CompetitionType;
                 SeasonStartDateUtc = data.SeasonStartDateUtc;
+                EntryDeadlineUtc = data.EntryDeadlineUtc;
                 MemberCount = data.MemberCount;
                 TotalPrizeFund = data.TotalPrizeFund;
                 IsFinished = data.IsFinished;
                 IsFree = data.IsFree;
                 Members = data.Members;
                 ViewableRounds = data.ViewableRounds;
+
+                if (EntryDeadlineUtc is { } deadline && DateTime.UtcNow < deadline && !IsFinished)
+                    await LoadPrizeBreakdown(leagueId);
 
                 if (ViewableRounds.Any())
                 {
@@ -87,6 +94,18 @@ public class LeagueDashboardStateService(HttpClient httpClient)
         {
             IsLoadingDashboard = false;
             NotifyStateChanged();
+        }
+    }
+
+    private async Task LoadPrizeBreakdown(int leagueId)
+    {
+        try
+        {
+            PrizeBreakdown = await httpClient.GetFromJsonAsync<PrizeBreakdownDto>($"api/leagues/{leagueId}/prize-breakdown");
+        }
+        catch
+        {
+            PrizeBreakdown = null;
         }
     }
 

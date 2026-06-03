@@ -32,6 +32,7 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
                 l.[Name],
                 c.[Type] AS CompetitionType,
                 s.[StartDateUtc],
+                l.[EntryDeadlineUtc],
                 (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus) AS MemberCount,
                 (l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus) + ISNULL(l.[PrizeFundOverride], 0)) AS TotalPrizeFund,
                 l.[IsFree],
@@ -49,7 +50,7 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
             WHERE
                 l.[Id] = @LeagueId";
 
-        var leagueInfo = await dbConnection.QuerySingleOrDefaultAsync<(string Name, int CompetitionType, DateTime StartDateUtc, int MemberCount, decimal TotalPrizeFund, bool IsFree, bool IsFinished)>(
+        var leagueInfo = await dbConnection.QuerySingleOrDefaultAsync<(string Name, int CompetitionType, DateTime StartDateUtc, DateTime? EntryDeadlineUtc, int MemberCount, decimal TotalPrizeFund, bool IsFree, bool IsFinished)>(
             leagueSql, cancellationToken, new
             {
                 request.LeagueId,
@@ -112,6 +113,7 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
             LeagueName = leagueInfo.Name,
             CompetitionType = leagueInfo.CompetitionType,
             SeasonStartDateUtc = leagueInfo.StartDateUtc,
+            EntryDeadlineUtc = leagueInfo.EntryDeadlineUtc,
             MemberCount = leagueInfo.MemberCount,
             TotalPrizeFund = leagueInfo.TotalPrizeFund,
             IsFinished = leagueInfo.IsFinished,

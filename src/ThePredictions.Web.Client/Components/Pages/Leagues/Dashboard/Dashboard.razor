@@ -22,9 +22,11 @@
         }
         else
         {
+            var isPreDeadline = State.EntryDeadlineUtc is { } deadline && DateTime.UtcNow < deadline;
+
             <h3 class="text-center fw-bold text-white mb-4">@State.LeagueName</h3>
 
-            @if (!State.ViewableRounds.Any())
+            @if (!State.IsFinished && (isPreDeadline || !State.ViewableRounds.Any()))
             {
                 <div class="dashboard-waiting text-center">
                     <div class="dashboard-waiting__pulse"></div>
@@ -105,6 +107,19 @@
                         }
                     </div>
                 </div>
+
+                @if (State.PrizeBreakdown?.Categories.Any() == true)
+                {
+                    <div class="row justify-content-center mt-4">
+                        <div class="col-lg-6">
+                            <div class="section">
+                                <h3 class="text-white text-center fw-bold mb-3">Prize Breakdown</h3>
+                                <PrizeBreakdownPreview Breakdown="State.PrizeBreakdown" PotLabel="Estimated prize pot" />
+                                <p class="prize-preview-note mt-3 mb-0">Estimated - the pot grows as players join. Prizes are confirmed once entries close.</p>
+                            </div>
+                        </div>
+                    </div>
+                }
             }
             else
             {

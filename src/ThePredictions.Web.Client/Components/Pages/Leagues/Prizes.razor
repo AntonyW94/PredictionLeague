@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 
 @using ThePredictions.Contracts.Leagues
+@using ThePredictions.Contracts.Prizes
 @using ThePredictions.Domain.Common.Enumerations
 @using ThePredictions.Web.Client.ViewModels.Leagues
 @using System.Globalization
@@ -53,9 +54,9 @@
             {
                 <div class="prize-locked-card">
                     <div class="prize-locked-icon">
-                        <span class="bi bi-lock-fill"></span>
+                        <span class="bi bi-hourglass-split"></span>
                     </div>
-                    <p class="prize-locked-text">Prize setup is locked until the entry deadline has passed.</p>
+                    <p class="prize-locked-text">Entries are still open. The figures below are estimated from the current pot and grow as more players join - final prizes are confirmed once the entry deadline passes.</p>
 
                     <div class="prize-info-grid">
                         <div class="prize-info-item">
@@ -76,6 +77,18 @@
                         </div>
                     </div>
                 </div>
+
+                @if (_breakdown?.Categories.Any() == true)
+                {
+                    <div class="card w-100 mt-4">
+                        <div class="header">
+                            <h5 class="text-center fw-bold mb-0">Estimated Prize Breakdown</h5>
+                        </div>
+                        <div class="body">
+                            <PrizeBreakdownPreview Breakdown="_breakdown" PotLabel="Estimated prize pot" />
+                        </div>
+                    </div>
+                }
             }
             else if (_pageData.PrizeSettings.Any())
             {
@@ -222,6 +235,7 @@
     [Parameter] public int LeagueId { get; set; }
 
     private LeaguePrizesPageDto? _pageData;
+    private PrizeBreakdownDto? _breakdown;
     private DefinePrizesViewModel? _model;
     private bool _isLoading = true;
     private string? _errorMessage;
@@ -237,6 +251,18 @@
             {
                 var prizePot = _pageData.Price * _pageData.MemberCount;
                 _model = new DefinePrizesViewModel(prizePot, _pageData.NumberOfRounds, _pageData.SeasonStartDateUtc, _pageData.SeasonEndDateUtc);
+            }
+
+            if (_pageData != null && DateTime.UtcNow < _pageData.EntryDeadlineUtc)
+            {
+                try
+                {
+                    _breakdown = await Http.GetFromJsonAsync<PrizeBreakdownDto>($"api/leagues/{LeagueId}/prize-breakdown");
+                }
+                catch
+                {
+                    _breakdown = null;
+                }
             }
         }
         catch
