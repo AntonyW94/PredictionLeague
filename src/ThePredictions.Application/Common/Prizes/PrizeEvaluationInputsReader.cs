@@ -21,6 +21,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
                 l.[Price] AS EntryCost,
                 l.[PrizeFundOverride],
                 l.[EntryDeadlineUtc],
+                s.[Name] AS SeasonName,
                 s.[StartDateUtc] AS SeasonStartDateUtc,
                 s.[EndDateUtc] AS SeasonEndDateUtc,
                 s.[NumberOfRounds],
@@ -87,6 +88,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
         {
             LeagueId = row.LeagueId,
             LeagueName = row.LeagueName,
+            SeasonName = row.SeasonName,
             AdministratorName = row.AdministratorName,
             AdministratorUserId = row.AdministratorUserId,
             EntryCode = row.EntryCode,
@@ -115,6 +117,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
     {
         public int LeagueId { get; init; }
         public string LeagueName { get; init; } = string.Empty;
+        public string SeasonName { get; init; } = string.Empty;
         public string AdministratorUserId { get; init; } = string.Empty;
         public string AdministratorName { get; init; } = string.Empty;
         public string? EntryCode { get; init; }

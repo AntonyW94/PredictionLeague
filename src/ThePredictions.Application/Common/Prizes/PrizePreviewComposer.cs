@@ -43,6 +43,7 @@ public static class PrizePreviewComposer
         {
             LeagueId = inputs.LeagueId,
             LeagueName = inputs.LeagueName,
+            SeasonName = inputs.SeasonName,
             AdministratorName = inputs.AdministratorName,
             EntrantCount = inputs.EntrantCount,
             EntryCost = inputs.EntryCost,

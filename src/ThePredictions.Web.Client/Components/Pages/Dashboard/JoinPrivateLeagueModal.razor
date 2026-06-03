@@ -82,6 +82,13 @@
                                     <span class="prize-preview-stat-value">£@_preview.CurrentPrizePot.ToString("0")</span>
                                 </div>
                             }
+                            else
+                            {
+                                <div class="prize-preview-stat">
+                                    <span class="prize-preview-stat-label">Season</span>
+                                    <span class="prize-preview-stat-value">@_preview.SeasonName</span>
+                                </div>
+                            }
                             <div class="prize-preview-stat">
                                 <span class="prize-preview-stat-label">Entry deadline</span>
                                 <span class="prize-preview-stat-value">@_preview.EntryDeadlineUtc.ToLocalTime().ToString("d MMM yyyy, HH:mm")</span>
@@ -155,7 +162,7 @@
 
                     @if (_joinedLeagueId is not null)
                     {
-                        <LeaguePaymentPanel LeagueId="_joinedLeagueId.Value" />
+                        <LeaguePaymentPanel LeagueId="_joinedLeagueId.Value" AlreadyPaidHint="true" />
                     }
 
                     @if (_hasPayoutDetails)

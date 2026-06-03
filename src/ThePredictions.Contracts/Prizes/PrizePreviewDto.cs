@@ -11,6 +11,7 @@ public class PrizePreviewDto
 {
     public int LeagueId { get; init; }
     public string LeagueName { get; init; } = string.Empty;
+    public string SeasonName { get; init; } = string.Empty;
     public string AdministratorName { get; init; } = string.Empty;
     public int EntrantCount { get; init; }
     public decimal EntryCost { get; init; }
