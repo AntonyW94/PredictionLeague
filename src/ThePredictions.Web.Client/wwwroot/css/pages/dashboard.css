@@ -97,6 +97,41 @@
     margin: 0 auto;
 }
 
+/* Compact live countdown shown on pre-deadline My Leagues cards (colours come
+   from text-green-600 / text-white-50 utilities so they adapt to the theme) */
+.preseason-card-countdown {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+
+.preseason-card-countdown__unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 2.4rem;
+}
+
+.preseason-card-countdown__value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.preseason-card-countdown__label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.preseason-card-countdown__sep {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
 /* Round-structure / players rows: evenly separated columns that fill the card.
    Mobile shows name + trailing value; tablet+ adds the centred middle column. */
 .preseason-row {

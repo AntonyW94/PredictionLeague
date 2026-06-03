@@ -6,6 +6,7 @@ public record MyLeagueDto(
     string SeasonName,
     int CompetitionType,
     DateTime? SeasonStartDateUtc,
+    DateTime? EntryDeadlineUtc,
 
     string CurrentRound,
     string CurrentMonth,

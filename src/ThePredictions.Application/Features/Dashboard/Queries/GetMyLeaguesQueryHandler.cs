@@ -22,6 +22,7 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
                 s.[Name] AS SeasonName,
                 c.[Type] AS CompetitionType,
                 s.[StartDateUtc] AS SeasonStartDateUtc,
+                l.[EntryDeadlineUtc],
                 s.[NumberOfRounds],
                 lm.[UserId],
                 lm.[Status],
@@ -125,6 +126,7 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             l.[SeasonName],
             l.[CompetitionType],
             l.[SeasonStartDateUtc],
+            l.[EntryDeadlineUtc],
 
             CASE WHEN ar.[RoundId] IS NOT NULL THEN 'Round ' + CAST(ar.[RoundNumber] AS VARCHAR(10)) ELSE NULL END AS CurrentRound,
             CASE
