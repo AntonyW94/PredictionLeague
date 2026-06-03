@@ -520,3 +520,32 @@ input.prize-preview-count {
 .theme-dark .prize-attribution {
     color: var(--white);
 }
+
+/* ---- League join / payment modals: theme-aware surface ----
+   These modals embed the (theme-aware) prize and payment panels. A forced-white modal in dark
+   mode would leave dark panels sitting on white; instead the modal adopts the dark surface so the
+   whole popup stays consistent. */
+.themed-modal {
+    background: var(--white);
+}
+
+.theme-dark .themed-modal {
+    background: var(--purple-800);
+    color: var(--white);
+}
+
+.theme-dark .themed-modal .modal-title {
+    color: var(--white);
+}
+
+.theme-dark .themed-modal .text-muted {
+    color: var(--white-alpha-70) !important;
+}
+
+.theme-dark .themed-modal .modal-header {
+    border-bottom-color: var(--white-alpha-15) !important;
+}
+
+.theme-dark .themed-modal .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
