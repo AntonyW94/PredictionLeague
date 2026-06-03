@@ -4,34 +4,37 @@
     margin-right: auto;
 }
 
-/* Dashboard waiting state (no rounds yet) */
+/* Pre-deadline hero - purple gradient banner, mirrors .page-hero */
 .dashboard-waiting {
     position: relative;
-    padding: var(--space-12) var(--space-4);
+    padding: var(--space-10) var(--space-5);
     overflow: hidden;
+    border-radius: var(--bs-border-radius);
+    background: linear-gradient(135deg, var(--purple-800), var(--purple-600));
+    box-shadow: 0 8px 24px var(--black-alpha-25);
+    margin-bottom: var(--space-5);
 }
 
-.dashboard-waiting__pulse {
+.dashboard-waiting::after {
+    content: "";
     position: absolute;
-    top: 30%;
-    left: 50%;
-    width: 250px;
-    height: 250px;
-    transform: translate(-50%, -50%);
+    right: -40px;
+    bottom: -60px;
+    width: 180px;
+    height: 180px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(150, 60, 255, 0.3) 0%, rgba(150, 60, 255, 0) 70%);
-    animation: dashboard-pulse 3s ease-in-out infinite;
+    background: var(--white-alpha-08);
+    pointer-events: none;
 }
 
-@keyframes dashboard-pulse {
-    0%, 100% {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 0.6;
-    }
-    50% {
-        transform: translate(-50%, -50%) scale(1.5);
-        opacity: 0.2;
-    }
+/* The hero is purple in both themes, so its text must stay white. This beats the
+   .dashboard-container light-mode rule (specificity 0,2,0) that darkens .text-white. */
+.dashboard-container .dashboard-waiting .text-white {
+    color: var(--white) !important;
+}
+
+.dashboard-container .dashboard-waiting .text-white-50 {
+    color: var(--white-alpha-50) !important;
 }
 
 .dashboard-waiting__content {
@@ -40,8 +43,15 @@
 }
 
 .dashboard-waiting__icon {
-    font-size: 3rem;
-    color: var(--purple-300);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--white-alpha-15);
+    color: var(--white);
+    font-size: 1.6rem;
 }
 
 /* Countdown timer */
@@ -68,7 +78,7 @@
 .dashboard-waiting__label {
     font-size: 0.7rem;
     font-weight: 600;
-    color: var(--grey-500);
+    color: var(--white-alpha-50);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-top: var(--space-1);
@@ -77,7 +87,7 @@
 .dashboard-waiting__separator {
     font-size: 2rem;
     font-weight: 700;
-    color: var(--grey-300);
+    color: var(--white-alpha-30);
     margin-bottom: 1rem;
 }
 
@@ -86,6 +96,11 @@
     max-width: 500px;
     margin: 0 auto;
     text-align: left;
+}
+
+/* Inside a section card (round structure / players lists) fill the full width */
+.section .dashboard-waiting__members-table {
+    max-width: none;
 }
 
 .dashboard-waiting__member-row {

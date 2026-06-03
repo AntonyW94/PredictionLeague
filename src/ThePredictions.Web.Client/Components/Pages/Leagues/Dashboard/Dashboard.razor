@@ -29,7 +29,6 @@
             @if (!State.IsFinished && (isPreDeadline || !State.ViewableRounds.Any()))
             {
                 <div class="dashboard-waiting text-center">
-                    <div class="dashboard-waiting__pulse"></div>
                     <div class="dashboard-waiting__content">
                         <i class="bi bi-hourglass-split dashboard-waiting__icon"></i>
                         <h4 class="fw-bold text-white mt-3">The competition hasn't started yet</h4>
@@ -101,7 +100,7 @@
                                         <div class="dashboard-waiting__member-row">
                                             <span class="text-white fw-bold">@(string.IsNullOrWhiteSpace(round.ApiRoundName) ? $"Round {round.RoundNumber}" : round.ApiRoundName)</span>
                                             <div class="d-flex align-items-center gap-3">
-                                                <small class="text-white-50">@round.StartDateUtc.ToString("dd MMM yyyy")</small>
+                                                <small class="text-white-50">@(round.Status == RoundStatus.Draft ? "TBD" : round.StartDateUtc.ToString("dd MMM yyyy"))</small>
                                                 <span class="text-white-50 fw-bold">@round.MatchCount @(round.MatchCount == 1 ? "match" : "matches")</span>
                                             </div>
                                         </div>
@@ -113,7 +112,7 @@
                         @if (State.Members.Any())
                         {
                             <div class="section">
-                                <h3 class="text-white text-center fw-bold mb-3">Players (@State.Members.Count)</h3>
+                                <h3 class="text-white text-center fw-bold mb-3">Players <span class="match-count-badge">@State.Members.Count</span></h3>
                                 <div class="dashboard-waiting__members-table">
                                     @foreach (var member in State.Members)
                                     {
