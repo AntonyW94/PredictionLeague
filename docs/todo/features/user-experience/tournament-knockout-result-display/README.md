@@ -26,8 +26,8 @@ We will:
    when a knockout match finishes past 90 minutes (currently discarded).
 2. **Keep the 90‑minute score as the primary, scored result** everywhere.
 3. **Add a secondary, less‑prominent caption** under the result reading
-   `Final: 1-1 (4-2 pens)` / `Final: 2-1 (a.e.t.)`, so users can see we know the
-   real outcome but that the **game** uses the 90‑minute score.
+   `1-1 (4-2 pens)` / `2-1 (a.e.t.)`, so users can see we know the real outcome
+   but that the **game** uses the 90‑minute score.
 4. **Explain the rule once per round** with a small legend, so it is obvious
    *why* without cluttering every cell.
 
@@ -35,11 +35,17 @@ We will:
 
 | Situation | Caption |
 |-----------|---------|
-| Decided in extra time | `Final: 2-1 (a.e.t.)` |
-| Decided on penalties | `Final: 1-1 (4-2 pens)` |
+| Decided in extra time | `2-1 (a.e.t.)` |
+| Decided on penalties | `1-1 (4-2 pens)` |
 | Decided in 90 minutes | *(no caption — unchanged)* |
 
-The bracketed left‑hand score (`1-1` / `2-1`) is the **score after extra time**
+No `Final:` prefix — the primary badge above already establishes "this is the
+result", and `(a.e.t.)` / `(x-y pens)` carry the meaning on their own. Dropping
+it also shortens the caption enough to usually fit one line in the narrow
+desktop column. The fuller "Final result … scored on the 90-minute result"
+sentence still lives in the hover tooltip (§4.2).
+
+The leading score (`1-1` / `2-1`) is the **score after extra time**
 (API‑Football `goals`), not the 90‑minute score. For a shootout it is the
 deadlocked 120‑minute score; the `(x-y pens)` is the shootout result.
 
@@ -94,8 +100,8 @@ component, rendered in two layouts — surfaces 1 & 2) plus a **new legend** in
   today. The caption must read as clearly secondary.
 * **Caption is muted and smaller**: lighter weight, smaller font, secondary
   colour. Never competes with the score.
-* **Same wording on every surface** (the chosen `Final: …`) — we do *not*
-  invent per‑surface abbreviations. We make it fit instead (§4.3).
+* **Same wording on every surface** (`2-1 (a.e.t.)` / `1-1 (4-2 pens)`) — we do
+  *not* invent per‑surface abbreviations. We make it fit instead (§4.3).
 * **Explain once per round**, not per cell (§7).
 
 ### 4.2 `MatchStatusBadge` layout
@@ -141,8 +147,8 @@ private bool ShowFinalResult =>
     && AfterExtraTimeAwayScore.HasValue;
 
 private string DetailText => WentToPenalties
-    ? $"Final: {AfterExtraTimeHomeScore}-{AfterExtraTimeAwayScore} ({PenaltyHomeScore}-{PenaltyAwayScore} pens)"
-    : $"Final: {AfterExtraTimeHomeScore}-{AfterExtraTimeAwayScore} (a.e.t.)";
+    ? $"{AfterExtraTimeHomeScore}-{AfterExtraTimeAwayScore} ({PenaltyHomeScore}-{PenaltyAwayScore} pens)"
+    : $"{AfterExtraTimeHomeScore}-{AfterExtraTimeAwayScore} (a.e.t.)";
 
 private string DetailTooltip => WentToPenalties
     ? $"Final result {AfterExtraTimeHomeScore}-{AfterExtraTimeAwayScore}, {PenaltyHomeScore}-{PenaltyAwayScore} on penalties. Predictions are scored on the 90-minute result."
@@ -152,12 +158,12 @@ private string DetailTooltip => WentToPenalties
 ### 4.3 Thin columns (the key constraint) & light/dark CSS
 
 The desktop grid column (`.results-grid .match-col`) is only `min-width: 6.5rem`
-(~104px) and the cells are `white-space: nowrap`. The caption is too long for
-one line there, so we let **the caption (and only the caption) wrap to two
-lines** within the column, while the badge stays on one line. The mobile card
-header is full‑width, so the same text sits on one line there with no special
-handling. The full sentence (with the "scored on the 90‑minute result"
-explanation) is always available via the `title` tooltip.
+(~104px) and the cells are `white-space: nowrap`. Without the `Final:` prefix the
+caption (`1-1 (4-2 pens)`) usually fits one line, but to be safe we let **the
+caption (and only the caption) wrap** within the column rather than overflow,
+while the badge stays on one line. The mobile card header is full‑width, so the
+text always sits on one line there. The full sentence (with the "scored on the
+90‑minute result" explanation) is always available via the `title` tooltip.
 
 Add to **`src/ThePredictions.Web.Client/wwwroot/css/components/badges.css`**
 (this file already owns `.badge-group`; co‑locate the `.theme-dark` override
