@@ -93,6 +93,28 @@ WHERE
 SELECT Id, name FROM Leagues WHERE season_id = @seasonId
 ```
 
+### Dapper Result Mapping — SELECT column order MUST match the record constructor
+
+Query handlers read into **positional `record` result types**, and Dapper matches the constructor to the result set **positionally**: parameter *N* must line up with `SELECT` column *N* by **both name and type**. A mismatch is **not** caught by the compiler or unit tests — it only throws at **runtime**:
+
+> `InvalidOperationException: A parameterless default constructor or one matching signature (...) is required for <Handler>+<Result> materialization`
+
+**The rule:** whenever you add, remove, reorder, or retype a column in a `SELECT`, make the **identical** change to the result `record` (and vice versa). Keep the two lists in lockstep, top to bottom.
+
+```csharp
+// SELECT order:  Id, FullName, Email, EmailConfirmed, IsAdmin
+//                 1      2       3         4              5
+
+// CORRECT — record parameters in the same order
+private record UserQueryResult(string Id, string FullName, string Email, bool EmailConfirmed, bool IsAdmin);
+
+// WRONG — EmailConfirmed/IsAdmin moved; column 4 (bool EmailConfirmed) now hits
+//         parameter 4 (bool IsAdmin) — passes build & tests, throws at runtime
+private record UserQueryResult(string Id, string FullName, string Email, bool IsAdmin, bool EmailConfirmed);
+```
+
+Computed/`CASE`/`COALESCE` columns must be aliased (`... AS HasSeasonPass`) and counted as a column in this ordering. The C# mapping from the result record to the outward DTO is by name and is **not** affected — only the `SELECT`↔`record` pairing is positional.
+
 ### Testing & Code Coverage
 
 The Domain project **must maintain 100% line and branch coverage**. After writing or modifying code:
@@ -183,6 +205,7 @@ Significant product, business, legal, and technical decisions are recorded in [`
 8. **NEVER make database changes without updating `docs/guides/database-schema.md`** and the refresh tool in `tools/ThePredictions.DatabaseTools/`
 9. **NEVER leave code coverage below 100%** - Write tests or add `[ExcludeFromCodeCoverage]` for untestable code
 10. **NEVER create `.sql` files in the repository** - present migration SQL in the chat for the user to run manually (until a migration tool exists)
+11. **NEVER let a query's `SELECT` column order drift from its result `record` constructor** - Dapper maps them positionally (name + type per position); a mismatch compiles and passes tests but throws at runtime. See [Dapper Result Mapping](#dapper-result-mapping--select-column-order-must-match-the-record-constructor).
 
 ## Quick Reference
 
