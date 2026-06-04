@@ -1011,14 +1011,62 @@ main.theme-dark:has(.admin-light) .navbar-logo {
     color: var(--white-alpha-50);
 }
 
-.theme-dark .user-stat {
-    background: var(--white-alpha-10);
+.theme-dark .user-email,
+.theme-dark .user-money {
     color: var(--white-alpha-70);
 }
 
-.theme-dark .user-stat-off {
-    background: var(--white-alpha-10);
+.theme-dark .user-auth {
     color: var(--white-alpha-50);
+}
+
+.theme-dark .user-kebab {
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .user-kebab:hover:not(:disabled) {
+    background: var(--white-alpha-10);
+}
+
+.theme-dark .user-menu {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-08);
+}
+
+.theme-dark .user-menu-item {
+    color: var(--white);
+}
+
+.theme-dark .user-menu-item:hover {
+    background: var(--white-alpha-10);
+}
+
+.theme-dark .user-menu-item-danger {
+    color: var(--red);
+}
+
+.theme-dark .user-tile {
+    background: var(--white-alpha-08);
+}
+
+.theme-dark .user-tile-value {
+    color: var(--white);
+}
+
+.theme-dark .user-tile-value-off {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-tile-label {
+    color: var(--white-alpha-50);
+}
+
+/* Mid-amber text is too dark on the dark purple surface — brighten the
+   attention pills (and their pending badge) to gold for legibility. */
+.theme-dark .user-dormant-pill,
+.theme-dark .user-warning-pill,
+.theme-dark .user-tile-badge {
+    color: var(--gold);
 }
 
 /* Cards inside admin pages should match the form-container surface

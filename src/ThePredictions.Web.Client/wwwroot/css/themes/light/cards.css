@@ -377,62 +377,241 @@
     font-size: 0.9rem;
 }
 
-/* Email confirmation badge */
-.email-confirmed-badge {
+/* Allow the kebab dropdown to overflow the list instead of being clipped
+   by the list's overflow:hidden (which exists to round the row corners). */
+.user-card-list {
+    overflow: visible;
+}
+
+/* User card — top-align avatar against the taller card body */
+.user-row {
+    align-items: flex-start;
+}
+
+/* Header: identity (name / email) + actions kebab */
+.user-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.user-identity {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name-line {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.user-role {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--blue-700);
+}
+
+.user-role-admin {
+    color: var(--red);
+}
+
+.user-email-line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: 1px;
+}
+
+.user-email {
+    color: var(--grey-500);
+    font-size: 0.8rem;
+    word-break: break-all;
+    min-width: 0;
+}
+
+.user-auth {
+    display: inline-flex;
+    gap: var(--space-1);
+    color: var(--grey-400);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Kebab actions menu */
+.user-menu-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.user-kebab {
+    border: none;
+    background: transparent;
+    color: var(--grey-500);
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.user-kebab:hover:not(:disabled) {
+    background: var(--grey-100);
+}
+
+.user-kebab:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.user-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+.user-menu {
+    position: absolute;
+    top: 2.25rem;
+    right: 0;
+    z-index: 1001;
+    min-width: 11rem;
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 8px 24px var(--black-alpha-25);
+    padding: var(--space-1);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.user-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--bs-border-radius);
     font-size: 0.85rem;
-    line-height: 1;
+    font-weight: 500;
+    color: var(--purple-1000);
+    cursor: pointer;
 }
 
-.email-confirmed-badge.confirmed {
-    color: var(--green-600);
+.user-menu-item:hover {
+    background: var(--grey-100);
 }
 
-.email-confirmed-badge.unconfirmed {
-    color: var(--orange);
+.user-menu-item-danger {
+    color: var(--red);
 }
 
-/* Dormant flag pill */
+.user-menu-item-danger:hover {
+    background: var(--red-alpha-15);
+}
+
+/* Attention badges — only rendered when relevant */
+.user-attention {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+}
+
 .user-dormant-pill {
     background: var(--orange-alpha-15);
     color: var(--orange);
 }
 
-/* Per-user stat pills */
-.user-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1) var(--space-2);
-    margin-top: var(--space-2);
-}
-
-.user-stat {
+.user-warning-pill {
+    background: var(--orange-alpha-15);
+    color: var(--orange);
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1);
-    padding: 1px var(--space-2);
-    border-radius: 50rem;
-    font-size: 0.7rem;
-    font-weight: 600;
+    gap: 4px;
+}
+
+/* Stat tiles */
+.user-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+}
+
+.user-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: var(--space-2) var(--space-1);
     background: var(--grey-100);
-    color: var(--grey-500);
-    white-space: nowrap;
+    border-radius: var(--bs-border-radius);
 }
 
-.user-stat .bi {
-    font-size: 0.7rem;
-    opacity: 0.8;
+.user-tile-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--purple-1000);
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
 }
 
-.user-stat-on {
-    background: var(--green-600-alpha-15);
+.user-tile-value-on {
     color: var(--green-600);
 }
 
-.user-stat-off {
-    background: var(--grey-100);
+.user-tile-value-off {
+    color: var(--grey-400);
+}
+
+.user-tile-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--grey-500);
+}
+
+.user-tile-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--orange);
+    background: var(--orange-alpha-15);
+    border-radius: 50rem;
+    padding: 0 5px;
+    line-height: 1.4;
+}
+
+/* Secondary money line — hidden when both totals are zero */
+.user-money {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    margin-top: var(--space-2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--grey-500);
+}
+
+.user-money .bi {
+    opacity: 0.7;
+    margin-right: 4px;
 }
 
 /* Season list rows */
