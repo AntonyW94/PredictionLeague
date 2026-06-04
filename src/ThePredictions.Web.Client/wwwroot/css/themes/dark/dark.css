@@ -991,6 +991,103 @@ main.theme-dark:has(.admin-light) .navbar-logo {
     color: var(--white);
 }
 
+/* User list — toolbar, cards and badges (admin users page) */
+.theme-dark .user-toolbar-toggle,
+.theme-dark .user-filter-panel,
+.theme-dark .user-sort-dir {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-08);
+    color: var(--white);
+}
+
+.theme-dark .user-toolbar-caret {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-filter-label,
+.theme-dark .user-results-count {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-filter-search .bi {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-toggle-chip {
+    background: transparent;
+    border-color: var(--white-alpha-15);
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .user-toggle-chip.active {
+    background: var(--orange-alpha-15);
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+.theme-dark .member-empty {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-08);
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-email,
+.theme-dark .user-money {
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .user-auth {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-kebab {
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .user-kebab:hover:not(:disabled) {
+    background: var(--white-alpha-10);
+}
+
+.theme-dark .user-menu {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-08);
+}
+
+.theme-dark .user-menu-item {
+    color: var(--white);
+}
+
+.theme-dark .user-menu-item:hover {
+    background: var(--white-alpha-10);
+}
+
+.theme-dark .user-menu-item-danger {
+    color: var(--red);
+}
+
+.theme-dark .user-tile {
+    background: var(--white-alpha-08);
+}
+
+.theme-dark .user-tile-value {
+    color: var(--white);
+}
+
+.theme-dark .user-tile-value-off {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-tile-label {
+    color: var(--white-alpha-50);
+}
+
+/* Mid-amber text is too dark on the dark purple surface — brighten the
+   warning pill (and the pending badge) to gold for legibility. */
+.theme-dark .user-warning-pill,
+.theme-dark .user-tile-badge {
+    color: var(--gold);
+}
+
 /* Cards inside admin pages should match the form-container surface
    (purple-800), not the darker purple-1000 used on dashboard cards. */
 .theme-dark .admin-light .card {

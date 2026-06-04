@@ -60,54 +60,164 @@
                 </button>
             </div>
 
-            <div class="member-list">
-                @foreach (var user in GetActiveTabUsers())
-                {
-                    var isLoggedInUser = _currentUserId == user.Id;
+            var displayedUsers = GetDisplayedUsers();
 
-                    <div class="member-row user-row">
-                        <UserAvatar FullName="@user.FullName" />
-                        <div class="member-info">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="member-name">@user.FullName</span>
-                                @if (user.IsAdmin)
-                                {
-                                    <span class="member-status-pill member-status-rejected">Admin</span>
-                                }
-                                else
-                                {
-                                    <span class="member-status-pill" style="background: var(--blue-700); color: var(--white)">Player</span>
-                                }
-                            </div>
-                            <span class="member-date" style="word-break: break-all;">
-                                @user.Email
-                                @if (!string.IsNullOrWhiteSpace(user.PhoneNumber))
-                                {
-                                    <span class="d-none d-lg-inline"> · @user.PhoneNumber</span>
-                                }
-                            </span>
-                            <div class="user-row-footer">
-                                <div class="auth-badges">
-                                    <span class="auth-badge @(user.HasLocalPassword ? "active" : "")" title="Email & Password">
-                                        <span class="bi bi-envelope-fill"></span>
-                                    </span>
-                                    <span class="auth-badge @(user.SocialProviders.Contains("Google") ? "active" : "")" title="Google">
-                                        <span class="bi bi-google"></span>
-                                    </span>
-                                </div>
-                                <div class="user-row-actions">
-                                    <button class="btn btn-sm @(isLoggedInUser ? "grey-button" : "green-button")" @onclick="() => ChangeRole(user)" disabled="@isLoggedInUser" title="Change Role">
-                                        <span class="bi bi-person-badge-fill"></span><span class="d-none d-lg-inline ms-1">Role</span>
-                                    </button>
-                                    <button class="btn btn-sm @(isLoggedInUser ? "grey-button" : "red-button")" @onclick="() => PrepareToDeleteUser(user)" disabled="@isLoggedInUser" title="Delete User">
-                                        <span class="bi bi-trash-fill"></span>
-                                    </button>
-                                </div>
-                            </div>
+            <div class="user-toolbar">
+                <button type="button" class="user-toolbar-toggle" @onclick="ToggleFilters">
+                    <span class="bi bi-sliders2"></span>
+                    <span>Sort &amp; filter</span>
+                    @if (HasNonDefaultControls)
+                    {
+                        <span class="user-toolbar-dot" title="Filters active"></span>
+                    }
+                    <span class="bi @(_filtersExpanded ? "bi-chevron-up" : "bi-chevron-down") user-toolbar-caret"></span>
+                </button>
+
+                @if (_filtersExpanded)
+                {
+                    <div class="user-filter-panel">
+                        <div class="user-filter-search">
+                            <span class="bi bi-search"></span>
+                            <input type="text" class="form-control" placeholder="Search name or email…" value="@_searchTerm" @oninput="OnSearchChanged" />
+                        </div>
+                        <div class="user-filter-row">
+                            <label class="user-filter-label" for="user-sort">Sort by</label>
+                            <select id="user-sort" class="form-select" value="@_sortField" @onchange="OnSortFieldChanged">
+                                <option value="name">Name</option>
+                                <option value="created">Leagues created</option>
+                                <option value="joined">Leagues joined</option>
+                                <option value="spend">Total spend</option>
+                                <option value="winnings">Total winnings</option>
+                            </select>
+                            <button type="button" class="user-sort-dir" @onclick="ToggleSortDirection" title="@(_sortDescending ? "Descending" : "Ascending")">
+                                <span class="bi @(_sortDescending ? "bi-sort-down" : "bi-sort-up")"></span>
+                                <span>@(_sortDescending ? "Desc" : "Asc")</span>
+                            </button>
+                        </div>
+                        <div class="user-filter-row user-filter-row-between">
+                            <button type="button" class="user-toggle-chip @(_dormantOnly ? "active" : "")" @onclick="ToggleDormantOnly">
+                                <span class="bi bi-moon-stars-fill"></span> Dormant only
+                            </button>
+                            @if (HasNonDefaultControls)
+                            {
+                                <button type="button" class="user-filter-clear" @onclick="ClearFilters">Clear</button>
+                            }
                         </div>
                     </div>
                 }
             </div>
+
+            @if (HasActiveFilters)
+            {
+                <div class="user-results-count">Showing @displayedUsers.Count of @GetActiveTabUsers().Count</div>
+            }
+
+            @if (displayedUsers.Count == 0)
+            {
+                <div class="member-empty">No users match the current filters.</div>
+            }
+            else
+            {
+                <div class="member-list user-card-list">
+                    @foreach (var user in displayedUsers)
+                    {
+                        var isLoggedInUser = _currentUserId == user.Id;
+
+                        <div class="member-row user-row">
+                            <UserAvatar FullName="@user.FullName" />
+                            <div class="member-info">
+                                <div class="user-card-head">
+                                    <div class="user-identity">
+                                        <div class="user-name-line">
+                                            <span class="member-name">@user.FullName</span>
+                                            <span class="user-role @(user.IsAdmin ? "user-role-admin" : "")">@(user.IsAdmin ? "Admin" : "Player")</span>
+                                        </div>
+                                        <div class="user-email-line">
+                                            <span class="user-email">@user.Email</span>
+                                            <span class="user-auth">
+                                                @if (user.HasLocalPassword)
+                                                {
+                                                    <span class="bi bi-envelope-fill" title="Email & password"></span>
+                                                }
+                                                @if (user.SocialProviders.Contains("Google"))
+                                                {
+                                                    <span class="bi bi-google" title="Google"></span>
+                                                }
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="user-menu-wrap">
+                                        <button class="user-kebab" @onclick="() => ToggleMenu(user.Id)" disabled="@isLoggedInUser" title="Actions">
+                                            <span class="bi bi-three-dots-vertical"></span>
+                                        </button>
+                                        @if (_openMenuUserId == user.Id)
+                                        {
+                                            <div class="user-menu-backdrop" @onclick="CloseMenu"></div>
+                                            <div class="user-menu">
+                                                <button class="user-menu-item" @onclick="() => ChangeRole(user)">
+                                                    <span class="bi bi-person-badge-fill"></span> Change role
+                                                </button>
+                                                <button class="user-menu-item user-menu-item-danger" @onclick="() => PrepareToDeleteUser(user)">
+                                                    <span class="bi bi-trash-fill"></span> Delete user
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                @if (!user.EmailConfirmed)
+                                {
+                                    <div class="user-attention">
+                                        <span class="member-status-pill user-warning-pill" title="Email address not confirmed">
+                                            <span class="bi bi-patch-exclamation-fill"></span> Email
+                                        </span>
+                                    </div>
+                                }
+
+                                <div class="user-tiles">
+                                    <div class="user-tile">
+                                        <span class="user-tile-value">@user.LeaguesCreated</span>
+                                        <span class="user-tile-label">Created</span>
+                                    </div>
+                                    <div class="user-tile">
+                                        <span class="user-tile-value">
+                                            @user.LeaguesJoinedApproved
+                                            @if (user.LeaguesJoinedPending > 0)
+                                            {
+                                                <span class="user-tile-badge" title="@user.LeaguesJoinedPending awaiting approval">+@user.LeaguesJoinedPending</span>
+                                            }
+                                        </span>
+                                        <span class="user-tile-label">Joined</span>
+                                    </div>
+                                    <div class="user-tile">
+                                        <span class="user-tile-value @(user.HasSeasonPass ? "user-tile-value-on" : "user-tile-value-off")">@(user.HasSeasonPass ? "Yes" : "No")</span>
+                                        <span class="user-tile-label">Pass</span>
+                                    </div>
+                                </div>
+
+                                @if (user.TotalSpend > 0 || user.TotalWinnings > 0)
+                                {
+                                    <div class="user-money">
+                                        @if (user.TotalSpend > 0)
+                                        {
+                                            <span title="Season passes @FormatMoney(user.SeasonPassSpend) · league entries @FormatMoney(user.LeagueEntrySpend)">
+                                                <span class="bi bi-cash-stack"></span>@FormatMoney(user.TotalSpend) spent
+                                            </span>
+                                        }
+                                        @if (user.TotalWinnings > 0)
+                                        {
+                                            <span>
+                                                <span class="bi bi-trophy-fill"></span>@FormatMoney(user.TotalWinnings) won
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
         }
     </div>
 </div>
@@ -119,6 +229,15 @@
     private string? _errorMessage;
     private string? _currentUserId;
     private string _activeTab = "all";
+    private string _searchTerm = "";
+    private string _sortField = "name";
+    private bool _sortDescending;
+    private bool _dormantOnly;
+    private bool _filtersExpanded;
+    private string? _openMenuUserId;
+
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchTerm) || _dormantOnly;
+    private bool HasNonDefaultControls => HasActiveFilters || _sortField != "name" || _sortDescending;
 
     protected override async Task OnInitializedAsync()
     {
@@ -133,12 +252,93 @@
         _activeTab = e.Value?.ToString() ?? "all";
     }
 
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        _searchTerm = e.Value?.ToString() ?? "";
+    }
+
+    private void OnSortFieldChanged(ChangeEventArgs e)
+    {
+        _sortField = e.Value?.ToString() ?? "name";
+    }
+
+    private void ToggleFilters()
+    {
+        _filtersExpanded = !_filtersExpanded;
+    }
+
+    private void ToggleDormantOnly()
+    {
+        _dormantOnly = !_dormantOnly;
+    }
+
+    private void ToggleSortDirection()
+    {
+        _sortDescending = !_sortDescending;
+    }
+
+    private void ClearFilters()
+    {
+        _searchTerm = "";
+        _dormantOnly = false;
+        _sortField = "name";
+        _sortDescending = false;
+    }
+
+    private void ToggleMenu(string userId)
+    {
+        _openMenuUserId = _openMenuUserId == userId ? null : userId;
+    }
+
+    private void CloseMenu()
+    {
+        _openMenuUserId = null;
+    }
+
     private List<UserDto> GetActiveTabUsers() => _activeTab switch
     {
         "admin" => _adminUsers,
         "player" => _playerUsers,
         _ => _users ?? []
     };
+
+    private List<UserDto> GetDisplayedUsers()
+    {
+        IEnumerable<UserDto> users = GetActiveTabUsers();
+
+        if (!string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            var term = _searchTerm.Trim();
+            users = users.Where(u =>
+                u.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || u.Email.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (_dormantOnly)
+        {
+            users = users.Where(u => u.IsDormant);
+        }
+
+        users = _sortField switch
+        {
+            "created" => users.OrderBy(u => u.LeaguesCreated),
+            "joined" => users.OrderBy(u => u.LeaguesJoinedApproved + u.LeaguesJoinedPending),
+            "spend" => users.OrderBy(u => u.TotalSpend),
+            "winnings" => users.OrderBy(u => u.TotalWinnings),
+            _ => users.OrderBy(u => u.FullName)
+        };
+
+        if (_sortDescending)
+        {
+            users = users.Reverse();
+        }
+
+        return users.ToList();
+    }
+
+    private static string FormatMoney(decimal amount) => amount % 1 == 0
+        ? $"£{amount:N0}"
+        : $"£{amount:N2}";
 
     private async Task LoadUsers()
     {
@@ -161,6 +361,7 @@
 
     private async Task ChangeRole(UserDto user)
     {
+        _openMenuUserId = null;
         _errorMessage = null;
 
         var currentRole = user.IsAdmin ? nameof(ApplicationUserRole.Administrator) : nameof(ApplicationUserRole.Player);
@@ -191,6 +392,7 @@
 
     private async Task PrepareToDeleteUser(UserDto user)
     {
+        _openMenuUserId = null;
         _errorMessage = null;
 
         try
@@ -247,16 +449,5 @@
         }
 
         StateHasChanged();
-    }
-
-    private static string GetProviderIcon(string provider)
-    {
-        return provider.ToLower() switch
-        {
-            "google" => "bi-google",
-            "facebook" => "bi-facebook",
-            "microsoft" => "bi-microsoft",
-            _ => "bi-shield-lock-fill"
-        };
     }
 }

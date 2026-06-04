@@ -93,6 +93,8 @@ WHERE l.[SeasonId] = @SeasonId
 - [ ] Handler injects `IApplicationReadDbConnection` (NOT a repository)
 - [ ] SQL uses brackets around all identifiers
 - [ ] SQL uses parameterised queries
+- [ ] **`SELECT` column order matches the result `record` constructor order exactly (name + type, position by position)** — Dapper maps positionally and a mismatch only fails at runtime, never at build/test time
+- [ ] Every computed/`CASE`/`COALESCE`/aggregate column is aliased (`... AS Foo`) and counted in that ordering
 - [ ] Returns DTOs, not domain models
 - [ ] One public type per file
 - [ ] All async methods end with `Async`
@@ -123,4 +125,10 @@ public async Task<IEnumerable<League>> Handle(...) // Should return DTOs
 
 // WRONG - SQL without brackets
 const string sql = "SELECT Id, Name FROM Leagues"; // Missing brackets
+
+// WRONG - SELECT order doesn't match the record constructor order.
+// Dapper maps positionally, so column 2 (string Name) is fed to parameter 2
+// (int CreatedYear) -> InvalidOperationException at runtime. Build + tests stay green.
+//   SELECT [Id], [Name], [CreatedYear]
+//   record Row(int Id, int CreatedYear, string Name);   // Name and CreatedYear swapped
 ```
