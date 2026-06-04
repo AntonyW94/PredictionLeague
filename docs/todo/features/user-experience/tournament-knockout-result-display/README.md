@@ -26,8 +26,8 @@ We will:
    when a knockout match finishes past 90 minutes (currently discarded).
 2. **Keep the 90‑minute score as the primary, scored result** everywhere.
 3. **Add a secondary, less‑prominent caption** under the result reading
-   `1-1 (4-2 pens)` / `2-1 (a.e.t.)`, so users can see we know the real outcome
-   but that the **game** uses the 90‑minute score.
+   `4-2 pens` / `2-1 (a.e.t.)`, so users can see we know the real outcome but
+   that the **game** uses the 90‑minute score.
 4. **Explain the rule once per round** with a small legend, so it is obvious
    *why* without cluttering every cell.
 
@@ -36,18 +36,24 @@ We will:
 | Situation | Caption |
 |-----------|---------|
 | Decided in extra time | `2-1 (a.e.t.)` |
-| Decided on penalties | `1-1 (4-2 pens)` |
+| Decided on penalties | `4-2 pens` |
 | Decided in 90 minutes | *(no caption — unchanged)* |
+| Extra time / shootout **in progress** | *(no caption; 90′ score shown, pulsing — see §4.5)* |
 
 No `Final:` prefix — the primary badge above already establishes "this is the
-result", and `(a.e.t.)` / `(x-y pens)` carry the meaning on their own. Dropping
-it also shortens the caption enough to usually fit one line in the narrow
-desktop column. The fuller "Final result … scored on the 90-minute result"
-sentence still lives in the hover tooltip (§4.2).
+result", and `(a.e.t.)` / `pens` carry the meaning on their own. This also
+shortens the caption enough to fit one line in the narrow desktop column. The
+fuller "Final result … scored on the 90-minute result" sentence still lives in
+the hover tooltip (§4.2).
 
-The leading score (`1-1` / `2-1`) is the **score after extra time**
-(API‑Football `goals`), not the 90‑minute score. For a shootout it is the
-deadlocked 120‑minute score; the `(x-y pens)` is the shootout result.
+**Penalties show only the shootout score** (`4-2 pens`), not the deadlocked
+score. The decisive information is the shootout; the level score is already
+visible in the primary 90′ badge above. In the rare case where goals are scored
+*during* extra time (e.g. 1‑1 at 90′, 2‑2 after ET, then pens), the after‑ET
+aggregate is not shown on the line but **is retained in the tooltip** — so no
+information is lost. For an **extra‑time** finish the caption keeps the score
+(`2-1 (a.e.t.)`) because there the score is the meaningful outcome. The
+after‑ET score (`2-1`) is API‑Football `goals`, not the 90‑minute score.
 
 ---
 
@@ -100,7 +106,7 @@ component, rendered in two layouts — surfaces 1 & 2) plus a **new legend** in
   today. The caption must read as clearly secondary.
 * **Caption is muted and smaller**: lighter weight, smaller font, secondary
   colour. Never competes with the score.
-* **Same wording on every surface** (`2-1 (a.e.t.)` / `1-1 (4-2 pens)`) — we do
+* **Same wording on every surface** (`2-1 (a.e.t.)` / `4-2 pens`) — we do
   *not* invent per‑surface abbreviations. We make it fit instead (§4.3).
 * **Explain once per round**, not per cell (§7).
 
@@ -147,7 +153,7 @@ private bool ShowFinalResult =>
     && AfterExtraTimeAwayScore.HasValue;
 
 private string DetailText => WentToPenalties
-    ? $"{AfterExtraTimeHomeScore}-{AfterExtraTimeAwayScore} ({PenaltyHomeScore}-{PenaltyAwayScore} pens)"
+    ? $"{PenaltyHomeScore}-{PenaltyAwayScore} pens"
     : $"{AfterExtraTimeHomeScore}-{AfterExtraTimeAwayScore} (a.e.t.)";
 
 private string DetailTooltip => WentToPenalties
@@ -158,12 +164,13 @@ private string DetailTooltip => WentToPenalties
 ### 4.3 Thin columns (the key constraint) & light/dark CSS
 
 The desktop grid column (`.results-grid .match-col`) is only `min-width: 6.5rem`
-(~104px) and the cells are `white-space: nowrap`. Without the `Final:` prefix the
-caption (`1-1 (4-2 pens)`) usually fits one line, but to be safe we let **the
-caption (and only the caption) wrap** within the column rather than overflow,
-while the badge stays on one line. The mobile card header is full‑width, so the
-text always sits on one line there. The full sentence (with the "scored on the
-90‑minute result" explanation) is always available via the `title` tooltip.
+(~104px) and the cells are `white-space: nowrap`. The trimmed captions
+(`4-2 pens`, `2-1 (a.e.t.)`) comfortably fit one line, but to be safe we let
+**the caption (and only the caption) wrap** within the column rather than
+overflow, while the badge stays on one line. The mobile card header is
+full‑width, so the text always sits on one line there. The full sentence (with
+the "scored on the 90‑minute result" explanation) is always available via the
+`title` tooltip.
 
 Add to **`src/ThePredictions.Web.Client/wwwroot/css/components/badges.css`**
 (this file already owns `.badge-group`; co‑locate the `.theme-dark` override
@@ -234,6 +241,29 @@ Add four pass‑throughs to each:
 ```
 
 (`MobileMatchResultCard` uses `Match.` with a capital `M`.)
+
+### 4.5 While extra time / penalties are in progress
+
+**Primary stays the 90‑minute score, pulsing, throughout** — it is the scored
+result, it will not change, and freezing it avoids the score visibly "jumping
+back" to 90′ at the final whistle. The result caption (`4-2 pens` /
+`2-1 (a.e.t.)`) appears **only when the match is final** (`ShowFinalResult`
+requires `Status == Completed`), so nothing new is needed for the in‑progress
+case in `MatchStatusBadge`.
+
+**However, fix a latent status‑mapping gap (§6.3a) so the score does not vanish
+mid‑match.** `GetMatchStatus` currently maps only `1H/HT/2H/ET` to
+`InProgress`; the break before extra time (`BT`) and the penalty shootout (`P`),
+plus generic `LIVE`, fall through to the default `Scheduled`. Because
+`UpdateScore` clears the score on `Scheduled`, a knockout would briefly show its
+kickoff time with **no score** during the break and the shootout. Map `BT`,
+`P` and `LIVE` to `InProgress` so the 90′ score stays visible and pulsing right
+through to `AET`/`PEN`.
+
+**Optional (not in core):** a live "Extra time" / "Penalties" label during those
+phases. The client only receives `MatchStatus.InProgress` today and cannot tell
+extra time from a normal second half, so this needs a small phase signal plumbed
+through `MatchInRoundDto`. Deferred to keep the core simple; add later if wanted.
 
 ---
 
@@ -426,6 +456,25 @@ return new MatchResultDto(localMatch.Id, homeScore, awayScore,
     afterEtHome, afterEtAway, penHome, penAway);
 ```
 
+### 6.3a `GetMatchStatus` — keep the score visible during ET/penalties
+
+In the same handler, extend the status map so post‑90 in‑progress phases are
+treated as `InProgress` (otherwise the score is cleared mid‑match — see §4.5):
+
+```csharp
+private static MatchStatus GetMatchStatus(string apiStatus) => apiStatus switch
+{
+    "FT" or "AET" or "PEN" => MatchStatus.Completed,
+    "HT" or "1H" or "2H" or "ET" or "BT" or "P" or "LIVE" => MatchStatus.InProgress,
+    "PST" => MatchStatus.Postponed,
+    _ => MatchStatus.Scheduled
+};
+```
+
+(`BT` = break before/within extra time, `P` = penalty shootout in progress,
+`LIVE` = generic in‑play. `AET`/`PEN` remain the *finished* states that trigger
+the result caption.)
+
 ### 6.4 `UpdateMatchResultsCommandHandler.cs` (line ~47)
 
 ```csharp
@@ -578,6 +627,8 @@ small; provide a `.theme-dark` colour):
   * returns after‑ET, null penalties for an `AET` knockout fixture,
   * returns nulls for a 90′‑finished knockout (`FT`),
   * returns nulls for group‑stage / league matches.
+* **`GetMatchStatus`** (§6.3a): `BT`, `P` and `LIVE` map to `InProgress`;
+  `AET`/`PEN` stay `Completed`; unknown codes still fall back to `Scheduled`.
 * **`MatchResultDtoValidator`** — if validation rules are added for the new
   fields (recommended: `InclusiveBetween(0, 30)` when `!= null` for penalties,
   `0–9` for after‑ET to mirror `HomeScore`), add matching tests in
@@ -622,13 +673,13 @@ plan is unaffected.
 1. [ ] DB: add the four columns (run §5.2 SQL); update `database-schema.md`.
 2. [ ] Domain: `Match` properties + constructor + `UpdateScore` + `Postpone`; tests to 100%.
 3. [ ] Contracts: extend `MatchResultDto` and `MatchInRoundDto`.
-4. [ ] Application: `GetScoreForMatch` + `Handle` (capture); `UpdateMatchResultsCommandHandler` call site.
+4. [ ] Application: `GetScoreForMatch` + `Handle` (capture); `GetMatchStatus` (§6.3a, BT/P/LIVE → InProgress); `UpdateMatchResultsCommandHandler` call site.
 5. [ ] Queries: `GetMatchesForRoundQueryHandler` (by‑name) + `GetRoundByIdQueryHandler` (positional — lockstep!).
 6. [ ] Admin round‑trip: `MatchViewModel` + `EnterResultsViewModel`.
 7. [ ] UI: `MatchStatusBadge` (params + markup), wire `PredictionGrid` & `MobileMatchResultCard`.
 8. [ ] CSS: `.match-result` / `.match-result-detail` (+ dark) in `components/badges.css`.
 9. [ ] Legend: `RoundResultsTile.razor` + note CSS.
 10. [ ] Validators + builders + tests; `dotnet build /p:TreatWarningsAsErrors=true` and coverage.
-11. [ ] Manual verify: light + dark, desktop 24‑match grid wrap, mobile card, a `PEN` and an `AET` fixture.
+11. [ ] Manual verify: light + dark, desktop 24‑match grid wrap, mobile card, a `PEN` and an `AET` fixture, and that the 90′ score stays visible (pulsing) through `BT`/`ET`/`P` in‑progress states.
 </content>
 </invoke>
