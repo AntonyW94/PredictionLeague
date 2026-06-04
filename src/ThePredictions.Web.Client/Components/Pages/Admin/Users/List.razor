@@ -60,35 +60,57 @@
                 </button>
             </div>
 
-            <div class="user-controls">
-                <div class="user-controls-search">
-                    <span class="bi bi-search"></span>
-                    <input type="text" class="form-control" placeholder="Search name or email…" value="@_searchTerm" @oninput="OnSearchChanged" />
-                </div>
-                <div class="user-controls-sort">
-                    <label class="user-controls-label" for="user-sort">Sort</label>
-                    <select id="user-sort" class="form-select" value="@_sortField" @onchange="OnSortFieldChanged">
-                        <option value="name">Name</option>
-                        <option value="created">Leagues created</option>
-                        <option value="joined">Leagues joined</option>
-                        <option value="spend">Total spend</option>
-                        <option value="winnings">Total winnings</option>
-                    </select>
-                    <button class="btn btn-sm grey-button" @onclick="ToggleSortDirection" title="@(_sortDescending ? "Descending" : "Ascending")">
-                        <span class="bi @(_sortDescending ? "bi-sort-down" : "bi-sort-up")"></span>
-                    </button>
-                </div>
-                <label class="user-controls-dormant">
-                    <input type="checkbox" checked="@_dormantOnly" @onchange="OnDormantOnlyChanged" />
-                    Dormant only
-                </label>
-            </div>
-
             var displayedUsers = GetDisplayedUsers();
 
-            <div class="user-results-count">
-                Showing @displayedUsers.Count of @GetActiveTabUsers().Count
+            <div class="user-toolbar">
+                <button type="button" class="user-toolbar-toggle" @onclick="ToggleFilters">
+                    <span class="bi bi-sliders2"></span>
+                    <span>Sort &amp; filter</span>
+                    @if (HasNonDefaultControls)
+                    {
+                        <span class="user-toolbar-dot" title="Filters active"></span>
+                    }
+                    <span class="bi @(_filtersExpanded ? "bi-chevron-up" : "bi-chevron-down") user-toolbar-caret"></span>
+                </button>
+
+                @if (_filtersExpanded)
+                {
+                    <div class="user-filter-panel">
+                        <div class="user-filter-search">
+                            <span class="bi bi-search"></span>
+                            <input type="text" class="form-control" placeholder="Search name or email…" value="@_searchTerm" @oninput="OnSearchChanged" />
+                        </div>
+                        <div class="user-filter-row">
+                            <label class="user-filter-label" for="user-sort">Sort by</label>
+                            <select id="user-sort" class="form-select" value="@_sortField" @onchange="OnSortFieldChanged">
+                                <option value="name">Name</option>
+                                <option value="created">Leagues created</option>
+                                <option value="joined">Leagues joined</option>
+                                <option value="spend">Total spend</option>
+                                <option value="winnings">Total winnings</option>
+                            </select>
+                            <button type="button" class="user-sort-dir" @onclick="ToggleSortDirection" title="@(_sortDescending ? "Descending" : "Ascending")">
+                                <span class="bi @(_sortDescending ? "bi-sort-down" : "bi-sort-up")"></span>
+                                <span>@(_sortDescending ? "Desc" : "Asc")</span>
+                            </button>
+                        </div>
+                        <div class="user-filter-row user-filter-row-between">
+                            <button type="button" class="user-toggle-chip @(_dormantOnly ? "active" : "")" @onclick="ToggleDormantOnly">
+                                <span class="bi bi-moon-stars-fill"></span> Dormant only
+                            </button>
+                            @if (HasNonDefaultControls)
+                            {
+                                <button type="button" class="user-filter-clear" @onclick="ClearFilters">Clear</button>
+                            }
+                        </div>
+                    </div>
+                }
             </div>
+
+            @if (HasActiveFilters)
+            {
+                <div class="user-results-count">Showing @displayedUsers.Count of @GetActiveTabUsers().Count</div>
+            }
 
             @if (displayedUsers.Count == 0)
             {
@@ -144,19 +166,12 @@
                                     </div>
                                 </div>
 
-                                @if (user.IsDormant || !user.EmailConfirmed)
+                                @if (!user.EmailConfirmed)
                                 {
                                     <div class="user-attention">
-                                        @if (user.IsDormant)
-                                        {
-                                            <span class="member-status-pill user-dormant-pill" title="No season pass, no leagues created or joined">Dormant</span>
-                                        }
-                                        @if (!user.EmailConfirmed)
-                                        {
-                                            <span class="member-status-pill user-warning-pill" title="Email address not confirmed">
-                                                <span class="bi bi-patch-exclamation-fill"></span> Email
-                                            </span>
-                                        }
+                                        <span class="member-status-pill user-warning-pill" title="Email address not confirmed">
+                                            <span class="bi bi-patch-exclamation-fill"></span> Email
+                                        </span>
                                     </div>
                                 }
 
@@ -218,7 +233,11 @@
     private string _sortField = "name";
     private bool _sortDescending;
     private bool _dormantOnly;
+    private bool _filtersExpanded;
     private string? _openMenuUserId;
+
+    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchTerm) || _dormantOnly;
+    private bool HasNonDefaultControls => HasActiveFilters || _sortField != "name" || _sortDescending;
 
     protected override async Task OnInitializedAsync()
     {
@@ -243,14 +262,27 @@
         _sortField = e.Value?.ToString() ?? "name";
     }
 
-    private void OnDormantOnlyChanged(ChangeEventArgs e)
+    private void ToggleFilters()
     {
-        _dormantOnly = e.Value is bool value && value;
+        _filtersExpanded = !_filtersExpanded;
+    }
+
+    private void ToggleDormantOnly()
+    {
+        _dormantOnly = !_dormantOnly;
     }
 
     private void ToggleSortDirection()
     {
         _sortDescending = !_sortDescending;
+    }
+
+    private void ClearFilters()
+    {
+        _searchTerm = "";
+        _dormantOnly = false;
+        _sortField = "name";
+        _sortDescending = false;
     }
 
     private void ToggleMenu(string userId)

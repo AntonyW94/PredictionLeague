@@ -991,18 +991,38 @@ main.theme-dark:has(.admin-light) .navbar-logo {
     color: var(--white);
 }
 
-/* User list — controls, stats and badges (admin users page) */
-.theme-dark .user-controls-label,
+/* User list — toolbar, cards and badges (admin users page) */
+.theme-dark .user-toolbar-toggle,
+.theme-dark .user-filter-panel,
+.theme-dark .user-sort-dir {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-08);
+    color: var(--white);
+}
+
+.theme-dark .user-toolbar-caret {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-filter-label,
 .theme-dark .user-results-count {
     color: var(--white-alpha-50);
 }
 
-.theme-dark .user-controls-dormant {
-    color: var(--white);
+.theme-dark .user-filter-search .bi {
+    color: var(--white-alpha-50);
 }
 
-.theme-dark .user-controls-search .bi {
-    color: var(--white-alpha-50);
+.theme-dark .user-toggle-chip {
+    background: transparent;
+    border-color: var(--white-alpha-15);
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .user-toggle-chip.active {
+    background: var(--orange-alpha-15);
+    border-color: var(--gold);
+    color: var(--gold);
 }
 
 .theme-dark .member-empty {
@@ -1062,8 +1082,7 @@ main.theme-dark:has(.admin-light) .navbar-logo {
 }
 
 /* Mid-amber text is too dark on the dark purple surface — brighten the
-   attention pills (and their pending badge) to gold for legibility. */
-.theme-dark .user-dormant-pill,
+   warning pill (and the pending badge) to gold for legibility. */
 .theme-dark .user-warning-pill,
 .theme-dark .user-tile-badge {
     color: var(--gold);
