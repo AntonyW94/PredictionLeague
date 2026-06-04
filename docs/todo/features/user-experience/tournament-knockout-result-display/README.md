@@ -123,8 +123,13 @@ Group‑stage and league matches leave all four `NULL`. Display state is derived
 
 ### CQRS / Dapper reminders
 
-* Capture (write) goes through the command handler + `Match` entity.
-* Reads use `IApplicationReadDbConnection` + SQL.
+* Capture (write) goes through the command handler + `Match` entity, persisted by
+  **`RoundRepository.UpdateMatchScoresAsync`** — whose explicit `UPDATE` column
+  list must gain the four new columns (Task 4, Step 5), or nothing is saved.
+* `RoundRepository` *reads*/hydrates `Match` via `SELECT m.*` (Dapper maps by
+  name), so reads need no SQL change once the `Match` constructor gains the
+  parameters (Task 2).
+* Reads that build DTOs use `IApplicationReadDbConnection` + explicit SQL.
 * **`GetRoundByIdQueryHandler` maps positionally** via a private result record —
   keep `SELECT` column order and the record constructor in lockstep (Task 5).
 

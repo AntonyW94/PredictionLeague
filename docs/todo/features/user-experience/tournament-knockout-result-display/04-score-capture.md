@@ -18,6 +18,7 @@ the values through to `Match.UpdateScore`.
 |------|--------|---------|
 | `src/ThePredictions.Application/Features/Admin/Rounds/Commands/UpdateScoresForNextRoundCommandHandler.cs` | Modify | `GetScoreForMatch` (capture) + `GetMatchStatus` + `Handle` wiring |
 | `src/ThePredictions.Application/Features/Admin/Rounds/Commands/UpdateMatchResultsCommandHandler.cs` | Modify | Pass new values into `UpdateScore` |
+| `src/ThePredictions.Infrastructure/Repositories/RoundRepository.cs` | Modify | **Persist** the four columns in `UpdateMatchScoresAsync` (see Step 5) |
 | `tests/Unit/ThePredictions.Application.Tests.Unit/...UpdateScoresForNextRoundCommandHandlerTests.cs` | Modify | Cover capture + status mapping |
 
 ## Background
@@ -116,6 +117,56 @@ matchToUpdate.UpdateScore(
     matchResult.PenaltyAwayScore);
 ```
 
+### Step 5: Persist the columns — `RoundRepository.UpdateMatchScoresAsync`
+
+**This is the actual write path and currently only sets three columns** — it
+must include the four new ones or nothing we capture is ever saved. Update both
+the SQL and the anonymous parameter projection (`RoundRepository.cs:471`):
+
+```csharp
+const string sql = @"
+UPDATE
+    [Matches]
+SET
+    [ActualHomeTeamScore] = @ActualHomeTeamScore,
+    [ActualAwayTeamScore] = @ActualAwayTeamScore,
+    [AfterExtraTimeHomeScore] = @AfterExtraTimeHomeScore,
+    [AfterExtraTimeAwayScore] = @AfterExtraTimeAwayScore,
+    [PenaltyHomeScore] = @PenaltyHomeScore,
+    [PenaltyAwayScore] = @PenaltyAwayScore,
+    [Status] = @Status
+WHERE
+    [Id] = @Id;";
+
+var command = new CommandDefinition(
+    commandText: sql,
+    parameters: matches.Select(m => new
+    {
+        m.Id,
+        m.ActualHomeTeamScore,
+        m.ActualAwayTeamScore,
+        m.AfterExtraTimeHomeScore,
+        m.AfterExtraTimeAwayScore,
+        m.PenaltyHomeScore,
+        m.PenaltyAwayScore,
+        Status = m.Status.ToString()
+    }),
+    transaction: Transaction,
+    cancellationToken: cancellationToken
+);
+```
+
+The `IRoundRepository.UpdateMatchScoresAsync(List<Match>, CancellationToken)`
+signature is unchanged — only the SQL/projection inside changes.
+
+> **Read path needs no SQL change.** `RoundRepository` hydrates `Match` via
+> `SELECT r.*, m.*` (`GetRoundsWithMatchesSql`) and Dapper maps the columns to
+> the `Match` constructor **by name**, so the new `m.*` columns flow in once the
+> constructor gains the parameters (Task 2). Match creation (`AddMatchSql`) and
+> detail edits (`UpdateAsync`) deliberately don't touch score columns, so the new
+> nullable columns stay `NULL` on create and are preserved on edit — no change
+> needed there.
+
 ## Idempotency note
 
 The four columns are now written while the match is `InProgress` too. That is
@@ -135,5 +186,6 @@ only on revert to `Scheduled`/`Postponed`.
 ## Verification
 
 - [ ] Build clean with `/p:TreatWarningsAsErrors=true`.
-- [ ] During an `ET`/`BT`/`P` poll the match remains `InProgress` and keeps its 90′ score; ET/penalty columns are populated.
+- [ ] During an `ET`/`BT`/`P` poll the match remains `InProgress` and keeps its 90′ score; ET/penalty columns are **written to the database** (confirm via `UpdateMatchScoresAsync`, not just the in‑memory entity).
+- [ ] On `AET`/`PEN` the final ET/penalty values persist and the match flips to `Completed`.
 </content>

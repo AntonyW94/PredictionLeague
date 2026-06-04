@@ -168,13 +168,14 @@ overrides here (as `results-grid.css` does).
 }
 
 /* Live ET/penalties ticker: slightly stronger than the settled caption so it
-   reads as "happening now" alongside the pulsing 90′ headline above. */
+   reads as "happening now" alongside the pulsing 90′ headline above.
+   (Blue scale is 500/700/900 only — there is no --blue-300.) */
 .match-result-detail--live {
-    color: var(--blue-700);
+    color: var(--blue-900);
 }
 
 .theme-dark .match-result-detail--live {
-    color: var(--blue-300);
+    color: var(--blue-500);
 }
 
 /* Mobile card header has room — keep it on one line and a touch larger. */
@@ -185,8 +186,8 @@ overrides here (as `results-grid.css` does).
 }
 ```
 
-Use whichever `--blue-*` / `--grey-*` / `--white-alpha-*` tokens give clear
-contrast in each theme; confirm against `variables.css` / `themes/dark`.
+Tokens verified against `variables.css`: `--grey-500` (#6C757D), `--white-alpha-50`,
+`--blue-900` (#029187), `--blue-500` (#04F5FF). Confirm contrast in both themes.
 
 ## Verification
 
