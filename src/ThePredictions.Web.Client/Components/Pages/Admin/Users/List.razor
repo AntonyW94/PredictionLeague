@@ -60,54 +60,129 @@
                 </button>
             </div>
 
-            <div class="member-list">
-                @foreach (var user in GetActiveTabUsers())
-                {
-                    var isLoggedInUser = _currentUserId == user.Id;
+            <div class="user-controls">
+                <div class="user-controls-search">
+                    <span class="bi bi-search"></span>
+                    <input type="text" class="form-control" placeholder="Search name or email…" value="@_searchTerm" @oninput="OnSearchChanged" />
+                </div>
+                <div class="user-controls-sort">
+                    <label class="user-controls-label" for="user-sort">Sort</label>
+                    <select id="user-sort" class="form-select" value="@_sortField" @onchange="OnSortFieldChanged">
+                        <option value="name">Name</option>
+                        <option value="created">Leagues created</option>
+                        <option value="joined">Leagues joined</option>
+                        <option value="spend">Total spend</option>
+                        <option value="winnings">Total winnings</option>
+                    </select>
+                    <button class="btn btn-sm grey-button" @onclick="ToggleSortDirection" title="@(_sortDescending ? "Descending" : "Ascending")">
+                        <span class="bi @(_sortDescending ? "bi-sort-down" : "bi-sort-up")"></span>
+                    </button>
+                </div>
+                <label class="user-controls-dormant">
+                    <input type="checkbox" checked="@_dormantOnly" @onchange="OnDormantOnlyChanged" />
+                    Dormant only
+                </label>
+            </div>
 
-                    <div class="member-row user-row">
-                        <UserAvatar FullName="@user.FullName" />
-                        <div class="member-info">
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="member-name">@user.FullName</span>
-                                @if (user.IsAdmin)
-                                {
-                                    <span class="member-status-pill member-status-rejected">Admin</span>
-                                }
-                                else
-                                {
-                                    <span class="member-status-pill" style="background: var(--blue-700); color: var(--white)">Player</span>
-                                }
-                            </div>
-                            <span class="member-date" style="word-break: break-all;">
-                                @user.Email
-                                @if (!string.IsNullOrWhiteSpace(user.PhoneNumber))
-                                {
-                                    <span class="d-none d-lg-inline"> · @user.PhoneNumber</span>
-                                }
-                            </span>
-                            <div class="user-row-footer">
-                                <div class="auth-badges">
-                                    <span class="auth-badge @(user.HasLocalPassword ? "active" : "")" title="Email & Password">
-                                        <span class="bi bi-envelope-fill"></span>
+            var displayedUsers = GetDisplayedUsers();
+
+            <div class="user-results-count">
+                Showing @displayedUsers.Count of @GetActiveTabUsers().Count
+            </div>
+
+            @if (displayedUsers.Count == 0)
+            {
+                <div class="member-empty">No users match the current filters.</div>
+            }
+            else
+            {
+                <div class="member-list">
+                    @foreach (var user in displayedUsers)
+                    {
+                        var isLoggedInUser = _currentUserId == user.Id;
+
+                        <div class="member-row user-row">
+                            <UserAvatar FullName="@user.FullName" />
+                            <div class="member-info">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="member-name">@user.FullName</span>
+                                    @if (user.IsAdmin)
+                                    {
+                                        <span class="member-status-pill member-status-rejected">Admin</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="member-status-pill" style="background: var(--blue-700); color: var(--white)">Player</span>
+                                    }
+                                    @if (user.EmailConfirmed)
+                                    {
+                                        <span class="email-confirmed-badge confirmed" title="Email confirmed">
+                                            <span class="bi bi-patch-check-fill"></span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="email-confirmed-badge unconfirmed" title="Email not confirmed">
+                                            <span class="bi bi-patch-exclamation-fill"></span>
+                                        </span>
+                                    }
+                                    @if (user.IsDormant)
+                                    {
+                                        <span class="member-status-pill user-dormant-pill" title="No season pass, no leagues created or joined">Dormant</span>
+                                    }
+                                </div>
+                                <span class="member-date" style="word-break: break-all;">
+                                    @user.Email
+                                    @if (!string.IsNullOrWhiteSpace(user.PhoneNumber))
+                                    {
+                                        <span class="d-none d-lg-inline"> · @user.PhoneNumber</span>
+                                    }
+                                </span>
+                                <div class="user-stats">
+                                    <span class="user-stat @(user.HasSeasonPass ? "user-stat-on" : "user-stat-off")" title="Season pass">
+                                        <span class="bi bi-ticket-perforated-fill"></span>
+                                        @(user.HasSeasonPass ? "Pass" : "No pass")
                                     </span>
-                                    <span class="auth-badge @(user.SocialProviders.Contains("Google") ? "active" : "")" title="Google">
-                                        <span class="bi bi-google"></span>
+                                    <span class="user-stat" title="Leagues created">
+                                        <span class="bi bi-flag-fill"></span>
+                                        @user.LeaguesCreated created
+                                    </span>
+                                    <span class="user-stat" title="Leagues joined (approved)">
+                                        <span class="bi bi-people-fill"></span>
+                                        @user.LeaguesJoinedApproved joined@(user.LeaguesJoinedPending > 0 ? $" (+{user.LeaguesJoinedPending} pending)" : "")
+                                    </span>
+                                    <span class="user-stat" title="Total spend — passes @FormatMoney(user.SeasonPassSpend), league entries @FormatMoney(user.LeagueEntrySpend)">
+                                        <span class="bi bi-cash-stack"></span>
+                                        @FormatMoney(user.TotalSpend) spent
+                                    </span>
+                                    <span class="user-stat" title="Total winnings">
+                                        <span class="bi bi-trophy-fill"></span>
+                                        @FormatMoney(user.TotalWinnings) won
                                     </span>
                                 </div>
-                                <div class="user-row-actions">
-                                    <button class="btn btn-sm @(isLoggedInUser ? "grey-button" : "green-button")" @onclick="() => ChangeRole(user)" disabled="@isLoggedInUser" title="Change Role">
-                                        <span class="bi bi-person-badge-fill"></span><span class="d-none d-lg-inline ms-1">Role</span>
-                                    </button>
-                                    <button class="btn btn-sm @(isLoggedInUser ? "grey-button" : "red-button")" @onclick="() => PrepareToDeleteUser(user)" disabled="@isLoggedInUser" title="Delete User">
-                                        <span class="bi bi-trash-fill"></span>
-                                    </button>
+                                <div class="user-row-footer">
+                                    <div class="auth-badges">
+                                        <span class="auth-badge @(user.HasLocalPassword ? "active" : "")" title="Email & Password">
+                                            <span class="bi bi-envelope-fill"></span>
+                                        </span>
+                                        <span class="auth-badge @(user.SocialProviders.Contains("Google") ? "active" : "")" title="Google">
+                                            <span class="bi bi-google"></span>
+                                        </span>
+                                    </div>
+                                    <div class="user-row-actions">
+                                        <button class="btn btn-sm @(isLoggedInUser ? "grey-button" : "green-button")" @onclick="() => ChangeRole(user)" disabled="@isLoggedInUser" title="Change Role">
+                                            <span class="bi bi-person-badge-fill"></span><span class="d-none d-lg-inline ms-1">Role</span>
+                                        </button>
+                                        <button class="btn btn-sm @(isLoggedInUser ? "grey-button" : "red-button")" @onclick="() => PrepareToDeleteUser(user)" disabled="@isLoggedInUser" title="Delete User">
+                                            <span class="bi bi-trash-fill"></span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                }
-            </div>
+                    }
+                </div>
+            }
         }
     </div>
 </div>
@@ -119,6 +194,10 @@
     private string? _errorMessage;
     private string? _currentUserId;
     private string _activeTab = "all";
+    private string _searchTerm = "";
+    private string _sortField = "name";
+    private bool _sortDescending;
+    private bool _dormantOnly;
 
     protected override async Task OnInitializedAsync()
     {
@@ -133,12 +212,68 @@
         _activeTab = e.Value?.ToString() ?? "all";
     }
 
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        _searchTerm = e.Value?.ToString() ?? "";
+    }
+
+    private void OnSortFieldChanged(ChangeEventArgs e)
+    {
+        _sortField = e.Value?.ToString() ?? "name";
+    }
+
+    private void OnDormantOnlyChanged(ChangeEventArgs e)
+    {
+        _dormantOnly = e.Value is bool value && value;
+    }
+
+    private void ToggleSortDirection()
+    {
+        _sortDescending = !_sortDescending;
+    }
+
     private List<UserDto> GetActiveTabUsers() => _activeTab switch
     {
         "admin" => _adminUsers,
         "player" => _playerUsers,
         _ => _users ?? []
     };
+
+    private List<UserDto> GetDisplayedUsers()
+    {
+        IEnumerable<UserDto> users = GetActiveTabUsers();
+
+        if (!string.IsNullOrWhiteSpace(_searchTerm))
+        {
+            var term = _searchTerm.Trim();
+            users = users.Where(u =>
+                u.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || u.Email.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (_dormantOnly)
+        {
+            users = users.Where(u => u.IsDormant);
+        }
+
+        users = _sortField switch
+        {
+            "created" => users.OrderBy(u => u.LeaguesCreated),
+            "joined" => users.OrderBy(u => u.LeaguesJoinedApproved + u.LeaguesJoinedPending),
+            "spend" => users.OrderBy(u => u.TotalSpend),
+            "winnings" => users.OrderBy(u => u.TotalWinnings),
+            _ => users.OrderBy(u => u.FullName)
+        };
+
+        if (_sortDescending)
+        {
+            users = users.Reverse();
+        }
+
+        return users.ToList();
+    }
+
+    private static string FormatMoney(decimal amount) => $"£{amount:0.00}";
 
     private async Task LoadUsers()
     {

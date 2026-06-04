@@ -991,6 +991,36 @@ main.theme-dark:has(.admin-light) .navbar-logo {
     color: var(--white);
 }
 
+/* User list — controls, stats and badges (admin users page) */
+.theme-dark .user-controls-label,
+.theme-dark .user-results-count {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-controls-dormant {
+    color: var(--white);
+}
+
+.theme-dark .user-controls-search .bi {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .member-empty {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-08);
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-stat {
+    background: var(--white-alpha-10);
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .user-stat-off {
+    background: var(--white-alpha-10);
+    color: var(--white-alpha-50);
+}
+
 /* Cards inside admin pages should match the form-container surface
    (purple-800), not the darker purple-1000 used on dashboard cards. */
 .theme-dark .admin-light .card {

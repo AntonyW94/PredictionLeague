@@ -300,6 +300,141 @@
     color: var(--white);
 }
 
+/* User list — controls bar (search / sort / filter) */
+.user-controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+@media (min-width: 768px) {
+    .user-controls {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-3);
+    }
+}
+
+.user-controls-search {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.user-controls-search .bi {
+    position: absolute;
+    top: 50%;
+    left: var(--space-3);
+    transform: translateY(-50%);
+    color: var(--grey-500);
+    pointer-events: none;
+}
+
+.user-controls-search .form-control {
+    padding-left: calc(var(--space-3) + 1.25rem);
+}
+
+.user-controls-sort {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+.user-controls-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--grey-500);
+    margin: 0;
+}
+
+.user-controls-dormant {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--purple-1000);
+    flex-shrink: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+.user-results-count {
+    font-size: 0.8rem;
+    color: var(--grey-500);
+    margin-bottom: var(--space-2);
+}
+
+.member-empty {
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--bs-border-radius);
+    padding: var(--space-6);
+    text-align: center;
+    color: var(--grey-500);
+    font-size: 0.9rem;
+}
+
+/* Email confirmation badge */
+.email-confirmed-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.email-confirmed-badge.confirmed {
+    color: var(--green-600);
+}
+
+.email-confirmed-badge.unconfirmed {
+    color: var(--orange);
+}
+
+/* Dormant flag pill */
+.user-dormant-pill {
+    background: var(--orange-alpha-15);
+    color: var(--orange);
+}
+
+/* Per-user stat pills */
+.user-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+    margin-top: var(--space-2);
+}
+
+.user-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 1px var(--space-2);
+    border-radius: 50rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: var(--grey-100);
+    color: var(--grey-500);
+    white-space: nowrap;
+}
+
+.user-stat .bi {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+.user-stat-on {
+    background: var(--green-600-alpha-15);
+    color: var(--green-600);
+}
+
+.user-stat-off {
+    background: var(--grey-100);
+    color: var(--grey-500);
+}
+
 /* Season list rows */
 .season-row-icon {
     width: 42px;
