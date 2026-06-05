@@ -95,7 +95,8 @@ jobs:
       - name: Warm up site
         run: |
           echo "Warming up site to avoid cold-start delay..."
-          HTTP_STATUS=$(curl --retry 5 --retry-delay 10 --retry-all-errors \
+          # -L follows the apex -> www 301 redirect so we report the final 200, not the redirect.
+          HTTP_STATUS=$(curl -L --retry 5 --retry-delay 10 --retry-all-errors \
             --max-time 120 -o /dev/null -s -w "%{http_code}" \
             "https://thepredictions.co.uk" || true)
           echo "HTTP status: $HTTP_STATUS"
@@ -114,7 +115,7 @@ jobs:
           echo "Waiting for app pool to recycle..."
           sleep 15
           echo "Retrying warm up..."
-          curl --retry 5 --retry-delay 10 --retry-all-errors \
+          curl -L --retry 5 --retry-delay 10 --retry-all-errors \
             --max-time 120 -o /dev/null -s -w "HTTP %{http_code} in %{time_total}s\n" \
             "https://thepredictions.co.uk"
 

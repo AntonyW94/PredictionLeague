@@ -1,6 +1,6 @@
 # 0009. Platform & data: Competitions table, email identity, deferred challenges
 
-- **Status:** Accepted (Competitions, Email) / Deferred (Season Challenges)
+- **Status:** Accepted (Competitions, Email) / Deferred (Season Challenges) — email-confirmation gate **temporarily suspended by [0012](./0012-email-gate-temporary-suspension.md)**
 - **Date:** 2026-05-30
 - **Deciders:** Antony
 - **Tags:** technical, domain, security, legal, product

@@ -35,6 +35,12 @@ public class SetPrizeSchemeCommandHandler(
         if (!alreadySet && !isLeagueAdmin && !isSiteAdmin)
             throw new UnauthorizedAccessException("Only the league administrator can set the prize scheme.");
 
+        // A free league with no admin top-up has a £0 pot, so prizes do not apply. The client hides the
+        // editor in this case; guard here too so a scheme can never be persisted against an empty pot.
+        var hasPrizeFund = league.Price > 0 || (league.PrizeFundOverride ?? 0) > 0;
+        if (!hasPrizeFund)
+            throw new InvalidOperationException("A prize scheme cannot be set on a free league with no prize fund.");
+
         var season = await seasonRepository.GetByIdAsync(league.SeasonId, cancellationToken);
         Guard.Against.EntityNotFound(league.SeasonId, season, "Season");
 

@@ -9,6 +9,13 @@
 
 <PageTitle>Register</PageTitle>
 
+<AuthorizeView>
+    <Authorized>
+        @* Visiting register while already signed in - bounce to the dashboard. *@
+        <RedirectToDashboard />
+    </Authorized>
+</AuthorizeView>
+
 <div class="page-container">
     <div class="form-container">
         <NavLink href="/" class="back-button" title="Back to Home">

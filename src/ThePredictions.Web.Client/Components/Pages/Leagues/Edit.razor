@@ -135,14 +135,26 @@
                         }
                         else if (!_isPastDeadline)
                         {
-                            <PrizeSchemeEditor Scheme="_scheme"
-                                               SeasonId="_league.SeasonId"
-                                               Price="_model.Price"
-                                               IsTournament="_league.IsTournament"
-                                               CurrentEntrants="_league.MemberCount"
-                                               PrizeFundOverride="_model.PrizeFundOverride" />
+                            @* Prizes only apply when there is money in the pot. Boosts always apply, so they stay. *@
+                            @if (_hasPrizeFund)
+                            {
+                                <PrizeSchemeEditor Scheme="_scheme"
+                                                   SeasonId="_league.SeasonId"
+                                                   Price="_model.Price"
+                                                   IsTournament="_league.IsTournament"
+                                                   CurrentEntrants="_league.MemberCount"
+                                                   PrizeFundOverride="_model.PrizeFundOverride" />
+                            }
+                            else
+                            {
+                                <FormSection Title="Prizes" Intro="This is a free league, so there are no prizes.">
+                                    <div class="message-box-solid info">
+                                        Set an entry fee or add your own money to the pot to configure prizes.
+                                    </div>
+                                </FormSection>
+                            }
                             <LeagueBoostSelector Selections="_boostSelections" />
-                            <p class="form-text text-white-50 form-section-note">Prizes &amp; boosts can only be set once, then they lock.</p>
+                            <p class="form-text text-white-50 form-section-note">@(_hasPrizeFund ? "Prizes & boosts can only be set once, then they lock." : "Boosts can only be set once, then they lock.")</p>
                         }
                     }
 
@@ -172,6 +184,10 @@
 
     // Prizes (and so the admin top-up) are editable only while the scheme is unset and entries are open.
     private bool _canEditPrizes => _league is { HasPrizeScheme: false } && !_isPastDeadline;
+
+    // Prizes only apply when there is money in the pot: entry fees and/or the admin top-up.
+    // Re-evaluates live as the admin edits the entry fee or the top-up, so the editor appears/disappears.
+    private bool _hasPrizeFund => _model is not null && (_model.Price > 0 || (_model.PrizeFundOverride ?? 0) > 0);
 
     private async Task CopyEntryCodeAsync()
     {

@@ -81,6 +81,26 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     KnownNetworks = { new IPNetwork(System.Net.IPAddress.Parse("10.44.44.0"), 24) }
 });
 
+// Canonicalise the apex domain to the www subdomain (thepredictions.co.uk -> www.thepredictions.co.uk),
+// preserving scheme, path and query. Sits after UseForwardedHeaders so the original host/scheme are seen.
+// Only the exact apex is matched, so dev.* and localhost are untouched.
+app.Use(async (context, next) =>
+{
+    var request = context.Request;
+    if (string.Equals(request.Host.Host, "thepredictions.co.uk", StringComparison.OrdinalIgnoreCase))
+    {
+        var wwwHost = request.Host.Port.HasValue
+            ? new HostString("www.thepredictions.co.uk", request.Host.Port.Value)
+            : new HostString("www.thepredictions.co.uk");
+
+        var location = $"{request.Scheme}://{wwwHost}{request.PathBase}{request.Path}{request.QueryString}";
+        context.Response.Redirect(location, permanent: true);
+        return;
+    }
+
+    await next();
+});
+
 var isLocalDev = app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Local");
 if (isLocalDev)
 {

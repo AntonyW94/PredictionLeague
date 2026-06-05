@@ -12,6 +12,11 @@
 
 <CascadingAuthenticationState>
     <AuthorizeView>
+        <Authorized>
+            @* Already signed in - go straight to the dashboard. Reactive, so it also
+               fires if the auth state resolves after the first render. *@
+            <RedirectToDashboard />
+        </Authorized>
         <NotAuthorized>
             @* 1. Hero *@
             <div class="hero-section text-center diagonal-clip">
