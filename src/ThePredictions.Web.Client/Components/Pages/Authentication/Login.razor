@@ -10,6 +10,13 @@
 
 <PageTitle>Login</PageTitle>
 
+<AuthorizeView>
+    <Authorized>
+        @* Visiting login while already signed in - bounce to the dashboard. *@
+        <RedirectToDashboard />
+    </Authorized>
+</AuthorizeView>
+
 <div class="page-container">
     <div class="form-container shadow">
         <NavLink href="/" class="back-button" title="Back to Home">

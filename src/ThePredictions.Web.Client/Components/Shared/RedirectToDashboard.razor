@@ -1,0 +1,14 @@
+@inject NavigationManager NavigationManager
+
+@code {
+    // Reactive counterpart to RedirectToLogin: rendered from an <AuthorizeView>'s
+    // <Authorized> branch so an already-authenticated user who lands on a public
+    // page (home, login, register) is sent to the dashboard. Because it fires on
+    // render rather than once in OnInitializedAsync, it still triggers when the
+    // auth state resolves late - e.g. a token refresh that completes after the
+    // first render (such as hitting the site mid-deploy while the API is recycling).
+    protected override void OnInitialized()
+    {
+        NavigationManager.NavigateTo("/dashboard");
+    }
+}
