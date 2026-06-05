@@ -115,6 +115,18 @@ public class SetPrizeSchemeCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldThrowInvalidOperation_WhenFreeLeagueHasNoPrizeFund()
+    {
+        var league = CreateLeague(price: 0m);
+        Arrange(league, isSiteAdmin: false);
+
+        var act = () => _handler.Handle(new SetPrizeSchemeCommand(1, "admin-user", Request()), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*free league*");
+        await _leagueRepository.DidNotReceiveWithAnyArgs().SavePrizeSchemeAsync(default, default!, CancellationToken.None);
+    }
+
+    [Fact]
     public async Task Handle_ShouldThrowInvalidOperation_WhenEntryFeeHasPence()
     {
         var league = CreateLeague(price: 10.50m);
