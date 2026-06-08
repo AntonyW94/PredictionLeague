@@ -1,11 +1,10 @@
-<!-- Brevo template id 10 · JoinLeagueRequest
-     Subject:      A new member has requested to join {{params.LEAGUE_NAME}}
+<!-- Brevo template id 10 · "Join League Request" (config key: JoinLeagueRequest)
+     Subject:      A new member has requested to join {{ params.LEAGUE_NAME }}
      Preview text: {{params.FIRST_NAME}} {{params.LAST_NAME}} wants to join {{params.LEAGUE_NAME}}
      Merge tags:   ADMIN_NAME, FIRST_NAME, LAST_NAME, LEAGUE_NAME, SEASON_NAME, DASHBOARD_URL -->
-
-<!-- Preheader: fills the inbox snippet, hidden in the body -->
+<html><body><!-- Preheader: fills the inbox snippet, hidden in the body -->
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F8F5FA;opacity:0;">
-  {{ params.FIRST_NAME }} {{ params.LAST_NAME }} wants to join {{ params.LEAGUE_NAME }}.
+  {{ params.FIRST_NAME }} {{params.LAST_NAME}} wants to join {{ params.LEAGUE_NAME }}.
   &#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;
 </div>
 
@@ -44,7 +43,7 @@
         <!-- Body -->
         <tr>
           <td style="padding:16px 32px 8px;color:#475467;font-size:16px;line-height:1.6;">
-            <p style="margin:0 0 16px;">Hi {{ params.ADMIN_NAME }},</p>
+            <p style="margin:0 0 16px;">Hi {{params.ADMIN_NAME}},</p>
             <p style="margin:0 0 20px;"><strong style="color:#2C0A3D;">{{ params.FIRST_NAME }} {{ params.LAST_NAME }}</strong> has asked to join your league. Review the request below to approve or reject it.</p>
           </td>
         </tr>
@@ -114,4 +113,4 @@
 
     </td>
   </tr>
-</table>
+</table></body></html>
