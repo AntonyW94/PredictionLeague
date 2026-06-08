@@ -23,6 +23,30 @@ public class BrevoEmailService(IOptions<BrevoSettings> settings, IOptions<Timeou
         await SendEmailAsync(sendSmtpEmail);
     }
 
+    public async Task<EmailSendResult> SendTestTemplatedEmailAsync(string to, long templateId, object parameters)
+    {
+        var sendSmtpEmail = GetBaseEmail(to);
+
+        sendSmtpEmail.TemplateId = templateId;
+        sendSmtpEmail.Params = parameters;
+
+        try
+        {
+            var apiInstance = GetApiInstance();
+
+            var result = await apiInstance.SendTransacEmailAsync(sendSmtpEmail);
+            var messageId = result?.MessageId ?? "UNKNOWN";
+
+            logger.LogInformation("Successfully sent test email to {Email} with message ID {MessageId}", to, messageId);
+            return new EmailSendResult(true, messageId, null);
+        }
+        catch (ApiException e)
+        {
+            logger.LogError(e, "Failed to send test email via Brevo. Status Code: {StatusCode}, Body: {Body}", e.ErrorCode, e.Message);
+            return new EmailSendResult(false, null, e.Message);
+        }
+    }
+
     private TransactionalEmailsApi GetApiInstance()
     {
         if (string.IsNullOrWhiteSpace(_settings.ApiKey))

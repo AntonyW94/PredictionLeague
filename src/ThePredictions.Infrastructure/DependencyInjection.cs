@@ -122,8 +122,12 @@ public static class DependencyInjection
         services.AddScoped<PredictionDomainService>();
         services.AddSingleton<IEmailDateFormatter, UkEmailDateFormatter>();
 
+        services.AddMemoryCache();
+
         services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
         services.AddScoped<IEmailService, BrevoEmailService>();
+        services.AddScoped<IEmailTemplateCatalog, BrevoEmailTemplateCatalog>();
+        services.AddSingleton<IEmailTestDefaultsResolver, EmailTestDefaultsResolver>();
         services.AddScoped<IReminderService, ReminderService>();
         services.AddScoped<IBoostService, BoostService>();
         services.AddScoped<IUserManager, UserManagerService>();
