@@ -389,7 +389,10 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
             request.BankAccountName,
             request.BankSortCode,
             request.BankAccountNumber,
-            request.PaymentReferenceTemplate);
+            request.PaymentReferenceTemplate,
+            RequiresMemberApproval: request.RequiresMemberApproval,
+            IsListed: request.IsListed,
+            LeagueUrlBase: Request.Headers["Origin"].ToString());
 
         await mediator.Send(command, cancellationToken);
 
@@ -469,7 +472,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         [FromBody, SwaggerParameter("Entry code for the league", Required = true)] JoinLeagueRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, null, request.EntryCode);
+        var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, null, request.EntryCode, Request.Headers["Origin"].ToString());
         var leagueId = await mediator.Send(command, cancellationToken);
 
         return Ok(new JoinLeagueResultDto(leagueId));
@@ -487,7 +490,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
-        var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, leagueId, null);
+        var command = new JoinLeagueCommand(CurrentUserId, CurrentUserFirstName, CurrentUserLastName, leagueId, null, Request.Headers["Origin"].ToString());
         var joinedLeagueId = await mediator.Send(command, cancellationToken);
 
         return Ok(new JoinLeagueResultDto(joinedLeagueId));
@@ -508,7 +511,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         [FromBody, SwaggerParameter("New membership status", Required = true)] LeagueMemberStatus newStatus,
         CancellationToken cancellationToken)
     {
-        var command = new UpdateLeagueMemberStatusCommand(leagueId, memberId, CurrentUserId, newStatus);
+        var command = new UpdateLeagueMemberStatusCommand(leagueId, memberId, CurrentUserId, newStatus, Request.Headers["Origin"].ToString());
         await mediator.Send(command, cancellationToken);
 
         return NoContent();

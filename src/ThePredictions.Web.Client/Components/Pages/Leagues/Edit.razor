@@ -50,6 +50,25 @@
                         <StyledValidationMessage For="@(() => _model.Name)" />
                     </div>
 
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <InputCheckbox id="requiresApproval" class="form-check-input" @bind-Value="_model.RequiresMemberApproval" disabled="@_isPastDeadline" />
+                            <label class="form-check-label" for="requiresApproval">Require approval for players to join</label>
+                        </div>
+                        <div class="form-text text-white-50">When off, anyone who joins is accepted automatically - no approval needed. You can change this at any time.</div>
+                    </div>
+
+                    @if (_entryCodeForDisplay != "Public")
+                    {
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <InputCheckbox id="isListed" class="form-check-input" @bind-Value="_model.IsListed" disabled="@_isPastDeadline" />
+                                <label class="form-check-label" for="isListed">Show this league in Available Leagues</label>
+                            </div>
+                            <div class="form-text text-white-50">Players can see the league exists, but still need the entry code to join. Member names stay hidden.</div>
+                        </div>
+                    }
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="price" class="form-label">Entry Fee (£)</label>
@@ -215,7 +234,9 @@
                 Price = league.Price,
                 EntryDeadlineUtc = league.EntryDeadlineUtc,
                 PointsForExactScore = league.PointsForExactScore,
-                PointsForCorrectResult = league.PointsForCorrectResult
+                PointsForCorrectResult = league.PointsForCorrectResult,
+                RequiresMemberApproval = league.RequiresMemberApproval,
+                IsListed = league.IsListed
             };
             _entryCodeForDisplay = league.EntryCode;
             _seasonName = league.SeasonName;

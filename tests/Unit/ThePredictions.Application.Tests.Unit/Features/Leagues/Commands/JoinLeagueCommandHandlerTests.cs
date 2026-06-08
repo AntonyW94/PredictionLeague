@@ -24,18 +24,19 @@ public class JoinLeagueCommandHandlerTests
         _handler = new JoinLeagueCommandHandler(_leagueRepository, _seasonAccessService, _mediator, _dateTimeProvider);
     }
 
-    private League CreateLeague(int id = 1, string administratorUserId = "admin-user", DateTime? entryDeadlineUtc = null)
+    private League CreateLeague(int id = 1, string administratorUserId = "admin-user", DateTime? entryDeadlineUtc = null, string? entryCode = null, bool requiresMemberApproval = true)
     {
         return new League(
             id: id, name: "Test League", seasonId: 1,
             administratorUserId: administratorUserId,
-            entryCode: "ABC123",
+            entryCode: entryCode,
             createdAtUtc: _dateTimeProvider.UtcNow.AddDays(-30),
             entryDeadlineUtc: entryDeadlineUtc ?? _dateTimeProvider.UtcNow.AddMonths(1),
             pointsForExactScore: 3, pointsForCorrectResult: 1,
             price: 0, isFree: true, hasPrizes: false,
             prizeFundOverride: null,
-            members: null, prizeSettings: null);
+            members: null, prizeSettings: null,
+            requiresMemberApproval: requiresMemberApproval);
     }
 
     [Fact]
@@ -58,7 +59,7 @@ public class JoinLeagueCommandHandlerTests
     public async Task Handle_ShouldAddMemberAndUpdateLeague_WhenJoiningByEntryCode()
     {
         // Arrange
-        var league = CreateLeague(id: 5);
+        var league = CreateLeague(id: 5, entryCode: "ABC123");
         var command = new JoinLeagueCommand("new-user", "Jane", "Doe", LeagueId: null, EntryCode: "ABC123");
 
         _leagueRepository.GetByEntryCodeAsync("ABC123", Arg.Any<CancellationToken>()).Returns(league);
@@ -154,5 +155,48 @@ public class JoinLeagueCommandHandlerTests
         // Assert
         await _leagueRepository.Received(1).GetByIdAsync(5, Arg.Any<CancellationToken>());
         await _leagueRepository.DidNotReceive().GetByEntryCodeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrowInvalidOperationException_WhenJoiningPrivateLeagueByLeagueId()
+    {
+        // Arrange — listing a private league exposes its id, so the by-id path must reject it (code required)
+        var league = CreateLeague(id: 5, entryCode: "ABC123");
+        var command = new JoinLeagueCommand("new-user", "Jane", "Doe", LeagueId: 5, EntryCode: null);
+
+        _leagueRepository.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(league);
+
+        // Act
+        var act = () => _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*entry code*");
+        await _leagueRepository.DidNotReceive().UpdateAsync(Arg.Any<League>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotifyMember_WhenLeagueDoesNotRequireApproval()
+    {
+        // Arrange — approval off: the joiner is auto-approved and told they can take part
+        var league = CreateLeague(id: 5, requiresMemberApproval: false);
+        var command = new JoinLeagueCommand("new-user", "Jane", "Doe", LeagueId: 5, EntryCode: null, LeagueUrlBase: "https://www.thepredictions.co.uk");
+
+        _leagueRepository.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(league);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await _mediator.Received(1).Send(
+            Arg.Is<NotifyMemberOfLeagueApprovalCommand>(n =>
+                n.MemberUserId == "new-user" &&
+                n.LeagueId == 5 &&
+                n.LeagueName == "Test League" &&
+                n.SeasonId == 1 &&
+                n.LeagueUrlBase == "https://www.thepredictions.co.uk"),
+            Arg.Any<CancellationToken>());
+
+        await _mediator.DidNotReceive().Send(Arg.Any<NotifyLeagueAdminOfJoinRequestCommand>(), Arg.Any<CancellationToken>());
     }
 }

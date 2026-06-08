@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MediatR;
 using NSubstitute;
 using ThePredictions.Application.Features.Leagues.Commands;
 using ThePredictions.Application.Repositories;
@@ -14,13 +15,14 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
 {
     private readonly ILeagueRepository _leagueRepository = Substitute.For<ILeagueRepository>();
     private readonly ILeagueMemberRepository _leagueMemberRepository = Substitute.For<ILeagueMemberRepository>();
+    private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
     private readonly UpdateLeagueMemberStatusCommandHandler _handler;
 
     public UpdateLeagueMemberStatusCommandHandlerTests()
     {
         _handler = new UpdateLeagueMemberStatusCommandHandler(
-            _leagueRepository, _leagueMemberRepository, _dateTimeProvider);
+            _leagueRepository, _leagueMemberRepository, _mediator, _dateTimeProvider);
     }
 
     private League CreateLeague(int id = 1, string administratorUserId = "admin-user")
@@ -66,6 +68,9 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
         // Assert
         await _leagueMemberRepository.Received(1).UpdateAsync(member, Arg.Any<CancellationToken>());
         member.Status.Should().Be(LeagueMemberStatus.Approved);
+        await _mediator.Received(1).Send(
+            Arg.Is<NotifyMemberOfLeagueApprovalCommand>(n => n.MemberUserId == "member-1" && n.LeagueName == "Test League" && n.SeasonId == 1),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -18,13 +18,14 @@ public class GetAvailableLeaguesQueryHandler(IApplicationReadDbConnection dbConn
                 l.[Price],
                 l.[EntryDeadlineUtc],
                 (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) AS MemberCount,
-                (l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) + ISNULL(l.[PrizeFundOverride], 0)) AS EstPot
+                (l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) + ISNULL(l.[PrizeFundOverride], 0)) AS EstPot,
+                CAST(CASE WHEN l.[EntryCode] IS NOT NULL THEN 1 ELSE 0 END AS bit) AS IsPrivate
             FROM
                 [Leagues] l
-            JOIN 
+            JOIN
                 [Seasons] s ON l.[SeasonId] = s.[Id]
             WHERE
-                l.[EntryCode] IS NULL
+                (l.[EntryCode] IS NULL OR l.[IsListed] = 1)            -- public leagues, plus private leagues the admin has chosen to list
                 AND l.[EntryDeadlineUtc] > GETUTCDATE()
                 AND NOT EXISTS (
                     SELECT 1

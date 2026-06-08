@@ -6,4 +6,5 @@ public record NotifyLeagueAdminOfJoinRequestCommand(string AdministratorUserId,
     string LeagueName,
     int SeasonId,
     string NewMemberFirstName,
-    string NewMemberLastName) : IRequest;
+    string NewMemberLastName,
+    string? LeagueUrlBase = null) : IRequest;

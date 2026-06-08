@@ -7,4 +7,5 @@ public record AvailableLeagueDto(
     decimal Price,
     DateTime EntryDeadlineUtc,
     int MemberCount,
-    decimal EstPot);
+    decimal EstPot,
+    bool IsPrivate = false);

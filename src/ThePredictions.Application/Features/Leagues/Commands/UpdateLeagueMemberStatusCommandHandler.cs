@@ -7,7 +7,7 @@ using ThePredictions.Domain.Common.Guards;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepository, ILeagueMemberRepository leagueMemberRepository, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateLeagueMemberStatusCommand>
+public class UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepository, ILeagueMemberRepository leagueMemberRepository, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateLeagueMemberStatusCommand>
 {
     public async Task Handle(UpdateLeagueMemberStatusCommand request, CancellationToken cancellationToken)
     {
@@ -38,5 +38,9 @@ public class UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepo
         }
 
         await leagueMemberRepository.UpdateAsync(member, cancellationToken);
+
+        // Let the member know they can now take part once the admin has approved them.
+        if (request.NewStatus == LeagueMemberStatus.Approved)
+            await mediator.Send(new NotifyMemberOfLeagueApprovalCommand(member.UserId, league.Id, league.Name, league.SeasonId, request.LeagueUrlBase), cancellationToken);
     }
 }

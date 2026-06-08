@@ -12,5 +12,7 @@ public record LeagueDto(
     int PointsForCorrectResult,
     int SeasonId = 0,
     bool IsTournament = false,
-    bool HasPrizeScheme = false
+    bool HasPrizeScheme = false,
+    bool RequiresMemberApproval = true,
+    bool IsListed = false
 );
