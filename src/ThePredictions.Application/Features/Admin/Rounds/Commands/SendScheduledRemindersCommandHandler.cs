@@ -15,10 +15,12 @@ public class SendScheduledRemindersCommandHandler(
     IReminderService reminderService,
     IEmailDateFormatter dateFormatter,
     IOptions<BrevoSettings> brevoSettings,
+    IOptions<SiteSettings> siteSettings,
     IDateTimeProvider dateTimeProvider,
     ILogger<SendScheduledRemindersCommandHandler> logger) : IRequestHandler<SendScheduledRemindersCommand>
 {
     private readonly BrevoSettings _brevoSettings = brevoSettings.Value;
+    private readonly SiteSettings _siteSettings = siteSettings.Value;
 
     public async Task Handle(SendScheduledRemindersCommand request, CancellationToken cancellationToken)
     {
@@ -54,13 +56,19 @@ public class SendScheduledRemindersCommandHandler(
             return;
         }
 
+        var baseUrl = string.IsNullOrWhiteSpace(_siteSettings.BaseUrl)
+            ? "https://www.thepredictions.co.uk"
+            : _siteSettings.BaseUrl.TrimEnd('/');
+        var predictionsUrl = $"{baseUrl}/predictions/{nextRound.Id}";
+
         foreach (var user in usersToChase)
         {
             var parameters = new
             {
                 FIRST_NAME = user.FirstName,
                 ROUND_NAME = user.RoundName,
-                DEADLINE = dateFormatter.FormatDeadline(user.DeadlineUtc)
+                DEADLINE = dateFormatter.FormatDeadline(user.DeadlineUtc),
+                PREDICTIONS_URL = predictionsUrl
             };
             await emailService.SendTemplatedEmailAsync(user.Email, templateId.Value, parameters);
 

@@ -151,11 +151,21 @@
 </AuthorizeView>
 
 @code {
+    private static readonly string[] AllowedTabs = ["play", "leagues", "standings", "admin"];
+
     private string _activeTab = "play";
+
+    // Lets emails/links open a specific tab, e.g. /dashboard?tab=admin (used by the join-request email).
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Tab { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
+
+        if (!string.IsNullOrWhiteSpace(Tab) && AllowedTabs.Contains(Tab))
+            _activeTab = Tab;
 
         await Task.WhenAll(
             DashboardState.LoadMyLeaguesAsync(),

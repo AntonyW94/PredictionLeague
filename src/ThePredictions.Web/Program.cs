@@ -66,6 +66,7 @@ builder.Services.Configure<BrevoSettings>(builder.Configuration.GetSection("Brev
 builder.Services.Configure<FootballApiSettings>(builder.Configuration.GetSection("FootballApi"));
 builder.Services.Configure<FootballApiResilienceSettings>(builder.Configuration.GetSection("FootballApi:Resilience"));
 builder.Services.Configure<TimeoutSettings>(builder.Configuration.GetSection("Timeouts"));
+builder.Services.Configure<SiteSettings>(options => options.BaseUrl = builder.Configuration["ApiBaseUrl"]);
 
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)

@@ -167,6 +167,7 @@ For comprehensive rules with examples, consult these files:
 | Log message formatting | [`docs/guides/logging.md`](docs/guides/logging.md) |
 | Testing, coverage tools, report interpretation | [`docs/guides/testing.md`](docs/guides/testing.md) |
 | Domain concepts, tech stack, infrastructure | [`docs/guides/project-context.md`](docs/guides/project-context.md) |
+| Brevo email templates (HTML copies, house style, merge tags, ids) | [`docs/email-templates/README.md`](docs/email-templates/README.md) |
 
 ## Project-Specific Guidelines
 

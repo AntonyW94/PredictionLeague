@@ -43,11 +43,23 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConn
                 LAST_NAME = request.NewMemberLastName,
                 LEAGUE_NAME = request.LeagueName,
                 SEASON_NAME = admin.SeasonName,
-                ADMIN_NAME = admin.FirstName
+                ADMIN_NAME = admin.FirstName,
+                DASHBOARD_URL = BuildAdminDashboardUrl(request.LeagueUrlBase)
             };
 
             await emailService.SendTemplatedEmailAsync(admin.Email, templateId, parameters);
         }
+    }
+
+    // Deep-links to the dashboard's Admin tab, where pending join requests are actioned. The base comes
+    // from the request origin (the join is HTTP-triggered); falls back to the canonical site if absent.
+    private static string BuildAdminDashboardUrl(string? leagueUrlBase)
+    {
+        var baseUrl = string.IsNullOrWhiteSpace(leagueUrlBase)
+            ? "https://www.thepredictions.co.uk"
+            : leagueUrlBase.TrimEnd('/');
+
+        return $"{baseUrl}/dashboard?tab=admin";
     }
 }
 
