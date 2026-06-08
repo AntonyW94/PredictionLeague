@@ -67,8 +67,10 @@
                                                 </div>
                                             </div>
 
+                                            @* Private (listed) leagues still require the entry code, so open the code-entry
+                                               step rather than joining by id. Public leagues join directly by id. *@
                                             <button class="btn purple-accent-button w-100 mt-3"
-                                                    @onclick="() => ShowJoinModalAsync(league.Id)">
+                                                    @onclick="() => ShowJoinModalAsync(league.IsPrivate ? null : league.Id)">
                                                 Join
                                             </button>
                                         </div>

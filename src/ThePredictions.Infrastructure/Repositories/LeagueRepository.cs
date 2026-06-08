@@ -38,6 +38,8 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                 [IsFree],
                 [HasPrizes],
                 [PrizeFundOverride],
+                [RequiresMemberApproval],
+                [IsListed],
                 [BankAccountName],
                 [BankSortCode],
                 [BankAccountNumber],
@@ -57,6 +59,8 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                 @IsFree,
                 @HasPrizes,
                 @PrizeFundOverride,
+                @RequiresMemberApproval,
+                @IsListed,
                 @BankAccountName,
                 @BankSortCode,
                 @BankAccountNumber,
@@ -101,7 +105,9 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             bankSortCode: league.BankSortCode,
             bankAccountNumber: league.BankAccountNumber,
             paymentReferenceTemplate: league.PaymentReferenceTemplate,
-            prizeScheme: league.PrizeScheme
+            prizeScheme: league.PrizeScheme,
+            requiresMemberApproval: league.RequiresMemberApproval,
+            isListed: league.IsListed
         );
 
         return newLeague;
@@ -227,7 +233,9 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             league.BankSortCode,
             league.BankAccountNumber,
             league.PaymentReferenceTemplate,
-            prizeScheme
+            prizeScheme,
+            league.RequiresMemberApproval,
+            league.IsListed
         );
     }
 
@@ -299,6 +307,8 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                 [IsFree] = @IsFree,
                 [HasPrizes] = @HasPrizes,
                 [PrizeFundOverride] = @PrizeFundOverride,
+                [RequiresMemberApproval] = @RequiresMemberApproval,
+                [IsListed] = @IsListed,
                 [BankAccountName] = @BankAccountName,
                 [BankSortCode] = @BankSortCode,
                 [BankAccountNumber] = @BankAccountNumber,
@@ -611,7 +621,9 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             league.BankSortCode,
             league.BankAccountNumber,
             league.PaymentReferenceTemplate,
-            scheme);
+            scheme,
+            league.RequiresMemberApproval,
+            league.IsListed);
 
     private async Task<IEnumerable<League>> QueryAndMapLeaguesAsync(string sql, CancellationToken cancellationToken, object? param = null)
     {
@@ -654,7 +666,9 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                     firstLeague.BankAccountName,
                     firstLeague.BankSortCode,
                     firstLeague.BankAccountNumber,
-                    firstLeague.PaymentReferenceTemplate
+                    firstLeague.PaymentReferenceTemplate,
+                    requiresMemberApproval: firstLeague.RequiresMemberApproval,
+                    isListed: firstLeague.IsListed
                 );
             });
 

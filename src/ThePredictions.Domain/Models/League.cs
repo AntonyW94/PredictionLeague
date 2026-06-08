@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Ardalis.GuardClauses;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Constants;
+using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Domain.Models;
 
@@ -22,6 +23,15 @@ public partial class League
     public bool IsFree { get; private set; }
     public bool HasPrizes { get; private set; }
     public decimal? PrizeFundOverride { get; private set; }
+
+    // When true, new joiners land as Pending and the admin must approve them. When false, joiners are
+    // approved automatically. Toggleable by the admin at any time on the edit page.
+    public bool RequiresMemberApproval { get; private set; }
+
+    // When true, a private (entry-code) league is surfaced in the Available Leagues list so players can
+    // discover it - but the entry code is still required to join. Public leagues are always discoverable
+    // regardless of this flag.
+    public bool IsListed { get; private set; }
 
     // Peer-to-peer entry-fee settlement. Bank fields hold ciphertext (encrypted at the command layer);
     // the platform never touches the money. PaymentReferenceTemplate is a non-sensitive display hint.
@@ -63,7 +73,9 @@ public partial class League
         string? bankSortCode = null,
         string? bankAccountNumber = null,
         string? paymentReferenceTemplate = null,
-        LeaguePrizeScheme? prizeScheme = null)
+        LeaguePrizeScheme? prizeScheme = null,
+        bool requiresMemberApproval = true,
+        bool isListed = false)
     {
         Id = id;
         Name = name;
@@ -80,6 +92,8 @@ public partial class League
         IsFree = isFree;
         HasPrizes = hasPrizes;
         PrizeFundOverride = prizeFundOverride;
+        RequiresMemberApproval = requiresMemberApproval;
+        IsListed = isListed;
 
         BankAccountName = bankAccountName;
         BankSortCode = bankSortCode;
@@ -127,7 +141,9 @@ public partial class League
             PointsForCorrectResult = pointsForCorrectResult,
             IsFree = isFree,
             HasPrizes = false,
-            PrizeFundOverride = null
+            PrizeFundOverride = null,
+            RequiresMemberApproval = true,
+            IsListed = false
         };
     }
 
@@ -145,7 +161,7 @@ public partial class League
     {
         var league = Create(
             seasonId,
-            $"Official {seasonName} League",
+            $"{seasonName} Free League",
             administratorUserId,
             entryDeadlineUtc,
             PublicLeagueSettings.PointsForExactScore,
@@ -154,6 +170,10 @@ public partial class League
             season,
             dateTimeProvider
         );
+
+        // The official league is open to all - joiners are approved automatically so the site admin
+        // never has to action a backlog of join requests each season.
+        league.RequiresMemberApproval = false;
 
         return league;
     }
@@ -217,7 +237,43 @@ public partial class League
             throw new InvalidOperationException("The entry deadline for this league has passed.");
 
         var newMember = LeagueMember.Create(Id, userId, dateTimeProvider);
+
+        // When the league does not require approval, the joiner is approved immediately so they can take
+        // part straight away.
+        if (!RequiresMemberApproval)
+            newMember.Approve(dateTimeProvider);
+
         _members.Add(newMember);
+    }
+
+    /// <summary>
+    /// Toggles whether new join requests require admin approval. Turning approval off auto-approves any
+    /// members currently awaiting approval and returns their user ids so callers can notify them.
+    /// </summary>
+    public IReadOnlyCollection<string> SetRequiresMemberApproval(bool requiresApproval, IDateTimeProvider dateTimeProvider)
+    {
+        RequiresMemberApproval = requiresApproval;
+
+        if (requiresApproval)
+            return [];
+
+        var autoApprovedUserIds = new List<string>();
+        foreach (var member in _members.Where(m => m.Status == LeagueMemberStatus.Pending))
+        {
+            member.Approve(dateTimeProvider);
+            autoApprovedUserIds.Add(member.UserId);
+        }
+
+        return autoApprovedUserIds;
+    }
+
+    /// <summary>
+    /// Sets whether a private league is surfaced in the Available Leagues list. The entry code is still
+    /// required to join; this only controls discoverability.
+    /// </summary>
+    public void SetIsListed(bool isListed)
+    {
+        IsListed = isListed;
     }
 
     public void RemoveMember(string userId)

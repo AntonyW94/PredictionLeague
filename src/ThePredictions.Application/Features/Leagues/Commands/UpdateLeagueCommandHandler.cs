@@ -7,7 +7,7 @@ using ThePredictions.Domain.Common.Guards;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IFieldEncryptionService fieldEncryptionService, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateLeagueCommand>
+public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IFieldEncryptionService fieldEncryptionService, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateLeagueCommand>
 {
     public async Task Handle(UpdateLeagueCommand request, CancellationToken cancellationToken)
     {
@@ -43,8 +43,18 @@ public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
             NullIfBlank(request.PaymentReferenceTemplate));
 
         league.SetPrizeFundOverride(request.PrizeFundOverride);
+        league.SetIsListed(request.IsListed);
+
+        // Toggling approval off auto-approves anyone currently waiting; capture them so we can let them
+        // know they can now take part.
+        var autoApprovedUserIds = league.SetRequiresMemberApproval(request.RequiresMemberApproval, dateTimeProvider);
 
         await leagueRepository.UpdateAsync(league, cancellationToken);
+
+        foreach (var memberUserId in autoApprovedUserIds)
+        {
+            await mediator.Send(new NotifyMemberOfLeagueApprovalCommand(memberUserId, league.Name, league.SeasonId), cancellationToken);
+        }
     }
 
     private static string? NullIfBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

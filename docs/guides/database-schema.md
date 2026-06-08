@@ -333,6 +333,8 @@ User-created prediction leagues.
 | IsFree | bit | NO | 0 | Whether league is free to join |
 | HasPrizes | bit | NO | 1 | Whether league has prizes |
 | PrizeFundOverride | decimal(18,2) | YES | | Admin money added on top of entry fees (additive: pot = Price x ApprovedMembers + this) |
+| RequiresMemberApproval | bit | NO | 1 | When set, new joiners are Pending until the admin approves. When clear, joiners are auto-approved. Official free leagues default to clear |
+| IsListed | bit | NO | 0 | When set, a private (entry-code) league appears in Available Leagues for discovery; the entry code is still required to join. Ignored for public leagues, which are always listed |
 | PointsForExactScore | int | NO | 5 | Points for exact score prediction |
 | PointsForCorrectResult | int | NO | 3 | Points for correct result only |
 | CreatedAtUtc | datetime2 | NO | GETUTCDATE() | Creation timestamp |

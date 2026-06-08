@@ -1,4 +1,5 @@
 using FluentAssertions;
+using MediatR;
 using NSubstitute;
 using ThePredictions.Application.Features.Leagues.Commands;
 using ThePredictions.Application.Repositories;
@@ -16,12 +17,13 @@ public class UpdateLeagueCommandHandlerTests
     private readonly ILeagueRepository _leagueRepository = Substitute.For<ILeagueRepository>();
     private readonly ISeasonRepository _seasonRepository = Substitute.For<ISeasonRepository>();
     private readonly IFieldEncryptionService _fieldEncryptionService = Substitute.For<IFieldEncryptionService>();
+    private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
     private readonly UpdateLeagueCommandHandler _handler;
 
     public UpdateLeagueCommandHandlerTests()
     {
-        _handler = new UpdateLeagueCommandHandler(_leagueRepository, _seasonRepository, _fieldEncryptionService, _dateTimeProvider);
+        _handler = new UpdateLeagueCommandHandler(_leagueRepository, _seasonRepository, _fieldEncryptionService, _mediator, _dateTimeProvider);
     }
 
     private Season CreateSeason(int id = 1) =>

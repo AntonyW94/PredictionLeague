@@ -389,7 +389,9 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
             request.BankAccountName,
             request.BankSortCode,
             request.BankAccountNumber,
-            request.PaymentReferenceTemplate);
+            request.PaymentReferenceTemplate,
+            RequiresMemberApproval: request.RequiresMemberApproval,
+            IsListed: request.IsListed);
 
         await mediator.Send(command, cancellationToken);
 

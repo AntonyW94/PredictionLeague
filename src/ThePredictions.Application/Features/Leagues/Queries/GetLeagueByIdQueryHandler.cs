@@ -26,7 +26,9 @@ public class GetLeagueByIdQueryHandler(
                 l.[PointsForCorrectResult],
                 l.[SeasonId],
                 CAST(CASE WHEN c.[Type] = 1 THEN 1 ELSE 0 END AS bit) AS IsTournament,
-                CAST(CASE WHEN EXISTS (SELECT 1 FROM [LeaguePrizeScheme] lps WHERE lps.[LeagueId] = l.[Id]) THEN 1 ELSE 0 END AS bit) AS HasPrizeScheme
+                CAST(CASE WHEN EXISTS (SELECT 1 FROM [LeaguePrizeScheme] lps WHERE lps.[LeagueId] = l.[Id]) THEN 1 ELSE 0 END AS bit) AS HasPrizeScheme,
+                l.[RequiresMemberApproval],
+                l.[IsListed]
             FROM
                 [Leagues] l
             JOIN
@@ -47,7 +49,9 @@ public class GetLeagueByIdQueryHandler(
                 l.[PointsForExactScore],
                 l.[PointsForCorrectResult],
                 l.[SeasonId],
-                c.[Type];";
+                c.[Type],
+                l.[RequiresMemberApproval],
+                l.[IsListed];";
 
         return await dbConnection.QuerySingleOrDefaultAsync<LeagueDto>(
             sql,

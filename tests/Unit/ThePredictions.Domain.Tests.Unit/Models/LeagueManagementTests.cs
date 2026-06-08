@@ -144,6 +144,26 @@ public class LeagueManagementTests
     }
 
     [Fact]
+    public void Create_ShouldRequireMemberApproval_WhenCreated()
+    {
+        // Act
+        var league = CreateLeagueViaFactory();
+
+        // Assert
+        league.RequiresMemberApproval.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Create_ShouldSetIsListedToFalse_WhenCreated()
+    {
+        // Act
+        var league = CreateLeagueViaFactory();
+
+        // Assert
+        league.IsListed.Should().BeFalse();
+    }
+
+    [Fact]
     public void Create_ShouldSetPointsForExactScore_WhenProvided()
     {
         // Act
@@ -292,14 +312,25 @@ public class LeagueManagementTests
     #region CreateOfficialPublicLeague
 
     [Fact]
-    public void CreateOfficialPublicLeague_ShouldSetNameWithOfficialPrefix()
+    public void CreateOfficialPublicLeague_ShouldSetNameWithFreeSuffix()
     {
         // Act
         var league = League.CreateOfficialPublicLeague(
             1, "2025/26", 10m, "admin-user", FutureDeadline, CreateFutureSeason(), _dateTimeProvider);
 
         // Assert
-        league.Name.Should().Be("Official 2025/26 League");
+        league.Name.Should().Be("2025/26 Free League");
+    }
+
+    [Fact]
+    public void CreateOfficialPublicLeague_ShouldNotRequireMemberApproval()
+    {
+        // Act
+        var league = League.CreateOfficialPublicLeague(
+            1, "2025/26", 10m, "admin-user", FutureDeadline, CreateFutureSeason(), _dateTimeProvider);
+
+        // Assert
+        league.RequiresMemberApproval.Should().BeFalse();
     }
 
     [Fact]
@@ -514,6 +545,20 @@ public class LeagueManagementTests
     }
 
     [Fact]
+    public void AddMember_ShouldAutoApproveMember_WhenApprovalNotRequired()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+        league.SetRequiresMemberApproval(false, _dateTimeProvider);
+
+        // Act
+        league.AddMember("user-1", _dateTimeProvider);
+
+        // Assert
+        league.Members.First().Status.Should().Be(LeagueMemberStatus.Approved);
+    }
+
+    [Fact]
     public void AddMember_ShouldAddMultipleMembers_WhenDifferentUserIds()
     {
         // Arrange
@@ -647,6 +692,102 @@ public class LeagueManagementTests
         // Assert
         league.Members.Should().HaveCount(1);
         league.Members.First().UserId.Should().Be("user-2");
+    }
+
+    #endregion
+
+    #region SetRequiresMemberApproval
+
+    [Fact]
+    public void SetRequiresMemberApproval_ShouldSetFlagTrue_WhenApprovalRequired()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+        league.SetRequiresMemberApproval(false, _dateTimeProvider);
+
+        // Act
+        league.SetRequiresMemberApproval(true, _dateTimeProvider);
+
+        // Assert
+        league.RequiresMemberApproval.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SetRequiresMemberApproval_ShouldReturnEmpty_WhenApprovalRequired()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+        league.AddMember("user-1", _dateTimeProvider);
+
+        // Act
+        var autoApproved = league.SetRequiresMemberApproval(true, _dateTimeProvider);
+
+        // Assert
+        autoApproved.Should().BeEmpty();
+        league.Members.First().Status.Should().Be(LeagueMemberStatus.Pending);
+    }
+
+    [Fact]
+    public void SetRequiresMemberApproval_ShouldApprovePendingMembers_WhenApprovalTurnedOff()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+        league.AddMember("user-1", _dateTimeProvider);
+        league.AddMember("user-2", _dateTimeProvider);
+
+        // Act
+        var autoApproved = league.SetRequiresMemberApproval(false, _dateTimeProvider);
+
+        // Assert
+        league.RequiresMemberApproval.Should().BeFalse();
+        autoApproved.Should().BeEquivalentTo(new[] { "user-1", "user-2" });
+        league.Members.Should().OnlyContain(m => m.Status == LeagueMemberStatus.Approved);
+    }
+
+    [Fact]
+    public void SetRequiresMemberApproval_ShouldNotReApproveExistingMembers_WhenApprovalTurnedOff()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+        league.SetRequiresMemberApproval(false, _dateTimeProvider);
+        league.AddMember("user-1", _dateTimeProvider);
+
+        // Act — user-1 is already approved, so turning approval off again returns nobody new
+        var autoApproved = league.SetRequiresMemberApproval(false, _dateTimeProvider);
+
+        // Assert
+        autoApproved.Should().BeEmpty();
+    }
+
+    #endregion
+
+    #region SetIsListed
+
+    [Fact]
+    public void SetIsListed_ShouldSetFlagTrue_WhenListed()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+
+        // Act
+        league.SetIsListed(true);
+
+        // Assert
+        league.IsListed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SetIsListed_ShouldSetFlagFalse_WhenNotListed()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+        league.SetIsListed(true);
+
+        // Act
+        league.SetIsListed(false);
+
+        // Assert
+        league.IsListed.Should().BeFalse();
     }
 
     #endregion
