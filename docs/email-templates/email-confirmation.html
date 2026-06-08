@@ -1,7 +1,7 @@
 <!-- Brevo template id 6 · EmailConfirmation
      Subject:      Confirm your email address
      Preview text: Confirm your email to activate your Predictions account.
-     Merge tags:   firstName, confirmLink  (lowercase) -->
+     Merge tags:   FIRST_NAME, CONFIRM_LINK -->
 
 <!-- Preheader: fills the inbox snippet, hidden in the body -->
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F8F5FA;opacity:0;">
@@ -44,7 +44,7 @@
         <!-- Body -->
         <tr>
           <td style="padding:16px 32px 8px;color:#475467;font-size:16px;line-height:1.6;">
-            <p style="margin:0 0 16px;">Hi {{ params.firstName }},</p>
+            <p style="margin:0 0 16px;">Hi {{ params.FIRST_NAME }},</p>
             <p style="margin:0 0 20px;">Thanks for signing up. Please confirm your email address to activate your account and start making predictions.</p>
           </td>
         </tr>
@@ -55,7 +55,7 @@
             <table role="presentation" cellpadding="0" cellspacing="0">
               <tr>
                 <td align="center" bgcolor="#3D195B" style="border-radius:10px;">
-                  <a href="{{ params.confirmLink }}" target="_blank"
+                  <a href="{{ params.CONFIRM_LINK }}" target="_blank"
                      style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">
                     Confirm my email
                   </a>
@@ -69,7 +69,7 @@
         <tr>
           <td style="padding:16px 32px 8px;color:#475467;font-size:14px;line-height:1.6;">
             <p style="margin:0 0 6px;color:#98a2b3;">If the button doesn't work, copy and paste this link into your browser:</p>
-            <p style="margin:0;word-break:break-all;"><a href="{{ params.confirmLink }}" style="color:#5D3E85;text-decoration:none;">{{ params.confirmLink }}</a></p>
+            <p style="margin:0;word-break:break-all;"><a href="{{ params.CONFIRM_LINK }}" style="color:#5D3E85;text-decoration:none;">{{ params.CONFIRM_LINK }}</a></p>
           </td>
         </tr>
 

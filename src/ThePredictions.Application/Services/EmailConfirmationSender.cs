@@ -44,8 +44,8 @@ public class EmailConfirmationSender(
                 templateId,
                 new
                 {
-                    firstName = user.FirstName,
-                    confirmLink
+                    FIRST_NAME = user.FirstName,
+                    CONFIRM_LINK = confirmLink
                 });
 
             logger.LogInformation("Email confirmation sent to User (ID: {UserId})", user.Id);

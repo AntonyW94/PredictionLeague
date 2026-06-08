@@ -82,8 +82,8 @@ public class RequestPasswordResetCommandHandler(
             templateId,
             new
             {
-                firstName = user.FirstName,
-                resetLink
+                FIRST_NAME = user.FirstName,
+                RESET_LINK = resetLink
             });
 
         logger.LogInformation("Password reset email sent to User (ID: {UserId})", user.Id);
@@ -105,8 +105,8 @@ public class RequestPasswordResetCommandHandler(
             templateId,
             new
             {
-                firstName = user.FirstName,
-                loginLink
+                FIRST_NAME = user.FirstName,
+                LOGIN_LINK = loginLink
             });
 
         logger.LogInformation("Google sign-in reminder email sent to User (ID: {UserId})", user.Id);

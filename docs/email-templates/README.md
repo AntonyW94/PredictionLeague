@@ -15,15 +15,14 @@ The template id for each is configured under `Brevo:Templates` in
 | Template | File | Brevo id | Trigger (handler) | Merge tags (`{{ params.X }}`) | CTA link |
 |----------|------|---------|-------------------|-------------------------------|----------|
 | Join League Request | [join-league-request.html](join-league-request.html) | 10 | `NotifyLeagueAdminOfJoinRequestCommandHandler` | `ADMIN_NAME`, `FIRST_NAME`, `LAST_NAME`, `LEAGUE_NAME`, `SEASON_NAME`, `DASHBOARD_URL` | `{{ params.DASHBOARD_URL }}` → `/dashboard?tab=admin` |
-| Predictions Missing | [predictions-missing.html](predictions-missing.html) | 2 *(migrating to a new HTML template, id 9)* | `SendScheduledRemindersCommandHandler` | `FIRST_NAME`, `ROUND_NAME`, `DEADLINE`, `PREDICTIONS_URL` | `{{ params.PREDICTIONS_URL }}` → `/predictions/{roundId}` |
+| Predictions Missing | [predictions-missing.html](predictions-missing.html) | 9 | `SendScheduledRemindersCommandHandler` | `FIRST_NAME`, `ROUND_NAME`, `DEADLINE`, `PREDICTIONS_URL` | `{{ params.PREDICTIONS_URL }}` → `/predictions/{roundId}` |
 | League Join Approved | [league-join-approved.html](league-join-approved.html) | 5 | `NotifyMemberOfLeagueApprovalCommandHandler` | `FIRST_NAME`, `LEAGUE_NAME`, `SEASON_NAME`, `LEAGUE_URL` | `{{ params.LEAGUE_URL }}` → `/leagues/{id}/dashboard` |
-| Email Confirmation | [email-confirmation.html](email-confirmation.html) | 6 | `EmailConfirmationSender` | `firstName`, `confirmLink` | `{{ params.confirmLink }}` |
-| Password Reset – Google User | [password-reset-google-user.html](password-reset-google-user.html) | 7 | `RequestPasswordResetCommandHandler` | `firstName`, `loginLink` | `{{ params.loginLink }}` |
-| Password Reset | [password-reset.html](password-reset.html) | 8 | `RequestPasswordResetCommandHandler` | `firstName`, `resetLink` | `{{ params.resetLink }}` |
+| Email Confirmation | [email-confirmation.html](email-confirmation.html) | 6 | `EmailConfirmationSender` | `FIRST_NAME`, `CONFIRM_LINK` | `{{ params.CONFIRM_LINK }}` |
+| Password Reset – Google User | [password-reset-google-user.html](password-reset-google-user.html) | 7 | `RequestPasswordResetCommandHandler` | `FIRST_NAME`, `LOGIN_LINK` | `{{ params.LOGIN_LINK }}` |
+| Password Reset | [password-reset.html](password-reset.html) | 8 | `RequestPasswordResetCommandHandler` | `FIRST_NAME`, `RESET_LINK` | `{{ params.RESET_LINK }}` |
 
-> ⚠️ **Tag casing varies by template** (legacy reasons): account/auth emails use lowercase
-> (`firstName`, `confirmLink`, `resetLink`, `loginLink`); league/round emails use `UPPER_SNAKE`.
-> Always copy the exact names from the handler.
+> All merge tags use `UPPER_SNAKE` (e.g. `FIRST_NAME`, `RESET_LINK`). Always copy the exact names
+> from the handler's `params` object - a mismatch renders blank.
 
 ## Link building (no hard-coded domain in templates)
 
