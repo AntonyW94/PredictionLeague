@@ -346,11 +346,11 @@ input.prize-preview-count {
 }
 
 .boost-icon--selected .boost-icon-hex {
-    stroke: var(--blue-500);
+    stroke: var(--purple-200);
 }
 
 .boost-icon--selected svg {
-    filter: drop-shadow(0 0 3px var(--blue-500)) drop-shadow(0 0 7px var(--blue-700));
+    filter: drop-shadow(0 0 3px var(--purple-200)) drop-shadow(0 0 7px var(--purple-300));
 }
 
 .boost-icon--disabled svg {
