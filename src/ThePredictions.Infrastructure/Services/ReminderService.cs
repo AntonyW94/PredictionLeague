@@ -37,7 +37,10 @@ public class ReminderService(IApplicationReadDbConnection dbConnection) : IRemin
             SELECT DISTINCT
                 u.[Email],
                 u.[FirstName],
-                'Round ' + CONVERT(NVARCHAR(MAX), r.[RoundNumber]) AS RoundName,
+                CASE
+                    WHEN LEN(LTRIM(RTRIM(r.[DisplayName]))) > 0 THEN r.[DisplayName]
+                    ELSE 'Round ' + CONVERT(NVARCHAR(MAX), r.[RoundNumber])
+                END AS RoundName,
                 r.[DeadlineUtc],
                 u.[Id] AS UserId
             FROM 
