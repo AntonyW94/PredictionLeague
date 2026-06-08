@@ -16,4 +16,5 @@ public record UpdateLeagueCommand(
     string? PaymentReferenceTemplate = null,
     decimal? PrizeFundOverride = null,
     bool RequiresMemberApproval = true,
-    bool IsListed = false) : IRequest;
+    bool IsListed = false,
+    string? LeagueUrlBase = null) : IRequest;

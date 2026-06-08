@@ -41,6 +41,6 @@ public class UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepo
 
         // Let the member know they can now take part once the admin has approved them.
         if (request.NewStatus == LeagueMemberStatus.Approved)
-            await mediator.Send(new NotifyMemberOfLeagueApprovalCommand(member.UserId, league.Name, league.SeasonId), cancellationToken);
+            await mediator.Send(new NotifyMemberOfLeagueApprovalCommand(member.UserId, league.Id, league.Name, league.SeasonId, request.LeagueUrlBase), cancellationToken);
     }
 }

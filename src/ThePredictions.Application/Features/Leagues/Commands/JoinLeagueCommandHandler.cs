@@ -56,8 +56,10 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ISeaso
         {
             await mediator.Send(new NotifyMemberOfLeagueApprovalCommand(
                 request.JoiningUserId,
+                league.Id,
                 league.Name,
-                league.SeasonId), cancellationToken);
+                league.SeasonId,
+                request.LeagueUrlBase), cancellationToken);
         }
         else
         {
