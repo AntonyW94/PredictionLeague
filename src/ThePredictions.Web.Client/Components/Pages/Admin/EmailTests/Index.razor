@@ -1,0 +1,254 @@
+@page "/admin/email-tests"
+
+@attribute [Authorize(Roles = RoleNames.Administrator)]
+
+@inject HttpClient Http
+
+@using ThePredictions.Contracts.Admin.EmailTests
+@using ThePredictions.Contracts.Admin.Users
+
+<PageTitle>Email Test Tool</PageTitle>
+
+<div class="page-container admin-light">
+    <div class="admin-table-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Email Test Tool</h1>
+            <button class="btn btn-outline-secondary" @onclick="RefreshTemplatesAsync" disabled="@_loadingTemplates">
+                <span class="bi bi-arrow-clockwise me-2"></span>Refresh templates
+            </button>
+        </div>
+
+        @if (_loadError is not null)
+        {
+            <div class="alert alert-danger">@_loadError</div>
+        }
+
+        @if (_loadingTemplates)
+        {
+            <p>Loading templates...</p>
+        }
+        else if (_templates is null || _templates.Count == 0)
+        {
+            <div class="alert alert-warning">No Brevo templates were found.</div>
+        }
+        else
+        {
+            <div class="mb-3">
+                <label class="form-label" for="template-select">Template</label>
+                <select id="template-select" class="form-select" value="@_selectedTemplateId" @onchange="OnTemplateChangedAsync">
+                    <option value="">-- Select a template --</option>
+                    @foreach (var template in _templates)
+                    {
+                        <option value="@template.Id" disabled="@(!template.IsActive)">
+                            @template.Name@(template.IsActive ? "" : " (inactive)")
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="user-select">Seed defaults from user</label>
+                <select id="user-select" class="form-select" value="@_selectedUserId" @onchange="OnUserChangedAsync">
+                    <option value="">-- Generic defaults --</option>
+                    @if (_users is not null)
+                    {
+                        @foreach (var user in _users)
+                        {
+                            <option value="@user.Id">@user.FullName (@user.Email)</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            @if (_selectedTemplate is not null)
+            {
+                @if (!_selectedTemplate.IsActive)
+                {
+                    <div class="alert alert-warning">Template is inactive in Brevo.</div>
+                }
+                else
+                {
+                    <hr />
+                    <h2 class="h5">Parameters</h2>
+
+                    @if (_selectedTemplate.ParamNames.Count == 0)
+                    {
+                        <p class="text-muted">This template has no <code>{{ params.X }}</code> merge tags.</p>
+                    }
+                    else if (_loadingDefaults)
+                    {
+                        <p>Loading defaults...</p>
+                    }
+                    else
+                    {
+                        @foreach (var name in _selectedTemplate.ParamNames)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label" for="param-@name">@name</label>
+                                <input id="param-@name" class="form-control"
+                                       value="@GetParam(name)"
+                                       @oninput="e => SetParam(name, e.Value?.ToString())" />
+                            </div>
+                        }
+                    }
+
+                    <p class="text-muted">
+                        <span class="bi bi-info-circle me-1"></span>
+                        Sends to your own email address (the signed-in admin), never the user picked above.
+                    </p>
+
+                    <button class="btn btn-primary" @onclick="SendAsync" disabled="@(_sending || _loadingDefaults)">
+                        @(_sending ? "Sending..." : "Send test email")
+                    </button>
+
+                    @if (_lastResult is not null)
+                    {
+                        @if (_lastResult.Success)
+                        {
+                            <div class="alert alert-success mt-3">
+                                Sent to @_lastResult.SentTo. Brevo message ID: <code>@_lastResult.MessageId</code>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-danger mt-3">
+                                Send failed: @_lastResult.Error
+                            </div>
+                        }
+                    }
+                }
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private List<EmailTestTemplateDto>? _templates;
+    private List<UserDto>? _users;
+
+    private long? _selectedTemplateId;
+    private string? _selectedUserId;
+    private EmailTestTemplateDto? _selectedTemplate;
+
+    private Dictionary<string, string> _paramValues = new(StringComparer.Ordinal);
+
+    private bool _loadingTemplates;
+    private bool _loadingDefaults;
+    private bool _sending;
+    private SendTestEmailResultDto? _lastResult;
+    private string? _loadError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Task.WhenAll(LoadTemplatesAsync(), LoadUsersAsync());
+    }
+
+    private async Task LoadTemplatesAsync()
+    {
+        _loadingTemplates = true;
+        _loadError = null;
+
+        try
+        {
+            _templates = await Http.GetFromJsonAsync<List<EmailTestTemplateDto>>("api/admin/emailtests/templates") ?? [];
+        }
+        catch
+        {
+            _loadError = "Failed to load templates from Brevo.";
+            _templates = [];
+        }
+        finally
+        {
+            _loadingTemplates = false;
+        }
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        try
+        {
+            _users = await Http.GetFromJsonAsync<List<UserDto>>("api/admin/users") ?? [];
+        }
+        catch
+        {
+            _users = [];
+        }
+    }
+
+    private async Task RefreshTemplatesAsync()
+    {
+        await LoadTemplatesAsync();
+        if (_selectedTemplate is not null)
+            _selectedTemplate = _templates?.FirstOrDefault(t => t.Id == _selectedTemplateId);
+    }
+
+    private async Task OnTemplateChangedAsync(ChangeEventArgs e)
+    {
+        _lastResult = null;
+        _selectedTemplateId = long.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        _selectedTemplate = _templates?.FirstOrDefault(t => t.Id == _selectedTemplateId);
+        await LoadDefaultsAsync();
+    }
+
+    private async Task OnUserChangedAsync(ChangeEventArgs e)
+    {
+        _selectedUserId = string.IsNullOrEmpty(e.Value?.ToString()) ? null : e.Value!.ToString();
+        await LoadDefaultsAsync();
+    }
+
+    private async Task LoadDefaultsAsync()
+    {
+        if (_selectedTemplate is null || !_selectedTemplate.IsActive || _selectedTemplate.ParamNames.Count == 0)
+        {
+            _paramValues = new Dictionary<string, string>(StringComparer.Ordinal);
+            return;
+        }
+
+        _loadingDefaults = true;
+
+        try
+        {
+            var url = $"api/admin/emailtests/templates/{_selectedTemplateId}/defaults?dataUserId={Uri.EscapeDataString(_selectedUserId ?? string.Empty)}";
+            var defaults = await Http.GetFromJsonAsync<EmailTestDefaultsDto>(url);
+            _paramValues = defaults?.Defaults is not null
+                ? new Dictionary<string, string>(defaults.Defaults, StringComparer.Ordinal)
+                : new Dictionary<string, string>(StringComparer.Ordinal);
+        }
+        catch
+        {
+            _paramValues = new Dictionary<string, string>(StringComparer.Ordinal);
+        }
+        finally
+        {
+            _loadingDefaults = false;
+        }
+    }
+
+    private string GetParam(string name) => _paramValues.TryGetValue(name, out var value) ? value : string.Empty;
+
+    private void SetParam(string name, string? value) => _paramValues[name] = value ?? string.Empty;
+
+    private async Task SendAsync()
+    {
+        if (_selectedTemplateId is null)
+            return;
+
+        _sending = true;
+        _lastResult = null;
+
+        try
+        {
+            var request = new SendTestEmailRequest(_selectedTemplateId.Value, new Dictionary<string, string>(_paramValues, StringComparer.Ordinal));
+            var response = await Http.PostAsJsonAsync("api/admin/emailtests/send", request);
+            _lastResult = await response.Content.ReadFromJsonAsync<SendTestEmailResultDto>();
+        }
+        catch
+        {
+            _lastResult = new SendTestEmailResultDto(false, null, "The request failed before a result was returned.", string.Empty);
+        }
+        finally
+        {
+            _sending = false;
+        }
+    }
+}

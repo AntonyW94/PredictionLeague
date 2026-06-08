@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using brevo_csharp.Api;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -8,7 +7,7 @@ using ThePredictions.Application.Services;
 
 namespace ThePredictions.Infrastructure.Services;
 
-public partial class BrevoEmailTemplateCatalog(
+public class BrevoEmailTemplateCatalog(
     IOptions<BrevoSettings> settings,
     IOptions<TimeoutSettings> timeoutSettings,
     IMemoryCache cache,
@@ -51,7 +50,7 @@ public partial class BrevoEmailTemplateCatalog(
             if (template.Id is null)
                 continue;
 
-            var paramNames = ExtractParamNames(template.HtmlContent);
+            var paramNames = EmailTemplateParameters.Extract(template.HtmlContent);
             result.Add(new EmailTemplateInfo(
                 template.Id.Value,
                 template.Name ?? string.Empty,
@@ -62,29 +61,4 @@ public partial class BrevoEmailTemplateCatalog(
 
         return result.OrderBy(t => t.Name).ToList();
     }
-
-    /// <summary>
-    /// Extracts every distinct <c>{{ params.X }}</c> merge-tag name from a template's HTML,
-    /// preserving first-seen order so the test-tool form lists inputs in document order.
-    /// </summary>
-    private static IReadOnlyList<string> ExtractParamNames(string? htmlContent)
-    {
-        if (string.IsNullOrEmpty(htmlContent))
-            return [];
-
-        var names = new List<string>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-
-        foreach (Match match in ParamTagRegex().Matches(htmlContent))
-        {
-            var name = match.Groups[1].Value;
-            if (seen.Add(name))
-                names.Add(name);
-        }
-
-        return names;
-    }
-
-    [GeneratedRegex(@"\{\{\s*params\.([A-Za-z0-9_]+)", RegexOptions.IgnoreCase)]
-    private static partial Regex ParamTagRegex();
 }
