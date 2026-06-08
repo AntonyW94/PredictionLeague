@@ -98,7 +98,8 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
                 lm.[LeagueId] = @LeagueId
                 AND lm.[Status] IN (@ApprovedStatus, @PendingStatus)
             ORDER BY
-                lm.[JoinedAtUtc]";
+                u.[FirstName],
+                u.[LastName]";
 
         var members = await dbConnection.QueryAsync<LeagueDashboardMemberDto>(
             membersSql, cancellationToken, new

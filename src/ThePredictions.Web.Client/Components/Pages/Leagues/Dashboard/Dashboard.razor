@@ -110,12 +110,14 @@
                             <h3 class="text-white text-center fw-bold mb-3">Players <span class="match-count-badge">@State.Members.Count</span></h3>
                             @foreach (var member in State.Members)
                             {
-                                <div class="preseason-row">
+                                <div class="preseason-row preseason-row--player">
                                     <div class="d-flex align-items-center gap-3">
                                         <UserAvatar FullName="@member.FullName" />
-                                        <span class="text-white fw-bold">@member.FullName</span>
+                                        <div class="d-flex flex-column">
+                                            <span class="text-white fw-bold">@member.FullName</span>
+                                            <small class="text-white-50">Joined @member.JoinedAtUtc.ToString("dd MMM yyyy")</small>
+                                        </div>
                                     </div>
-                                    <span class="preseason-row__mid text-white-50 d-none d-md-block">@member.JoinedAtUtc.ToString("dd MMM yyyy")</span>
                                     <div>
                                         @if (member.Status == "Approved")
                                         {
