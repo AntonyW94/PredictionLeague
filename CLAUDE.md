@@ -194,6 +194,10 @@ Use these when creating new features:
 
 Significant product, business, legal, and technical decisions are recorded in [`docs/decisions/`](docs/decisions/) (ADR-style). **Read the relevant record before changing a decision**, and when reversing one, add a new record and mark the old one `Superseded by NNNN` rather than rewriting it. See [`docs/decisions/README.md`](docs/decisions/README.md) for the index and template.
 
+## Operational Processes
+
+Repeatable operational procedures (external-service access, credential retrieval, manual steps, runbooks) live in [`docs/processes/`](docs/processes/). Check there before assuming a process needs manual UI work. Notably: **Brevo email templates are managed via the API, not the Brevo UI** - see [`docs/processes/brevo-template-management.md`](docs/processes/brevo-template-management.md). Never commit secret values to these docs; document where a secret lives and how it is accessed, not the value.
+
 ## Things to NEVER Do
 
 1. **NEVER use `DateTime.Now`** - Always `DateTime.UtcNow`
