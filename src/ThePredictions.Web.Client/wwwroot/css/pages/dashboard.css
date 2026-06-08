@@ -171,6 +171,12 @@
         grid-template-columns: 1fr 1fr 1fr;
     }
 
+    /* Player rows carry the joined date under the name, so they keep a
+       two-column name + status layout at every breakpoint. */
+    .preseason-row--player {
+        grid-template-columns: 1fr auto;
+    }
+
     .preseason-row__mid {
         text-align: center;
     }
