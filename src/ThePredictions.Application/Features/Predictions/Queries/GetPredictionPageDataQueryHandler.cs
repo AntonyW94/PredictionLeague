@@ -37,7 +37,8 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
                 m.[PlaceholderAwayName],
                 m.[CustomLockTimeUtc],
                 up.[PredictedHomeScore],
-                up.[PredictedAwayScore]
+                up.[PredictedAwayScore],
+                r.[DisplayName] AS RoundDisplayName
             FROM [Rounds] r
             JOIN [Seasons] s ON r.[SeasonId] = s.[Id]
             JOIN [Competitions] c ON s.[CompetitionId] = c.[Id]
@@ -139,6 +140,7 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
         {
             RoundId = firstRow.RoundId,
             RoundNumber = firstRow.RoundNumber,
+            RoundDisplayName = firstRow.RoundDisplayName,
             SeasonName = firstRow.SeasonName,
             DeadlineUtc = firstRow.DeadlineUtc,
             IsPastDeadline = firstRow.DeadlineUtc < DateTime.UtcNow,
@@ -208,7 +210,8 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
         string? PlaceholderAwayName,
         DateTime? CustomLockTimeUtc,
         int? PredictedHomeScore,
-        int? PredictedAwayScore
+        int? PredictedAwayScore,
+        string? RoundDisplayName
     );
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]

@@ -47,3 +47,12 @@
     max-width: 540px;
     margin: 0 auto;
 }
+
+/* Emphasised sub-line inside the hero lead (e.g. the round name on the predictions page) */
+.page-hero__round {
+    display: block;
+    color: var(--white);
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: var(--space-1);
+}

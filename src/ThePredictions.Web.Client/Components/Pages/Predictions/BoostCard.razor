@@ -1,38 +1,32 @@
 @using ThePredictions.Contracts.Boosts
 
-<div class="boost-card" role="button" tabindex="0"
+<div class="boost-card @(IsSelected ? "boost-card--selected" : "") @(IsDisabled ? "boost-card--disabled" : "") @(BoostCode == "None" ? "boost-card--none" : "")"
+     role="button" tabindex="0"
      aria-pressed="@IsSelected"
      aria-disabled="@IsDisabled"
      title="@Tooltip"
      @onclick="HandleToggle"
      @onkeydown="HandleKeyDown">
 
-    <div class="boost-hex">
-        <img src="@CurrentImageUrl" alt="@ImageAlt" class="boost-img" />
-    </div>
+    <span class="boost-card__check bi bi-check-lg" aria-hidden="true"></span>
 
-    @if (Eligibility is not null)
+    <BoostIcon Code="@BoostCode" Name="@Name" Selected="@IsSelected" Disabled="@IsDisabled" Size="56" />
+
+    <div class="boost-card__name">@Name</div>
+
+    @if (BoostCode == "None")
     {
-        if (BoostCode == "None")
-        {
-            <div class="badge-group badge-group--green">
-                <span class="badge-icon">
-                    <span class="fw-bold">∞</span>
-                </span>
+        <div class="boost-card__caption">Default - no boost applied</div>
+    }
+    else if (Eligibility is not null)
+    {
+        <div class="@GetBoostRemainingCss(DisplayRemaining) boost-card__badge">
+            <span class="badge-icon">
+                <span class="fw-bold">@DisplayRemaining</span>
+            </span>
 
-                <span>remaining</span>
-            </div>
-        }
-        else
-        {
-            <div class="@GetBoostRemainingCss(DisplayRemaining)">
-                <span class="badge-icon">
-                    <span class="fw-bold">@DisplayRemaining</span>
-                </span>
-
-                <span>remaining</span>
-            </div>
-        }
+            <span>remaining</span>
+        </div>
     }
 </div>
 
@@ -41,10 +35,7 @@
     [Parameter, EditorRequired] public int RoundId { get; set; }
 
     [Parameter] public string BoostCode { get; set; } = string.Empty;
-    [Parameter] public string ImageUrl { get; set; } = string.Empty;
-    [Parameter] public string SelectedImageUrl { get; set; } = string.Empty;
-    [Parameter] public string DisabledImageUrl { get; set; } = string.Empty;
-    [Parameter] public string ImageAlt { get; set; } = string.Empty;
+    [Parameter] public string Name { get; set; } = string.Empty;
     [Parameter] public string Tooltip { get; set; } = string.Empty;
     [Parameter] public bool IsSelected { get; set; }
 
@@ -58,12 +49,6 @@
     private bool _localSelected;
 
     private bool IsDisabled => IsLocked || (!_initiallySelected && (Eligibility == null || !Eligibility.CanUse || Eligibility.AlreadyUsedThisRound));
-
-    private string CurrentImageUrl =>
-        IsSelected ? SelectedImageUrl :
-        IsDisabled ? DisabledImageUrl :
-        ImageUrl;
-
 
     private int DisplayRemaining
     {

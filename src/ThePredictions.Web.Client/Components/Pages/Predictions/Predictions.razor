@@ -14,7 +14,7 @@
 
 <PageTitle>Predictions - Round @(_pageData?.RoundNumber)</PageTitle>
 
-<div class="page-container">
+<div class="page-container predictions-page">
     <div class="form-container extra-wide">
         @if (_isLoading)
         {
@@ -22,10 +22,12 @@
         }
         else if (_pageData != null)
         {
-            <div class="text-center mb-4">
-                <h3 class="fw-bold text-white mb-1">@_pageData.SeasonName</h3>
-                <p class="fw-bold text-white-50 mb-2">Round @_pageData.RoundNumber</p>
+            <PageHero Title="@_pageData.SeasonName" Icon="bi-pencil-square">
+                <span class="page-hero__round">@RoundLabel</span>
+                Set your score for every match, then save before the deadline.
+            </PageHero>
 
+            <div class="text-center mb-4">
                 @if ((_pageData.DeadlineUtc - DateTime.UtcNow).TotalHours < 24)
                 {
                     <CountdownTimer DeadlineUtc="_pageData.DeadlineUtc" />
@@ -148,15 +150,37 @@
 
                 @if (!_pageData.IsPastDeadline && _hasVisibleBoosts)
                 {
-                    <div class="mb-3 mt-4">
-                        <h3 class="text-white text-center mb-4">Boosts</h3>
+                    <div class="boosts-section mt-4 mb-3">
+                        <h3 class="fw-bold text-white text-center mb-3">Boosts</h3>
 
                         @if (_loadingBoostEligibility)
                         {
-                            <div class="text-white-50">Loading boosts...</div>
+                            <div class="text-white-50 text-center">Loading boosts...</div>
                         }
                         else
                         {
+                            <div class="boost-explainer mb-4">
+                                <span class="boost-explainer__icon bi bi-lightning-charge-fill" aria-hidden="true"></span>
+                                <div class="boost-explainer__body">
+                                    <p class="boost-explainer__title">How boosts work</p>
+                                    <p class="boost-explainer__text">
+                                        A boost gives this round a one-off lift - for example, Double Up doubles the points you score.
+                                        You only get a limited number each season, so pick your moment. Tap a boost to arm it for this round, or tap it again to clear it.
+                                    </p>
+                                    <p class="boost-explainer__note">
+                                        <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+                                        <span>Your scores are shared across every league you're in, but boosts are chosen separately for each league below.</span>
+                                    </p>
+                                    @if (_pageData.IsTournament)
+                                    {
+                                        <p class="boost-explainer__note">
+                                            <i class="bi bi-lightbulb-fill" aria-hidden="true"></i>
+                                            <span>Tip: a boost doubles your whole round, so it pays off most on the rounds with the most matches.</span>
+                                        </p>
+                                    }
+                                </div>
+                            </div>
+
                             <div class="d-flex flex-wrap gap-4">
                                 @{
                                     var leaguesWithBoosts = _pageData.Leagues.Where(l => l.HasBoosts).ToList();
@@ -182,14 +206,19 @@
                                     }
 
                                     <div class="boost-league-row w-100">
-                                        <h5 class="text-center text-white mb-2">@league.Name</h5>
+                                        <div class="boost-league-row__head">
+                                            <span class="boost-league-row__label">Boosts for</span>
+                                            <span class="boost-league-row__name">@league.Name</span>
+                                        </div>
 
                                         @if (lockBoost)
                                         {
-                                            <div class="alert alert-warning text-center mb-3" role="alert">
-                                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                                <strong>Final round of the season.</strong>
-                                                You haven't used your boost yet for @league.Name, so it must be applied to this round.
+                                            <div class="boost-warning" role="alert">
+                                                <span class="boost-warning__icon bi bi-exclamation-triangle-fill" aria-hidden="true"></span>
+                                                <span class="boost-warning__text">
+                                                    <strong>Final round of the season.</strong>
+                                                    You haven't used your boost yet for @league.Name, so it must be applied to this round.
+                                                </span>
                                             </div>
                                         }
 
@@ -335,6 +364,11 @@
             _loadingBoostEligibility = false;
         }
     }
+
+    private string RoundLabel =>
+        _pageData!.IsTournament && !string.IsNullOrWhiteSpace(_pageData.RoundDisplayName)
+            ? _pageData.RoundDisplayName
+            : $"Round {_pageData.RoundNumber}";
 
     private IEnumerable<MatchPredictionDto> GetSortedMatches()
     {

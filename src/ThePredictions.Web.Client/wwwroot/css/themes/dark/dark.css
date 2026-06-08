@@ -469,6 +469,14 @@
     background: var(--white-alpha-30);
 }
 
+/* Predictions page: flatten the form-container so it reads as the page surface,
+   not a giant card. The match cards and boost rows are the only raised boxes. */
+.theme-dark .predictions-page .form-container {
+    background-color: var(--purple-900);
+    box-shadow: none;
+    border: none;
+}
+
 .theme-dark .boost-league-row {
     background: var(--purple-600);
     border: none;
@@ -477,6 +485,58 @@
 
 .theme-dark .boost-description-wrapper {
     border-top-color: var(--purple-600);
+}
+
+.theme-dark .boost-league-row__label {
+    color: var(--purple-200);
+}
+
+.theme-dark .boost-league-row__name {
+    color: var(--white);
+}
+
+/* Boosts section explainer (dark) */
+.theme-dark .boost-explainer {
+    background: var(--purple-600);
+    border: none;
+    box-shadow: 0 8px 20px var(--black-alpha-35), inset 0 0 0 1px var(--white-alpha-05);
+    color: var(--white);
+}
+
+.theme-dark .boost-explainer__icon {
+    background: var(--white-alpha-10);
+    color: var(--purple-200);
+}
+
+.theme-dark .boost-explainer__text {
+    color: var(--grey-300);
+}
+
+.theme-dark .boost-explainer__note {
+    background: var(--white-alpha-05);
+    color: var(--white);
+}
+
+.theme-dark .boost-explainer__note i {
+    color: var(--purple-200);
+}
+
+/* Flat boost tiles (dark).
+   Tiles stay transparent so they sit flat on the purple-600 league row rather
+   than stacking a second filled box inside it - only the selected tile gets a fill. */
+.theme-dark .boost-card {
+    background: transparent;
+    border-color: var(--white-alpha-15);
+    color: var(--white);
+}
+
+.theme-dark .boost-card__caption {
+    color: var(--grey-300);
+}
+
+.theme-dark .boost-card--selected {
+    background: var(--white-alpha-08);
+    border-color: var(--purple-200);
 }
 
 .theme-dark .detail-row code {
