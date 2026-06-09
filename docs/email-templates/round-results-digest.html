@@ -1,0 +1,158 @@
+<!-- Brevo template "Round Results Digest" (config key: RoundResultsDigest)
+     Subject:      {{ params.FIRST_NAME }}, here's how you did in {{ params.ROUND_NAME }}
+     Preview text: Your {{ params.ROUND_NAME }} results are in
+     Scalar tags:  FIRST_NAME, ROUND_NAME, CORRECT_RESULTS, EXACT_SCORES, RESULTS_URL,
+                   HAS_NEXT_ROUND, NEXT_ROUND_NAME, NEXT_ROUND_OPENS, NEXT_ROUND_DEADLINE
+     Loop:         params.LEAGUES[] -> LEAGUE_NAME, POINTS, POSITION, MOVEMENT, TOP_SCORER, TOP_SCORER_POINTS
+     Note: the LEAGUES loop only renders on a real send (the admin email-test tool sends
+           scalar params only, so the per-league rows will be empty there). -->
+<html><body><!-- Preheader: fills the inbox snippet, hidden in the body -->
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F8F5FA;opacity:0;">
+  Your {{ params.ROUND_NAME }} results are in.
+  &#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;margin:0;padding:32px 12px;font-family:'Segoe UI',Arial,Helvetica,sans-serif;">
+  <tr>
+    <td align="center">
+
+      <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #F0EAF5;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(44,10,61,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#3D195B;background:linear-gradient(135deg,#3D195B 0%,#2C0A3D 100%);padding:22px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td valign="middle" style="padding-right:12px;">
+                  <img src="https://www.thepredictions.co.uk/images/Logo.png" alt="" width="40" height="40" style="display:block;border:0;outline:none;text-decoration:none;width:40px;height:40px;border-radius:8px;">
+                </td>
+                <td valign="middle" style="color:#ffffff;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;letter-spacing:.2px;">
+                  The Predictions
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Hero -->
+        <tr>
+          <td style="padding:36px 32px 8px;">
+            <span style="display:inline-block;background:#E7F8EF;color:#00824A;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;">&#127937; Round complete</span>
+            <h1 style="margin:18px 0 0;color:#2C0A3D;font-size:26px;line-height:1.25;font-weight:800;">{{ params.ROUND_NAME }} is in the books</h1>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:16px 32px 8px;color:#475467;font-size:16px;line-height:1.6;">
+            <p style="margin:0 0 16px;">Hi {{ params.FIRST_NAME }},</p>
+            <p style="margin:0 0 20px;">Here's how your predictions went this round.</p>
+          </td>
+        </tr>
+
+        <!-- Round summary panel -->
+        <tr>
+          <td style="padding:0 32px 8px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;border:1px solid #F0EAF5;border-radius:12px;">
+              <tr>
+                <td style="padding:18px 20px;">
+                  <p style="margin:0 0 4px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">This round</p>
+                  <p style="margin:0;color:#2C0A3D;font-size:17px;font-weight:700;">{{ params.CORRECT_RESULTS }} correct results &middot; {{ params.EXACT_SCORES }} exact scores</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Per-league breakdown -->
+        <tr>
+          <td style="padding:20px 32px 0;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">
+            Your leagues
+          </td>
+        </tr>
+        {% for league in params.LEAGUES %}
+        <tr>
+          <td style="padding:8px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #F0EAF5;border-radius:12px;">
+              <tr>
+                <td style="padding:16px 20px;">
+                  <p style="margin:0 0 6px;color:#2C0A3D;font-size:16px;font-weight:700;">{{ league.LEAGUE_NAME }}</p>
+                  <p style="margin:0;color:#475467;font-size:15px;line-height:1.6;">
+                    {{ league.POINTS }} pts &middot; {{ league.POSITION }}{% if league.MOVEMENT %} <span style="color:#98a2b3;">({{ league.MOVEMENT }})</span>{% endif %}
+                  </p>
+                  {% if league.TOP_SCORER %}
+                  <p style="margin:6px 0 0;color:#98a2b3;font-size:13px;">Top scorer: {{ league.TOP_SCORER }} ({{ league.TOP_SCORER_POINTS }} pts)</p>
+                  {% endif %}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {% endfor %}
+
+        <!-- Bulletproof button -->
+        <tr>
+          <td style="padding:24px 32px 8px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" bgcolor="#3D195B" style="border-radius:10px;">
+                  <a href="{{ params.RESULTS_URL }}" target="_blank"
+                     style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">
+                    View full results
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Next round (conditional) -->
+        {% if params.HAS_NEXT_ROUND %}
+        <tr>
+          <td style="padding:8px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;border:1px solid #F0EAF5;border-radius:12px;">
+              <tr>
+                <td style="padding:18px 20px;">
+                  <p style="margin:0 0 4px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">Next up &middot; {{ params.NEXT_ROUND_NAME }}</p>
+                  <p style="margin:0;color:#475467;font-size:15px;line-height:1.6;">Opens {{ params.NEXT_ROUND_OPENS }}<br/>Deadline {{ params.NEXT_ROUND_DEADLINE }}</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- Sign-off -->
+        <tr>
+          <td style="padding:20px 32px 32px;color:#475467;font-size:16px;line-height:1.6;">
+            <p style="margin:0;">Good luck next round,<br/><strong style="color:#2C0A3D;">The Predictions Team</strong></p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="background:#F8F5FA;border-top:1px solid #F0EAF5;padding:24px 32px;color:#98a2b3;font-size:12px;line-height:1.6;">
+            <p style="margin:0 0 10px;">
+              <a href="https://www.thepredictions.co.uk/privacy" style="color:#5D3E85;text-decoration:none;">Privacy</a>
+              &nbsp;&middot;&nbsp;
+              <a href="https://www.thepredictions.co.uk/terms" style="color:#5D3E85;text-decoration:none;">Terms</a>
+              &nbsp;&middot;&nbsp;
+              <a href="https://www.thepredictions.co.uk/cookie-policy" style="color:#5D3E85;text-decoration:none;">Cookie Policy</a>
+            </p>
+            <p style="margin:0;">
+              You're receiving this because you're playing in a league at
+              <a href="https://www.thepredictions.co.uk" style="color:#5D3E85;text-decoration:none;">www.thepredictions.co.uk</a>.
+            </p>
+            <p style="margin:8px 0 0;">© The Predictions</p>
+          </td>
+        </tr>
+
+      </table>
+
+      <!--[if mso]></td></tr></table><![endif]-->
+
+    </td>
+  </tr>
+</table></body></html>
