@@ -55,7 +55,10 @@ Copy an existing file and keep these conventions:
    (`<!--[if mso]><table width="600">…<![endif]-->`) since Outlook ignores `max-width`.
 5. **Header:** purple gradient `linear-gradient(135deg,#3D195B 0%,#2C0A3D 100%)`, with the
    logo + "The Predictions" wordmark lockup (logo `alt=""` because the wordmark text is present).
-6. **Hero:** a pill + an `<h1>` in `#2C0A3D`.
+6. **Hero (centred):** a pill + an `<h1>` in `#2C0A3D`, **centre-aligned** - put `align="center"` and
+   `text-align:center` on the hero `<td>`. Every template opens with a centred hero for a consistent
+   feel; the celebratory Prize Won email also adds a large emoji above the pill. Everything *below* the
+   hero (greeting, body copy, info panels, buttons, fallback links) stays **left-aligned**.
 7. **Info panel** for key facts: `background:#F8F5FA; border:1px solid #F0EAF5; border-radius:12px`,
    uppercase grey labels (`#98a2b3`) + `#2C0A3D` values.
 8. **Bulletproof button:** anchor inside a `bgcolor="#3D195B"` cell with `border-radius:10px`
