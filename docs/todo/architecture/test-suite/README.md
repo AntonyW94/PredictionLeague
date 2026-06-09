@@ -4,6 +4,8 @@
 
 Not Started | **In Progress** | Complete
 
+> **Verified June 2026:** Phase 1 (domain unit tests, 100% line/branch coverage) and Phase 2 (validator tests, ~261 cases) are complete. Phases 3-7 (query-handler integration, command-handler unit, API, and E2E tests) remain outstanding.
+
 This document outlines the comprehensive testing strategy for the ThePredictions application, including CI/CD integration with GitHub Actions.
 
 ## Table of Contents

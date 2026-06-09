@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped. ASP.NET Identity password policy is configured in `ThePredictions.Infrastructure/DependencyInjection.cs`: 8-char minimum, requires digit, lowercase, uppercase, and 4 unique characters.
 
 ## Summary
 

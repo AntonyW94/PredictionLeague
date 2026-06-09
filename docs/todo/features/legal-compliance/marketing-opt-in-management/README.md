@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Verified June 2026:** Foundation only. `ApplicationUser.MarketingOptInAtUtc` and registration-time consent capture (`RecordRegistrationConsent`) exist. Outstanding: a post-registration opt-in/out toggle on the account page, an update endpoint, and marketing-consent wiring for Google sign-up.
 
 ## Summary
 

@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Verified June 2026:** Partially shipped. The admin "new join request" email (`NotifyLeagueAdminOfJoinRequestCommand`, template 10) and the member "join approved" email (`NotifyMemberOfLeagueApprovalCommand`, template 5) are live. Outstanding: broader league-event notifications and any per-event opt-out.
 
 ## Summary
 

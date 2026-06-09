@@ -25,7 +25,6 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 |---|------|--------|-----|------|
 | 3 | Database migrations (DbUp) | Medium | Manual schema changes across 3 databases is unsustainable | [Outline](architecture/database-migrations/README.md) |
 | 4 | Request timeout configuration | Low | No explicit timeouts currently = silent hangs in production | [Outline](architecture/request-timeouts/README.md) |
-| 5 | Validator tests (Phase 2) | Low | ~160 pure unit tests, no mocks. Quick coverage win | [Detailed plan](architecture/test-suite/phase-2-validator-tests/README.md) |
 | 6 | Health check endpoints | Low | Small implementation, enables monitoring. Needed for alerting and E2E workflow | [Outline](architecture/health-checks/README.md) |
 | 7 | Football API resilience | High | Site completely fails if the API goes down. Circuit breaker + caching essential | [Outline](architecture/football-api-resilience/README.md) |
 | 8 | Database resilience | Medium | Connection pooling + retry policies for shared hosting | [Outline](architecture/database-resilience/README.md) |
@@ -66,8 +65,7 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 
 | # | Item | Effort | Why | Plan |
 |---|------|--------|-----|------|
-| 28 | **90-minute knockout scoring** | **Low** | **Knockout predictions must use 90-min score, not extra time. Required before World Cup Round of 32 (July 2026)** | [**Outline**](features/user-experience/tournament-knockout-scoring/README.md) |
-| 29 | Round results emails | Medium | The moment users care most: what happened this round? | [Outline](features/email-notifications/round-results-emails/README.md) |
+| 28 | Tournament knockout AET/penalty result *display* | Low | 90-minute knockout *scoring* already ships; the remaining work is capturing and displaying extra-time/penalty results so users can see how a tie was settled | [Outline](features/user-experience/tournament-knockout-result-display/README.md) |
 | 30 | User onboarding | Medium | Reduce drop-off for new signups | [Outline](features/user-experience/user-onboarding/README.md) |
 | 31 | Email preferences | Medium | Let users control what they receive | [Outline](features/email-notifications/email-preferences/README.md) |
 | 32 | Notifications UI | Medium | Dashboard alerts tile exists; extend to bell icon and dropdown for general notifications | [Outline](features/user-experience/notifications-ui/README.md) |
@@ -157,4 +155,8 @@ These items from the original backlog are already implemented:
 | Prod backup workflow | GitHub Actions, daily at 2am UTC |
 | CI workflow (`ci.yml`) | Build + test on every push/PR with Coverlet code coverage |
 | Deploy workflows (`deploy.yml`) | One-click deploys to dev and production via FTP with verification and warm-up |
-| Tournament support | Schema, domain models (CompetitionType, TournamentStage), sync handler, placeholder matches, round mappings, API endpoints, UI CSS, 50+ tests. 90-minute knockout scoring still outstanding |
+| Tournament support | Schema, domain models (CompetitionType, TournamentStage), sync handler, placeholder matches, round mappings, API endpoints, UI CSS, 50+ tests. 90-minute knockout scoring complete; only the AET/penalty result *display* remains (Track 3 #28) |
+| Validator tests (Phase 2) | `ThePredictions.Validators.Tests.Unit`, ~261 cases across all validators |
+| Round results digest emails | Per-user post-round digest (Brevo template 11), per-league links, admin resend, idempotent via `Round.ResultsDigestSentUtc` |
+| Prize-won notifications | Celebratory email to winners (Brevo template 12), idempotent via `PrizeNotifications` sent-log, admin resend |
+| Email test tool (admin) | `/admin/email-tests` page with live Brevo template discovery and smart parameter defaults |

@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Verified June 2026:** Partially addressed. The OAuth open-redirect protection is implemented (`ExternalAuthController.GetSafeLocalPath`). The remaining hardening items - an explicit `ClockSkew` and a `ValidAlgorithms` allow-list on `TokenValidationParameters` - are still outstanding. SameSite=None on the refresh-token cookie remains a documented accepted risk (see `docs/security/accepted-risks.md`).
 
 > **DEFERRED**: This plan involves changes to the login system and cookies. It has been deferred until the login system is ready to be modified.
 

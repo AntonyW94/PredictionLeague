@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Verified June 2026:** Partially built. `GetSeasonRecapQuery`/`Handler` and the `SeasonRecapTile` dashboard component exist and render recap stats. Outstanding: a shareable/standalone recap surface and any remaining highlight types from the plan.
 
 ## Summary
 

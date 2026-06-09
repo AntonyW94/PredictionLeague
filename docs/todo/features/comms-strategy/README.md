@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Verified June 2026:** Phase 1 (email design system) and Phase 2 (round-results digest, prize-won notifications, transactional emails) are shipped. Phases 3-6 (email preferences, WhatsApp/SMS channel, cost tracking) remain outstanding.
 
 ## Summary
 

@@ -4,7 +4,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped - the `ThePredictions.Validators.Tests.Unit` project exists and is wired into the solution and CI.
 
 ## Goal
 

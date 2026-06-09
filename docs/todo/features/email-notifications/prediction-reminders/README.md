@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Verified June 2026:** The reminder system is live - cron-triggered `SendScheduledRemindersCommand`/`Handler` with milestone timing (5d/3d/1d/6h/1h), per-user dedup, round `DisplayName`, and Brevo template 9 (Predictions Missing). Outstanding scope for this card is the richer urgency-based template redesign (e.g. `URGENCY` / `TIME_REMAINING` merge data), which is not yet built.
 
 ## Summary
 

@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped. JWT access tokens (15 min) plus DB-persisted refresh tokens (30-day sliding window) with rotation and revocation via `RefreshTokenCommand`/`Handler` and `IRefreshTokenRepository`.
 
 ## Summary
 

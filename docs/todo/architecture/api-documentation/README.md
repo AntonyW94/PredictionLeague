@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Verified June 2026:** Swagger/OpenAPI generation with JWT bearer security definitions is configured and live in development (`ThePredictions.API/DependencyInjection.cs`). Outstanding for this Phase 2 card: request/response examples (Swashbuckle filters) and a standard `ApiErrorResponse` contract.
 
 ## Overview
 

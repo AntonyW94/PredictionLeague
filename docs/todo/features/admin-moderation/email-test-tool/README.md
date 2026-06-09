@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped (PR #103). `EmailTestsController`, the `/admin/email-tests` Blazor page, `BrevoEmailTemplateCatalog` (live discovery, 5-min cache), `EmailTestDefaultsResolver`, the CQRS layer (`GetEmailTestTemplatesQuery`, `GetEmailTestDefaultsQuery`, `SendTestEmailCommand`), and the admin nav link are all in place. All five sub-tasks complete.
 
 ## Summary
 

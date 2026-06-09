@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped (PR #105). `SendRoundDigestEmailsCommand`/`Handler`, `GetRoundDigestQuery`, `DigestEmailFormatter`, Brevo template 11, per-league results links, and admin resend are all live. Idempotent via `Round.ResultsDigestSentUtc`.
 
 ## Priority
 

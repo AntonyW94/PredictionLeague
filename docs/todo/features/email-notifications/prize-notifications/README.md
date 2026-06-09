@@ -2,7 +2,9 @@
 
 ## Status
 
-Not Started | **In Progress** (email v1 built on branch `prize-won-notifications`) | Complete
+Not Started | In Progress | **Complete** *(email v1; WhatsApp phase deferred)*
+
+> **Verified June 2026:** Email v1 shipped (PR #106). `SendPrizeNotificationsCommand`/`Handler`, `PrizeNotification` sent-log (idempotency), `GetPrizeWinnersForRoundQuery`, `PrizeNotificationFormatter`, Brevo template 12, and admin "Resend prizes" are all live. The WhatsApp channel (original task 7) remains a deferred follow-up.
 
 ### Implementation notes (v1, differs from original plan)
 

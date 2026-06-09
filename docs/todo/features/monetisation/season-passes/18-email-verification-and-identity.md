@@ -8,6 +8,8 @@
 
 Not Started | In Progress | **Complete** *(code; one external config step outstanding)*
 
+> **Update (June 2026):** The email-confirmation *gate* is temporarily suspended per ADR-0012 - it does not currently block season-pass acquisition. The token flow code exists; the gate is re-enabled once the verification email template is live.
+
 > **Done in code (A9).** `EmailConfirmationToken` + repo; confirmation token issued and emailed on registration via a resilient sender; `confirm-email` + `resend-confirmation` endpoints and a client confirm page; a custom `ILookupNormalizer` strips `+alias` so plus-aliases collide on the unique email index; acquiring a Season Pass requires a confirmed email (soft login). **Outstanding (external):** create the Brevo "Email confirmation" template and set `Brevo:Templates:EmailConfirmation` (sending is safely skipped while it's 0), and run the `EmailConfirmationTokens` migration + the one-off grandfather `UPDATE`.
 
 ## Type

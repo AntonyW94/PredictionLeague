@@ -4,7 +4,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped. `ThePredictions.Validators.Tests.Unit` exists with ~261 test cases covering the validators across all seven planned task areas.
 
 ## Summary
 

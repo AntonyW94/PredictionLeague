@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped. Per-component `IsLoading` pattern with CSS spinners is used across the Blazor client (60+ components), including auth and dashboard loading states.
 
 ## Summary
 

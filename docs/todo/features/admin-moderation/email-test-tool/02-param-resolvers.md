@@ -4,7 +4,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped (PR #103) - `EmailTestDefaultsResolver` provides smart per-template defaults.
 
 ## Goal
 

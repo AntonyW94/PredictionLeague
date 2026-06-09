@@ -8,6 +8,8 @@
 
 Not Started | In Progress | **Complete**
 
+> **Update (June 2026):** The email-confirmation precondition described below is temporarily suspended per ADR-0012 - unconfirmed users can currently acquire a season pass until verification emails ship.
+
 > **Done (A4 + A4b).** Gate + acquisition + acquire UI + My/Available passes pages + per-season public-league visibility gating all shipped. Acquisition now also requires a confirmed email (Task 18). Paid (non-trial) acquisition still routes to Stripe checkout, which is Phase B (Task 09).
 
 > **Acquire-first model (revised).** A Season Pass is required to take part in **every** season. The **gate** only checks the user already **holds** a pass for the season - it does **not** grant one. Acquisition is a separate, explicit action so users acquire before participating (and before seeing a season's public leagues).

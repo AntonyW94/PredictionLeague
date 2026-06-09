@@ -4,7 +4,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped - admin user and account validator tests are present in `ThePredictions.Validators.Tests.Unit`.
 
 ## Goal
 

@@ -2,7 +2,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped. The house-style design system (purple gradient header, pill hero, bulletproof buttons, Privacy/Terms footer) is applied across all live templates and documented in `docs/email-templates/README.md`.
 
 ## Priority
 

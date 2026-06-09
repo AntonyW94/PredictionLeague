@@ -4,7 +4,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Verified June 2026:** Shipped (PR #103) - the `/admin/email-tests` Blazor page with template dropdown, parameter form, and send result.
 
 ## Goal
 

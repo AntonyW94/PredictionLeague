@@ -4,6 +4,8 @@
 
 Not Started | **In Progress** | Complete
 
+> **Verified June 2026:** Largely shipped. `.github/workflows/` has `ci.yml` (build + test + coverage), `deploy-dev.yml`, `deploy-prod.yml`, `refresh-dev-db.yml`, and `backup-prod-db.yml`. Outstanding: an E2E test workflow and a test-DB seeder tool.
+
 ## Overview
 
 Complete CI/CD pipeline using GitHub Actions with four workflows:
