@@ -52,6 +52,7 @@ public class DatabaseRefresher(
         "LeagueRoundResults",
         "UserBoostUsages",
         "Winnings",
+        "PrizeNotifications",
         "LeaguePayouts"
     ];
 

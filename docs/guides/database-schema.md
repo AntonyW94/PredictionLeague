@@ -525,6 +525,35 @@ Actual prize payouts to users.
 
 ---
 
+### PrizeNotifications
+
+Append-only sent-log that makes the "Prize Won" email idempotent. `Winnings` rows are deleted and
+re-created every time a round is re-processed, so they cannot carry a "notified" flag; this log
+persists across re-processing and records that a winner has been emailed about one specific prize.
+The send command (`SendPrizeNotificationsCommand`) skips any prize already present here unless forced.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers - the notified winner |
+| LeaguePrizeSettingId | int | NO | | FK to LeaguePrizeSettings - the prize won |
+| RoundNumber | int | YES | | For Round prizes (matches the won `Winning`) |
+| Month | int | YES | | For Monthly prizes, 1-12 (matches the won `Winning`) |
+| SentAtUtc | datetime2 | NO | | When the prize-won email was sent |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `(UserId, LeaguePrizeSettingId, RoundNumber, Month)` - the winning's stable identity; the
+  dedup key for idempotency. (SQL Server treats `NULL = NULL` as equal in a unique index, so the
+  all-null overall/section prizes are enforced as notified-once.)
+- FK: `UserId` → `AspNetUsers.Id`
+- FK: `LeaguePrizeSettingId` → `LeaguePrizeSettings.Id`
+
+> Holds no personal data beyond the `UserId` FK (as `Winnings` does), so it is copied verbatim by
+> the database refresh tool and needs no anonymisation.
+
+---
+
 ## Prediction Tables
 
 ### UserPredictions
