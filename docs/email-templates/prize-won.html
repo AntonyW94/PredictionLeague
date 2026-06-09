@@ -1,0 +1,127 @@
+<!-- Brevo template "Prize Won" (config key: PrizeWon)
+     Subject:      {{ params.FIRST_NAME }}, you won! 🏆
+     Preview text: You picked up a prize in {{ params.ROUND_NAME }}
+     Scalar tags:  FIRST_NAME, ROUND_NAME, PRIZE_COUNT
+     Loop:         params.PRIZES[] -> PRIZE_TITLE, LEAGUE_NAME, PRIZE_VALUE, LEAGUE_URL
+     Note: the PRIZES loop only renders on a real send. The admin email-test tool sends scalar
+           params only, so the prize cards will be empty there - to preview the full email, send a
+           populated sample via the Brevo API or use the admin "Resend prizes" button on a completed
+           round. ROUND_NAME is the round DisplayName (e.g. "Finals", "Gameweek 37"). -->
+<html><body><!-- Preheader: fills the inbox snippet, hidden in the body -->
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F8F5FA;opacity:0;">
+  You picked up a prize in {{ params.ROUND_NAME }}.
+  &#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;margin:0;padding:32px 12px;font-family:'Segoe UI',Arial,Helvetica,sans-serif;">
+  <tr>
+    <td align="center">
+
+      <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #F0EAF5;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(44,10,61,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#3D195B;background:linear-gradient(135deg,#3D195B 0%,#2C0A3D 100%);padding:22px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td valign="middle" style="padding-right:12px;">
+                  <img src="https://www.thepredictions.co.uk/images/Logo.png" alt="" width="40" height="40" style="display:block;border:0;outline:none;text-decoration:none;width:40px;height:40px;border-radius:8px;">
+                </td>
+                <td valign="middle" style="color:#ffffff;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;letter-spacing:.2px;">
+                  The Predictions
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Hero -->
+        <tr>
+          <td align="center" style="padding:40px 32px 8px;">
+            <div style="font-size:56px;line-height:1;">&#127942;</div>
+            <span style="display:inline-block;margin-top:16px;background:#FFF7E6;color:#B7791F;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;">&#11088; You won a prize</span>
+            <h1 style="margin:14px 0 0;color:#2C0A3D;font-size:28px;line-height:1.2;font-weight:800;">Congratulations, {{ params.FIRST_NAME }}!</h1>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td align="center" style="padding:12px 32px 8px;color:#475467;font-size:16px;line-height:1.6;">
+            <p style="margin:0;">
+              {% if params.PRIZE_COUNT > 1 %}You picked up {{ params.PRIZE_COUNT }} prizes in {{ params.ROUND_NAME }}. Here's the haul.{% else %}You picked up a prize in {{ params.ROUND_NAME }}. Nicely done.{% endif %}
+            </p>
+          </td>
+        </tr>
+
+        <!-- Prize cards -->
+        {% for prize in params.PRIZES %}
+        <tr>
+          <td style="padding:12px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #F0EAF5;border-radius:12px;background:#FFFDF7;">
+              <tr>
+                <td style="padding:18px 20px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td valign="top" style="font-size:26px;width:40px;">&#127942;</td>
+                      <td valign="top">
+                        <p style="margin:0;color:#2C0A3D;font-size:17px;font-weight:800;">{{ prize.PRIZE_TITLE }}</p>
+                        <p style="margin:4px 0 0;color:#98a2b3;font-size:13px;">{{ prize.LEAGUE_NAME }}</p>
+                      </td>
+                      <td valign="top" align="right" style="color:#B7791F;font-size:24px;font-weight:800;white-space:nowrap;">{{ prize.PRIZE_VALUE }}</td>
+                    </tr>
+                  </table>
+                  <p style="margin:14px 0 0;"><a href="{{ prize.LEAGUE_URL }}" target="_blank" style="color:#5D3E85;font-size:14px;font-weight:700;text-decoration:none;">View league &rarr;</a></p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {% endfor %}
+
+        <!-- Collection note -->
+        <tr>
+          <td style="padding:20px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;border:1px solid #F0EAF5;border-radius:12px;">
+              <tr>
+                <td style="padding:16px 20px;color:#475467;font-size:14px;line-height:1.6;">
+                  Your league admin will be in touch about getting your prize to you.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Sign-off -->
+        <tr>
+          <td style="padding:20px 32px 32px;color:#475467;font-size:16px;line-height:1.6;">
+            <p style="margin:0;">Enjoy it,<br/><strong style="color:#2C0A3D;">The Predictions Team</strong></p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="background:#F8F5FA;border-top:1px solid #F0EAF5;padding:24px 32px;color:#98a2b3;font-size:12px;line-height:1.6;">
+            <p style="margin:0 0 10px;">
+              <a href="https://www.thepredictions.co.uk/privacy" style="color:#5D3E85;text-decoration:none;">Privacy</a>
+              &nbsp;&middot;&nbsp;
+              <a href="https://www.thepredictions.co.uk/terms" style="color:#5D3E85;text-decoration:none;">Terms</a>
+              &nbsp;&middot;&nbsp;
+              <a href="https://www.thepredictions.co.uk/cookie-policy" style="color:#5D3E85;text-decoration:none;">Cookie Policy</a>
+            </p>
+            <p style="margin:0;">
+              You're receiving this because you're playing in a league at
+              <a href="https://www.thepredictions.co.uk" style="color:#5D3E85;text-decoration:none;">www.thepredictions.co.uk</a>.
+            </p>
+            <p style="margin:8px 0 0;">© The Predictions</p>
+          </td>
+        </tr>
+
+      </table>
+
+      <!--[if mso]></td></tr></table><![endif]-->
+
+    </td>
+  </tr>
+</table></body></html>
