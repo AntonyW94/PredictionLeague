@@ -2,8 +2,10 @@
      Subject:      {{ params.FIRST_NAME }}, here's how you did in {{ params.ROUND_NAME }}
      Preview text: Your {{ params.ROUND_NAME }} results are in
      Scalar tags:  FIRST_NAME, ROUND_NAME, CORRECT_RESULTS, EXACT_SCORES,
-                   NEXT_ROUND_NAME, NEXT_ROUND_OPENS, NEXT_ROUND_DEADLINE
-     Loop:         params.LEAGUES[] -> LEAGUE_NAME, POINTS, POSITION, MOVEMENT, TOP_SCORER, TOP_SCORER_POINTS, LEAGUE_URL
+                   NEXT_ROUND_NAME, NEXT_ROUND_DEADLINE
+     Loop:         params.LEAGUES[] -> LEAGUE_NAME, POINTS, POSITION, MOVEMENT_ARROW, MOVEMENT_COLOUR,
+                   MOVEMENT_COUNT, TOP_SCORER, TOP_SCORER_POINTS, LEAGUE_URL
+                   (MOVEMENT_ARROW is a coloured up/down triangle or a grey dash; blank = no data)
      Note: the LEAGUES loop and the next-round block only render on a real send. The admin
            email-test tool sends scalar params only, so the per-league rows will be empty there
            (the next-round block shows if you fill NEXT_ROUND_NAME). ROUND_NAME / NEXT_ROUND_NAME
@@ -40,7 +42,7 @@
 
         <!-- Hero -->
         <tr>
-          <td style="padding:36px 32px 8px;">
+          <td align="center" style="padding:36px 32px 8px;text-align:center;">
             <span style="display:inline-block;background:#E7F8EF;color:#00824A;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;">&#127937; Round complete</span>
             <h1 style="margin:18px 0 0;color:#2C0A3D;font-size:26px;line-height:1.25;font-weight:800;">{{ params.ROUND_NAME }} is in the books</h1>
           </td>
@@ -105,7 +107,7 @@
                       </td>
                       <td valign="top" width="50%">
                         <p style="margin:0 0 2px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Position</p>
-                        <p style="margin:0;color:#2C0A3D;font-size:18px;font-weight:800;">{{ league.POSITION }}{% if league.MOVEMENT %} <span style="color:#98a2b3;font-size:13px;font-weight:600;">({{ league.MOVEMENT }})</span>{% endif %}</p>
+                        <p style="margin:0;color:#2C0A3D;font-size:18px;font-weight:800;">{{ league.POSITION }}{% if league.MOVEMENT_ARROW %} <span style="color:{{ league.MOVEMENT_COLOUR }};font-size:14px;font-weight:800;">{{ league.MOVEMENT_ARROW }}{% if league.MOVEMENT_COUNT %}&nbsp;{{ league.MOVEMENT_COUNT }}{% endif %}</span>{% endif %}</p>
                       </td>
                     </tr>
                   </table>
@@ -127,8 +129,10 @@
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;border:1px solid #F0EAF5;border-radius:12px;">
               <tr>
                 <td style="padding:18px 20px;">
-                  <p style="margin:0 0 4px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">Next up &middot; {{ params.NEXT_ROUND_NAME }}</p>
-                  <p style="margin:0;color:#475467;font-size:15px;line-height:1.6;">Opens {{ params.NEXT_ROUND_OPENS }}<br/>Deadline {{ params.NEXT_ROUND_DEADLINE }}</p>
+                  <p style="margin:0 0 4px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">Next up</p>
+                  <p style="margin:0 0 16px;color:#2C0A3D;font-size:18px;font-weight:800;">{{ params.NEXT_ROUND_NAME }}</p>
+                  <p style="margin:0 0 2px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Prediction deadline</p>
+                  <p style="margin:0;color:#2C0A3D;font-size:15px;font-weight:700;">{{ params.NEXT_ROUND_DEADLINE }}</p>
                 </td>
               </tr>
             </table>

@@ -2,7 +2,21 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** (email v1 built on branch `prize-won-notifications`) | Complete
+
+### Implementation notes (v1, differs from original plan)
+
+- **Idempotency via a `[PrizeNotifications]` sent-log, not a persisted `PrizeAwards` table.** `Winnings`
+  already are the award record, but each `IPrizeStrategy` deletes and re-creates them every
+  re-process, so they can't carry a "notified" flag. The append-only log is keyed on the winning's
+  stable identity `(UserId, LeaguePrizeSettingId, RoundNumber, Month)` and is the dedup source.
+- **One grouped email per winner** covering all their prizes for the round (Brevo `{% for %}` loop),
+  rather than one email per prize as the original AC suggested.
+- **Email shows prize label and monetary value.** Winners only - no runner-up notifications in v1.
+- Sent from `SendPrizeNotificationsCommand`, wired into `UpdateMatchResultsCommandHandler` after the
+  results digest. Admin force-resend: `POST /api/admin/rounds/{id}/resend-prize-emails` + button.
+- Brevo template "Prize Won" is id `12`; HTML at `docs/email-templates/prize-won.html`.
+- WhatsApp portion (task 7) remains a Phase 4 follow-up.
 
 ## Priority
 

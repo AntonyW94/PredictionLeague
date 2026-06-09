@@ -12,4 +12,5 @@ public class TemplateSettings
     public long PasswordResetGoogleUser { get; set; }
     public long EmailConfirmation { get; set; }
     public long RoundResultsDigest { get; set; }
+    public long PrizeWon { get; set; }
 }

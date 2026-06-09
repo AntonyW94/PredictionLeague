@@ -152,5 +152,21 @@ public class RoundsController(IMediator mediator) : ApiControllerBase
         return NoContent();
     }
 
+    [HttpPost("{roundId:int}/resend-prize-emails")]
+    [SwaggerOperation(
+        Summary = "Re-send the prize-won emails",
+        Description = "Forces a re-send of the celebratory \"Prize Won\" email to every winner in the round's season, even if they were already notified. The round must be completed.")]
+    [SwaggerResponse(204, "Prize-email re-send triggered")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    public async Task<IActionResult> ResendPrizeEmailsAsync(
+        [SwaggerParameter("Round identifier")] int roundId,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new SendPrizeNotificationsCommand(roundId, Force: true), cancellationToken);
+
+        return NoContent();
+    }
+
     #endregion
 }

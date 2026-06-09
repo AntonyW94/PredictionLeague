@@ -67,14 +67,15 @@ public class SendRoundDigestEmailsCommandHandler(
                 CORRECT_RESULTS = digest.CorrectResultCount,
                 EXACT_SCORES = digest.ExactScoreCount,
                 NEXT_ROUND_NAME = digest.NextRoundName ?? string.Empty,
-                NEXT_ROUND_OPENS = digest.NextRoundStartUtc.HasValue ? dateFormatter.FormatDeadline(digest.NextRoundStartUtc.Value) : string.Empty,
                 NEXT_ROUND_DEADLINE = digest.NextRoundDeadlineUtc.HasValue ? dateFormatter.FormatDeadline(digest.NextRoundDeadlineUtc.Value) : string.Empty,
                 LEAGUES = digest.Leagues.Select(league => new
                 {
                     LEAGUE_NAME = league.LeagueName,
                     POINTS = league.Points,
                     POSITION = DigestEmailFormatter.Ordinal(league.Position),
-                    MOVEMENT = DigestEmailFormatter.PositionMovement(league.PositionDelta),
+                    MOVEMENT_ARROW = DigestEmailFormatter.MovementArrow(league.PositionDelta),
+                    MOVEMENT_COLOUR = DigestEmailFormatter.MovementColour(league.PositionDelta),
+                    MOVEMENT_COUNT = DigestEmailFormatter.MovementCount(league.PositionDelta),
                     TOP_SCORER = league.TopScorerName ?? string.Empty,
                     TOP_SCORER_POINTS = league.TopScorerPoints ?? 0,
                     LEAGUE_URL = $"{baseUrl}/leagues/{league.LeagueId}/dashboard"

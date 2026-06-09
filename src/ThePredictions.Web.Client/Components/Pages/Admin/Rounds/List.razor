@@ -69,6 +69,9 @@
                                 <button class="btn btn-sm purple-button" @onclick="() => ResendDigest(round.Id, round.RoundNumber)" disabled="@_isResending" title="Re-send the results digest email">
                                     <span class="bi bi-envelope-arrow-up-fill"></span><span class="d-none d-lg-inline ms-1">Resend digest</span>
                                 </button>
+                                <button class="btn btn-sm purple-button" @onclick="() => ResendPrizeEmails(round.Id, round.RoundNumber)" disabled="@_isResending" title="Re-send the prize-won emails">
+                                    <span class="bi bi-trophy-fill"></span><span class="d-none d-lg-inline ms-1">Resend prizes</span>
+                                </button>
                             }
                         </div>
                     </div>
@@ -144,6 +147,37 @@
         catch (Exception)
         {
             _errorMessage = "An error occurred while re-sending the results digest.";
+        }
+        finally
+        {
+            _isResending = false;
+        }
+    }
+
+    private async Task ResendPrizeEmails(int roundId, int roundNumber)
+    {
+        _errorMessage = null;
+        _successMessage = null;
+
+        var confirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm",
+            $"Re-send the prize-won emails for Round {roundNumber} to every winner in this season?");
+        if (!confirmed)
+            return;
+
+        _isResending = true;
+
+        try
+        {
+            var response = await Http.PostAsync($"api/admin/rounds/{roundId}/resend-prize-emails", null);
+            if (response.IsSuccessStatusCode)
+                _successMessage = $"Prize-won email re-send triggered for Round {roundNumber}.";
+            else
+                _errorMessage = "Failed to re-send the prize-won emails.";
+        }
+        catch (Exception)
+        {
+            _errorMessage = "An error occurred while re-sending the prize-won emails.";
         }
         finally
         {

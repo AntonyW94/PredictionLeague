@@ -12,6 +12,5 @@ public record UserRoundDigest(
     int ExactScoreCount,
     int CorrectResultCount,
     string? NextRoundName,
-    DateTime? NextRoundStartUtc,
     DateTime? NextRoundDeadlineUtc,
     IReadOnlyList<LeagueRoundDigest> Leagues);
