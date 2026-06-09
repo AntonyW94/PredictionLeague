@@ -34,19 +34,51 @@ public class DigestEmailFormatterTests
     }
 
     [Theory]
-    [InlineData(1, "up 1")]
-    [InlineData(5, "up 5")]
-    [InlineData(-1, "down 1")]
-    [InlineData(-4, "down 4")]
-    [InlineData(0, "no change")]
-    public void PositionMovement_ShouldDescribeDelta(int delta, string expected)
+    [InlineData(1, "▲")]
+    [InlineData(5, "▲")]
+    [InlineData(-1, "▼")]
+    [InlineData(-4, "▼")]
+    [InlineData(0, "-")]
+    public void MovementArrow_ShouldReflectDirection(int delta, string expected)
     {
-        DigestEmailFormatter.PositionMovement(delta).Should().Be(expected);
+        DigestEmailFormatter.MovementArrow(delta).Should().Be(expected);
     }
 
     [Fact]
-    public void PositionMovement_ShouldReturnEmpty_WhenDeltaIsNull()
+    public void MovementArrow_ShouldReturnEmpty_WhenDeltaIsNull()
     {
-        DigestEmailFormatter.PositionMovement(null).Should().BeEmpty();
+        DigestEmailFormatter.MovementArrow(null).Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(3, "#00B960")]
+    [InlineData(-2, "#E90052")]
+    [InlineData(0, "#98a2b3")]
+    public void MovementColour_ShouldReflectDirection(int delta, string expected)
+    {
+        DigestEmailFormatter.MovementColour(delta).Should().Be(expected);
+    }
+
+    [Fact]
+    public void MovementColour_ShouldReturnEmpty_WhenDeltaIsNull()
+    {
+        DigestEmailFormatter.MovementColour(null).Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(1, "1")]
+    [InlineData(5, "5")]
+    [InlineData(-4, "4")]
+    public void MovementCount_ShouldBeAbsoluteMagnitude(int delta, string expected)
+    {
+        DigestEmailFormatter.MovementCount(delta).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(null)]
+    public void MovementCount_ShouldBeEmpty_ForNoChangeOrNull(int? delta)
+    {
+        DigestEmailFormatter.MovementCount(delta).Should().BeEmpty();
     }
 }
