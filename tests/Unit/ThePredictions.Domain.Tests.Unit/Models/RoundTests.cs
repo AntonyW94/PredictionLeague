@@ -754,6 +754,49 @@ public class RoundTests
 
     #endregion
 
+    #region MarkResultsDigestSent
+
+    [Fact]
+    public void Create_ShouldSetResultsDigestSentUtcToNull_WhenCreated()
+    {
+        // Act
+        var round = CreateRoundViaFactory();
+
+        // Assert
+        round.ResultsDigestSentUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public void MarkResultsDigestSent_ShouldSetTimestamp_WhenCalled()
+    {
+        // Arrange
+        var round = CreateRoundViaFactory();
+
+        // Act
+        round.MarkResultsDigestSent(_dateTimeProvider);
+
+        // Assert
+        round.ResultsDigestSentUtc.Should().Be(_dateTimeProvider.UtcNow);
+    }
+
+    [Fact]
+    public void MarkResultsDigestSent_ShouldUpdateTimestamp_WhenCalledAgain()
+    {
+        // Arrange
+        var round = CreateRoundViaFactory();
+        round.MarkResultsDigestSent(_dateTimeProvider);
+
+        _dateTimeProvider.AdvanceBy(TimeSpan.FromHours(2));
+
+        // Act
+        round.MarkResultsDigestSent(_dateTimeProvider);
+
+        // Assert
+        round.ResultsDigestSentUtc.Should().Be(_dateTimeProvider.UtcNow);
+    }
+
+    #endregion
+
     #region DisplayName
 
     [Fact]

@@ -468,6 +468,30 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
         await Connection.ExecuteAsync(command);
     }
 
+    public async Task UpdateResultsDigestSentAsync(Round round, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            UPDATE
+                [Rounds]
+            SET
+                [ResultsDigestSentUtc] = @ResultsDigestSentUtc
+            WHERE
+                [Id] = @Id;";
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new
+            {
+                round.Id,
+                round.ResultsDigestSentUtc
+            },
+            transaction: Transaction,
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(command);
+    }
+
     public async Task UpdateMatchScoresAsync(List<Match> matches, CancellationToken cancellationToken)
     {
         if (!matches.Any())
@@ -586,7 +610,8 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
                     groupedRound.Status,
                     groupedRound.ApiRoundName,
                     groupedRound.LastReminderSentUtc,
-                    matches
+                    matches,
+                    groupedRound.ResultsDigestSentUtc
                 );
             });
 

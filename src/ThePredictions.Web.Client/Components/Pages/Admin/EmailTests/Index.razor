@@ -10,115 +10,125 @@
 <PageTitle>Email Test Tool</PageTitle>
 
 <div class="page-container admin-light">
-    <div class="admin-table-container">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0">Email Test Tool</h1>
-            <button class="btn btn-outline-secondary" @onclick="RefreshTemplatesAsync" disabled="@_loadingTemplates">
-                <span class="bi bi-arrow-clockwise me-2"></span>Refresh templates
-            </button>
+    <div class="base-form base-form--extra-wide">
+    <PageHero Title="Email Test Tool" Icon="bi-envelope-paper-fill">
+        Trigger any Brevo template against your own inbox with realistic, pre-filled values, so you can
+        check content and layout without reproducing the whole user flow.
+    </PageHero>
+
+    <ApiError Message="@_errorMessage" />
+    <ApiSuccess Message="@_successMessage" />
+
+    @if (_loadingTemplates)
+    {
+        <div class="form-container">
+            <div class="d-flex justify-content-center py-5"><div class="spinner-border" role="status"></div></div>
+        </div>
+    }
+    else if (_templates is null || _templates.Count == 0)
+    {
+        <div class="form-container">
+            <p class="form-text text-white-50 mb-0">No Brevo templates were found.</p>
+        </div>
+    }
+    else
+    {
+        <div class="form-container mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Template</h5>
+                <button class="btn grey-button d-flex align-items-center" @onclick="RefreshTemplatesAsync" disabled="@_loadingTemplates">
+                    <span class="bi bi-arrow-clockwise me-2"></span>Refresh templates
+                </button>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <label class="form-label" for="template-select">Template</label>
+                    <select id="template-select" class="form-select" value="@_selectedTemplateId" @onchange="OnTemplateChangedAsync">
+                        <option value="">-- Select a template --</option>
+                        @foreach (var template in _templates)
+                        {
+                            <option value="@template.Id" disabled="@(!template.IsActive)">
+                                @template.Name@(template.IsActive ? "" : " (inactive)")
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="user-select">Seed defaults from user</label>
+                    <select id="user-select" class="form-select" value="@_selectedUserId" @onchange="OnUserChangedAsync">
+                        <option value="">-- Generic defaults --</option>
+                        @if (_users is not null)
+                        {
+                            @foreach (var user in _users)
+                            {
+                                <option value="@user.Id">@user.FullName (@user.Email)</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
         </div>
 
-        @if (_loadError is not null)
+        @if (_selectedTemplate is not null)
         {
-            <div class="alert alert-danger">@_loadError</div>
-        }
-
-        @if (_loadingTemplates)
-        {
-            <p>Loading templates...</p>
-        }
-        else if (_templates is null || _templates.Count == 0)
-        {
-            <div class="alert alert-warning">No Brevo templates were found.</div>
-        }
-        else
-        {
-            <div class="mb-3">
-                <label class="form-label" for="template-select">Template</label>
-                <select id="template-select" class="form-select" value="@_selectedTemplateId" @onchange="OnTemplateChangedAsync">
-                    <option value="">-- Select a template --</option>
-                    @foreach (var template in _templates)
-                    {
-                        <option value="@template.Id" disabled="@(!template.IsActive)">
-                            @template.Name@(template.IsActive ? "" : " (inactive)")
-                        </option>
-                    }
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label" for="user-select">Seed defaults from user</label>
-                <select id="user-select" class="form-select" value="@_selectedUserId" @onchange="OnUserChangedAsync">
-                    <option value="">-- Generic defaults --</option>
-                    @if (_users is not null)
-                    {
-                        @foreach (var user in _users)
-                        {
-                            <option value="@user.Id">@user.FullName (@user.Email)</option>
-                        }
-                    }
-                </select>
-            </div>
-
-            @if (_selectedTemplate is not null)
+            @if (!_selectedTemplate.IsActive)
             {
-                @if (!_selectedTemplate.IsActive)
-                {
-                    <div class="alert alert-warning">Template is inactive in Brevo.</div>
-                }
-                else
-                {
-                    <hr />
-                    <h2 class="h5">Parameters</h2>
+                <div class="form-container">
+                    <p class="form-text text-white-50 mb-0">Template is inactive in Brevo.</p>
+                </div>
+            }
+            else
+            {
+                <div class="form-container mb-4">
+                    <h5 class="fw-bold mb-3">Parameters</h5>
 
                     @if (_selectedTemplate.ParamNames.Count == 0)
                     {
-                        <p class="text-muted">This template has no <code>{{ params.X }}</code> merge tags.</p>
+                        <p class="form-text text-white-50 mb-0">This template has no <code>{{ params.X }}</code> merge tags.</p>
                     }
                     else if (_loadingDefaults)
                     {
-                        <p>Loading defaults...</p>
+                        <div class="d-flex justify-content-center py-4"><div class="spinner-border" role="status"></div></div>
                     }
                     else
                     {
-                        @foreach (var name in _selectedTemplate.ParamNames)
-                        {
-                            <div class="mb-3">
-                                <label class="form-label" for="param-@name">@name</label>
-                                <input id="param-@name" class="form-control"
-                                       value="@GetParam(name)"
-                                       @oninput="e => SetParam(name, e.Value?.ToString())" />
-                            </div>
-                        }
+                        <div class="row">
+                            @foreach (var name in _selectedTemplate.ParamNames)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label" for="param-@name">@name</label>
+                                    <input id="param-@name" class="form-control"
+                                           value="@GetParam(name)"
+                                           @oninput="e => SetParam(name, e.Value?.ToString())" />
+                                </div>
+                            }
+                        </div>
+
+                        <p class="form-text text-white-50 mt-2 mb-3">
+                            <span class="bi bi-info-circle me-1"></span>
+                            Sends to your own email address (the signed-in admin), never the user picked above.
+                        </p>
+
+                        <div class="d-flex justify-content-end">
+                            <button class="btn green-button d-flex align-items-center" @onclick="SendAsync" disabled="@(_sending || _loadingDefaults)">
+                                @if (_sending)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Sending...</span>
+                                }
+                                else
+                                {
+                                    <span class="bi bi-send me-2"></span>
+                                    <span>Send test email</span>
+                                }
+                            </button>
+                        </div>
                     }
-
-                    <p class="text-muted">
-                        <span class="bi bi-info-circle me-1"></span>
-                        Sends to your own email address (the signed-in admin), never the user picked above.
-                    </p>
-
-                    <button class="btn btn-primary" @onclick="SendAsync" disabled="@(_sending || _loadingDefaults)">
-                        @(_sending ? "Sending..." : "Send test email")
-                    </button>
-
-                    @if (_lastResult is not null)
-                    {
-                        @if (_lastResult.Success)
-                        {
-                            <div class="alert alert-success mt-3">
-                                Sent to @_lastResult.SentTo. Brevo message ID: <code>@_lastResult.MessageId</code>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="alert alert-danger mt-3">
-                                Send failed: @_lastResult.Error
-                            </div>
-                        }
-                    }
-                }
+                </div>
             }
         }
+    }
     </div>
 </div>
 
@@ -135,8 +145,8 @@
     private bool _loadingTemplates;
     private bool _loadingDefaults;
     private bool _sending;
-    private SendTestEmailResultDto? _lastResult;
-    private string? _loadError;
+    private string? _errorMessage;
+    private string? _successMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -146,7 +156,7 @@
     private async Task LoadTemplatesAsync()
     {
         _loadingTemplates = true;
-        _loadError = null;
+        _errorMessage = null;
 
         try
         {
@@ -154,7 +164,7 @@
         }
         catch
         {
-            _loadError = "Failed to load templates from Brevo.";
+            _errorMessage = "Failed to load templates from Brevo.";
             _templates = [];
         }
         finally
@@ -184,7 +194,8 @@
 
     private async Task OnTemplateChangedAsync(ChangeEventArgs e)
     {
-        _lastResult = null;
+        _successMessage = null;
+        _errorMessage = null;
         _selectedTemplateId = long.TryParse(e.Value?.ToString(), out var id) ? id : null;
         _selectedTemplate = _templates?.FirstOrDefault(t => t.Id == _selectedTemplateId);
         await LoadDefaultsAsync();
@@ -234,17 +245,23 @@
             return;
 
         _sending = true;
-        _lastResult = null;
+        _successMessage = null;
+        _errorMessage = null;
 
         try
         {
             var request = new SendTestEmailRequest(_selectedTemplateId.Value, new Dictionary<string, string>(_paramValues, StringComparer.Ordinal));
             var response = await Http.PostAsJsonAsync("api/admin/emailtests/send", request);
-            _lastResult = await response.Content.ReadFromJsonAsync<SendTestEmailResultDto>();
+            var result = await response.Content.ReadFromJsonAsync<SendTestEmailResultDto>();
+
+            if (result is { Success: true })
+                _successMessage = $"Sent to {result.SentTo}. Brevo message ID: {result.MessageId}";
+            else
+                _errorMessage = result?.Error ?? "The test email could not be sent.";
         }
         catch
         {
-            _lastResult = new SendTestEmailResultDto(false, null, "The request failed before a result was returned.", string.Empty);
+            _errorMessage = "The request failed before a result was returned.";
         }
         finally
         {

@@ -1,0 +1,170 @@
+<!-- Brevo template "Round Results Digest" (config key: RoundResultsDigest)
+     Subject:      {{ params.FIRST_NAME }}, here's how you did in {{ params.ROUND_NAME }}
+     Preview text: Your {{ params.ROUND_NAME }} results are in
+     Scalar tags:  FIRST_NAME, ROUND_NAME, CORRECT_RESULTS, EXACT_SCORES,
+                   NEXT_ROUND_NAME, NEXT_ROUND_OPENS, NEXT_ROUND_DEADLINE
+     Loop:         params.LEAGUES[] -> LEAGUE_NAME, POINTS, POSITION, MOVEMENT, TOP_SCORER, TOP_SCORER_POINTS, LEAGUE_URL
+     Note: the LEAGUES loop and the next-round block only render on a real send. The admin
+           email-test tool sends scalar params only, so the per-league rows will be empty there
+           (the next-round block shows if you fill NEXT_ROUND_NAME). ROUND_NAME / NEXT_ROUND_NAME
+           are the round DisplayName (e.g. "Finals", "Gameweek 37"). -->
+<html><body><!-- Preheader: fills the inbox snippet, hidden in the body -->
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F8F5FA;opacity:0;">
+  Your {{ params.ROUND_NAME }} results are in.
+  &#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;margin:0;padding:32px 12px;font-family:'Segoe UI',Arial,Helvetica,sans-serif;">
+  <tr>
+    <td align="center">
+
+      <!--[if mso]><table role="presentation" width="600" cellpadding="0" cellspacing="0"><tr><td><![endif]-->
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #F0EAF5;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(44,10,61,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#3D195B;background:linear-gradient(135deg,#3D195B 0%,#2C0A3D 100%);padding:22px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td valign="middle" style="padding-right:12px;">
+                  <img src="https://www.thepredictions.co.uk/images/Logo.png" alt="" width="40" height="40" style="display:block;border:0;outline:none;text-decoration:none;width:40px;height:40px;border-radius:8px;">
+                </td>
+                <td valign="middle" style="color:#ffffff;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;letter-spacing:.2px;">
+                  The Predictions
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Hero -->
+        <tr>
+          <td style="padding:36px 32px 8px;">
+            <span style="display:inline-block;background:#E7F8EF;color:#00824A;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;">&#127937; Round complete</span>
+            <h1 style="margin:18px 0 0;color:#2C0A3D;font-size:26px;line-height:1.25;font-weight:800;">{{ params.ROUND_NAME }} is in the books</h1>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:16px 32px 8px;color:#475467;font-size:16px;line-height:1.6;">
+            <p style="margin:0 0 16px;">Hi {{ params.FIRST_NAME }},</p>
+            <p style="margin:0 0 20px;">Here's how your predictions went this round.</p>
+          </td>
+        </tr>
+
+        <!-- Round summary panel: two rows, one stat each -->
+        <tr>
+          <td style="padding:0 32px 8px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;border:1px solid #F0EAF5;border-radius:12px;">
+              <tr>
+                <td style="padding:16px 20px;border-bottom:1px solid #F0EAF5;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td valign="middle" style="font-size:22px;width:34px;">&#9989;</td>
+                      <td valign="middle" style="color:#475467;font-size:15px;font-weight:600;">Correct results</td>
+                      <td valign="middle" align="right" style="color:#2C0A3D;font-size:22px;font-weight:800;">{{ params.CORRECT_RESULTS }}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:16px 20px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td valign="middle" style="font-size:22px;width:34px;">&#127919;</td>
+                      <td valign="middle" style="color:#475467;font-size:15px;font-weight:600;">Exact scores</td>
+                      <td valign="middle" align="right" style="color:#2C0A3D;font-size:22px;font-weight:800;">{{ params.EXACT_SCORES }}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Per-league breakdown -->
+        <tr>
+          <td style="padding:20px 32px 0;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">
+            Your leagues
+          </td>
+        </tr>
+        {% for league in params.LEAGUES %}
+        <tr>
+          <td style="padding:8px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #F0EAF5;border-radius:12px;">
+              <tr>
+                <td style="padding:16px 20px;">
+                  <p style="margin:0 0 12px;color:#2C0A3D;font-size:16px;font-weight:700;">{{ league.LEAGUE_NAME }}</p>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td valign="top" width="50%">
+                        <p style="margin:0 0 2px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Points</p>
+                        <p style="margin:0;color:#2C0A3D;font-size:18px;font-weight:800;">{{ league.POINTS }}</p>
+                      </td>
+                      <td valign="top" width="50%">
+                        <p style="margin:0 0 2px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Position</p>
+                        <p style="margin:0;color:#2C0A3D;font-size:18px;font-weight:800;">{{ league.POSITION }}{% if league.MOVEMENT %} <span style="color:#98a2b3;font-size:13px;font-weight:600;">({{ league.MOVEMENT }})</span>{% endif %}</p>
+                      </td>
+                    </tr>
+                  </table>
+                  {% if league.TOP_SCORER %}
+                  <p style="margin:12px 0 0;color:#98a2b3;font-size:13px;">Top scorer this round: {{ league.TOP_SCORER }} ({{ league.TOP_SCORER_POINTS }} pts)</p>
+                  {% endif %}
+                  <p style="margin:14px 0 0;"><a href="{{ league.LEAGUE_URL }}" target="_blank" style="color:#5D3E85;font-size:14px;font-weight:700;text-decoration:none;">View league &rarr;</a></p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {% endfor %}
+
+        <!-- Next round (renders when there is a next round) -->
+        {% if params.NEXT_ROUND_NAME %}
+        <tr>
+          <td style="padding:8px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;border:1px solid #F0EAF5;border-radius:12px;">
+              <tr>
+                <td style="padding:18px 20px;">
+                  <p style="margin:0 0 4px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">Next up &middot; {{ params.NEXT_ROUND_NAME }}</p>
+                  <p style="margin:0;color:#475467;font-size:15px;line-height:1.6;">Opens {{ params.NEXT_ROUND_OPENS }}<br/>Deadline {{ params.NEXT_ROUND_DEADLINE }}</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- Sign-off -->
+        <tr>
+          <td style="padding:20px 32px 32px;color:#475467;font-size:16px;line-height:1.6;">
+            <p style="margin:0;">Good luck next round,<br/><strong style="color:#2C0A3D;">The Predictions Team</strong></p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="background:#F8F5FA;border-top:1px solid #F0EAF5;padding:24px 32px;color:#98a2b3;font-size:12px;line-height:1.6;">
+            <p style="margin:0 0 10px;">
+              <a href="https://www.thepredictions.co.uk/privacy" style="color:#5D3E85;text-decoration:none;">Privacy</a>
+              &nbsp;&middot;&nbsp;
+              <a href="https://www.thepredictions.co.uk/terms" style="color:#5D3E85;text-decoration:none;">Terms</a>
+              &nbsp;&middot;&nbsp;
+              <a href="https://www.thepredictions.co.uk/cookie-policy" style="color:#5D3E85;text-decoration:none;">Cookie Policy</a>
+            </p>
+            <p style="margin:0;">
+              You're receiving this because you're playing in a league at
+              <a href="https://www.thepredictions.co.uk" style="color:#5D3E85;text-decoration:none;">www.thepredictions.co.uk</a>.
+            </p>
+            <p style="margin:8px 0 0;">© The Predictions</p>
+          </td>
+        </tr>
+
+      </table>
+
+      <!--[if mso]></td></tr></table><![endif]-->
+
+    </td>
+  </tr>
+</table></body></html>
