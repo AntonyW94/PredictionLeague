@@ -10,6 +10,10 @@ This folder contains all planned work organised by category.
 | [features](features/) | User-facing features and functionality |
 | [security](security/) | Security improvements and deferred items |
 
+## Planning aids
+
+- [decision-effort-tiers.md](decision-effort-tiers.md) - the remaining plans ranked by how much product-owner input each needs (quick wins through to big builds).
+
 ## Priority Guide
 
 - **Critical** - Required for public launch

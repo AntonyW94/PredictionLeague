@@ -80,6 +80,7 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 | 41 | Social sharing | Low | Organic growth driver | [Outline](features/user-experience/social-sharing/README.md) |
 | 42 | Digest emails | Medium | Weekly summaries for less active users | [Outline](features/email-notifications/digest-emails/README.md) |
 | 43 | League moderation | Medium | Basic member management exists; extend to full moderation tools | [Outline](features/admin-moderation/league-moderation/README.md) |
+| 44 | Live score auto-update (no refresh) | Low | Scores update in the DB every minute but the WASM client doesn't auto-refresh; add 10s client polling on live pages (SignalR is the later upgrade) | [Outline](features/user-experience/live-score-updates/README.md) |
 
 ---
 
