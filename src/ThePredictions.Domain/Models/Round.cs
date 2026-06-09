@@ -16,6 +16,7 @@ public class Round
     public RoundStatus Status { get; private set; }
     public string? ApiRoundName { get; private set; }
     public DateTime? LastReminderSentUtc { get; private set; }
+    public DateTime? ResultsDigestSentUtc { get; private set; }
 
     private readonly List<Match> _matches = new();
     public IReadOnlyCollection<Match> Matches => _matches.AsReadOnly();
@@ -24,7 +25,7 @@ public class Round
 
     private Round() { }
   
-    public Round(int id, int seasonId, int roundNumber, string displayName, DateTime startDateUtc, DateTime deadlineUtc, RoundStatus status, string? apiRoundName, DateTime? lastReminderSentUtc, IEnumerable<Match?>? matches)
+    public Round(int id, int seasonId, int roundNumber, string displayName, DateTime startDateUtc, DateTime deadlineUtc, RoundStatus status, string? apiRoundName, DateTime? lastReminderSentUtc, IEnumerable<Match?>? matches, DateTime? resultsDigestSentUtc = null)
     {
         Id = id;
         SeasonId = seasonId;
@@ -35,6 +36,7 @@ public class Round
         Status = status;
         ApiRoundName = apiRoundName;
         LastReminderSentUtc = lastReminderSentUtc;
+        ResultsDigestSentUtc = resultsDigestSentUtc;
 
         if (matches != null)
             _matches.AddRange(matches.Where(m => m != null).Select(m => (Match)m!));
@@ -72,6 +74,11 @@ public class Round
     public void UpdateLastReminderSent(IDateTimeProvider dateTimeProvider)
     {
         LastReminderSentUtc = dateTimeProvider.UtcNow;
+    }
+
+    public void MarkResultsDigestSent(IDateTimeProvider dateTimeProvider)
+    {
+        ResultsDigestSentUtc = dateTimeProvider.UtcNow;
     }
 
     public void UpdateStatus(RoundStatus status, IDateTimeProvider dateTimeProvider)

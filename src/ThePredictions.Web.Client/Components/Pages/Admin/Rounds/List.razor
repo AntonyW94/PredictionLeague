@@ -4,6 +4,7 @@
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 
 @using ThePredictions.Contracts.Admin.Rounds
 @using ThePredictions.Domain.Common.Enumerations
@@ -63,6 +64,12 @@
                             <button class="btn btn-sm blue-light-button" @onclick="() => EnterResults(round.Id)" title="Enter Results">
                                 <span class="bi bi-clipboard2-check-fill"></span><span class="d-none d-lg-inline ms-1">Results</span>
                             </button>
+                            @if (round.Status == RoundStatus.Completed)
+                            {
+                                <button class="btn btn-sm purple-button" @onclick="() => ResendDigest(round.Id, round.RoundNumber)" disabled="@_isResending" title="Re-send the results digest email">
+                                    <span class="bi bi-envelope-arrow-up-fill"></span><span class="d-none d-lg-inline ms-1">Resend digest</span>
+                                </button>
+                            }
                         </div>
                     </div>
                 }
@@ -82,6 +89,7 @@
     private List<RoundDto>? _rounds;
     private string? _errorMessage;
     private string? _successMessage;
+    private bool _isResending;
 
     protected override async Task OnInitializedAsync()
     {
@@ -111,4 +119,35 @@
     private void EditRound(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/edit/{roundId}");
     private void Back() => NavigationManager.NavigateTo($"/admin/seasons/edit/{SeasonId}");
     private void EnterResults(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/{roundId}/results");
+
+    private async Task ResendDigest(int roundId, int roundNumber)
+    {
+        _errorMessage = null;
+        _successMessage = null;
+
+        var confirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm",
+            $"Re-send the results digest email for Round {roundNumber} to everyone who predicted?");
+        if (!confirmed)
+            return;
+
+        _isResending = true;
+
+        try
+        {
+            var response = await Http.PostAsync($"api/admin/rounds/{roundId}/resend-digest", null);
+            if (response.IsSuccessStatusCode)
+                _successMessage = $"Results digest re-send triggered for Round {roundNumber}.";
+            else
+                _errorMessage = "Failed to re-send the results digest.";
+        }
+        catch (Exception)
+        {
+            _errorMessage = "An error occurred while re-sending the results digest.";
+        }
+        finally
+        {
+            _isResending = false;
+        }
+    }
 }

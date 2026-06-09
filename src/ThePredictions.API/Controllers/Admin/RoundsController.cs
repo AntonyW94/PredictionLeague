@@ -136,5 +136,21 @@ public class RoundsController(IMediator mediator) : ApiControllerBase
         return NoContent();
     }
 
+    [HttpPost("{roundId:int}/resend-digest")]
+    [SwaggerOperation(
+        Summary = "Re-send the round-results digest",
+        Description = "Forces a re-send of the round-results digest email to every user who predicted in the round, even if it was already sent. The round must be completed.")]
+    [SwaggerResponse(204, "Digest re-send triggered")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    public async Task<IActionResult> ResendDigestAsync(
+        [SwaggerParameter("Round identifier")] int roundId,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new SendRoundDigestEmailsCommand(roundId, Force: true), cancellationToken);
+
+        return NoContent();
+    }
+
     #endregion
 }

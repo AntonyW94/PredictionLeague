@@ -107,6 +107,10 @@ public class UpdateMatchResultsCommandHandler(
                 };
                 await mediator.Send(processPrizesCommand, cancellationToken);
             }
+
+            // Stats and prizes are now finalised for the round, so send the results digest.
+            // Idempotent via Round.ResultsDigestSentUtc, so re-completing the round won't re-send.
+            await mediator.Send(new SendRoundDigestEmailsCommand(round.Id), cancellationToken);
         }
     }
 }

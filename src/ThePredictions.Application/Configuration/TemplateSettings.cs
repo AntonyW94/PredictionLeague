@@ -11,4 +11,5 @@ public class TemplateSettings
     public long PasswordReset { get; set; }
     public long PasswordResetGoogleUser { get; set; }
     public long EmailConfirmation { get; set; }
+    public long RoundResultsDigest { get; set; }
 }
