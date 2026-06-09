@@ -50,7 +50,7 @@ public class SendRoundDigestEmailsCommandHandlerTests
 
     private static UserRoundDigest Digest(string email) =>
         new("u1", email, "Antony", "Gameweek 7", 2, 6, "Gameweek 8", null, null,
-            new List<LeagueRoundDigest> { new("Office League", 18, 3, 1, "Sarah J", 24) });
+            new List<LeagueRoundDigest> { new(5, "Office League", 18, 3, 1, "Sarah J", 24) });
 
     [Fact]
     public async Task Handle_ShouldSendAndMarkSent_WhenRoundCompletedAndNotYetSent()

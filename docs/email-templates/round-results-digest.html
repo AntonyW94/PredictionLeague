@@ -1,9 +1,9 @@
 <!-- Brevo template "Round Results Digest" (config key: RoundResultsDigest)
      Subject:      {{ params.FIRST_NAME }}, here's how you did in {{ params.ROUND_NAME }}
      Preview text: Your {{ params.ROUND_NAME }} results are in
-     Scalar tags:  FIRST_NAME, ROUND_NAME, CORRECT_RESULTS, EXACT_SCORES, RESULTS_URL,
+     Scalar tags:  FIRST_NAME, ROUND_NAME, CORRECT_RESULTS, EXACT_SCORES,
                    NEXT_ROUND_NAME, NEXT_ROUND_OPENS, NEXT_ROUND_DEADLINE
-     Loop:         params.LEAGUES[] -> LEAGUE_NAME, POINTS, POSITION, MOVEMENT, TOP_SCORER, TOP_SCORER_POINTS
+     Loop:         params.LEAGUES[] -> LEAGUE_NAME, POINTS, POSITION, MOVEMENT, TOP_SCORER, TOP_SCORER_POINTS, LEAGUE_URL
      Note: the LEAGUES loop and the next-round block only render on a real send. The admin
            email-test tool sends scalar params only, so the per-league rows will be empty there
            (the next-round block shows if you fill NEXT_ROUND_NAME). ROUND_NAME / NEXT_ROUND_NAME
@@ -112,28 +112,13 @@
                   {% if league.TOP_SCORER %}
                   <p style="margin:12px 0 0;color:#98a2b3;font-size:13px;">Top scorer this round: {{ league.TOP_SCORER }} ({{ league.TOP_SCORER_POINTS }} pts)</p>
                   {% endif %}
+                  <p style="margin:14px 0 0;"><a href="{{ league.LEAGUE_URL }}" target="_blank" style="color:#5D3E85;font-size:14px;font-weight:700;text-decoration:none;">View league &rarr;</a></p>
                 </td>
               </tr>
             </table>
           </td>
         </tr>
         {% endfor %}
-
-        <!-- Bulletproof button -->
-        <tr>
-          <td style="padding:24px 32px 8px;">
-            <table role="presentation" cellpadding="0" cellspacing="0">
-              <tr>
-                <td align="center" bgcolor="#3D195B" style="border-radius:10px;">
-                  <a href="{{ params.RESULTS_URL }}" target="_blank"
-                     style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">
-                    View full results
-                  </a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
 
         <!-- Next round (renders when there is a next round) -->
         {% if params.NEXT_ROUND_NAME %}

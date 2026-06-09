@@ -57,7 +57,6 @@ public class SendRoundDigestEmailsCommandHandler(
         var baseUrl = string.IsNullOrWhiteSpace(_siteSettings.BaseUrl)
             ? "https://www.thepredictions.co.uk"
             : _siteSettings.BaseUrl.TrimEnd('/');
-        var resultsUrl = $"{baseUrl}/dashboard";
 
         foreach (var digest in digests)
         {
@@ -67,7 +66,6 @@ public class SendRoundDigestEmailsCommandHandler(
                 ROUND_NAME = digest.RoundName,
                 CORRECT_RESULTS = digest.CorrectResultCount,
                 EXACT_SCORES = digest.ExactScoreCount,
-                RESULTS_URL = resultsUrl,
                 NEXT_ROUND_NAME = digest.NextRoundName ?? string.Empty,
                 NEXT_ROUND_OPENS = digest.NextRoundStartUtc.HasValue ? dateFormatter.FormatDeadline(digest.NextRoundStartUtc.Value) : string.Empty,
                 NEXT_ROUND_DEADLINE = digest.NextRoundDeadlineUtc.HasValue ? dateFormatter.FormatDeadline(digest.NextRoundDeadlineUtc.Value) : string.Empty,
@@ -78,7 +76,8 @@ public class SendRoundDigestEmailsCommandHandler(
                     POSITION = DigestEmailFormatter.Ordinal(league.Position),
                     MOVEMENT = DigestEmailFormatter.PositionMovement(league.PositionDelta),
                     TOP_SCORER = league.TopScorerName ?? string.Empty,
-                    TOP_SCORER_POINTS = league.TopScorerPoints ?? 0
+                    TOP_SCORER_POINTS = league.TopScorerPoints ?? 0,
+                    LEAGUE_URL = $"{baseUrl}/leagues/{league.LeagueId}/dashboard"
                 }).ToList()
             };
 

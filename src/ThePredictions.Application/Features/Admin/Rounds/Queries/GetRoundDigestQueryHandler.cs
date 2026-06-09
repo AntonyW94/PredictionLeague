@@ -112,6 +112,7 @@ public class GetRoundDigestQueryHandler(IApplicationReadDbConnection dbConnectio
                 var first = group.First();
                 var leagues = group
                     .Select(row => new LeagueRoundDigest(
+                        row.LeagueId,
                         row.LeagueName,
                         row.LeaguePoints,
                         row.Position,

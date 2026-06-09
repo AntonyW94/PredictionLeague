@@ -6,6 +6,7 @@ namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 /// means no change / not available.
 /// </summary>
 public record LeagueRoundDigest(
+    int LeagueId,
     string LeagueName,
     int Points,
     int? Position,
