@@ -239,6 +239,7 @@ Represents a gameweek within a season.
 | DeadlineUtc | datetime2 | NO | | Prediction deadline |
 | CompletedDateUtc | datetime2 | YES | | When round was completed |
 | LastReminderSentUtc | datetime2 | YES | | Last reminder email sent |
+| ResultsDigestSentUtc | datetime2 | YES | | When the round-results digest email was sent (idempotency guard) |
 | CompletedDate | datetime2 | YES | | (Legacy column — use CompletedDateUtc instead) |
 
 **Constraints:**
