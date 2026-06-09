@@ -43,11 +43,11 @@ public class EmailTestDefaultsResolverTests
     }
 
     [Fact]
-    public void Resolve_ShouldReturnEmptyString_ForUnknownNonLinkParams()
+    public void Resolve_ShouldReturnHumanisedPlaceholder_ForUnknownNonLinkParams()
     {
         var result = _resolver.Resolve(["SOME_RANDOM_FIELD"], _user, "https://test.local");
 
-        result["SOME_RANDOM_FIELD"].Should().BeEmpty();
+        result["SOME_RANDOM_FIELD"].Should().Be("Some Random Field");
     }
 
     [Fact]
