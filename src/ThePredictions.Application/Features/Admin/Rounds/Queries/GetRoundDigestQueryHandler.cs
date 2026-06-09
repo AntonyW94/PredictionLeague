@@ -29,7 +29,6 @@ public class GetRoundDigestQueryHandler(IApplicationReadDbConnection dbConnectio
             (
                 SELECT TOP 1
                     nr.[DisplayName] AS NextRoundName,
-                    nr.[StartDateUtc] AS NextRoundStartUtc,
                     nr.[DeadlineUtc] AS NextRoundDeadlineUtc
                 FROM
                     [Rounds] nr
@@ -60,7 +59,6 @@ public class GetRoundDigestQueryHandler(IApplicationReadDbConnection dbConnectio
                 ts.[TopScorerName],
                 ts.[TopScorerPoints],
                 nextR.[NextRoundName],
-                nextR.[NextRoundStartUtc],
                 nextR.[NextRoundDeadlineUtc]
             FROM
                 [Rounds] r
@@ -129,7 +127,6 @@ public class GetRoundDigestQueryHandler(IApplicationReadDbConnection dbConnectio
                     first.ExactScoreCount,
                     first.CorrectResultCount,
                     first.NextRoundName,
-                    first.NextRoundStartUtc,
                     first.NextRoundDeadlineUtc,
                     leagues);
             })

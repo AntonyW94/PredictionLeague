@@ -38,8 +38,6 @@ public class EmailTestDefaultsResolver : IEmailTestDefaultsResolver
             case "DEADLINE":
             case "NEXT_ROUND_DEADLINE":
                 return "Saturday 14:30";
-            case "NEXT_ROUND_OPENS":
-                return "Saturday 18:00";
             case "CORRECT_RESULTS":
                 return "5";
             case "EXACT_SCORES":

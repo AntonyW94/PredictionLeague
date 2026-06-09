@@ -24,5 +24,4 @@ public record RoundDigestRow(
     string? TopScorerName,
     int? TopScorerPoints,
     string? NextRoundName,
-    DateTime? NextRoundStartUtc,
     DateTime? NextRoundDeadlineUtc);
