@@ -68,7 +68,6 @@ public class SendRoundDigestEmailsCommandHandler(
                 CORRECT_RESULTS = digest.CorrectResultCount,
                 EXACT_SCORES = digest.ExactScoreCount,
                 RESULTS_URL = resultsUrl,
-                HAS_NEXT_ROUND = digest.NextRoundName is not null,
                 NEXT_ROUND_NAME = digest.NextRoundName ?? string.Empty,
                 NEXT_ROUND_OPENS = digest.NextRoundStartUtc.HasValue ? dateFormatter.FormatDeadline(digest.NextRoundStartUtc.Value) : string.Empty,
                 NEXT_ROUND_DEADLINE = digest.NextRoundDeadlineUtc.HasValue ? dateFormatter.FormatDeadline(digest.NextRoundDeadlineUtc.Value) : string.Empty,

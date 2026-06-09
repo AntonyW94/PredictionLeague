@@ -2,10 +2,12 @@
      Subject:      {{ params.FIRST_NAME }}, here's how you did in {{ params.ROUND_NAME }}
      Preview text: Your {{ params.ROUND_NAME }} results are in
      Scalar tags:  FIRST_NAME, ROUND_NAME, CORRECT_RESULTS, EXACT_SCORES, RESULTS_URL,
-                   HAS_NEXT_ROUND, NEXT_ROUND_NAME, NEXT_ROUND_OPENS, NEXT_ROUND_DEADLINE
+                   NEXT_ROUND_NAME, NEXT_ROUND_OPENS, NEXT_ROUND_DEADLINE
      Loop:         params.LEAGUES[] -> LEAGUE_NAME, POINTS, POSITION, MOVEMENT, TOP_SCORER, TOP_SCORER_POINTS
-     Note: the LEAGUES loop only renders on a real send (the admin email-test tool sends
-           scalar params only, so the per-league rows will be empty there). -->
+     Note: the LEAGUES loop and the next-round block only render on a real send. The admin
+           email-test tool sends scalar params only, so the per-league rows will be empty there
+           (the next-round block shows if you fill NEXT_ROUND_NAME). ROUND_NAME / NEXT_ROUND_NAME
+           are the round DisplayName (e.g. "Finals", "Gameweek 37"). -->
 <html><body><!-- Preheader: fills the inbox snippet, hidden in the body -->
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F8F5FA;opacity:0;">
   Your {{ params.ROUND_NAME }} results are in.
@@ -52,14 +54,30 @@
           </td>
         </tr>
 
-        <!-- Round summary panel -->
+        <!-- Round summary panel: two rows, one stat each -->
         <tr>
           <td style="padding:0 32px 8px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;border:1px solid #F0EAF5;border-radius:12px;">
               <tr>
-                <td style="padding:18px 20px;">
-                  <p style="margin:0 0 4px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">This round</p>
-                  <p style="margin:0;color:#2C0A3D;font-size:17px;font-weight:700;">{{ params.CORRECT_RESULTS }} correct results &middot; {{ params.EXACT_SCORES }} exact scores</p>
+                <td style="padding:16px 20px;border-bottom:1px solid #F0EAF5;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td valign="middle" style="font-size:22px;width:34px;">&#9989;</td>
+                      <td valign="middle" style="color:#475467;font-size:15px;font-weight:600;">Correct results</td>
+                      <td valign="middle" align="right" style="color:#2C0A3D;font-size:22px;font-weight:800;">{{ params.CORRECT_RESULTS }}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:16px 20px;">
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td valign="middle" style="font-size:22px;width:34px;">&#127919;</td>
+                      <td valign="middle" style="color:#475467;font-size:15px;font-weight:600;">Exact scores</td>
+                      <td valign="middle" align="right" style="color:#2C0A3D;font-size:22px;font-weight:800;">{{ params.EXACT_SCORES }}</td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
@@ -78,12 +96,21 @@
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #F0EAF5;border-radius:12px;">
               <tr>
                 <td style="padding:16px 20px;">
-                  <p style="margin:0 0 6px;color:#2C0A3D;font-size:16px;font-weight:700;">{{ league.LEAGUE_NAME }}</p>
-                  <p style="margin:0;color:#475467;font-size:15px;line-height:1.6;">
-                    {{ league.POINTS }} pts &middot; {{ league.POSITION }}{% if league.MOVEMENT %} <span style="color:#98a2b3;">({{ league.MOVEMENT }})</span>{% endif %}
-                  </p>
+                  <p style="margin:0 0 12px;color:#2C0A3D;font-size:16px;font-weight:700;">{{ league.LEAGUE_NAME }}</p>
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td valign="top" width="50%">
+                        <p style="margin:0 0 2px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Points</p>
+                        <p style="margin:0;color:#2C0A3D;font-size:18px;font-weight:800;">{{ league.POINTS }}</p>
+                      </td>
+                      <td valign="top" width="50%">
+                        <p style="margin:0 0 2px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Position</p>
+                        <p style="margin:0;color:#2C0A3D;font-size:18px;font-weight:800;">{{ league.POSITION }}{% if league.MOVEMENT %} <span style="color:#98a2b3;font-size:13px;font-weight:600;">({{ league.MOVEMENT }})</span>{% endif %}</p>
+                      </td>
+                    </tr>
+                  </table>
                   {% if league.TOP_SCORER %}
-                  <p style="margin:6px 0 0;color:#98a2b3;font-size:13px;">Top scorer: {{ league.TOP_SCORER }} ({{ league.TOP_SCORER_POINTS }} pts)</p>
+                  <p style="margin:12px 0 0;color:#98a2b3;font-size:13px;">Top scorer this round: {{ league.TOP_SCORER }} ({{ league.TOP_SCORER_POINTS }} pts)</p>
                   {% endif %}
                 </td>
               </tr>
@@ -108,8 +135,8 @@
           </td>
         </tr>
 
-        <!-- Next round (conditional) -->
-        {% if params.HAS_NEXT_ROUND %}
+        <!-- Next round (renders when there is a next round) -->
+        {% if params.NEXT_ROUND_NAME %}
         <tr>
           <td style="padding:8px 32px 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;border:1px solid #F0EAF5;border-radius:12px;">
