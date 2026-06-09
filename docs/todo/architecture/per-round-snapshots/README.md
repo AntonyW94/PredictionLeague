@@ -18,7 +18,7 @@ Two new tables - one per-user-per-league-per-round, one per-league-per-round. Ba
 
 - **Cheapest backfill possible.** Right now: 34 rounds, 2 leagues. Every round and every new league widens the backfill scope. Within months this becomes a bigger and riskier piece of work.
 - **Locks data in before rule changes.** The user has confirmed scoring/boost rules cannot change mid-season (rules are set at season start), but season-to-season changes are still possible. Snapshotting per round eliminates any future ambiguity.
-- **Direct dependency of the round results email** ([round-results-emails](../../features/email-notifications/round-results-emails/README.md)) and the prize email ([prize-notifications](../../features/email-notifications/prize-notifications/README.md)). Both want per-round rank deltas and league context.
+- **Wanted by the round results email and the prize email (both now shipped):** both surface per-round rank deltas and league context that these snapshots would make cheaper and more reliable to compute.
 - **Five other Tier 7 features get easier or possible:** stats dashboard, season recap, prediction history page, head-to-head, achievement badges.
 
 ## Design principle
@@ -40,7 +40,7 @@ Derived stats (form, streaks, biggest-jump, average per round, accuracy %, "you 
 | Match results | match tables | |
 | Round points (raw + boosted) | `LeagueRoundResults` | (We do duplicate this for query speed - see schema) |
 | Boost type used | `BoostUsage` | (Same) |
-| Prize won | `PrizeAwards` (new, from prize-notifications plan) | |
+| Prize won | `Winnings` + `PrizeNotifications` (shipped) | |
 
 ## Schema
 

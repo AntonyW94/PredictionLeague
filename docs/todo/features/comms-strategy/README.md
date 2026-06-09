@@ -58,8 +58,8 @@ Volumes scale linearly with user count. At 200 users we'd still be well under £
 
 | # | Plan | Why first | Status |
 |---|---|---|---|
-| 1 | [Email design system](../email-notifications/email-templates/README.md) | Every email after this benefits. The current ones look basic - this is the right time to fix it. | Not Started |
-| 2 | [Admin email test tool](../admin-moderation/email-test-tool/README.md) | Makes everything below cheaper to develop and verify. Already planned. | Not Started |
+| 1 | Email design system | Every email after this benefits. The current ones look basic - this is the right time to fix it. | **Complete (shipped)** |
+| 2 | Admin email test tool | Makes everything below cheaper to develop and verify. | **Complete (shipped)** |
 
 ### Phase 2 - High-impact emails (do after Phase 1)
 
@@ -67,9 +67,9 @@ User explicitly flagged 3 and 4 as priorities.
 
 | # | Plan | Channel | Status |
 |---|---|---|---|
-| 3 | [Round results digest](../email-notifications/round-results-emails/README.md) | Email only | Not Started |
-| 4 | [Prize won notification](../email-notifications/prize-notifications/README.md) | Email + WhatsApp (opt-in, Phase 4) | Not Started |
-| 5 | [Welcome email](../email-notifications/transactional-emails/README.md) (existing stub - to be expanded) | Email only | Stub |
+| 3 | Round results digest | Email only | **Complete (shipped)** |
+| 4 | Prize won notification | Email shipped; WhatsApp opt-in still Phase 4 | **Complete (email)** |
+| 5 | Welcome email (existing stub - to be expanded) | Email only | Stub |
 | 6 | [League membership status changes](../email-notifications/league-notifications/README.md) (existing stub - to be expanded) | Email only | Stub |
 
 For Phase 2, the prize-won WhatsApp portion is gated behind Phase 4. Build the email path first; the same handler grows a WhatsApp send when WhatsApp infra lands.
@@ -138,5 +138,5 @@ Each phase unblocks the next. You can ship Phases 1-2 without ever touching What
 
 ## Related
 
-- [Admin email test tool plan](../admin-moderation/email-test-tool/README.md) - the testing harness all these new templates need.
+- Admin email test tool - shipped; the testing harness all these new templates needed.
 - [Password reset feature](../authentication/password-reset/README.md) - already shipped, the reference pattern for new email-sending features.
