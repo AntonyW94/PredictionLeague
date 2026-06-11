@@ -196,7 +196,8 @@
     margin-bottom: var(--space-3);
 }
 
-.prize-hero-title {
+/* Two-class selector so the white title beats the .admin-light h3 colour override */
+.prize-hero .prize-hero-title {
     color: var(--white);
     font-weight: 800;
     margin: 0 0 var(--space-1);
