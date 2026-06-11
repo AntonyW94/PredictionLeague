@@ -554,6 +554,34 @@ The send command (`SendPrizeNotificationsCommand`) skips any prize already prese
 
 ---
 
+### LeagueWelcomeNotifications
+
+Append-only sent-log that makes the league welcome email idempotent. Once a league's entry
+deadline has passed (and its prizes are frozen, where a scheme exists), the hourly scheduled task
+(`SendLeagueWelcomeEmailsCommand` via `POST /api/external/tasks/send-welcome-emails`) emails every
+approved member a one-off welcome covering the member count, prize structure (or leaderboard-only
+framing for free leagues) and any enabled boosts. Members already present here are skipped, so the
+scan can re-run forever. Only leagues whose deadline passed within the last 7 days are considered,
+so historic leagues are never back-filled.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| LeagueId | int | NO | | FK to Leagues |
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers - the welcomed member |
+| SentAtUtc | datetime2 | NO | | When the welcome email was sent |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `(LeagueId, UserId)` - the dedup key for idempotency
+- FK: `LeagueId` → `Leagues.Id` (CASCADE DELETE)
+- FK: `UserId` → `AspNetUsers.Id`
+
+> Holds no personal data beyond the `UserId` FK, so it is copied verbatim by the database refresh
+> tool and needs no anonymisation.
+
+---
+
 ## Prediction Tables
 
 ### UserPredictions
