@@ -1197,6 +1197,10 @@ main.theme-dark:has(.admin-light) .navbar-logo {
     color: var(--purple-200);
 }
 
+.theme-dark .prize-per-event {
+    color: var(--grey-300);
+}
+
 .theme-dark .prize-locked-text {
     color: var(--white-alpha-70);
 }

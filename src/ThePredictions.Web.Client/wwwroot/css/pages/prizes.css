@@ -56,6 +56,27 @@
     font-size: 1.1rem;
 }
 
+/* Muted per-event annotation on recurring prize rows, e.g. "(£6.00 per round)" */
+.prize-per-event {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--grey-500);
+}
+
+/* Stage grouping subheader inside the Stage Prizes card */
+.prize-stage-subheading {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--purple-300);
+    padding-top: 0.75rem;
+}
+
+.prize-stage-subheading:first-child {
+    padding-top: 0;
+}
+
 /* Prize locked state card */
 .prize-locked-card {
     background: var(--white);

@@ -42,7 +42,7 @@
                     @if (_pageData.PrizeSettings.Any())
                     {
                         <div class="prize-hero-total">
-                            @((_pageData.PrizeSettings.Sum(p => p.PrizeAmount)).ToString("C", new CultureInfo("en-GB")))
+                            @(TotalPrizePool.ToString("C", new CultureInfo("en-GB")))
                         </div>
                         <p class="prize-hero-subtitle">Total Prize Pool</p>
                     }
@@ -72,6 +72,31 @@
                         </div>
                     </div>
 
+                    @if (_pageData.PrizeSettings.Any(p => p.PrizeType == PrizeType.Stages))
+                    {
+                        <div class="card w-100">
+                            <div class="header">
+                                <h5 class="text-center fw-bold mb-0">Stage Prizes</h5>
+                            </div>
+                            <div class="body">
+                                @foreach (var stage in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Stages).GroupBy(p => p.Stage).OrderBy(g => g.Key))
+                                {
+                                    <div class="prize-stage-subheading">@stage.Key</div>
+                                    @foreach (var prize in stage.OrderBy(p => p.Rank))
+                                    {
+                                        <div class="prize-row prize-row--placement">
+                                            <div class="prize-medal @GetMedalClass(prize.Rank)">
+                                                <span class="bi bi-trophy-fill"></span>
+                                            </div>
+                                            <span class="prize-description">@prize.Rank<span>@FormattingUtilities.GetOrdinal(prize.Rank)</span><span class="d-none d-md-inline"> Place</span></span>
+                                            <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    }
+
                     <div class="card w-100">
                         <div class="header">
                             <h5 class="text-center fw-bold mb-0">Other Prizes</h5>
@@ -81,24 +106,16 @@
                             {
                                 <div class="prize-row">
                                     <div class="prize-icon"><span class="bi bi-calendar3-event"></span></div>
-                                    <span class="prize-description">Round<span class="d-none d-md-inline">&nbsp;Winner</span></span>
-                                    <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                    <span class="prize-description">Round<span class="d-none d-md-inline">&nbsp;Winner</span>s <span class="prize-per-event">(@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB")) per round)</span></span>
+                                    <span class="prize-amount">@((prize.PrizeAmount * _pageData.NumberOfRounds).ToString("C", new CultureInfo("en-GB")))</span>
                                 </div>
                             }
                             @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Monthly))
                             {
                                 <div class="prize-row">
                                     <div class="prize-icon"><span class="bi bi-calendar-month"></span></div>
-                                    <span class="prize-description">Monthly<span class="d-none d-md-inline">&nbsp;Winner</span></span>
-                                    <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
-                                </div>
-                            }
-                            @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.Stages).OrderBy(p => p.Stage).ThenBy(p => p.Rank))
-                            {
-                                <div class="prize-row">
-                                    <div class="prize-icon"><span class="bi bi-diagram-3-fill"></span></div>
-                                    <span class="prize-description">@prize.Stage - @prize.Rank<span>@FormattingUtilities.GetOrdinal(prize.Rank)</span></span>
-                                    <span class="prize-amount">@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB"))</span>
+                                    <span class="prize-description">Monthly<span class="d-none d-md-inline">&nbsp;Winner</span>s <span class="prize-per-event">(@prize.PrizeAmount.ToString("C", new CultureInfo("en-GB")) per month)</span></span>
+                                    <span class="prize-amount">@((prize.PrizeAmount * NumberOfMonths).ToString("C", new CultureInfo("en-GB")))</span>
                                 </div>
                             }
                             @foreach (var prize in _pageData.PrizeSettings.Where(p => p.PrizeType == PrizeType.MostExactScores))
@@ -199,6 +216,34 @@
     }
 
     private void Back() => NavigationManager.NavigateTo("/leagues");
+
+    /// <summary>
+    /// Recurring prize settings store the per-event amount once, so the pool total multiplies
+    /// them by their occurrence count (rounds/months); everything else pays out exactly once.
+    /// </summary>
+    private decimal TotalPrizePool => _pageData?.PrizeSettings.Sum(p => p.PrizeAmount * PrizeOccurrences(p.PrizeType)) ?? 0m;
+
+    private int PrizeOccurrences(PrizeType prizeType) => prizeType switch
+    {
+        PrizeType.Round => _pageData!.NumberOfRounds,
+        PrizeType.Monthly => NumberOfMonths,
+        _ => 1
+    };
+
+    private int NumberOfMonths
+    {
+        get
+        {
+            if (_pageData == null)
+                return 0;
+
+            var months = 0;
+            for (var date = _pageData.SeasonStartDateUtc; date <= _pageData.SeasonEndDateUtc; date = date.AddMonths(1))
+                months++;
+
+            return months;
+        }
+    }
 
     private static string GetMedalClass(int rank) => rank switch
     {
