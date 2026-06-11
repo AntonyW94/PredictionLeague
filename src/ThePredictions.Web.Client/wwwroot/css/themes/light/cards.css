@@ -159,21 +159,51 @@
 }
 
 /* Empty state */
-/* Prize hero banner */
+/* Prize hero banner - same purple gradient treatment as the season pass hero */
 .prize-hero {
+    position: relative;
+    overflow: hidden;
     text-align: center;
-    padding: var(--space-4) var(--space-6) var(--space-3);
+    padding: var(--space-6) var(--space-5);
+    margin-bottom: var(--space-6);
+    border-radius: var(--bs-border-radius);
+    background: linear-gradient(135deg, var(--purple-800), var(--purple-600));
+    box-shadow: 0 8px 24px var(--black-alpha-25);
+}
+
+.prize-hero::after {
+    content: "";
+    position: absolute;
+    right: -40px;
+    bottom: -60px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: var(--white-alpha-08);
+    pointer-events: none;
 }
 
 .prize-hero-icon {
-    font-size: 1.8rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--white-alpha-15);
     color: var(--gold);
-    display: block;
-    margin-bottom: var(--space-2);
+    font-size: 1.4rem;
+    margin-bottom: var(--space-3);
+}
+
+.prize-hero-title {
+    color: var(--white);
+    font-weight: 800;
+    margin: 0 0 var(--space-1);
 }
 
 .prize-hero-league {
-    color: var(--purple-300);
+    color: var(--white-alpha-50);
     font-weight: 500;
     margin-bottom: var(--space-3);
 }
@@ -789,7 +819,7 @@
 }
 
 .prize-hero-subtitle {
-    color: var(--grey-500);
+    color: var(--white-alpha-50);
     font-size: 0.85rem;
     font-weight: 600;
     text-transform: uppercase;

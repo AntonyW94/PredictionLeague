@@ -1167,14 +1167,6 @@ main.theme-dark:has(.admin-light) .navbar-logo {
 }
 
 /* Prize page — hero text */
-.theme-dark .prize-hero-league {
-    color: var(--white-alpha-70);
-}
-
-.theme-dark .prize-hero-subtitle {
-    color: var(--white-alpha-50);
-}
-
 /* Prize page — prize rows */
 .theme-dark .admin-light .prize-amount,
 .theme-dark .admin-light .prize-description {
