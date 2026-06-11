@@ -16,6 +16,17 @@
     justify-content: center;
 }
 
+/* Tournament cards show four rank boxes in a 2x2 grid (Overall | Stage / Round | Exact
+   Scores). Titles vary in length ("Round 1" vs "Knockout Stage"), so reserve two lines
+   for every title in these rows to keep the shields vertically aligned across the grid. */
+.secondary-rank-row--tournament .secondary-rank-box > small {
+    min-height: 2.1em;
+    line-height: 1.05;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* --- Shield Icon System --- */
 .rank-shield-container {
     position: relative;

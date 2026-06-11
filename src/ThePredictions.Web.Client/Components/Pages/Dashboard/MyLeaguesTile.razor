@@ -327,128 +327,83 @@
                                             }
                                             else
                                             {
-                                                <div class="glass-panel hero-rank-container">
-                                                    <div class="text-center w-100">
-                                                        <div class="text-uppercase text-white fw-bold mb-2 text-sm">Overall Rank</div>
-
-                                                        <div class="d-flex align-items-center justify-content-center">
-                                                            <RankChangeArrow
-                                                                PreviousRank="@league.PreRoundOverallRank"
-                                                                CurrentRank="@league.Rank.GetValueOrDefault()"
-                                                                IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundOverallRank.HasValue && league.Rank.HasValue)" />
-
-                                                            @if (league.Rank.HasValue && league.MemberCount.HasValue)
-                                                            {
-                                                                <div class="d-flex align-items-center gap-1">
-                                                                    <div class="rank-shield-container">
-                                                                        @{ var overallColour = GetShieldColour(league.Rank, league.MemberCount); }
-                                                                        <svg viewBox="0 0 24 24" class="rank-shield-icon" filter="url(#shield-shadow)">
-                                                                            <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@overallColour)" stroke="url(#rim-@overallColour)"/>
-                                                                        </svg>
-                                                                        <span class="rank-shield-text">
-                                                                            @league.Rank
-                                                                        </span>
-                                                                    </div>
-                                                                    <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
-                                                                </div>
-                                                            }
+                                                @if (league.CompetitionType == 1)
+                                                {
+                                                    <div class="row g-2 mb-2 secondary-rank-row--tournament">
+                                                        <div class="col-6 d-flex">
+                                                            @RenderRankBox("Overall Rank", league.Rank, league.PreRoundOverallRank, league.MemberCount,
+                                                                showNotStarted: false,
+                                                                arrowVisible: league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundOverallRank.HasValue && league.Rank.HasValue,
+                                                                roundStart: league.RoundStartDateUtc)
+                                                        </div>
+                                                        <div class="col-6 d-flex">
+                                                            @RenderRankBox(league.StageName ?? "Stage", league.StageRank, league.PreRoundStageRank, league.MemberCount,
+                                                                showNotStarted: league.RoundStatus == nameof(RoundStatus.Published) && !league.PreRoundStageRank.HasValue,
+                                                                arrowVisible: league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundStageRank.HasValue,
+                                                                roundStart: league.RoundStartDateUtc)
                                                         </div>
                                                     </div>
-                                                </div>
+                                                    <div class="row g-2 mb-3 flex-grow-1 secondary-rank-row--tournament">
+                                                        <div class="col-6 d-flex">
+                                                            @RenderRankBox(league.CurrentRound, league.RoundRank, league.StableRoundRank, league.MemberCount,
+                                                                showNotStarted: league.RoundStatus == nameof(RoundStatus.Published),
+                                                                arrowVisible: league.RoundStatus == nameof(RoundStatus.InProgress) && league.InProgressCount > 0 && league.CompletedCount > 0 && league.StableRoundRank.HasValue,
+                                                                roundStart: league.RoundStartDateUtc)
+                                                        </div>
+                                                        <div class="col-6 d-flex">
+                                                            @RenderRankBox(league.CurrentMonth, league.MonthRank, league.PreRoundMonthRank, league.MemberCount,
+                                                                showNotStarted: league.RoundStatus == nameof(RoundStatus.Published) && !league.PreRoundMonthRank.HasValue,
+                                                                arrowVisible: league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundMonthRank.HasValue,
+                                                                roundStart: league.RoundStartDateUtc)
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="glass-panel hero-rank-container">
+                                                        <div class="text-center w-100">
+                                                            <div class="text-uppercase text-white fw-bold mb-2 text-sm">Overall Rank</div>
 
-                                                <div class="row g-2 mb-3 flex-grow-1">
-                                                    <div class="col-6 d-flex">
-                                                        <div class="glass-panel secondary-rank-box w-100">
-                                                            <small class="text-uppercase text-white fw-bold d-block mb-1 text-xs">@league.CurrentRound</small>
-                                                            @if (league.RoundStatus == nameof(RoundStatus.Published))
-                                                            {
-                                                                <div class="d-flex flex-column align-items-center justify-content-center">
-                                                                    <i class="bi bi-hourglass-split text-purple-300" style="font-size: 1.8rem;"></i>
-                                                                    <small class="text-white-50 text-2xs mt-1">
-                                                                        @if (league.RoundStartDateUtc.HasValue)
-                                                                        {
-                                                                            @($"Starts {league.RoundStartDateUtc.Value:dd MMM}")
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            @("Awaiting kick-off")
-                                                                        }
-                                                                    </small>
-                                                                </div>
-                                                            }
-                                                            else if (league.RoundRank.HasValue)
-                                                            {
-                                                                <div class="d-flex align-items-center justify-content-center gap-1">
-                                                                    <RankChangeArrow
-                                                                        PreviousRank="@league.StableRoundRank"
-                                                                        CurrentRank="@league.RoundRank.GetValueOrDefault()"
-                                                                        IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.InProgressCount > 0 && league.CompletedCount > 0 && league.StableRoundRank.HasValue)" />
+                                                            <div class="d-flex align-items-center justify-content-center">
+                                                                <RankChangeArrow
+                                                                    PreviousRank="@league.PreRoundOverallRank"
+                                                                    CurrentRank="@league.Rank.GetValueOrDefault()"
+                                                                    IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundOverallRank.HasValue && league.Rank.HasValue)" />
 
-                                                                    <div class="rank-shield-container small">
-                                                                        @{ var roundColour = GetShieldColour(league.RoundRank, league.MemberCount); }
-                                                                        <svg viewBox="0 0 24 24" class="rank-shield-icon" filter="url(#shield-shadow)">
-                                                                            <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@roundColour)" stroke="url(#rim-@roundColour)" />
-                                                                        </svg>
-                                                                        <span class="rank-shield-text">
-                                                                            @league.RoundRank
-                                                                        </span>
+                                                                @if (league.Rank.HasValue && league.MemberCount.HasValue)
+                                                                {
+                                                                    <div class="d-flex align-items-center gap-1">
+                                                                        <div class="rank-shield-container">
+                                                                            @{ var overallColour = GetShieldColour(league.Rank, league.MemberCount); }
+                                                                            <svg viewBox="0 0 24 24" class="rank-shield-icon" filter="url(#shield-shadow)">
+                                                                                <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@overallColour)" stroke="url(#rim-@overallColour)"/>
+                                                                            </svg>
+                                                                            <span class="rank-shield-text">
+                                                                                @league.Rank
+                                                                            </span>
+                                                                        </div>
+                                                                        <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
                                                                     </div>
-                                                                    <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
-                                                                </div>
-                                                            }
-                                                            else
-                                                            {
-                                                                <span class="text-white-50">-</span>
-                                                            }
+                                                                }
+                                                            </div>
                                                         </div>
                                                     </div>
 
-                                                    <div class="col-6 d-flex">
-                                                        <div class="glass-panel secondary-rank-box w-100">
-                                                            <small class="text-uppercase text-white fw-bold d-block mb-1 text-xs">@league.CurrentMonth</small>
-                                                            @if (league.RoundStatus == nameof(RoundStatus.Published) && !league.PreRoundMonthRank.HasValue)
-                                                            {
-                                                                <div class="d-flex flex-column align-items-center justify-content-center">
-                                                                    <i class="bi bi-hourglass-split text-purple-300" style="font-size: 1.8rem;"></i>
-                                                                    <small class="text-white-50 text-2xs mt-1">
-                                                                        @if (league.RoundStartDateUtc.HasValue)
-                                                                        {
-                                                                            @($"Starts {league.RoundStartDateUtc.Value:dd MMM}")
-                                                                        }
-                                                                        else
-                                                                        {
-                                                                            @("Awaiting kick-off")
-                                                                        }
-                                                                    </small>
-                                                                </div>
-                                                            }
-                                                            else if (league.MonthRank.HasValue)
-                                                            {
-                                                                <div class="d-flex align-items-center justify-content-center gap-1">
-                                                                    <RankChangeArrow
-                                                                        PreviousRank="@league.PreRoundMonthRank"
-                                                                        CurrentRank="@league.MonthRank.GetValueOrDefault()"
-                                                                        IsVisible="@(league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundMonthRank.HasValue)" />
-
-                                                                    <div class="rank-shield-container small">
-                                                                        @{ var monthColour = GetShieldColour(league.MonthRank, league.MemberCount); }
-                                                                        <svg viewBox="0 0 24 24" class="rank-shield-icon" filter="url(#shield-shadow)">
-                                                                            <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@monthColour)" stroke="url(#rim-@monthColour)" />
-                                                                        </svg>
-                                                                        <span class="rank-shield-text">
-                                                                            @league.MonthRank
-                                                                        </span>
-                                                                    </div>
-                                                                    <div class="text-white-50 fw-bold fs-6">/ @league.MemberCount</div>
-                                                                </div>
-                                                            }
-                                                            else
-                                                            {
-                                                                <span class="text-white-50">-</span>
-                                                            }
+                                                    <div class="row g-2 mb-3 flex-grow-1">
+                                                        <div class="col-6 d-flex">
+                                                            @RenderRankBox(league.CurrentRound, league.RoundRank, league.StableRoundRank, league.MemberCount,
+                                                                showNotStarted: league.RoundStatus == nameof(RoundStatus.Published),
+                                                                arrowVisible: league.RoundStatus == nameof(RoundStatus.InProgress) && league.InProgressCount > 0 && league.CompletedCount > 0 && league.StableRoundRank.HasValue,
+                                                                roundStart: league.RoundStartDateUtc)
+                                                        </div>
+                                                        <div class="col-6 d-flex">
+                                                            @RenderRankBox(league.CurrentMonth, league.MonthRank, league.PreRoundMonthRank, league.MemberCount,
+                                                                showNotStarted: league.RoundStatus == nameof(RoundStatus.Published) && !league.PreRoundMonthRank.HasValue,
+                                                                arrowVisible: league.RoundStatus == nameof(RoundStatus.InProgress) && league.PreRoundMonthRank.HasValue,
+                                                                roundStart: league.RoundStartDateUtc)
                                                         </div>
                                                     </div>
-                                                </div>
+                                                }
 
                                                 @if (league.TotalPrizeFund > 0)
                                                 {
@@ -723,6 +678,51 @@
     {
         NavigationManager.NavigateTo($"/leagues/{leagueId}/dashboard");
     }
+
+    private RenderFragment RenderRankBox(string title, int? rank, int? previousRank, int? memberCount, bool showNotStarted, bool arrowVisible, DateTime? roundStart) =>
+        @<div class="glass-panel secondary-rank-box w-100">
+            <small class="text-uppercase text-white fw-bold d-block mb-1 text-xs">@title</small>
+            @if (showNotStarted)
+            {
+                <div class="d-flex flex-column align-items-center justify-content-center">
+                    <i class="bi bi-hourglass-split text-purple-300" style="font-size: 1.8rem;"></i>
+                    <small class="text-white-50 text-2xs mt-1">
+                        @if (roundStart.HasValue)
+                        {
+                            @($"Starts {roundStart.Value:dd MMM}")
+                        }
+                        else
+                        {
+                            @("Awaiting kick-off")
+                        }
+                    </small>
+                </div>
+            }
+            else if (rank.HasValue)
+            {
+                <div class="d-flex align-items-center justify-content-center gap-1">
+                    <RankChangeArrow
+                        PreviousRank="@previousRank"
+                        CurrentRank="@rank.GetValueOrDefault()"
+                        IsVisible="@arrowVisible" />
+
+                    <div class="rank-shield-container small">
+                        @{ var colour = GetShieldColour(rank, memberCount); }
+                        <svg viewBox="0 0 24 24" class="rank-shield-icon" filter="url(#shield-shadow)">
+                            <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3z" fill="url(#grad-@colour)" stroke="url(#rim-@colour)" />
+                        </svg>
+                        <span class="rank-shield-text">
+                            @rank
+                        </span>
+                    </div>
+                    <div class="text-white-50 fw-bold fs-6">/ @memberCount</div>
+                </div>
+            }
+            else
+            {
+                <span class="text-white-50">-</span>
+            }
+        </div>;
 
     private static string GetShieldColour(long? rank, int? memberCount)
     {

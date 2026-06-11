@@ -55,11 +55,22 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
                         r.[RoundNumber] ASC
                 ) as [PriorityRank]
             FROM [Rounds] r
-            WHERE 
+            WHERE
                 r.[Status] <> @DraftStatus
                 AND r.[SeasonId] IN (SELECT DISTINCT [SeasonId] FROM [MyLeagues])
         ),
-        
+
+        RoundStages AS (
+            SELECT
+                r.[Id] AS RoundId,
+                r.[SeasonId],
+                r.[Status],
+                CASE WHEN trm.[Stages] LIKE '%Group%' THEN 'Group Stage' ELSE 'Knockout Stage' END AS StageName
+            FROM [Rounds] r
+            JOIN [TournamentRoundMappings] trm ON trm.[SeasonId] = r.[SeasonId] AND trm.[RoundNumber] = r.[RoundNumber]
+            WHERE r.[SeasonId] IN (SELECT DISTINCT [SeasonId] FROM [MyLeagues])
+        ),
+
         LeagueContext AS (
             SELECT
                 l.[Id] AS LeagueId,
@@ -118,6 +129,40 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
                 AND lm.[Status] = @ApprovedStatus
             GROUP BY lm.[LeagueId], lm.[UserId], ar.[RoundId], lg.[SeasonId], ar.[StartDateUtc]
+        ),
+
+        ActiveStageRanks AS (
+            SELECT
+                lm.[LeagueId],
+                lm.[UserId],
+                ars.[StageName],
+                CAST(RANK() OVER (
+                    PARTITION BY lm.[LeagueId]
+                    ORDER BY ISNULL(SUM(CASE WHEN rs.[RoundId] IS NOT NULL THEN lrr.[BoostedPoints] ELSE 0 END), 0) DESC
+                ) AS INT) AS StageRank,
+                CASE
+                    WHEN NOT EXISTS (
+                        SELECT 1 FROM [RoundStages] rs2
+                        WHERE rs2.[SeasonId] = lg.[SeasonId]
+                        AND rs2.[StageName] = ars.[StageName]
+                        AND rs2.[RoundId] <> ar.[RoundId]
+                        AND rs2.[Status] IN (@InProgressStatus, @CompletedStatus)
+                    )
+                    THEN NULL
+                    ELSE CAST(RANK() OVER (
+                        PARTITION BY lm.[LeagueId]
+                        ORDER BY ISNULL(SUM(CASE WHEN rs.[RoundId] <> ar.[RoundId] THEN lrr.[BoostedPoints] ELSE 0 END), 0) DESC
+                    ) AS INT)
+                END AS PreRoundStageRank
+            FROM [LeagueMembers] lm
+            JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
+            JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
+            JOIN [RoundStages] ars ON ars.[RoundId] = ar.[RoundId]
+            LEFT JOIN [LeagueRoundResults] lrr ON lm.[LeagueId] = lrr.[LeagueId] AND lm.[UserId] = lrr.[UserId]
+            LEFT JOIN [RoundStages] rs ON lrr.[RoundId] = rs.[RoundId] AND rs.[StageName] = ars.[StageName]
+            WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
+                AND lm.[Status] = @ApprovedStatus
+            GROUP BY lm.[LeagueId], lm.[UserId], ar.[RoundId], lg.[SeasonId], ars.[StageName]
         )
 
         SELECT
@@ -169,13 +214,18 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
                 THEN 1
                 ELSE 0
             END AS bit) AS IsFinished,
-            l.[IsArchivedByUser]
+            l.[IsArchivedByUser],
+
+            asr.[StageName],
+            asr.[StageRank],
+            asr.[PreRoundStageRank]
 
         FROM [MyLeagues] l
         LEFT JOIN [LeagueMemberStats] stats ON l.[LeagueId] = stats.[LeagueId] AND l.[UserId] = stats.[UserId]
         LEFT JOIN [ActiveRounds] ar ON l.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
         LEFT JOIN [LeagueContext] lc ON l.[LeagueId] = lc.[LeagueId]
         LEFT JOIN [ActiveRoundMonthlyRanks] armr ON l.[LeagueId] = armr.[LeagueId] AND l.[UserId] = armr.[UserId]
+        LEFT JOIN [ActiveStageRanks] asr ON l.[LeagueId] = asr.[LeagueId] AND l.[UserId] = asr.[UserId]
 
         ORDER BY
             CASE WHEN ar.[Status] = @InProgressStatus THEN 0 ELSE 1 END ASC,

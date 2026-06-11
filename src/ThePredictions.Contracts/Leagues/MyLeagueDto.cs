@@ -34,5 +34,9 @@ public record MyLeagueDto(
     int MonthsWon,
 
     bool IsFinished,
-    bool IsArchivedByUser
+    bool IsArchivedByUser,
+
+    string? StageName,
+    int? StageRank,
+    int? PreRoundStageRank
 );
