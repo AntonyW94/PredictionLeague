@@ -109,6 +109,7 @@ public static class DependencyInjection
         services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
         services.AddScoped<IWinningsRepository, WinningsRepository>();
         services.AddScoped<IPrizeNotificationRepository, PrizeNotificationRepository>();
+        services.AddScoped<ILeagueWelcomeNotificationRepository, LeagueWelcomeNotificationRepository>();
         services.AddScoped<IBoostReadRepository, BoostReadRepository>();
         services.AddScoped<IBoostWriteRepository, BoostWriteRepository>();
         services.AddScoped<ILeagueBoostRuleRepository, LeagueBoostRuleRepository>();
