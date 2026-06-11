@@ -83,7 +83,7 @@ public class SendLeagueWelcomeEmailsCommandHandler(
                         BOOST_NAME = line.Name,
                         BOOST_DESCRIPTION = line.Description,
                         BOOST_USAGE = line.Usage,
-                        BOOST_IMAGE_URL = AbsoluteImageUrl(baseUrl, line.ImageUrl)
+                        BOOST_IMAGE_URL = AbsoluteImageUrl(line.ImageUrl)
                     }).ToList(),
                     LEAGUE_URL = $"{baseUrl}/leagues/{league.LeagueId}/dashboard"
                 };
@@ -103,13 +103,20 @@ public class SendLeagueWelcomeEmailsCommandHandler(
         return new SendLeagueWelcomeEmailsResult(LeaguesProcessed: leagues.Count, EmailsSent: emailsSent);
     }
 
-    private static string AbsoluteImageUrl(string baseUrl, string imageUrl)
+    /// <summary>
+    /// Static images in emails are always served from the canonical production site (matching the
+    /// hard-coded header logo in every template) - dev-hosted images break whenever dev redeploys,
+    /// and an email outlives any deployment.
+    /// </summary>
+    private const string CanonicalImageBaseUrl = "https://www.thepredictions.co.uk";
+
+    private static string AbsoluteImageUrl(string imageUrl)
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
             return string.Empty;
 
         return imageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
             ? imageUrl
-            : $"{baseUrl}{imageUrl}";
+            : $"{CanonicalImageBaseUrl}{imageUrl}";
     }
 }
