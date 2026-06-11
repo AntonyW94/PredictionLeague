@@ -18,6 +18,12 @@ public class GetLeaderboardsQueryHandler(IApplicationReadDbConnection connection
                     l.[Name] AS [LeagueName],
                     l.[Price] AS [LeaguePrice],
                     s.[Name] AS [SeasonName],
+                    s.[StartDateUtc] AS [SeasonStartDateUtc],
+                    CAST(CASE
+                        WHEN (SELECT COUNT(*) FROM [Rounds] r2 WHERE r2.[SeasonId] = l.[SeasonId] AND r2.[Status] = @CompletedStatus) >= s.[NumberOfRounds]
+                        THEN 1
+                        ELSE 0
+                    END AS bit) AS [IsFinished],
                     u.[Id] AS [UserId],
                     u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
                     SUM(ISNULL(lrr.[BoostedPoints], 0)) AS [TotalPoints],
@@ -50,6 +56,8 @@ public class GetLeaderboardsQueryHandler(IApplicationReadDbConnection connection
                     l.[Name],
                     l.[Price],
                     s.[Name],
+                    s.[StartDateUtc],
+                    s.[NumberOfRounds],
                     l.[SeasonId],
                     u.[Id],
                     u.[FirstName],
@@ -62,19 +70,22 @@ public class GetLeaderboardsQueryHandler(IApplicationReadDbConnection connection
                 alr.[LeagueName],
                 alr.[LeaguePrice],
                 alr.[SeasonName],
+                alr.[SeasonStartDateUtc],
+                alr.[IsFinished],
                 alr.[Rank],
                 alr.[PlayerName],
                 alr.[TotalPoints],
                 alr.[UserId],
                 alr.[SnapshotRank],
-                alr.[IsRoundInProgress]
+                alr.[IsRoundInProgress],
+                mylm.[IsArchivedByUser]
             FROM
                 [AllLeagueRanks] alr
-            WHERE
-                alr.[LeagueId] IN (
-                    SELECT [LeagueId] FROM [LeagueMembers] WHERE [UserId] = @UserId AND [Status] = @ApprovedStatus
-                )
+            JOIN
+                [LeagueMembers] mylm ON mylm.[LeagueId] = alr.[LeagueId] AND mylm.[UserId] = @UserId AND mylm.[Status] = @ApprovedStatus
             ORDER BY
+                CASE WHEN alr.[IsRoundInProgress] = 1 THEN 0 ELSE 1 END ASC,
+                alr.[SeasonStartDateUtc] ASC,
                 alr.[LeaguePrice] DESC,
                 alr.[LeagueName],
                 alr.[Rank],
@@ -87,20 +98,25 @@ public class GetLeaderboardsQueryHandler(IApplicationReadDbConnection connection
             {
                 request.UserId,
                 ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                InProgressStatus = nameof(RoundStatus.InProgress)
+                InProgressStatus = nameof(RoundStatus.InProgress),
+                CompletedStatus = nameof(RoundStatus.Completed)
             }
         );
 
         var result = flatResults
-            .GroupBy(x => new { x.LeagueId, x.LeagueName, x.LeaguePrice, x.SeasonName })
+            .GroupBy(x => new { x.LeagueId, x.LeagueName, x.LeaguePrice, x.SeasonName, x.SeasonStartDateUtc, x.IsFinished, x.IsRoundInProgress, x.IsArchivedByUser })
             .Select(g => new
             {
                 g.Key.LeaguePrice,
+                g.Key.SeasonStartDateUtc,
+                g.Key.IsRoundInProgress,
                 Dto = new LeagueLeaderboardDto
                 {
                     LeagueId = g.Key.LeagueId,
                     LeagueName = g.Key.LeagueName,
                     SeasonName = g.Key.SeasonName,
+                    IsFinished = g.Key.IsFinished,
+                    IsArchivedByUser = g.Key.IsArchivedByUser,
                     Entries = g.Select(entry => new LeaderboardEntryDto
                     {
                         Rank = entry.Rank,
@@ -112,7 +128,9 @@ public class GetLeaderboardsQueryHandler(IApplicationReadDbConnection connection
                     }).ToList()
                 }
             })
-            .OrderByDescending(x => x.LeaguePrice)
+            .OrderBy(x => x.IsRoundInProgress == 1 ? 0 : 1)
+            .ThenBy(x => x.SeasonStartDateUtc)
+            .ThenByDescending(x => x.LeaguePrice)
             .ThenBy(x => x.Dto.LeagueName)
             .Select(x => x.Dto);
 
@@ -128,11 +146,14 @@ public class GetLeaderboardsQueryHandler(IApplicationReadDbConnection connection
         public string LeagueName { get; init; } = null!;
         public decimal LeaguePrice { get; init; }
         public string SeasonName { get; init; } = null!;
+        public DateTime SeasonStartDateUtc { get; init; }
+        public bool IsFinished { get; init; }
         public long Rank { get; init; }
         public string PlayerName { get; init; } = null!;
         public int TotalPoints { get; init; }
         public string UserId { get; init; } = null!;
         public long? SnapshotRank { get; init; }
         public int IsRoundInProgress { get; init; }
+        public bool IsArchivedByUser { get; init; }
     }
 }

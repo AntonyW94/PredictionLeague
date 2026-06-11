@@ -283,21 +283,39 @@ public class DashboardStateService(ILeagueService leagueService, ISeasonPassServ
     public async Task SetLeagueArchivedAsync(int leagueId, bool isArchived)
     {
         MyLeaguesErrorMessage = null;
+        LeaderboardsErrorMessage = null;
 
-        var leagueIndex = MyLeagues.FindIndex(l => l.Id == leagueId);
-        if (leagueIndex < 0)
+        // Archiving is a single per-user flag shared across the dashboard, so optimistically
+        // update both the My Leagues and Standings lists (whichever are loaded) in lockstep.
+        var myLeagueIndex = MyLeagues.FindIndex(l => l.Id == leagueId);
+        var leaderboardIndex = Leaderboards.FindIndex(l => l.LeagueId == leagueId);
+
+        if (myLeagueIndex < 0 && leaderboardIndex < 0)
             return;
 
-        var original = MyLeagues[leagueIndex];
-        MyLeagues[leagueIndex] = original with { IsArchivedByUser = isArchived };
+        var originalMyLeague = myLeagueIndex >= 0 ? MyLeagues[myLeagueIndex] : null;
+        var originalLeaderboard = leaderboardIndex >= 0 ? Leaderboards[leaderboardIndex] : null;
+
+        if (originalMyLeague is not null)
+            MyLeagues[myLeagueIndex] = originalMyLeague with { IsArchivedByUser = isArchived };
+
+        if (originalLeaderboard is not null)
+            Leaderboards[leaderboardIndex] = originalLeaderboard with { IsArchivedByUser = isArchived };
+
         NotifyStateChanged();
 
         var (success, errorMessage) = await leagueService.SetLeagueArchivedAsync(leagueId, isArchived);
         if (success)
             return;
 
-        MyLeagues[leagueIndex] = original;
+        if (originalMyLeague is not null)
+            MyLeagues[myLeagueIndex] = originalMyLeague;
+
+        if (originalLeaderboard is not null)
+            Leaderboards[leaderboardIndex] = originalLeaderboard;
+
         MyLeaguesErrorMessage = errorMessage;
+        LeaderboardsErrorMessage = errorMessage;
         NotifyStateChanged();
     }
 

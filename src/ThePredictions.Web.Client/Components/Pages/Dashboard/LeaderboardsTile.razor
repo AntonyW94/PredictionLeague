@@ -6,6 +6,7 @@
 
 @inherits BaseLeaderboardComponent
 
+@using ThePredictions.Contracts.Leaderboards
 @using ThePredictions.Web.Client.Services.Dashboard
 
 <div class="section h-100 section--constrained">
@@ -28,11 +29,24 @@
             <p class="text-white-50 mt-2 mb-0 text-center">No active leaderboards.</p>
         </div>
     }
+    else if (!VisibleLeaderboards.Any())
+    {
+        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
+            <i class="bi bi-archive empty-state-icon"></i>
+            <p class="text-white-50 mt-2 mb-0 text-center">All your standings are archived.</p>
+            @if (ArchivedLeaderboardCount > 0)
+            {
+                <button type="button" class="archive-toggle-link mt-3" @onclick="ToggleShowArchived">
+                    @($"Show {ArchivedLeaderboardCount} archived {(ArchivedLeaderboardCount == 1 ? "league" : "leagues")}")
+                </button>
+            }
+        </div>
+    }
     else
     {
         <div class="carousel-wrapper">
             <div class="carousel-container" @ontouchstart="HandleTouchStart" @ontouchmove="HandleTouchMove" @ontouchend="HandleTouchEnd">
-                @if (DashboardState.Leaderboards.Count > 1)
+                @if (VisibleLeaderboards.Count > 1)
                 {
                     <button class="carousel-btn" @onclick="ShowPrevious" disabled="@(_currentIndex == 0)">
                         <span class="bi bi-chevron-left"></span>
@@ -41,7 +55,7 @@
 
                 <div class="carousel-track-wrapper" id="leaderboards-track-wrapper">
                 <div class="carousel-track" style="@_trackStyle">
-                    @foreach (var leaderboard in DashboardState.Leaderboards)
+                    @foreach (var leaderboard in VisibleLeaderboards)
                     {
                         <div class="carousel-item-wrapper">
                             <div class="carousel-item-content">
@@ -86,9 +100,22 @@
                                         </div>
                                     </div>
                                     <div class="footer">
+                                        @{
+                                            var isFinishedOrArchived = leaderboard.IsFinished || leaderboard.IsArchivedByUser;
+                                        }
                                         <button class="btn purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(leaderboard.LeagueId)">
                                             View Dashboard
                                         </button>
+                                        @if (isFinishedOrArchived)
+                                        {
+                                            var archiveLabel = leaderboard.IsArchivedByUser ? "Unarchive League" : "Archive League";
+                                            var archiveIcon = leaderboard.IsArchivedByUser ? "bi-arrow-counterclockwise" : "bi-archive";
+                                            <button class="btn archive-season-button w-100"
+                                                    aria-label="@archiveLabel"
+                                                    @onclick="() => ToggleArchive(leaderboard)">
+                                                <i class="bi @archiveIcon me-2"></i>@archiveLabel
+                                            </button>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -97,18 +124,18 @@
                 </div>
                 </div>
 
-                @if (DashboardState.Leaderboards.Count > 1)
+                @if (VisibleLeaderboards.Count > 1)
                 {
-                    <button class="carousel-btn" @onclick="ShowNext" disabled="@(_currentIndex >= DashboardState.Leaderboards.Count - 1)">
+                    <button class="carousel-btn" @onclick="ShowNext" disabled="@(_currentIndex >= VisibleLeaderboards.Count - 1)">
                         <span class="bi bi-chevron-right"></span>
                     </button>
                 }
             </div>
 
-            @if (DashboardState.Leaderboards.Count > 1)
+            @if (VisibleLeaderboards.Count > 1)
             {
                 <div class="carousel-dots">
-                    @for (var i = 0; i < DashboardState.Leaderboards.Count; i++)
+                    @for (var i = 0; i < VisibleLeaderboards.Count; i++)
                     {
                         var index = i;
                         <span class="carousel-dot @(index == _currentIndex ? "active" : "")" @onclick="() => GoToSlide(index)"></span>
@@ -117,12 +144,42 @@
             }
         </div>
     }
+
+    @if (ArchivedLeaderboardCount > 0)
+    {
+        <div class="archive-toggle-row">
+            <button type="button" class="archive-toggle-link" @onclick="ToggleShowArchived">
+                @if (_showArchived)
+                {
+                    <i class="bi bi-chevron-up me-1"></i>
+                    @($"Hide {ArchivedLeaderboardCount} archived {(ArchivedLeaderboardCount == 1 ? "league" : "leagues")}")
+                }
+                else
+                {
+                    <i class="bi bi-archive me-1"></i>
+                    @($"Show {ArchivedLeaderboardCount} archived {(ArchivedLeaderboardCount == 1 ? "league" : "leagues")}")
+                }
+            </button>
+        </div>
+    }
 </div>
 
 @code {
     private int _currentIndex;
     private double _touchStartX;
     private string _trackStyle = "transform: translateX(0%);";
+    private bool _showArchived;
+
+    // Archived standings are hidden by default and, when revealed, appended after the active
+    // ones so the carousel always opens on a live league rather than a completed one.
+    private List<LeagueLeaderboardDto> VisibleLeaderboards =>
+        _showArchived
+            ? DashboardState.Leaderboards.Where(l => !l.IsArchivedByUser)
+                .Concat(DashboardState.Leaderboards.Where(l => l.IsArchivedByUser))
+                .ToList()
+            : DashboardState.Leaderboards.Where(l => !l.IsArchivedByUser).ToList();
+
+    private int ArchivedLeaderboardCount => DashboardState.Leaderboards.Count(l => l.IsArchivedByUser);
 
     protected override async Task OnInitializedAsync()
     {
@@ -133,13 +190,27 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && DashboardState.Leaderboards.Any())
+        if (firstRender && VisibleLeaderboards.Any())
         {
-            foreach (var leaderboard in DashboardState.Leaderboards)
+            foreach (var leaderboard in VisibleLeaderboards)
             {
                 await JsRuntime.InvokeVoidAsync("blazorInterop.scrollToUserRow", $"leaderboard-scroll-{leaderboard.LeagueId}");
             }
         }
+    }
+
+    private void ToggleShowArchived()
+    {
+        _showArchived = !_showArchived;
+        _currentIndex = 0;
+        UpdateTrackStyle();
+    }
+
+    private async Task ToggleArchive(LeagueLeaderboardDto leaderboard)
+    {
+        await DashboardState.SetLeagueArchivedAsync(leaderboard.LeagueId, !leaderboard.IsArchivedByUser);
+        _currentIndex = 0;
+        UpdateTrackStyle();
     }
 
     private void HandleTouchStart(TouchEventArgs e) => _touchStartX = e.Touches[0].ClientX;
@@ -176,7 +247,7 @@
 
     private void ShowNext()
     {
-        if (_currentIndex >= DashboardState.Leaderboards.Count - 1)
+        if (_currentIndex >= VisibleLeaderboards.Count - 1)
             return;
 
         _currentIndex++;
