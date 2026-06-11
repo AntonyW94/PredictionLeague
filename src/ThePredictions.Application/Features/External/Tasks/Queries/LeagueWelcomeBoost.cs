@@ -4,5 +4,6 @@ namespace ThePredictions.Application.Features.External.Tasks.Queries;
 public record LeagueWelcomeBoost(
     string Name,
     string? Description,
+    string? ImageUrl,
     int TotalUsesPerSeason,
     IReadOnlyList<LeagueWelcomeBoostWindow> Windows);

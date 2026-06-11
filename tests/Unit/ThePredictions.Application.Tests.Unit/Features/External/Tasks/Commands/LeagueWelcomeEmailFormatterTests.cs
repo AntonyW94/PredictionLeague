@@ -40,7 +40,7 @@ public class LeagueWelcomeEmailFormatterTests
     }
 
     [Fact]
-    public void PrizeLines_ShouldOrderOverallThenStagesThenRecurringThenExactScores()
+    public void PrizeSections_ShouldGroupIntoOverallThenStagesThenOther()
     {
         var league = CreateLeague(prizes:
         [
@@ -52,34 +52,67 @@ public class LeagueWelcomeEmailFormatterTests
             new LeagueWelcomePrize(PrizeType.Overall, 1, null, 135m)
         ]);
 
-        var lines = LeagueWelcomeEmailFormatter.PrizeLines(league);
+        var sections = LeagueWelcomeEmailFormatter.PrizeSections(league);
 
-        lines.Select(l => l.Title).Should().ContainInOrder(
-            "Overall - 1st",
-            "Overall - 2nd",
-            "Group stage - 1st",
-            "Knockout stage - 1st",
-            "Round winner - each of the 7 rounds",
-            "Most exact scores");
-        lines[0].Value.Should().Be("£135");
+        sections.Select(s => s.Title).Should().ContainInOrder("Overall", "Group stage", "Knockout stage", "Other prizes");
     }
 
     [Fact]
-    public void PrizeLines_ShouldDescribeMonthlyPrizes_WhenPresent()
+    public void PrizeSections_ShouldFlagOnlyTheTopPrizeOfRankedSections()
     {
-        var league = CreateLeague(prizes: [new LeagueWelcomePrize(PrizeType.Monthly, 1, null, 10m)], numberOfMonths: 10);
+        var league = CreateLeague(prizes:
+        [
+            new LeagueWelcomePrize(PrizeType.Overall, 1, null, 135m),
+            new LeagueWelcomePrize(PrizeType.Overall, 2, null, 65m),
+            new LeagueWelcomePrize(PrizeType.Stages, 1, "Group stage", 45m),
+            new LeagueWelcomePrize(PrizeType.MostExactScores, 1, null, 78m)
+        ]);
 
-        var lines = LeagueWelcomeEmailFormatter.PrizeLines(league);
+        var sections = LeagueWelcomeEmailFormatter.PrizeSections(league);
 
-        lines.Should().ContainSingle().Which.Title.Should().Be("Monthly winner - each of the 10 months");
+        var overall = sections.Single(s => s.Title == "Overall");
+        overall.Prizes[0].Should().Be(new LeagueWelcomePrizeLine("1st place", "£135", IsTop: true));
+        overall.Prizes[1].Should().Be(new LeagueWelcomePrizeLine("2nd place", "£65", IsTop: false));
+
+        sections.Single(s => s.Title == "Group stage").Prizes.Single().IsTop.Should().BeTrue();
+        sections.Single(s => s.Title == "Other prizes").Prizes.Single().IsTop.Should().BeFalse();
     }
 
     [Fact]
-    public void BoostLines_ShouldDescribeSeasonCapOnly_WhenSingleWindowSpansSeason()
+    public void PrizeSections_ShouldDescribeRecurringPrizes_InOtherSection()
+    {
+        var league = CreateLeague(
+            prizes:
+            [
+                new LeagueWelcomePrize(PrizeType.Round, 1, null, 6m),
+                new LeagueWelcomePrize(PrizeType.Monthly, 1, null, 10m)
+            ],
+            numberOfMonths: 10);
+
+        var sections = LeagueWelcomeEmailFormatter.PrizeSections(league);
+
+        var other = sections.Single(s => s.Title == "Other prizes");
+        other.Prizes.Select(p => p.Title).Should().ContainInOrder(
+            "Round winner - each of the 7 rounds",
+            "Monthly winner - each of the 10 months");
+    }
+
+    [Fact]
+    public void PrizeSections_ShouldOmitEmptySections()
+    {
+        var league = CreateLeague(prizes: [new LeagueWelcomePrize(PrizeType.Overall, 1, null, 135m)]);
+
+        var sections = LeagueWelcomeEmailFormatter.PrizeSections(league);
+
+        sections.Should().ContainSingle().Which.Title.Should().Be("Overall");
+    }
+
+    [Fact]
+    public void BoostLines_ShouldIncludeImageUrl()
     {
         var league = CreateLeague(boosts:
         [
-            new LeagueWelcomeBoost("Double Up", "Doubles your round score.", 3,
+            new LeagueWelcomeBoost("Double Up", "Doubles your round score.", "/images/boosts/double-up-normal.png", 3,
                 [new LeagueWelcomeBoostWindow(1, 7, 3)])
         ]);
 
@@ -88,6 +121,7 @@ public class LeagueWelcomeEmailFormatterTests
         lines.Should().ContainSingle();
         lines[0].Name.Should().Be("Double Up");
         lines[0].Description.Should().Be("Doubles your round score.");
+        lines[0].ImageUrl.Should().Be("/images/boosts/double-up-normal.png");
         lines[0].Usage.Should().Be("Can be used 3 times this season");
     }
 
@@ -96,7 +130,7 @@ public class LeagueWelcomeEmailFormatterTests
     {
         var league = CreateLeague(boosts:
         [
-            new LeagueWelcomeBoost("Double Up", null, 3,
+            new LeagueWelcomeBoost("Double Up", null, null, 3,
             [
                 new LeagueWelcomeBoostWindow(1, 5, 2),
                 new LeagueWelcomeBoostWindow(6, 7, 1)
@@ -111,7 +145,7 @@ public class LeagueWelcomeEmailFormatterTests
     [Fact]
     public void BoostLines_ShouldUseSingularPhrasing_WhenOneUsePerSeason()
     {
-        var league = CreateLeague(boosts: [new LeagueWelcomeBoost("Wildcard", null, 1, [])]);
+        var league = CreateLeague(boosts: [new LeagueWelcomeBoost("Wildcard", null, null, 1, [])]);
 
         var lines = LeagueWelcomeEmailFormatter.BoostLines(league);
 
@@ -123,7 +157,7 @@ public class LeagueWelcomeEmailFormatterTests
     {
         var league = CreateLeague(boosts:
         [
-            new LeagueWelcomeBoost("Wildcard", null, 1, [new LeagueWelcomeBoostWindow(7, 7, 1)])
+            new LeagueWelcomeBoost("Wildcard", null, null, 1, [new LeagueWelcomeBoostWindow(7, 7, 1)])
         ]);
 
         var lines = LeagueWelcomeEmailFormatter.BoostLines(league);

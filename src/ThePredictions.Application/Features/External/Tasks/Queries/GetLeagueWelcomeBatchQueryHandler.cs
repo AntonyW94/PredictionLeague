@@ -100,6 +100,7 @@ public class GetLeagueWelcomeBatchQueryHandler(IApplicationReadDbConnection dbCo
                 lbr.[LeagueId],
                 bd.[Name],
                 bd.[Description],
+                bd.[ImageUrl],
                 lbr.[TotalUsesPerSeason]
             FROM
                 [LeagueBoostRules] lbr
@@ -145,6 +146,7 @@ public class GetLeagueWelcomeBatchQueryHandler(IApplicationReadDbConnection dbCo
                     .Select(b => new LeagueWelcomeBoost(
                         b.Name,
                         b.Description,
+                        b.ImageUrl,
                         b.TotalUsesPerSeason,
                         windowsByRule[b.RuleId]
                             .OrderBy(w => w.StartRoundNumber)
@@ -198,7 +200,7 @@ public class GetLeagueWelcomeBatchQueryHandler(IApplicationReadDbConnection dbCo
     private record PrizeRow(int LeagueId, PrizeType PrizeType, int Rank, string? Stage, decimal Amount);
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record BoostRow(int RuleId, int LeagueId, string Name, string? Description, int TotalUsesPerSeason);
+    private record BoostRow(int RuleId, int LeagueId, string Name, string? Description, string? ImageUrl, int TotalUsesPerSeason);
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record WindowRow(int LeagueBoostRuleId, int StartRoundNumber, int EndRoundNumber, int MaxUsesInWindow);

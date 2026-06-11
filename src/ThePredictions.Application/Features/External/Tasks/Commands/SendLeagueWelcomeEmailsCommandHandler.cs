@@ -51,9 +51,9 @@ public class SendLeagueWelcomeEmailsCommandHandler(
 
         foreach (var league in leagues)
         {
-            var prizeLines = LeagueWelcomeEmailFormatter.PrizeLines(league);
+            var prizeSections = LeagueWelcomeEmailFormatter.PrizeSections(league);
             var boostLines = LeagueWelcomeEmailFormatter.BoostLines(league);
-            var hasPrizes = league.HasPrizes && prizeLines.Count > 0;
+            var hasPrizes = league.HasPrizes && prizeSections.Count > 0;
 
             var sentLog = new List<LeagueWelcomeNotification>();
 
@@ -67,17 +67,23 @@ public class SendLeagueWelcomeEmailsCommandHandler(
                     MEMBER_COUNT = league.MemberCount,
                     HAS_PRIZES = hasPrizes,
                     PRIZE_POT = LeagueWelcomeEmailFormatter.PrizePot(league),
-                    PRIZES = prizeLines.Select(line => new
+                    PRIZE_SECTIONS = prizeSections.Select(section => new
                     {
-                        PRIZE_TITLE = line.Title,
-                        PRIZE_VALUE = line.Value
+                        SECTION_TITLE = section.Title,
+                        PRIZES = section.Prizes.Select(line => new
+                        {
+                            PRIZE_TITLE = line.Title,
+                            PRIZE_VALUE = line.Value,
+                            IS_TOP = line.IsTop
+                        }).ToList()
                     }).ToList(),
                     HAS_BOOSTS = boostLines.Count > 0,
                     BOOSTS = boostLines.Select(line => new
                     {
                         BOOST_NAME = line.Name,
                         BOOST_DESCRIPTION = line.Description,
-                        BOOST_USAGE = line.Usage
+                        BOOST_USAGE = line.Usage,
+                        BOOST_IMAGE_URL = AbsoluteImageUrl(baseUrl, line.ImageUrl)
                     }).ToList(),
                     LEAGUE_URL = $"{baseUrl}/leagues/{league.LeagueId}/dashboard"
                 };
@@ -95,5 +101,15 @@ public class SendLeagueWelcomeEmailsCommandHandler(
         }
 
         return new SendLeagueWelcomeEmailsResult(LeaguesProcessed: leagues.Count, EmailsSent: emailsSent);
+    }
+
+    private static string AbsoluteImageUrl(string baseUrl, string imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+            return string.Empty;
+
+        return imageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? imageUrl
+            : $"{baseUrl}{imageUrl}";
     }
 }
