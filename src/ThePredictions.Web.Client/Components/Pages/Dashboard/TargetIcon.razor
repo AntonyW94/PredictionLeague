@@ -1,0 +1,37 @@
+@using ThePredictions.Domain.Common.Enumerations
+
+@* Tabler Icons (MIT licence) - target family rendered inline so the stroke follows the
+   parent's CSS colour via currentColor. ExactScore = target-arrow, CorrectResult = target,
+   Incorrect = target-off. Pending or null renders nothing. *@
+@if (Outcome is PredictionOutcome.ExactScore)
+{
+    <svg class="target-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+        <path d="M12 7a5 5 0 1 0 5 5" />
+        <path d="M13 3.055a9 9 0 1 0 7.941 7.945" />
+        <path d="M15 6v3h3l3 -3h-3v-3l-3 3" />
+        <path d="M15 9l-3 3" />
+    </svg>
+}
+else if (Outcome is PredictionOutcome.CorrectResult)
+{
+    <svg class="target-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+        <path d="M7 12a5 5 0 1 0 10 0a5 5 0 1 0 -10 0" />
+        <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+    </svg>
+}
+else if (Outcome is PredictionOutcome.Incorrect)
+{
+    <svg class="target-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M11.286 11.3a1 1 0 0 0 1.41 1.419" />
+        <path d="M8.44 8.49a5 5 0 0 0 7.098 7.044m1.377 -2.611a5 5 0 0 0 -5.846 -5.836" />
+        <path d="M5.649 5.623a9 9 0 1 0 12.698 12.758m1.683 -2.313a9 9 0 0 0 -12.076 -12.11" />
+        <path d="M3 3l18 18" />
+    </svg>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public PredictionOutcome? Outcome { get; set; }
+}

@@ -574,6 +574,10 @@
     color: var(--white);
 }
 
+.theme-dark .match-preview-actual-status--ft {
+    color: var(--grey-300);
+}
+
 /* Preserve the original faint separator on the dark card surfaces; the brighter
    light-mode treatment lives in the base round-cards.css rule. */
 .theme-dark .match-preview-vs {

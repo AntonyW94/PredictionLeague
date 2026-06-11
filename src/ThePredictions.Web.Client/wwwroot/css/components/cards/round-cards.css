@@ -38,19 +38,45 @@
     justify-self: start;
     display: inline-flex;
     align-items: center;
-    font-size: 0.95rem;
     line-height: 1;
 }
 
+.target-icon {
+    display: block;
+}
+
+.match-preview-outcome .target-icon {
+    width: 1.05rem;
+    height: 1.05rem;
+}
+
+/* Actual score stacks the status (FT label or live dot) above the score so the column
+   stays as narrow as the score itself, keeping the predicted score optically centred. */
 .match-preview-actual {
     justify-self: end;
     display: inline-flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.2rem;
+    justify-content: center;
+    line-height: 1.05;
+}
+
+.match-preview-actual-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0.55rem;
+}
+
+.match-preview-actual-status--ft {
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--grey-500);
 }
 
 .match-preview-actual-score {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 600;
     color: var(--purple-1000);
     font-variant-numeric: tabular-nums;
@@ -145,22 +171,22 @@
     opacity: 0.5;
 }
 
-/* Outcome summary icons share the same family and colours as the per-match tiles
+/* Outcome summary icons share the same target family and colours as the per-match tiles
    so the legend and the tiles read as one system. */
-.outcome-item i {
-    font-size: 1rem;
-    line-height: 1;
+.outcome-item .target-icon {
+    width: 1rem;
+    height: 1rem;
 }
 
-.outcome-item--exact i {
+.outcome-item--exact .target-icon {
     color: var(--green-600);
 }
 
-.outcome-item--correct i {
+.outcome-item--correct .target-icon {
     color: var(--orange);
 }
 
-.outcome-item--incorrect i {
+.outcome-item--incorrect .target-icon {
     color: var(--red);
 }
 

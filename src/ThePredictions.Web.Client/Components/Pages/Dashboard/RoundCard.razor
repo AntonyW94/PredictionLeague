@@ -36,13 +36,9 @@
             <div class="match-preview-grid">
                 @foreach (var match in Round.Matches)
                 {
-                    var outcomeIcon = GetOutcomeIcon(match);
                     <div class="match-preview-row @GetMatchBackgroundClass(match) @GetMatchPulsingClass(match)">
                         <span class="match-preview-outcome">
-                            @if (outcomeIcon is not null)
-                            {
-                                <i class="bi @outcomeIcon"></i>
-                            }
+                            <TargetIcon Outcome="match.Outcome" />
                         </span>
                         <div class="match-preview-centre">
                             <img src="@(match.HomeTeamLogoUrl ?? "images/team-placeholder.svg")"
@@ -64,7 +60,13 @@
                             {
                                 @if (match.Status == MatchStatus.InProgress)
                                 {
-                                    <span class="match-live-dot" title="Live"></span>
+                                    <span class="match-preview-actual-status">
+                                        <span class="match-live-dot" title="Live"></span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="match-preview-actual-status match-preview-actual-status--ft">FT</span>
                                 }
                                 <span class="match-preview-actual-score">@($"{match.ActualHomeScore}-{match.ActualAwayScore}")</span>
                             }
@@ -79,17 +81,17 @@
         {
             <div class="outcome-summary">
                 <span class="outcome-item outcome-item--exact" title="Exact score">
-                    <i class="bi bi-check-circle-fill"></i>
+                    <TargetIcon Outcome="PredictionOutcome.ExactScore" />
                     <span>@Round.OutcomeSummary.ExactScoreCount</span>
                 </span>
                 <span class="outcome-separator">·</span>
                 <span class="outcome-item outcome-item--correct" title="Correct result">
-                    <i class="bi bi-dash-circle-fill"></i>
+                    <TargetIcon Outcome="PredictionOutcome.CorrectResult" />
                     <span>@Round.OutcomeSummary.CorrectResultCount</span>
                 </span>
                 <span class="outcome-separator">·</span>
                 <span class="outcome-item outcome-item--incorrect" title="Incorrect">
-                    <i class="bi bi-x-circle-fill"></i>
+                    <TargetIcon Outcome="PredictionOutcome.Incorrect" />
                     <span>@Round.OutcomeSummary.IncorrectCount</span>
                 </span>
             </div>
@@ -127,17 +129,6 @@
             PredictionOutcome.CorrectResult => "match-outcome-correct-result",
             PredictionOutcome.Incorrect => "match-outcome-incorrect",
             _ => "" // Pending or null - use default background
-        };
-    }
-
-    private static string? GetOutcomeIcon(ActiveRoundMatchDto match)
-    {
-        return match.Outcome switch
-        {
-            PredictionOutcome.ExactScore => "bi-check-circle-fill",
-            PredictionOutcome.CorrectResult => "bi-dash-circle-fill",
-            PredictionOutcome.Incorrect => "bi-x-circle-fill",
-            _ => null // Pending or null - no icon
         };
     }
 
