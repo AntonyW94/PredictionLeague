@@ -10,5 +10,6 @@ public class WinningsDto
     public WinningsLeaderboardDto Leaderboard { get; init; } = new();
     public List<PrizeDto> RoundPrizes { get; set; } = [];
     public List<PrizeDto> MonthlyPrizes { get; set; } = [];
+    public List<PrizeDto> StagePrizes { get; init; } = [];
     public List<PrizeDto> EndOfSeasonPrizes { get; init; } = [];
 }

@@ -134,6 +134,38 @@
     content: "\F26B";
 }
 
+/* Soft notice banner - informational warnings that should not shout (e.g. read-only forms) */
+.message-box-notice {
+    display: flex;
+    align-items: center;
+    border-radius: var(--bs-border-radius);
+    border-left: 4px solid var(--orange);
+    background: var(--orange-alpha-15);
+    color: var(--orange);
+    padding: 0.6rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    margin-bottom: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.message-box-notice::before {
+    content: "\F33B";
+    display: inline-block;
+    font-family: bootstrap-icons !important;
+    font-style: normal;
+    font-weight: normal !important;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1;
+    vertical-align: -0.125rem;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+}
+
 .form-control {
     height: 48px;
     width: 100%;

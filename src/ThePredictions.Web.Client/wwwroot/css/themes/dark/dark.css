@@ -175,6 +175,12 @@
     border-color: var(--purple-900);
 }
 
+.theme-dark .message-box-notice {
+    border-left-color: var(--yellow);
+    background: var(--yellow-alpha-18);
+    color: var(--yellow);
+}
+
 /* Auth pages */
 
 .theme-dark .form-container .text-purple-1000 {
@@ -1161,14 +1167,6 @@ main.theme-dark:has(.admin-light) .navbar-logo {
 }
 
 /* Prize page — hero text */
-.theme-dark .prize-hero-league {
-    color: var(--white-alpha-70);
-}
-
-.theme-dark .prize-hero-subtitle {
-    color: var(--white-alpha-50);
-}
-
 /* Prize page — prize rows */
 .theme-dark .admin-light .prize-amount,
 .theme-dark .admin-light .prize-description {
@@ -1189,6 +1187,10 @@ main.theme-dark:has(.admin-light) .navbar-logo {
 .theme-dark .prize-locked-icon {
     background: var(--purple-1000);
     color: var(--purple-200);
+}
+
+.theme-dark .prize-per-event {
+    color: var(--grey-300);
 }
 
 .theme-dark .prize-locked-text {

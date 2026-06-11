@@ -21,7 +21,14 @@
                     <tr>
                         <th class="text-start">Player</th>
                         <th class="text-start d-none d-sm-table-cell">Round</th>
-                        <th class="text-start d-none d-sm-table-cell">Month</th>
+                        @if (ShowMonthlyColumn)
+                        {
+                            <th class="text-start d-none d-sm-table-cell">Month</th>
+                        }
+                        @if (ShowStageColumn)
+                        {
+                            <th class="text-start d-none d-sm-table-cell">Stages</th>
+                        }
                         <th class="text-start d-none d-sm-table-cell">EoS</th>
                         <th class="text-end">Total</th>
                     </tr>
@@ -32,7 +39,14 @@
                         <tr class="@(GetUserHighlightClass(entry.UserId))">
                             <td class="break-word text-start fw-bold">@entry.PlayerName</td>
                             <td class="text-start fw-bold d-none d-sm-table-cell">@entry.RoundWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
-                            <td class="text-start fw-bold d-none d-sm-table-cell">@entry.MonthlyWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
+                            @if (ShowMonthlyColumn)
+                            {
+                                <td class="text-start fw-bold d-none d-sm-table-cell">@entry.MonthlyWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
+                            }
+                            @if (ShowStageColumn)
+                            {
+                                <td class="text-start fw-bold d-none d-sm-table-cell">@entry.StageWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
+                            }
                             <td class="text-start fw-bold d-none d-sm-table-cell">@entry.EndOfSeasonWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
                             <td class="text-end fw-bold">@entry.TotalWinnings.ToString("C", new System.Globalization.CultureInfo("en-GB"))</td>
                         </tr>
@@ -51,4 +65,6 @@
 @code {
     [Parameter] public WinningsLeaderboardDto? Leaderboard { get; set; }
     [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public bool ShowMonthlyColumn { get; set; } = true;
+    [Parameter] public bool ShowStageColumn { get; set; }
 }

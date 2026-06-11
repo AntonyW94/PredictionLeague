@@ -78,7 +78,7 @@
                                           Class="form-control"
                                           Max="@MaxDate"
                                           Disabled="@ShouldDisableFields" />
-                            <div class="form-text text-white-50">Deadline must be before the season starts.</div>
+                            <div class="form-text text-white-50">Deadline must be at least 6 hours before the season starts.</div>
                             <StyledValidationMessage For="@(() => _model.EntryDeadlineUtc)" />
                         </div>
                     </div>

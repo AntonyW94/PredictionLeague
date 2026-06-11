@@ -114,7 +114,7 @@
                                     <div class="team-display">
                                         <img src="@match.HomeTeamLogoUrl" class="match-logo" alt="Home Team Logo" />
                                         <span class="team-name d-none d-sm-block">@match.HomeTeamName</span>
-                                        <span class="team-name d-sm-none">@match.HomeTeamAbbreviation</span>
+                                        <span class="team-name d-sm-none">@(match.HomeTeamShortName ?? match.HomeTeamAbbreviation)</span>
                                     </div>
                                     <div class="score-input-group">
                                         <div class="score-input-stepper">
@@ -140,7 +140,7 @@
                                     <div class="team-display">
                                         <img src="@match.AwayTeamLogoUrl" class="match-logo" alt="Away Team Logo" />
                                         <span class="team-name d-none d-sm-block">@match.AwayTeamName</span>
-                                        <span class="team-name d-sm-none">@match.AwayTeamAbbreviation</span>
+                                        <span class="team-name d-sm-none">@(match.AwayTeamShortName ?? match.AwayTeamAbbreviation)</span>
                                     </div>
                                 </div>
                             }

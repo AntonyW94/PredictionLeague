@@ -84,7 +84,11 @@
 .team-display .team-name {
     font-weight: 500;
     min-height: 2.5rem;
-    font-size: 0.875rem;
+    /* Mobile shows full short names (e.g. "Netherlands") in a 5rem column, so the type is
+       slightly smaller and long names wrap rather than overflow. */
+    font-size: 0.75rem;
+    overflow-wrap: break-word;
+    max-width: 100%;
     margin-top: 0.5rem;
 }
 
@@ -167,6 +171,10 @@
 
     .team-display .match-logo {
         height: 3.75rem;
+    }
+
+    .team-display .team-name {
+        font-size: 0.875rem;
     }
 
     .score-input-group {

@@ -56,6 +56,15 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
         return await httpClient.GetFromJsonAsync<WinningsDto>($"api/leagues/{leagueId}/winnings") ?? new WinningsDto();
     }
 
+    public async Task<PrizeBreakdownDto?> GetPrizeBreakdownAsync(int leagueId)
+    {
+        var response = await httpClient.GetAsync($"api/leagues/{leagueId}/prize-breakdown");
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadFromJsonAsync<PrizeBreakdownDto>();
+    }
+
     public async Task<LeaguePaymentInfoDto?> GetPaymentInfoAsync(int leagueId)
     {
         var response = await httpClient.GetAsync($"api/leagues/{leagueId}/payment-info");

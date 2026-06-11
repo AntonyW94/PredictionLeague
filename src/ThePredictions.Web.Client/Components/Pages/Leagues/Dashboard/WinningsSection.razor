@@ -1,6 +1,7 @@
 @inject ILeagueService LeagueService
 @inject IJSRuntime JS
 @using ThePredictions.Contracts.Leagues
+@using ThePredictions.Contracts.Prizes
 @using ThePredictions.Web.Client.Services.Leagues
 @implements IAsyncDisposable
 @if (_isLoading)
@@ -23,7 +24,8 @@ else if (_winningsData != null)
         {
             <div class="row">
                 <div class="col-12 mb-4">
-                    <WinningsLeaderboardTile Leaderboard="@_winningsData?.Leaderboard" IsLoading="@_isLoading" />
+                    <WinningsLeaderboardTile Leaderboard="@_winningsData?.Leaderboard" IsLoading="@_isLoading"
+                                             ShowMonthlyColumn="@HasMonthlyPrizes" ShowStageColumn="@HasStagePrizes" />
                 </div>
 
                 <div class="col-lg-4 mb-4 d-flex">
@@ -31,10 +33,21 @@ else if (_winningsData != null)
                                      IsExpanded="@IsRoundExpanded" OnToggleExpanded="@ToggleRoundPrizes" />
                 </div>
 
-                <div class="col-lg-4 mb-4 d-flex">
-                    <MonthlyPrizesTile Prizes="@_winningsData?.MonthlyPrizes" IsLoading="@_isLoading"
-                                       IsExpanded="@IsMonthlyExpanded" OnToggleExpanded="@ToggleMonthlyPrizes" />
-                </div>
+                @if (HasMonthlyPrizes)
+                {
+                    <div class="col-lg-4 mb-4 d-flex">
+                        <MonthlyPrizesTile Prizes="@_winningsData?.MonthlyPrizes" IsLoading="@_isLoading"
+                                           IsExpanded="@IsMonthlyExpanded" OnToggleExpanded="@ToggleMonthlyPrizes" />
+                    </div>
+                }
+
+                @if (HasStagePrizes)
+                {
+                    <div class="col-lg-4 mb-4 d-flex">
+                        <StagePrizesTile Prizes="@_winningsData?.StagePrizes" IsLoading="@_isLoading"
+                                         IsExpanded="@IsStageExpanded" OnToggleExpanded="@ToggleStagePrizes" />
+                    </div>
+                }
 
                 <div class="col-lg-4 mb-4 d-flex">
                     <EndOfSeasonPrizesTile Prizes="@_winningsData?.EndOfSeasonPrizes" IsLoading="@_isLoading"
@@ -47,6 +60,15 @@ else if (_winningsData != null)
             <div class="col-12">
                 <PrizePotTile WinningsData="@_winningsData" />
             </div>
+            @if (_prizeBreakdown?.Categories.Any() == true)
+            {
+                <div class="col-12 mt-4">
+                    <div class="section">
+                        <h5 class="text-white fw-bold mb-3 text-center">Prize Breakdown</h5>
+                        <PrizeBreakdownPreview Breakdown="_prizeBreakdown" PotLabel="Total prize pot" />
+                    </div>
+                </div>
+            }
         }
     }
 }
@@ -66,6 +88,7 @@ else
     public int LeagueId { get; set; }
 
     private WinningsDto? _winningsData;
+    private PrizeBreakdownDto? _prizeBreakdown;
     private bool _isLoading = true;
     private DotNetObjectReference<WinningsSection>? _dotNetRef;
 
@@ -75,13 +98,18 @@ else
     // Individual state for mobile (tiles stacked)
     private bool _roundExpanded;
     private bool _monthlyExpanded;
+    private bool _stageExpanded;
     private bool _endOfSeasonExpanded;
 
     private bool _isDesktopLayout;
 
     private bool IsRoundExpanded => _isDesktopLayout ? _sharedExpanded : _roundExpanded;
     private bool IsMonthlyExpanded => _isDesktopLayout ? _sharedExpanded : _monthlyExpanded;
+    private bool IsStageExpanded => _isDesktopLayout ? _sharedExpanded : _stageExpanded;
     private bool IsEndOfSeasonExpanded => _isDesktopLayout ? _sharedExpanded : _endOfSeasonExpanded;
+
+    private bool HasMonthlyPrizes => _winningsData?.MonthlyPrizes.Any() == true;
+    private bool HasStagePrizes => _winningsData?.StagePrizes.Any() == true;
 
     private void ToggleRoundPrizes()
     {
@@ -97,6 +125,14 @@ else
             _sharedExpanded = !_sharedExpanded;
         else
             _monthlyExpanded = !_monthlyExpanded;
+    }
+
+    private void ToggleStagePrizes()
+    {
+        if (_isDesktopLayout)
+            _sharedExpanded = !_sharedExpanded;
+        else
+            _stageExpanded = !_stageExpanded;
     }
 
     private void ToggleEndOfSeasonPrizes()
@@ -122,6 +158,9 @@ else
         try
         {
             _winningsData = await LeagueService.GetWinningsAsync(LeagueId);
+
+            if (_winningsData is { WinningsCalculated: false, TotalPrizePot: > 0 })
+                _prizeBreakdown = await LeagueService.GetPrizeBreakdownAsync(LeagueId);
         }
         catch (Exception)
         {

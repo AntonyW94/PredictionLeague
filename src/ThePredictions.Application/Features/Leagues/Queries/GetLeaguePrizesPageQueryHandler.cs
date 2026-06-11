@@ -26,7 +26,8 @@ public class GetLeaguePrizesPageQueryHandler(
                 s.[EndDateUtc] AS SeasonEndDateUtc,
                 ps.[PrizeType],
                 ps.[Rank],
-                ps.[PrizeAmount]
+                ps.[PrizeAmount],
+                ps.[Stage]
             FROM 
                 [Leagues] l
             JOIN 
@@ -57,7 +58,8 @@ public class GetLeaguePrizesPageQueryHandler(
                 .Select(r => new PrizeSettingDto(
                     Enum.Parse<PrizeType>(r.PrizeType!),
                     r.Rank!.Value,
-                    r.PrizeAmount!.Value
+                    r.PrizeAmount!.Value,
+                    r.Stage
                 )).ToList()
         };
 
@@ -75,6 +77,7 @@ public class GetLeaguePrizesPageQueryHandler(
         DateTime SeasonEndDateUtc,
         string? PrizeType,
         int? Rank,
-        decimal? PrizeAmount
+        decimal? PrizeAmount,
+        string? Stage
     );
 }

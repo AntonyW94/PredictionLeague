@@ -41,6 +41,7 @@ public class GetWinningsQueryHandler(
 
         ProcessRoundPrizes(winningsDto, leagueData);
         ProcessMonthlyPrizes(winningsDto, leagueData);
+        ProcessStagePrizes(winningsDto, leagueData);
         ProcessEndOfSeasonPrizes(winningsDto, leagueData);
         ProcessLeaderboard(winningsDto, leagueData);
 
@@ -122,10 +123,49 @@ public class GetWinningsQueryHandler(
         }).ToList();
     }
     
+    private static void ProcessStagePrizes(WinningsDto dto, LeagueData data)
+    {
+        var stageSettings = data.PrizeSettings
+            .Where(p => p.PrizeType == PrizeType.Stages)
+            .OrderBy(p => p.Stage)
+            .ThenByDescending(p => p.Amount);
+
+        foreach (var setting in stageSettings)
+        {
+            var winners = data.Winnings
+                .Where(w => w.LeaguePrizeSettingId == setting.Id)
+                .ToList();
+
+            if (winners.Any())
+            {
+                foreach (var winner in winners)
+                {
+                    dto.StagePrizes.Add(new PrizeDto
+                    {
+                        Name = setting.Name,
+                        Amount = winner.Amount,
+                        Winner = winner.WinnerName,
+                        UserId = winner.UserId
+                    });
+                }
+            }
+            else
+            {
+                dto.StagePrizes.Add(new PrizeDto
+                {
+                    Name = setting.Name,
+                    Amount = setting.Amount,
+                    Winner = null,
+                    UserId = null
+                });
+            }
+        }
+    }
+
     private static void ProcessEndOfSeasonPrizes(WinningsDto dto, LeagueData data)
     {
-        var specialPrizeSettings = data.PrizeSettings.Where(p => p.PrizeType != PrizeType.Round && p.PrizeType != PrizeType.Monthly);
-     
+        var specialPrizeSettings = data.PrizeSettings.Where(p => p.PrizeType != PrizeType.Round && p.PrizeType != PrizeType.Monthly && p.PrizeType != PrizeType.Stages);
+
         foreach (var setting in specialPrizeSettings.OrderBy(p => p.PrizeType).ThenByDescending(p => p.Amount))
         {
             var winners = data.Winnings
@@ -169,7 +209,8 @@ public class GetWinningsQueryHandler(
                     PlayerName = member.PlayerName,
                     RoundWinnings = memberWinnings.Where(p => p.PrizeType == PrizeType.Round).Sum(p => p.Amount),
                     MonthlyWinnings = memberWinnings.Where(p => p.PrizeType == PrizeType.Monthly).Sum(p => p.Amount),
-                    EndOfSeasonWinnings = memberWinnings.Where(p => p.PrizeType != PrizeType.Round && p.PrizeType != PrizeType.Monthly).Sum(p => p.Amount),
+                    StageWinnings = memberWinnings.Where(p => p.PrizeType == PrizeType.Stages).Sum(p => p.Amount),
+                    EndOfSeasonWinnings = memberWinnings.Where(p => p.PrizeType != PrizeType.Round && p.PrizeType != PrizeType.Monthly && p.PrizeType != PrizeType.Stages).Sum(p => p.Amount),
                     TotalWinnings = memberWinnings.Sum(p => p.Amount),
                     UserId = member.UserId
                 };
@@ -201,14 +242,15 @@ public class GetWinningsQueryHandler(
             return null;
 
         const string prizeSettingsSql = @"
-            SELECT 
-                [Id], 
-                [PrizeType], 
-                [PrizeDescription] AS [Name], 
-                [PrizeAmount] AS [Amount]
-            FROM 
-                [LeaguePrizeSettings] 
-            WHERE 
+            SELECT
+                [Id],
+                [PrizeType],
+                [PrizeDescription] AS [Name],
+                [PrizeAmount] AS [Amount],
+                [Stage]
+            FROM
+                [LeaguePrizeSettings]
+            WHERE
                 [LeagueId] = @leagueId;";
 
         leagueData.PrizeSettings = (await dbConnection.QueryAsync<PrizeSettingQueryResult>(prizeSettingsSql, token, new { leagueId })).ToList();
@@ -275,7 +317,7 @@ public class GetWinningsQueryHandler(
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PrizeSettingQueryResult(int Id, PrizeType PrizeType, string Name, decimal Amount);
+    private record PrizeSettingQueryResult(int Id, PrizeType PrizeType, string Name, decimal Amount, string? Stage);
    
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record WinningsQueryResult(decimal Amount, int LeaguePrizeSettingId, PrizeType PrizeType, string WinnerName, int? RoundNumber, int? Month, string UserId);

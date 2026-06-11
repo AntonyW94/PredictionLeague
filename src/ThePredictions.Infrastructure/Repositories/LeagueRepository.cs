@@ -288,6 +288,30 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
         return await Connection.QueryAsync<int>(new CommandDefinition(sql, new { SeasonId = seasonId }, transaction: Transaction, cancellationToken: cancellationToken));
     }
 
+    public async Task<IEnumerable<int>> GetLeagueIdsDueForPrizeFreezeAsync(DateTime nowUtc, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            SELECT
+                l.[Id]
+            FROM
+                [Leagues] l
+            JOIN
+                [LeaguePrizeScheme] lpsc ON lpsc.[LeagueId] = l.[Id]
+            WHERE
+                l.[EntryDeadlineUtc] <= @NowUtc
+                AND NOT EXISTS
+                (
+                    SELECT
+                        1
+                    FROM
+                        [LeaguePrizeSettings] lps
+                    WHERE
+                        lps.[LeagueId] = l.[Id]
+                );";
+
+        return await Connection.QueryAsync<int>(new CommandDefinition(sql, new { NowUtc = nowUtc }, transaction: Transaction, cancellationToken: cancellationToken));
+    }
+
     #endregion
 
     #region Update

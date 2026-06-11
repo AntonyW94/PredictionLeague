@@ -73,6 +73,20 @@ public class TasksController(IMediator mediator) : ApiControllerBase
         return NoContent();
     }
 
+    [HttpPost("freeze-prizes")]
+    [SwaggerOperation(
+        Summary = "Freeze due prize schemes",
+        Description = "Freezes the prize scheme into confirmed prize settings for leagues whose entry deadline has passed. Called hourly.")]
+    [SwaggerResponse(200, "Freeze completed", typeof(FreezeDuePrizeSchemesResult))]
+    [SwaggerResponse(401, "Invalid or missing API key")]
+    public async Task<IActionResult> FreezeDuePrizeSchemesAsync(CancellationToken cancellationToken)
+    {
+        var command = new FreezeDuePrizeSchemesCommand();
+        var result = await mediator.Send(command, cancellationToken);
+
+        return Ok(result);
+    }
+
     [HttpPost("recalculate-season-stats/{seasonId:int}")]
     [SwaggerOperation(
         Summary = "Recalculate season statistics",
