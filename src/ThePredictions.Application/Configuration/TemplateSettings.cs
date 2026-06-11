@@ -13,4 +13,5 @@ public class TemplateSettings
     public long EmailConfirmation { get; set; }
     public long RoundResultsDigest { get; set; }
     public long PrizeWon { get; set; }
+    public long LeagueWelcome { get; set; }
 }

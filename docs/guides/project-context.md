@@ -229,6 +229,7 @@ Jobs exist for **both production and development** (prefixed `PROD -` / `DEV -` 
 | Sync Season | Daily at 8am | `/api/external/tasks/sync` | Active | Active |
 | Live Update Scores | Every minute | `/api/external/tasks/score-update` | Active | Active |
 | Freeze Prize Schemes | Hourly | `/api/external/tasks/freeze-prizes` | Created, inactive until feature deployed to prod | Active |
+| League Welcome Emails | Hourly (a few minutes after freeze-prizes) | `/api/external/tasks/send-welcome-emails` | Not yet created | Not yet created |
 
 The Active/Inactive flags reflect the setup as of June 2026 - check cron-job.org for the current state before relying on a job firing in a given environment.
 

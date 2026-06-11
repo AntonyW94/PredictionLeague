@@ -87,6 +87,20 @@ public class TasksController(IMediator mediator) : ApiControllerBase
         return Ok(result);
     }
 
+    [HttpPost("send-welcome-emails")]
+    [SwaggerOperation(
+        Summary = "Send league welcome emails",
+        Description = "Sends the one-off league welcome email to approved members of leagues whose entry deadline passed within the last 7 days (skipping leagues whose prizes are not yet frozen). Called hourly, after freeze-prizes.")]
+    [SwaggerResponse(200, "Welcome emails processed", typeof(SendLeagueWelcomeEmailsResult))]
+    [SwaggerResponse(401, "Invalid or missing API key")]
+    public async Task<IActionResult> SendLeagueWelcomeEmailsAsync(CancellationToken cancellationToken)
+    {
+        var command = new SendLeagueWelcomeEmailsCommand();
+        var result = await mediator.Send(command, cancellationToken);
+
+        return Ok(result);
+    }
+
     [HttpPost("recalculate-season-stats/{seasonId:int}")]
     [SwaggerOperation(
         Summary = "Recalculate season statistics",

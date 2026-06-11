@@ -24,6 +24,7 @@ of cases, so both are listed.
 | Confirm Email Address | `EmailConfirmation` | [email-confirmation.html](email-confirmation.html) | 6 | `EmailConfirmationSender` | `FIRST_NAME`, `CONFIRM_LINK` | `{{ params.CONFIRM_LINK }}` |
 | Password Reset – Google User | `PasswordResetGoogleUser` | [password-reset-google-user.html](password-reset-google-user.html) | 7 | `RequestPasswordResetCommandHandler` | `FIRST_NAME`, `LOGIN_LINK` | `{{ params.LOGIN_LINK }}` |
 | Password Reset | `PasswordReset` | [password-reset.html](password-reset.html) | 8 | `RequestPasswordResetCommandHandler` | `FIRST_NAME`, `RESET_LINK` | `{{ params.RESET_LINK }}` |
+| League Welcome | `LeagueWelcome` | [league-welcome.html](league-welcome.html) | TBC (set `Brevo:Templates:LeagueWelcome` once created) | `SendLeagueWelcomeEmailsCommandHandler` | `FIRST_NAME`, `LEAGUE_NAME`, `SEASON_NAME`, `MEMBER_COUNT`, `HAS_PRIZES`, `PRIZE_POT`, `HAS_BOOSTS`, `LEAGUE_URL`; loops `PRIZES[]` (`PRIZE_TITLE`, `PRIZE_VALUE`), `BOOSTS[]` (`BOOST_NAME`, `BOOST_DESCRIPTION`, `BOOST_USAGE`) | `{{ params.LEAGUE_URL }}` → `/leagues/{id}/dashboard` |
 
 > All merge tags use `UPPER_SNAKE` (e.g. `FIRST_NAME`, `RESET_LINK`). Always copy the exact names
 > from the handler's `params` object - a mismatch renders blank.
