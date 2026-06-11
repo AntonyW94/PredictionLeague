@@ -24,7 +24,8 @@ else if (_winningsData != null)
         {
             <div class="row">
                 <div class="col-12 mb-4">
-                    <WinningsLeaderboardTile Leaderboard="@_winningsData?.Leaderboard" IsLoading="@_isLoading" />
+                    <WinningsLeaderboardTile Leaderboard="@_winningsData?.Leaderboard" IsLoading="@_isLoading"
+                                             ShowMonthlyColumn="@HasMonthlyPrizes" ShowStageColumn="@HasStagePrizes" />
                 </div>
 
                 <div class="col-lg-4 mb-4 d-flex">
@@ -32,10 +33,21 @@ else if (_winningsData != null)
                                      IsExpanded="@IsRoundExpanded" OnToggleExpanded="@ToggleRoundPrizes" />
                 </div>
 
-                <div class="col-lg-4 mb-4 d-flex">
-                    <MonthlyPrizesTile Prizes="@_winningsData?.MonthlyPrizes" IsLoading="@_isLoading"
-                                       IsExpanded="@IsMonthlyExpanded" OnToggleExpanded="@ToggleMonthlyPrizes" />
-                </div>
+                @if (HasMonthlyPrizes)
+                {
+                    <div class="col-lg-4 mb-4 d-flex">
+                        <MonthlyPrizesTile Prizes="@_winningsData?.MonthlyPrizes" IsLoading="@_isLoading"
+                                           IsExpanded="@IsMonthlyExpanded" OnToggleExpanded="@ToggleMonthlyPrizes" />
+                    </div>
+                }
+
+                @if (HasStagePrizes)
+                {
+                    <div class="col-lg-4 mb-4 d-flex">
+                        <StagePrizesTile Prizes="@_winningsData?.StagePrizes" IsLoading="@_isLoading"
+                                         IsExpanded="@IsStageExpanded" OnToggleExpanded="@ToggleStagePrizes" />
+                    </div>
+                }
 
                 <div class="col-lg-4 mb-4 d-flex">
                     <EndOfSeasonPrizesTile Prizes="@_winningsData?.EndOfSeasonPrizes" IsLoading="@_isLoading"
@@ -86,13 +98,18 @@ else
     // Individual state for mobile (tiles stacked)
     private bool _roundExpanded;
     private bool _monthlyExpanded;
+    private bool _stageExpanded;
     private bool _endOfSeasonExpanded;
 
     private bool _isDesktopLayout;
 
     private bool IsRoundExpanded => _isDesktopLayout ? _sharedExpanded : _roundExpanded;
     private bool IsMonthlyExpanded => _isDesktopLayout ? _sharedExpanded : _monthlyExpanded;
+    private bool IsStageExpanded => _isDesktopLayout ? _sharedExpanded : _stageExpanded;
     private bool IsEndOfSeasonExpanded => _isDesktopLayout ? _sharedExpanded : _endOfSeasonExpanded;
+
+    private bool HasMonthlyPrizes => _winningsData?.MonthlyPrizes.Any() == true;
+    private bool HasStagePrizes => _winningsData?.StagePrizes.Any() == true;
 
     private void ToggleRoundPrizes()
     {
@@ -108,6 +125,14 @@ else
             _sharedExpanded = !_sharedExpanded;
         else
             _monthlyExpanded = !_monthlyExpanded;
+    }
+
+    private void ToggleStagePrizes()
+    {
+        if (_isDesktopLayout)
+            _sharedExpanded = !_sharedExpanded;
+        else
+            _stageExpanded = !_stageExpanded;
     }
 
     private void ToggleEndOfSeasonPrizes()

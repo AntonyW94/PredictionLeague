@@ -140,15 +140,8 @@
             else
             {
                 var leaderboardColClass = State.CompetitionType == 1 ? "col-lg-6" : "col-lg-4";
-                var isPreSeason = !State.ViewableRounds.Any(r => r.Status == RoundStatus.InProgress || r.Status == RoundStatus.Completed);
 
                 <div class="row">
-                    @if (isPreSeason && !State.IsFinished)
-                    {
-                        <div class="col-12 mb-4">
-                            <WinningsSection LeagueId="LeagueId" />
-                        </div>
-                    }
                     @if (State.IsFinished)
                     {
                         <div class="col-12 mb-4">
@@ -207,12 +200,9 @@
 
                         <BoostUsageTile LeagueId="LeagueId" />
 
-                        @if (!isPreSeason)
-                        {
-                            <div class="col-12">
-                                <WinningsSection LeagueId="LeagueId" />
-                            </div>
-                        }
+                        <div class="col-12">
+                            <WinningsSection LeagueId="LeagueId" />
+                        </div>
                     }
                 </div>
             }

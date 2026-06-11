@@ -10,5 +10,5 @@ public interface IWinningsRepository
     Task DeleteWinningsForMonthAsync(int leagueId, int month, CancellationToken cancellationToken);
     Task DeleteWinningsForOverallAsync(int leagueId, CancellationToken cancellationToken);
     Task DeleteWinningsForMostExactScoresAsync(int leagueId, CancellationToken cancellationToken);
-    Task DeleteWinningsForSectionAsync(int leagueId, CancellationToken cancellationToken);
+    Task DeleteWinningsForStageAsync(int leagueId, string stage, CancellationToken cancellationToken);
 }

@@ -8,9 +8,11 @@ using ThePredictions.Domain.Models;
 namespace ThePredictions.Application.Features.Admin.Rounds.Strategies;
 
 /// <summary>
-/// Awards Section prizes at the end of the season: members are ranked by their aggregate score
-/// within each tournament stage (group stage vs knockouts) and paid per the frozen, stage-tagged
-/// Section settings. Ties pool the covered slots, matching <see cref="OverallPrizeStrategy"/>.
+/// Awards Section prizes as soon as a tournament stage finishes: once every round in a stage
+/// (group stage vs knockouts) is completed, members are ranked by their aggregate score within
+/// that stage and paid per the frozen, stage-tagged Section settings. Re-processing a round
+/// re-awards its stage idempotently. Ties pool the covered slots, matching
+/// <see cref="OverallPrizeStrategy"/>.
 /// </summary>
 public class SectionPrizeStrategy(
     IWinningsRepository winningsRepository,
@@ -30,10 +32,6 @@ public class SectionPrizeStrategy(
         if (currentRound == null)
             return;
 
-        var isLastRoundOfSeason = await roundRepository.IsLastRoundOfSeasonAsync(currentRound.Id, currentRound.SeasonId, cancellationToken);
-        if (!isLastRoundOfSeason)
-            return;
-
         var league = await leagueRepository.GetByIdWithAllDataAsync(command.LeagueId, cancellationToken);
         if (league == null)
             return;
@@ -42,39 +40,40 @@ public class SectionPrizeStrategy(
         if (sectionSettings.Count == 0)
             return;
 
-        var (groupRoundIds, knockoutRoundIds) = await ResolveStageRoundIdsAsync(currentRound.SeasonId, cancellationToken);
+        var stages = await ResolveStagesAsync(currentRound.SeasonId, cancellationToken);
 
-        await winningsRepository.DeleteWinningsForSectionAsync(league.Id, cancellationToken);
+        foreach (var stage in stages.Where(s => s.IsComplete))
+        {
+            var newWinnings = AwardStage(league, sectionSettings, stage.Name, stage.RoundIds);
 
-        var allNewWinnings = new List<Winning>();
-        allNewWinnings.AddRange(AwardStage(league, sectionSettings, GroupStageName, groupRoundIds));
-        allNewWinnings.AddRange(AwardStage(league, sectionSettings, KnockoutStageName, knockoutRoundIds));
+            await winningsRepository.DeleteWinningsForStageAsync(league.Id, stage.Name, cancellationToken);
 
-        if (allNewWinnings.Any())
-            await winningsRepository.AddWinningsAsync(allNewWinnings, cancellationToken);
+            if (newWinnings.Any())
+                await winningsRepository.AddWinningsAsync(newWinnings, cancellationToken);
+        }
     }
 
-    private async Task<(List<int> GroupRoundIds, List<int> KnockoutRoundIds)> ResolveStageRoundIdsAsync(int seasonId, CancellationToken cancellationToken)
+    private async Task<List<StageRounds>> ResolveStagesAsync(int seasonId, CancellationToken cancellationToken)
     {
         var mappings = await tournamentRoundMappingRepository.GetBySeasonIdAsync(seasonId, cancellationToken);
         var roundsById = await roundRepository.GetAllForSeasonAsync(seasonId, cancellationToken);
-        var roundIdByNumber = roundsById.Values.ToDictionary(r => r.RoundNumber, r => r.Id);
+        var roundByNumber = roundsById.Values.ToDictionary(r => r.RoundNumber);
 
-        var groupRoundIds = new List<int>();
-        var knockoutRoundIds = new List<int>();
+        var groupStage = new StageRounds(GroupStageName);
+        var knockoutStage = new StageRounds(KnockoutStageName);
 
         foreach (var mapping in mappings)
         {
-            if (!roundIdByNumber.TryGetValue(mapping.RoundNumber, out var roundId))
+            if (!roundByNumber.TryGetValue(mapping.RoundNumber, out var round))
                 continue;
 
             if (IsGroupStage(mapping))
-                groupRoundIds.Add(roundId);
+                groupStage.Add(round);
             else
-                knockoutRoundIds.Add(roundId);
+                knockoutStage.Add(round);
         }
 
-        return (groupRoundIds, knockoutRoundIds);
+        return [groupStage, knockoutStage];
     }
 
     private static bool IsGroupStage(TournamentRoundMapping mapping) =>
@@ -119,5 +118,17 @@ public class SectionPrizeStrategy(
         }
 
         return winnings;
+    }
+
+    /// <summary>The rounds that make up one tournament stage; complete once every round has finished.</summary>
+    private sealed class StageRounds(string name)
+    {
+        private readonly List<Round> _rounds = [];
+
+        public string Name { get; } = name;
+        public IReadOnlyList<int> RoundIds => _rounds.Select(r => r.Id).ToList();
+        public bool IsComplete => _rounds.Count > 0 && _rounds.All(r => r.Status == RoundStatus.Completed);
+
+        public void Add(Round round) => _rounds.Add(round);
     }
 }

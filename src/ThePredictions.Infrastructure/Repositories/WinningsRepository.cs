@@ -145,7 +145,7 @@ public class WinningsRepository(IDbConnectionFactory connectionFactory, IDbTrans
         await Connection.ExecuteAsync(command);
     }
 
-    public async Task DeleteWinningsForSectionAsync(int leagueId, CancellationToken cancellationToken)
+    public async Task DeleteWinningsForStageAsync(int leagueId, string stage, CancellationToken cancellationToken)
     {
         const string sql = @"
             DELETE
@@ -156,14 +156,16 @@ public class WinningsRepository(IDbConnectionFactory connectionFactory, IDbTrans
                 [LeaguePrizeSettings] lps ON w.[LeaguePrizeSettingId] = lps.[Id]
             WHERE
                 lps.[LeagueId] = @LeagueId
-                AND lps.[PrizeType] = @PrizeType;";
+                AND lps.[PrizeType] = @PrizeType
+                AND lps.[Stage] = @Stage;";
 
         var command = new CommandDefinition(
             sql,
             new
             {
                 LeagueId = leagueId,
-                PrizeType = PrizeType.Stages
+                PrizeType = PrizeType.Stages,
+                Stage = stage
             },
             transaction: Transaction,
             cancellationToken: cancellationToken
