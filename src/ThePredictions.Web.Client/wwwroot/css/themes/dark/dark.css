@@ -175,6 +175,12 @@
     border-color: var(--purple-900);
 }
 
+.theme-dark .message-box-notice {
+    border-left-color: var(--yellow);
+    background: var(--yellow-alpha-18);
+    color: var(--yellow);
+}
+
 /* Auth pages */
 
 .theme-dark .form-container .text-purple-1000 {

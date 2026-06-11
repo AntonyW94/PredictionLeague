@@ -129,6 +129,7 @@ All `/api/external/tasks/*` endpoints are protected by API key. The legacy `/api
 | `POST /api/external/tasks/send-reminders` | Email reminders for upcoming deadlines | Every 30 min |
 | `POST /api/external/tasks/sync` | Sync fixture data from Football API | Daily 8am |
 | `POST /api/external/tasks/score-update` | Update scores during matches | Every minute |
+| `POST /api/external/tasks/freeze-prizes` | Freeze prize schemes for leagues past their entry deadline | Hourly |
 
 ### Task Controller Pattern
 

@@ -307,6 +307,36 @@ public class LeagueManagementTests
         act.Should().Throw<ArgumentException>();
     }
 
+    [Fact]
+    public void Create_ShouldThrowException_WhenEntryDeadlineLessThanSixHoursBeforeSeasonStart()
+    {
+        // Arrange — deadline inside the minimum 6-hour gap
+        var season = CreateFutureSeason();
+
+        // Act
+        var act = () => CreateLeagueViaFactory(
+            entryDeadlineUtc: season.StartDateUtc.AddHours(-6).AddMinutes(1),
+            season: season);
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_ShouldCreateLeague_WhenEntryDeadlineExactlySixHoursBeforeSeasonStart()
+    {
+        // Arrange — deadline exactly on the minimum 6-hour boundary
+        var season = CreateFutureSeason();
+
+        // Act
+        var league = CreateLeagueViaFactory(
+            entryDeadlineUtc: season.StartDateUtc.AddHours(-6),
+            season: season);
+
+        // Assert
+        league.EntryDeadlineUtc.Should().Be(season.StartDateUtc.AddHours(-6));
+    }
+
     #endregion
 
     #region CreateOfficialPublicLeague

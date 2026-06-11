@@ -84,8 +84,11 @@
                     {
                         <div class="section mb-4">
                             <h3 class="text-white text-center fw-bold mb-3">Prize Breakdown</h3>
-                            <PrizeBreakdownPreview Breakdown="State.PrizeBreakdown" PotLabel="Estimated prize pot" />
-                            <p class="prize-preview-note mt-3 mb-0">Estimated - the pot grows as players join. Prizes are confirmed once entries close.</p>
+                            <PrizeBreakdownPreview Breakdown="State.PrizeBreakdown" PotLabel="@(isPreDeadline ? "Estimated prize pot" : "Total prize pot")" />
+                            @if (isPreDeadline)
+                            {
+                                <p class="prize-preview-note mt-3 mb-0">Estimated - the pot grows as players join. Prizes are confirmed once entries close.</p>
+                            }
                         </div>
                     }
 

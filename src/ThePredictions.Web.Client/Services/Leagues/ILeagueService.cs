@@ -19,6 +19,7 @@ public interface ILeagueService
     Task<List<LeagueRequestDto>> GetPendingRequestsAsync();
     Task<List<MonthDto>> GetMonthsForLeagueAsync(int leagueId);
     Task<WinningsDto> GetWinningsAsync(int leagueId);
+    Task<PrizeBreakdownDto?> GetPrizeBreakdownAsync(int leagueId);
     Task<LeaguePaymentInfoDto?> GetPaymentInfoAsync(int leagueId);
     Task<List<BoostUsageSummaryDto>> GetBoostUsageSummaryAsync(int leagueId);
     Task<bool> CheckForAvailablePrivateLeaguesAsync();

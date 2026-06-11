@@ -20,6 +20,12 @@ public interface ILeagueRepository
     Task<IEnumerable<LeagueRoundResult>> GetLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken);
     Task<IEnumerable<int>> GetLeagueIdsForSeasonAsync(int seasonId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Leagues whose entry deadline has passed, that have a prize scheme, but whose prizes have not
+    /// yet been frozen into <see cref="LeaguePrizeSetting"/> rows.
+    /// </summary>
+    Task<IEnumerable<int>> GetLeagueIdsDueForPrizeFreezeAsync(DateTime nowUtc, CancellationToken cancellationToken);
+
     #endregion
 
     #region Update

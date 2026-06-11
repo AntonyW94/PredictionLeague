@@ -61,7 +61,7 @@ public class LeagueDashboardStateService(HttpClient httpClient)
                 Members = data.Members;
                 ViewableRounds = data.ViewableRounds;
 
-                if (EntryDeadlineUtc is { } deadline && DateTime.UtcNow < deadline && !IsFinished)
+                if (!IsFinished)
                     await LoadPrizeBreakdown(leagueId);
 
                 if (ViewableRounds.Any())

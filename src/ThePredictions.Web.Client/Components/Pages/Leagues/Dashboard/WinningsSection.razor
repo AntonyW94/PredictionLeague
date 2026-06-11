@@ -1,6 +1,7 @@
 @inject ILeagueService LeagueService
 @inject IJSRuntime JS
 @using ThePredictions.Contracts.Leagues
+@using ThePredictions.Contracts.Prizes
 @using ThePredictions.Web.Client.Services.Leagues
 @implements IAsyncDisposable
 @if (_isLoading)
@@ -47,6 +48,15 @@ else if (_winningsData != null)
             <div class="col-12">
                 <PrizePotTile WinningsData="@_winningsData" />
             </div>
+            @if (_prizeBreakdown?.Categories.Any() == true)
+            {
+                <div class="col-12 mt-4">
+                    <div class="section">
+                        <h5 class="text-white fw-bold mb-3 text-center">Prize Breakdown</h5>
+                        <PrizeBreakdownPreview Breakdown="_prizeBreakdown" PotLabel="Total prize pot" />
+                    </div>
+                </div>
+            }
         }
     }
 }
@@ -66,6 +76,7 @@ else
     public int LeagueId { get; set; }
 
     private WinningsDto? _winningsData;
+    private PrizeBreakdownDto? _prizeBreakdown;
     private bool _isLoading = true;
     private DotNetObjectReference<WinningsSection>? _dotNetRef;
 
@@ -122,6 +133,9 @@ else
         try
         {
             _winningsData = await LeagueService.GetWinningsAsync(LeagueId);
+
+            if (_winningsData is { WinningsCalculated: false, TotalPrizePot: > 0 })
+                _prizeBreakdown = await LeagueService.GetPrizeBreakdownAsync(LeagueId);
         }
         catch (Exception)
         {

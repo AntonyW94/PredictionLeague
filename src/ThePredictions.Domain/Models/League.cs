@@ -147,13 +147,19 @@ public partial class League
         };
     }
 
+    /// <summary>
+    /// Minimum gap between the entry deadline and the season start. Sized so the hourly
+    /// freeze-prizes job always locks the prize scheme in before the first match kicks off.
+    /// </summary>
+    private const int MinimumHoursBetweenDeadlineAndSeasonStart = 6;
+
     private static void Validate(string name, DateTime entryDeadlineUtc, Season season, IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.NullOrWhiteSpace(name);
         Guard.Against.Expression(d => d <= dateTimeProvider.UtcNow, entryDeadlineUtc, "Entry deadline must be in the future.");
 
-        if (entryDeadlineUtc.Date >= season.StartDateUtc.Date)
-            throw new ArgumentException("Entry deadline must be at least one day before the season start date.", nameof(entryDeadlineUtc));
+        if (entryDeadlineUtc > season.StartDateUtc.AddHours(-MinimumHoursBetweenDeadlineAndSeasonStart))
+            throw new ArgumentException($"Entry deadline must be at least {MinimumHoursBetweenDeadlineAndSeasonStart} hours before the season start date.", nameof(entryDeadlineUtc));
     }
 
 

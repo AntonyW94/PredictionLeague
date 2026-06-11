@@ -215,6 +215,7 @@ public static class DependencyInjection
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddSingleton<IPrizeEvaluator, PrizeEvaluator>();
             services.AddScoped<IPrizeEvaluationInputsReader, PrizeEvaluationInputsReader>();
+            services.AddScoped<IPrizeSchemeFreezeService, PrizeSchemeFreezeService>();
 
             services.AddMediatR(cfg =>
             {
