@@ -156,8 +156,8 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
 
     public async Task<Round?> GetOldestInProgressRoundAsync(int seasonId, CancellationToken cancellationToken)
     {
-        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = (SELECT TOP 1 [Id] FROM [Rounds] WHERE [SeasonId] = @SeasonId AND [Status] != @CompletedStatus AND [StartDateUtc] < GETUTCDATE() ORDER BY [StartDateUtc] ASC)";
-        return await QueryAndMapRoundAsync(sql, cancellationToken, new { SeasonId = seasonId, CompletedStatus = nameof(RoundStatus.Completed) });
+        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = (SELECT TOP 1 [Id] FROM [Rounds] WHERE [SeasonId] = @SeasonId AND [Status] IN (@PublishedStatus, @InProgressStatus) AND [StartDateUtc] < GETUTCDATE() ORDER BY [StartDateUtc] ASC)";
+        return await QueryAndMapRoundAsync(sql, cancellationToken, new { SeasonId = seasonId, PublishedStatus = nameof(RoundStatus.Published), InProgressStatus = nameof(RoundStatus.InProgress) });
     }
 
     public async Task<IEnumerable<int>> GetMatchIdsWithPredictionsAsync(IEnumerable<int> matchIds, CancellationToken cancellationToken)
