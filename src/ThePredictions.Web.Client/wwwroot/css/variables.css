@@ -68,8 +68,11 @@
     --purple-800-alpha-25: rgba(61, 25, 91, 0.25);
     --purple-900-alpha-80: rgba(49, 20, 74, 0.8);
 
-    /* Transparent Orange (for tinted backgrounds) - matches --orange: #CC8200 */
+    /* Transparent Orange (for tinted backgrounds, borders and animations) - matches --orange: #CC8200 */
     --orange-alpha-15: rgba(204, 130, 0, 0.15);
+    --orange-alpha-40: rgba(204, 130, 0, 0.4);
+    --orange-alpha-70: rgba(204, 130, 0, 0.7);
+    --orange-alpha-00: rgba(204, 130, 0, 0);
 
     /* Transparent Yellow (for animations and tinted backgrounds) - matches --yellow: #EBFF01 */
     --yellow-alpha-18: rgba(235, 255, 1, 0.18);
@@ -81,13 +84,15 @@
     --blue-700-alpha-70: rgba(3, 194, 180, 0.7);
     --blue-700-alpha-00: rgba(3, 194, 180, 0);
 
-    /* Transparent Green (for animations and tinted backgrounds) - matches --green-600: #00B960 */
+    /* Transparent Green (for animations, borders and tinted backgrounds) - matches --green-600: #00B960 */
     --green-600-alpha-15: rgba(0, 185, 96, 0.15);
+    --green-600-alpha-40: rgba(0, 185, 96, 0.4);
     --green-600-alpha-70: rgba(0, 185, 96, 0.7);
     --green-600-alpha-00: rgba(0, 185, 96, 0);
 
-    /* Transparent Red (for animations and tinted backgrounds) - matches --red: #E90052 */
+    /* Transparent Red (for animations, borders and tinted backgrounds) - matches --red: #E90052 */
     --red-alpha-15: rgba(233, 0, 82, 0.15);
+    --red-alpha-40: rgba(233, 0, 82, 0.4);
     --red-alpha-70: rgba(233, 0, 82, 0.7);
     --red-alpha-00: rgba(233, 0, 82, 0);
 

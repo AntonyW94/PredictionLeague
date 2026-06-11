@@ -13,13 +13,56 @@
 }
 
 .match-preview-row {
+    /* Three columns - outcome icon (left), predicted score (centre), actual score (right).
+       The side columns are an equal fixed width so the predicted score stays optically
+       centred regardless of how wide the actual-score pill is. */
+    display: grid;
+    grid-template-columns: 1.75rem 1fr 1.75rem;
+    align-items: center;
+    column-gap: 0.25rem;
+    padding: 0.3rem 0.4rem;
+    border-radius: var(--bs-border-radius);
+    background-color: var(--white);
+    border: 1px solid transparent;
+}
+
+.match-preview-centre {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--bs-border-radius);
-    background-color: var(--white);
+    min-width: 0;
+}
+
+.match-preview-outcome {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.match-preview-actual {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.match-preview-actual-score {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--purple-1000);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.match-live-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background-color: var(--red);
+    flex-shrink: 0;
 }
 
 .match-preview-logo {
@@ -46,32 +89,34 @@
     opacity: 1;
 }
 
-/* Match Outcome Backgrounds */
+/* Match Outcome Backgrounds - soft tint + matching border, with the outcome colour
+   carried by the icon rather than a solid fill. The predicted score keeps its default
+   dark colour for legibility on the pale tint. */
 .match-preview-row.match-outcome-exact {
-    background-color: var(--green-600);
+    background-color: var(--green-600-alpha-15);
+    border-color: var(--green-600-alpha-40);
 }
 
-.match-preview-row.match-outcome-exact .match-preview-score,
-.match-preview-row.match-outcome-exact .match-preview-vs {
-    color: var(--white);
+.match-preview-row.match-outcome-exact .match-preview-outcome {
+    color: var(--green-600);
 }
 
 .match-preview-row.match-outcome-correct-result {
-    background-color: var(--yellow);
+    background-color: var(--orange-alpha-15);
+    border-color: var(--orange-alpha-40);
 }
 
-.match-preview-row.match-outcome-correct-result .match-preview-score,
-.match-preview-row.match-outcome-correct-result .match-preview-vs {
-    color: var(--purple-1000);
+.match-preview-row.match-outcome-correct-result .match-preview-outcome {
+    color: var(--orange);
 }
 
 .match-preview-row.match-outcome-incorrect {
-    background-color: var(--red);
+    background-color: var(--red-alpha-15);
+    border-color: var(--red-alpha-40);
 }
 
-.match-preview-row.match-outcome-incorrect .match-preview-score,
-.match-preview-row.match-outcome-incorrect .match-preview-vs {
-    color: var(--white);
+.match-preview-row.match-outcome-incorrect .match-preview-outcome {
+    color: var(--red);
 }
 
 /* Outcome Summary - In-Progress Rounds Footer */
@@ -100,24 +145,47 @@
     opacity: 0.5;
 }
 
-/* iPhone 16 and up (393px viewport) */
+/* Outcome summary icons share the same family and colours as the per-match tiles
+   so the legend and the tiles read as one system. */
+.outcome-item i {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.outcome-item--exact i {
+    color: var(--green-600);
+}
+
+.outcome-item--correct i {
+    color: var(--orange);
+}
+
+.outcome-item--incorrect i {
+    color: var(--red);
+}
+
+/* iPhone 16 and up (393px viewport) - two matches per row. Logos stay compact here
+   so the predicted score and the actual-score pill both fit in the tighter half-width tile. */
 @media (min-width: 390px) {
     .match-preview-grid {
         grid-template-columns: 1fr 1fr;
         gap: 0.5rem;
     }
 
-    .match-preview-logo {
-        width: 1.5rem;
-        height: 1.5rem;
-    }
-
-    .match-preview-row {
-        gap: 0.375rem;
-    }
-
     .match-preview-score {
         min-width: 0.875rem;
         font-size: 0.875rem;
+    }
+}
+
+/* Desktop+ - more horizontal room, so logos and side columns can grow a little. */
+@media (min-width: 992px) {
+    .match-preview-row {
+        grid-template-columns: 2rem 1fr 2rem;
+    }
+
+    .match-preview-logo {
+        width: 1.5rem;
+        height: 1.5rem;
     }
 }

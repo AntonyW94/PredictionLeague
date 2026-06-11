@@ -563,19 +563,14 @@
     background-color: var(--black-alpha-25);
 }
 
-.theme-dark .match-preview-row.match-outcome-exact {
-    background-color: var(--green-600);
-}
-
-.theme-dark .match-preview-row.match-outcome-correct-result {
-    background-color: var(--yellow);
-}
-
-.theme-dark .match-preview-row.match-outcome-incorrect {
-    background-color: var(--red);
-}
-
+/* Outcome tiles reuse the same translucent tint + border as light mode (defined in the
+   base round-cards.css rules); the tints sit over the dark card surface, so the predicted
+   score and actual score stay white for contrast. */
 .theme-dark .match-preview-score {
+    color: var(--white);
+}
+
+.theme-dark .match-preview-actual-score {
     color: var(--white);
 }
 
@@ -584,11 +579,6 @@
 .theme-dark .match-preview-vs {
     color: var(--grey-300);
     opacity: 0.7;
-}
-
-.theme-dark .match-preview-row.match-outcome-correct-result .match-preview-score,
-.theme-dark .match-preview-row.match-outcome-correct-result .match-preview-vs {
-    color: var(--purple-1000);
 }
 
 .theme-dark .outcome-summary {

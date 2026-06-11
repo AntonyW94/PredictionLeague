@@ -82,7 +82,9 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                 up.[PredictedHomeScore],
                 up.[PredictedAwayScore],
                 up.[Outcome],
-                m.[Status]
+                m.[Status],
+                m.[ActualHomeTeamScore] AS ActualHomeScore,
+                m.[ActualAwayTeamScore] AS ActualAwayScore
             FROM [Matches] m
             INNER JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
             INNER JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
@@ -111,7 +113,9 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                     m.PredictedHomeScore,
                     m.PredictedAwayScore,
                     m.Outcome,
-                    Enum.Parse<MatchStatus>(m.Status)))
+                    Enum.Parse<MatchStatus>(m.Status),
+                    m.ActualHomeScore,
+                    m.ActualAwayScore))
                 : Enumerable.Empty<ActiveRoundMatchDto>();
 
             // Calculate outcome summary for rounds past their deadline
@@ -153,5 +157,7 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         int? PredictedHomeScore,
         int? PredictedAwayScore,
         PredictionOutcome? Outcome,
-        string Status);
+        string Status,
+        int? ActualHomeScore,
+        int? ActualAwayScore);
 }

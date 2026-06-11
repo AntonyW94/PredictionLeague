@@ -19,6 +19,25 @@
     }
 }
 
+/* Pulse glow effect - orange variant (for correct-result matches) */
+.pulsing-orange {
+    animation: pulse-orange 2s infinite;
+}
+
+@keyframes pulse-orange {
+    0% {
+        box-shadow: 0 0 0 0 var(--orange-alpha-70);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px var(--orange-alpha-00);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 var(--orange-alpha-00);
+    }
+}
+
 /* Pulse glow effect - blue variant (for in-progress badges) */
 .pulsing-blue {
     animation: pulse-blue 2s infinite;
