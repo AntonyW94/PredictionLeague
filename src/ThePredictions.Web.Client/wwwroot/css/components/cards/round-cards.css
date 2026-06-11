@@ -17,7 +17,7 @@
        The side columns are an equal fixed width so the predicted score stays optically
        centred regardless of how wide the actual-score pill is. */
     display: grid;
-    grid-template-columns: 1.75rem 1fr 1.75rem;
+    grid-template-columns: 2.1rem 1fr 2.1rem;
     align-items: center;
     column-gap: 0.25rem;
     padding: 0.3rem 0.4rem;
@@ -50,8 +50,9 @@
     height: 1.05rem;
 }
 
-/* Actual score stacks the status (FT label or live dot) above the score so the column
-   stays as narrow as the score itself, keeping the predicted score optically centred. */
+/* Actual score stacks the status (FT label or live dot) above the score so the chip
+   stays as narrow as the score itself, keeping the predicted score optically centred.
+   It sits on a slightly stronger tint of the outcome colour so it lifts off the tile. */
 .match-preview-actual {
     justify-self: end;
     display: inline-flex;
@@ -59,6 +60,21 @@
     align-items: center;
     justify-content: center;
     line-height: 1.05;
+    padding: 0.1rem 0.35rem;
+    border-radius: var(--bs-border-radius);
+    background-color: var(--black-alpha-15);
+}
+
+.match-preview-row.match-outcome-exact .match-preview-actual {
+    background-color: var(--green-600-alpha-25);
+}
+
+.match-preview-row.match-outcome-correct-result .match-preview-actual {
+    background-color: var(--orange-alpha-25);
+}
+
+.match-preview-row.match-outcome-incorrect .match-preview-actual {
+    background-color: var(--red-alpha-25);
 }
 
 .match-preview-actual-status {
@@ -92,8 +108,8 @@
 }
 
 .match-preview-logo {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.1rem;
+    height: 1.1rem;
     object-fit: contain;
     flex-shrink: 0;
 }
@@ -197,21 +213,20 @@
         grid-template-columns: 1fr 1fr;
         gap: 0.5rem;
     }
-
-    .match-preview-score {
-        min-width: 0.875rem;
-        font-size: 0.875rem;
-    }
 }
 
-/* Desktop+ - more horizontal room, so logos and side columns can grow a little. */
+/* Desktop+ - more horizontal room, so logos, side columns and the score can grow. */
 @media (min-width: 992px) {
     .match-preview-row {
-        grid-template-columns: 2rem 1fr 2rem;
+        grid-template-columns: 2.4rem 1fr 2.4rem;
     }
 
     .match-preview-logo {
-        width: 1.5rem;
-        height: 1.5rem;
+        width: 1.4rem;
+        height: 1.4rem;
+    }
+
+    .match-preview-score {
+        font-size: 0.9rem;
     }
 }

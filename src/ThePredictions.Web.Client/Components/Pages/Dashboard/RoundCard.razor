@@ -55,9 +55,9 @@
                                  loading="lazy"
                                  onerror="this.onerror=null; this.src='images/team-placeholder.svg';" />
                         </div>
-                        <span class="match-preview-actual">
-                            @if (HasActualScore(match))
-                            {
+                        @if (HasActualScore(match))
+                        {
+                            <span class="match-preview-actual">
                                 @if (match.Status == MatchStatus.InProgress)
                                 {
                                     <span class="match-preview-actual-status">
@@ -69,8 +69,8 @@
                                     <span class="match-preview-actual-status match-preview-actual-status--ft">FT</span>
                                 }
                                 <span class="match-preview-actual-score">@($"{match.ActualHomeScore}-{match.ActualAwayScore}")</span>
-                            }
-                        </span>
+                            </span>
+                        }
                     </div>
                 }
             </div>

@@ -70,6 +70,7 @@
 
     /* Transparent Orange (for tinted backgrounds, borders and animations) - matches --orange: #CC8200 */
     --orange-alpha-15: rgba(204, 130, 0, 0.15);
+    --orange-alpha-25: rgba(204, 130, 0, 0.25);
     --orange-alpha-40: rgba(204, 130, 0, 0.4);
     --orange-alpha-70: rgba(204, 130, 0, 0.7);
     --orange-alpha-00: rgba(204, 130, 0, 0);
@@ -86,12 +87,14 @@
 
     /* Transparent Green (for animations, borders and tinted backgrounds) - matches --green-600: #00B960 */
     --green-600-alpha-15: rgba(0, 185, 96, 0.15);
+    --green-600-alpha-25: rgba(0, 185, 96, 0.25);
     --green-600-alpha-40: rgba(0, 185, 96, 0.4);
     --green-600-alpha-70: rgba(0, 185, 96, 0.7);
     --green-600-alpha-00: rgba(0, 185, 96, 0);
 
     /* Transparent Red (for animations, borders and tinted backgrounds) - matches --red: #E90052 */
     --red-alpha-15: rgba(233, 0, 82, 0.15);
+    --red-alpha-25: rgba(233, 0, 82, 0.25);
     --red-alpha-40: rgba(233, 0, 82, 0.4);
     --red-alpha-70: rgba(233, 0, 82, 0.7);
     --red-alpha-00: rgba(233, 0, 82, 0);
