@@ -1,0 +1,14 @@
+# Standalone wrapper: migrate the Dev database without a code deploy. Manual trigger only.
+# Low-risk (dev), so no confirmation gate. See ADR-0013.
+name: Migrate Dev database
+
+on:
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    uses: ./.github/workflows/migrate-shared.yml
+    with:
+      environment: dev
+    secrets:
+      MIGRATE_CONNECTION_STRING: ${{ secrets.DEV_CONNECTION_STRING }}

@@ -2,7 +2,7 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete** (delivered on branch `database-migrations-dbup`; see [ADR-0013](../../../decisions/0013-database-migrations-dbup.md). NB: the split `deploy-dev.yml` / `deploy-prod.yml` exist, not a single `deploy.yml` as drafted below.)
 
 ## Summary
 

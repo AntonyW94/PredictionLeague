@@ -10,6 +10,9 @@ public class DatabaseRefresher(
     string? testPassword,
     bool anonymise)
 {
+    // NOTE: DbUp's [dbo].[SchemaVersions] migration journal is deliberately absent from BOTH
+    // arrays below. Each database owns its own journal, so the data refresh/backup must neither
+    // copy nor truncate it. Do not add it here. (See ADR-0013.)
     private static readonly string[] TablesToSkip =
     [
         "AspNetUserTokens",

@@ -851,6 +851,27 @@ JWT refresh tokens for authentication.
 
 ---
 
+## Schema Migration Tracking
+
+### SchemaVersions
+
+DbUp's migration journal (ADR-0013). One row per migration script that has been applied **to this
+database**. Created and written by `ThePredictions.DatabaseTools` in `Migrate` mode; not used by
+the application. Each database (prod / dev / backup) has its **own** journal, so it is
+deliberately **excluded** from the `DatabaseRefresher` copy/skip arrays - a data refresh must never
+copy or truncate it, or an environment would forget which migrations it has applied.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| ScriptName | nvarchar(255) | NO | | Embedded resource name of the applied migration script |
+| Applied | datetime | NO | | When the script was applied |
+
+**Constraints:**
+- PK: `Id` (`PK_SchemaVersions_Id`)
+
+---
+
 ## Common Queries Reference
 
 ### Get user's prize wins by type

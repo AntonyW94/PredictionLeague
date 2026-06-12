@@ -8,22 +8,35 @@ try
     if (!Enum.TryParse<ToolMode>(args[0], ignoreCase: false, out var mode))
         throw new InvalidOperationException($"Unknown mode: '{args[0]}'. Valid modes: " + string.Join(", ", Enum.GetNames<ToolMode>()));
 
-    var prodConnectionString = GetRequiredEnvironmentVariable("PROD_CONNECTION_STRING");
-
     switch (mode)
     {
         case ToolMode.DevelopmentRefresh:
+        {
+            var prodConnectionString = GetRequiredEnvironmentVariable("PROD_CONNECTION_STRING");
             var devConnectionString = GetRequiredEnvironmentVariable("DEV_CONNECTION_STRING");
             var testPassword = GetRequiredEnvironmentVariable("TEST_ACCOUNT_PASSWORD");
             var refresher = new DatabaseRefresher(prodConnectionString, devConnectionString, testPassword, anonymise: true);
             await refresher.RunAsync();
             break;
+        }
 
         case ToolMode.ProductionBackup:
+        {
+            var prodConnectionString = GetRequiredEnvironmentVariable("PROD_CONNECTION_STRING");
             var backupConnectionString = GetRequiredEnvironmentVariable("BACKUP_CONNECTION_STRING");
             var backupRefresher = new DatabaseRefresher(prodConnectionString, backupConnectionString, testPassword: null, anonymise: false);
             await backupRefresher.RunAsync();
             break;
+        }
+
+        case ToolMode.Migrate:
+        {
+            var migrateConnectionString = GetRequiredEnvironmentVariable("MIGRATE_CONNECTION_STRING");
+            var migrator = new DatabaseMigrator(migrateConnectionString);
+            if (!migrator.Run())
+                return 1;
+            break;
+        }
 
         default:
             throw new ArgumentOutOfRangeException();

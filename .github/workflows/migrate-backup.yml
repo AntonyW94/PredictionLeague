@@ -1,0 +1,29 @@
+# Standalone wrapper: migrate the BACKUP database without a data copy. Manual trigger only.
+# Requires typing "migrate" to confirm (ADR-0013, Option A).
+name: Migrate Backup database
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "migrate" to confirm running migrations against the BACKUP database'
+        required: true
+        type: string
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation
+        if: github.event.inputs.confirm != 'migrate'
+        run: |
+          echo "Cancelled. You must type 'migrate' to confirm a backup migration."
+          exit 1
+
+  migrate:
+    needs: validate
+    uses: ./.github/workflows/migrate-shared.yml
+    with:
+      environment: backup
+    secrets:
+      MIGRATE_CONNECTION_STRING: ${{ secrets.BACKUP_CONNECTION_STRING }}

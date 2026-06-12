@@ -25,12 +25,15 @@ Any new tables must also be added to the database refresh tool in [`tools/ThePre
 - If the table contains personal data, add anonymisation rules to `DataAnonymiser.cs`
 - If the table contains sensitive tokens, add verification to `PersonalDataVerifier.cs`
 
-### Migration SQL — present in chat, never write a file
+### Migration SQL — committed only under the DbUp Migrations folder
 
-Until a proper migration tool exists, **do NOT create `.sql` files anywhere in the repository** (no `tools/sql/`, no migration scripts on disk). When a change needs SQL run against a database, **present the SQL directly in the chat window** in a fenced code block for the user to copy and run manually. The user applies migrations out of band.
+Database schema changes are managed by **DbUp** (ADR-0013). Committed `.sql` files are allowed in **one** place only: [`tools/ThePredictions.DatabaseTools/Migrations/`](tools/ThePredictions.DatabaseTools/Migrations/) — embedded, numbered `NNNN_PascalCase.sql`, applied in order, and **immutable once applied** (add a new script rather than editing one). Write new schema changes as a new migration script there.
 
-- State whether the migration is **additive** (new tables, new nullable/`DEFAULT`-ed columns — safe to apply ahead of the code deploy) or **destructive** (drop/rename/retype — must ship with or after the matching deploy).
-- Still update `docs/guides/database-schema.md` and `DatabaseTools` as above; just don't commit the migration script itself.
+**Everywhere else, still do NOT create `.sql` files** (no `tools/sql/`, no loose scripts on disk). For any genuinely ad-hoc / one-off SQL outside the migration set, **present it directly in the chat window** in a fenced code block for the user to run manually.
+
+- State whether a migration is **additive** (new tables, new nullable/`DEFAULT`-ed columns — safe to apply ahead of the code deploy) or **destructive** (drop/rename/retype — must ship with or after the matching deploy).
+- Migrations are forward-only: to reverse a change, add a new forward "undo" script; take a backup (`backup-prod-db.yml`) before anything destructive.
+- Still update `docs/guides/database-schema.md` and `DatabaseTools` as above.
 
 ### CQRS Data Access
 
@@ -209,7 +212,7 @@ Repeatable operational procedures (external-service access, credential retrieval
 7. **NEVER use US English spelling** - Use UK English
 8. **NEVER make database changes without updating `docs/guides/database-schema.md`** and the refresh tool in `tools/ThePredictions.DatabaseTools/`
 9. **NEVER leave code coverage below 100%** - Write tests or add `[ExcludeFromCodeCoverage]` for untestable code
-10. **NEVER create `.sql` files in the repository** - present migration SQL in the chat for the user to run manually (until a migration tool exists)
+10. **NEVER create `.sql` files in the repository EXCEPT under `tools/ThePredictions.DatabaseTools/Migrations/`** (the DbUp migration set, ADR-0013; numbered, embedded, immutable once applied) - everywhere else, present ad-hoc SQL in the chat for the user to run manually
 11. **NEVER let a query's `SELECT` column order drift from its result `record` constructor** - Dapper maps them positionally (name + type per position); a mismatch compiles and passes tests but throws at runtime. See [Dapper Result Mapping](#dapper-result-mapping--select-column-order-must-match-the-record-constructor).
 
 ## Quick Reference

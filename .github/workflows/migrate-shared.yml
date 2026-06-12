@@ -1,0 +1,52 @@
+# Reusable database-migration workflow (see ADR-0013).
+#
+# Called via `workflow_call` from:
+#   - the standalone wrappers migrate-dev.yml / migrate-prod.yml / migrate-backup.yml
+#     (apply a schema change to one database without a code deploy); and
+#   - deploy-dev.yml / deploy-prod.yml / refresh-dev-db.yml / backup-prod-db.yml, which
+#     run it as a `migrate` job that their main job declares `needs:` on, so schema lands
+#     before code is deployed or data is copied.
+#
+# Runs ThePredictions.DatabaseTools in `Migrate` mode (DbUp). DbUp tracks applied scripts
+# per-database in dbo.SchemaVersions, so running against every database is safe - each only
+# applies what it has not yet seen. The connection string is supplied as the
+# MIGRATE_CONNECTION_STRING environment variable (never a command-line argument, so it does
+# not appear in the runner's process list). The tool returns a non-zero exit code on any
+# failure, which fails this job and blocks any dependent deploy/copy job.
+
+name: Migrate database (shared)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Target environment label (dev/prod/backup) - for display only'
+        required: true
+        type: string
+    secrets:
+      MIGRATE_CONNECTION_STRING:
+        description: 'Connection string for the database to migrate'
+        required: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore tool dependencies
+        run: dotnet restore tools/ThePredictions.DatabaseTools/ThePredictions.DatabaseTools.csproj
+
+      - name: Build migrator
+        run: dotnet build tools/ThePredictions.DatabaseTools/ThePredictions.DatabaseTools.csproj --configuration Release --no-restore
+
+      - name: Run database migrations (${{ inputs.environment }})
+        run: dotnet run --project tools/ThePredictions.DatabaseTools --configuration Release --no-build -- Migrate
+        env:
+          MIGRATE_CONNECTION_STRING: ${{ secrets.MIGRATE_CONNECTION_STRING }}
