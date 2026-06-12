@@ -130,6 +130,22 @@
     opacity: 1;
 }
 
+/* Kickoff caption: scheduled matches have no result chip, so the kickoff date and time
+   sits on its own full-width line beneath the row. Rounds can span several days (a World
+   Cup matchday runs for a week), so the short weekday + date keeps it unambiguous where a
+   time alone would not. Spanning all three columns sidesteps the narrow right-hand chip
+   track, so it stays on one line even on the two-per-row tablet layout. */
+.match-preview-kickoff {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-top: 0.2rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--grey-500);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
 /* Match Outcome Backgrounds - soft tint + matching border, with the outcome colour
    carried by the icon rather than a solid fill. The predicted score keeps its default
    dark colour for legibility on the pale tint. */

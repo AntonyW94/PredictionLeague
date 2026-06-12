@@ -5,7 +5,8 @@ namespace ThePredictions.Contracts.Dashboard;
 /// <summary>
 /// Lightweight DTO for displaying match predictions on the dashboard active rounds tile.
 /// Contains only the data needed for the compact match preview (logos, predicted score,
-/// outcome, and the actual match score for in-progress and completed matches).
+/// outcome, the actual match score for in-progress and completed matches, and the kickoff
+/// time so scheduled matches can show when they start).
 /// </summary>
 public record ActiveRoundMatchDto(
     string? HomeTeamLogoUrl,
@@ -15,5 +16,6 @@ public record ActiveRoundMatchDto(
     PredictionOutcome? Outcome,
     MatchStatus Status,
     int? ActualHomeScore,
-    int? ActualAwayScore
+    int? ActualAwayScore,
+    DateTime MatchDateTimeUtc
 );
