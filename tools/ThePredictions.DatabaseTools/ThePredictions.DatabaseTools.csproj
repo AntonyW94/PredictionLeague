@@ -11,9 +11,9 @@
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
-    <!-- Bumped from 5.2.2 to satisfy dbup-sqlserver 7.2.0 (needs >= 6.1.4). This project is
-         standalone (not referenced by the app), so the bump is isolated to the tooling. -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+    <!-- Bumped from 5.2.2 (dbup-sqlserver 7.2.0 needs >= 6.1.4); pinned to the latest stable.
+         This project is standalone (not referenced by the app), so the bump is isolated to the tooling. -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
   </ItemGroup>
 
   <ItemGroup>
