@@ -7,6 +7,16 @@ on:
         description: 'Type "refresh" to confirm database refresh'
         required: true
         type: string
+      keep_league_names:
+        description: 'Keep real league names (do not anonymise them)'
+        required: false
+        type: boolean
+        default: true
+      preserve_first_names:
+        description: 'Preserve real first names (only anonymise last names)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   refresh:
@@ -34,6 +44,8 @@ jobs:
           PROD_CONNECTION_STRING: ${{ secrets.PROD_CONNECTION_STRING }}
           DEV_CONNECTION_STRING: ${{ secrets.DEV_CONNECTION_STRING }}
           TEST_ACCOUNT_PASSWORD: ${{ secrets.TEST_ACCOUNT_PASSWORD }}
+          KEEP_LEAGUE_NAMES: ${{ inputs.keep_league_names }}
+          PRESERVE_FIRST_NAMES: ${{ inputs.preserve_first_names }}
 
       - name: Report Success
         if: success()

@@ -13,7 +13,7 @@ public class DataAnonymiser
 
     private const int Seed = 12345;
 
-    public static IEnumerable<dynamic> AnonymiseUsers(IEnumerable<dynamic> users)
+    public static IEnumerable<dynamic> AnonymiseUsers(IEnumerable<dynamic> users, bool preserveFirstNames = false)
     {
         var faker = new Faker("en_GB")
         {
@@ -43,7 +43,10 @@ public class DataAnonymiser
                 result[kvp.Key] = kvp.Value;
             }
 
-            var firstName = faker.Name.FirstName();
+            var realFirstName = dict.TryGetValue("FirstName", out var existingFirstName) ? existingFirstName as string : null;
+            var firstName = preserveFirstNames && !string.IsNullOrWhiteSpace(realFirstName)
+                ? realFirstName
+                : faker.Name.FirstName();
             var lastName = faker.Name.LastName();
             var fakeEmail = $"{firstName.ToLowerInvariant()}.{lastName.ToLowerInvariant()}{counter}@testmail.com";
 
@@ -65,11 +68,12 @@ public class DataAnonymiser
             counter++;
         }
 
-        Console.WriteLine($"[INFO] Anonymised {counter - 1} users ({preservedCount} preserved)");
+        var firstNameMode = preserveFirstNames ? "first names preserved, last names only" : "first and last names";
+        Console.WriteLine($"[INFO] Anonymised {counter - 1} users ({preservedCount} preserved, {firstNameMode})");
         return anonymised;
     }
 
-    public static IEnumerable<dynamic> AnonymiseLeagues(IEnumerable<dynamic> leagues)
+    public static IEnumerable<dynamic> AnonymiseLeagues(IEnumerable<dynamic> leagues, bool keepLeagueNames = false)
     {
         var faker = new Faker("en_GB")
         {
@@ -89,11 +93,16 @@ public class DataAnonymiser
                 result[kvp.Key] = kvp.Value;
             }
 
-            var surname = faker.Name.LastName();
-            var price = Convert.ToDecimal(dict["Price"]);
-            var isFree = price == 0m;
+            // League names can optionally be kept as-is (e.g. to make a dev copy easier to navigate);
+            // the sensitive fields below (bank details, join codes) are still scrubbed either way.
+            if (!keepLeagueNames)
+            {
+                var surname = faker.Name.LastName();
+                var price = Convert.ToDecimal(dict["Price"]);
+                var isFree = price == 0m;
 
-            result["Name"] = isFree ? $"{surname}'s Free League" : $"{surname}'s League";
+                result["Name"] = isFree ? $"{surname}'s Free League" : $"{surname}'s League";
+            }
 
             // Only randomise real join codes; public leagues have no code (NULL) and must stay public.
             result["EntryCode"] = dict["EntryCode"] is null ? null : GenerateRandomEntryCode(faker);
@@ -107,7 +116,8 @@ public class DataAnonymiser
             counter++;
         }
 
-        Console.WriteLine($"[INFO] Anonymised {counter - 1} leagues");
+        var nameMode = keepLeagueNames ? "names kept" : "names anonymised";
+        Console.WriteLine($"[INFO] Anonymised {counter - 1} leagues ({nameMode})");
         return anonymised;
     }
 
