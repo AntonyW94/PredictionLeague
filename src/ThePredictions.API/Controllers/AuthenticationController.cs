@@ -181,7 +181,8 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     [SwaggerResponse(401, "Not authenticated")]
     public async Task<IActionResult> LogoutAsync(CancellationToken cancellationToken)
     {
-        var command = new LogoutCommand(CurrentUserId);
+        var refreshToken = Request.Cookies["refreshToken"];
+        var command = new LogoutCommand(CurrentUserId, refreshToken);
         await mediator.Send(command, cancellationToken);
 
         DeleteTokenCookie();

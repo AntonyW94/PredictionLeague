@@ -15,6 +15,11 @@ public class RefreshTokenCommandHandler(
     ILogger<RefreshTokenCommandHandler> logger)
     : IRequestHandler<RefreshTokenCommand, AuthenticationResponse>
 {
+    // How long a just-rotated token keeps working. Long enough to absorb a burst of
+    // near-simultaneous refreshes from multiple browser tabs (which share the cookie),
+    // short enough that a leaked token can't be replayed long after rotation.
+    private static readonly TimeSpan ReuseGraceWindow = TimeSpan.FromSeconds(30);
+
     public async Task<AuthenticationResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
         logger.LogInformation("RefreshTokenCommandHandler started.");
@@ -29,12 +34,23 @@ public class RefreshTokenCommandHandler(
         logger.LogDebug("Token format corrected (space replacement applied)");
 
         var storedToken = await refreshTokenRepository.GetByTokenAsync(correctedToken, cancellationToken);
-        if (storedToken == null || !storedToken.IsActive(dateTimeProvider))
+        if (storedToken == null)
+        {
+            logger.LogWarning("Refresh token validation failed - token not found");
+            return new FailedAuthenticationResponse("Invalid or expired refresh token.");
+        }
+
+        var isActive = storedToken.IsActive(dateTimeProvider);
+        if (!isActive && !storedToken.IsWithinReuseGrace(dateTimeProvider, ReuseGraceWindow))
         {
             logger.LogWarning("Refresh token validation failed - token not found or inactive");
             return new FailedAuthenticationResponse("Invalid or expired refresh token.");
         }
-        logger.LogInformation("Successfully found active token in the database for user ID: {UserId}", storedToken.UserId);
+
+        if (!isActive)
+            logger.LogInformation("Refresh token was rotated within the grace window; re-issuing for user ID: {UserId} without logging out", storedToken.UserId);
+        else
+            logger.LogInformation("Successfully found active token in the database for user ID: {UserId}", storedToken.UserId);
 
         var user = await userManager.FindByIdAsync(storedToken.UserId);
         if (user == null)
@@ -44,8 +60,14 @@ public class RefreshTokenCommandHandler(
         }
         logger.LogInformation("Successfully found User (ID: {UserId})", user.Id);
 
-        storedToken.Revoke(dateTimeProvider);
-        await refreshTokenRepository.UpdateAsync(storedToken, cancellationToken);
+        // Only rotate (revoke) a token that is still active. A grace-window token is
+        // already revoked from its original rotation - revoking it again would push its
+        // grace window forward and let it be reused indefinitely.
+        if (isActive)
+        {
+            storedToken.Revoke(dateTimeProvider);
+            await refreshTokenRepository.UpdateAsync(storedToken, cancellationToken);
+        }
 
         var (accessToken, newRefreshToken, expiresAt) = await tokenService.GenerateTokensAsync(user, cancellationToken);
         logger.LogInformation("Successfully generated new tokens for User (ID: {UserId})", user.Id);

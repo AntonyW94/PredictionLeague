@@ -183,4 +183,62 @@ public class RefreshTokenTests
     }
 
     #endregion
+
+    #region IsWithinReuseGrace
+
+    private static readonly TimeSpan GraceWindow = TimeSpan.FromSeconds(30);
+
+    [Fact]
+    public void IsWithinReuseGrace_ShouldReturnFalse_WhenNotRevoked()
+    {
+        // Arrange
+        var token = CreateActiveToken();
+
+        // Assert
+        token.IsWithinReuseGrace(_dateTimeProvider, GraceWindow).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsWithinReuseGrace_ShouldReturnTrue_WhenRevokedWithinWindowAndNotExpired()
+    {
+        // Arrange
+        var token = CreateActiveToken();
+        token.Revoke(_dateTimeProvider);
+
+        // A sibling request arrives a few seconds later
+        _dateTimeProvider.UtcNow = _dateTimeProvider.UtcNow.AddSeconds(5);
+
+        // Assert
+        token.IsWithinReuseGrace(_dateTimeProvider, GraceWindow).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsWithinReuseGrace_ShouldReturnFalse_WhenRevokedOutsideWindow()
+    {
+        // Arrange
+        var token = CreateActiveToken();
+        token.Revoke(_dateTimeProvider);
+
+        // Well past the grace window
+        _dateTimeProvider.UtcNow = _dateTimeProvider.UtcNow.AddSeconds(31);
+
+        // Assert
+        token.IsWithinReuseGrace(_dateTimeProvider, GraceWindow).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsWithinReuseGrace_ShouldReturnFalse_WhenRevokedButExpired()
+    {
+        // Arrange
+        var token = CreateActiveToken();
+        token.Revoke(_dateTimeProvider);
+
+        // Revoked recently, but the token has also passed its expiry
+        _dateTimeProvider.UtcNow = token.Expires.AddSeconds(1);
+
+        // Assert
+        token.IsWithinReuseGrace(_dateTimeProvider, GraceWindow).Should().BeFalse();
+    }
+
+    #endregion
 }
