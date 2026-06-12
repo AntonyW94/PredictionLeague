@@ -14,6 +14,7 @@ public class UpdateScoresForNextRoundCommandHandler(
     ISeasonRepository seasonRepository,
     ICompetitionRepository competitionRepository,
     IFootballDataService footballDataService,
+    ILeagueStatsService statsService,
     IMediator mediator) : IRequestHandler<UpdateScoresForNextRoundCommand>
 {
     public async Task Handle(UpdateScoresForNextRoundCommand request, CancellationToken cancellationToken)
@@ -21,6 +22,18 @@ public class UpdateScoresForNextRoundCommandHandler(
         var activeRound = await roundRepository.GetOldestInProgressRoundAsync(request.SeasonId, cancellationToken);
         if (activeRound == null || !activeRound.Matches.Any())
             return;
+
+        // Self-heal any league member who is missing a cached stats row for this in-progress round.
+        // Rows are normally created when the round goes live, but a round that started before that
+        // logic existed never got them, leaving the My Leagues round/overall tiles blank or wrong.
+        // This runs on every tick while the round is in progress but only does the (cheap) rank
+        // recompute when rows were actually created, so it is a no-op once everyone has a row.
+        var createdStatsRows = await statsService.EnsureMemberStatsRowsExistAsync(activeRound.Id, cancellationToken);
+        if (createdStatsRows > 0)
+        {
+            await statsService.UpdateStableStatsAsync(activeRound.Id, cancellationToken);
+            await statsService.UpdateLiveStatsAsync(activeRound.Id, cancellationToken);
+        }
 
         var matchesToCheck = activeRound.Matches
             .Where(m => m.MatchDateTimeUtc < DateTime.UtcNow && m.Status != MatchStatus.Completed)
