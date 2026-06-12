@@ -11,6 +11,8 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
 {
     public async Task SnapshotRanksForRoundStartAsync(int roundId, CancellationToken cancellationToken)
     {
+        await EnsureMemberStatsRowsExistAsync(roundId, cancellationToken);
+
         const string sql = @"
             UPDATE lms
             SET
@@ -30,6 +32,8 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
 
     public async Task UpdateLiveStatsAsync(int roundId, CancellationToken cancellationToken)
     {
+        await EnsureMemberStatsRowsExistAsync(roundId, cancellationToken);
+
         const string sql = @"
 
             UPDATE lms
@@ -71,6 +75,8 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
 
     public async Task UpdateStableStatsAsync(int roundId, CancellationToken cancellationToken)
     {
+        await EnsureMemberStatsRowsExistAsync(roundId, cancellationToken);
+
         const string sql = @"
             WITH StableCalc AS (
                 SELECT
@@ -127,5 +133,61 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
             PredictionOutcome.ExactScore,
             PredictionOutcome.CorrectResult
         }, transaction: Transaction, cancellationToken: cancellationToken));
+    }
+
+    // The snapshot/live/stable updates above only UPDATE existing rows, and nothing else in the
+    // pipeline creates them, so a brand-new season's leagues would never get a [LeagueMemberStats]
+    // row. That left the cached My Leagues tiles reading NULL (blank round rank, and an overall
+    // rank that fell back to a fabricated "1st"). This ensures every approved member of every
+    // league in the round's season has a row before the ranks are calculated. New rows start tied
+    // first on zero points; the subsequent UPDATEs overwrite these with the real values.
+    private async Task EnsureMemberStatsRowsExistAsync(int roundId, CancellationToken cancellationToken)
+    {
+        const string sql = @"
+            INSERT INTO [LeagueMemberStats]
+            (
+                [LeagueId],
+                [UserId],
+                [OverallRank],
+                [MonthRank],
+                [LiveRoundRank],
+                [SnapshotOverallRank],
+                [SnapshotMonthRank],
+                [StableRoundRank],
+                [LiveRoundPoints],
+                [StableRoundPoints]
+            )
+            SELECT
+                lm.[LeagueId],
+                lm.[UserId],
+                1,
+                1,
+                1,
+                1,
+                1,
+                1,
+                0,
+                0
+            FROM [LeagueMembers] lm
+            JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
+            JOIN [Rounds] r ON l.[SeasonId] = r.[SeasonId]
+            WHERE r.[Id] = @RoundId
+                AND lm.[Status] = @ApprovedStatus
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM [LeagueMemberStats] lms
+                    WHERE lms.[LeagueId] = lm.[LeagueId]
+                        AND lms.[UserId] = lm.[UserId]
+                );";
+
+        await Connection.ExecuteAsync(new CommandDefinition(
+            sql,
+            new
+            {
+                RoundId = roundId,
+                ApprovedStatus = nameof(LeagueMemberStatus.Approved)
+            },
+            transaction: Transaction,
+            cancellationToken: cancellationToken));
     }
 }

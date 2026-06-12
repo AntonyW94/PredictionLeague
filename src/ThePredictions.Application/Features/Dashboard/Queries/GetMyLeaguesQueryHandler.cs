@@ -182,7 +182,7 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             ar.[StartDateUtc] AS RoundStartDateUtc,
             ISNULL(lc.[MemberCount], 0) AS MemberCount,
 
-            ISNULL(stats.[OverallRank], 1) AS Rank,
+            stats.[OverallRank] AS Rank,
             armr.[ActiveMonthRank] AS MonthRank,
             CASE 
                 WHEN ar.[Status] = @PublishedStatus THEN 1                    
