@@ -585,6 +585,12 @@
     opacity: 0.7;
 }
 
+/* Kickoff caption: lift to the lighter grey so the date and time stay legible on the
+   dark card surface, matching the FT label treatment above. */
+.theme-dark .match-preview-kickoff {
+    color: var(--grey-300);
+}
+
 .theme-dark .outcome-summary {
     background-color: var(--black-alpha-25);
     color: var(--white);

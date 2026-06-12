@@ -47,7 +47,7 @@
                                  loading="lazy"
                                  onerror="this.onerror=null; this.src='images/team-placeholder.svg';" />
                             <span class="match-preview-score">@(match.PredictedHomeScore?.ToString() ?? "-")</span>
-                            <span class="match-preview-vs">v</span>
+                            <span class="match-preview-vs">-</span>
                             <span class="match-preview-score">@(match.PredictedAwayScore?.ToString() ?? "-")</span>
                             <img src="@(match.AwayTeamLogoUrl ?? "images/team-placeholder.svg")"
                                  class="match-preview-logo"
@@ -68,7 +68,13 @@
                                 {
                                     <span class="match-preview-actual-status match-preview-actual-status--ft">FT</span>
                                 }
-                                <span class="match-preview-actual-score">@($"{match.ActualHomeScore}-{match.ActualAwayScore}")</span>
+                                <span class="match-preview-actual-score">@($"{match.ActualHomeScore} - {match.ActualAwayScore}")</span>
+                            </span>
+                        }
+                        @if (match.Status == MatchStatus.Scheduled)
+                        {
+                            <span class="match-preview-kickoff">
+                                <LocalTime UtcDate="match.MatchDateTimeUtc" Format="ddd dd MMM HH:mm" />
                             </span>
                         }
                     </div>
