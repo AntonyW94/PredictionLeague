@@ -16,6 +16,10 @@ These rules are non-negotiable. Violating them will cause issues.
 | **`DateTime.UtcNow` only** | NEVER use `DateTime.Now` |
 | **DateTime properties use `Utc` suffix** | `CreatedAtUtc`, `DeadlineUtc` |
 
+### NuGet Package Versions
+
+When adding a **new** NuGet package, reference the **highest available version** - **including pre-release / preview** versions - as long as it is compatible with the project's target framework (`net8.0`) and restores and builds cleanly (including under `/p:TreatWarningsAsErrors=true`). **Never settle for the lowest version** that merely satisfies a transitive dependency's floor. Always pin an explicit version (no floating ranges) so builds stay reproducible. If the latest preview turns out to be incompatible or breaks the build, drop to the highest version that does work.
+
 ### Database Schema Documentation
 
 Any database changes (new tables, new columns, modified constraints, new indexes) **must** be reflected in [`docs/guides/database-schema.md`](docs/guides/database-schema.md). This file is the single source of truth for the database schema.
