@@ -686,6 +686,28 @@
     color: var(--green-600);
 }
 
+/* White-chip treatment on the user's row for the other badge colours (the icon disc is
+   already white in dark mode, so only the pill and text need overriding; the amber glyph
+   is switched from its dark purple to orange to read as amber on the white chip). */
+.theme-dark .current-user-highlight .badge-group--blue {
+    background-color: var(--white);
+    color: var(--blue-900);
+}
+
+.theme-dark .current-user-highlight .badge-group--red {
+    background-color: var(--white);
+    color: var(--red);
+}
+
+.theme-dark .current-user-highlight .badge-group--yellow {
+    background-color: var(--white);
+    color: var(--orange);
+}
+
+.theme-dark .current-user-highlight .badge-group--yellow .badge-icon {
+    color: var(--orange);
+}
+
 /* ============================================
    LOADING
    ============================================ */
