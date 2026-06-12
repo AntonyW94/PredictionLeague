@@ -127,6 +127,39 @@
     color: var(--green-600);
 }
 
+/* Same white-chip treatment for the other prediction/match badge colours on the user's
+   row. Their default translucent-tint pills go muddy over the green highlight, so make
+   each an opaque white chip with its colour carried by the text and icon glyph. */
+.current-user-highlight .badge-group--blue {
+    background-color: var(--white);
+    color: var(--blue-900);
+}
+
+.current-user-highlight .badge-group--blue .badge-icon {
+    background-color: var(--white);
+    color: var(--blue-700);
+}
+
+.current-user-highlight .badge-group--red {
+    background-color: var(--white);
+    color: var(--red);
+}
+
+.current-user-highlight .badge-group--red .badge-icon {
+    background-color: var(--white);
+    color: var(--red);
+}
+
+.current-user-highlight .badge-group--yellow {
+    background-color: var(--white);
+    color: var(--orange);
+}
+
+.current-user-highlight .badge-group--yellow .badge-icon {
+    background-color: var(--white);
+    color: var(--orange);
+}
+
 /* Tablet and up (--breakpoint-tablet: 768px) */
 @media (min-width: 768px) {
     .badge-group {
