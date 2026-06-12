@@ -28,7 +28,11 @@ public class GetLeaderboardsQueryHandler(IApplicationReadDbConnection connection
                     u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
                     SUM(ISNULL(lrr.[BoostedPoints], 0)) AS [TotalPoints],
                     RANK() OVER (PARTITION BY l.[Id] ORDER BY SUM(ISNULL(lrr.[BoostedPoints], 0)) DESC) AS [Rank],
-                    stats.[SnapshotOverallRank] AS [SnapshotRank],
+                    CASE WHEN EXISTS (
+                        SELECT 1
+                        FROM [Rounds] r
+                        WHERE r.[SeasonId] = l.[SeasonId] AND r.[Status] = @CompletedStatus
+                    ) THEN stats.[SnapshotOverallRank] ELSE NULL END AS [SnapshotRank],
                     ar.[IsInProgress] AS [IsRoundInProgress]
                 FROM
                     [LeagueMembers] lm

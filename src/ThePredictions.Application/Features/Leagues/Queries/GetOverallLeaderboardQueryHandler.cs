@@ -20,7 +20,12 @@ public class GetOverallLeaderboardQueryHandler(
                 u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
                 COALESCE(SUM(lrr.[BoostedPoints]), 0) AS [TotalPoints],
                 u.[Id] AS [UserId],
-                stats.[SnapshotOverallRank] AS [SnapshotRank],
+                CASE WHEN EXISTS (
+                    SELECT 1
+                    FROM [Rounds] r
+                    JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
+                    WHERE l.[Id] = @LeagueId AND r.[Status] = @CompletedStatus
+                ) THEN stats.[SnapshotOverallRank] ELSE NULL END AS [SnapshotRank],
                 CASE WHEN EXISTS (
                     SELECT 1 
                     FROM [Rounds] r 
@@ -59,7 +64,8 @@ public class GetOverallLeaderboardQueryHandler(
             {
                 request.LeagueId,
                 ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                InProgressStatus = nameof(RoundStatus.InProgress)
+                InProgressStatus = nameof(RoundStatus.InProgress),
+                CompletedStatus = nameof(RoundStatus.Completed)
             }
         );
     }
