@@ -163,6 +163,38 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
                 AND lm.[Status] = @ApprovedStatus
             GROUP BY lm.[LeagueId], lm.[UserId], ar.[RoundId], lg.[SeasonId], ars.[StageName]
+        ),
+
+        ActiveOverallRanks AS (
+            SELECT
+                lm.[LeagueId],
+                lm.[UserId],
+                CAST(RANK() OVER (
+                    PARTITION BY lm.[LeagueId]
+                    ORDER BY ISNULL(SUM(lrr.[BoostedPoints]), 0) DESC
+                ) AS INT) AS OverallRank
+            FROM [LeagueMembers] lm
+            LEFT JOIN [LeagueRoundResults] lrr ON lm.[LeagueId] = lrr.[LeagueId] AND lm.[UserId] = lrr.[UserId]
+            WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
+                AND lm.[Status] = @ApprovedStatus
+            GROUP BY lm.[LeagueId], lm.[UserId]
+        ),
+
+        ActiveRoundRanks AS (
+            SELECT
+                lm.[LeagueId],
+                lm.[UserId],
+                CAST(RANK() OVER (
+                    PARTITION BY lm.[LeagueId]
+                    ORDER BY ISNULL(SUM(lrr.[BoostedPoints]), 0) DESC
+                ) AS INT) AS LiveRoundRank
+            FROM [LeagueMembers] lm
+            JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
+            JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
+            LEFT JOIN [LeagueRoundResults] lrr ON lm.[LeagueId] = lrr.[LeagueId] AND lm.[UserId] = lrr.[UserId] AND lrr.[RoundId] = ar.[RoundId]
+            WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
+                AND lm.[Status] = @ApprovedStatus
+            GROUP BY lm.[LeagueId], lm.[UserId]
         )
 
         SELECT
@@ -182,11 +214,11 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             ar.[StartDateUtc] AS RoundStartDateUtc,
             ISNULL(lc.[MemberCount], 0) AS MemberCount,
 
-            stats.[OverallRank] AS Rank,
+            aor.[OverallRank] AS Rank,
             armr.[ActiveMonthRank] AS MonthRank,
-            CASE 
-                WHEN ar.[Status] = @PublishedStatus THEN 1                    
-                ELSE stats.[LiveRoundRank]
+            CASE
+                WHEN ar.[Status] = @PublishedStatus THEN 1
+                ELSE arr.[LiveRoundRank]
             END AS RoundRank,
 
             stats.[SnapshotOverallRank] AS PreRoundOverallRank,
@@ -226,6 +258,8 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
         LEFT JOIN [LeagueContext] lc ON l.[LeagueId] = lc.[LeagueId]
         LEFT JOIN [ActiveRoundMonthlyRanks] armr ON l.[LeagueId] = armr.[LeagueId] AND l.[UserId] = armr.[UserId]
         LEFT JOIN [ActiveStageRanks] asr ON l.[LeagueId] = asr.[LeagueId] AND l.[UserId] = asr.[UserId]
+        LEFT JOIN [ActiveOverallRanks] aor ON l.[LeagueId] = aor.[LeagueId] AND l.[UserId] = aor.[UserId]
+        LEFT JOIN [ActiveRoundRanks] arr ON l.[LeagueId] = arr.[LeagueId] AND l.[UserId] = arr.[UserId]
 
         ORDER BY
             CASE WHEN ar.[Status] = @InProgressStatus THEN 0 ELSE 1 END ASC,
