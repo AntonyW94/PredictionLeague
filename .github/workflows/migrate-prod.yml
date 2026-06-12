@@ -1,0 +1,30 @@
+# Standalone wrapper: migrate the PRODUCTION database without a code deploy. Manual trigger only.
+# Requires typing "migrate" to confirm (ADR-0013, Option A - the sole-developer equivalent of a
+# required-reviewer gate).
+name: Migrate Prod database
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "migrate" to confirm running migrations against PRODUCTION'
+        required: true
+        type: string
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation
+        if: github.event.inputs.confirm != 'migrate'
+        run: |
+          echo "Cancelled. You must type 'migrate' to confirm a production migration."
+          exit 1
+
+  migrate:
+    needs: validate
+    uses: ./.github/workflows/migrate-shared.yml
+    with:
+      environment: prod
+    secrets:
+      MIGRATE_CONNECTION_STRING: ${{ secrets.PROD_CONNECTION_STRING }}

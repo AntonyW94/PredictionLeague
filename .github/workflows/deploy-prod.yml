@@ -10,9 +10,8 @@ on:
         type: string
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
-
     steps:
       - name: Validate confirmation
         if: github.event.inputs.confirm != 'deploy'
@@ -20,6 +19,20 @@ jobs:
           echo "Deployment cancelled. You must type 'deploy' to confirm."
           exit 1
 
+  # Apply pending database migrations before deploying new code (schema lands first).
+  migrate:
+    needs: validate
+    uses: ./.github/workflows/migrate-shared.yml
+    with:
+      environment: prod
+    secrets:
+      MIGRATE_CONNECTION_STRING: ${{ secrets.PROD_CONNECTION_STRING }}
+
+  deploy:
+    needs: migrate
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Checkout code
         uses: actions/checkout@v6
 

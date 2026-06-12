@@ -6,7 +6,16 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Migrate the backup schema before copying production data into it.
+  migrate:
+    uses: ./.github/workflows/migrate-shared.yml
+    with:
+      environment: backup
+    secrets:
+      MIGRATE_CONNECTION_STRING: ${{ secrets.BACKUP_CONNECTION_STRING }}
+
   backup:
+    needs: migrate
     runs-on: ubuntu-latest
 
     steps:

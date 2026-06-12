@@ -19,7 +19,17 @@ on:
         default: false
 
 jobs:
+  # Migrate the dev schema before copying production data into it.
+  migrate:
+    if: github.event.inputs.confirm == 'refresh'
+    uses: ./.github/workflows/migrate-shared.yml
+    with:
+      environment: dev
+    secrets:
+      MIGRATE_CONNECTION_STRING: ${{ secrets.DEV_CONNECTION_STRING }}
+
   refresh:
+    needs: migrate
     runs-on: ubuntu-latest
     if: github.event.inputs.confirm == 'refresh'
 

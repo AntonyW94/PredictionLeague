@@ -3,5 +3,6 @@ namespace ThePredictions.DatabaseTools;
 public enum ToolMode
 {
     DevelopmentRefresh,
-    ProductionBackup
+    ProductionBackup,
+    Migrate
 }
