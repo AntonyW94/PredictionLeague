@@ -141,7 +141,7 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
     // rank that fell back to a fabricated "1st"). This ensures every approved member of every
     // league in the round's season has a row before the ranks are calculated. New rows start tied
     // first on zero points; the subsequent UPDATEs overwrite these with the real values.
-    private async Task EnsureMemberStatsRowsExistAsync(int roundId, CancellationToken cancellationToken)
+    public async Task<int> EnsureMemberStatsRowsExistAsync(int roundId, CancellationToken cancellationToken)
     {
         const string sql = @"
             INSERT INTO [LeagueMemberStats]
@@ -180,7 +180,7 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
                         AND lms.[UserId] = lm.[UserId]
                 );";
 
-        await Connection.ExecuteAsync(new CommandDefinition(
+        return await Connection.ExecuteAsync(new CommandDefinition(
             sql,
             new
             {

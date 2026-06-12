@@ -19,4 +19,9 @@ public class LeagueStatsService(ILeagueStatsRepository statsRepository) : ILeagu
     {
         await statsRepository.UpdateStableStatsAsync(roundId, cancellationToken);
     }
+
+    public async Task<int> EnsureMemberStatsRowsExistAsync(int roundId, CancellationToken cancellationToken)
+    {
+        return await statsRepository.EnsureMemberStatsRowsExistAsync(roundId, cancellationToken);
+    }
 }
