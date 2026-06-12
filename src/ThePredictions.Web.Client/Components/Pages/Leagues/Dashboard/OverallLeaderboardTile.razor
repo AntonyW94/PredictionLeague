@@ -28,7 +28,7 @@
                 <table class="leaderboard-table table-striped-purple text-white">
                     <thead>
                         <tr>
-                            @if (_leaderboardEntries.First().IsRoundInProgress)
+                            @if (_leaderboardEntries.First().IsRoundInProgress && _leaderboardEntries.First().SnapshotRank.HasValue)
                             {
                                 <th class="rank-change-col"></th>
                             }
@@ -41,7 +41,7 @@
                         @foreach (var entry in _leaderboardEntries)
                         {
                             <tr class="@(GetUserHighlightClass(entry.UserId)) @entry.UserId">
-                                @if (entry.IsRoundInProgress)
+                                @if (entry.IsRoundInProgress && entry.SnapshotRank.HasValue)
                                 {
                                     <td class="rank-change-col">
                                         <RankChangeArrow PreviousRank="@entry.SnapshotRank"

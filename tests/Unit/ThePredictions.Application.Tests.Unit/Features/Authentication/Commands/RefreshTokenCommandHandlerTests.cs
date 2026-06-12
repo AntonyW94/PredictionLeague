@@ -189,6 +189,57 @@ public class RefreshTokenCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldReissueWithoutRevoking_WhenTokenWasRotatedWithinGraceWindow()
+    {
+        // Arrange - a sibling tab rotated this token 5 seconds ago (still within the grace window)
+        var command = new RefreshTokenCommand("just-rotated-token");
+        var storedToken = new Domain.Models.RefreshToken(
+            id: 1, userId: "user-1", token: "just-rotated-token",
+            expires: _dateTimeProvider.UtcNow.AddDays(7),
+            created: _dateTimeProvider.UtcNow.AddDays(-1),
+            revoked: _dateTimeProvider.UtcNow.AddSeconds(-5));
+        var user = new ApplicationUser { Id = "user-1", Email = "john@example.com" };
+        var newExpiresAtUtc = _dateTimeProvider.UtcNow.AddHours(1);
+
+        _refreshTokenRepository.GetByTokenAsync("just-rotated-token", Arg.Any<CancellationToken>())
+            .Returns(storedToken);
+        _userManager.FindByIdAsync("user-1").Returns(user);
+        _tokenService.GenerateTokensAsync(user, Arg.Any<CancellationToken>())
+            .Returns(("new-access-token", "new-refresh-token", newExpiresAtUtc));
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert - the caller gets working tokens and is not logged out, and the already
+        // revoked token is not revoked/updated again (which would extend its grace window).
+        result.Should().BeOfType<SuccessfulAuthenticationResponse>();
+        ((SuccessfulAuthenticationResponse)result).AccessToken.Should().Be("new-access-token");
+        await _refreshTokenRepository.DidNotReceiveWithAnyArgs().UpdateAsync(default!, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReturnFailedResponse_WhenTokenRevokedBeyondGraceWindow()
+    {
+        // Arrange - revoked an hour ago, well beyond the grace window
+        var command = new RefreshTokenCommand("long-revoked-token");
+        var storedToken = new Domain.Models.RefreshToken(
+            id: 1, userId: "user-1", token: "long-revoked-token",
+            expires: _dateTimeProvider.UtcNow.AddDays(7),
+            created: _dateTimeProvider.UtcNow.AddDays(-1),
+            revoked: _dateTimeProvider.UtcNow.AddHours(-1));
+
+        _refreshTokenRepository.GetByTokenAsync("long-revoked-token", Arg.Any<CancellationToken>())
+            .Returns(storedToken);
+
+        // Act
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        result.Should().BeOfType<FailedAuthenticationResponse>();
+        ((FailedAuthenticationResponse)result).Message.Should().Be("Invalid or expired refresh token.");
+    }
+
+    [Fact]
     public async Task Handle_ShouldReplaceSpacesWithPlusInToken_WhenTokenContainsSpaces()
     {
         // Arrange

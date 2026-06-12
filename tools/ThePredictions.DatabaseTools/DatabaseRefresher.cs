@@ -8,7 +8,9 @@ public class DatabaseRefresher(
     string sourceConnectionString,
     string targetConnectionString,
     string? testPassword,
-    bool anonymise)
+    bool anonymise,
+    bool keepLeagueNames = false,
+    bool preserveFirstNames = false)
 {
     // NOTE: DbUp's [dbo].[SchemaVersions] migration journal is deliberately absent from BOTH
     // arrays below. Each database owns its own journal, so the data refresh/backup must neither
@@ -68,6 +70,12 @@ public class DatabaseRefresher(
     {
         Console.WriteLine("[INFO] Starting database refresh...");
         Console.WriteLine($"[INFO] Anonymisation: {(anonymise ? "enabled" : "disabled")}");
+
+        if (anonymise)
+        {
+            Console.WriteLine($"[INFO] League names: {(keepLeagueNames ? "kept" : "anonymised")}");
+            Console.WriteLine($"[INFO] First names: {(preserveFirstNames ? "preserved" : "anonymised")}");
+        }
 
         var tableData = new Dictionary<string, IEnumerable<dynamic>>();
 
@@ -133,8 +141,8 @@ public class DatabaseRefresher(
         if (anonymise)
         {
             Console.WriteLine("[INFO] Anonymising personal data...");
-            tableData["AspNetUsers"] = DataAnonymiser.AnonymiseUsers(tableData["AspNetUsers"]);
-            tableData["Leagues"] = DataAnonymiser.AnonymiseLeagues(tableData["Leagues"]);
+            tableData["AspNetUsers"] = DataAnonymiser.AnonymiseUsers(tableData["AspNetUsers"], preserveFirstNames);
+            tableData["Leagues"] = DataAnonymiser.AnonymiseLeagues(tableData["Leagues"], keepLeagueNames);
             tableData["SeasonPasses"] = DataAnonymiser.AnonymiseSeasonPasses(tableData["SeasonPasses"]);
             tableData["UserPayoutDetails"] = DataAnonymiser.AnonymiseUserPayoutDetails(tableData["UserPayoutDetails"]);
         }

@@ -131,7 +131,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow), SwaggerParameter("Refresh token request (token can also be read from cookie)", Required = false)] RefreshTokenRequest? request,
         CancellationToken cancellationToken)
     {
-        logger.LogInformation("--- Refresh-Token Endpoint Called ---");
+        logger.LogDebug("Refresh-token endpoint called.");
 
         var refreshToken = request?.Token;
         string tokenSource;
@@ -139,33 +139,37 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         if (!string.IsNullOrEmpty(refreshToken))
         {
             tokenSource = "RequestBody";
-            logger.LogInformation("Refresh token found in request body.");
+            logger.LogDebug("Refresh token found in request body.");
         }
         else
         {
             refreshToken = Request.Cookies["refreshToken"];
             tokenSource = "Cookie";
-            logger.LogInformation("Refresh token not found in body, checking cookie.");
+            logger.LogDebug("Refresh token not found in body, checking cookie.");
         }
 
         if (string.IsNullOrEmpty(refreshToken))
         {
-            logger.LogWarning("Refresh token is missing from both request body and cookie. Cannot authenticate.");
+            // Expected when an unauthenticated client (or one whose cookie has lapsed) calls
+            // refresh - it simply needs to log in. Not a fault, so Information not Warning.
+            logger.LogInformation("Refresh token missing from both body and cookie; the client will be asked to log in.");
             return BadRequest(new { message = "Refresh token is missing." });
         }
 
-        logger.LogInformation("Processing refresh token from {TokenSource}", tokenSource);
+        logger.LogDebug("Processing refresh token from {TokenSource}", tokenSource);
 
         var command = new RefreshTokenCommand(refreshToken);
         var result = await mediator.Send(command, cancellationToken);
 
         if (result is not SuccessfulAuthenticationResponse success)
         {
-            logger.LogError("Refresh Token Command failed. Result: {@Result}", result);
+            // A failed refresh is an expected end-of-session outcome (the handler has already
+            // logged the specific reason at Information). The client re-authenticates.
+            logger.LogDebug("Refresh token could not be exchanged; returning 400 so the client logs in again.");
             return BadRequest(result);
         }
 
-        logger.LogInformation("Refresh Token Command was successful. Setting new refresh token cookie for user.");
+        logger.LogDebug("Refresh successful; setting new refresh token cookie.");
 
         SetTokenCookie(success.RefreshTokenForCookie);
         return Ok(success);
@@ -181,7 +185,8 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     [SwaggerResponse(401, "Not authenticated")]
     public async Task<IActionResult> LogoutAsync(CancellationToken cancellationToken)
     {
-        var command = new LogoutCommand(CurrentUserId);
+        var refreshToken = Request.Cookies["refreshToken"];
+        var command = new LogoutCommand(CurrentUserId, refreshToken);
         await mediator.Send(command, cancellationToken);
 
         DeleteTokenCookie();

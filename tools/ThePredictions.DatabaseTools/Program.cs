@@ -15,7 +15,15 @@ try
             var prodConnectionString = GetRequiredEnvironmentVariable("PROD_CONNECTION_STRING");
             var devConnectionString = GetRequiredEnvironmentVariable("DEV_CONNECTION_STRING");
             var testPassword = GetRequiredEnvironmentVariable("TEST_ACCOUNT_PASSWORD");
-            var refresher = new DatabaseRefresher(prodConnectionString, devConnectionString, testPassword, anonymise: true);
+            var keepLeagueNames = GetBooleanEnvironmentVariable("KEEP_LEAGUE_NAMES", defaultValue: true);
+            var preserveFirstNames = GetBooleanEnvironmentVariable("PRESERVE_FIRST_NAMES", defaultValue: false);
+            var refresher = new DatabaseRefresher(
+                prodConnectionString,
+                devConnectionString,
+                testPassword,
+                anonymise: true,
+                keepLeagueNames: keepLeagueNames,
+                preserveFirstNames: preserveFirstNames);
             await refresher.RunAsync();
             break;
         }
@@ -55,4 +63,10 @@ static string GetRequiredEnvironmentVariable(string name)
 {
     var value = Environment.GetEnvironmentVariable(name);
     return string.IsNullOrWhiteSpace(value) ? throw new InvalidOperationException($"{name} environment variable is not set or is empty.") : value;
+}
+
+static bool GetBooleanEnvironmentVariable(string name, bool defaultValue)
+{
+    var value = Environment.GetEnvironmentVariable(name);
+    return string.IsNullOrWhiteSpace(value) || !bool.TryParse(value, out var parsed) ? defaultValue : parsed;
 }
