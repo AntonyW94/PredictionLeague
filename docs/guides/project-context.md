@@ -244,6 +244,13 @@ All scheduled endpoints protected by API key (`X-Api-Key` header). The legacy `/
 
 Both workflows use `tools/ThePredictions.DatabaseTools/`. The **dev refresh** reads all tables from production, anonymises personal data (realistic fake names/emails via Bogus), creates test accounts (`testplayer@dev.local` and `testadmin@dev.local`), and writes to the dev database. The **production backup** copies all data unmodified to `ThePredictionsBackup` as a safety net independent of Fasthosts' own backup policy. Token tables (`AspNetUserTokens`, `RefreshTokens`, `PasswordResetTokens`) are excluded from both.
 
+The dev refresh exposes two `workflow_dispatch` toggles to make the dev copy easier to navigate (sensitive fields — emails, password hashes, bank/payout details, payment references — are always scrubbed regardless):
+
+| Input | Env var | Default | Effect |
+|-------|---------|---------|--------|
+| `keep_league_names` | `KEEP_LEAGUE_NAMES` | `true` | When true, real league names are kept; when false they are replaced with `<Surname>'s League`. |
+| `preserve_first_names` | `PRESERVE_FIRST_NAMES` | `false` | When true, real first names are kept and only surnames are anonymised; when false both are faked. |
+
 #### GitHub Secrets
 
 | Secret | Used by | Description |
