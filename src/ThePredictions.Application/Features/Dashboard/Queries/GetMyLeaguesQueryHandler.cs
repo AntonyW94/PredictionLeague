@@ -172,12 +172,28 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
                 CAST(RANK() OVER (
                     PARTITION BY lm.[LeagueId]
                     ORDER BY ISNULL(SUM(lrr.[BoostedPoints]), 0) DESC
-                ) AS INT) AS OverallRank
+                ) AS INT) AS OverallRank,
+                CASE
+                    WHEN NOT EXISTS (
+                        SELECT 1 FROM [Rounds] r2
+                        WHERE r2.[SeasonId] = lg.[SeasonId]
+                        AND r2.[RoundNumber] < ar.[RoundNumber]
+                        AND r2.[Status] IN (@InProgressStatus, @CompletedStatus)
+                    )
+                    THEN NULL
+                    ELSE CAST(RANK() OVER (
+                        PARTITION BY lm.[LeagueId]
+                        ORDER BY ISNULL(SUM(CASE WHEN rr.[RoundNumber] < ar.[RoundNumber] THEN lrr.[BoostedPoints] ELSE 0 END), 0) DESC
+                    ) AS INT)
+                END AS PreRoundOverallRank
             FROM [LeagueMembers] lm
+            JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
+            JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
             LEFT JOIN [LeagueRoundResults] lrr ON lm.[LeagueId] = lrr.[LeagueId] AND lm.[UserId] = lrr.[UserId]
+            LEFT JOIN [Rounds] rr ON lrr.[RoundId] = rr.[Id]
             WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
                 AND lm.[Status] = @ApprovedStatus
-            GROUP BY lm.[LeagueId], lm.[UserId]
+            GROUP BY lm.[LeagueId], lm.[UserId], lg.[SeasonId], ar.[RoundNumber]
         ),
 
         ActiveRoundRanks AS (
@@ -221,7 +237,7 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
                 ELSE arr.[LiveRoundRank]
             END AS RoundRank,
 
-            stats.[SnapshotOverallRank] AS PreRoundOverallRank,
+            aor.[PreRoundOverallRank] AS PreRoundOverallRank,
             armr.[PreRoundMonthRank] AS PreRoundMonthRank,
             CASE 
                 WHEN ar.[Status] = @PublishedStatus THEN 1                    

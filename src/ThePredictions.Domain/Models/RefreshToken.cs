@@ -27,6 +27,17 @@ public class RefreshToken
 
     public bool IsActive(IDateTimeProvider dateTimeProvider) => Revoked == null && !IsExpired(dateTimeProvider);
 
+    /// <summary>
+    /// True when the token was revoked very recently (within <paramref name="graceWindow"/>)
+    /// and has not expired. A token is normally revoked because it was rotated by a refresh;
+    /// allowing it briefly afterwards lets a near-simultaneous sibling request (e.g. a second
+    /// browser tab refreshing at the same moment) succeed instead of ending the session.
+    /// </summary>
+    public bool IsWithinReuseGrace(IDateTimeProvider dateTimeProvider, TimeSpan graceWindow) =>
+        Revoked != null
+        && !IsExpired(dateTimeProvider)
+        && dateTimeProvider.UtcNow <= Revoked.Value.Add(graceWindow);
+
     public void Revoke(IDateTimeProvider dateTimeProvider)
     {
         Revoked = dateTimeProvider.UtcNow;
