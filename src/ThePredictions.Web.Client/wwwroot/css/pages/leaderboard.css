@@ -70,10 +70,13 @@
     min-width: 0;
 }
 
-/* Dashboard leaderboard — constrain to parent column height on desktop.
-   .section--constrained is ONLY on the LeaderboardsTile.
-   On mobile tiles stack vertically so no constraint is needed. */
-@media (min-width: 992px) {
+/* Dashboard leaderboard - constrain to parent column height only when the tile actually
+   sits beside the main column (xxl and up). .section--constrained is ONLY on the
+   LeaderboardsTile. Below xxl the Standings tile stacks on its own row, so it has no tall
+   sibling to stretch against; applying the height:100% chain there would leave the card
+   body with no definite parent height and collapse the leaderboard table to zero. Stacked
+   (and mobile) the tile uses its natural, scrollable height instead. */
+@media (min-width: 1400px) {
     .section--constrained {
         overflow: hidden;
     }
