@@ -81,13 +81,13 @@
     private double _touchStartX;
     private string _trackStyle = "transform: translateX(0%);";
     private bool _showTwoItems;
-    private bool _isTabletOrAbove;
+    private bool _isWideDesktop;
 
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
-        _isTabletOrAbove = await BrowserService.IsTabletOrAbove();
-        _showTwoItems = _isTabletOrAbove && !IsHalfWidth;
+        _isWideDesktop = await BrowserService.IsWideDesktop();
+        _showTwoItems = _isWideDesktop && !IsHalfWidth;
 
         if (!DashboardState.ActiveRounds.Any())
             await DashboardState.LoadActiveRoundsAsync();
@@ -95,7 +95,7 @@
 
     protected override void OnParametersSet()
     {
-        _showTwoItems = _isTabletOrAbove && !IsHalfWidth;
+        _showTwoItems = _isWideDesktop && !IsHalfWidth;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

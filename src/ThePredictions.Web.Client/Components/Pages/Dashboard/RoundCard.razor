@@ -33,7 +33,8 @@
 
         @if (Round.Matches.Any())
         {
-            <div class="match-preview-grid">
+            <div class="match-preview">
+                <div class="match-preview-grid">
                 @foreach (var match in Round.Matches)
                 {
                     <div class="match-preview-row @GetMatchBackgroundClass(match) @GetMatchPulsingClass(match)">
@@ -79,6 +80,7 @@
                         }
                     </div>
                 }
+                </div>
             </div>
         }
     </div>
