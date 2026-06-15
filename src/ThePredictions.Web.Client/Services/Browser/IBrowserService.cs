@@ -5,4 +5,6 @@ public interface IBrowserService
     Task<bool> IsTabletOrAbove();
 
     Task<bool> IsDesktop();
+
+    Task<bool> IsWideDesktop();
 }
