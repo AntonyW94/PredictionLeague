@@ -2,6 +2,16 @@
    Used in: RoundCard.razor (Active Rounds Tile on Dashboard)
 */
 
+/* Match preview wrapper - establishes a containment context so the grid below can switch
+   to two-per-row based on the CARD's own width rather than the viewport. The Active Rounds
+   tile can be half-width or show two cards side by side at once, so a wide viewport does not
+   mean a wide card; querying the viewport switched to two columns far too early and let the
+   result chip overlap the away logo. */
+.match-preview {
+    container: round-card / inline-size;
+    width: 100%;
+}
+
 /* Match Preview Grid */
 .match-preview-grid {
     display: grid;
@@ -221,10 +231,12 @@
     color: var(--red);
 }
 
-/* Tablet and up - two matches per row. Phones stay one-per-row (handled by the base
-   single-column grid) so the icon, predicted score and actual-score chip all have room.
-   Logos and side columns tighten a little here to fit the narrower half-width tile. */
-@media (min-width: 768px) {
+/* Two matches per row - only once the card is genuinely wide enough to fit the home logo,
+   predicted score, away logo AND the FT result chip without the chip overlapping the away
+   logo. 29rem is the measured point where the widest realistic chip ("FT 2 - 0") clears the
+   away logo with roughly 0.7rem of breathing space; below it the grid stays single column.
+   Logos tighten a touch here because each row now only gets half the card width. */
+@container round-card (min-width: 29rem) {
     .match-preview-grid {
         grid-template-columns: 1fr 1fr;
         gap: 0.5rem;
@@ -240,8 +252,9 @@
     }
 }
 
-/* Desktop+ - wider cards, so logos and the score can grow again. */
-@media (min-width: 992px) {
+/* Roomy cards - the half-width rows now have space to spare, so let the logos and the
+   predicted score grow back to their full size. */
+@container round-card (min-width: 36rem) {
     .match-preview-logo {
         width: 1.3rem;
         height: 1.3rem;
