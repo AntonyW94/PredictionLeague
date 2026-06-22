@@ -157,9 +157,15 @@
         background-color: var(--yellow-alpha-18);
     }
 
+    /* Frozen columns must stay opaque: the translucent --yellow-alpha-18 let
+       horizontally-scrolled match cells show through the sticky name/total of
+       the winner row. The current-user+winner combination is included so it
+       wins over the translucent rule further down. */
     .results-grid tbody tr.winner-row td.player-col,
-    .results-grid tbody tr.winner-row td.total-col {
-        background-color: var(--yellow-alpha-18);
+    .results-grid tbody tr.winner-row td.total-col,
+    .results-grid tbody tr.current-user-highlight.winner-row td.player-col,
+    .results-grid tbody tr.current-user-highlight.winner-row td.total-col {
+        background-color: var(--yellow-tint);
     }
 
     .results-grid tbody tr.winner-row .player-rank {

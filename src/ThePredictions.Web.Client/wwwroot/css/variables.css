@@ -80,6 +80,10 @@
     --yellow-alpha-70: rgba(235, 255, 1, 0.7);
     --yellow-alpha-00: rgba(235, 255, 1, 0);
 
+    /* Opaque equivalent of --yellow-alpha-18 over white. Use on sticky/frozen
+       cells where a translucent fill would let scrolled content show through. */
+    --yellow-tint: #FBFFD1;
+
     /* Transparent Blue (for animations and tinted backgrounds) - matches --blue-700: #03c2b4 */
     --blue-700-alpha-15: rgba(3, 194, 180, 0.15);
     --blue-700-alpha-70: rgba(3, 194, 180, 0.7);
