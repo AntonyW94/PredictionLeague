@@ -1,0 +1,176 @@
+@inject ILeagueService LeagueService
+
+@inherits BaseLeaderboardComponent
+
+@using ThePredictions.Contracts.Leaderboards
+@using ThePredictions.Contracts.Leagues
+@using ThePredictions.Domain.Common.Enumerations
+@using ThePredictions.Web.Client.Services.Leagues
+
+<div class="section w-100 mh-600">
+    <h5 class="text-white fw-bold mb-3 text-center">Stage Leaderboard</h5>
+    <ApiError Message="@_errorMessage" />
+
+    @if (_isLoadingStages)
+    {
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border text-white" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (_stages.Any())
+    {
+        <div class="card slide w-100" style="max-width: none;">
+            <div class="header w-100">
+                <div class="leaderboard-stage-selector">
+                    <select class="leaderboard-stage-select" @onchange="OnStageChanged">
+                        @foreach (var stage in _stages)
+                        {
+                            <option value="@stage.Stage" selected="@(_currentStage?.Stage == stage.Stage)">
+                                @stage.Name
+                                @if (stage.RoundsRemaining > 0)
+                                {
+                                    @($" ({stage.RoundsRemaining} round{(stage.RoundsRemaining == 1 ? "" : "s")} remaining)")
+                                }
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="body leaderboard-body justify-start w-100 leaderboard-scroll-container">
+                @if (_currentStage != null && _leaderboards.TryGetValue(_currentStage.Stage, out var leaderboard))
+                {
+                    @if (leaderboard.IsLoading)
+                    {
+                        <div class="d-flex justify-content-center align-items-center py-5">
+                            <div class="spinner-border text-white" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (leaderboard.Entries.Any())
+                    {
+                        <div class="table-responsive rounded w-100">
+                            <table class="leaderboard-table table-striped-purple light text-white">
+                                <thead>
+                                    <tr>
+                                        @if (leaderboard.Entries.FirstOrDefault()?.IsRoundInProgress == true && leaderboard.Entries.FirstOrDefault()?.SnapshotRank.HasValue == true)
+                                        {
+                                            <th class="rank-change-col"></th>
+                                        }
+                                        <th class="rank-col">#</th>
+                                        <th class="player-name-col">Player</th>
+                                        <th class="points-col">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var entry in leaderboard.Entries)
+                                    {
+                                        <tr class="@(GetUserHighlightClass(entry.UserId))">
+                                            @if (entry.IsRoundInProgress && entry.SnapshotRank.HasValue)
+                                            {
+                                                <td class="rank-change-col">
+                                                    <RankChangeArrow PreviousRank="@entry.SnapshotRank"
+                                                                     CurrentRank="@entry.Rank"
+                                                                     IsVisible="@entry.IsRoundInProgress" />
+                                                </td>
+                                            }
+                                            <td class="rank-col fw-bold">@entry.Rank</td>
+                                            <td class="player-name-col fw-bold">@entry.PlayerName</td>
+                                            <td class="points-col fw-bold">@entry.TotalPoints</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-white-50 text-center">No scores for this stage yet.</p>
+                    }
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="text-center text-white-50">No stage leaderboards available yet.</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public int LeagueId { get; set; }
+
+    private List<StageDto> _stages = [];
+    private StageDto? _currentStage;
+    private readonly Dictionary<TournamentStageGroup, LeaderboardData> _leaderboards = new();
+    private bool _isLoadingStages = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await base.OnInitializedAsync();
+            _stages = (await LeagueService.GetStagesForLeagueAsync(LeagueId)).ToList();
+
+            _currentStage = _stages.FirstOrDefault(s => s.RoundsRemaining > 0) ?? _stages.FirstOrDefault();
+            if (_currentStage != null)
+            {
+                await LoadLeaderboardForStage(_currentStage.Stage);
+            }
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Could not load stage data.";
+        }
+        finally
+        {
+            _isLoadingStages = false;
+        }
+    }
+
+    private async Task OnStageChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<TournamentStageGroup>(e.Value?.ToString(), out var stage))
+        {
+            _currentStage = _stages.FirstOrDefault(s => s.Stage == stage);
+            if (_currentStage != null)
+            {
+                await LoadLeaderboardForStage(_currentStage.Stage);
+            }
+        }
+    }
+
+    private async Task LoadLeaderboardForStage(TournamentStageGroup stage)
+    {
+        if (_leaderboards.ContainsKey(stage))
+            return;
+
+        _leaderboards[stage] = new LeaderboardData { IsLoading = true };
+        StateHasChanged();
+
+        try
+        {
+            var entries = await LeagueService.GetStageLeaderboardAsync(LeagueId, stage);
+            _leaderboards[stage].Entries = entries;
+        }
+        catch
+        {
+            _errorMessage = "Stage Leaderboard failed to load.";
+        }
+        finally
+        {
+            _leaderboards[stage].IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private class LeaderboardData
+    {
+        public bool IsLoading { get; set; }
+        public List<LeaderboardEntryDto> Entries { get; set; } = [];
+    }
+}

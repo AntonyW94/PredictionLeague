@@ -276,6 +276,39 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         return Ok(await mediator.Send(query, cancellationToken));
     }
 
+    [HttpGet("{leagueId:int}/stages")]
+    [SwaggerOperation(
+        Summary = "Get tournament stages",
+        Description = "Returns the tournament stages (Group Stage, Knockout Stage) that have at least one non-draft round, for stage leaderboard filtering.")]
+    [SwaggerResponse(200, "Stages retrieved successfully", typeof(IEnumerable<StageDto>))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not a member of this league")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<IEnumerable<StageDto>>> GetStagesForLeagueAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetStagesForLeagueQuery(leagueId, CurrentUserId);
+        return Ok(await mediator.Send(query, cancellationToken));
+    }
+
+    [HttpGet("{leagueId:int}/leaderboard/stage/{stage}")]
+    [SwaggerOperation(
+        Summary = "Get stage leaderboard",
+        Description = "Returns the league leaderboard for a specific tournament stage, ranked by points accumulated in rounds belonging to that stage.")]
+    [SwaggerResponse(200, "Stage leaderboard retrieved successfully", typeof(IEnumerable<LeaderboardEntryDto>))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not a member of this league")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<IEnumerable<LeaderboardEntryDto>>> GetStageLeaderboardAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        [SwaggerParameter("Tournament stage (GroupStage or KnockoutStage)")] TournamentStageGroup stage,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetStageLeaderboardQuery(leagueId, stage, CurrentUserId);
+        return Ok(await mediator.Send(query, cancellationToken));
+    }
+
     [HttpGet("{leagueId:int}/leaderboard/exact-scores")]
     [SwaggerOperation(
         Summary = "Get exact scores leaderboard",

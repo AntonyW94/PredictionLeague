@@ -51,6 +51,16 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
         return await httpClient.GetFromJsonAsync<List<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/monthly/{month}") ?? [];
     }
 
+    public async Task<List<StageDto>> GetStagesForLeagueAsync(int leagueId)
+    {
+        return await httpClient.GetFromJsonAsync<List<StageDto>>($"api/leagues/{leagueId}/stages") ?? [];
+    }
+
+    public async Task<List<LeaderboardEntryDto>> GetStageLeaderboardAsync(int leagueId, TournamentStageGroup stage)
+    {
+        return await httpClient.GetFromJsonAsync<List<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/stage/{stage}") ?? [];
+    }
+
     public async Task<WinningsDto> GetWinningsAsync(int leagueId)
     {
         return await httpClient.GetFromJsonAsync<WinningsDto>($"api/leagues/{leagueId}/winnings") ?? new WinningsDto();

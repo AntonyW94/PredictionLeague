@@ -11,7 +11,7 @@ public class LeagueDashboardStateService(HttpClient httpClient)
     public event Action? OnStateChange;
 
     public string? LeagueName { get; private set; }
-    public int CompetitionType { get; private set; }
+    public CompetitionType CompetitionType { get; private set; }
     public DateTime? SeasonStartDateUtc { get; private set; }
     public DateTime? EntryDeadlineUtc { get; private set; }
     public int MemberCount { get; private set; }
@@ -51,7 +51,7 @@ public class LeagueDashboardStateService(HttpClient httpClient)
             if (data != null)
             {
                 LeagueName = data.LeagueName;
-                CompetitionType = data.CompetitionType;
+                CompetitionType = (CompetitionType)data.CompetitionType;
                 SeasonStartDateUtc = data.SeasonStartDateUtc;
                 EntryDeadlineUtc = data.EntryDeadlineUtc;
                 MemberCount = data.MemberCount;

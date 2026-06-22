@@ -18,6 +18,8 @@ public interface ILeagueService
     Task<ExactScoresLeaderboardDto> GetExactScoresLeaderboardAsync(int leagueId);
     Task<List<LeagueRequestDto>> GetPendingRequestsAsync();
     Task<List<MonthDto>> GetMonthsForLeagueAsync(int leagueId);
+    Task<List<StageDto>> GetStagesForLeagueAsync(int leagueId);
+    Task<List<LeaderboardEntryDto>> GetStageLeaderboardAsync(int leagueId, TournamentStageGroup stage);
     Task<WinningsDto> GetWinningsAsync(int leagueId);
     Task<PrizeBreakdownDto?> GetPrizeBreakdownAsync(int leagueId);
     Task<LeaguePaymentInfoDto?> GetPaymentInfoAsync(int leagueId);

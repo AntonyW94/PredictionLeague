@@ -148,12 +148,14 @@
     background: var(--grey-500);
 }
 
-/* Month selector dropdown */
-.leaderboard-month-selector {
+/* Month/stage selector dropdown */
+.leaderboard-month-selector,
+.leaderboard-stage-selector {
     width: 100%;
 }
 
-.leaderboard-month-select {
+.leaderboard-month-select,
+.leaderboard-stage-select {
     width: 100%;
     padding: var(--space-2) var(--space-4);
     padding-right: var(--space-10);
@@ -175,7 +177,8 @@
     text-align: center;
 }
 
-.leaderboard-month-select:focus {
+.leaderboard-month-select:focus,
+.leaderboard-stage-select:focus {
     outline: none;
     border-color: var(--green-600);
 }

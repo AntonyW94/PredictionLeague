@@ -139,7 +139,7 @@
             }
             else
             {
-                var leaderboardColClass = State.CompetitionType == 1 ? "col-lg-6" : "col-lg-4";
+                var leaderboardColClass = State.CompetitionType == CompetitionType.Tournament ? "col-lg-6" : "col-lg-4";
 
                 <div class="row">
                     @if (State.IsFinished)
@@ -164,7 +164,13 @@
                             <ExactScoresLeaderboardTile LeagueId="LeagueId" />
                         </div>
 
-                        @if (State.CompetitionType != 1)
+                        @if (State.CompetitionType == CompetitionType.Tournament)
+                        {
+                            <div class="col-lg-4 mb-4 d-flex">
+                                <StageLeaderboardTile LeagueId="LeagueId" />
+                            </div>
+                        }
+                        else
                         {
                             <div class="col-lg-4 mb-4 d-flex">
                                 <MonthlyLeaderboardTile LeagueId="LeagueId" />
@@ -187,7 +193,13 @@
                             <OverallLeaderboardTile LeagueId="LeagueId" />
                         </div>
 
-                        @if (State.CompetitionType != 1)
+                        @if (State.CompetitionType == CompetitionType.Tournament)
+                        {
+                            <div class="col-lg-4 mb-4 d-flex">
+                                <StageLeaderboardTile LeagueId="LeagueId" />
+                            </div>
+                        }
+                        else
                         {
                             <div class="col-lg-4 mb-4 d-flex">
                                 <MonthlyLeaderboardTile LeagueId="LeagueId" />
