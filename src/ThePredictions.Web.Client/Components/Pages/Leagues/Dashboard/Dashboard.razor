@@ -139,8 +139,6 @@
             }
             else
             {
-                var leaderboardColClass = State.CompetitionType == CompetitionType.Tournament ? "col-lg-6" : "col-lg-4";
-
                 <div class="row">
                     @if (State.IsFinished)
                     {
@@ -156,11 +154,11 @@
                             <WinningsSection LeagueId="LeagueId" />
                         </div>
 
-                        <div class="@leaderboardColClass mb-4 d-flex">
+                        <div class="col-lg-4 mb-4 d-flex">
                             <OverallLeaderboardTile LeagueId="LeagueId" />
                         </div>
 
-                        <div class="@leaderboardColClass mb-4 d-flex">
+                        <div class="col-lg-4 mb-4 d-flex">
                             <ExactScoresLeaderboardTile LeagueId="LeagueId" />
                         </div>
 
@@ -189,7 +187,7 @@
                             <RoundResultsTile LeagueId="LeagueId" />
                         </div>
 
-                        <div class="@leaderboardColClass mb-4 d-flex">
+                        <div class="col-lg-4 mb-4 d-flex">
                             <OverallLeaderboardTile LeagueId="LeagueId" />
                         </div>
 
@@ -206,7 +204,7 @@
                             </div>
                         }
 
-                        <div class="@leaderboardColClass mb-4 d-flex">
+                        <div class="col-lg-4 mb-4 d-flex">
                             <ExactScoresLeaderboardTile LeagueId="LeagueId" />
                         </div>
 
