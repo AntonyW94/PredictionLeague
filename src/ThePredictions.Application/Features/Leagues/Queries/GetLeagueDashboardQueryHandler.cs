@@ -112,7 +112,7 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
         return new LeagueDashboardDto
         {
             LeagueName = leagueInfo.Name,
-            CompetitionType = leagueInfo.CompetitionType,
+            CompetitionType = (CompetitionType)leagueInfo.CompetitionType,
             SeasonStartDateUtc = leagueInfo.StartDateUtc,
             EntryDeadlineUtc = leagueInfo.EntryDeadlineUtc,
             MemberCount = leagueInfo.MemberCount,

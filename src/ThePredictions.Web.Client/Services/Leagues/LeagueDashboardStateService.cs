@@ -51,7 +51,7 @@ public class LeagueDashboardStateService(HttpClient httpClient)
             if (data != null)
             {
                 LeagueName = data.LeagueName;
-                CompetitionType = (CompetitionType)data.CompetitionType;
+                CompetitionType = data.CompetitionType;
                 SeasonStartDateUtc = data.SeasonStartDateUtc;
                 EntryDeadlineUtc = data.EntryDeadlineUtc;
                 MemberCount = data.MemberCount;

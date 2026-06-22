@@ -1,9 +1,11 @@
+using ThePredictions.Domain.Common.Enumerations;
+
 namespace ThePredictions.Contracts.Homepage;
 
 public record HomepageSeasonDto(
     int Id,
     string Name,
-    int CompetitionType,
+    CompetitionType CompetitionType,
     DateTime StartDateUtc,
     DateTime EndDateUtc,
     int IsInProgress,

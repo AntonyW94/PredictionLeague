@@ -6,6 +6,7 @@
 @inject NavigationManager NavigationManager
 
 @using ThePredictions.Contracts.Admin.Seasons
+@using ThePredictions.Domain.Common.Enumerations
 
 <PageTitle>Manage Seasons</PageTitle>
 
@@ -70,7 +71,7 @@
                     {
                         <div class="member-row season-row">
                             <div class="season-row-icon">
-                                <span class="bi @(season.CompetitionType == 1 ? "bi-trophy" : "bi-table")"></span>
+                                <span class="bi @(season.CompetitionType == CompetitionType.Tournament ? "bi-trophy" : "bi-table")"></span>
                             </div>
                             <div class="member-info">
                                 <span class="member-name">@season.Name</span>

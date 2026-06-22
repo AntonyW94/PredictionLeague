@@ -11,6 +11,6 @@ public class ApiLeagueLookupResult
     public DateTime EndDateUtc { get; set; }
     public int RoundCount { get; set; }
     public int TeamCount { get; set; }
-    public int CompetitionType { get; set; }
+    public CompetitionType CompetitionType { get; set; }
     public List<TournamentStage> TournamentStages { get; set; } = [];
 }

@@ -203,7 +203,7 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
                 EndDateUtc = apiSeason.End,
                 RoundCount = apiRoundNames.Count,
                 TeamCount = apiTeams.Count,
-                CompetitionType = isTournament ? 1 : 0,
+                CompetitionType = isTournament ? CompetitionType.Tournament : CompetitionType.League,
                 TournamentStages = tournamentStages
             });
         }

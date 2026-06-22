@@ -308,7 +308,7 @@
             // from API" populates it during setup.
             _teamCount = seasonDto.TeamCount;
 
-            if (seasonDto.CompetitionType == (int)CompetitionType.Tournament)
+            if (seasonDto.CompetitionType == CompetitionType.Tournament)
             {
                 await LoadTournamentMappingsAsync();
             }

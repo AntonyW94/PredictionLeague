@@ -227,7 +227,7 @@ public class CreateSeasonCommandHandler(
             createdSeason.NumberOfRounds,
             competition.Id,
             competition.Name,
-            (int)competition.Type,
+            competition.Type,
             competition.ApiLeagueId,
             0, 0, 0, 0, 0, 0,
             createdSeason.PassStandardPrice,

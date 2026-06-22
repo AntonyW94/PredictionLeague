@@ -1,10 +1,12 @@
+using ThePredictions.Domain.Common.Enumerations;
+
 namespace ThePredictions.Contracts.Leagues;
 
 public record MyLeagueDto(
     int Id,
     string Name,
     string SeasonName,
-    int CompetitionType,
+    CompetitionType CompetitionType,
     DateTime? SeasonStartDateUtc,
     DateTime? EntryDeadlineUtc,
 

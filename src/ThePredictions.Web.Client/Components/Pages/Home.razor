@@ -7,6 +7,7 @@
 
 @using System.Net.Http.Json
 @using ThePredictions.Contracts.Homepage
+@using ThePredictions.Domain.Common.Enumerations
 
 <PageTitle>The Predictions — Football Score Predictions</PageTitle>
 
@@ -73,7 +74,7 @@
                                         <div class="row align-items-center g-5">
                                             <div class="col-lg-5 text-center d-none d-lg-block">
                                                 <div class="competitions-slide__icon">
-                                                    @if (season.CompetitionType == 1)
+                                                    @if (season.CompetitionType == CompetitionType.Tournament)
                                                     {
                                                         <i class="bi bi-trophy-fill"></i>
                                                     }

@@ -1,11 +1,12 @@
 using ThePredictions.Contracts.Admin.Rounds;
+using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Contracts.Leagues;
 
 public class LeagueDashboardDto
 {
     public string LeagueName { get; init; } = string.Empty;
-    public int CompetitionType { get; init; }
+    public CompetitionType CompetitionType { get; init; }
     public DateTime? SeasonStartDateUtc { get; init; }
     public DateTime? EntryDeadlineUtc { get; init; }
     public int MemberCount { get; init; }

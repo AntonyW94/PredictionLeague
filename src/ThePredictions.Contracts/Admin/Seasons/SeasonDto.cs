@@ -1,3 +1,5 @@
+using ThePredictions.Domain.Common.Enumerations;
+
 namespace ThePredictions.Contracts.Admin.Seasons;
 
 public record SeasonDto(
@@ -9,7 +11,7 @@ public record SeasonDto(
     int NumberOfRounds,
     int CompetitionId,
     string CompetitionName,
-    int CompetitionType,
+    CompetitionType CompetitionType,
     int? ApiLeagueId,
     int RoundCount,
     int DraftCount,
