@@ -110,6 +110,7 @@ public static class DependencyInjection
         services.AddScoped<IWinningsRepository, WinningsRepository>();
         services.AddScoped<IPrizeNotificationRepository, PrizeNotificationRepository>();
         services.AddScoped<ILeagueWelcomeNotificationRepository, LeagueWelcomeNotificationRepository>();
+        services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
         services.AddScoped<IBoostReadRepository, BoostReadRepository>();
         services.AddScoped<IBoostWriteRepository, BoostWriteRepository>();
         services.AddScoped<ILeagueBoostRuleRepository, LeagueBoostRuleRepository>();
@@ -128,6 +129,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
         services.AddScoped<IEmailService, BrevoEmailService>();
+        services.AddScoped<IEmailSettingsProvider, CachedEmailSettingsProvider>();
         services.AddScoped<IEmailTemplateCatalog, BrevoEmailTemplateCatalog>();
         services.AddSingleton<IEmailTestDefaultsResolver, EmailTestDefaultsResolver>();
         services.AddScoped<IReminderService, ReminderService>();

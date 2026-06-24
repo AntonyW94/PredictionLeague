@@ -36,6 +36,7 @@ public class DatabaseRefresher(
         "RunningCosts",
         "PricingSettings",
         "ServiceFees",
+        "EmailSettings",
         "Seasons",
         "SeasonPasses",
         "UserOnboardingSkips",

@@ -63,6 +63,7 @@ builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddHostedService<DatabaseInitialiser>();
 
 builder.Services.Configure<BrevoSettings>(builder.Configuration.GetSection("Brevo"));
+builder.Services.Configure<EmailDeliverySettings>(builder.Configuration.GetSection("EmailDelivery"));
 builder.Services.Configure<FootballApiSettings>(builder.Configuration.GetSection("FootballApi"));
 builder.Services.Configure<FootballApiResilienceSettings>(builder.Configuration.GetSection("FootballApi:Resilience"));
 builder.Services.Configure<TimeoutSettings>(builder.Configuration.GetSection("Timeouts"));

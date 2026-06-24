@@ -5,6 +5,7 @@ using ThePredictions.Web.Client.Services.Boosts;
 using ThePredictions.Web.Client.Services.Browser;
 using ThePredictions.Web.Client.Services.Consent;
 using ThePredictions.Web.Client.Services.Dashboard;
+using ThePredictions.Web.Client.Services.EmailSettings;
 using ThePredictions.Web.Client.Services.Leagues;
 using ThePredictions.Web.Client.Services.Onboarding;
 using ThePredictions.Web.Client.Services.Payouts;
@@ -35,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IRunningCostService, RunningCostService>();
         services.AddScoped<IPricingSettingsService, PricingSettingsService>();
         services.AddScoped<IServiceFeeService, ServiceFeeService>();
+        services.AddScoped<IEmailSettingsService, EmailSettingsService>();
         services.AddScoped<IDashboardStateService, DashboardStateService>();
         services.AddScoped<IBrowserService, BrowserService>();
         services.AddScoped<IThemeService, ThemeService>();

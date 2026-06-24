@@ -8,19 +8,49 @@ using ThePredictions.Application.Services;
 
 namespace ThePredictions.Infrastructure.Services;
 
-public class BrevoEmailService(IOptions<BrevoSettings> settings, IOptions<TimeoutSettings> timeoutSettings, ILogger<BrevoEmailService> logger) : IEmailService
+public class BrevoEmailService(
+    IOptions<BrevoSettings> settings,
+    IOptions<TimeoutSettings> timeoutSettings,
+    IOptions<EmailDeliverySettings> deliverySettings,
+    IEmailSettingsProvider emailSettingsProvider,
+    ILogger<BrevoEmailService> logger) : IEmailService
 {
     private readonly BrevoSettings _settings = settings.Value;
+    private readonly EmailDeliverySettings _deliverySettings = deliverySettings.Value;
     private readonly int _timeoutMilliseconds = timeoutSettings.Value.EmailServiceTimeoutSeconds * 1000;
 
     public async System.Threading.Tasks.Task SendTemplatedEmailAsync(string to, long templateId, object parameters)
     {
+        // Master switch (database-backed, admin-toggleable). When off, automated emails are silently suppressed.
+        // The explicit admin email-test path (SendTestTemplatedEmailAsync) deliberately bypasses this.
+        if (!await emailSettingsProvider.AreEmailsEnabledAsync(CancellationToken.None))
+        {
+            logger.LogInformation("Email delivery is disabled; suppressing email to {Email} (Template ID: {TemplateId}).", to, templateId);
+            return;
+        }
+
+        // Environment-specific allow-list (e.g. dev). When configured, only listed addresses receive mail.
+        if (!IsRecipientAllowed(to))
+        {
+            logger.LogInformation("Recipient {Email} is not in the configured allow-list; suppressing email (Template ID: {TemplateId}).", to, templateId);
+            return;
+        }
+
         var sendSmtpEmail = GetBaseEmail(to);
 
         sendSmtpEmail.TemplateId = templateId;
         sendSmtpEmail.Params = parameters;
 
         await SendEmailAsync(sendSmtpEmail);
+    }
+
+    private bool IsRecipientAllowed(string to)
+    {
+        var allowed = _deliverySettings.AllowedRecipients;
+        if (allowed is null || allowed.Length == 0)
+            return true;
+
+        return allowed.Any(address => string.Equals(address, to, StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task<EmailSendResult> SendTestTemplatedEmailAsync(string to, long templateId, object parameters)
