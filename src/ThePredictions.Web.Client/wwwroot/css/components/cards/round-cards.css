@@ -264,3 +264,29 @@
         font-size: 0.9rem;
     }
 }
+
+/* Four matches per row - only on the sole active round shown at the tile's FULL width (the
+   .round-card--wide flag, set when the Active Rounds tile is wide enough to show two cards side
+   by side and there is just one). When the admin section is showing, the tile is half-width and
+   shows one full-width card without this flag, so it correctly stays at two columns even on a
+   large screen. The 58rem floor then keeps each of the four columns at roughly the same ~14.5rem
+   the two-column layout has at 29rem, so the rows stay comfortable rather than cramped. */
+@container round-card (min-width: 58rem) {
+    .round-card--wide .match-preview-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* On that full-width single card the footer call-to-action would otherwise stretch the entire
+   card width (it carries w-100 and the footer lets buttons grow). Keep it to a sensible size,
+   centred, so it reads as a button rather than a banner. */
+.card.slide.round-card--wide > .footer {
+    justify-content: center;
+}
+
+.card.slide.round-card--wide > .footer .btn {
+    flex-grow: 0;
+    width: auto;
+    min-width: 14rem;
+    max-width: 22rem;
+}

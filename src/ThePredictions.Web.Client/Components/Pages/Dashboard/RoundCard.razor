@@ -1,7 +1,7 @@
 @using ThePredictions.Contracts.Dashboard
 @using ThePredictions.Domain.Common.Enumerations
 
-<div class="card slide">
+<div class="card slide @(Wide ? "round-card--wide" : "")">
     <div class="header">
         <h5 class="fw-bold text-white">@Round.SeasonName</h5>
         <small class="text-white-50 fw-bold">Round @Round.RoundNumber</small>
@@ -125,6 +125,14 @@
 @code {
     [Parameter, EditorRequired]
     public ActiveRoundDto Round { get; set; } = null!;
+
+    /// <summary>
+    /// True when this card is the sole active round shown full-width on a large desktop. Keeps the footer
+    /// call-to-action from stretching the whole width; the four-column match layout is handled by the
+    /// card-width container query in round-cards.css.
+    /// </summary>
+    [Parameter]
+    public bool Wide { get; set; }
 
     private bool IsInProgress => Round.Status == RoundStatus.InProgress;
     private bool IsDeadlinePassed => Round.DeadlineUtc <= DateTime.UtcNow;
