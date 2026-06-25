@@ -112,6 +112,20 @@ Per-transaction fees charged by third parties (ADR 0006), one row per provider s
 
 ---
 
+### EmailSettings
+
+Single-row, admin-editable master switch for the app's automated, transactional emails (round digests, reminders, welcome and prize emails). Stored so it can be toggled from the admin UI without a code deploy - chiefly to silence the dev environment when no one is testing. No row is seeded; the app falls back to the built-in default (`EmailsEnabled` = true) when the row is absent, so a fresh or unseeded database keeps sending. The admin email-test tool sends regardless of this switch.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| EmailsEnabled | bit | NO | | Whether automated emails are sent (false suppresses them) |
+
+**Constraints:**
+- PK: `Id`
+
+---
+
 ### Seasons
 
 Represents a football season within a competition.

@@ -1,0 +1,96 @@
+@page "/admin/email-settings"
+
+@attribute [Authorize(Roles = RoleNames.Administrator)]
+
+@using ThePredictions.Contracts.Admin.EmailSettings
+@using ThePredictions.Web.Client.Services.EmailSettings
+@inject IEmailSettingsService EmailSettingsService
+
+<PageTitle>Email settings</PageTitle>
+
+<div class="page-container admin-light">
+    <EditForm Model="_formModel" OnValidSubmit="SaveAsync" class="base-form">
+        <PageHero Title="Email settings" Icon="bi-toggles">
+            Master switch for the app's automated emails (round digests, reminders, welcome and prize emails).
+            Turn it off to stop the app sending those - handy on the dev environment when you're not testing.
+            On dev, emails only ever go to the preserved test inboxes. The admin email-test tool sends regardless
+            of this switch.
+        </PageHero>
+
+        <ApiError Message="@_errorMessage" />
+        <ApiSuccess Message="@_successMessage" />
+
+        @if (_isLoading)
+        {
+            <div class="form-container">
+                <div class="d-flex justify-content-center py-5"><div class="spinner-border" role="status"></div></div>
+            </div>
+        }
+        else
+        {
+            <div class="form-container mb-4">
+                <div class="form-check form-switch mb-0">
+                    <InputCheckbox id="emailsEnabled" class="form-check-input" @bind-Value="_emailsEnabled" />
+                    <label for="emailsEnabled" class="form-check-label fw-bold" style="color: var(--purple-1000)">
+                        @(_emailsEnabled ? "Automated emails are ON" : "Automated emails are OFF")
+                    </label>
+                </div>
+                <div class="form-text text-white-50 mt-2">
+                    When off, the app silently skips automated emails and logs that it did so. Changes take effect within about half a minute.
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="submit" class="btn green-button d-flex align-items-center" disabled="@_isBusy">
+                    @if (_isBusy)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <span class="bi bi-check-circle me-2"></span>
+                        <span>Save settings</span>
+                    }
+                </button>
+            </div>
+        }
+    </EditForm>
+</div>
+
+@code {
+    private readonly object _formModel = new();
+    private bool _emailsEnabled;
+
+    private bool _isLoading = true;
+    private bool _isBusy;
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await EmailSettingsService.GetAsync();
+        if (settings is not null)
+            _emailsEnabled = settings.EmailsEnabled;
+
+        _isLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        var (ok, error) = await EmailSettingsService.UpdateAsync(new UpdateEmailSettingsRequest { EmailsEnabled = _emailsEnabled });
+        if (!ok)
+        {
+            _errorMessage = error;
+            _isBusy = false;
+            return;
+        }
+
+        _successMessage = "Email settings saved.";
+        _isBusy = false;
+    }
+}
