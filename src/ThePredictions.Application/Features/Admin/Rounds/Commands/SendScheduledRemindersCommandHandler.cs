@@ -33,7 +33,7 @@ public class SendScheduledRemindersCommandHandler(
             return;
         }
 
-        var shouldSend = await reminderService.ShouldSendReminderAsync(nextRound, nowUtc);
+        var shouldSend = await reminderService.ShouldSendReminderAsync(nextRound, nowUtc, cancellationToken);
         if (!shouldSend)
         {
             logger.LogInformation("Sending Email Reminders: Active Round Not Due.");
@@ -42,7 +42,7 @@ public class SendScheduledRemindersCommandHandler(
 
         logger.LogInformation("Sending Email Reminders: Sending for Round (ID: {RoundId})", nextRound.Id);
 
-        var usersToChase = await reminderService.GetUsersMissingPredictionsAsync(nextRound.Id, cancellationToken);
+        var usersToChase = await reminderService.GetUsersMissingPredictionsAsync(nextRound.Id, nowUtc, cancellationToken);
         if (!usersToChase.Any())
         {
             logger.LogInformation("Sending Email Reminders: No Users to Chase for Round (ID: {RoundId})", nextRound.Id);

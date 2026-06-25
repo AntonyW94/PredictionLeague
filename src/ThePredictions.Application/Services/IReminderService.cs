@@ -5,6 +5,6 @@ namespace ThePredictions.Application.Services;
 
 public interface IReminderService
 {
-    Task<bool> ShouldSendReminderAsync(Round round, DateTime nowUtc);
-    Task<List<ChaseUserDto>> GetUsersMissingPredictionsAsync(int roundId, CancellationToken cancellationToken);
+    Task<bool> ShouldSendReminderAsync(Round round, DateTime nowUtc, CancellationToken cancellationToken);
+    Task<List<ChaseUserDto>> GetUsersMissingPredictionsAsync(int roundId, DateTime nowUtc, CancellationToken cancellationToken);
 }
