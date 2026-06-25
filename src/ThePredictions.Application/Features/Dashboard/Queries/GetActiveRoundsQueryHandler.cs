@@ -27,11 +27,15 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                         WHERE m.RoundId = r.Id AND up.UserId = @UserId
                     ) THEN 1
                     ELSE 0
-                END AS bit) AS HasUserPredicted
+                END AS bit) AS HasUserPredicted,
+                r.[DisplayName] AS RoundDisplayName,
+                c.[Type] AS CompetitionType
             FROM
                 [Rounds] r
             JOIN
                 [Seasons] s ON r.[SeasonId] = s.[Id]
+            JOIN
+                [Competitions] c ON s.[CompetitionId] = c.[Id]
             WHERE
                 r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
                 AND s.[IsActive] = 1
@@ -85,14 +89,21 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                 m.[Status],
                 m.[ActualHomeTeamScore] AS ActualHomeScore,
                 m.[ActualAwayTeamScore] AS ActualAwayScore,
-                m.[MatchDateTimeUtc]
+                m.[MatchDateTimeUtc],
+                m.[MatchNumber],
+                CAST(CASE
+                    WHEN m.[HomeTeamId] IS NOT NULL AND m.[AwayTeamId] IS NOT NULL THEN 1
+                    ELSE 0
+                END AS bit) AS AreTeamsConfirmed,
+                m.[PlaceholderHomeName],
+                m.[PlaceholderAwayName]
             FROM [Matches] m
-            INNER JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
-            INNER JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
+            LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
+            LEFT JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
             LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = @UserId
             WHERE m.[RoundId] IN @RoundIds
                 AND m.[Status] <> @PostponedStatus
-            ORDER BY m.[RoundId], m.[MatchDateTimeUtc] ASC, ht.[ShortName] ASC";
+            ORDER BY m.[RoundId], m.[MatchNumber] ASC, m.[MatchDateTimeUtc] ASC, ht.[ShortName] ASC";
 
         var matches = await dbConnection.QueryAsync<ActiveRoundMatchQueryResult>(
             matchesSql,
@@ -117,7 +128,11 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                     Enum.Parse<MatchStatus>(m.Status),
                     m.ActualHomeScore,
                     m.ActualAwayScore,
-                    m.MatchDateTimeUtc))
+                    m.MatchDateTimeUtc,
+                    m.MatchNumber,
+                    m.AreTeamsConfirmed,
+                    m.PlaceholderHomeName,
+                    m.PlaceholderAwayName))
                 : Enumerable.Empty<ActiveRoundMatchDto>();
 
             // Calculate outcome summary for rounds past their deadline
@@ -134,6 +149,8 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                 r.Id,
                 r.SeasonName,
                 r.RoundNumber,
+                r.RoundDisplayName,
+                r.CompetitionType == (int)CompetitionType.Tournament,
                 r.DeadlineUtc,
                 r.HasUserPredicted,
                 status,
@@ -149,7 +166,9 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         int RoundNumber,
         DateTime DeadlineUtc,
         string Status,
-        bool HasUserPredicted);
+        bool HasUserPredicted,
+        string? RoundDisplayName,
+        int CompetitionType);
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record ActiveRoundMatchQueryResult(
@@ -162,5 +181,9 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         string Status,
         int? ActualHomeScore,
         int? ActualAwayScore,
-        DateTime MatchDateTimeUtc);
+        DateTime MatchDateTimeUtc,
+        int? MatchNumber,
+        bool AreTeamsConfirmed,
+        string? PlaceholderHomeName,
+        string? PlaceholderAwayName);
 }

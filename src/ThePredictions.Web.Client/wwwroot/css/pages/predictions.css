@@ -226,6 +226,17 @@
     color: var(--grey-500);
 }
 
+/* The TBC team column stacks the placeholder circle above the match name, which pushes the
+   circle above the row's centre line so it no longer aligns with the central "TBC" label.
+   A spacer that mirrors the team name (same min-height and margin) sits above the circle so
+   it is centred within the column, lining the two circles up with the "TBC" label. */
+.prediction-card-body--tbc .team-display::before {
+    content: "";
+    display: block;
+    min-height: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
 .tbc-label {
     font-weight: bold;
     font-size: 1.25rem;

@@ -591,6 +591,13 @@
     color: var(--grey-300);
 }
 
+/* TBC placeholder rows: lift the question-mark icons and the placeholder match name to the
+   lighter grey so they stay legible on the dark tile, matching the kickoff caption above. */
+.theme-dark .match-preview-tbc-logo,
+.theme-dark .match-preview-tbc-name {
+    color: var(--grey-300);
+}
+
 .theme-dark .outcome-summary {
     background-color: var(--black-alpha-25);
     color: var(--white);

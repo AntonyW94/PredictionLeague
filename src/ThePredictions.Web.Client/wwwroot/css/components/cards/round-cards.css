@@ -156,6 +156,35 @@
     white-space: nowrap;
 }
 
+/* TBC fixtures: tournament rounds (e.g. the Round of 32) are published once any fixture has
+   confirmed teams, so the remaining knockout slots are still placeholders. They share the
+   three-column row layout - a muted question-mark either side of the placeholder match name
+   (e.g. "R32 Match 2") - so the card reads as "this slot exists but the teams are unknown". */
+.match-preview-row--tbc {
+    opacity: 0.85;
+}
+
+.match-preview-tbc-logo {
+    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--grey-500);
+}
+
+.match-preview-tbc-name {
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--grey-500);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
 /* Match Outcome Backgrounds - soft tint + matching border, with the outcome colour
    carried by the icon rather than a solid fill. The predicted score keeps its default
    dark colour for legibility on the pale tint. */

@@ -4,7 +4,7 @@
 <div class="card slide @(Wide ? "round-card--wide" : "")">
     <div class="header">
         <h5 class="fw-bold text-white">@Round.SeasonName</h5>
-        <small class="text-white-50 fw-bold">Round @Round.RoundNumber</small>
+        <small class="text-white-50 fw-bold">@RoundLabel</small>
     </div>
 
     <div class="body">
@@ -37,6 +37,17 @@
                 <div class="match-preview-grid">
                 @foreach (var match in Round.Matches)
                 {
+                    if (!match.AreTeamsConfirmed)
+                    {
+                        <div class="match-preview-row match-preview-row--tbc">
+                            <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
+                            <span class="match-preview-tbc-name">@(match.PlaceholderHomeName ?? "TBC")</span>
+                            <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
+                        </div>
+
+                        continue;
+                    }
+
                     <div class="match-preview-row @GetMatchBackgroundClass(match) @GetMatchPulsingClass(match)">
                         <span class="match-preview-outcome">
                             <TargetIcon Outcome="match.Outcome" />
@@ -136,6 +147,11 @@
 
     private bool IsInProgress => Round.Status == RoundStatus.InProgress;
     private bool IsDeadlinePassed => Round.DeadlineUtc <= DateTime.UtcNow;
+
+    private string RoundLabel =>
+        Round.IsTournament && !string.IsNullOrWhiteSpace(Round.RoundDisplayName)
+            ? Round.RoundDisplayName
+            : $"Round {Round.RoundNumber}";
 
     private static string GetMatchBackgroundClass(ActiveRoundMatchDto match)
     {

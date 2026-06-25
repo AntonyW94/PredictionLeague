@@ -9,6 +9,8 @@ public record ActiveRoundDto(
     int Id,
     string SeasonName,
     int RoundNumber,
+    string? RoundDisplayName,
+    bool IsTournament,
     DateTime DeadlineUtc,
     bool HasUserPredicted,
     RoundStatus Status,
