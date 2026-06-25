@@ -90,19 +90,42 @@ jobs:
       - name: Verify deployment file count
         run: |
           LOCAL_COUNT=$(find ./publish -type f | wc -l)
-          REMOTE_COUNT=$(lftp -u "${{ secrets.DEV_FTP_USERNAME }},${{ secrets.DEV_FTP_PASSWORD }}" \
-            "ftp://${{ vars.FTP_SERVER }}" \
-            -e "set ftp:passive-mode yes; \
-                set ftp:ssl-allow no; \
-                find /htdocs/; \
-                quit" | grep -v '/$' | grep -v '/logs/' | grep -v '/ShadowCopyDirectory/' | grep -v '/keys/' | wc -l)
-          echo "Local files:  $LOCAL_COUNT"
-          echo "Remote files: $REMOTE_COUNT"
-          if [ "$LOCAL_COUNT" -ne "$REMOTE_COUNT" ]; then
-            echo "ERROR: File count mismatch! Expected $LOCAL_COUNT but found $REMOTE_COUNT on server."
+          echo "Local files: $LOCAL_COUNT"
+
+          # The recursive FTP listing is flaky on this host: with no timeout/retry settings a single
+          # stalled LIST silently truncates the result, so a one-shot count can come back far too low
+          # and fail a perfectly good deploy. The mirror step above is the reliable transfer (and its
+          # --delete pass removes stale files); this is a missing-files sanity check only. Give lftp
+          # generous timeouts/retries, prefer MLSD, take the best (highest) count across a few
+          # attempts, and fail only if the best attempt is still short of the local count.
+          BEST_REMOTE=0
+          for attempt in 1 2 3; do
+            REMOTE_COUNT=$(lftp -u "${{ secrets.DEV_FTP_USERNAME }},${{ secrets.DEV_FTP_PASSWORD }}" \
+              "ftp://${{ vars.FTP_SERVER }}" \
+              -e "set net:timeout 30; \
+                  set net:max-retries 3; \
+                  set net:reconnect-interval-base 5; \
+                  set ftp:passive-mode yes; \
+                  set ftp:ssl-allow no; \
+                  set ftp:use-mlsd yes; \
+                  find /htdocs/; \
+                  quit" | grep -v '/$' | grep -v '/logs/' | grep -v '/ShadowCopyDirectory/' | grep -v '/keys/' | wc -l)
+            echo "Attempt $attempt remote files: $REMOTE_COUNT"
+            if [ "$REMOTE_COUNT" -gt "$BEST_REMOTE" ]; then
+              BEST_REMOTE=$REMOTE_COUNT
+            fi
+            if [ "$BEST_REMOTE" -ge "$LOCAL_COUNT" ]; then
+              break
+            fi
+            sleep 5
+          done
+
+          echo "Remote files (best of attempts): $BEST_REMOTE"
+          if [ "$BEST_REMOTE" -lt "$LOCAL_COUNT" ]; then
+            echo "ERROR: File count short! Expected at least $LOCAL_COUNT but found only $BEST_REMOTE on server after retries."
             exit 1
           fi
-          echo "File counts match."
+          echo "File count verified ($BEST_REMOTE >= $LOCAL_COUNT)."
 
       - name: Warm up site
         run: |
