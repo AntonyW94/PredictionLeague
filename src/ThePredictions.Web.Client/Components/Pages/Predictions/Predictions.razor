@@ -55,11 +55,6 @@
 
                         <div class="prediction-card @(isTbc ? "prediction-card--tbc" : "") @(isLocked ? "prediction-card--locked" : "")">
                             <div class="prediction-card-header">
-                                @if (_pageData.IsTournament && match.MatchNumber.HasValue)
-                                {
-                                    <span class="match-number-badge">@match.MatchNumber</span>
-                                }
-
                                 @if (isTbc)
                                 {
                                     @if (match.MatchDateTimeUtc.Year == 9999)
@@ -375,9 +370,7 @@
         if (_pageData == null)
             return [];
 
-        return _pageData.IsTournament
-            ? _pageData.Matches.OrderBy(m => m.MatchNumber ?? int.MaxValue).ThenBy(m => m.MatchDateTimeUtc)
-            : _pageData.Matches.OrderBy(m => m.MatchDateTimeUtc).ThenBy(m => m.HomeTeamShortName);
+        return _pageData.Matches.OrderBy(m => m.MatchDateTimeUtc).ThenBy(m => m.HomeTeamShortName);
     }
 
     private bool IsMatchLocked(MatchPredictionDto match)

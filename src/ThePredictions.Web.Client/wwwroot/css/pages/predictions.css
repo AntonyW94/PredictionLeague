@@ -78,7 +78,10 @@
 }
 
 .team-display .match-logo {
+    width: 2.5rem;
     height: 2.5rem;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .team-display .team-name {
@@ -170,6 +173,7 @@
     }
 
     .team-display .match-logo {
+        width: 3.75rem;
         height: 3.75rem;
     }
 
@@ -251,21 +255,6 @@
 
 .prediction-card--locked .stepper-btn {
     display: none;
-}
-
-/* --- Tournament: Match number badge --- */
-.match-number-badge {
-    background: var(--purple-500);
-    color: var(--white);
-    font-weight: 700;
-    font-size: 0.75rem;
-    min-width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 50rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 0.4rem;
 }
 
 /* --- Tournament: Lock and deadline badges --- */
