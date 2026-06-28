@@ -103,7 +103,7 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
             LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = @UserId
             WHERE m.[RoundId] IN @RoundIds
                 AND m.[Status] <> @PostponedStatus
-            ORDER BY m.[RoundId], m.[MatchNumber] ASC, m.[MatchDateTimeUtc] ASC, ht.[ShortName] ASC";
+            ORDER BY m.[RoundId], m.[MatchDateTimeUtc] ASC, ht.[ShortName] ASC";
 
         var matches = await dbConnection.QueryAsync<ActiveRoundMatchQueryResult>(
             matchesSql,
