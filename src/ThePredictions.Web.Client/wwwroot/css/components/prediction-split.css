@@ -68,11 +68,13 @@
     color: inherit;
 }
 
-/* Dark surfaces: the dark-theme results grid, the always-dark mobile match-card
-   header, and the dark-theme Active Rounds card tiles. Only the three colour
-   variables change. */
+/* Dark surfaces only: the dark-theme results grid, the dark-theme mobile match-card
+   header, and the dark-theme Active Rounds card tiles. In light mode every one of
+   these sits on a light surface, so the split keeps the default dark-grey colours;
+   here we only switch to light text where the surface is actually dark. Only the
+   three colour variables change. */
 .theme-dark .results-grid .prediction-split,
-.mobile-match-header .prediction-split,
+.theme-dark .mobile-match-header .prediction-split,
 .theme-dark .match-preview-row .prediction-split {
     --split-track: var(--white-alpha-10);
     --split-count: var(--white-alpha-50);

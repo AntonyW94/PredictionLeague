@@ -16,8 +16,10 @@
 .match-preview-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0.375rem;
-    padding: 0.75rem 0;
+    gap: 0.6rem;
+    /* No bottom padding: the body's own bottom padding already separates the last row
+       from the footer. The grid only needs breathing room above its first row. */
+    padding: 0.75rem 0 0;
     width: 100%;
     margin-top: 0.5rem;
 }
@@ -213,6 +215,13 @@
 
 .match-preview-row.match-outcome-incorrect .match-preview-outcome {
     color: var(--red);
+}
+
+/* The in-progress outcome legend doesn't need the full card-footer top padding above it;
+   trim the gap between the last match row and the legend so it isn't a large void. Scoped
+   with :has so ordinary card footers (e.g. the "Predict Now" button) keep their spacing. */
+.card > .footer:has(> .outcome-summary) {
+    padding-top: 0.25rem;
 }
 
 /* Outcome Summary - In-Progress Rounds Footer */
