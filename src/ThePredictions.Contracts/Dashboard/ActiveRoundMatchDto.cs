@@ -9,6 +9,10 @@ namespace ThePredictions.Contracts.Dashboard;
 /// time so scheduled matches can show when they start). Tournament rounds can also carry
 /// placeholder (TBC) fixtures whose teams are not yet known - these have no logos and are
 /// shown using their placeholder match name instead.
+///
+/// HomeCount, DrawCount and AwayCount hold the platform-wide split of how everyone who
+/// predicted this match went (home win / draw / away win). They are only populated once
+/// the round deadline has passed (zero beforehand) so they never reveal hidden predictions.
 /// </summary>
 public record ActiveRoundMatchDto(
     string? HomeTeamLogoUrl,
@@ -23,5 +27,8 @@ public record ActiveRoundMatchDto(
     int? MatchNumber,
     bool AreTeamsConfirmed,
     string? PlaceholderHomeName,
-    string? PlaceholderAwayName
+    string? PlaceholderAwayName,
+    int HomeCount,
+    int DrawCount,
+    int AwayCount
 );

@@ -1,0 +1,106 @@
+/* Per-match prediction split (home / draw / away).
+   A thin proportional bar above muted H/D/A counts, with the logged-in user's own
+   pick bolded. Shared by the league results grid (desktop grid + mobile match cards)
+   and the dashboard Active Rounds cards. Only ever rendered once a round's deadline
+   has passed, so it never reveals predictions that are still hidden.
+
+   Per-context colours (track, counts, label) are driven by three custom properties so
+   a new surface only needs to override the variables, not repeat every selector. The
+   segment colours are constant and distinguished by hue (purple / grey / teal) rather
+   than lightness, so they read against white cells, dark-theme cells and the dark card
+   tiles alike. */
+.prediction-split {
+    --split-track: var(--grey-200);
+    --split-count: var(--grey-500);
+    --split-label: var(--grey-400);
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.4rem;
+    min-width: 4.5rem;
+}
+
+.prediction-split-bar {
+    display: flex;
+    height: 0.3rem;
+    border-radius: 50rem;
+    overflow: hidden;
+    background-color: var(--split-track);
+}
+
+.prediction-split-seg {
+    flex-basis: 0;
+}
+
+.prediction-split-seg.seg-home {
+    background-color: var(--purple-300);
+}
+
+.prediction-split-seg.seg-draw {
+    background-color: var(--grey-400);
+}
+
+.prediction-split-seg.seg-away {
+    background-color: var(--blue-700);
+}
+
+.prediction-split-counts {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.2rem;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--split-count);
+}
+
+.prediction-split-lbl {
+    color: var(--split-label);
+}
+
+/* The logged-in user's own pick: bolded, with the label brought up to the count's
+   colour so the whole H/D/A item reads as one emphasised unit. */
+.prediction-split-counts .is-mine {
+    font-weight: 700;
+}
+
+.prediction-split-counts .is-mine .prediction-split-lbl {
+    color: inherit;
+}
+
+/* Dark surfaces: the dark-theme results grid, the always-dark mobile match-card
+   header, and the dark-theme Active Rounds card tiles. Only the three colour
+   variables change. */
+.theme-dark .results-grid .prediction-split,
+.mobile-match-header .prediction-split,
+.theme-dark .match-preview-row .prediction-split {
+    --split-track: var(--white-alpha-10);
+    --split-count: var(--white-alpha-50);
+    --split-label: var(--white-alpha-30);
+}
+
+.mobile-match-header .prediction-split {
+    margin-top: 0;
+    width: 100%;
+    max-width: 14rem;
+}
+
+.mobile-match-header .prediction-split-bar {
+    height: 0.375rem;
+}
+
+/* Centre the H/D/A counts as a tidy group directly beneath the bar on mobile,
+   rather than spreading them to the bar's outer edges. */
+.mobile-match-header .prediction-split-counts {
+    justify-content: center;
+    gap: 1rem;
+    font-size: 0.75rem;
+}
+
+/* Active Rounds card: the split sits on its own line spanning the match row's three
+   columns, just under the logos and scores. */
+.match-preview-row .prediction-split {
+    grid-column: 1 / -1;
+    margin-top: 0.3rem;
+    min-width: 0;
+}

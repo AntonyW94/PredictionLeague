@@ -11,6 +11,8 @@ public class BaseLeaderboardComponent : ComponentBase
 
     private string? _currentUserId;
 
+    protected string? CurrentUserId => _currentUserId;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateTask;

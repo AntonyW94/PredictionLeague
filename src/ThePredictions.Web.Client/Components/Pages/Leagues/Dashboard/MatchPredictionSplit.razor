@@ -1,29 +1,11 @@
+@inherits ThePredictions.Web.Client.Components.Shared.BaseLeaderboardComponent
+
 @using ThePredictions.Contracts.Leagues
 @using ThePredictions.Contracts.Admin.Rounds
 
 @if (_show)
 {
-    <div class="prediction-split" title="@_home predicted home, @_draw draw, @_away away">
-        <div class="prediction-split-bar">
-            @if (_home > 0)
-            {
-                <span class="prediction-split-seg seg-home" style="flex-grow:@_home"></span>
-            }
-            @if (_draw > 0)
-            {
-                <span class="prediction-split-seg seg-draw" style="flex-grow:@_draw"></span>
-            }
-            @if (_away > 0)
-            {
-                <span class="prediction-split-seg seg-away" style="flex-grow:@_away"></span>
-            }
-        </div>
-        <div class="prediction-split-counts">
-            <span><span class="prediction-split-lbl">H</span> @_home</span>
-            <span><span class="prediction-split-lbl">D</span> @_draw</span>
-            <span><span class="prediction-split-lbl">A</span> @_away</span>
-        </div>
-    </div>
+    <PredictionSplitBar Home="_home" Draw="_draw" Away="_away" UserChoice="UserChoice" />
 }
 
 @code {
@@ -35,6 +17,33 @@
     private int _draw;
     private int _away;
     private bool _show;
+
+    // The logged-in user's own pick for this match ("H"/"D"/"A"), or null if they did not predict.
+    // Evaluated during render rather than cached, because the current user id is resolved asynchronously
+    // by the base component and may not be set on the first OnParametersSet pass.
+    private string? UserChoice
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(CurrentUserId))
+                return null;
+
+            var prediction = Results
+                .FirstOrDefault(r => r.UserId == CurrentUserId)?
+                .Predictions.FirstOrDefault(p => p.MatchId == Match.Id);
+
+            if (prediction?.HomeScore == null || prediction.AwayScore == null)
+                return null;
+
+            if (prediction.HomeScore > prediction.AwayScore)
+                return "H";
+
+            if (prediction.HomeScore < prediction.AwayScore)
+                return "A";
+
+            return "D";
+        }
+    }
 
     protected override void OnParametersSet()
     {

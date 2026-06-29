@@ -141,6 +141,7 @@ System.IO.File.WriteAllText(FilePath, content);
             <CssFilesToBundle Include="$(PublishCssDir)components\dashboard-tabs.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\footer.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\cookie-consent.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\prediction-split.css" />
             <CssFilesToBundle Include="$(PublishCssDir)pages\dashboard.css" />
             <CssFilesToBundle Include="$(PublishCssDir)pages\home.css" />
             <CssFilesToBundle Include="$(PublishCssDir)pages\leaderboard.css" />

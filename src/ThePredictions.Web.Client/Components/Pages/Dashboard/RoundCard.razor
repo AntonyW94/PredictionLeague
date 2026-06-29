@@ -89,6 +89,13 @@
                                 <LocalTime UtcDate="match.MatchDateTimeUtc" Format="ddd dd MMM HH:mm" />
                             </span>
                         }
+                        @if (IsDeadlinePassed)
+                        {
+                            <PredictionSplitBar Home="match.HomeCount"
+                                                Draw="match.DrawCount"
+                                                Away="match.AwayCount"
+                                                UserChoice="@GetUserChoice(match)" />
+                        }
                     </div>
                 }
                 </div>
@@ -168,6 +175,22 @@
     {
         return match is { ActualHomeScore: not null, ActualAwayScore: not null }
             && match.Status is MatchStatus.InProgress or MatchStatus.Completed;
+    }
+
+    // The logged-in user's own pick for this match ("H"/"D"/"A"), or null if they did not predict.
+    // The card already carries the current user's own predicted score, so no user id is needed here.
+    private static string? GetUserChoice(ActiveRoundMatchDto match)
+    {
+        if (match.PredictedHomeScore == null || match.PredictedAwayScore == null)
+            return null;
+
+        if (match.PredictedHomeScore > match.PredictedAwayScore)
+            return "H";
+
+        if (match.PredictedHomeScore < match.PredictedAwayScore)
+            return "A";
+
+        return "D";
     }
 
     private static string GetMatchPulsingClass(ActiveRoundMatchDto match)

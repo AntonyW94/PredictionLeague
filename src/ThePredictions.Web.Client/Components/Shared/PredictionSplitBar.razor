@@ -1,0 +1,37 @@
+@{
+    var total = Home + Draw + Away;
+}
+@if (total > 0)
+{
+    <div class="prediction-split" title="@Home predicted home, @Draw draw, @Away away">
+        <div class="prediction-split-bar">
+            @if (Home > 0)
+            {
+                <span class="prediction-split-seg seg-home" style="flex-grow:@Home"></span>
+            }
+            @if (Draw > 0)
+            {
+                <span class="prediction-split-seg seg-draw" style="flex-grow:@Draw"></span>
+            }
+            @if (Away > 0)
+            {
+                <span class="prediction-split-seg seg-away" style="flex-grow:@Away"></span>
+            }
+        </div>
+        <div class="prediction-split-counts">
+            <span class="@(UserChoice == "H" ? "is-mine" : null)"><span class="prediction-split-lbl">H</span> @Home</span>
+            <span class="@(UserChoice == "D" ? "is-mine" : null)"><span class="prediction-split-lbl">D</span> @Draw</span>
+            <span class="@(UserChoice == "A" ? "is-mine" : null)"><span class="prediction-split-lbl">A</span> @Away</span>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public int Home { get; set; }
+    [Parameter, EditorRequired] public int Draw { get; set; }
+    [Parameter, EditorRequired] public int Away { get; set; }
+
+    // The logged-in user's own pick for this match ("H"/"D"/"A"), or null if they did not predict.
+    // When set, that count is rendered bold so the user can spot their own choice at a glance.
+    [Parameter] public string? UserChoice { get; set; }
+}

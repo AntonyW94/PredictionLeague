@@ -96,7 +96,25 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                     ELSE 0
                 END AS bit) AS AreTeamsConfirmed,
                 m.[PlaceholderHomeName],
-                m.[PlaceholderAwayName]
+                m.[PlaceholderAwayName],
+                (
+                    SELECT COUNT(*)
+                    FROM [UserPredictions] hp
+                    WHERE hp.[MatchId] = m.[Id]
+                        AND hp.[PredictedHomeScore] > hp.[PredictedAwayScore]
+                ) AS HomeCount,
+                (
+                    SELECT COUNT(*)
+                    FROM [UserPredictions] dp
+                    WHERE dp.[MatchId] = m.[Id]
+                        AND dp.[PredictedHomeScore] = dp.[PredictedAwayScore]
+                ) AS DrawCount,
+                (
+                    SELECT COUNT(*)
+                    FROM [UserPredictions] ap
+                    WHERE ap.[MatchId] = m.[Id]
+                        AND ap.[PredictedHomeScore] < ap.[PredictedAwayScore]
+                ) AS AwayCount
             FROM [Matches] m
             LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
             LEFT JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
@@ -119,6 +137,11 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         return rounds.Select(r =>
         {
             var status = Enum.Parse<RoundStatus>(r.Status);
+
+            // The prediction split is only revealed once the deadline has passed; before then we
+            // zero the counts so the aggregate never leaks predictions that are still hidden.
+            var revealSplit = r.DeadlineUtc <= DateTime.UtcNow;
+
             var activeRoundMatchDtos = matchesByRound.TryGetValue(r.Id, out var roundMatches)
                 ? roundMatches.Select(m => new ActiveRoundMatchDto(m.HomeTeamLogoUrl,
                     m.AwayTeamLogoUrl,
@@ -132,7 +155,10 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                     m.MatchNumber,
                     m.AreTeamsConfirmed,
                     m.PlaceholderHomeName,
-                    m.PlaceholderAwayName))
+                    m.PlaceholderAwayName,
+                    revealSplit ? m.HomeCount : 0,
+                    revealSplit ? m.DrawCount : 0,
+                    revealSplit ? m.AwayCount : 0))
                 : Enumerable.Empty<ActiveRoundMatchDto>();
 
             // Calculate outcome summary for rounds past their deadline
@@ -185,5 +211,8 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         int? MatchNumber,
         bool AreTeamsConfirmed,
         string? PlaceholderHomeName,
-        string? PlaceholderAwayName);
+        string? PlaceholderAwayName,
+        int HomeCount,
+        int DrawCount,
+        int AwayCount);
 }
