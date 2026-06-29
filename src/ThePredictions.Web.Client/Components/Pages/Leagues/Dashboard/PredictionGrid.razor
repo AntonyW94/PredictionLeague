@@ -56,7 +56,10 @@
                                     <span class="match-col-tbc-label">TBC</span>
                                 }
                             </div>
-                            <MatchPredictionSplit Match="match" Results="Results" DeadlineUtc="DeadlineUtc" />
+                            <MatchPredictionSplit Match="match"
+                                                  Results="Results"
+                                                  DeadlineUtc="DeadlineUtc"
+                                                  UserChoice="@PredictionSplitChoice.For(Results, CurrentUserId, match.Id)" />
                         </th>
                     }
                 </tr>

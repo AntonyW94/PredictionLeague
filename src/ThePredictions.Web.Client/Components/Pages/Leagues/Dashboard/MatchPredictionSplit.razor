@@ -1,5 +1,3 @@
-@inherits ThePredictions.Web.Client.Components.Shared.BaseLeaderboardComponent
-
 @using ThePredictions.Contracts.Leagues
 @using ThePredictions.Contracts.Admin.Rounds
 
@@ -13,37 +11,14 @@
     [Parameter, EditorRequired] public List<PredictionResultDto> Results { get; set; } = null!;
     [Parameter, EditorRequired] public DateTime DeadlineUtc { get; set; }
 
+    // The logged-in user's own pick ("H"/"D"/"A"), supplied by the parent component which owns the
+    // results data and the resolved current-user id. Bolds that count in the split.
+    [Parameter] public string? UserChoice { get; set; }
+
     private int _home;
     private int _draw;
     private int _away;
     private bool _show;
-
-    // The logged-in user's own pick for this match ("H"/"D"/"A"), or null if they did not predict.
-    // Evaluated during render rather than cached, because the current user id is resolved asynchronously
-    // by the base component and may not be set on the first OnParametersSet pass.
-    private string? UserChoice
-    {
-        get
-        {
-            if (string.IsNullOrEmpty(CurrentUserId))
-                return null;
-
-            var prediction = Results
-                .FirstOrDefault(r => r.UserId == CurrentUserId)?
-                .Predictions.FirstOrDefault(p => p.MatchId == Match.Id);
-
-            if (prediction?.HomeScore == null || prediction.AwayScore == null)
-                return null;
-
-            if (prediction.HomeScore > prediction.AwayScore)
-                return "H";
-
-            if (prediction.HomeScore < prediction.AwayScore)
-                return "A";
-
-            return "D";
-        }
-    }
 
     protected override void OnParametersSet()
     {

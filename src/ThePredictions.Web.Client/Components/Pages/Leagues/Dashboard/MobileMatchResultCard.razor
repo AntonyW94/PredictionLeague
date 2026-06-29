@@ -47,7 +47,10 @@
             <span class="match-col-tbc-label">Teams to be decided</span>
         }
 
-        <MatchPredictionSplit Match="Match" Results="Results" DeadlineUtc="DeadlineUtc" />
+        <MatchPredictionSplit Match="Match"
+                              Results="Results"
+                              DeadlineUtc="DeadlineUtc"
+                              UserChoice="@PredictionSplitChoice.For(Results, CurrentUserId, Match.Id)" />
     </div>
 
     <div class="body leaderboard-body">

@@ -571,6 +571,9 @@
    Scrollbar stays hidden until the user hovers the row. */
 .round-pill-selector {
     display: flex;
+    /* Centre the pills to match the rest of the (centred) results card. "safe" keeps them
+       left-aligned and fully scrollable if a season ever has too many rounds to fit. */
+    justify-content: safe center;
     gap: var(--space-2);
     overflow-x: auto;
     padding: var(--space-1) var(--space-1);
@@ -580,6 +583,13 @@
     scrollbar-width: none;
     scrollbar-color: transparent transparent;
     transition: scrollbar-color 0.2s ease;
+}
+
+/* Desktop keeps the pills left-aligned (their established layout beside the wide grid). */
+@media (min-width: 992px) {
+    .round-pill-selector {
+        justify-content: flex-start;
+    }
 }
 
     .round-pill-selector::-webkit-scrollbar {
