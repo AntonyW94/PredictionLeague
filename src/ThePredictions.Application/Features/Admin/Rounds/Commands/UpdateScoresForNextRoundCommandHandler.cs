@@ -63,12 +63,13 @@ public class UpdateScoresForNextRoundCommandHandler(
         var matchResults = liveFixtures.Where(f => f.Fixture != null && f.Goals != null).Select(fixture =>
         {
             var localMatch = activeRound.Matches.First(m => m.ExternalId == fixture.Fixture!.Id);
-            var (homeScore, awayScore) = GetScoreForMatch(fixture, localMatch, isTournament);
+            var isKnockout = isTournament && IsKnockoutMatch(localMatch);
+            var (homeScore, awayScore) = GetScoreForMatch(fixture, isKnockout);
             return new MatchResultDto(
                 localMatch.Id,
                 homeScore,
                 awayScore,
-                GetMatchStatus(fixture.Fixture!.Status.Short)
+                GetMatchStatus(fixture.Fixture!.Status.Short, isKnockout)
             );
         }).ToList();
 
@@ -79,10 +80,9 @@ public class UpdateScoresForNextRoundCommandHandler(
         }
     }
 
-    internal static (int HomeScore, int AwayScore) GetScoreForMatch(
-        FixtureResponse fixture, Match localMatch, bool isTournament)
+    internal static (int HomeScore, int AwayScore) GetScoreForMatch(FixtureResponse fixture, bool isKnockout)
     {
-        if (isTournament && IsKnockoutMatch(localMatch))
+        if (isKnockout)
         {
             var fulltime = fixture.Score?.FullTime;
             if (fulltime?.Home != null && fulltime.Away != null)
@@ -103,10 +103,16 @@ public class UpdateScoresForNextRoundCommandHandler(
         return TournamentRoundNameParser.IsKnockoutStage(stage);
     }
 
-    private static MatchStatus GetMatchStatus(string apiStatus) => apiStatus switch
+    internal static MatchStatus GetMatchStatus(string apiStatus, bool isKnockout) => apiStatus switch
     {
         "FT" or "AET" or "PEN" => MatchStatus.Completed,
-        "HT" or "1H" or "2H" or "ET" => MatchStatus.InProgress,
+        // A knockout tie is scored on the 90-minute result, so once regular time is over the
+        // result can no longer change for prediction purposes. Treat the break before extra
+        // time (BT), extra time (ET) and the penalty shootout (P) as Completed rather than
+        // leaving the match live to the final whistle of the tie - this also lets end-of-round
+        // processing fire as soon as the last match is decided on 90 minutes.
+        "BT" or "ET" or "P" when isKnockout => MatchStatus.Completed,
+        "HT" or "1H" or "2H" or "ET" or "BT" or "P" or "LIVE" => MatchStatus.InProgress,
         "PST" => MatchStatus.Postponed,
         _ => MatchStatus.Scheduled
     };

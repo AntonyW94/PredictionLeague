@@ -19,6 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="ThePredictions.Application.Tests.Unit" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ThePredictions.Contracts\ThePredictions.Contracts.csproj" />
     <ProjectReference Include="..\ThePredictions.Domain\ThePredictions.Domain.csproj" />
     <ProjectReference Include="..\ThePredictions.Validators\ThePredictions.Validators.csproj" />

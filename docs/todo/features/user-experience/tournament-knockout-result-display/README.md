@@ -55,7 +55,36 @@ penalty win must not look like a draw).
 * **Primary is always the 90‑minute score** and never changes — no jarring
   "jump back" at the final whistle.
 
-### Match status during extra time / penalties (decided: presentation only)
+### Match status during extra time / penalties (REVERSED 2026-06-29)
+
+> **Superseded.** The original decision (kept below for history) was to leave a
+> knockout match `InProgress` through extra time and penalties and only flip it
+> to `Completed` at the final whistle of the tie. On 2026-06-29, watching the
+> first ever extra-time match (Germany vs Paraguay, level at 1-1), we reversed
+> this: a knockout tie is **scored on the 90-minute result**, so once regular
+> time is over the result can no longer change for prediction purposes and the
+> match should be **`Completed`**. This lets end-of-round processing (prizes,
+> digest, winner emails) fire as soon as the deciding match is settled on 90
+> minutes, rather than waiting on real-world extra time / penalties that have no
+> bearing on the game.
+>
+> **Implemented** in `UpdateScoresForNextRoundCommandHandler.GetMatchStatus`:
+> for knockout matches, `BT` (break before extra time), `ET` (extra time) and
+> `P` (penalty shootout) now map to `Completed`; `1H`/`2H`/`HT`/`LIVE` stay
+> `InProgress` (regular time, score can still change in injury time). The score
+> stored is the 90-minute `Score.FullTime` value (unchanged). This also closes
+> the original Task 4 bug whereby `BT`/`P` fell through to `Scheduled` and the
+> score was wiped mid-match.
+>
+> Consequence for this feature: there is no longer an `InProgress` extra-time
+> phase to render a **live** ticker for, so the live-ticker half of the caption
+> design is moot. A static `(a.e.t.)` / `pens` caption on the completed result
+> (Tasks 1-3, 5, 7) is still a worthwhile follow-on if we later capture the
+> after-extra-time / shootout scores, but is no longer required to avoid a
+> penalty win looking like a draw mid-match.
+
+<details>
+<summary>Original decision (superseded)</summary>
 
 The match **stays `InProgress`** until the tie resolves, then flips to
 `Completed`. We do **not** mark it `Completed` at 90′ — that would stop the score
@@ -67,6 +96,8 @@ separate "phase" signal is plumbed to the client**.
 A supporting fix is required: `GetMatchStatus` must map the break before extra
 time (`BT`), the shootout (`P`) and generic `LIVE` to `InProgress`, otherwise
 they fall to `Scheduled` and the score is cleared mid‑match (Task 4).
+
+</details>
 
 ### Display surface audit (what changes, what doesn't)
 
