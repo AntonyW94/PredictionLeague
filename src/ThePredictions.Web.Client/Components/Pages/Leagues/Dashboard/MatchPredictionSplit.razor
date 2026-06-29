@@ -1,0 +1,71 @@
+@using ThePredictions.Contracts.Leagues
+@using ThePredictions.Contracts.Admin.Rounds
+
+@if (_show)
+{
+    <div class="prediction-split" title="@_home predicted home, @_draw draw, @_away away">
+        <div class="prediction-split-bar">
+            @if (_home > 0)
+            {
+                <span class="prediction-split-seg seg-home" style="flex-grow:@_home"></span>
+            }
+            @if (_draw > 0)
+            {
+                <span class="prediction-split-seg seg-draw" style="flex-grow:@_draw"></span>
+            }
+            @if (_away > 0)
+            {
+                <span class="prediction-split-seg seg-away" style="flex-grow:@_away"></span>
+            }
+        </div>
+        <div class="prediction-split-counts">
+            <span><span class="prediction-split-lbl">H</span> @_home</span>
+            <span><span class="prediction-split-lbl">D</span> @_draw</span>
+            <span><span class="prediction-split-lbl">A</span> @_away</span>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public MatchInRoundDto Match { get; set; } = null!;
+    [Parameter, EditorRequired] public List<PredictionResultDto> Results { get; set; } = null!;
+    [Parameter, EditorRequired] public DateTime DeadlineUtc { get; set; }
+
+    private int _home;
+    private int _draw;
+    private int _away;
+    private bool _show;
+
+    protected override void OnParametersSet()
+    {
+        _home = 0;
+        _draw = 0;
+        _away = 0;
+
+        var teamsConfirmed = Match.HomeTeamId.HasValue && Match.AwayTeamId.HasValue;
+        var deadlinePassed = DeadlineUtc < DateTime.UtcNow;
+
+        if (!teamsConfirmed || !deadlinePassed)
+        {
+            _show = false;
+            return;
+        }
+
+        foreach (var player in Results)
+        {
+            var prediction = player.Predictions.FirstOrDefault(p => p.MatchId == Match.Id);
+
+            if (prediction?.HomeScore == null || prediction.AwayScore == null || prediction.IsHidden)
+                continue;
+
+            if (prediction.HomeScore > prediction.AwayScore)
+                _home++;
+            else if (prediction.HomeScore < prediction.AwayScore)
+                _away++;
+            else
+                _draw++;
+        }
+
+        _show = _home + _draw + _away > 0;
+    }
+}

@@ -182,10 +182,17 @@
         background-color: var(--purple-100);
     }
 
+    /* Current user who is also a round winner: keep the yellow winner colour and
+       mark the row as "you" with a single purple accent bar on the left edge of the
+       sticky player column (always visible during horizontal scroll). An inset
+       box-shadow draws the bar without shifting the cell content. A per-cell outline
+       previously drew a separate box around every cell. */
     .results-grid tbody tr.current-user-highlight.winner-row td {
         background-color: var(--yellow-alpha-18);
-        outline: 2px solid var(--purple-500);
-        outline-offset: -2px;
+    }
+
+    .results-grid tbody tr.current-user-highlight.winner-row td.player-col {
+        box-shadow: inset 0.1875rem 0 0 0 var(--purple-500);
     }
 
 .blurred-score {
@@ -271,6 +278,88 @@
 .theme-dark .results-grid tbody tr.current-user-highlight td.player-col,
 .theme-dark .results-grid tbody tr.current-user-highlight td.total-col {
     background-color: var(--purple-700);
+}
+
+/* Per-match prediction split (home / draw / away). Only rendered once the round
+   deadline has passed, so it never reveals predictions that are still hidden.
+   Deliberately understated: a thin proportional bar above muted counts. Segment
+   colours are distinguished by hue (purple / grey / teal) rather than lightness,
+   so they read against the white cells, the dark-theme cells, and the always-dark
+   mobile card header alike. */
+.prediction-split {
+    margin-top: 0.4rem;
+    min-width: 4.5rem;
+}
+
+.prediction-split-bar {
+    display: flex;
+    height: 0.3rem;
+    border-radius: 50rem;
+    overflow: hidden;
+    background-color: var(--grey-200);
+}
+
+.prediction-split-seg {
+    flex-basis: 0;
+}
+
+.prediction-split-seg.seg-home {
+    background-color: var(--purple-300);
+}
+
+.prediction-split-seg.seg-draw {
+    background-color: var(--grey-400);
+}
+
+.prediction-split-seg.seg-away {
+    background-color: var(--blue-700);
+}
+
+.prediction-split-counts {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.2rem;
+    font-size: 0.7rem;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--grey-500);
+}
+
+.prediction-split-lbl {
+    color: var(--grey-400);
+}
+
+.theme-dark .results-grid .prediction-split-bar {
+    background-color: var(--white-alpha-10);
+}
+
+.theme-dark .results-grid .prediction-split-counts {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .results-grid .prediction-split-lbl {
+    color: var(--white-alpha-30);
+}
+
+.mobile-match-header .prediction-split {
+    margin-top: 0;
+    width: 100%;
+    max-width: 12rem;
+}
+
+.mobile-match-header .prediction-split-bar {
+    height: 0.375rem;
+    background-color: var(--white-alpha-15);
+}
+
+.mobile-match-header .prediction-split-counts {
+    font-size: 0.75rem;
+    color: var(--white-alpha-50);
+}
+
+.mobile-match-header .prediction-split-lbl {
+    color: var(--white-alpha-30);
 }
 
 /* --- Mobile Carousel and Card Styles --- */
