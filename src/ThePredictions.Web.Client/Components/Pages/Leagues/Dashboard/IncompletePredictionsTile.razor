@@ -107,16 +107,12 @@
 
     private int? ResolveActiveRoundId()
     {
-        // Only chase between rounds: when a round is currently in progress (matches being played)
-        // the tile is hidden entirely. It shows only when the next round has opened for predictions
-        // (Published, deadline still in the future) but has not itself kicked off, and an earlier
-        // round has already completed - the gap where players can still be nudged.
+        // Only chase a round that has opened for predictions but has not itself kicked off: Published
+        // with a deadline still in the future. If any round is currently in progress (matches being
+        // played) the tile is hidden entirely - so an in-progress previous round suppresses it, but
+        // the very first round of a season still shows while it is open and not yet under way.
         var anyRoundInProgress = State.ViewableRounds.Any(r => r.Status == RoundStatus.InProgress);
         if (anyRoundInProgress)
-            return null;
-
-        var anyRoundCompleted = State.ViewableRounds.Any(r => r.Status == RoundStatus.Completed);
-        if (!anyRoundCompleted)
             return null;
 
         var nextOpenRound = State.ViewableRounds
