@@ -4,7 +4,7 @@
 
 Not Started | **In Progress** | Complete
 
-> **Verified June 2026:** Phase 1 (domain unit tests, 100% line/branch coverage) and Phase 2 (validator tests, ~261 cases) are complete. Phases 3-7 (query-handler integration, command-handler unit, API, and E2E tests) remain outstanding.
+> **Verified July 2026:** Counts below are `[Fact]`/`[Theory]` method counts (actual executed cases are higher, as each `[Theory]` fans out over its `InlineData`). Test files / test methods per unit project: **Domain** 42 files / 768 methods; **Validators** 26 files / 261 methods; **Application** 49 files / 301 methods; **Web.Client** 2 files / 20 methods; **Composition** 1 file / 1 method. Phase 1 (domain, 100% line/branch coverage) and Phase 2 (validators) are complete, and command-handler unit tests have begun. Coverage of the Application command/query surface remains thin: of **134** `IRequestHandler` implementations in `src/ThePredictions.Application`, only **34** have a corresponding test file (100 untested). Phases 3-4 (query-handler and repository integration), the remainder of Phase 5 (command-handler unit), and Phases 6-8 (API, E2E, CI/CD) remain outstanding.
 
 This document outlines the comprehensive testing strategy for the ThePredictions application, including CI/CD integration with GitHub Actions.
 
@@ -1051,6 +1051,71 @@ This is where you'll catch most SQL mapping bugs.
 **Effort: Medium | Value: Medium | Catches SQL bugs: No (mocked)**
 
 Test business logic orchestration with mocked repositories.
+
+#### Priority: untested command handlers with real logic
+
+Verified July 2026 - each of the following has meaningful orchestration/branching and **no** corresponding test file under `tests/Unit/ThePredictions.Application.Tests.Unit`. Prioritise these:
+
+| Handler | Path |
+|---------|------|
+| `ProcessPrizesCommandHandler` | `src/ThePredictions.Application/Features/Admin/Rounds/Commands/ProcessPrizesCommandHandler.cs` |
+| `RecalculateSeasonStatsCommandHandler` | `src/ThePredictions.Application/Features/Admin/Seasons/Commands/RecalculateSeasonStatsCommandHandler.cs` |
+| `SendScheduledRemindersCommandHandler` | `src/ThePredictions.Application/Features/Admin/Rounds/Commands/SendScheduledRemindersCommandHandler.cs` |
+| `UpdateMatchResultsCommandHandler` | `src/ThePredictions.Application/Features/Admin/Rounds/Commands/UpdateMatchResultsCommandHandler.cs` |
+| `SyncSeasonWithApiCommandHandler` | `src/ThePredictions.Application/Features/Admin/Seasons/Commands/SyncSeasonWithApiCommandHandler.cs` |
+| `CleanupExpiredDataCommandHandler` | `src/ThePredictions.Application/Features/External/Tasks/Commands/CleanupExpiredDataCommandHandler.cs` |
+| `ConfirmEmailCommandHandler` | `src/ThePredictions.Application/Features/Authentication/Commands/ConfirmEmail/ConfirmEmailCommandHandler.cs` |
+| `ResendConfirmationCommandHandler` | `src/ThePredictions.Application/Features/Authentication/Commands/ResendConfirmation/ResendConfirmationCommandHandler.cs` |
+
+Test with mocked repositories/services (NSubstitute), xUnit v3, FluentAssertions, and `CancellationToken.None` (never a bare `default`, per xUnit1051).
+
+### Phase 5a: Infrastructure Pure-Logic Unit Tests
+**Effort: Low | Value: Medium | Catches SQL bugs: No**
+
+A set of classes in `src/ThePredictions.Infrastructure` contain pure logic that is unit-testable **today** with no database and no external services. This is distinct from the SQLite-backed repository/query integration work in Phases 3-4 (which exercises real SQL): these are fast, mock-free (or lightly mocked) unit tests. They need a **new** test project, `tests/Unit/ThePredictions.Infrastructure.Tests.Unit`, added under the `Tests/Unit` solution folder.
+
+Candidate classes (verified locations and names):
+
+| Class | Path | What to test |
+|-------|------|--------------|
+| `CanonicalEmailLookupNormalizer` | `src/ThePredictions.Infrastructure/Identity/CanonicalEmailLookupNormalizer.cs` | Plus-alias canonicalisation and upper-casing; `null` in -> `null` out; username and email normalised identically (pure logic, no dependencies). |
+| `SqlTransientFaultDetector` | `src/ThePredictions.Infrastructure/Data/Resilience/SqlTransientFaultDetector.cs` | `IsTransient` true for each transient error number, false for a non-transient number, false for a non-`SqlException`, and inner-exception handling. `SqlException` is hard to construct directly, so cover the non-SqlException and inner-exception branches directly and note the SqlException-number branch may need a helper/reflection. |
+| `SqlRetryPolicy` | `src/ThePredictions.Infrastructure/Data/Resilience/SqlRetryPolicy.cs` | `ExecuteAsync` returns the operation result on success; retries then surfaces on a transient fault (drive via a throwing delegate); pass `IOptions<SqlRetryPolicyOptions>` and a mock `ILogger`. |
+| `AuthenticationTokenService` | `src/ThePredictions.Infrastructure/Services/AuthenticationTokenService.cs` | JWT generation - claims (NameIdentifier, email, roles, name claims), expiry driven by the injected `IDateTimeProvider` and `JwtSettings`, and refresh-token persistence. Dependencies are all mockable: `IUserManager`, `IConfiguration` (in-memory `ConfigurationBuilder`), `IRefreshTokenRepository`, `IDateTimeProvider` - so it is testable without a database. |
+| `UkEmailDateFormatter` | `src/ThePredictions.Infrastructure/Formatters/UkEmailDateFormatter.cs` | UK date formatting with BST/GMT suffix selection and the `TimeZoneNotFoundException` fallback to `(UTC)`. Confirmed to live in Infrastructure (not Application). |
+
+New project file `tests/Unit/ThePredictions.Infrastructure.Tests.Unit/ThePredictions.Infrastructure.Tests.Unit.csproj`, modelled on `ThePredictions.Application.Tests.Unit.csproj` (versions matched exactly):
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- No coverlet.msbuild - 100% coverage threshold only applies to Domain tests per CLAUDE.md -->
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" Version="3.0.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0" />
+    <PackageReference Include="FluentAssertions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <PackageReference Include="NSubstitute" Version="5.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ThePredictions.Infrastructure\ThePredictions.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Shared\ThePredictions.Tests.Shared\ThePredictions.Tests.Shared.csproj" />
+  </ItemGroup>
+</Project>
+```
+
+This project is for **pure-logic** Infrastructure classes only; the database-touching repositories and query handlers remain in the SQLite integration project (`ThePredictions.Infrastructure.Tests.Integration`, Phases 3-4).
 
 ### Phase 6: API Integration Tests
 **Effort: Medium-High | Value: High | Catches SQL bugs: Yes**

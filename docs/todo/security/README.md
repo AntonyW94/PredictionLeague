@@ -10,14 +10,15 @@ These items have been reviewed and deferred with documented mitigations:
 |------|--------|-------------|
 | [open-redirect](open-redirect/) | Waiting for login system changes | N/A - to be fixed |
 | [jwt-security-hardening](jwt-security-hardening/) | Waiting for login system changes | N/A - to be fixed |
-| [refresh-tokens-in-urls](refresh-tokens-in-urls/) | Mobile browser compatibility | HTTPS, short expiry, rotation |
 | [localstorage-tokens](localstorage-tokens/) | Blazor WASM architecture | Strong CSP, short expiry, XSS prevention |
-| [server-validation-gap](server-validation-gap/) | FluentValidation.AspNetCore deprecated | Client validation, domain guards, DB constraints |
 
 ## Planned Improvements
 
 | Item | Priority | Description |
 |------|----------|-------------|
+| [server-validation-gap](server-validation-gap/) | High | Enforce FluentValidation server-side at the API boundary (June 2026 audit reversed the January deferral; client-side validation was also found dead) |
+| [refresh-tokens-in-urls](refresh-tokens-in-urls/) | High | Replace the raw refresh token in the Google callback URL with a 60-second exchange code (July 2026 review found a mobile-safe design; un-deferred) |
+| [origin-header-email-links](origin-header-email-links/) | High | Stop building emailed links (password reset, league emails) from the attacker-controllable Origin header; use configured SiteSettings base URL |
 | [account-lockout](account-lockout/) | Medium | Lock accounts after failed login attempts |
 | [audit-logging](audit-logging/) | Medium | Security event audit trail |
 | [request-security](request-security/) | Medium | Security headers review |

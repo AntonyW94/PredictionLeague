@@ -242,3 +242,53 @@ Log templates (`PublishUpcomingRoundsCommandHandler`), comments, Swagger tags (`
 2. Sections 2.1-2.3, 2.6, 2.9 (agreed CQRS/authorisation changes)
 3. Section 3 (hydration + RefreshToken rename, needs a migration)
 4. Section 4 (mechanical sweeps - good batched "tidy" PRs)
+
+---
+
+## 7. July 2026 follow-up review (addendum)
+
+A second architecture review (2026-07-06, four parallel deep-dives: CQRS discipline, layering, presentation layers, testability/conventions) re-verified this audit and found everything above still present and unremediated. It also found new issues. The larger new findings have their own detailed plans; the small ones are recorded here against the sections they extend.
+
+### 7.1 Updates to existing findings
+
+**1.1 (validation) - worse than recorded: client-side validation is ALSO dead.** The custom `FluentValidationValidator` (which replaced Blazored.FluentValidation in commit `7bef0c6d`) resolves `IValidator<T>` from DI and silently no-ops when none is found - and nothing in Web.Client registers the validators. So the FluentValidation rules currently execute nowhere at all, not just "only client-side" as recorded above. The plan (both client and server wiring) is now fully specified in [`docs/todo/security/server-validation-gap/README.md`](../../security/server-validation-gap/README.md).
+
+**2.6 (admin double-lock) - additional handlers missing the self-check**, beyond those listed above: `RecalculateSeasonStatsCommandHandler`, `SyncSeasonWithApiCommandHandler`, `UpdateAllLiveScoresCommandHandler`, and the EmailSettings handlers under Features/Admin. Sweep all of Features/Admin when implementing.
+
+**2.9 (mediator chaining) - the blessed pattern sits on a latent transaction trap.** `DbTransactionContext.BeginAsync` throws on nested Begin; the chains only work because no nested command is `ITransactionalRequest`, and nothing enforces that. `TransactionBehaviour` also logs "Rolling back" without rolling back, and emails/HTTP calls happen inside open transactions (`JoinLeague`, `CreateSeason`). The chaining decision stands; the trap is fixed by [`docs/todo/architecture/transaction-context-hardening/README.md`](../transaction-context-hardening/README.md), which also implements the 2.2 restructure.
+
+### 7.2 Additions to section 4.7 (duplication)
+
+- [ ] The leaderboard SQL skeleton (`RANK() OVER ... SUM(lrr.[BoostedPoints])`, the `SnapshotRank` CASE, the `IsRoundInProgress` EXISTS subquery) is repeated across `GetOverallLeaderboardQueryHandler`, `GetMonthlyLeaderboardQueryHandler` and `GetStageLeaderboardQueryHandler`, differing only in the round filter - extract a shared SQL fragment constant
+- [ ] The player display-name formula `u.[FirstName] + ' ' + LEFT(u.[LastName], 1)` appears 23 times across 15 query handler files - extract a shared SQL constant
+
+### 7.3 Additions to section 4.9 (misc small items)
+
+- [ ] `IUserManager` (~18 async methods) takes no `CancellationToken`, same gap as the `IEmailService` item above (detailed in [`docs/todo/architecture/application-infrastructure-leaks/README.md`](../application-infrastructure-leaks/README.md))
+- [ ] `API\DependencyInjection.cs` binds `JwtSettings` manually and registers the instance as a singleton instead of `IOptions<JwtSettings>` - inconsistent with the options pattern used everywhere else
+- [ ] `ThePredictions.Application.csproj` references `ThePredictions.Validators` but no Application code uses it - dead reference, remove (covered by the composition plan below)
+- [ ] The misplaced Blazor packages item above also applies to `Microsoft.AspNetCore.Components.WebAssembly.Server` in Infrastructure (both packages exist only so the Web host gets them transitively; move to Web.csproj - covered by the composition plan below)
+- [ ] `GetAvailableBoostsQueryHandler` runs `Task.WhenAll` over `IBoostService` calls sharing scoped repositories - safe today only because queries never hold a transaction; add a comment or serialise the calls when touched
+
+### 7.4 Reviewed and accepted (no action)
+
+- Public mutable `List<T> { get; set; }` on 13 Contracts DTO properties - defensible for model binding and System.Text.Json; not worth churn
+- Create commands returning full DTOs while updates return void - mixed but harmless convention
+
+### 7.5 New plans created by the July review
+
+| Plan | Covers |
+|------|--------|
+| [`security/server-validation-gap`](../../security/server-validation-gap/README.md) | Rewritten: revive client-side validation, enforce server-side at the API boundary (implements 1.1) |
+| [`security/refresh-tokens-in-urls`](../../security/refresh-tokens-in-urls/README.md) | Rewritten: replace the raw refresh token in the Google callback URL with a 60-second exchange code (mobile-safe) |
+| [`security/origin-header-email-links`](../../security/origin-header-email-links/README.md) | Stop deriving emailed URLs (password reset, league emails) from the attacker-controllable Origin header; delivers the `SiteSettings` base-URL helper from 4.7 |
+| [`architecture/transaction-context-hardening`](../transaction-context-hardening/README.md) | Nesting-safe transactions, real rollback, side effects after commit (implements 2.2, hardens 2.9) |
+| [`architecture/composition-root-and-hosting`](../composition-root-and-hosting/README.md) | `AddApplicationServices`, options binding for both hosts, shared host pipeline (security headers on the Web host), package/reference hygiene |
+| [`architecture/error-contract-standardisation`](../error-contract-standardisation/README.md) | One API error shape, 401/403 split, cancellation handling (implements 4.4) |
+| [`architecture/client-service-layer-consolidation`](../client-service-layer-consolidation/README.md) | Move 28 raw-HttpClient components onto the service layer, fix silently swallowed write failures, atomic league save |
+| [`architecture/handler-domain-logic-extraction`](../handler-domain-logic-extraction/README.md) | Extract scheduling/knockout/state-machine logic from the giant admin handlers into tested Domain services |
+| [`architecture/application-infrastructure-leaks`](../application-infrastructure-leaks/README.md) | Brevo template IDs behind `IEmailTemplateCatalog`, move `FieldEncryptionService` to Infrastructure, normalise football API statuses, CancellationToken gaps |
+| [`architecture/dapper-result-records`](../dapper-result-records/README.md) | Standardise query handlers on private result records instead of materialising into Contracts DTOs |
+| [`architecture/build-tooling`](../build-tooling/README.md) | `Directory.Build.props` + `.editorconfig` so CI strictness applies locally |
+
+The [`architecture/test-suite`](../test-suite/README.md) plan was also updated with current coverage numbers and an Infrastructure pure-logic unit test phase.
