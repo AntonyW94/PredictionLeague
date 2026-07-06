@@ -218,12 +218,15 @@
             }
             else
             {
-                _errorMessage = "Could not send reminders. Please try again.";
+                // Most likely the deadline passed after the page loaded - the server refuses the send.
+                // Reload so the completion reflects the passed deadline and the Remind controls hide.
+                _errorMessage = "Could not send reminders. The prediction deadline may have passed.";
+                await LoadAsync();
             }
         }
         catch (Exception)
         {
-            _errorMessage = "Could not send reminders. Please try again.";
+            _errorMessage = "Could not send reminders. The prediction deadline may have passed.";
         }
         finally
         {

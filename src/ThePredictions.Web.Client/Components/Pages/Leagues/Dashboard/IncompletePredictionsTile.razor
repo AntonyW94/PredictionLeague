@@ -129,9 +129,15 @@
 
     private int? ResolveActiveRoundId()
     {
-        // The round currently open for predictions - where reminders are meaningful.
-        var round = State.ViewableRounds.OrderBy(r => r.RoundNumber).FirstOrDefault(r => r.Status == RoundStatus.InProgress)
-            ?? State.ViewableRounds.OrderBy(r => r.RoundNumber).FirstOrDefault(r => r.Status == RoundStatus.Published && r.DeadlineUtc > DateTime.UtcNow);
+        // Only chase for a round still open for predictions. A round stays InProgress after its
+        // deadline (matches are being played), so the deadline - not the status - decides whether
+        // there is anything left to chase. Once the deadline passes the tile hides until the next
+        // round opens.
+        var round = State.ViewableRounds
+            .Where(r => r.DeadlineUtc > DateTime.UtcNow
+                        && r.Status is RoundStatus.Published or RoundStatus.InProgress)
+            .OrderBy(r => r.RoundNumber)
+            .FirstOrDefault();
 
         return round?.Id;
     }
@@ -187,12 +193,15 @@
             }
             else
             {
-                _errorMessage = "Could not send reminders. Please try again.";
+                // Most likely the deadline passed after the page loaded - the server refuses the send.
+                // Reload so the completion reflects the passed deadline and the Remind controls hide.
+                _errorMessage = "Could not send reminders. The prediction deadline may have passed.";
+                await LoadAsync();
             }
         }
         catch (Exception)
         {
-            _errorMessage = "Could not send reminders. Please try again.";
+            _errorMessage = "Could not send reminders. The prediction deadline may have passed.";
         }
         finally
         {
