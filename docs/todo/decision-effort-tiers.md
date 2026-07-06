@@ -5,8 +5,9 @@ product owner has to give** before the work can proceed - *not* by engineering
 effort. The goal is to make it easy to pick quick wins (little/no decision needed)
 versus work that needs a design, business, or legal call first.
 
-> **Snapshot: June 2026.** Statuses drift as work ships. A future session should
-> re-verify against the codebase before relying on this (the plan files'
+> **Snapshot: July 2026** (June snapshot updated after the July architecture
+> review added eleven plans). Statuses drift as work ships. A future session
+> should re-verify against the codebase before relying on this (the plan files'
 > `## Status` lines were themselves stale once - trust the code, not the doc).
 
 ## Tier A - Hands-off (no product decisions)
@@ -22,6 +23,31 @@ CI green) and open a PR for review. No input needed until review.
 - **query-monitoring** - slow-query logging with a sensible threshold (~500ms).
 - **third-party-licences** - auto-generated open-source attribution page, linked
   in the footer.
+
+July 2026 review plans, all fully specified with decisions already made:
+
+- **security/server-validation-gap** - revive client validation, add the server
+  validation filter (June audit decision; do first).
+- **security/refresh-tokens-in-urls** - exchange-code redesign of the Google
+  callback; hands-off to build, but merging to production requires the manual
+  mobile test checklist on dev to pass.
+- **security/origin-header-email-links** - configured base URL instead of the
+  Origin header for emailed links.
+- **architecture/transaction-context-hardening** - nesting-safe transactions,
+  real rollback, post-commit side effects.
+- **architecture/composition-root-and-hosting** - Application DI, options
+  binding for both hosts, shared pipeline, security headers on the Web host.
+- **architecture/error-contract-standardisation** - single ApiErrorResponse
+  shape, 401/403 split.
+- **architecture/client-service-layer-consolidation** - components onto the
+  service layer, silent-failure fixes, atomic league save.
+- **architecture/handler-domain-logic-extraction** - scheduling/knockout/state
+  machine logic into tested Domain services.
+- **architecture/application-infrastructure-leaks** - email template resolver,
+  crypto to Infrastructure, provider status normalisation.
+- **architecture/dapper-result-records** - private result records in all query
+  handlers.
+- **architecture/build-tooling** - Directory.Build.props + .editorconfig.
 
 ## Tier B - One quick decision, then build
 
@@ -67,5 +93,6 @@ These are deferred **by decision**, documented in `docs/security/accepted-risks.
 They only need work if the decision is reversed.
 
 - localstorage-tokens
-- refresh-tokens-in-urls
-- server-validation-gap
+
+(refresh-tokens-in-urls and server-validation-gap were un-deferred by the
+June/July 2026 reviews and moved to Tier A above.)

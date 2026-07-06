@@ -161,6 +161,8 @@ Focus on the most-used endpoints:
 
 Document what error responses look like so developers can handle them properly.
 
+> **Note (July 2026):** the `ApiErrorResponse` DTO below and the `ErrorHandlingMiddleware` implementation that emits it are delivered by the [error-contract-standardisation plan](../error-contract-standardisation/README.md) (which adopts this exact record, adding an optional `Extensions` dictionary). Implement the DTO and middleware there; this task then only covers the Swagger examples (2.2) and response attributes (2.3). Keep the record definition in sync with that plan so the two cannot diverge.
+
 ### 2.1 Create Standard Error Response DTO
 
 **File:** `ThePredictions.Contracts/Common/ApiErrorResponse.cs`
