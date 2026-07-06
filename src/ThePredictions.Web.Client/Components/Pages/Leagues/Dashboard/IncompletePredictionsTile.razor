@@ -8,13 +8,19 @@
 @using ThePredictions.Domain.Common.Enumerations
 @using ThePredictions.Web.Client.Services.Leagues
 
-@if (_activeRoundId.HasValue)
+@if (_activeRoundId.HasValue && _completion != null && _incomplete.Any())
 {
-    <div class="section w-100">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="text-white fw-bold mb-0">Incomplete Predictions</h5>
-            @if (_completion != null && _completion.CanSendReminders && _incomplete.Any() && !_completion.DeadlinePassed)
-            {
+    <div class="col-12 mb-4">
+        <div class="section w-100">
+        <h5 class="text-white fw-bold mb-3 text-center">Incomplete Predictions</h5>
+        <p class="text-white-50 small mb-3 text-center">@_completion.RoundName</p>
+
+        <ApiError Message="@_errorMessage" />
+        <ApiSuccess Message="@_successMessage" />
+
+        @if (_completion.CanSendReminders && !_completion.DeadlinePassed)
+        {
+            <div class="d-flex justify-content-center mb-3">
                 <button class="btn btn-sm blue-light-button" disabled="@_isSending" @onclick="RemindAll">
                     @if (_isSending)
                     {
@@ -26,35 +32,10 @@
                     }
                     <span>Remind all</span>
                 </button>
-            }
-        </div>
-
-        @if (_completion != null)
-        {
-            <p class="text-white-50 small mb-3">@_completion.RoundName @(_completion.DeadlinePassed ? "(deadline passed)" : "")</p>
-        }
-
-        <ApiError Message="@_errorMessage" />
-        <ApiSuccess Message="@_successMessage" />
-
-        @if (_isLoading)
-        {
-            <div class="d-flex justify-content-center py-4">
-                <div class="spinner-border text-white" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
             </div>
         }
-        else if (_completion != null && !_incomplete.Any())
-        {
-            <p class="text-center text-white-50 my-3">
-                <span class="bi bi-check-circle-fill text-green-600 me-1"></span>
-                Everyone has completed their predictions for this round.
-            </p>
-        }
-        else if (_completion != null)
-        {
-            <div class="table-responsive">
+
+        <div class="table-responsive">
                 <table class="table table-borderless align-middle mb-0">
                     <tbody>
                         @foreach (var player in _incomplete)
@@ -101,7 +82,7 @@
                     </tbody>
                 </table>
             </div>
-        }
+        </div>
     </div>
 }
 
@@ -112,7 +93,6 @@
     private int? _activeRoundId;
     private RoundCompletionDto? _completion;
     private List<RoundCompletionPlayerDto> _incomplete = [];
-    private bool _isLoading = true;
     private bool _isSending;
     private string? _errorMessage;
     private string? _successMessage;
@@ -123,23 +103,28 @@
 
         if (_activeRoundId.HasValue)
             await LoadAsync();
-
-        _isLoading = false;
     }
 
     private int? ResolveActiveRoundId()
     {
-        // Only chase for a round still open for predictions. A round stays InProgress after its
-        // deadline (matches are being played), so the deadline - not the status - decides whether
-        // there is anything left to chase. Once the deadline passes the tile hides until the next
-        // round opens.
-        var round = State.ViewableRounds
-            .Where(r => r.DeadlineUtc > DateTime.UtcNow
-                        && r.Status is RoundStatus.Published or RoundStatus.InProgress)
+        // Only chase between rounds: when a round is currently in progress (matches being played)
+        // the tile is hidden entirely. It shows only when the next round has opened for predictions
+        // (Published, deadline still in the future) but has not itself kicked off, and an earlier
+        // round has already completed - the gap where players can still be nudged.
+        var anyRoundInProgress = State.ViewableRounds.Any(r => r.Status == RoundStatus.InProgress);
+        if (anyRoundInProgress)
+            return null;
+
+        var anyRoundCompleted = State.ViewableRounds.Any(r => r.Status == RoundStatus.Completed);
+        if (!anyRoundCompleted)
+            return null;
+
+        var nextOpenRound = State.ViewableRounds
+            .Where(r => r.Status == RoundStatus.Published && r.DeadlineUtc > DateTime.UtcNow)
             .OrderBy(r => r.RoundNumber)
             .FirstOrDefault();
 
-        return round?.Id;
+        return nextOpenRound?.Id;
     }
 
     private async Task LoadAsync()
