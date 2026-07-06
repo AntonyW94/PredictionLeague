@@ -3,8 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ThePredictions.Application.Features.Admin.Rounds.Commands;
 using ThePredictions.Application.Features.Admin.Rounds.Queries;
+using ThePredictions.Application.Features.Rounds.Commands;
+using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Contracts.Admin.Matches;
 using ThePredictions.Contracts.Admin.Rounds;
+using ThePredictions.Contracts.Rounds;
 using ThePredictions.Domain.Common.Enumerations;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -82,6 +85,27 @@ public class RoundsController(IMediator mediator) : ApiControllerBase
             return NotFound();
 
         return Ok(roundDetails);
+    }
+
+    [HttpGet("{roundId:int}/completion")]
+    [SwaggerOperation(
+        Summary = "Get prediction-completion status for a round",
+        Description = "Returns every participant in the round's season with how many predictable fixtures they have entered, which they are still missing, and when they were last reminded. Used by the admin incomplete-predictions view.")]
+    [SwaggerResponse(200, "Completion status retrieved successfully", typeof(RoundCompletionDto))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    [SwaggerResponse(404, "Round not found")]
+    public async Task<ActionResult<RoundCompletionDto>> GetRoundCompletionAsync(
+        [SwaggerParameter("Round identifier")] int roundId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetRoundCompletionQuery(roundId, LeagueId: null, CurrentUserId, IsSiteAdmin: true);
+        var result = await mediator.Send(query, cancellationToken);
+
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
     }
 
     #endregion
@@ -166,6 +190,24 @@ public class RoundsController(IMediator mediator) : ApiControllerBase
         await mediator.Send(new SendPrizeNotificationsCommand(roundId, Force: true), cancellationToken);
 
         return NoContent();
+    }
+
+    [HttpPost("{roundId:int}/reminders")]
+    [SwaggerOperation(
+        Summary = "Send ad-hoc prediction reminders",
+        Description = "Emails a \"you are missing predictions\" reminder to the given players for the round. Players reminded within the throttle window, or who no longer have any missing fixtures, are skipped. Refused once the deadline has passed.")]
+    [SwaggerResponse(200, "Reminders processed", typeof(SendPredictionRemindersResultDto))]
+    [SwaggerResponse(400, "Deadline has passed")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    [SwaggerResponse(404, "Round not found")]
+    public async Task<ActionResult<SendPredictionRemindersResultDto>> SendRemindersAsync(
+        [SwaggerParameter("Round identifier")] int roundId,
+        [FromBody, SwaggerParameter("Players to remind", Required = true)] SendPredictionRemindersRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new SendPredictionRemindersCommand(roundId, LeagueId: null, request.UserIds, CurrentUserId, IsSiteAdmin: true);
+        return Ok(await mediator.Send(command, cancellationToken));
     }
 
     #endregion
