@@ -60,6 +60,7 @@ public class DatabaseRefresher(
         "Winnings",
         "PrizeNotifications",
         "LeagueWelcomeNotifications",
+        "PredictionReminderNotifications",
         "LeaguePayouts"
     ];
 

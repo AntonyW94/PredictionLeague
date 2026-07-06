@@ -596,6 +596,34 @@ so historic leagues are never back-filled.
 
 ---
 
+### PredictionReminderNotifications
+
+Log of ad-hoc "you are missing predictions" reminders sent for a round. An admin (global round
+view) or a league owner (their league dashboard) can nudge players who have only partially entered
+their predictions; the send is deduped per `(RoundId, UserId)` so a player in several leagues,
+nudged by more than one owner, is emailed at most once per throttle window (6 hours) per round.
+`LastRemindedUtc` is refreshed on each send, so the row also drives the "reminded N hours ago"
+display. Reuses Brevo template 9 (Predictions Missing).
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| RoundId | int | NO | | FK to Rounds |
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers - the reminded player |
+| LastRemindedUtc | datetime2 | NO | | When the most recent reminder was sent (upserted) |
+| RemindedByUserId | nvarchar(450) | NO | | FK to AspNetUsers - who triggered the send (admin or league owner) |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `(RoundId, UserId)` (`UX_PredictionReminderNotifications_RoundUser`) - the dedup/throttle key
+- FK: `RoundId` → `Rounds.Id` (CASCADE DELETE)
+- FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
+
+> Holds no personal data beyond the `UserId`/`RemindedByUserId` FKs, so it is copied verbatim by the
+> database refresh tool and needs no anonymisation.
+
+---
+
 ## Prediction Tables
 
 ### UserPredictions

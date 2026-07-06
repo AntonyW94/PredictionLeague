@@ -64,6 +64,12 @@
                             <button class="btn btn-sm blue-light-button" @onclick="() => EnterResults(round.Id)" title="Enter Results">
                                 <span class="bi bi-clipboard2-check-fill"></span><span class="d-none d-lg-inline ms-1">Results</span>
                             </button>
+                            @if (round.Status is RoundStatus.Published or RoundStatus.InProgress)
+                            {
+                                <button class="btn btn-sm blue-light-button" @onclick="() => ViewCompletion(round.Id)" title="See who is missing predictions">
+                                    <span class="bi bi-list-check"></span><span class="d-none d-lg-inline ms-1">Completion</span>
+                                </button>
+                            }
                             @if (round.Status == RoundStatus.Completed)
                             {
                                 <button class="btn btn-sm purple-button" @onclick="() => ResendDigest(round.Id, round.RoundNumber)" disabled="@_isResending" title="Re-send the results digest email">
@@ -122,6 +128,7 @@
     private void EditRound(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/edit/{roundId}");
     private void Back() => NavigationManager.NavigateTo($"/admin/seasons/edit/{SeasonId}");
     private void EnterResults(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/{roundId}/results");
+    private void ViewCompletion(int roundId) => NavigationManager.NavigateTo($"/admin/rounds/{roundId}/completion");
 
     private async Task ResendDigest(int roundId, int roundNumber)
     {

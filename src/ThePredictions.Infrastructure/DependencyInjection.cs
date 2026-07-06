@@ -110,6 +110,7 @@ public static class DependencyInjection
         services.AddScoped<IWinningsRepository, WinningsRepository>();
         services.AddScoped<IPrizeNotificationRepository, PrizeNotificationRepository>();
         services.AddScoped<ILeagueWelcomeNotificationRepository, LeagueWelcomeNotificationRepository>();
+        services.AddScoped<IPredictionReminderNotificationRepository, PredictionReminderNotificationRepository>();
         services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
         services.AddScoped<IBoostReadRepository, BoostReadRepository>();
         services.AddScoped<IBoostWriteRepository, BoostWriteRepository>();

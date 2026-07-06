@@ -5,12 +5,15 @@ using ThePredictions.Application.Features.Leagues.Commands;
 using ThePredictions.Application.Features.Boosts.Queries;
 using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Features.Prizes.Queries;
+using ThePredictions.Application.Features.Rounds.Commands;
+using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Contracts.Boosts;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Contracts.Payouts;
 using ThePredictions.Contracts.Prizes;
+using ThePredictions.Contracts.Rounds;
 using ThePredictions.Domain.Common.Enumerations;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -113,6 +116,49 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
             return NotFound();
 
         return Ok(result);
+    }
+
+    [HttpGet("{leagueId:int}/rounds/{roundId:int}/completion")]
+    [SwaggerOperation(
+        Summary = "Get prediction-completion status for a round in this league",
+        Description = "Returns each approved league member with how many predictable fixtures they have entered and which they are still missing. Any approved member can view; only the league owner (or an admin) may then send reminders (see CanSendReminders).")]
+    [SwaggerResponse(200, "Completion status retrieved successfully", typeof(RoundCompletionDto))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not a member of this league")]
+    [SwaggerResponse(404, "Round not found")]
+    public async Task<ActionResult<RoundCompletionDto>> GetLeagueRoundCompletionAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        [SwaggerParameter("Round identifier")] int roundId,
+        CancellationToken cancellationToken)
+    {
+        var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
+        var query = new GetRoundCompletionQuery(roundId, leagueId, CurrentUserId, isAdmin);
+        var result = await mediator.Send(query, cancellationToken);
+
+        if (result == null)
+            return NotFound();
+
+        return Ok(result);
+    }
+
+    [HttpPost("{leagueId:int}/rounds/{roundId:int}/reminders")]
+    [SwaggerOperation(
+        Summary = "Send ad-hoc prediction reminders to league members",
+        Description = "Emails a \"you are missing predictions\" reminder to the given members. Only the league owner (or an admin) may call this. Players reminded within the throttle window, or with no missing fixtures, are skipped. Refused once the deadline has passed.")]
+    [SwaggerResponse(200, "Reminders processed", typeof(SendPredictionRemindersResultDto))]
+    [SwaggerResponse(400, "Deadline has passed")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Only the league owner or an admin can send reminders")]
+    [SwaggerResponse(404, "Round not found")]
+    public async Task<ActionResult<SendPredictionRemindersResultDto>> SendLeagueRoundRemindersAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        [SwaggerParameter("Round identifier")] int roundId,
+        [FromBody, SwaggerParameter("Members to remind", Required = true)] SendPredictionRemindersRequest request,
+        CancellationToken cancellationToken)
+    {
+        var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
+        var command = new SendPredictionRemindersCommand(roundId, leagueId, request.UserIds, CurrentUserId, isAdmin);
+        return Ok(await mediator.Send(command, cancellationToken));
     }
 
     [HttpGet("create-data")]
