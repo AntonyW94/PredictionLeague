@@ -35,52 +35,44 @@
             </div>
         }
 
-        <div class="table-responsive">
-                <table class="table table-borderless align-middle mb-0">
-                    <tbody>
-                        @foreach (var player in _incomplete)
-                        {
-                            var remindedRecently = player.LastRemindedUtc.HasValue
-                                && (DateTime.UtcNow - player.LastRemindedUtc.Value) < TimeSpan.FromHours(6);
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <UserAvatar FullName="@player.PlayerName" />
-                                        <div class="d-flex flex-column">
-                                            <span class="text-white fw-bold">@player.PlayerName</span>
-                                            <small class="text-white-50">Missing: @string.Join(", ", player.MissingFixtures.Select(f => $"{f.HomeTeam} v {f.AwayTeam}"))</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="text-nowrap text-end">
-                                    @if (player.HasEnteredNothing)
-                                    {
-                                        <span class="member-status-pill member-status-pending">None (@player.PredictedCount/@_completion.PredictableMatchCount)</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="member-status-pill member-status-pending">Partial (@player.PredictedCount/@_completion.PredictableMatchCount)</span>
-                                    }
-                                </td>
-                                @if (_completion.CanSendReminders && !_completion.DeadlinePassed)
+        <div class="incomplete-predictions">
+                @foreach (var player in _incomplete)
+                {
+                    var remindedRecently = player.LastRemindedUtc.HasValue
+                        && (DateTime.UtcNow - player.LastRemindedUtc.Value) < TimeSpan.FromHours(6);
+                    <div class="incomplete-predictions__row">
+                        <div class="incomplete-predictions__player">
+                            <UserAvatar FullName="@player.PlayerName" />
+                            <div class="incomplete-predictions__details">
+                                <span class="text-white fw-bold">@player.PlayerName</span>
+                                <small class="text-white-50">Missing: @string.Join(", ", player.MissingFixtures.Select(f => $"{f.HomeTeam} v {f.AwayTeam}"))</small>
+                            </div>
+                        </div>
+                        <div class="incomplete-predictions__actions">
+                            @if (player.HasEnteredNothing)
+                            {
+                                <span class="member-status-pill member-status-pending">None (@player.PredictedCount/@_completion.PredictableMatchCount)</span>
+                            }
+                            else
+                            {
+                                <span class="member-status-pill member-status-pending">Partial (@player.PredictedCount/@_completion.PredictableMatchCount)</span>
+                            }
+                            @if (_completion.CanSendReminders && !_completion.DeadlinePassed)
+                            {
+                                @if (remindedRecently)
                                 {
-                                    <td class="text-end">
-                                        @if (remindedRecently)
-                                        {
-                                            <span class="text-white-50 small" title="Reminded at @player.LastRemindedUtc!.Value.ToLocalTime().ToString("dd MMM HH:mm")">Reminded</span>
-                                        }
-                                        else
-                                        {
-                                            <button class="btn btn-sm blue-light-button" disabled="@_isSending" @onclick="() => RemindPlayer(player)">
-                                                <span class="bi bi-envelope-fill me-1"></span>Remind
-                                            </button>
-                                        }
-                                    </td>
+                                    <span class="text-white-50 small" title="Reminded at @player.LastRemindedUtc!.Value.ToLocalTime().ToString("dd MMM HH:mm")">Reminded</span>
                                 }
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                else
+                                {
+                                    <button class="btn btn-sm blue-light-button text-nowrap" disabled="@_isSending" @onclick="() => RemindPlayer(player)">
+                                        <span class="bi bi-envelope-fill me-1"></span>Remind
+                                    </button>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
