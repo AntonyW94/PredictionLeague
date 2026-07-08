@@ -262,5 +262,22 @@ window.blazorInterop = {
             block: 'nearest',
             behavior: smooth ? 'smooth' : 'auto'
         });
+    },
+    _visibilityHandler: null,
+    // Registers a callback invoked whenever the tab's visibility changes (Page
+    // Visibility API), so the client can pause polling on a hidden tab. Returns
+    // the current hidden state so the caller starts from the right value.
+    registerVisibilityCallback: function (dotNetHelper, methodName) {
+        this._visibilityHandler = () => {
+            dotNetHelper.invokeMethodAsync(methodName, document.hidden);
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
+        return document.hidden;
+    },
+    unregisterVisibilityCallback: function () {
+        if (this._visibilityHandler) {
+            document.removeEventListener('visibilitychange', this._visibilityHandler);
+            this._visibilityHandler = null;
+        }
     }
 };

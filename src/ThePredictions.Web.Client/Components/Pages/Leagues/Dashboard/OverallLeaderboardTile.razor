@@ -1,4 +1,6 @@
-@inject ILeagueService LeagueService
+@inject LeagueDashboardStateService State
+
+@implements IDisposable
 
 @inherits BaseLeaderboardComponent
 
@@ -8,7 +10,7 @@
 <div class="section w-100 mh-600">
     <h5 class="text-white fw-bold mb-3 text-center">Overall Leaderboard</h5>
     <div class="body no-padding justify-start">
-        @if (_isLoading)
+        @if (State.IsLoadingOverallLeaderboard)
         {
             <div class="d-flex justify-content-center align-items-center h-100">
                 <div class="spinner-border text-white" role="status">
@@ -16,19 +18,19 @@
                 </div>
             </div>
         }
-        else if (!string.IsNullOrEmpty(_errorMessage))
+        else if (!string.IsNullOrEmpty(State.OverallLeaderboardError))
         {
             <div class="p-3">
-                <ApiError Message="@_errorMessage" />
+                <ApiError Message="@State.OverallLeaderboardError" />
             </div>
         }
-        else if (_leaderboardEntries != null && _leaderboardEntries.Any())
+        else if (State.OverallLeaderboard.Any())
         {
             <div class="table-responsive rounded">
                 <table class="leaderboard-table table-striped-purple text-white">
                     <thead>
                         <tr>
-                            @if (_leaderboardEntries.First().IsRoundInProgress && _leaderboardEntries.First().SnapshotRank.HasValue)
+                            @if (State.OverallLeaderboard.First().IsRoundInProgress && State.OverallLeaderboard.First().SnapshotRank.HasValue)
                             {
                                 <th class="rank-change-col"></th>
                             }
@@ -38,7 +40,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var entry in _leaderboardEntries)
+                        @foreach (var entry in State.OverallLeaderboard)
                         {
                             <tr class="@(GetUserHighlightClass(entry.UserId)) @entry.UserId">
                                 @if (entry.IsRoundInProgress && entry.SnapshotRank.HasValue)
@@ -69,24 +71,14 @@
     [Parameter, EditorRequired]
     public int LeagueId { get; set; }
 
-    private IEnumerable<LeaderboardEntryDto>? _leaderboardEntries;
-    private bool _isLoading = true;
-    private string? _errorMessage;
-
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            await base.OnInitializedAsync();
-            _leaderboardEntries = await LeagueService.GetOverallLeaderboardAsync(LeagueId);
-        }
-        catch (Exception)
-        {
-            _errorMessage = "Could not load the leaderboard. Please try again later.";
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+        await base.OnInitializedAsync();
+        State.OnStateChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        State.OnStateChange -= StateHasChanged;
     }
 }

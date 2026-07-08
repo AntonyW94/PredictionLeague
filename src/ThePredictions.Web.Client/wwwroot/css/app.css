@@ -56,6 +56,7 @@
 @import url('components/cookie-consent.css');
 @import url('components/prediction-split.css');
 @import url('components/incomplete-predictions.css');
+@import url('components/live-indicator.css');
 
 /* Light theme overrides (scoped under .admin-light) */
 @import url('themes/light/layout.css');

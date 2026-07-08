@@ -3,12 +3,15 @@
 @attribute [Authorize]
 
 @inject LeagueDashboardStateService State
+@inject LiveScorePollingService Poller
+@inject IPageVisibilityService Visibility
 
 @implements IAsyncDisposable
 
 @using ThePredictions.Contracts.Leagues
 @using ThePredictions.Domain.Common.Enumerations
 @using ThePredictions.Web.Client.Services.Leagues
+@using ThePredictions.Web.Client.Services.Live
 
 <PageTitle>League Dashboard</PageTitle>
 
@@ -24,7 +27,17 @@
         {
             var isPreDeadline = State.EntryDeadlineUtc is { } deadline && DateTime.UtcNow < deadline;
 
-            <h3 class="text-center fw-bold text-white mb-4">@State.LeagueName</h3>
+            <h3 class="text-center fw-bold text-white mb-2">@State.LeagueName</h3>
+
+            @if (State.IsSelectedRoundLive)
+            {
+                <div class="text-center mb-4">
+                    <span class="live-indicator" title="Scores update automatically">
+                        <span class="live-indicator__dot" aria-hidden="true"></span>
+                        <span class="live-indicator__label">Live - updating automatically</span>
+                    </span>
+                </div>
+            }
 
             @if (!State.IsFinished && (isPreDeadline || !State.ViewableRounds.Any()))
             {
@@ -231,9 +244,41 @@
 
     protected override async Task OnInitializedAsync()
     {
-        State.OnStateChange += StateHasChanged;
+        State.OnStateChange += OnStateChanged;
         await State.LoadDashboardData(LeagueId);
         StartCountdown();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await Visibility.InitialiseAsync();
+        EnsurePolling();
+    }
+
+    private void OnStateChanged()
+    {
+        InvokeAsync(() =>
+        {
+            StateHasChanged();
+            EnsurePolling();
+        });
+    }
+
+    // Starts polling once the selected round is live, and stops it once nothing
+    // is live. The polling loop itself pauses while the tab is hidden.
+    private void EnsurePolling()
+    {
+        if (State.IsSelectedRoundLive)
+        {
+            Poller.Start(() => State.IsSelectedRoundLive, ct => State.RefreshLiveDataAsync(LeagueId, ct));
+        }
+        else
+        {
+            Poller.Stop();
+        }
     }
 
     private void StartCountdown()
@@ -273,9 +318,10 @@
 
     public ValueTask DisposeAsync()
     {
-        State.OnStateChange -= StateHasChanged;
+        State.OnStateChange -= OnStateChanged;
         _countdownTimer?.Stop();
         _countdownTimer?.Dispose();
+        Poller.Stop();
         return ValueTask.CompletedTask;
     }
 }
