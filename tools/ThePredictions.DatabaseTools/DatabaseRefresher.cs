@@ -15,6 +15,13 @@ public class DatabaseRefresher(
     // NOTE: DbUp's [dbo].[SchemaVersions] migration journal is deliberately absent from BOTH
     // arrays below. Each database owns its own journal, so the data refresh/backup must neither
     // copy nor truncate it. Do not add it here. (See ADR-0013.)
+    //
+    // NOTE: [dbo].[EmailSettings] is also deliberately absent from BOTH arrays. It is the
+    // per-environment master email switch, and each environment owns its own value: dev keeps
+    // emails OFF so it never double-sends to the real inboxes a refresh preserves, while prod
+    // stays ON. Copying it would overwrite dev's OFF with prod's default; listing it under
+    // TablesToSkip would still TRUNCATE it (skip means "don't copy", not "don't touch"), and an
+    // empty table reads as emails-ON. Leaving it out of both arrays preserves the target's row.
     private static readonly string[] TablesToSkip =
     [
         "AspNetUserTokens",
@@ -36,7 +43,6 @@ public class DatabaseRefresher(
         "RunningCosts",
         "PricingSettings",
         "ServiceFees",
-        "EmailSettings",
         "Seasons",
         "SeasonPasses",
         "UserOnboardingSkips",
