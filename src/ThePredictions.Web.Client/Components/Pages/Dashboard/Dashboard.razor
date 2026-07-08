@@ -1,10 +1,13 @@
 @using ThePredictions.Web.Client.Services.Dashboard
+@using ThePredictions.Web.Client.Services.Live
 @using ThePredictions.Contracts.Onboarding
 
 @page "/dashboard"
 
 @attribute [Authorize]
 @inject IDashboardStateService DashboardState
+@inject LiveScorePollingService Poller
+@inject IPageVisibilityService Visibility
 @implements IAsyncDisposable
 
 <PageTitle>Dashboard</PageTitle>
@@ -162,7 +165,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        DashboardState.OnStateChange += StateHasChanged;
+        DashboardState.OnStateChange += OnStateChanged;
 
         if (!string.IsNullOrWhiteSpace(Tab) && AllowedTabs.Contains(Tab))
             _activeTab = Tab;
@@ -179,9 +182,42 @@
         );
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await Visibility.InitialiseAsync();
+        EnsurePolling();
+    }
+
+    private void OnStateChanged()
+    {
+        InvokeAsync(() =>
+        {
+            StateHasChanged();
+            EnsurePolling();
+        });
+    }
+
+    // Poll for live scores/standings only while a round is in progress; the poll
+    // loop itself pauses while the tab is hidden and stops once nothing is live.
+    private void EnsurePolling()
+    {
+        if (DashboardState.IsAnyRoundLive)
+        {
+            Poller.Start(() => DashboardState.IsAnyRoundLive, _ => DashboardState.RefreshLiveDataAsync());
+        }
+        else
+        {
+            Poller.Stop();
+        }
+    }
+
     public ValueTask DisposeAsync()
     {
-        DashboardState.OnStateChange -= StateHasChanged;
+        DashboardState.OnStateChange -= OnStateChanged;
+        Poller.Stop();
         return ValueTask.CompletedTask;
     }
 }

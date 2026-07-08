@@ -9,7 +9,8 @@ Not Started | In Progress | **Complete (pragmatic version)**
 > documented as the later upgrade path (see Open Questions).
 >
 > **Shipped:** client-side, visibility-aware polling on the league dashboard
-> (live round results, match scores/statuses and the overall leaderboard),
+> (round results, match scores/statuses and the overall/monthly/exact-scores/
+> stage leaderboards) and the user dashboard (Active Rounds and Standings),
 > reusing the existing read endpoints. **Intentionally deferred to the
 > caching-strategy / football-api-resilience work:** the cache-backed reads
 > (Task 4) and the degraded/stale-data banner (Task 5). A failed poll simply
@@ -44,10 +45,11 @@ When nothing is live, or the tab is hidden  ──▶  stop polling
 
 ## Acceptance Criteria
 
-- [x] Live pages auto-refresh every 10s (configurable): the league live round
-      results and leaderboard update on their own. (The standalone predictions
-      *entry* page is pre-deadline only and shows no live scores, so it is not
-      polled; the live scores surface is the league dashboard.)
+- [x] Live pages auto-refresh every 10s (configurable): the league dashboard
+      (round results, match scores/statuses, and the overall, monthly,
+      exact-scores and stage leaderboards) and the user dashboard (Active Rounds
+      and Standings) update on their own. (The standalone predictions *entry*
+      page is pre-deadline only and shows no live scores, so it is not polled.)
 - [x] Polling runs only when something is live (an in-progress round/match) and
       pauses when the browser tab is hidden (Page Visibility API).
 - [ ] Polled reads are served from the cache layer (see
@@ -67,7 +69,7 @@ When nothing is live, or the tab is hidden  ──▶  stop polling
 |---|------|-------------|--------|
 | 1 | Live snapshot endpoint(s) | Reused the existing reads: `GET /api/rounds/{roundId}/matches-data`, `GET /api/leagues/{leagueId}/rounds/{roundId}/results`, `GET /api/leagues/{leagueId}/leaderboard/overall`. No new endpoint needed | Done (reused) |
 | 2 | Client polling service | `LiveScorePollingService` - reusable, visibility-aware `PeriodicTimer` helper with start/stop and configurable interval (default 10s) | Done |
-| 3 | Wire live pages | League dashboard live round/leaderboard (`Dashboard.razor`, `LeagueDashboardStateService`, `OverallLeaderboardTile`) | Done |
+| 3 | Wire live pages | League dashboard (round results + overall/monthly/exact-scores/stage leaderboards) and user dashboard (Active Rounds + Standings), via the state services + `OnStateChange` / `OnLiveDataChanged` | Done |
 | 4 | Cache-backed reads | Ensure polled endpoints hit the cache layer | Deferred (caching-strategy work) |
 | 5 | Degraded/stale handling | Reflect the resilience plan's stale-data signal | Deferred (football-api-resilience work); failed polls keep last-known values |
 | 6 | Tests | Start/stop, visibility pause, interval config, no-live = no poll, change-detection | Done |
@@ -98,11 +100,11 @@ When nothing is live, or the tab is hidden  ──▶  stop polling
       new endpoint was added. A slim combined snapshot endpoint could be added
       later alongside the cache layer if the three-call fan-out proves too chatty.
 - [x] Should the live leaderboard re-rank live, or only the scores? **Resolved:**
-      the overall leaderboard already re-ranks live server-side (`RANK()` over
+      the leaderboards already re-rank live server-side (`RANK()` over
       `SUM(BoostedPoints)` with `IsRoundInProgress` / `SnapshotRank`), so polling
-      it refreshes live ranks and the up/down arrows. Only the *overall*
-      leaderboard is live-refreshed; the monthly / exact-scores / stage tiles
-      still update on the next manual load (kept out of scope to stay lean).
+      them refreshes live ranks and the up/down arrows. The league dashboard's
+      overall, monthly, exact-scores and stage leaderboards and the user
+      dashboard's Standings are all live-refreshed.
 - [ ] **SignalR upgrade trigger:** define the threshold at which push becomes
       worth it - e.g. score cadence drops below ~30s, provider webhooks/streaming
       become available, or the app moves to a host with confirmed WebSocket

@@ -12,6 +12,14 @@ public class LeagueDashboardStateService(HttpClient httpClient)
 {
     public event Action? OnStateChange;
 
+    /// <summary>
+    /// Raised after a live poll detects changed data. Tiles that own their own
+    /// data (the monthly / exact-scores / stage leaderboards) subscribe to this
+    /// to re-fetch their current selection, separate from the structural
+    /// <see cref="OnStateChange"/> that fires during loads and round switches.
+    /// </summary>
+    public event Action? OnLiveDataChanged;
+
     public string? LeagueName { get; private set; }
     public CompetitionType CompetitionType { get; private set; }
     public DateTime? SeasonStartDateUtc { get; private set; }
@@ -228,6 +236,7 @@ public class LeagueDashboardStateService(HttpClient httpClient)
             OverallLeaderboard = newLeaderboard;
 
             NotifyStateChanged();
+            OnLiveDataChanged?.Invoke();
         }
         catch
         {

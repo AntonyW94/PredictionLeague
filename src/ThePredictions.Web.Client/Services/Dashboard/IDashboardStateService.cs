@@ -20,6 +20,8 @@ public interface IDashboardStateService
     List<AdminLeagueSummaryDto> AdminLeagues { get; }
     bool IsAdminOfOpenLeague { get; }
 
+    bool IsAnyRoundLive { get; }
+
     bool HasAvailablePrivateLeagues { get; }
     bool IsMyLeaguesLoading { get; }
     bool IsAvailableLeaguesLoading { get; }
@@ -46,6 +48,7 @@ public interface IDashboardStateService
     Task DismissOnboardingAsync();
     Task LoadLeaderboardsAsync();
     Task LoadActiveRoundsAsync();
+    Task RefreshLiveDataAsync();
     Task LoadPendingRequestsAsync();
     Task LoadPendingMembersAsync();
     Task ApproveMemberAsync(int leagueId, string userId);
