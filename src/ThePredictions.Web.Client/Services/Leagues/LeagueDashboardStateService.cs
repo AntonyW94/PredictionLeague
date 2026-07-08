@@ -55,26 +55,10 @@ public class LeagueDashboardStateService(HttpClient httpClient)
     /// True when the currently-selected round is in progress, or any of its
     /// matches are in progress. Drives whether live-score polling should run.
     /// </summary>
-    public bool IsSelectedRoundLive
-    {
-        get
-        {
-            // Any match currently playing is always live.
-            if (CurrentRoundMatches.Any(m => m.Status == MatchStatus.InProgress))
-                return true;
-
-            var selectedRound = ViewableRounds.FirstOrDefault(r => r.Id == SelectedRoundId);
-            if (selectedRound is not { Status: RoundStatus.InProgress })
-                return false;
-
-            // The round is in progress: keep polling before kick-off and between
-            // matches (any match still to play). Once every match has finished we
-            // treat it as no longer live so polling can stop, even though the
-            // round's own status is only re-fetched on a full page load.
-            return CurrentRoundMatches.Count == 0
-                   || CurrentRoundMatches.Any(m => m.Status == MatchStatus.Scheduled);
-        }
-    }
+    // Live only while a match is actually being played. A round stays "in progress"
+    // for the whole gameweek (often days) even when no match is on, so we key off
+    // real match status rather than round status to avoid polling during the gaps.
+    public bool IsSelectedRoundLive => CurrentRoundMatches.Any(m => m.Status == MatchStatus.InProgress);
 
     public async Task LoadDashboardData(int leagueId)
     {

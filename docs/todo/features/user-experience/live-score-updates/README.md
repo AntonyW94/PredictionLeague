@@ -91,6 +91,14 @@ When nothing is live, or the tab is hidden  ──▶  stop polling
   not make scores more real-time than the cron.
 - Pause polling on a hidden tab (Page Visibility API) and when there is no
   in-progress round, to limit request volume and battery use.
+- **"Live" means a match is actually in progress**, keyed on `MatchStatus.InProgress`,
+  not `RoundStatus.InProgress`. A round stays in progress for the whole gameweek
+  (often days) while matches only play in short windows, so keying on round status
+  would poll continuously through the gaps. Trade-off: polling starts when a match
+  is in progress at page load (or once one kicks off while already polling); it does
+  not auto-start at the very first kick-off if the page was opened beforehand, so a
+  user sitting on the page pre-kick-off would need to reload. That is an acceptable
+  cost for not hammering the API for days per round.
 
 ## Open Questions
 

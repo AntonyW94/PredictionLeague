@@ -24,8 +24,13 @@ public class DashboardStateServiceLiveRefreshTests
             Substitute.For<IOnboardingService>());
     }
 
-    private static ActiveRoundDto Round(int id, RoundStatus status) =>
-        new(id, "Season", 1, null, false, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc), false, status, Array.Empty<ActiveRoundMatchDto>(), null);
+    private static readonly DateTime MatchTime = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    private static ActiveRoundDto Round(int id, MatchStatus matchStatus) =>
+        new(id, "Season", 1, null, false, MatchTime, false, RoundStatus.InProgress, new[] { Match(matchStatus) }, null);
+
+    private static ActiveRoundMatchDto Match(MatchStatus status) =>
+        new(null, null, null, null, null, status, null, null, MatchTime, 1, true, null, null, 0, 0, 0);
 
     private static LeagueLeaderboardDto Board(int totalPoints, bool roundInProgress) =>
         new()
@@ -40,33 +45,26 @@ public class DashboardStateServiceLiveRefreshTests
         };
 
     [Fact]
-    public async Task IsAnyRoundLive_ShouldBeTrue_WhenAnActiveRoundIsInProgress()
+    public async Task IsAnyRoundLive_ShouldBeTrue_WhenAnActiveRoundHasAMatchInProgress()
     {
-        _leagueService.GetActiveRoundsAsync().Returns(new List<ActiveRoundDto> { Round(1, RoundStatus.InProgress) });
+        _leagueService.GetActiveRoundsAsync().Returns(new List<ActiveRoundDto> { Round(1, MatchStatus.InProgress) });
 
         await _state.LoadActiveRoundsAsync();
 
         _state.IsAnyRoundLive.Should().BeTrue();
     }
 
-    [Fact]
-    public async Task IsAnyRoundLive_ShouldBeTrue_WhenAStandingsEntryIsInProgress()
+    [Theory]
+    [InlineData(MatchStatus.Scheduled)]
+    [InlineData(MatchStatus.Completed)]
+    [InlineData(MatchStatus.Postponed)]
+    public async Task IsAnyRoundLive_ShouldBeFalse_WhenNoMatchIsInProgress_EvenIfRoundIsInProgress(MatchStatus matchStatus)
     {
-        _leagueService.GetLeaderboardsAsync().Returns(new List<LeagueLeaderboardDto> { Board(3, roundInProgress: true) });
-
-        await _state.LoadLeaderboardsAsync();
-
-        _state.IsAnyRoundLive.Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task IsAnyRoundLive_ShouldBeFalse_WhenNothingIsLive()
-    {
-        _leagueService.GetActiveRoundsAsync().Returns(new List<ActiveRoundDto> { Round(1, RoundStatus.Published) });
-        _leagueService.GetLeaderboardsAsync().Returns(new List<LeagueLeaderboardDto> { Board(3, roundInProgress: false) });
+        // The round itself is RoundStatus.InProgress (set by Round(...)), but no match is
+        // actually being played, so we must not poll during the gap.
+        _leagueService.GetActiveRoundsAsync().Returns(new List<ActiveRoundDto> { Round(1, matchStatus) });
 
         await _state.LoadActiveRoundsAsync();
-        await _state.LoadLeaderboardsAsync();
 
         _state.IsAnyRoundLive.Should().BeFalse();
     }
@@ -74,7 +72,7 @@ public class DashboardStateServiceLiveRefreshTests
     [Fact]
     public async Task RefreshLiveDataAsync_ShouldNotNotify_WhenDataUnchanged()
     {
-        _leagueService.GetActiveRoundsAsync().Returns(new List<ActiveRoundDto> { Round(1, RoundStatus.InProgress) });
+        _leagueService.GetActiveRoundsAsync().Returns(new List<ActiveRoundDto> { Round(1, MatchStatus.InProgress) });
         _leagueService.GetLeaderboardsAsync().Returns(new List<LeagueLeaderboardDto> { Board(3, roundInProgress: true) });
 
         await _state.LoadActiveRoundsAsync();
@@ -91,7 +89,7 @@ public class DashboardStateServiceLiveRefreshTests
     [Fact]
     public async Task RefreshLiveDataAsync_ShouldNotifyOnce_WhenStandingsChange()
     {
-        _leagueService.GetActiveRoundsAsync().Returns(new List<ActiveRoundDto> { Round(1, RoundStatus.InProgress) });
+        _leagueService.GetActiveRoundsAsync().Returns(new List<ActiveRoundDto> { Round(1, MatchStatus.InProgress) });
         _leagueService.GetLeaderboardsAsync().Returns(
             new List<LeagueLeaderboardDto> { Board(3, roundInProgress: true) },
             new List<LeagueLeaderboardDto> { Board(6, roundInProgress: true) });
@@ -111,7 +109,7 @@ public class DashboardStateServiceLiveRefreshTests
     [Fact]
     public async Task RefreshLiveDataAsync_ShouldKeepLastKnownValues_WhenPollFails()
     {
-        var baseline = new List<ActiveRoundDto> { Round(1, RoundStatus.InProgress) };
+        var baseline = new List<ActiveRoundDto> { Round(1, MatchStatus.InProgress) };
         _leagueService.GetActiveRoundsAsync().Returns(baseline);
         _leagueService.GetLeaderboardsAsync().Returns(new List<LeagueLeaderboardDto> { Board(3, roundInProgress: true) });
 

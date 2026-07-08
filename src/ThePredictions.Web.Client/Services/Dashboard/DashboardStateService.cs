@@ -43,12 +43,13 @@ public class DashboardStateService(ILeagueService leagueService, ISeasonPassServ
     public event Action? OnStateChange;
 
     /// <summary>
-    /// True when any of the user's active rounds is in progress, or a standings
-    /// entry belongs to an in-progress round. Drives whether the dashboard polls.
+    /// True only while one of the user's active rounds has a match actually being
+    /// played. A round stays "in progress" for the whole gameweek (often days)
+    /// even when no match is on, so we key off real match status - not round
+    /// status - to avoid polling during the gaps between matches.
     /// </summary>
     public bool IsAnyRoundLive =>
-        ActiveRounds.Any(r => r.Status == RoundStatus.InProgress)
-        || Leaderboards.Any(l => l.Entries.Any(e => e.IsRoundInProgress));
+        ActiveRounds.Any(r => r.Matches.Any(m => m.Status == MatchStatus.InProgress));
 
     /// <summary>
     /// Silently re-fetches the active rounds and standings, raising
