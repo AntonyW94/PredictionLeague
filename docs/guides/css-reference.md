@@ -181,6 +181,24 @@ Creates a premium-looking panel with:
 </div>
 ```
 
+### Dark-Mode Content Panels
+
+In dark mode, the page background is `var(--purple-900)`. Any content box, card, or panel that needs to stand out from that background should reuse the **`.form-container` surface** (the same treatment used by the login and register pages) rather than inventing new colours:
+
+```css
+.theme-dark .my-panel {
+    background-color: var(--purple-800);
+    border: 1px solid transparent;
+    box-shadow: 0 8px 24px var(--black-alpha-25);
+}
+```
+
+The canonical rule lives in `wwwroot/css/themes/dark/dark.css` (`.theme-dark .form-container`). The `0 8px 24px var(--black-alpha-25)` drop shadow matches `.page-hero`, so every raised surface reads consistently.
+
+- Prefer reusing an existing surface class (`.card`, `.section`, `.glass-panel`, `.form-container`) over adding a new one; only reach for the values above when a genuinely new surface is needed.
+- Do **not** darken panels to `--purple-1000` or match the page background - they disappear into it.
+- Do not apply this to elements that should recede (the page background itself, transparent wrappers, full-width hero bands).
+
 ### Section Structure
 
 ```html
