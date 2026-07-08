@@ -1,0 +1,62 @@
+/* Incomplete Predictions dashboard tile
+   Mobile-first: each player stacks the name/missing block above the
+   status pill and remind action so nothing is squeezed into a narrow
+   column. From tablet up the row lays out horizontally. */
+
+.incomplete-predictions {
+    display: flex;
+    flex-direction: column;
+}
+
+.incomplete-predictions__row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--grey-200);
+}
+
+.incomplete-predictions__row:first-child {
+    border-top: 1px solid var(--grey-200);
+}
+
+.incomplete-predictions__row:last-child {
+    border-bottom: none;
+}
+
+.incomplete-predictions__player {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.incomplete-predictions__details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.incomplete-predictions__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+@media (min-width: 768px) {
+    .incomplete-predictions__row {
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-4);
+    }
+
+    .incomplete-predictions__player {
+        flex: 1 1 auto;
+    }
+
+    .incomplete-predictions__actions {
+        flex: 0 0 auto;
+        justify-content: flex-end;
+    }
+}
