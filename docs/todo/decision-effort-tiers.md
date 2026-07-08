@@ -54,7 +54,6 @@ July 2026 review plans, all fully specified with decisions already made:
 | Plan | The one decision needed |
 |------|-------------------------|
 | live-score-updates | Poll interval - **decided: 10s** (effectively ready to build) |
-| tournament-knockout-result-display | Approve the existing 8-task spec (decisions already made) |
 | football-api-resilience (caching) | Acceptable staleness TTLs; user banner yes/no |
 | caching-strategy | Which endpoints + TTLs (safe defaults: teams/seasons) |
 | pagination | Default page size + response envelope shape |

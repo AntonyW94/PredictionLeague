@@ -65,7 +65,6 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 
 | # | Item | Effort | Why | Plan |
 |---|------|--------|-----|------|
-| 28 | Tournament knockout AET/penalty result *display* | Low | 90-minute knockout *scoring* already ships; the remaining work is capturing and displaying extra-time/penalty results so users can see how a tie was settled | [Outline](features/user-experience/tournament-knockout-result-display/README.md) |
 | 30 | User onboarding | Medium | Reduce drop-off for new signups | [Outline](features/user-experience/user-onboarding/README.md) |
 | 31 | Email preferences | Medium | Let users control what they receive | [Outline](features/email-notifications/email-preferences/README.md) |
 | 32 | Notifications UI | Medium | Dashboard alerts tile exists; extend to bell icon and dropdown for general notifications | [Outline](features/user-experience/notifications-ui/README.md) |
@@ -156,7 +155,7 @@ These items from the original backlog are already implemented:
 | Prod backup workflow | GitHub Actions, daily at 2am UTC |
 | CI workflow (`ci.yml`) | Build + test on every push/PR with Coverlet code coverage |
 | Deploy workflows (`deploy.yml`) | One-click deploys to dev and production via FTP with verification and warm-up |
-| Tournament support | Schema, domain models (CompetitionType, TournamentStage), sync handler, placeholder matches, round mappings, API endpoints, UI CSS, 50+ tests. 90-minute knockout scoring complete; only the AET/penalty result *display* remains (Track 3 #28) |
+| Tournament support | Schema, domain models (CompetitionType, TournamentStage), sync handler, placeholder matches, round mappings, API endpoints, UI CSS, 50+ tests. 90-minute knockout scoring complete; knockout ties are shown as their scored 90-minute result (AET/penalty detail intentionally not displayed) |
 | Validator tests (Phase 2) | `ThePredictions.Validators.Tests.Unit`, ~261 cases across all validators |
 | Round results digest emails | Per-user post-round digest (Brevo template 11), per-league links, admin resend, idempotent via `Round.ResultsDigestSentUtc` |
 | Prize-won notifications | Celebratory email to winners (Brevo template 12), idempotent via `PrizeNotifications` sent-log, admin resend |
