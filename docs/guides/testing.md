@@ -91,6 +91,14 @@ Click any class name to see a line-by-line view with green (covered) and red (un
 
 Branch coverage tracks every possible path through `if`, `switch`, `??`, ternary (`? :`), and pattern matching expressions. A single `if` statement creates 2 branches (true and false). The `??` operator also creates 2 branches (null and non-null).
 
+## Composition / Container Validation
+
+A MediatR handler that depends on a service the host never registers is **invisible to `dotnet build` and to handler unit tests** (those construct the handler with mocks). The gap only surfaces at app startup, via the Development host's `ValidateOnBuild`, i.e. on deploy.
+
+`tests/Unit/ThePredictions.Composition.Tests.Unit/ContainerValidationTests.cs` closes that gap: it builds the **real** DI container (`AddInfrastructureServices` + `AddApiServices` with representative configuration) and resolves every `IRequestHandler<>` / `IRequestHandler<,>`, so a missing registration fails in CI with the offending handler and its unregistered dependency named, instead of on deploy.
+
+When you add a handler with a new dependency, run this project. If it needs a configuration value read at registration time (or in an eagerly-built singleton constructor), add that key to the in-memory configuration in `BuildConfiguration()`.
+
 ## Test Conventions
 
 ### Test Project Structure

@@ -109,7 +109,7 @@ There is also a backup database (`ThePredictionsBackup`) which receives a daily 
 
 - **Provider:** Fasthosts shared hosting (both sites)
 - **Access:** FTP only (no RDP, no server configuration)
-- **Deployment:** Manual publish from Visual Studio, then upload via CuteFTP
+- **Deployment:** GitHub Actions publishes and uploads over FTP (`deploy-dev.yml`, `deploy-prod.yml`). Each is `workflow_dispatch` with a typed `confirm` input, e.g. `gh workflow run deploy-prod.yml --ref master -f confirm=deploy` (dev: `deploy-dev.yml`). Manual publish from Visual Studio + FTP upload remains a fallback.
 - **FTP hostname:** `ftp.fasthosts.co.uk` for both sites
 
 ### Database Server
@@ -165,58 +165,7 @@ Each App Registration has the **Key Vault Secrets User** role on its respective 
 
 Secrets are referenced in `appsettings.json` using substitution syntax: `${Secret-Name}`. The `EnableSubstitutions()` call in `Program.cs` replaces these placeholders with actual Key Vault values at startup.
 
-### Database Server
-
-All databases are hosted on `mssql04.mssql.prositehosting.net` (Fasthosts SQL Server).
-
-| Database | Purpose | Logins |
-|----------|---------|--------|
-| `ThePredictions` | Production | `AntonyWillson` (app), `Refresh` (read for backups/refresh) |
-| `ThePredictionsDev` | Development | `AntonyWillsonDev` (app), `RefreshDev` (read for refresh) |
-| `ThePredictionsBackup` | Daily backup of production | `PredictionBackup` (write) |
-
-All database logins have database owner permissions (Fasthosts only supports owner or no access).
-
-### Publish Profiles
-
-The `ThePredictions.Web` project has two publish profiles:
-
-| Profile | Environment | Output Folder | Notes |
-|---------|-------------|---------------|-------|
-| `Publish to Production` | `Production` | `bin\Release\net8.0\publish\` | Excludes dev config files |
-| `Publish to Development` | `Development` | `bin\Release\net8.0\publish-dev\` | Excludes prod config files |
-
-Each profile uses `CopyToPublishDirectory="Never"` to exclude the other environment's `appsettings` and secrets files. The `EnvironmentName` property in each `.pubxml` controls the `ASPNETCORE_ENVIRONMENT` value written into the published `web.config`.
-
-### Configuration Files
-
-| File | Used by | Purpose |
-|------|---------|---------|
-| `appsettings.json` | All environments | Shared base config with Key Vault substitution placeholders |
-| `appsettings.Local.json` | Local development | Localhost URLs, dev Key Vault URI |
-| `appsettings.Development.json` | Hosted dev site | Dev site URLs, dev Key Vault URI |
-| `appsettings.Production.json` | Live site | Production URLs, prod Key Vault URI |
-| `appsettings.Production.Secrets.json` | Live site | Azure service principal credentials (not in source control) |
-| `appsettings.Development.Secrets.json` | Hosted dev site | Azure service principal credentials (not in source control) |
-
-The `*.Secrets.json` files contain Azure AD service principal credentials (`TenantId`, `ClientId`, `ClientSecret`) used to authenticate to Key Vault. They are gitignored and must be manually placed on each Fasthosts site.
-
-`launchSettings.json` sets the environment to `Local` for Visual Studio debugging, which loads `appsettings.Local.json` and uses `DefaultAzureCredential` (Visual Studio sign-in) for Key Vault access.
-
-### Azure Key Vault
-
-Both Key Vaults use **RBAC (role-based access control)** for permissions.
-
-Each environment has its own Key Vault and Azure AD App Registration (service principal):
-
-| Environment | Key Vault | App Registration |
-|-------------|-----------|------------------|
-| Production | `the-predictions-prod` | `The Predictions (Prod)` |
-| Development | `the-predictions-dev` | `The Predictions (Dev)` |
-
-Each App Registration has the **Key Vault Secrets User** role on its respective Key Vault.
-
-Secrets are referenced in `appsettings.json` using substitution syntax: `${Secret-Name}`. The `EnableSubstitutions()` call in `Program.cs` replaces these placeholders with actual Key Vault values at startup.
+> **Key Vault reachability gotcha:** some VPNs block outbound access to `*.vault.azure.net` (the connection resets) while leaving `login.microsoftonline.com` reachable, so token acquisition succeeds but the secret fetch hangs or fails. If Key Vault reads fail locally, disconnect the VPN and retry.
 
 ### Scheduled Jobs (via cron-job.org)
 
@@ -239,10 +188,20 @@ All scheduled endpoints protected by API key (`X-Api-Key` header). The legacy `/
 
 | Workflow | File | Trigger | Purpose |
 |----------|------|---------|---------|
+| CI | `ci.yml` | Push / PR | Build + test (`/p:TreatWarningsAsErrors=true`) |
+| Deploy to Dev | `deploy-dev.yml` | Manual (`confirm` input) | Runs pending migrations, then publishes + FTP-uploads to the dev site |
+| Deploy to Prod | `deploy-prod.yml` | Manual (`confirm` input) | Runs pending migrations, then publishes + FTP-uploads to the live site |
+| Migrate (dev/prod/backup) | `migrate-*.yml`, `migrate-shared.yml` | Manual (prod/backup require `confirm`) | Applies DbUp migrations to a single database (see ADR-0013) |
 | Refresh Dev Database | `refresh-dev-db.yml` | Manual only | Copies production data to dev with anonymisation |
 | Backup Production Database | `backup-prod-db.yml` | Daily at 2am UTC + manual | Copies production data to backup (no anonymisation) |
 
-Both workflows use `tools/ThePredictions.DatabaseTools/`. The **dev refresh** reads all tables from production, anonymises personal data (realistic fake names/emails via Bogus), creates test accounts (`testplayer@dev.local` and `testadmin@dev.local`), and writes to the dev database. The **production backup** copies all data unmodified to `ThePredictionsBackup` as a safety net independent of Fasthosts' own backup policy. Token tables (`AspNetUserTokens`, `RefreshTokens`, `PasswordResetTokens`) are excluded from both.
+The deploy workflows each `needs:` a migrate job, so schema changes land before the code that depends on them. After a deploy, confirm the site is actually healthy rather than trusting a green run alone:
+
+- `curl -s -o /dev/null -w "%{http_code}" https://www.thepredictions.co.uk/` returns `200`.
+- The served page references `css/app.css?v=<timestamp>`; that cache-bust stamp is the publish time, so a matching stamp means the new build is live.
+- Sampling `_framework` assets from `/_framework/blazor.boot.json` returns `200` (a partial upload would 404 most of these and Blazor would not boot).
+
+The two **database** workflows use `tools/ThePredictions.DatabaseTools/`. The **dev refresh** reads all tables from production, anonymises personal data (realistic fake names/emails via Bogus), creates test accounts (`testplayer@dev.local` and `testadmin@dev.local`), and writes to the dev database. The **production backup** copies all data unmodified to `ThePredictionsBackup` as a safety net independent of Fasthosts' own backup policy. Token tables (`AspNetUserTokens`, `RefreshTokens`, `PasswordResetTokens`) are excluded from both. The dev refresh additionally leaves `EmailSettings` untouched so the dev master email switch survives a refresh (see [Dev email gate](#dev-email-gate)).
 
 The dev refresh exposes two `workflow_dispatch` toggles to make the dev copy easier to navigate (sensitive fields — emails, password hashes, bank/payout details, payment references — are always scrubbed regardless):
 
@@ -264,6 +223,15 @@ The dev refresh exposes two `workflow_dispatch` toggles to make the dev copy eas
 
 - **Provider:** api-sports.io (Football API)
 - **No fallback data** — app relies entirely on API availability
+
+### Dev Email Gate
+
+Dev and production share a single Brevo account, and a dev database refresh preserves a couple of real email addresses (the `DataAnonymiser` preserved list) so template previews reach a real inbox. Without a gate, dev and prod would both send automated emails (e.g. the round-results digest) to those preserved inboxes, so a real person receives two copies of every email. Two mechanisms prevent that, both enforced in the single chokepoint `BrevoEmailService.SendTemplatedEmailAsync`:
+
+- **Master switch** — the single-row `EmailSettings` table (`EmailsEnabled` bit), read on the hot path via `IEmailSettingsProvider` (short-lived cache, so a toggle takes a few seconds to bite) and toggled at `/admin/email-settings`. **An absent row means "on"** (the production default), so production is unaffected; dev is switched **off**. The admin email-test tool (`SendTestTemplatedEmailAsync`) deliberately bypasses this so a test can always be sent.
+- **Recipient allow-list** — `EmailDelivery:AllowedRecipients` in `appsettings.Development.json`. When set, only those addresses receive mail. It intentionally includes the preserved real inboxes so previews still work, so it does **not** by itself stop the double-send to those inboxes; the master switch is what does.
+
+Because the allow-list lets the preserved inboxes through, the master switch is the only thing stopping dev from double-sending to them. The dev refresh therefore leaves `EmailSettings` untouched (it is in neither of the refresher's copy/skip arrays) so the dev "off" value is not reset to production's "on" default on every refresh.
 
 ## Season Sync Algorithm
 
@@ -432,7 +400,7 @@ These are intentional trade-offs, not issues to fix:
 2. **Blazor WASM** — Client-side rendering for responsiveness, tokens in localStorage
 3. **MediatR** — Decouples controllers from business logic
 4. **Unit tests with 100% coverage** — Domain project fully tested with xUnit, FluentAssertions, and coverlet
-5. **Manual FTP deployment** — Hosting limitation (CI/CD via GitHub Actions planned)
+5. **FTP deployment** — Hosting limitation (Fasthosts is FTP-only); publish + upload is automated via GitHub Actions, with manual publish from Visual Studio as a fallback
 6. **Separate environments** — Local (localhost), Development (hosted dev site), Production
 
 ## Documentation Locations
