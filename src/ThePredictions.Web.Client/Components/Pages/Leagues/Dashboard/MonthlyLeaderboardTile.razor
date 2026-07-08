@@ -1,7 +1,11 @@
 @inject ILeagueService LeagueService
+@inject LeagueDashboardStateService State
+
+@implements IDisposable
 
 @inherits BaseLeaderboardComponent
 
+@using System.Text.Json
 @using ThePredictions.Contracts.Leaderboards
 @using ThePredictions.Contracts.Leagues
 @using ThePredictions.Web.Client.Services.Leagues
@@ -113,6 +117,7 @@
         try
         {
             await base.OnInitializedAsync();
+            State.OnLiveDataChanged += HandleLiveRefresh;
             _months = (await LeagueService.GetMonthsForLeagueAsync(LeagueId)).ToList();
 
             _currentMonth = _months.FirstOrDefault(m => m.RoundsRemaining > 0) ?? _months.FirstOrDefault();
@@ -129,6 +134,42 @@
         {
             _isLoadingMonths = false;
         }
+    }
+
+    // On a live poll, silently re-fetch the currently-selected month and only
+    // re-render if its entries actually changed, so live scores flow in without flicker.
+    private void HandleLiveRefresh() => _ = InvokeAsync(RefreshCurrentMonthAsync);
+
+    private async Task RefreshCurrentMonthAsync()
+    {
+        if (_currentMonth is null)
+            return;
+
+        try
+        {
+            var entries = await LeagueService.GetMonthlyLeaderboardAsync(LeagueId, _currentMonth.Month);
+
+            if (!_leaderboards.TryGetValue(_currentMonth.Month, out var data))
+            {
+                data = new LeaderboardData();
+                _leaderboards[_currentMonth.Month] = data;
+            }
+
+            if (JsonSerializer.Serialize(data.Entries) == JsonSerializer.Serialize(entries))
+                return;
+
+            data.Entries = entries;
+            StateHasChanged();
+        }
+        catch
+        {
+            // Keep the last-known leaderboard on a failed poll.
+        }
+    }
+
+    public void Dispose()
+    {
+        State.OnLiveDataChanged -= HandleLiveRefresh;
     }
 
     private async Task OnMonthChanged(ChangeEventArgs e)

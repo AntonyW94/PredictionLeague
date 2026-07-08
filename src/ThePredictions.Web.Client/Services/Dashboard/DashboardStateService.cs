@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ThePredictions.Contracts.Dashboard;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
@@ -40,6 +41,53 @@ public class DashboardStateService(ILeagueService leagueService, ISeasonPassServ
     public string? PendingMembersErrorMessage { get; private set; }
 
     public event Action? OnStateChange;
+
+    /// <summary>
+    /// True only while one of the user's active rounds has a match actually being
+    /// played. A round stays "in progress" for the whole gameweek (often days)
+    /// even when no match is on, so we key off real match status - not round
+    /// status - to avoid polling during the gaps between matches.
+    /// </summary>
+    public bool IsAnyRoundLive =>
+        ActiveRounds.Any(r => r.Matches.Any(m => m.Status == MatchStatus.InProgress));
+
+    /// <summary>
+    /// Silently re-fetches the active rounds and standings, raising
+    /// <see cref="OnStateChange"/> only when something changed (no flicker) and
+    /// keeping the last-known values if a poll fails.
+    /// </summary>
+    public async Task RefreshLiveDataAsync()
+    {
+        try
+        {
+            var activeRoundsTask = leagueService.GetActiveRoundsAsync();
+            var leaderboardsTask = leagueService.GetLeaderboardsAsync();
+
+            await Task.WhenAll(activeRoundsTask, leaderboardsTask);
+
+            var newActiveRounds = activeRoundsTask.Result;
+            var newLeaderboards = leaderboardsTask.Result;
+
+            var changed =
+                HasChanged(ActiveRounds, newActiveRounds)
+                | HasChanged(Leaderboards, newLeaderboards);
+
+            if (!changed)
+                return;
+
+            ActiveRounds = newActiveRounds;
+            Leaderboards = newLeaderboards;
+
+            NotifyStateChanged();
+        }
+        catch
+        {
+            // Keep the last-known values on a failed poll; the dashboard must not crash.
+        }
+    }
+
+    private static bool HasChanged<T>(List<T> current, List<T> updated) =>
+        JsonSerializer.Serialize(current) != JsonSerializer.Serialize(updated);
 
     public async Task LoadMyLeaguesAsync()
     {

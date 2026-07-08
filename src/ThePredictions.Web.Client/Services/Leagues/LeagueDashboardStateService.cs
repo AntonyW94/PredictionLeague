@@ -1,14 +1,24 @@
 using ThePredictions.Contracts.Admin.Rounds;
+using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common.Enumerations;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace ThePredictions.Web.Client.Services.Leagues;
 
 public class LeagueDashboardStateService(HttpClient httpClient)
 {
     public event Action? OnStateChange;
+
+    /// <summary>
+    /// Raised after a live poll detects changed data. Tiles that own their own
+    /// data (the monthly / exact-scores / stage leaderboards) subscribe to this
+    /// to re-fetch their current selection, separate from the structural
+    /// <see cref="OnStateChange"/> that fires during loads and round switches.
+    /// </summary>
+    public event Action? OnLiveDataChanged;
 
     public string? LeagueName { get; private set; }
     public CompetitionType CompetitionType { get; private set; }
@@ -22,6 +32,7 @@ public class LeagueDashboardStateService(HttpClient httpClient)
     public List<RoundDto> ViewableRounds { get; private set; } = [];
     public List<PredictionResultDto> CurrentRoundResults { get; private set; } = [];
     public List<MatchInRoundDto> CurrentRoundMatches { get; private set; } = [];
+    public List<LeaderboardEntryDto> OverallLeaderboard { get; private set; } = [];
     public SeasonRecapDto? SeasonRecap { get; private set; }
     public LeagueRecordsDto? LeagueRecords { get; private set; }
     public PrizeBreakdownDto? PrizeBreakdown { get; private set; }
@@ -30,13 +41,24 @@ public class LeagueDashboardStateService(HttpClient httpClient)
 
     public bool IsLoadingDashboard { get; private set; }
     public bool IsLoadingRoundResults { get; private set; }
+    public bool IsLoadingOverallLeaderboard { get; private set; }
     public bool IsLoadingSeasonRecap { get; private set; }
     public bool IsLoadingLeagueRecords { get; private set; }
 
     public string? DashboardLoadError { get; private set; }
     public string? RoundResultsError { get; private set; }
+    public string? OverallLeaderboardError { get; private set; }
     public string? SeasonRecapError { get; private set; }
     public string? LeagueRecordsError { get; private set; }
+
+    /// <summary>
+    /// True when the currently-selected round is in progress, or any of its
+    /// matches are in progress. Drives whether live-score polling should run.
+    /// </summary>
+    // Live only while a match is actually being played. A round stays "in progress"
+    // for the whole gameweek (often days) even when no match is on, so we key off
+    // real match status rather than round status to avoid polling during the gaps.
+    public bool IsSelectedRoundLive => CurrentRoundMatches.Any(m => m.Status == MatchStatus.InProgress);
 
     public async Task LoadDashboardData(int leagueId)
     {
@@ -76,6 +98,8 @@ public class LeagueDashboardStateService(HttpClient httpClient)
                         SelectedRoundId = defaultRound.Id;
                         await LoadRoundResults(leagueId, SelectedRoundId.Value);
                     }
+
+                    await LoadOverallLeaderboard(leagueId);
                 }
 
                 if (IsFinished)
@@ -137,6 +161,75 @@ public class LeagueDashboardStateService(HttpClient httpClient)
             NotifyStateChanged();
         }
     }
+
+    public async Task LoadOverallLeaderboard(int leagueId)
+    {
+        IsLoadingOverallLeaderboard = true;
+        OverallLeaderboardError = null;
+
+        NotifyStateChanged();
+
+        try
+        {
+            OverallLeaderboard = await httpClient.GetFromJsonAsync<List<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/overall") ?? [];
+        }
+        catch
+        {
+            OverallLeaderboardError = "Could not load the leaderboard. Please try again later.";
+        }
+        finally
+        {
+            IsLoadingOverallLeaderboard = false;
+            NotifyStateChanged();
+        }
+    }
+
+    /// <summary>
+    /// Silently re-fetches the live data for the selected round (match scores and
+    /// statuses, per-round points and the overall leaderboard) and only raises
+    /// <see cref="OnStateChange"/> when something actually changed, so the UI does
+    /// not flicker on unchanged polls. A failed poll keeps the last-known values.
+    /// </summary>
+    public async Task RefreshLiveDataAsync(int leagueId, CancellationToken cancellationToken = default)
+    {
+        if (SelectedRoundId is not { } roundId)
+            return;
+
+        try
+        {
+            var resultsTask = httpClient.GetFromJsonAsync<List<PredictionResultDto>>($"api/leagues/{leagueId}/rounds/{roundId}/results", cancellationToken);
+            var matchesTask = httpClient.GetFromJsonAsync<List<MatchInRoundDto>>($"api/rounds/{roundId}/matches-data", cancellationToken);
+            var leaderboardTask = httpClient.GetFromJsonAsync<List<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/overall", cancellationToken);
+
+            await Task.WhenAll(resultsTask, matchesTask, leaderboardTask);
+
+            var newResults = resultsTask.Result ?? [];
+            var newMatches = matchesTask.Result ?? [];
+            var newLeaderboard = leaderboardTask.Result ?? [];
+
+            var changed =
+                HasChanged(CurrentRoundResults, newResults)
+                | HasChanged(CurrentRoundMatches, newMatches)
+                | HasChanged(OverallLeaderboard, newLeaderboard);
+
+            if (!changed)
+                return;
+
+            CurrentRoundResults = newResults;
+            CurrentRoundMatches = newMatches;
+            OverallLeaderboard = newLeaderboard;
+
+            NotifyStateChanged();
+            OnLiveDataChanged?.Invoke();
+        }
+        catch
+        {
+            // Keep the last-known values on a failed poll; the page must not crash.
+        }
+    }
+
+    private static bool HasChanged<T>(List<T> current, List<T> updated) =>
+        JsonSerializer.Serialize(current) != JsonSerializer.Serialize(updated);
 
     public async Task LoadSeasonRecap(int leagueId)
     {

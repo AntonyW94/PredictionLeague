@@ -1,0 +1,44 @@
+/* Live indicator - shown on the league dashboard while a round is in progress
+   and scores are auto-updating. Mobile-first; themed for light and dark. */
+
+.live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-3);
+    border-radius: 999px;
+    background: var(--green-600-alpha-15);
+    border: 1px solid var(--green-600-alpha-40);
+    color: var(--green-600);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.live-indicator__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green-600);
+    box-shadow: 0 0 0 0 var(--green-600-alpha-70);
+    animation: pulse-green 2s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .live-indicator__dot {
+        animation: none;
+    }
+}
+
+@media (min-width: 576px) {
+    .live-indicator {
+        font-size: 0.75rem;
+    }
+}
+
+/* Dark theme: brighten the label for contrast against the dark purple surface. */
+.theme-dark .live-indicator {
+    color: var(--green-300);
+    background: var(--green-600-alpha-25);
+}

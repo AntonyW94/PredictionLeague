@@ -1,7 +1,11 @@
 @inject ILeagueService LeagueService
+@inject LeagueDashboardStateService State
+
+@implements IDisposable
 
 @inherits BaseLeaderboardComponent
 
+@using System.Text.Json
 @using ThePredictions.Contracts.Leaderboards
 @using ThePredictions.Contracts.Leagues
 @using ThePredictions.Domain.Common.Enumerations
@@ -114,6 +118,7 @@
         try
         {
             await base.OnInitializedAsync();
+            State.OnLiveDataChanged += HandleLiveRefresh;
             _stages = (await LeagueService.GetStagesForLeagueAsync(LeagueId)).ToList();
 
             _currentStage = _stages.FirstOrDefault(s => s.RoundsRemaining > 0) ?? _stages.FirstOrDefault();
@@ -130,6 +135,42 @@
         {
             _isLoadingStages = false;
         }
+    }
+
+    // On a live poll, silently re-fetch the currently-selected stage and only
+    // re-render if its entries actually changed, so live scores flow in without flicker.
+    private void HandleLiveRefresh() => _ = InvokeAsync(RefreshCurrentStageAsync);
+
+    private async Task RefreshCurrentStageAsync()
+    {
+        if (_currentStage is null)
+            return;
+
+        try
+        {
+            var entries = await LeagueService.GetStageLeaderboardAsync(LeagueId, _currentStage.Stage);
+
+            if (!_leaderboards.TryGetValue(_currentStage.Stage, out var data))
+            {
+                data = new LeaderboardData();
+                _leaderboards[_currentStage.Stage] = data;
+            }
+
+            if (JsonSerializer.Serialize(data.Entries) == JsonSerializer.Serialize(entries))
+                return;
+
+            data.Entries = entries;
+            StateHasChanged();
+        }
+        catch
+        {
+            // Keep the last-known leaderboard on a failed poll.
+        }
+    }
+
+    public void Dispose()
+    {
+        State.OnLiveDataChanged -= HandleLiveRefresh;
     }
 
     private async Task OnStageChanged(ChangeEventArgs e)

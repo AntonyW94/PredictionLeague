@@ -7,6 +7,7 @@ using ThePredictions.Web.Client.Services.Consent;
 using ThePredictions.Web.Client.Services.Dashboard;
 using ThePredictions.Web.Client.Services.EmailSettings;
 using ThePredictions.Web.Client.Services.Leagues;
+using ThePredictions.Web.Client.Services.Live;
 using ThePredictions.Web.Client.Services.Onboarding;
 using ThePredictions.Web.Client.Services.Payouts;
 using ThePredictions.Web.Client.Services.PricingSettings;
@@ -41,8 +42,10 @@ public static class DependencyInjection
         services.AddScoped<IBrowserService, BrowserService>();
         services.AddScoped<IThemeService, ThemeService>();
         services.AddScoped<IConsentBannerService, ConsentBannerService>();
-        services.AddScoped<LeagueDashboardStateService>(); 
+        services.AddScoped<LeagueDashboardStateService>();
         services.AddScoped<BoostClientService>();
         services.AddScoped<EnterResultsViewModel>();
+        services.AddScoped<IPageVisibilityService, PageVisibilityService>();
+        services.AddScoped<LiveScorePollingService>();
     }
 }

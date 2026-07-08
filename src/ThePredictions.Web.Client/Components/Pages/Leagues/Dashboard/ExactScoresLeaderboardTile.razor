@@ -1,7 +1,11 @@
 @inject ILeagueService LeagueService
+@inject LeagueDashboardStateService State
+
+@implements IDisposable
 
 @inherits BaseLeaderboardComponent
 
+@using System.Text.Json
 @using ThePredictions.Contracts.Leaderboards
 @using ThePredictions.Web.Client.Services.Leagues
 
@@ -63,6 +67,7 @@
         try
         {
             await base.OnInitializedAsync();
+            State.OnLiveDataChanged += HandleLiveRefresh;
             _leaderboard = await LeagueService.GetExactScoresLeaderboardAsync(LeagueId);
         }
         catch (Exception ex)
@@ -73,5 +78,31 @@
         {
             _isLoading = false;
         }
+    }
+
+    // On a live poll, silently re-fetch and only re-render if the data changed.
+    private void HandleLiveRefresh() => _ = InvokeAsync(RefreshAsync);
+
+    private async Task RefreshAsync()
+    {
+        try
+        {
+            var updated = await LeagueService.GetExactScoresLeaderboardAsync(LeagueId);
+
+            if (JsonSerializer.Serialize(_leaderboard) == JsonSerializer.Serialize(updated))
+                return;
+
+            _leaderboard = updated;
+            StateHasChanged();
+        }
+        catch
+        {
+            // Keep the last-known leaderboard on a failed poll.
+        }
+    }
+
+    public void Dispose()
+    {
+        State.OnLiveDataChanged -= HandleLiveRefresh;
     }
 }
