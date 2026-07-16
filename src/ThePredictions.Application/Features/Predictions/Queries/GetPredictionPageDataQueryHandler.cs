@@ -143,7 +143,6 @@ public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbCo
             RoundDisplayName = firstRow.RoundDisplayName,
             SeasonName = firstRow.SeasonName,
             DeadlineUtc = firstRow.DeadlineUtc,
-            IsPastDeadline = firstRow.DeadlineUtc < DateTime.UtcNow,
             IsTournament = isTournament,
             IsLastRoundOfSeason = firstRow.RoundNumber == firstRow.NumberOfRounds,
             Matches = results

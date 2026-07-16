@@ -156,7 +156,11 @@ public class GetRoundCompletionQueryHandler(
             request.RoundId,
             roundInfo.RoundName,
             roundInfo.DeadlineUtc,
-            DeadlinePassed: nowUtc >= roundInfo.DeadlineUtc,
+            // "Passed" for chase purposes means nothing is left to predict. PredictableMatchCount already
+            // excludes matches that have locked (per-match CustomLockTimeUtc or the round deadline), so a
+            // combined round still counts as open while its later batch is unlocked, even though the round
+            // deadline that locked the earlier batch has passed.
+            DeadlinePassed: predictableMatchCount == 0,
             canSendReminders,
             predictableMatchCount,
             players);

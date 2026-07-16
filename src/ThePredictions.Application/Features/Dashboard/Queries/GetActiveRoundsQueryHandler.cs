@@ -29,7 +29,19 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                     ELSE 0
                 END AS bit) AS HasUserPredicted,
                 r.[DisplayName] AS RoundDisplayName,
-                c.[Type] AS CompetitionType
+                c.[Type] AS CompetitionType,
+                COALESCE(
+                    (
+                        SELECT
+                            MAX(lm.[CustomLockTimeUtc])
+                        FROM
+                            [Matches] lm
+                        WHERE
+                            lm.[RoundId] = r.[Id]
+                            AND lm.[Status] <> @PostponedStatus
+                            AND lm.[CustomLockTimeUtc] > r.[DeadlineUtc]
+                    ),
+                    r.[DeadlineUtc]) AS LatestPredictionDeadlineUtc
             FROM
                 [Rounds] r
             JOIN
@@ -62,14 +74,15 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
             DraftStatus = nameof(RoundStatus.Draft),
             CompletedStatus = nameof(RoundStatus.Completed),
             InProgressStatus = nameof(RoundStatus.InProgress),
-            ApprovedStatus = nameof(LeagueMemberStatus.Approved)
+            ApprovedStatus = nameof(LeagueMemberStatus.Approved),
+            PostponedStatus = nameof(MatchStatus.Postponed)
         };
 
         var rounds = (await dbConnection.QueryAsync<ActiveRoundQueryResult>(
             roundsSql,
             cancellationToken,
             parameters))
-            .Where(r => r.DeadlineUtc > DateTime.UtcNow || r.HasUserPredicted)
+            .Where(r => r.LatestPredictionDeadlineUtc > DateTime.UtcNow || r.HasUserPredicted)
             .ToList();
 
         if (!rounds.Any())
@@ -114,7 +127,8 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                     FROM [UserPredictions] ap
                     WHERE ap.[MatchId] = m.[Id]
                         AND ap.[PredictedHomeScore] < ap.[PredictedAwayScore]
-                ) AS AwayCount
+                ) AS AwayCount,
+                m.[CustomLockTimeUtc]
             FROM [Matches] m
             LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
             LEFT JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
@@ -137,33 +151,40 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         return rounds.Select(r =>
         {
             var status = Enum.Parse<RoundStatus>(r.Status);
-
-            // The prediction split is only revealed once the deadline has passed; before then we
-            // zero the counts so the aggregate never leaks predictions that are still hidden.
-            var revealSplit = r.DeadlineUtc <= DateTime.UtcNow;
+            var utcNow = DateTime.UtcNow;
 
             var activeRoundMatchDtos = matchesByRound.TryGetValue(r.Id, out var roundMatches)
-                ? roundMatches.Select(m => new ActiveRoundMatchDto(m.HomeTeamLogoUrl,
-                    m.AwayTeamLogoUrl,
-                    m.PredictedHomeScore,
-                    m.PredictedAwayScore,
-                    m.Outcome,
-                    Enum.Parse<MatchStatus>(m.Status),
-                    m.ActualHomeScore,
-                    m.ActualAwayScore,
-                    m.MatchDateTimeUtc,
-                    m.MatchNumber,
-                    m.AreTeamsConfirmed,
-                    m.PlaceholderHomeName,
-                    m.PlaceholderAwayName,
-                    revealSplit ? m.HomeCount : 0,
-                    revealSplit ? m.DrawCount : 0,
-                    revealSplit ? m.AwayCount : 0))
+                ? roundMatches.Select(m =>
+                {
+                    // The prediction split is only revealed once this match itself has locked; before then we
+                    // zero the counts so the aggregate never leaks predictions that are still open. In a
+                    // combined round the earlier matches reveal at the round deadline while the later ones
+                    // stay hidden until their own custom lock time.
+                    var revealSplit = (m.CustomLockTimeUtc ?? r.DeadlineUtc) <= utcNow;
+
+                    return new ActiveRoundMatchDto(m.HomeTeamLogoUrl,
+                        m.AwayTeamLogoUrl,
+                        m.PredictedHomeScore,
+                        m.PredictedAwayScore,
+                        m.Outcome,
+                        Enum.Parse<MatchStatus>(m.Status),
+                        m.ActualHomeScore,
+                        m.ActualAwayScore,
+                        m.MatchDateTimeUtc,
+                        m.MatchNumber,
+                        m.AreTeamsConfirmed,
+                        m.PlaceholderHomeName,
+                        m.PlaceholderAwayName,
+                        revealSplit,
+                        revealSplit ? m.HomeCount : 0,
+                        revealSplit ? m.DrawCount : 0,
+                        revealSplit ? m.AwayCount : 0);
+                })
                 : Enumerable.Empty<ActiveRoundMatchDto>();
 
             // Calculate outcome summary for rounds past their deadline
             OutcomeSummaryDto? outcomeSummary = null;
-            if (r.DeadlineUtc <= DateTime.UtcNow && r.HasUserPredicted && roundMatches != null)
+            if (r.DeadlineUtc <= utcNow && r.HasUserPredicted && roundMatches != null)
             {
                 outcomeSummary = new OutcomeSummaryDto(
                     ExactScoreCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.ExactScore),
@@ -178,6 +199,7 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                 r.RoundDisplayName,
                 r.CompetitionType == (int)CompetitionType.Tournament,
                 r.DeadlineUtc,
+                r.LatestPredictionDeadlineUtc,
                 r.HasUserPredicted,
                 status,
                 activeRoundMatchDtos,
@@ -194,7 +216,8 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         string Status,
         bool HasUserPredicted,
         string? RoundDisplayName,
-        int CompetitionType);
+        int CompetitionType,
+        DateTime LatestPredictionDeadlineUtc);
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record ActiveRoundMatchQueryResult(
@@ -214,5 +237,6 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         string? PlaceholderAwayName,
         int HomeCount,
         int DrawCount,
-        int AwayCount);
+        int AwayCount,
+        DateTime? CustomLockTimeUtc);
 }

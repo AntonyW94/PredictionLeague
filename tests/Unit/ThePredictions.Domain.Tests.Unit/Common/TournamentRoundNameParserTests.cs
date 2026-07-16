@@ -315,4 +315,47 @@ public class TournamentRoundNameParserTests
     }
 
     #endregion
+
+    #region GetPredictionBatch
+
+    [Theory]
+    [InlineData(TournamentStage.Group1)]
+    [InlineData(TournamentStage.Group2)]
+    [InlineData(TournamentStage.Group3)]
+    [InlineData(TournamentStage.RoundOf32)]
+    [InlineData(TournamentStage.RoundOf16)]
+    [InlineData(TournamentStage.QuarterFinals)]
+    [InlineData(TournamentStage.SemiFinals)]
+    [InlineData(TournamentStage.ThirdPlace)]
+    public void GetPredictionBatch_ShouldReturnOwnStageOrdinal_WhenStageIsNotTheFinal(TournamentStage stage)
+    {
+        // Act
+        var result = TournamentRoundNameParser.GetPredictionBatch(stage);
+
+        // Assert
+        result.Should().Be((int)stage);
+    }
+
+    [Fact]
+    public void GetPredictionBatch_ShouldShareTheThirdPlaceBatch_WhenStageIsTheFinal()
+    {
+        // Act
+        var finalBatch = TournamentRoundNameParser.GetPredictionBatch(TournamentStage.Final);
+
+        // Assert - the final and third-place playoff are both decided by the semi-finals, so they batch together
+        finalBatch.Should().Be(TournamentRoundNameParser.GetPredictionBatch(TournamentStage.ThirdPlace));
+    }
+
+    [Fact]
+    public void GetPredictionBatch_ShouldOrderBatchesByDepth_WhenComparingConsecutiveStages()
+    {
+        // Assert - later tournament stages produce higher (or equal, for the terminal pair) batch values
+        TournamentRoundNameParser.GetPredictionBatch(TournamentStage.QuarterFinals)
+            .Should().BeLessThan(TournamentRoundNameParser.GetPredictionBatch(TournamentStage.SemiFinals));
+
+        TournamentRoundNameParser.GetPredictionBatch(TournamentStage.SemiFinals)
+            .Should().BeLessThan(TournamentRoundNameParser.GetPredictionBatch(TournamentStage.Final));
+    }
+
+    #endregion
 }

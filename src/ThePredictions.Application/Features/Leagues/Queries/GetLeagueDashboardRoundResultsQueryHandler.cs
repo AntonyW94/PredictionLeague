@@ -39,9 +39,9 @@ public class GetLeagueDashboardRoundResultsQueryHandler(
                                 up.[PredictedAwayScore],
                                 ISNULL(up.[Outcome], 0) AS [Outcome],
                                 
-                                CAST(CASE 
-                                    WHEN r.[DeadlineUtc] > GETUTCDATE() AND lm.[UserId] != @CurrentUserId THEN 1 
-                                    ELSE 0 
+                                CAST(CASE
+                                    WHEN COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > GETUTCDATE() AND lm.[UserId] != @CurrentUserId THEN 1
+                                    ELSE 0
                                 END AS bit) AS [IsHidden],
 
                                 rr.[Rank],

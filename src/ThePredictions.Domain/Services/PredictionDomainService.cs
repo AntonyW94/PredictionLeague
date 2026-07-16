@@ -10,11 +10,16 @@ public class PredictionDomainService(IDateTimeProvider dateTimeProvider)
     {
         Guard.Against.Null(round);
 
-        if (round.DeadlineUtc < dateTimeProvider.UtcNow)
+        var utcNow = dateTimeProvider.UtcNow;
+
+        // Reject only once every match has locked. While any match is still open (for example the final and
+        // third-place playoff of a combined round that carry a later custom lock than the round deadline that
+        // locked the semi-finals), the per-match filter below keeps the already-locked matches untouched and
+        // accepts predictions for the open ones.
+        if (round.IsClosedForPredictions(utcNow))
             throw new InvalidOperationException("The deadline for submitting predictions for this round has passed.");
 
         var matchesById = round.Matches.ToDictionary(m => m.Id);
-        var utcNow = dateTimeProvider.UtcNow;
 
         var predictions = predictedScores
             .Where(p =>

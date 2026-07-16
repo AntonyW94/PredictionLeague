@@ -89,7 +89,7 @@
                                 <LocalTime UtcDate="match.MatchDateTimeUtc" Format="ddd dd MMM HH:mm" />
                             </span>
                         }
-                        @if (IsDeadlinePassed)
+                        @if (match.IsPredictionRevealed)
                         {
                             <PredictionSplitBar Home="match.HomeCount"
                                                 Draw="match.DrawCount"
@@ -103,7 +103,22 @@
         }
     </div>
     <div class="footer">
-        @if (IsDeadlinePassed && Round.OutcomeSummary != null)
+        @if (!IsClosedForPredictions)
+        {
+            <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
+                @if (Round.HasUserPredicted)
+                {
+                    <span class="bi bi-pencil-fill me-2"></span>
+                    <span>Edit Predictions</span>
+                }
+                else
+                {
+                    <span class="bi bi-pencil me-2"></span>
+                    <span>Predict Now</span>
+                }
+            </NavLink>
+        }
+        else if (Round.OutcomeSummary != null)
         {
             <div class="outcome-summary">
                 <span class="outcome-item outcome-item--exact" title="Exact score">
@@ -122,21 +137,6 @@
                 </span>
             </div>
         }
-        else if (!IsDeadlinePassed)
-        {
-            <NavLink href="@($"/predictions/{Round.Id}")" class="btn green-button w-100">
-                @if (Round.HasUserPredicted)
-                {
-                    <span class="bi bi-pencil-fill me-2"></span>
-                    <span>Edit Predictions</span>
-                }
-                else
-                {
-                    <span class="bi bi-pencil me-2"></span>
-                    <span>Predict Now</span>
-                }
-            </NavLink>
-        }
     </div>
 </div>
 
@@ -153,7 +153,11 @@
     public bool Wide { get; set; }
 
     private bool IsInProgress => Round.Status == RoundStatus.InProgress;
-    private bool IsDeadlinePassed => Round.DeadlineUtc <= DateTime.UtcNow;
+
+    // Whether the round can still be predicted. Keyed off the latest per-match lock, not the round deadline,
+    // so a combined round (for example semi-finals plus the final and third-place playoff) keeps showing the
+    // Predict / Edit button while its later matches are still open even though the round deadline has passed.
+    private bool IsClosedForPredictions => Round.LatestPredictionDeadlineUtc <= DateTime.UtcNow;
 
     private string RoundLabel =>
         Round.IsTournament && !string.IsNullOrWhiteSpace(Round.RoundDisplayName)
