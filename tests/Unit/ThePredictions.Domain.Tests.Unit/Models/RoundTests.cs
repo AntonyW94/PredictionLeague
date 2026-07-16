@@ -919,4 +919,203 @@ public class RoundTests
     }
 
     #endregion
+
+    #region GetLatestPredictionDeadline / IsClosedForPredictions
+
+    private static Match CreateMatchWithCustomLock(int id, DateTime matchDateTimeUtc, DateTime? customLockTimeUtc) =>
+        new(id: id, roundId: 1, homeTeamId: 1, awayTeamId: 2,
+            matchDateTimeUtc: matchDateTimeUtc,
+            customLockTimeUtc: customLockTimeUtc,
+            status: MatchStatus.Scheduled, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, matchNumber: null, placeholderHomeName: null, placeholderAwayName: null, apiRoundName: null);
+
+    private static Round CreateRoundWithMatches(DateTime deadlineUtc, params DateTime?[] customLockTimes)
+    {
+        var matches = customLockTimes
+            .Select((lockTime, index) => CreateMatchWithCustomLock(index + 1, deadlineUtc.AddHours(1), lockTime))
+            .ToList<Match>();
+
+        return new Round(
+            id: 1, seasonId: 1, roundNumber: 1, displayName: "Finals",
+            startDateUtc: deadlineUtc.AddHours(2), deadlineUtc: deadlineUtc,
+            status: RoundStatus.Published, apiRoundName: null, lastReminderSentUtc: null,
+            matches: matches);
+    }
+
+    [Fact]
+    public void GetLatestPredictionDeadline_ShouldReturnRoundDeadline_WhenRoundHasNoMatches()
+    {
+        // Arrange
+        var round = CreateRoundWithId();
+
+        // Act
+        var result = round.GetLatestPredictionDeadline();
+
+        // Assert
+        result.Should().Be(round.DeadlineUtc);
+    }
+
+    [Fact]
+    public void GetLatestPredictionDeadline_ShouldReturnRoundDeadline_WhenNoMatchHasLaterCustomLock()
+    {
+        // Arrange - one match with no custom lock, one locking before the round deadline
+        var deadline = new DateTime(2026, 7, 14, 18, 30, 0, DateTimeKind.Utc);
+        var round = CreateRoundWithMatches(deadline, null, deadline.AddHours(-1));
+
+        // Act
+        var result = round.GetLatestPredictionDeadline();
+
+        // Assert
+        result.Should().Be(deadline);
+    }
+
+    [Fact]
+    public void GetLatestPredictionDeadline_ShouldReturnLatestCustomLock_WhenMatchLocksAfterRoundDeadline()
+    {
+        // Arrange - semi-finals lock at the round deadline, the final locks three days later
+        var deadline = new DateTime(2026, 7, 14, 18, 30, 0, DateTimeKind.Utc);
+        var finalLock = new DateTime(2026, 7, 19, 18, 30, 0, DateTimeKind.Utc);
+        var round = CreateRoundWithMatches(deadline, null, finalLock);
+
+        // Act
+        var result = round.GetLatestPredictionDeadline();
+
+        // Assert
+        result.Should().Be(finalLock);
+    }
+
+    [Fact]
+    public void IsClosedForPredictions_ShouldReturnTrue_WhenLatestDeadlineHasPassed()
+    {
+        // Arrange
+        var deadline = _dateTimeProvider.UtcNow.AddDays(-2);
+        var round = CreateRoundWithMatches(deadline, null, deadline.AddHours(-1));
+
+        // Act
+        var result = round.IsClosedForPredictions(_dateTimeProvider.UtcNow);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsClosedForPredictions_ShouldReturnFalse_WhenAMatchIsStillOpenViaCustomLock()
+    {
+        // Arrange - the round deadline has passed but the final still locks in the future
+        var deadline = _dateTimeProvider.UtcNow.AddDays(-2);
+        var round = CreateRoundWithMatches(deadline, null, _dateTimeProvider.UtcNow.AddDays(1));
+
+        // Act
+        var result = round.IsClosedForPredictions(_dateTimeProvider.UtcNow);
+
+        // Assert
+        result.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region RecalculateBatchPredictionLocks
+
+    private static readonly DateTime BatchRoundDeadline = new(2026, 7, 14, 18, 30, 0, DateTimeKind.Utc);
+    private static readonly DateTime SemiFinal1Kickoff = new(2026, 7, 14, 19, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime SemiFinal2Kickoff = new(2026, 7, 15, 19, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime FinalKickoff = new(2026, 7, 18, 21, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime ThirdPlaceKickoff = new(2026, 7, 19, 19, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime ExpectedBatchLock = new(2026, 7, 18, 20, 30, 0, DateTimeKind.Utc);
+
+    private static Match BatchMatch(int id, string? apiRoundName, DateTime kickoffUtc, DateTime? customLockTimeUtc = null, MatchStatus status = MatchStatus.Scheduled, bool confirmed = true) =>
+        new(id: id, roundId: 1,
+            homeTeamId: confirmed ? 1 : null, awayTeamId: confirmed ? 2 : null,
+            matchDateTimeUtc: kickoffUtc, customLockTimeUtc: customLockTimeUtc,
+            status: status, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, matchNumber: null,
+            placeholderHomeName: confirmed ? null : "TBC", placeholderAwayName: confirmed ? null : "TBC",
+            apiRoundName: apiRoundName);
+
+    private static Round CreateBatchRound(params Match[] matches) =>
+        new(id: 1, seasonId: 1, roundNumber: 1, displayName: "Finals",
+            startDateUtc: SemiFinal1Kickoff, deadlineUtc: BatchRoundDeadline,
+            status: RoundStatus.InProgress, apiRoundName: null, lastReminderSentUtc: null,
+            matches: matches.ToList());
+
+    [Fact]
+    public void RecalculateBatchPredictionLocks_ShouldLockFinalBatchTogether_WhenCombinedRound()
+    {
+        // Arrange - semi-finals (earliest batch) plus a final and third-place playoff that should batch
+        // together. The third-place playoff starts with a stale lock 30 minutes before its own kickoff.
+        var semiFinal1 = BatchMatch(1, "Semi-finals", SemiFinal1Kickoff, status: MatchStatus.Completed);
+        var semiFinal2 = BatchMatch(2, "Semi-finals", SemiFinal2Kickoff, status: MatchStatus.Completed);
+        var final = BatchMatch(3, "Final", FinalKickoff, customLockTimeUtc: ExpectedBatchLock);
+        var thirdPlace = BatchMatch(4, "3rd Place Final", ThirdPlaceKickoff, customLockTimeUtc: ThirdPlaceKickoff.AddMinutes(-30));
+        var round = CreateBatchRound(semiFinal1, semiFinal2, final, thirdPlace);
+
+        // Act
+        var changed = round.RecalculateBatchPredictionLocks();
+
+        // Assert - the earliest batch (semi-finals) has no custom lock; the final and third-place playoff
+        // both lock together 30 minutes before the earlier of the two.
+        changed.Should().BeTrue();
+        semiFinal1.CustomLockTimeUtc.Should().BeNull();
+        semiFinal2.CustomLockTimeUtc.Should().BeNull();
+        final.CustomLockTimeUtc.Should().Be(ExpectedBatchLock);
+        thirdPlace.CustomLockTimeUtc.Should().Be(ExpectedBatchLock);
+    }
+
+    [Fact]
+    public void RecalculateBatchPredictionLocks_ShouldIgnoreUnconfirmedPostponedAndUnparseableMatches()
+    {
+        // Arrange - only the semi-final and final are eligible; the rest must be ignored. The postponed
+        // third-place playoff kicks off earliest, so if it were wrongly included the final batch would lock
+        // before its kickoff instead of the final's.
+        var semiFinal = BatchMatch(1, "Semi-finals", SemiFinal1Kickoff, status: MatchStatus.Completed);
+        var final = BatchMatch(2, "Final", FinalKickoff);
+        var placeholder = BatchMatch(3, "Final", DateTime.MaxValue, confirmed: false);
+        var postponed = BatchMatch(4, "3rd Place Final", new DateTime(2026, 7, 17, 12, 0, 0, DateTimeKind.Utc), status: MatchStatus.Postponed);
+        var noApiRoundName = BatchMatch(5, null, FinalKickoff);
+        var unparseable = BatchMatch(6, "Not A Real Stage", FinalKickoff);
+        var round = CreateBatchRound(semiFinal, final, placeholder, postponed, noApiRoundName, unparseable);
+
+        // Act
+        var changed = round.RecalculateBatchPredictionLocks();
+
+        // Assert
+        changed.Should().BeTrue();
+        final.CustomLockTimeUtc.Should().Be(FinalKickoff.AddMinutes(-30));
+        semiFinal.CustomLockTimeUtc.Should().BeNull();
+        placeholder.CustomLockTimeUtc.Should().BeNull();
+        postponed.CustomLockTimeUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public void RecalculateBatchPredictionLocks_ShouldReturnFalse_WhenNoConfirmedMatchesToBatch()
+    {
+        // Arrange - only unassigned placeholders, nothing to batch
+        var round = CreateBatchRound(
+            BatchMatch(1, "Semi-finals", DateTime.MaxValue, confirmed: false),
+            BatchMatch(2, "Final", DateTime.MaxValue, confirmed: false));
+
+        // Act
+        var changed = round.RecalculateBatchPredictionLocks();
+
+        // Assert
+        changed.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RecalculateBatchPredictionLocks_ShouldReturnFalse_WhenAllLockTimesAlreadyCorrect()
+    {
+        // Arrange - locks already match what the batch calculation would produce
+        var semiFinal = BatchMatch(1, "Semi-finals", SemiFinal1Kickoff, status: MatchStatus.Completed);
+        var final = BatchMatch(2, "Final", FinalKickoff, customLockTimeUtc: ExpectedBatchLock);
+        var thirdPlace = BatchMatch(3, "3rd Place Final", ThirdPlaceKickoff, customLockTimeUtc: ExpectedBatchLock);
+        var round = CreateBatchRound(semiFinal, final, thirdPlace);
+
+        // Act
+        var changed = round.RecalculateBatchPredictionLocks();
+
+        // Assert
+        changed.Should().BeFalse();
+    }
+
+    #endregion
 }

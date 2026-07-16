@@ -124,6 +124,89 @@ public class Round
             _matches.Remove(matchToRemove);
     }
 
+    /// <summary>
+    /// The latest point at which any match in this round can still be predicted. Each match uses its own
+    /// effective deadline (a per-match <see cref="Match.CustomLockTimeUtc"/> when set, otherwise the round
+    /// deadline), so this is the round deadline unless a match carries a later custom lock. This lets a
+    /// combined round (for example World Cup semi-finals plus the final and third-place playoff) stay open
+    /// for the later matches after the round deadline that locked the earlier ones has passed.
+    /// </summary>
+    public DateTime GetLatestPredictionDeadline()
+    {
+        var latest = DeadlineUtc;
+
+        foreach (var match in _matches)
+        {
+            var effectiveDeadline = match.GetEffectiveDeadline(DeadlineUtc);
+
+            if (effectiveDeadline > latest)
+                latest = effectiveDeadline;
+        }
+
+        return latest;
+    }
+
+    /// <summary>
+    /// True once every match in the round has locked, i.e. no match can still be predicted. Use this rather
+    /// than comparing against <see cref="DeadlineUtc"/> directly, which only reflects the earliest lock.
+    /// </summary>
+    public bool IsClosedForPredictions(DateTime utcNow)
+    {
+        return utcNow >= GetLatestPredictionDeadline();
+    }
+
+    /// <summary>
+    /// Recomputes the per-match custom lock times for this round from its confirmed matches. Matches whose
+    /// teams are decided by the same earlier matches form a "batch" (see
+    /// <see cref="TournamentRoundNameParser.GetPredictionBatch"/>) and lock together 30 minutes before the
+    /// earliest kickoff in that batch - for example a combined round's final and third-place playoff, both
+    /// decided by the semi-finals, lock together. The earliest batch carries no custom lock and uses the
+    /// round deadline. The calculation depends only on each match's own batch and kickoff, never on when the
+    /// previous batch is played, so batches whose predecessors kick off at different times still work.
+    /// Idempotent: returns true only if at least one lock time actually changed.
+    /// </summary>
+    public bool RecalculateBatchPredictionLocks()
+    {
+        var batchedMatches = new List<(Match Match, int Batch)>();
+
+        foreach (var match in _matches)
+        {
+            if (!match.AreTeamsConfirmed || match.Status == MatchStatus.Postponed || match.ApiRoundName == null)
+                continue;
+
+            if (!TournamentRoundNameParser.TryParseStage(match.ApiRoundName, out var stage))
+                continue;
+
+            batchedMatches.Add((match, TournamentRoundNameParser.GetPredictionBatch(stage)));
+        }
+
+        if (batchedMatches.Count == 0)
+            return false;
+
+        var earliestBatch = batchedMatches.Min(b => b.Batch);
+        var changed = false;
+
+        foreach (var batch in batchedMatches.GroupBy(b => b.Batch))
+        {
+            // The earliest batch uses the round deadline (no custom lock); later batches lock together 30
+            // minutes before the earliest kickoff among their own matches.
+            DateTime? lockTimeUtc = batch.Key == earliestBatch
+                ? null
+                : batch.Min(b => b.Match.MatchDateTimeUtc).AddMinutes(-30);
+
+            foreach (var (match, _) in batch)
+            {
+                if (match.CustomLockTimeUtc == lockTimeUtc)
+                    continue;
+
+                match.SetCustomLockTime(lockTimeUtc);
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
     private static void Validate(int seasonId, int roundNumber, string displayName, DateTime startDateUtc, DateTime deadlineUtc)
     {
         Guard.Against.NegativeOrZero(seasonId, "Season ID must be greater than 0");

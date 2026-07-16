@@ -373,9 +373,6 @@ public class SyncSeasonWithApiCommandHandler(
                 continue;
             }
 
-            var stages = mapping.GetStageList();
-            var primaryStage = mapping.GetPrimaryStage();
-
             foreach (var fixture in fixtures)
             {
                 TournamentRoundNameParser.TryParseStage(fixture.ApiRoundName, out var fixtureStage);
@@ -409,22 +406,6 @@ public class SyncSeasonWithApiCommandHandler(
                         placeholder.UpdateDate(fixture.MatchDateTimeUtc);
                         placeholder.SetExternalId(fixture.ExternalId);
                         placeholder.SetApiRoundName(fixture.ApiRoundName);
-
-                        // Set CustomLockTimeUtc for non-primary stages in combined rounds
-                        if (stages.Count > 1 && fixtureStage != primaryStage)
-                        {
-                            var stageFixtures = fixtures.Where(f =>
-                            {
-                                TournamentRoundNameParser.TryParseStage(f.ApiRoundName, out var s);
-                                return s == fixtureStage;
-                            }).ToList();
-
-                            if (stageFixtures.Any())
-                            {
-                                var earliestInStage = stageFixtures.Min(f => f.MatchDateTimeUtc);
-                                placeholder.SetCustomLockTime(earliestInStage.AddMinutes(-30));
-                            }
-                        }
 
                         allChangedRoundIds.Add(round.Id);
                     }
@@ -477,6 +458,12 @@ public class SyncSeasonWithApiCommandHandler(
                     allChangedRoundIds.Add(round.Id);
                 }
             }
+
+            // Recompute per-batch custom lock times across the whole round. Doing this here (rather than only
+            // when a placeholder is first filled) means every sync self-heals existing matches, so a schedule
+            // change or a corrected batch is picked up without any manual intervention.
+            if (round.RecalculateBatchPredictionLocks())
+                allChangedRoundIds.Add(round.Id);
         }
 
         // Persist changes

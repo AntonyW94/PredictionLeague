@@ -181,6 +181,38 @@ public class PredictionDomainServiceTests
     }
 
     [Fact]
+    public void SubmitPredictions_ShouldNotThrowAndAcceptOpenMatch_WhenRoundDeadlinePassedButMatchStillOpenViaCustomLock()
+    {
+        // A combined round (e.g. semi-finals + final): the round deadline has passed and locked the
+        // semi-final, but the final carries a later custom lock and is still open. Submission must be
+        // accepted for the open match and skip the locked one, rather than being rejected outright.
+        var futureLockTime = _dateTimeProvider.UtcNow.AddDays(3);
+        var matches = new List<Match>
+        {
+            CreateConfirmedMatch(1, 1),
+            CreateConfirmedMatch(2, 1, customLockTimeUtc: futureLockTime)
+        };
+        var round = new Round(
+            id: 1, seasonId: 1, roundNumber: 1, displayName: "Finals",
+            startDateUtc: _dateTimeProvider.UtcNow.AddDays(-1),
+            deadlineUtc: _dateTimeProvider.UtcNow.AddDays(-2),
+            status: RoundStatus.InProgress,
+            apiRoundName: null,
+            lastReminderSentUtc: null,
+            matches: matches);
+        var scores = new[]
+        {
+            (MatchId: 1, HomeScore: 1, AwayScore: 0),
+            (MatchId: 2, HomeScore: 2, AwayScore: 1)
+        };
+
+        var result = _sut.SubmitPredictions(round, "user-1", scores).ToList();
+
+        result.Should().ContainSingle();
+        result[0].MatchId.Should().Be(2);
+    }
+
+    [Fact]
     public void SubmitPredictions_ShouldThrowException_WhenRoundIsNull()
     {
         var scores = new[] { (MatchId: 1, HomeScore: 1, AwayScore: 0) };

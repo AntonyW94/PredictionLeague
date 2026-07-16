@@ -49,6 +49,22 @@ public static class TournamentRoundNameParser
         return stage is not (TournamentStage.Group1 or TournamentStage.Group2 or TournamentStage.Group3);
     }
 
+    /// <summary>
+    /// The prediction "batch" a stage belongs to within a combined round. Matches in the same batch have
+    /// their teams decided by the same earlier matches, so they become known together and lock together
+    /// 30 minutes before the earliest fixture in the batch. Every stage is its own batch except the Third
+    /// Place Playoff and the Final, which are both decided by the Semi-finals and therefore share a batch.
+    /// The value increases with tournament depth, so batches order naturally from earliest to latest.
+    /// </summary>
+    public static int GetPredictionBatch(TournamentStage stage)
+    {
+        // The Final is decided by the same matches (the Semi-finals) as the Third Place Playoff, so it
+        // locks in the same batch rather than 30 minutes before its own (later) kickoff.
+        return stage == TournamentStage.Final
+            ? (int)TournamentStage.ThirdPlace
+            : (int)stage;
+    }
+
     public static int CalculateExpectedMatchCount(TournamentStage stage, int totalTeams)
     {
         return stage switch

@@ -27,10 +27,10 @@ public class DashboardStateServiceLiveRefreshTests
     private static readonly DateTime MatchTime = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private static ActiveRoundDto Round(int id, MatchStatus matchStatus) =>
-        new(id, "Season", 1, null, false, MatchTime, false, RoundStatus.InProgress, new[] { Match(matchStatus) }, null);
+        new(id, "Season", 1, null, false, MatchTime, MatchTime, false, RoundStatus.InProgress, new[] { Match(matchStatus) }, null);
 
     private static ActiveRoundMatchDto Match(MatchStatus status) =>
-        new(null, null, null, null, null, status, null, null, MatchTime, 1, true, null, null, 0, 0, 0);
+        new(null, null, null, null, null, status, null, null, MatchTime, 1, true, null, null, false, 0, 0, 0);
 
     private static LeagueLeaderboardDto Board(int totalPoints, bool roundInProgress) =>
         new()

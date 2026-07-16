@@ -51,7 +51,7 @@
                     {
                         var isLocked = IsMatchLocked(match);
                         var isTbc = !match.AreTeamsConfirmed;
-                        var isDisabled = _pageData.IsPastDeadline || isLocked || isTbc;
+                        var isDisabled = isLocked || isTbc;
 
                         <div class="prediction-card @(isTbc ? "prediction-card--tbc" : "") @(isLocked ? "prediction-card--locked" : "")">
                             <div class="prediction-card-header">
@@ -71,7 +71,7 @@
                                     <LocalTime UtcDate="@match.MatchDateTimeUtc" Format="dddd dd MMM yyyy 'at' HH:mm" />
                                 }
 
-                                @if (isLocked && !_pageData.IsPastDeadline)
+                                @if (isLocked && IsRoundOpenForPredictions)
                                 {
                                     <span class="locked-badge"><i class="bi bi-lock-fill me-1"></i>Locked</span>
                                 }
@@ -143,7 +143,7 @@
                     }
                 </div>
 
-                @if (!_pageData.IsPastDeadline && _hasVisibleBoosts)
+                @if (IsRoundOpenForPredictions && _hasVisibleBoosts)
                 {
                     <div class="boosts-section mt-4 mb-3">
                         <h3 class="fw-bold text-white text-center mb-3">Boosts</h3>
@@ -240,7 +240,7 @@
                     </div>
                 }
 
-                @if (!_pageData.IsPastDeadline)
+                @if (IsRoundOpenForPredictions)
                 {
                     <div class="d-flex justify-content-center mt-4">
                         <button type="submit" class="btn btn-lg green-button" disabled="@_isBusy">
@@ -380,6 +380,30 @@
 
         var effectiveDeadline = match.CustomLockTimeUtc ?? _pageData!.DeadlineUtc;
         return DateTime.UtcNow >= effectiveDeadline;
+    }
+
+    // True while any match in the round is still open. Keyed off the latest per-match lock rather than the
+    // round deadline, so a combined round stays editable for its later matches (which carry a custom lock)
+    // after the round deadline that locked the earlier ones has passed.
+    private bool IsRoundOpenForPredictions
+    {
+        get
+        {
+            if (_pageData == null)
+                return false;
+
+            var latest = _pageData.DeadlineUtc;
+
+            foreach (var match in _pageData.Matches)
+            {
+                var effectiveDeadline = match.CustomLockTimeUtc ?? _pageData.DeadlineUtc;
+
+                if (effectiveDeadline > latest)
+                    latest = effectiveDeadline;
+            }
+
+            return DateTime.UtcNow < latest;
+        }
     }
 
     private string GetSelectedCode(int leagueId) => _boostSelections.GetValueOrDefault(leagueId, "None");

@@ -12,7 +12,9 @@ namespace ThePredictions.Contracts.Dashboard;
 ///
 /// HomeCount, DrawCount and AwayCount hold the platform-wide split of how everyone who
 /// predicted this match went (home win / draw / away win). They are only populated once
-/// the round deadline has passed (zero beforehand) so they never reveal hidden predictions.
+/// this match has locked (zero beforehand) so they never reveal predictions that are still
+/// open. IsPredictionRevealed says whether that has happened for this match; in a combined
+/// round the earlier matches can be revealed while the later ones are still hidden.
 /// </summary>
 public record ActiveRoundMatchDto(
     string? HomeTeamLogoUrl,
@@ -28,6 +30,7 @@ public record ActiveRoundMatchDto(
     bool AreTeamsConfirmed,
     string? PlaceholderHomeName,
     string? PlaceholderAwayName,
+    bool IsPredictionRevealed,
     int HomeCount,
     int DrawCount,
     int AwayCount

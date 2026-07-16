@@ -9,7 +9,6 @@ public class PredictionPageDto
     public string? RoundDisplayName { get; init; }
     public string SeasonName { get; init; } = string.Empty;
     public DateTime DeadlineUtc { get; init; }
-    public bool IsPastDeadline { get; init; }
     public bool IsTournament { get; init; }
     public bool IsLastRoundOfSeason { get; init; }
     public List<MatchPredictionDto> Matches { get; init; } = [];
