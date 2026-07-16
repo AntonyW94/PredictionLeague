@@ -178,7 +178,8 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                         revealSplit,
                         revealSplit ? m.HomeCount : 0,
                         revealSplit ? m.DrawCount : 0,
-                        revealSplit ? m.AwayCount : 0);
+                        revealSplit ? m.AwayCount : 0,
+                        m.CustomLockTimeUtc);
                 })
                 : Enumerable.Empty<ActiveRoundMatchDto>();
 

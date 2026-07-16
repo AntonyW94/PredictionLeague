@@ -33,5 +33,6 @@ public record ActiveRoundMatchDto(
     bool IsPredictionRevealed,
     int HomeCount,
     int DrawCount,
-    int AwayCount
+    int AwayCount,
+    DateTime? CustomLockTimeUtc
 );
