@@ -81,7 +81,7 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
             roundsSql,
             cancellationToken,
             parameters))
-            .Where(r => r.DeadlineUtc > DateTime.UtcNow || r.HasUserPredicted)
+            .Where(r => r.LatestPredictionDeadlineUtc > DateTime.UtcNow || r.HasUserPredicted)
             .ToList();
 
         if (!rounds.Any())

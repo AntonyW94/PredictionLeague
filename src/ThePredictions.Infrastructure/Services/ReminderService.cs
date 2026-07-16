@@ -10,7 +10,15 @@ public class ReminderService(IApplicationReadDbConnection dbConnection) : IRemin
 {
     public async Task<bool> ShouldSendReminderAsync(Round round, DateTime nowUtc, CancellationToken cancellationToken)
     {
-        var deadline = round.DeadlineUtc;
+        // Milestones are measured against the next batch to lock, not the round deadline. In a combined
+        // round the semi-finals lock at the round deadline while the final and third-place playoff lock
+        // later, so keying off the next lock gives that later batch its own reminder wave. For a normal
+        // round every match locks at the round deadline, so this is simply the round deadline.
+        var nextLock = round.GetNextPredictionDeadline(nowUtc);
+        if (nextLock == null)
+            return false;
+
+        var deadline = nextLock.Value;
         var lastSent = round.LastReminderSentUtc;
 
         // The two early milestones (5 and 3 days out) are held back while any earlier round in the
@@ -82,7 +90,17 @@ public class ReminderService(IApplicationReadDbConnection dbConnection) : IRemin
                     WHEN LEN(LTRIM(RTRIM(r.[DisplayName]))) > 0 THEN r.[DisplayName]
                     ELSE 'Round ' + CONVERT(NVARCHAR(MAX), r.[RoundNumber])
                 END AS RoundName,
-                r.[DeadlineUtc],
+                COALESCE(
+                    (
+                        SELECT MIN(COALESCE(nm.[CustomLockTimeUtc], r.[DeadlineUtc]))
+                        FROM [Matches] nm
+                        WHERE nm.[RoundId] = r.[Id]
+                            AND nm.[HomeTeamId] IS NOT NULL
+                            AND nm.[AwayTeamId] IS NOT NULL
+                            AND nm.[Status] <> @PostponedStatus
+                            AND COALESCE(nm.[CustomLockTimeUtc], r.[DeadlineUtc]) > @NowUtc
+                    ),
+                    r.[DeadlineUtc]) AS DeadlineUtc,
                 u.[Id] AS UserId
             FROM
                 [AspNetUsers] u

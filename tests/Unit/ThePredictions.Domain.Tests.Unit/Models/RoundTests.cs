@@ -1118,4 +1118,74 @@ public class RoundTests
     }
 
     #endregion
+
+    #region GetNextPredictionDeadline
+
+    [Fact]
+    public void GetNextPredictionDeadline_ShouldReturnRoundDeadline_WhenMatchesLockAtRoundDeadline()
+    {
+        // Arrange - a normal round: every match locks at the round deadline
+        var round = CreateBatchRound(
+            BatchMatch(1, "Semi-finals", SemiFinal1Kickoff),
+            BatchMatch(2, "Semi-finals", SemiFinal2Kickoff));
+
+        // Act
+        var result = round.GetNextPredictionDeadline(BatchRoundDeadline.AddDays(-1));
+
+        // Assert
+        result.Should().Be(BatchRoundDeadline);
+    }
+
+    [Fact]
+    public void GetNextPredictionDeadline_ShouldReturnEarliestFutureLock_WhenBatchesLockAtDifferentTimes()
+    {
+        // Arrange - the round deadline (semi-finals) has passed; the final and third-place playoff carry
+        // later locks and one match locks later still.
+        var now = BatchRoundDeadline.AddDays(1);
+        var laterLock = new DateTime(2026, 7, 19, 18, 30, 0, DateTimeKind.Utc);
+        var round = CreateBatchRound(
+            BatchMatch(1, "Semi-finals", SemiFinal1Kickoff, status: MatchStatus.Completed),
+            BatchMatch(2, "Final", FinalKickoff, customLockTimeUtc: laterLock),
+            BatchMatch(3, "3rd Place Final", ThirdPlaceKickoff, customLockTimeUtc: ExpectedBatchLock),
+            BatchMatch(4, "Final", FinalKickoff, customLockTimeUtc: ExpectedBatchLock));
+
+        // Act
+        var result = round.GetNextPredictionDeadline(now);
+
+        // Assert - the earliest lock still in the future
+        result.Should().Be(ExpectedBatchLock);
+    }
+
+    [Fact]
+    public void GetNextPredictionDeadline_ShouldReturnNull_WhenEveryMatchHasLocked()
+    {
+        // Arrange - now is after every lock
+        var round = CreateBatchRound(
+            BatchMatch(1, "Semi-finals", SemiFinal1Kickoff),
+            BatchMatch(2, "Final", FinalKickoff, customLockTimeUtc: ExpectedBatchLock));
+
+        // Act
+        var result = round.GetNextPredictionDeadline(new DateTime(2026, 7, 20, 0, 0, 0, DateTimeKind.Utc));
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetNextPredictionDeadline_ShouldIgnorePostponedAndUnconfirmedMatches()
+    {
+        // Arrange - only the confirmed, scheduled final should be considered
+        var round = CreateBatchRound(
+            BatchMatch(1, "Final", FinalKickoff, customLockTimeUtc: ExpectedBatchLock),
+            BatchMatch(2, "Semi-finals", SemiFinal1Kickoff, status: MatchStatus.Postponed),
+            BatchMatch(3, "Final", DateTime.MaxValue, confirmed: false));
+
+        // Act
+        var result = round.GetNextPredictionDeadline(BatchRoundDeadline.AddDays(-1));
+
+        // Assert
+        result.Should().Be(ExpectedBatchLock);
+    }
+
+    #endregion
 }

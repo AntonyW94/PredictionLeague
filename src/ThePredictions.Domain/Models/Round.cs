@@ -156,6 +156,33 @@ public class Round
     }
 
     /// <summary>
+    /// The next moment a batch of this round's matches locks - the earliest effective deadline still in the
+    /// future among confirmed, non-postponed matches - or null if every predictable match has already
+    /// locked. Reminder scheduling keys its milestones off this so a combined round gets a fresh reminder
+    /// wave before its later batch locks, rather than only before the round deadline.
+    /// </summary>
+    public DateTime? GetNextPredictionDeadline(DateTime utcNow)
+    {
+        DateTime? next = null;
+
+        foreach (var match in _matches)
+        {
+            if (!match.AreTeamsConfirmed || match.Status == MatchStatus.Postponed)
+                continue;
+
+            var effectiveDeadline = match.GetEffectiveDeadline(DeadlineUtc);
+
+            if (effectiveDeadline <= utcNow)
+                continue;
+
+            if (next == null || effectiveDeadline < next.Value)
+                next = effectiveDeadline;
+        }
+
+        return next;
+    }
+
+    /// <summary>
     /// Recomputes the per-match custom lock times for this round from its confirmed matches. Matches whose
     /// teams are decided by the same earlier matches form a "batch" (see
     /// <see cref="TournamentRoundNameParser.GetPredictionBatch"/>) and lock together 30 minutes before the

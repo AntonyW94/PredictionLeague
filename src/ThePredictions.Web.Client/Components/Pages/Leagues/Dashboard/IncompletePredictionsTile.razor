@@ -99,20 +99,17 @@
 
     private int? ResolveActiveRoundId()
     {
-        // Only chase a round that has opened for predictions but has not itself kicked off: Published
-        // with a deadline still in the future. If any round is currently in progress (matches being
-        // played) the tile is hidden entirely - so an in-progress previous round suppresses it, but
-        // the very first round of a season still shows while it is open and not yet under way.
-        var anyRoundInProgress = State.ViewableRounds.Any(r => r.Status == RoundStatus.InProgress);
-        if (anyRoundInProgress)
-            return null;
-
-        var nextOpenRound = State.ViewableRounds
-            .Where(r => r.Status == RoundStatus.Published && r.DeadlineUtc > DateTime.UtcNow)
+        // Chase the earliest round that is still open for predictions. We include in-progress rounds
+        // because a combined round (for example semi-finals plus the final and third-place playoff) can
+        // still have a later batch open for prediction after its earlier matches have kicked off. We do
+        // not need to test the deadline here: the completion data only surfaces players who are still
+        // missing a predictable (unlocked) fixture, so a round with nothing left to predict shows nothing.
+        var candidateRound = State.ViewableRounds
+            .Where(r => r.Status is RoundStatus.Published or RoundStatus.InProgress)
             .OrderBy(r => r.RoundNumber)
             .FirstOrDefault();
 
-        return nextOpenRound?.Id;
+        return candidateRound?.Id;
     }
 
     private async Task LoadAsync()

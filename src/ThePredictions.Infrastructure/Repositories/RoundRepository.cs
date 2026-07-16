@@ -266,13 +266,34 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
 
     public async Task<Round?> GetNextRoundForReminderAsync(CancellationToken cancellationToken)
     {
+        // Pick the round whose next batch locks soonest. A round is a candidate while it still has a
+        // predictable match that has not locked - the effective lock being the per-match CustomLockTimeUtc
+        // or the round deadline. In-progress rounds are included because a combined round can still have a
+        // later batch (its final and third-place playoff) open after its earlier matches have kicked off.
         const string sqlWithMatches = @"
             WITH NextRound AS (
-                SELECT TOP 1 [Id]
-                FROM [Rounds]
-                WHERE [Status] = @PublishedStatus
-                AND [DeadlineUtc] > GETUTCDATE()
-                ORDER BY [DeadlineUtc] ASC
+                SELECT TOP 1 r.[Id]
+                FROM [Rounds] r
+                WHERE r.[Status] IN (@PublishedStatus, @InProgressStatus)
+                    AND EXISTS (
+                        SELECT 1
+                        FROM [Matches] m
+                        WHERE m.[RoundId] = r.[Id]
+                            AND m.[HomeTeamId] IS NOT NULL
+                            AND m.[AwayTeamId] IS NOT NULL
+                            AND m.[Status] <> @PostponedStatus
+                            AND COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > GETUTCDATE()
+                    )
+                ORDER BY
+                    (
+                        SELECT MIN(COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]))
+                        FROM [Matches] m
+                        WHERE m.[RoundId] = r.[Id]
+                            AND m.[HomeTeamId] IS NOT NULL
+                            AND m.[AwayTeamId] IS NOT NULL
+                            AND m.[Status] <> @PostponedStatus
+                            AND COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > GETUTCDATE()
+                    ) ASC
             )
 
             SELECT
@@ -282,7 +303,15 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
             LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]
             WHERE r.[Id] IN (SELECT [Id] FROM NextRound);";
 
-        return await QueryAndMapRoundAsync(sqlWithMatches, cancellationToken, new { PublishedStatus = nameof(RoundStatus.Published) });
+        return await QueryAndMapRoundAsync(
+            sqlWithMatches,
+            cancellationToken,
+            new
+            {
+                PublishedStatus = nameof(RoundStatus.Published),
+                InProgressStatus = nameof(RoundStatus.InProgress),
+                PostponedStatus = nameof(MatchStatus.Postponed)
+            });
     }
 
     public async Task<Dictionary<int, Round>> GetDraftRoundsStartingBeforeAsync(DateTime dateLimitUtc, CancellationToken cancellationToken)

@@ -40,7 +40,7 @@ public class SendPredictionRemindersCommandHandler(
             throw new KeyNotFoundException($"Round with ID {request.RoundId} not found.");
 
         var nowUtc = dateTimeProvider.UtcNow;
-        if (nowUtc >= round.DeadlineUtc)
+        if (round.IsClosedForPredictions(nowUtc))
             throw new InvalidOperationException("The prediction deadline for this round has passed, so reminders can no longer be sent.");
 
         var requestedUserIds = request.UserIds.Distinct().ToList();
