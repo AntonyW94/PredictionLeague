@@ -108,7 +108,7 @@
                                 }
                                 else
                                 {
-                                    @if (!player.HasPredicted && DeadlineUtc < DateTime.UtcNow)
+                                    @if (!player.HasPredicted && (match.CustomLockTimeUtc ?? DeadlineUtc) < DateTime.UtcNow)
                                     {
                                         <span class="not-predicted-icon text-red bi bi-x-circle-fill" title="No predictions submitted"></span>
                                     }

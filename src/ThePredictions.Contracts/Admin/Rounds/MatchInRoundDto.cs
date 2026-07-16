@@ -20,5 +20,6 @@ public record MatchInRoundDto(
     int? ActualAwayTeamScore,
     MatchStatus Status,
     string? PlaceholderHomeName = null,
-    string? PlaceholderAwayName = null
+    string? PlaceholderAwayName = null,
+    DateTime? CustomLockTimeUtc = null
 );
