@@ -285,15 +285,20 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
                             AND COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > GETUTCDATE()
                     )
                 ORDER BY
-                    (
-                        SELECT MIN(COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]))
-                        FROM [Matches] m
-                        WHERE m.[RoundId] = r.[Id]
-                            AND m.[HomeTeamId] IS NOT NULL
-                            AND m.[AwayTeamId] IS NOT NULL
-                            AND m.[Status] <> @PostponedStatus
-                            AND COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > GETUTCDATE()
-                    ) ASC
+                    CASE
+                        WHEN r.[DeadlineUtc] > GETUTCDATE() THEN r.[DeadlineUtc]
+                        ELSE COALESCE(
+                            (
+                                SELECT MIN(m.[CustomLockTimeUtc])
+                                FROM [Matches] m
+                                WHERE m.[RoundId] = r.[Id]
+                                    AND m.[HomeTeamId] IS NOT NULL
+                                    AND m.[AwayTeamId] IS NOT NULL
+                                    AND m.[Status] <> @PostponedStatus
+                                    AND m.[CustomLockTimeUtc] > GETUTCDATE()
+                            ),
+                            r.[DeadlineUtc])
+                    END ASC
             )
 
             SELECT

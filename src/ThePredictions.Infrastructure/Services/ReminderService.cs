@@ -90,17 +90,20 @@ public class ReminderService(IApplicationReadDbConnection dbConnection) : IRemin
                     WHEN LEN(LTRIM(RTRIM(r.[DisplayName]))) > 0 THEN r.[DisplayName]
                     ELSE 'Round ' + CONVERT(NVARCHAR(MAX), r.[RoundNumber])
                 END AS RoundName,
-                COALESCE(
-                    (
-                        SELECT MIN(COALESCE(nm.[CustomLockTimeUtc], r.[DeadlineUtc]))
-                        FROM [Matches] nm
-                        WHERE nm.[RoundId] = r.[Id]
-                            AND nm.[HomeTeamId] IS NOT NULL
-                            AND nm.[AwayTeamId] IS NOT NULL
-                            AND nm.[Status] <> @PostponedStatus
-                            AND COALESCE(nm.[CustomLockTimeUtc], r.[DeadlineUtc]) > @NowUtc
-                    ),
-                    r.[DeadlineUtc]) AS DeadlineUtc,
+                CASE
+                    WHEN r.[DeadlineUtc] > @NowUtc THEN r.[DeadlineUtc]
+                    ELSE COALESCE(
+                        (
+                            SELECT MIN(nm.[CustomLockTimeUtc])
+                            FROM [Matches] nm
+                            WHERE nm.[RoundId] = r.[Id]
+                                AND nm.[HomeTeamId] IS NOT NULL
+                                AND nm.[AwayTeamId] IS NOT NULL
+                                AND nm.[Status] <> @PostponedStatus
+                                AND nm.[CustomLockTimeUtc] > @NowUtc
+                        ),
+                        r.[DeadlineUtc])
+                END AS DeadlineUtc,
                 u.[Id] AS UserId
             FROM
                 [AspNetUsers] u

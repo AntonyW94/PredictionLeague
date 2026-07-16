@@ -33,12 +33,13 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
                 COALESCE(
                     (
                         SELECT
-                            MAX(COALESCE(lm.[CustomLockTimeUtc], r.[DeadlineUtc]))
+                            MAX(lm.[CustomLockTimeUtc])
                         FROM
                             [Matches] lm
                         WHERE
                             lm.[RoundId] = r.[Id]
                             AND lm.[Status] <> @PostponedStatus
+                            AND lm.[CustomLockTimeUtc] > r.[DeadlineUtc]
                     ),
                     r.[DeadlineUtc]) AS LatestPredictionDeadlineUtc
             FROM
