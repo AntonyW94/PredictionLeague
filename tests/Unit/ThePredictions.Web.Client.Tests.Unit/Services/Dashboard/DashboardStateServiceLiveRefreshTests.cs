@@ -30,7 +30,7 @@ public class DashboardStateServiceLiveRefreshTests
         new(id, "Season", 1, null, false, MatchTime, MatchTime, false, RoundStatus.InProgress, new[] { Match(matchStatus) }, null);
 
     private static ActiveRoundMatchDto Match(MatchStatus status) =>
-        new(null, null, null, null, null, status, null, null, MatchTime, 1, true, null, null, false, 0, 0, 0);
+        new(null, null, null, null, null, status, null, null, MatchTime, 1, true, null, null, false, 0, 0, 0, null);
 
     private static LeagueLeaderboardDto Board(int totalPoints, bool roundInProgress) =>
         new()
