@@ -29,7 +29,8 @@ public class GetMatchesForRoundQueryHandler(IApplicationReadDbConnection dbConne
                 m.[ActualAwayTeamScore],
                 m.[Status],
                 m.[PlaceholderHomeName],
-                m.[PlaceholderAwayName]
+                m.[PlaceholderAwayName],
+                m.[CustomLockTimeUtc]
             FROM
                 [Matches] m
             LEFT JOIN
