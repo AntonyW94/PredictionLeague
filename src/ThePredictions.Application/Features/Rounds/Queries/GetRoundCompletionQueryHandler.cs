@@ -13,14 +13,17 @@ public class GetRoundCompletionQueryHandler(
     IDateTimeProvider dateTimeProvider) : IRequestHandler<GetRoundCompletionQuery, RoundCompletionDto?>
 {
     // A fixture counts towards completion only while a player can still act on it: teams confirmed,
-    // not postponed, and not yet locked. Kept in lockstep with the identical predicate in
+    // still scheduled (not in progress, completed or postponed), and not yet locked. "Locked" mirrors
+    // Domain Match.IsPredictionLocked - the match locks at its own CustomLockTimeUtc when set, otherwise
+    // at the round deadline (@RoundDeadlineUtc), so a match with no custom lock still drops out once the
+    // round deadline passes. Kept in lockstep with the identical predicate in
     // ReminderService.GetUsersMissingPredictionsAsync - change both together.
     private const string PredictableMatchPredicate = @"
         m.[RoundId] = @RoundId
         AND m.[HomeTeamId] IS NOT NULL
         AND m.[AwayTeamId] IS NOT NULL
-        AND m.[Status] <> @PostponedStatus
-        AND (m.[CustomLockTimeUtc] IS NULL OR m.[CustomLockTimeUtc] > @NowUtc)";
+        AND m.[Status] = @ScheduledStatus
+        AND COALESCE(m.[CustomLockTimeUtc], @RoundDeadlineUtc) > @NowUtc";
 
     public async Task<RoundCompletionDto?> Handle(GetRoundCompletionQuery request, CancellationToken cancellationToken)
     {
@@ -51,8 +54,9 @@ public class GetRoundCompletionQueryHandler(
             request.RoundId,
             request.LeagueId,
             NowUtc = nowUtc,
+            RoundDeadlineUtc = roundInfo.DeadlineUtc,
             ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-            PostponedStatus = nameof(MatchStatus.Postponed)
+            ScheduledStatus = nameof(MatchStatus.Scheduled)
         };
 
         var predictableMatchCount = await dbConnection.QuerySingleOrDefaultAsync<int>(
