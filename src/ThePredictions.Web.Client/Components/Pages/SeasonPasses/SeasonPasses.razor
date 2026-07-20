@@ -83,8 +83,8 @@
             {
                 @if (_checkoutCancelled)
                 {
-                    <div class="season-pass-closed-banner">
-                        <i class="bi bi-info-circle-fill"></i>
+                    <div class="season-pass-cancelled-banner">
+                        <i class="bi bi-x-circle-fill"></i>
                         <span>Checkout cancelled - you haven't been charged. You can try again below.</span>
                     </div>
                 }
@@ -104,7 +104,7 @@
                     <p class="season-pass-hero__lead">
                         @if (_options.EntryOpen)
                         {
-                            <text>Your Season Pass to take part - join or create leagues, make predictions and compete on the leaderboards all season.</text>
+                            <text>Your Season Pass to take part - join or create leagues, make predictions and compete on the leaderboards all season. It's also what keeps The Predictions completely ad-free.</text>
                         }
                         else
                         {
@@ -162,6 +162,7 @@
                                 <li><i class="bi bi-check-lg"></i> Live match score updates</li>
                                 <li><i class="bi bi-check-lg"></i> Leaderboards &amp; standings</li>
                                 <li><i class="bi bi-check-lg"></i> Email reminders</li>
+                                <li><i class="bi bi-check-lg"></i> No adverts, ever</li>
                             </ul>
                             @if (CanAcquireStandardFree)
                             {

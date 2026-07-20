@@ -17,7 +17,7 @@
             <StyledValidationMessage For="@(() => Model.PassStandardPrice)" />
         </div>
         <div class="col-md-4 mb-3">
-            <button type="button" class="btn purple-accent-button w-100 text-nowrap" @onclick="GetRecommendationAsync" disabled="@(_isLoading || Model.CompetitionId <= 0 || Model.NumberOfRounds <= 0)">
+            <button type="button" class="btn purple-accent-button w-100 text-nowrap btn-input-height" @onclick="GetRecommendationAsync" disabled="@(_isLoading || Model.CompetitionId <= 0 || Model.NumberOfRounds <= 0)">
                 <span class="bi bi-calculator me-1"></span>@(_isLoading ? "Calculating..." : "Suggest a price")
             </button>
         </div>

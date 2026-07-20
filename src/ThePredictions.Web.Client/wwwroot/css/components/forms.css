@@ -240,6 +240,16 @@
     transition: all 0.18s ease;
 }
 
+/* Action button that sits beside an input and should match its 48px height. */
+.btn.btn-input-height {
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
 textarea.form-control {
     height: auto;
     line-height: 1.5;
