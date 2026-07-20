@@ -1,4 +1,5 @@
 using MediatR;
+using ThePredictions.Application.Common.Prizes;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Payouts;
@@ -91,7 +92,7 @@ public class GetLeaguePayoutsQueryHandler(IApplicationReadDbConnection dbConnect
 
                 var breakdown = group
                     .GroupBy(x => x.PrizeType)
-                    .Select(typeGroup => new PayoutBreakdownDto(typeGroup.Key.ToString(), typeGroup.Sum(x => x.Amount)))
+                    .Select(typeGroup => new PayoutBreakdownDto(PrizeCategoryRegistry.Definition(typeGroup.Key).DisplayName, typeGroup.Sum(x => x.Amount)))
                     .OrderBy(b => b.PrizeType)
                     .ToList();
 

@@ -76,12 +76,16 @@ public class ReminderService(IApplicationReadDbConnection dbConnection) : IRemin
     public async Task<List<ChaseUserDto>> GetUsersMissingPredictionsAsync(int roundId, DateTime nowUtc, CancellationToken cancellationToken)
     {
         // Chase any approved member who is still missing a prediction for at least one match they
-        // can act on - a fixture with confirmed teams that is not postponed and has not yet locked.
-        // Tournament rounds reveal their fixtures over time (a knockout round is published once its
-        // first tie has confirmed teams), so a member who predicts the only confirmed match today
+        // can act on - a fixture with confirmed teams that is still scheduled (not in progress,
+        // completed or postponed) and has not yet locked. "Locked" mirrors Domain
+        // Match.IsPredictionLocked: the match locks at its own CustomLockTimeUtc when set, otherwise at
+        // the round deadline, so a match with no custom lock still drops out once the round deadline
+        // passes. Tournament rounds reveal their fixtures over time (a knockout round is published once
+        // its first tie has confirmed teams), so a member who predicts the only confirmed match today
         // should be reminded again at the next milestone once further ties are confirmed. We only
         // count matches still open for prediction, so a member is never nagged about a fixture they
-        // can no longer change.
+        // can no longer change. Kept in lockstep with the identical predicate in
+        // GetRoundCompletionQueryHandler.PredictableMatchPredicate - change both together.
         const string sql = @"
             SELECT DISTINCT
                 u.[Email],
@@ -122,8 +126,8 @@ public class ReminderService(IApplicationReadDbConnection dbConnection) : IRemin
                     WHERE m.[RoundId] = r.[Id]
                         AND m.[HomeTeamId] IS NOT NULL
                         AND m.[AwayTeamId] IS NOT NULL
-                        AND m.[Status] <> @PostponedStatus
-                        AND (m.[CustomLockTimeUtc] IS NULL OR m.[CustomLockTimeUtc] > @NowUtc)
+                        AND m.[Status] = @ScheduledStatus
+                        AND COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > @NowUtc
                         AND NOT EXISTS (
                             SELECT 1 FROM [UserPredictions] up
                             WHERE up.[MatchId] = m.[Id] AND up.[UserId] = u.[Id]
@@ -138,6 +142,7 @@ public class ReminderService(IApplicationReadDbConnection dbConnection) : IRemin
                 RoundId = roundId,
                 NowUtc = nowUtc,
                 ApprovedStatus = nameof(LeagueMemberStatus.Approved),
+                ScheduledStatus = nameof(MatchStatus.Scheduled),
                 PostponedStatus = nameof(MatchStatus.Postponed)
             })).ToList();
     }
