@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ThePredictions.Application.Features.SeasonPasses.Commands;
 using ThePredictions.Application.Features.SeasonPasses.Queries;
 using ThePredictions.Contracts.SeasonPasses;
+using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.API.Controllers;
 
@@ -48,5 +49,12 @@ public class SeasonPassesController(IMediator mediator) : ApiControllerBase
     {
         await mediator.Send(new AcquireSeasonPassCommand(CurrentUserId, request.SeasonId), cancellationToken);
         return NoContent();
+    }
+
+    [HttpPost("checkout")]
+    public async Task<ActionResult<CreateCheckoutSessionResponse>> CreateCheckoutAsync([FromBody] CreateCheckoutSessionRequest request, CancellationToken cancellationToken)
+    {
+        var response = await mediator.Send(new CreateCheckoutSessionCommand(CurrentUserId, request.SeasonId, SeasonPassTier.Standard), cancellationToken);
+        return Ok(response);
     }
 }
