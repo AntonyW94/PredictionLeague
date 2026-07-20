@@ -10,7 +10,7 @@ namespace ThePredictions.API.Controllers;
 
 [Authorize]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/season-passes")]
 public class SeasonPassesController(IMediator mediator) : ApiControllerBase
 {
     [HttpGet("mine")]
