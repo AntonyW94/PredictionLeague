@@ -727,6 +727,25 @@
     color: var(--green-600);
 }
 
+/* Reassurance line under the paid CTA (Stripe, one-off, no auto-renewal) */
+.season-pass-card__secure {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: var(--space-3) 0 0;
+    font-size: 0.75rem;
+    color: var(--grey-500);
+}
+
+.season-pass-card__secure i {
+    color: var(--green-600);
+}
+
+.theme-dark .season-pass-card__secure {
+    color: var(--white-alpha-50);
+}
+
 /* Dark mode */
 .theme-dark .season-pass-card {
     background: var(--purple-800);

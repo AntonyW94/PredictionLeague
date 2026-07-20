@@ -43,8 +43,8 @@ public class CreateCheckoutSessionCommandHandler(
         var (amountToCharge, smsFeePaid) = ResolvePricing(season, request.Tier);
 
         var baseUrl = (string.IsNullOrWhiteSpace(_siteSettings.BaseUrl) ? DefaultBaseUrl : _siteSettings.BaseUrl).TrimEnd('/');
-        var successUrl = $"{baseUrl}/passes/{request.SeasonId}?checkout=success&session_id={{CHECKOUT_SESSION_ID}}";
-        var cancelUrl = $"{baseUrl}/passes/{request.SeasonId}?checkout=cancelled";
+        var successUrl = $"{baseUrl}/season-passes?seasonId={request.SeasonId}&checkout=success&session_id={{CHECKOUT_SESSION_ID}}";
+        var cancelUrl = $"{baseUrl}/season-passes?seasonId={request.SeasonId}&checkout=cancelled";
 
         var result = await paymentService.CreateCheckoutSessionAsync(
             new PaymentCheckoutRequest(request.UserId, request.SeasonId, request.Tier, amountToCharge, smsFeePaid, successUrl, cancelUrl),

@@ -10,4 +10,5 @@ public interface ISeasonPassService
     Task<SeasonPassOptionsDto?> GetOptionsAsync(int seasonId);
     Task<List<SeasonTeamDto>> GetSeasonTeamsAsync(int seasonId);
     Task<(bool Success, string? ErrorMessage)> AcquireAsync(int seasonId);
+    Task<(string? Url, string? ErrorMessage)> CreateCheckoutAsync(int seasonId);
 }

@@ -52,4 +52,25 @@ public class SeasonPassService(HttpClient httpClient) : ISeasonPassService
             return (false, "An unexpected error occurred.");
         }
     }
+
+    public async Task<(string? Url, string? ErrorMessage)> CreateCheckoutAsync(int seasonId)
+    {
+        var response = await httpClient.PostAsJsonAsync("api/seasonpasses/checkout", new CreateCheckoutSessionRequest { SeasonId = seasonId });
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<CreateCheckoutSessionResponse>();
+            return (result?.CheckoutUrl, null);
+        }
+
+        try
+        {
+            var errorContent = await response.Content.ReadFromJsonAsync<JsonNode>();
+            var errorMessage = errorContent?["message"]?.ToString() ?? "An unknown error occurred while starting checkout.";
+            return (null, errorMessage);
+        }
+        catch
+        {
+            return (null, "An unexpected error occurred.");
+        }
+    }
 }

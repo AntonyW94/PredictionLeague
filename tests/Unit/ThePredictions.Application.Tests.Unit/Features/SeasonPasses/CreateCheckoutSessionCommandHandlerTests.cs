@@ -69,7 +69,7 @@ public class CreateCheckoutSessionCommandHandlerTests
         await _paymentService.Received(1).CreateCheckoutSessionAsync(
             Arg.Is<PaymentCheckoutRequest>(r => r.UserId == UserId && r.SeasonId == SeasonId
                 && r.Tier == SeasonPassTier.Standard && r.AmountToCharge == 10m && r.SmsFeePaid == 0m
-                && r.SuccessUrl.Contains($"/passes/{SeasonId}") && r.SuccessUrl.Contains("{CHECKOUT_SESSION_ID}")
+                && r.SuccessUrl.Contains($"/season-passes?seasonId={SeasonId}") && r.SuccessUrl.Contains("{CHECKOUT_SESSION_ID}")
                 && r.CancelUrl.Contains("checkout=cancelled")),
             Arg.Any<CancellationToken>());
     }
