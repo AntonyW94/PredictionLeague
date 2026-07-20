@@ -80,6 +80,11 @@
 .team-display .match-logo {
     width: 2.5rem;
     height: 2.5rem;
+    object-fit: contain;
+}
+
+/* Country flags (tournaments) render as circular badges; club crests keep their natural shape. */
+.team-display .match-logo--flag {
     border-radius: 50%;
     object-fit: cover;
 }

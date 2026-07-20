@@ -107,7 +107,7 @@
                             {
                                 <div class="prediction-card-body">
                                     <div class="team-display">
-                                        <img src="@match.HomeTeamLogoUrl" class="match-logo" alt="Home Team Logo" />
+                                        <img src="@match.HomeTeamLogoUrl" class="match-logo @(_pageData.IsTournament ? "match-logo--flag" : "")" alt="Home Team Logo" />
                                         <span class="team-name d-none d-sm-block">@match.HomeTeamName</span>
                                         <span class="team-name d-sm-none">@(match.HomeTeamShortName ?? match.HomeTeamAbbreviation)</span>
                                     </div>
@@ -133,7 +133,7 @@
                                         </div>
                                     </div>
                                     <div class="team-display">
-                                        <img src="@match.AwayTeamLogoUrl" class="match-logo" alt="Away Team Logo" />
+                                        <img src="@match.AwayTeamLogoUrl" class="match-logo @(_pageData.IsTournament ? "match-logo--flag" : "")" alt="Away Team Logo" />
                                         <span class="team-name d-none d-sm-block">@match.AwayTeamName</span>
                                         <span class="team-name d-sm-none">@(match.AwayTeamShortName ?? match.AwayTeamAbbreviation)</span>
                                     </div>
