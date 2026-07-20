@@ -27,6 +27,17 @@
     box-shadow: 0 8px 24px var(--black-alpha-25);
 }
 
+/* Price recommendation card - dark mode */
+.theme-dark .price-recommendation__price,
+.theme-dark .price-recommendation__breakdown {
+    color: var(--white);
+}
+
+.theme-dark .price-recommendation__tier,
+.theme-dark .price-recommendation__meta {
+    color: var(--white-alpha-50);
+}
+
 /* ============================================
    CARDS
    ============================================ */
