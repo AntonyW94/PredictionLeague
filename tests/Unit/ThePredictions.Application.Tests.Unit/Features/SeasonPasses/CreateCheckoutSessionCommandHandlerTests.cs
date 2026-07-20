@@ -4,6 +4,7 @@ using NSubstitute;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Features.SeasonPasses.Commands;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Application.Services.Payments;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Common.Exceptions;
@@ -16,6 +17,7 @@ public class CreateCheckoutSessionCommandHandlerTests
 {
     private readonly ISeasonRepository _seasonRepository = Substitute.For<ISeasonRepository>();
     private readonly ISeasonPassRepository _seasonPassRepository = Substitute.For<ISeasonPassRepository>();
+    private readonly IUserManager _userManager = Substitute.For<IUserManager>();
     private readonly IPaymentService _paymentService = Substitute.For<IPaymentService>();
     private readonly CreateCheckoutSessionCommandHandler _handler;
 
@@ -25,8 +27,10 @@ public class CreateCheckoutSessionCommandHandlerTests
 
     public CreateCheckoutSessionCommandHandlerTests()
     {
+        _userManager.FindByIdAsync(UserId).Returns(new ApplicationUser { Id = UserId, EmailConfirmed = true });
+
         var siteSettings = Options.Create(new SiteSettings { BaseUrl = "https://dev.thepredictions.co.uk" });
-        _handler = new CreateCheckoutSessionCommandHandler(_seasonRepository, _seasonPassRepository, _paymentService, siteSettings);
+        _handler = new CreateCheckoutSessionCommandHandler(_seasonRepository, _seasonPassRepository, _userManager, _paymentService, siteSettings);
 
         _paymentService.CreateCheckoutSessionAsync(Arg.Any<PaymentCheckoutRequest>(), Arg.Any<CancellationToken>())
             .Returns(new PaymentCheckoutResult("cs_test_123", CheckoutUrl));
@@ -130,6 +134,17 @@ public class CreateCheckoutSessionCommandHandlerTests
         var act = () => _handler.Handle(new CreateCheckoutSessionCommand(UserId, SeasonId, SeasonPassTier.Premium), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrowEmailNotConfirmed_WhenUserEmailUnconfirmed()
+    {
+        _userManager.FindByIdAsync(UserId).Returns(new ApplicationUser { Id = UserId, EmailConfirmed = false });
+
+        var act = () => _handler.Handle(new CreateCheckoutSessionCommand(UserId, SeasonId, SeasonPassTier.Standard), CancellationToken.None);
+
+        await act.Should().ThrowAsync<EmailNotConfirmedException>();
+        await _paymentService.DidNotReceiveWithAnyArgs().CreateCheckoutSessionAsync(default!, CancellationToken.None);
     }
 
     [Fact]

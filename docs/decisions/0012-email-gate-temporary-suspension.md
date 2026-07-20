@@ -1,6 +1,6 @@
 # 0012. Temporarily suspend the email-confirmation gate
 
-- **Status:** Accepted (temporary; reverts when email verification ships)
+- **Status:** Superseded by [0014](./0014-email-gate-re-enabled.md) (the gate was re-enabled once verification emails shipped)
 - **Date:** 2026-06-05
 - **Deciders:** Antony
 - **Tags:** product, technical, security

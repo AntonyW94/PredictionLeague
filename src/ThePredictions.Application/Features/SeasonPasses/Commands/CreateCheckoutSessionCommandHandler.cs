@@ -3,9 +3,11 @@ using MediatR;
 using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Application.Services.Payments;
 using ThePredictions.Contracts.SeasonPasses;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common.Exceptions;
 using ThePredictions.Domain.Common.Guards;
 using ThePredictions.Domain.Models;
 
@@ -14,6 +16,7 @@ namespace ThePredictions.Application.Features.SeasonPasses.Commands;
 public class CreateCheckoutSessionCommandHandler(
     ISeasonRepository seasonRepository,
     ISeasonPassRepository seasonPassRepository,
+    IUserManager userManager,
     IPaymentService paymentService,
     IOptions<SiteSettings> siteSettings) : IRequestHandler<CreateCheckoutSessionCommand, CreateCheckoutSessionResponse>
 {
@@ -25,6 +28,13 @@ public class CreateCheckoutSessionCommandHandler(
     {
         Guard.Against.NullOrWhiteSpace(request.UserId);
         Guard.Against.NegativeOrZero(request.SeasonId);
+
+        // A confirmed email is required before paying (ADR 0009(b) / 0014), matching the free-acquire gate.
+        var user = await userManager.FindByIdAsync(request.UserId);
+        Guard.Against.EntityNotFound(request.UserId, user, nameof(ApplicationUser));
+
+        if (!user!.EmailConfirmed)
+            throw new EmailNotConfirmedException();
 
         var season = await seasonRepository.GetByIdAsync(request.SeasonId, cancellationToken);
         Guard.Against.EntityNotFound(request.SeasonId, season, nameof(Season));
