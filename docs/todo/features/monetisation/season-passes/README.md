@@ -2,9 +2,9 @@
 
 ## Status
 
-Not Started | **In Progress** | Complete
+Not Started | In Progress | **Complete (live on prod; pending branch merge)**
 
-> **Progress (June 2026):** All build-now Phase A work is done - Competitions refactor, Season-pass domain, DB/schema, access gate + acquire UI, entry-fee settlement, payouts, running costs, configurable prices + calculator, email verification, and best-effort legal pages. **Remaining is the Stripe-dependent slice** (Stripe account, Checkout integration, refunds, purchase page) plus final testing/launch. **SMS / Premium tier is deferred** out of the first launch. See the per-task list below and the "What's left" summary at the foot of this section.
+> **Progress (July 2026):** The Standard Season Pass is **built, deployed to production, and verified with a live card payment**. Done: Stripe account + product + webhook, the Checkout integration (webhook-driven fulfilment), the purchase page, the email-confirmation gate (re-enabled per ADR 0014 now that verification emails ship), Premier League 2026/27 priced on prod, and existing users grandfathered + the Teams table (new teams + refreshed logos) synced to prod. **Refunds are handled manually via the Stripe dashboard** (no self-service refund UI was built - low volume expected). **SMS / Premium tier remains deferred.** The **only remaining step is merging the feature branch into `master`** (production currently runs the branch). See the per-task list below and the "What's left" summary at the foot of this section.
 
 ## Summary
 
@@ -119,20 +119,20 @@ We **track how many SMS each user is sent per season** (`SeasonPass.SmsSentCount
 
 ## Acceptance Criteria
 
-- [ ] Sole trader registered; Monzo Business + Stripe live in the business name.
+- [x] Sole trader registered (UTR received); Monzo Business + Stripe live in the business name.
 - [x] Pass-required is derived from price (`Season.PassStandardPrice IS NOT NULL`); all existing seasons + World Cup 2026 are free (no prices); PL 2026/27 is priced.
 - [x] A user with no pass cannot join/create a league in a pass-required season unless trial-eligible.
 - [x] Brand-new users are auto-granted a free Standard trial on first participation in a pass-required season.
 - [~] Per-season **Standard** price is admin-configurable (DB-backed). *(Premium deferred; Stripe charging the amount is Phase B.)*
 - [x] Admin **Running Costs** page records costs (name, amount, frequency, start/end dates, notes).
 - [x] Season creation shows a **recommended price** from the calculator (15% buffer, length-weighted apportionment, break-even at last comparable season's player count, based on recorded running costs).
-- [ ] Users can buy Standard or Premium via Stripe Checkout (one-off, Apple/Google Pay enabled).
-- [ ] A `SeasonPass` is created reliably on successful payment (webhook-driven).
+- [x] Users can buy **Standard** via Stripe Checkout (one-off, Apple/Google Pay enabled). *(Premium deferred.)*
+- [x] A `SeasonPass` is created reliably on successful payment (webhook-driven, idempotent).
 - [ ] Everyone (incl. SMS-tier) keeps all emails at every milestone; SMS is an **additional** 6h/1h nudge for unsubmitted SMS-tier holders.
 - [ ] Per-season SMS count tracked per user (`SmsSentCount`).
 - [ ] Self-funding reward: a paying low-usage SMS season earns the next SMS season free when the leftover fee covers that season's worst-case SMS cost.
-- [ ] Passes (incl. SMS) are refundable before the season starts (Stripe refund + entitlement revoked); non-refundable after.
-- [x] Email verification completed: unconfirmed users can't purchase/take part; `+`-alias emails are rejected as duplicates. *(Brevo template id still to be set.)*
+- [~] Refunds: handled **manually via the Stripe dashboard** for launch (self-service refund UI not built; low volume expected). Policy stays "refund before the season starts".
+- [x] Email verification completed: unconfirmed users can't purchase/take part (gate re-enabled, ADR 0014); `+`-alias emails are rejected as duplicates. Brevo "Confirm your email" template is live (id 6) and sent on registration; existing users grandfathered to confirmed.
 - [ ] ~~SMS purchase requires a valid UK mobile~~ — **deferred (SMS out of launch scope).**
 - [x] Terms & Privacy updated with paid-service / Stripe / refund / consumer-rights wording; flagged as **not yet solicitor-reviewed**.
 - [x] Domain project at 100% line + branch coverage; schema docs + DatabaseTools updated.
@@ -161,43 +161,41 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 | A6 | 20 | ✅ Done | [Payouts](./20-payouts.md) | Player payout details + payouts list + mark-as-paid (manual, no Stripe). |
 | A7 | 14 | ✅ Done | [Admin running costs](./14-admin-running-costs.md) | Running-costs CRUD page (built without the `Payer` field). |
 | A8 | 15 | ✅ Done | [Configurable prices & calculator](./15-configurable-prices-and-calculator.md) | Standard price + recommended-price calculator; admin-editable buffer/floor + provider fees (`ServiceFees`). |
-| A9 | 18 | ✅ Done* | [Email verification & identity](./18-email-verification-and-identity.md) | Confirmation flow + `+`-alias normalisation. *Code done; needs the Brevo template id set (external).* |
+| A9 | 18 | ✅ Done | [Email verification & identity](./18-email-verification-and-identity.md) | Confirmation flow + `+`-alias normalisation. Brevo template live (id 6), sent on registration; gate re-enabled (ADR 0014); existing users grandfathered. |
 | ~~A10~~ | 13 | ⛔ Deferred | ~~[SMS early-bird reward](./13-sms-earned-upgrade.md)~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
 | ~~A11~~ | 11 | ⛔ Deferred | ~~[SMS reminders](./11-sms-reminders.md)~~ | **DEFERRED (SMS out of launch scope, June 2026).** |
-| A12 | 10 | 🟡 Deferred | [Purchase page](./10-purchase-page.md) | **Deferred until Stripe is set up** — build the page in one go with the Checkout integration (B5) rather than half now. Standard-only. |
+| A12 | 10 | ✅ Done | [Purchase page](./10-purchase-page.md) | Built with the Checkout integration (B7). Standard-only; trial / already-held / entries-closed / cancelled states; return-from-Stripe polling. |
 | A13 | 5 | ✅ Done | [Legal page updates](./05-legal-page-updates.md) | Best-effort Terms/Privacy/refund wording; **not solicitor-reviewed** (deferred until charging beyond friends & family). |
 
 ### Phase B — needs business setup / live accounts
 
 | Order | # | Status | Task | Blocked on |
 |-------|---|--------|------|------------|
-| B1 | 1 | 🟡 In progress | [Business setup (sole trader)](./01-business-setup-sole-trader.md) | Registered with HMRC; **UTR in the post (up to 28 days)**. |
+| B1 | 1 | ✅ Done | [Business setup (sole trader)](./01-business-setup-sole-trader.md) | Registered with HMRC; UTR received. |
 | B2 | 2 | ✅ Done | [Monzo Business account](./02-monzo-business-account.md) | Account open. |
-| B3 | 3 | ⬜ Not started | [Stripe account & products](./03-stripe-account-products.md) | 🟢 Unblocked — Monzo open; UTR not required to register. Can start now. |
+| B3 | 3 | ✅ Done | [Stripe account & products](./03-stripe-account-products.md) | Live account activated; "Season Pass" product; card + Apple/Google Pay; live webhook; keys + webhook secret in the prod Key Vault. |
 | B4 | 4 | ⛔ Deferred | [Brevo SMS setup](./04-brevo-sms-setup.md) | SMS out of launch scope. |
-| B5 | 9 | ⬜ Not started | [Stripe Checkout integration](./09-stripe-checkout-integration.md) | Stripe keys/account (B3). |
-| B6 | 17 | ⬜ Not started | [Refunds](./17-refunds.md) | Stripe refund API (B3/B5). |
-| B7 | 10 | ⬜ Not started | Purchase page (build + wire Checkout) | Build the page and wire the Stripe redirect together (was split A12/B7; now one job). |
+| B5 | 9 | ✅ Done | [Stripe Checkout integration](./09-stripe-checkout-integration.md) | One-off `payment` mode, dynamic `price_data`; webhook-driven idempotent fulfilment. |
+| B6 | 17 | ⛔ Manual (deferred) | [Refunds](./17-refunds.md) | Handled manually via the Stripe dashboard for launch; no self-service refund UI built. |
+| B7 | 10 | ✅ Done | Purchase page (build + wire Checkout) | Purchase page + Stripe redirect built together. |
 | ~~B8~~ | 11 | ⛔ Deferred | ~~SMS reminders — go live~~ | SMS out of launch scope. |
-| B9 | 12 | ⬜ Not started | [Testing & launch](./12-testing-and-launch.md) | Live Stripe; no Brevo SMS, no solicitor sign-off for this launch (June 2026 decision). |
+| B9 | 12 | ✅ Done | [Testing & launch](./12-testing-and-launch.md) | End-to-end in Stripe test mode on dev, then deployed to prod and verified with a live card payment. No Brevo SMS, no solicitor sign-off (conscious decision). |
 
-### What's left (both phases)
+### What's left
 
-**Build work still to do (code):**
-- **B5 — Stripe Checkout integration** (one-off `payment` mode; webhook creates the `SeasonPass`). Needs the Stripe account (B3).
-- **B7 — Purchase page** (Standard-only): the per-season buy page + the Stripe redirect, built together. Needs B5.
-- **B6 — Refunds** (refund-before-season-start via Stripe + entitlement revoke). Needs Stripe.
-- **B9 — Testing & launch** (end-to-end in Stripe test mode, then go-live).
+**The launch build is complete and live on prod, verified with a real payment.** The only outstanding step:
 
-**Offline / external (yours):**
-- **B1** — receive the HMRC UTR (in the post).
-- **B3** — create the Stripe account (free; can start now).
-- **Email confirmation template** (Task 18) — create the Brevo "Email confirmation" template and set `Brevo:Templates:EmailConfirmation`.
+- **Merge the feature branch into `master`.** Production currently runs the branch, so `master` must catch up - otherwise a future `master`-based deploy would overwrite prod with code that lacks the feature. (No new DB migrations, so the migrate step is a no-op.)
 
-**Deferred out of first launch (not needed now):**
+**Product / go-live tasks (owner, when ready):**
+- Open Premier League 2026/27 league entry / announce it now the live purchase is proven.
+- Confirm the automated-emails master switch is ON in prod so confirmation emails send.
+
+**Deferred out of first launch (deliberate, not needed now):**
 - **A10 / A11 / B8 / B4** — all SMS / Premium-tier work (SMS reminders, the early-bird reward, Brevo SMS setup).
-- **A12** is folded into **B7** (build the purchase page with the Stripe work, not before).
+- **B6 — self-service refunds:** refunds are handled manually via the Stripe dashboard for now.
 - **Solicitor review** of Terms & Privacy (best-effort wording is live; full review deferred until charging beyond friends & family).
+- **Stripe Connect entry-fee routing** — separate future feature, gated on gambling-law sign-off (ADR 0003/0008).
 
 ## Dependencies
 
@@ -205,10 +203,10 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 - [x] Brevo configured for email (`IEmailService`)
 - [x] `Season` entity and league join flow (`JoinLeagueCommandHandler`)
 - [x] Terms & Privacy pages (`/terms`, `/privacy`)
-- [x] **Sole trader** registered with HMRC (UTR in the post, up to 28 days) (Task 01)
+- [x] **Sole trader** registered with HMRC (UTR received) (Task 01)
 - [x] **Monzo Business** account open (Task 02)
-- [ ] **Need:** Stripe account (unblocked now - UTR not required to register), Brevo SMS enabled (Tasks 03-04)
-- [ ] **Need:** solicitor review of legal pages before go-live
+- [x] **Stripe** live account, product, webhook and keys in place (Task 03); Brevo SMS still deferred (Task 04)
+- [~] Solicitor review of legal pages **deliberately deferred** until charging beyond friends & family (best-effort wording is live)
 
 ## Technical Notes
 
@@ -222,10 +220,13 @@ Task **ID numbers are stable** (they're referenced across the ADRs and other tas
 
 ## Resolved Decisions
 
-**Launch scope (June 2026):**
+**Launch scope (June-July 2026):**
 
 - **SMS / Premium tier deferred.** First launch sells **Standard only**. The `SeasonPass` tier model stays in place (already built) but Premium is not offered and no Premium prices are set; SMS reminders, `SmsSentCount`, the early-bird reward, libphonenumber and Brevo SMS are all out of scope for now. Re-adding Premium later is purely additive. (Drops A10, A11, B8; simplifies A8 and A12.)
 - **No solicitor review before this launch.** Terms/Privacy/refund wording is best-effort and explicitly flagged as un-reviewed. A full solicitor review is deferred until charging beyond friends & family. (Affects A13, B9.)
+- **Refunds are manual for launch.** No self-service refund UI (Task 17 / B6 deferred); the owner refunds via the Stripe dashboard. Low volume expected.
+- **Email-confirmation gate re-enabled (ADR 0014).** Now that verification emails ship (Brevo template id 6, sent on registration), the confirmed-email requirement to take part is back on for both the free-acquire and paid-checkout paths. Existing users were grandfathered to confirmed via a one-off data update; only new sign-ups must verify.
+- **Deployed to prod from the feature branch** for staged verification (a live payment was taken successfully); `master` merge is the final step.
 
 Earlier decisions (see `docs/decisions/`):
 

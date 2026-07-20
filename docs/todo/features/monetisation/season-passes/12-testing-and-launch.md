@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Done.** Verified end-to-end in Stripe test mode on dev, then deployed to prod (from the feature branch) and confirmed with a live card payment showing in Stripe. PL 2026/27 priced on prod. No Brevo SMS and no solicitor sign-off for this launch (conscious decisions). Paid-league entry-fee routing (Connect) remains OFF.
 
 ## Goal
 

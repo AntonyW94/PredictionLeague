@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | Complete — **Deferred for launch: refunds handled manually via the Stripe dashboard**
+
+> **Manual for launch.** No self-service `RefundSeasonPassCommand` / UI was built - low volume expected, so the owner issues refunds from the Stripe dashboard per the ADR 0005 policy (refund before the season starts). This task (self-service refunds + entitlement revoke) remains available to build later if volume warrants.
 
 ## Goal
 

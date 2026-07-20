@@ -6,9 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
 
-> **Deferred until Stripe is set up (June 2026).** Decided to build the purchase page in one go alongside the Stripe Checkout integration (Task 09) rather than half now / half later. Not started. Standard-only (no Premium/SMS card).
+> **Done.** Built with the Checkout integration (B7) as the per-season view of `/season-passes?seasonId={id}` (rather than a separate `/passes` route). Standard-only. Handles trial / already-held / entries-closed states, launches Stripe Checkout for the paid path, and on return polls for the webhook-created pass (success / "payment received, setting up" / cancelled banner). Live on prod.
 
 ## Goal
 
