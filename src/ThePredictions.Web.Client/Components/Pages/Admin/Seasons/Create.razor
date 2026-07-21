@@ -18,12 +18,13 @@
                        SuccessRedirectUrl="/admin/seasons"
                        BackUrl="/admin/seasons"
                        SuccessAlertMessage="Season created successfully!"
-                       BusyText="Creating Season...">
-        <Header>
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3 class="fw-bold mb-0">Create New Season</h3>
-            </div>
-        </Header>
+                       BusyText="Creating Season..."
+                       ContainerClass="wide">
+        <Hero>
+            <PageHero Title="Create Season" Icon="bi-calendar-plus">
+                Set up a new competition season - its dates, rounds and the Season Pass price that unlocks it for players.
+            </PageHero>
+        </Hero>
         <ChildContent>
                 <div class="row">
                     <div class="col-md-5 mb-3">
@@ -44,7 +45,7 @@
                     <div class="col-md-4 mb-3">
                         <label class="form-label">&nbsp;</label>
                         <div>
-                            <button type="button" class="btn purple-accent-button w-100" @onclick="LookupApiLeagueAsync" disabled="@(_isLookingUp || !SelectedApiLeagueId.HasValue)">
+                            <button type="button" class="btn purple-accent-button w-100 text-nowrap btn-input-height" @onclick="LookupApiLeagueAsync" disabled="@(_isLookingUp || !SelectedApiLeagueId.HasValue)">
                                 <span class="bi bi-cloud-download me-1"></span>@(_isLookingUp ? "Looking up..." : "Lookup from API")
                             </button>
                         </div>

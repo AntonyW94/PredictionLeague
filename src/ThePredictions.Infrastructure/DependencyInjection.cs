@@ -9,6 +9,7 @@ using ThePredictions.Application.Formatters;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Application.Services.Boosts;
+using ThePredictions.Application.Services.Payments;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Models;
 using ThePredictions.Domain.Services;
@@ -21,6 +22,7 @@ using ThePredictions.Infrastructure.Repositories;
 using ThePredictions.Infrastructure.Repositories.Boosts;
 using ThePredictions.Infrastructure.Resilience;
 using ThePredictions.Infrastructure.Services;
+using ThePredictions.Infrastructure.Services.Payments;
 using System.Net;
 
 namespace ThePredictions.Infrastructure;
@@ -36,6 +38,10 @@ public static class DependencyInjection
         services.Configure<FieldEncryptionSettings>(
             configuration.GetSection(FieldEncryptionSettings.SectionName));
         services.AddSingleton<IFieldEncryptionService, FieldEncryptionService>();
+
+        services.Configure<StripeSettings>(
+            configuration.GetSection(StripeSettings.SectionName));
+        services.AddScoped<IPaymentService, StripePaymentService>();
 
         services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
         services.AddScoped<IDbTransactionContext, DbTransactionContext>();

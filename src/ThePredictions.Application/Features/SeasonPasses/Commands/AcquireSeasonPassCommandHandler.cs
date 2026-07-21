@@ -3,6 +3,7 @@ using MediatR;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common;
+using ThePredictions.Domain.Common.Exceptions;
 using ThePredictions.Domain.Common.Guards;
 using ThePredictions.Domain.Models;
 
@@ -19,10 +20,14 @@ public class AcquireSeasonPassCommandHandler(
         Guard.Against.NullOrWhiteSpace(request.UserId);
         Guard.Against.NegativeOrZero(request.SeasonId);
 
-        // The user must exist. The email-confirmation gate from ADR 0009(b) is temporarily suspended
-        // (ADR 0012) until verification emails ship, so an unconfirmed email no longer blocks acquisition.
+        // A confirmed email is required to take part (ADR 0009(b), re-enabled by ADR 0014 now that
+        // verification emails ship). Google-OAuth users are already confirmed. Existing users were
+        // grandfathered to confirmed, so this only blocks new, unverified sign-ups.
         var user = await userManager.FindByIdAsync(request.UserId);
         Guard.Against.EntityNotFound(request.UserId, user, nameof(ApplicationUser));
+
+        if (!user!.EmailConfirmed)
+            throw new EmailNotConfirmedException();
 
         // Idempotent: the user already holds a pass for this season.
         if (await seasonPassRepository.ExistsForUserSeasonAsync(request.UserId, request.SeasonId, cancellationToken))

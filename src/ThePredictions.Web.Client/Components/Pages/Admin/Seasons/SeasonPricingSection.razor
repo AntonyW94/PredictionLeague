@@ -17,7 +17,7 @@
             <StyledValidationMessage For="@(() => Model.PassStandardPrice)" />
         </div>
         <div class="col-md-4 mb-3">
-            <button type="button" class="btn purple-accent-button w-100" @onclick="GetRecommendationAsync" disabled="@(_isLoading || Model.CompetitionId <= 0 || Model.NumberOfRounds <= 0)">
+            <button type="button" class="btn purple-accent-button w-100 text-nowrap btn-input-height" @onclick="GetRecommendationAsync" disabled="@(_isLoading || Model.CompetitionId <= 0 || Model.NumberOfRounds <= 0)">
                 <span class="bi bi-calculator me-1"></span>@(_isLoading ? "Calculating..." : "Suggest a price")
             </button>
         </div>
@@ -27,17 +27,24 @@
     {
         @if (_recommendation.SuggestedStandardPrice is { } suggested)
         {
-            <div class="message-box-solid success mb-3">
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-                    <strong>Recommended: @Money(suggested) Standard@(_recommendation.ExpectedPlayers is { } players ? $" (breaks even at ~{players} players)" : "")</strong>
-                    <button type="button" class="btn btn-sm green-button" @onclick="() => Model.PassStandardPrice = suggested">
+            <div class="price-recommendation mb-3">
+                <div class="price-recommendation__top">
+                    <div class="price-recommendation__headline">
+                        <span class="price-recommendation__eyebrow"><i class="bi bi-check-circle-fill"></i> Recommended price</span>
+                        <span class="price-recommendation__price">@Money(suggested) <span class="price-recommendation__tier">Standard</span></span>
+                        @if (_recommendation.ExpectedPlayers is { } players)
+                        {
+                            <span class="price-recommendation__meta">Breaks even at ~@players players</span>
+                        }
+                    </div>
+                    <button type="button" class="btn btn-sm green-button text-nowrap" @onclick="() => Model.PassStandardPrice = suggested">
                         Use @Money(suggested)
                     </button>
                 </div>
-                <ul class="mb-0 ps-3 text-sm">
-                    <li>Running costs: @Money(_recommendation.AnnualRunningCost) / year</li>
-                    <li>This season's share: @Percent(_recommendation.Weight) (@_recommendation.SeasonRounds of @_recommendation.TotalPaidRoundsInHorizon paid rounds) = @Money(_recommendation.ApportionedCost)</li>
-                    <li>Plus @Percent(_recommendation.BufferRate) buffer = @Money(_recommendation.TargetWithBuffer) to recover</li>
+                <ul class="price-recommendation__breakdown">
+                    <li>Running costs: <strong>@Money(_recommendation.AnnualRunningCost)</strong> / year</li>
+                    <li>This season's share: @Percent(_recommendation.Weight) (@_recommendation.SeasonRounds of @_recommendation.TotalPaidRoundsInHorizon paid rounds) = <strong>@Money(_recommendation.ApportionedCost)</strong></li>
+                    <li>Plus @Percent(_recommendation.BufferRate) buffer = <strong>@Money(_recommendation.TargetWithBuffer)</strong> to recover</li>
                     <li>Across ~@_recommendation.ExpectedPlayers players, grossed up for card fees@(_recommendation.FloorApplied ? ", lifted to the minimum floor" : "")</li>
                 </ul>
             </div>

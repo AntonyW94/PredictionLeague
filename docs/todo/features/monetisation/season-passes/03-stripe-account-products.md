@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Done.** Live Stripe account activated (sole trader), "Season Pass" product created, card + Apple/Google Pay enabled, live webhook (`checkout.session.completed`) added, and the live secret key + webhook signing secret stored in the prod Key Vault. A sandbox was used for all build/test first.
 
 > **UTR note (June 2026):** You can create and activate the Stripe account **now** - a UK sole trader (Individual) account does **not** require the UTR to register or to start taking payments. Provide your legal name/DOB/address and the **Monzo Business sort code + account number** for payouts. Stripe may ask for a tax ID (UTR) but it is optional for a UK individual; add it later when it arrives in the post. Do all integration work in **test mode** first (test keys are available immediately) - live activation isn't gated on the UTR either.
 

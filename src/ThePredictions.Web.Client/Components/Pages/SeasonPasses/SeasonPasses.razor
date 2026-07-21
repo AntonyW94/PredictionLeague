@@ -27,6 +27,16 @@
                     <a class="btn purple-accent-button" href="/dashboard">Back to dashboard</a>
                 </div>
             }
+            else if (_finalisingPayment)
+            {
+                <div class="season-pass-success">
+                    <div class="season-pass-success__banner">
+                        <div class="spinner-border mb-3" role="status" aria-hidden="true"></div>
+                        <h2 class="season-pass-success__title">Confirming your payment</h2>
+                        <p class="season-pass-success__subtitle">This will only take a moment...</p>
+                    </div>
+                </div>
+            }
             else if (_options.AlreadyHeld || _justAcquired)
             {
                 <div class="season-pass-success">
@@ -51,8 +61,34 @@
                     </div>
                 </div>
             }
+            else if (_paymentPending)
+            {
+                <div class="season-pass-success">
+                    <div class="season-pass-success__banner">
+                        <span class="season-pass-success__badge bi bi-hourglass-split" aria-hidden="true"></span>
+                        <h2 class="season-pass-success__title">Payment received</h2>
+                        <p class="season-pass-success__subtitle">
+                            Thanks! We're setting up your <strong>@_options.SeasonName</strong> pass - this usually only takes a few seconds.
+                        </p>
+                    </div>
+                    <div class="season-pass-success__body">
+                        <div class="season-pass-success__actions">
+                            <button class="btn green-button" @onclick="RefreshAsync">Check again</button>
+                            <a class="btn blue-light-button" href="/dashboard">Go to dashboard</a>
+                        </div>
+                    </div>
+                </div>
+            }
             else
             {
+                @if (_checkoutCancelled)
+                {
+                    <div class="season-pass-cancelled-banner">
+                        <i class="bi bi-x-circle-fill"></i>
+                        <span>Checkout cancelled - you haven't been charged. You can try again below.</span>
+                    </div>
+                }
+
                 <div class="season-pass-hero season-pass-hero--detail">
                     <span class="season-pass-hero__crest @(string.IsNullOrEmpty(_options.CompetitionLogoUrl) ? "season-pass-crest--empty" : "")">
                         @if (!string.IsNullOrEmpty(_options.CompetitionLogoUrl))
@@ -68,7 +104,7 @@
                     <p class="season-pass-hero__lead">
                         @if (_options.EntryOpen)
                         {
-                            <text>Your Season Pass to take part - join or create leagues, make predictions and compete on the leaderboards all season.</text>
+                            <text>Your Season Pass to take part - join or create leagues, make predictions and compete on the leaderboards all season. It's also what keeps The Predictions completely ad-free.</text>
                         }
                         else
                         {
@@ -126,6 +162,7 @@
                                 <li><i class="bi bi-check-lg"></i> Live match score updates</li>
                                 <li><i class="bi bi-check-lg"></i> Leaderboards &amp; standings</li>
                                 <li><i class="bi bi-check-lg"></i> Email reminders</li>
+                                <li><i class="bi bi-check-lg"></i> No adverts, ever</li>
                             </ul>
                             @if (CanAcquireStandardFree)
                             {
@@ -135,7 +172,10 @@
                             }
                             else
                             {
-                                <button class="btn purple-accent-button w-100" disabled>Card payment coming soon</button>
+                                <button class="btn green-button w-100" @onclick="BuyAsync" disabled="@_isBusy">
+                                    @(_isBusy ? "Redirecting to payment..." : $"Get your pass - {StandardPriceLabel}")
+                                </button>
+                                <p class="season-pass-card__secure"><i class="bi bi-lock-fill"></i> Secure payment via Stripe - one-off, no auto-renewal</p>
                             }
                         </div>
 
@@ -382,9 +422,15 @@
     [SupplyParameterFromQuery]
     public int? SeasonId { get; set; }
 
+    [SupplyParameterFromQuery(Name = "checkout")]
+    public string? Checkout { get; set; }
+
     private bool _isLoading = true;
     private bool _isBusy;
     private bool _justAcquired;
+    private bool _finalisingPayment;
+    private bool _paymentPending;
+    private bool _checkoutCancelled;
     private string? _errorMessage;
 
     private SeasonPassOptionsDto? _options;
@@ -398,6 +444,8 @@
         _isLoading = true;
         _errorMessage = null;
         _justAcquired = false;
+        _paymentPending = false;
+        _checkoutCancelled = false;
 
         try
         {
@@ -405,6 +453,12 @@
             {
                 _options = await SeasonPassService.GetOptionsAsync(SeasonId.Value);
                 _teams = _options is null ? [] : await SeasonPassService.GetSeasonTeamsAsync(SeasonId.Value);
+                _isLoading = false;
+
+                if (_options is not null && IsCheckout("success") && !_options.AlreadyHeld)
+                    await FinalisePaymentAsync();
+                else if (IsCheckout("cancelled"))
+                    _checkoutCancelled = true;
             }
             else
             {
@@ -421,6 +475,58 @@
         {
             _isLoading = false;
         }
+    }
+
+    private bool IsCheckout(string value) => string.Equals(Checkout, value, StringComparison.OrdinalIgnoreCase);
+
+    private async Task FinalisePaymentAsync()
+    {
+        // The pass is created by the Stripe webhook (server-to-server), which can land a moment after
+        // the browser returns from checkout. Poll briefly for it before deciding it's still pending.
+        _finalisingPayment = true;
+        StateHasChanged();
+
+        for (var attempt = 0; attempt < 6 && _options?.AlreadyHeld != true; attempt++)
+        {
+            await Task.Delay(1500);
+            _options = await SeasonPassService.GetOptionsAsync(SeasonId!.Value);
+        }
+
+        _finalisingPayment = false;
+        _paymentPending = _options?.AlreadyHeld != true;
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (!SeasonId.HasValue)
+            return;
+
+        _paymentPending = false;
+        _isLoading = true;
+
+        _options = await SeasonPassService.GetOptionsAsync(SeasonId.Value);
+
+        _isLoading = false;
+        _paymentPending = _options is not null && !_options.AlreadyHeld;
+    }
+
+    private async Task BuyAsync()
+    {
+        if (!SeasonId.HasValue)
+            return;
+
+        _isBusy = true;
+        _errorMessage = null;
+
+        var (url, errorMessage) = await SeasonPassService.CreateCheckoutAsync(SeasonId.Value);
+        if (!string.IsNullOrEmpty(url))
+        {
+            NavigationManager.NavigateTo(url, forceLoad: true);
+            return;
+        }
+
+        _errorMessage = errorMessage ?? "Could not start checkout. Please try again.";
+        _isBusy = false;
     }
 
     private bool CanAcquireStandardFree => _options is not null && (!_options.RequiresPayment || _options.IsTrialEligible);

@@ -6,9 +6,9 @@
 
 ## Status
 
-Not Started | **In Progress** | Complete
+Not Started | In Progress | **Complete**
 
-> **Update (June 2026):** Registered for Self Assessment as self-employed (sole trader) on the gov.uk website; Government Gateway access confirmed. **Awaiting the UTR by post (up to 28 days).** Once it arrives, store it securely and add it to Stripe/accounts if requested. Everything else here is done; this task closes when the UTR is received and filed.
+> **Update (July 2026):** Registered for Self Assessment as self-employed (sole trader) with HMRC; **UTR received** and filed. Used for Stripe live-account activation. Task closed.
 
 ## Goal
 

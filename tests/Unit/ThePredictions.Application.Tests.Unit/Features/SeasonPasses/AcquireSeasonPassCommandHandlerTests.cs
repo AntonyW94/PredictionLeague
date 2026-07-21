@@ -121,21 +121,18 @@ public class AcquireSeasonPassCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldGrantPass_WhenUserEmailUnconfirmed()
+    public async Task Handle_ShouldThrowEmailNotConfirmed_WhenUserEmailUnconfirmed()
     {
-        // The email-confirmation gate from ADR 0009(b) is temporarily suspended (ADR 0012) until
-        // verification emails ship, so an unconfirmed user can still acquire a free pass.
+        // The email-confirmation gate (ADR 0009(b), re-enabled by ADR 0014) blocks unconfirmed users
+        // from taking part now that verification emails ship.
         _userManager.FindByIdAsync(UserId).Returns(new ApplicationUser { Id = UserId, EmailConfirmed = false });
-        _seasonPassRepository.ExistsForUserSeasonAsync(UserId, SeasonId, Arg.Any<CancellationToken>()).Returns(false);
-        _seasonRepository.GetByIdAsync(SeasonId, Arg.Any<CancellationToken>()).Returns(FreeSeason());
 
         // Act
-        await _handler.Handle(new AcquireSeasonPassCommand(UserId, SeasonId), CancellationToken.None);
+        var act = () => _handler.Handle(new AcquireSeasonPassCommand(UserId, SeasonId), CancellationToken.None);
 
         // Assert
-        await _seasonPassRepository.Received(1).AddAsync(
-            Arg.Is<SeasonPass>(p => p.UserId == UserId && p.SeasonId == SeasonId && p.Source == SeasonPassSource.Free),
-            Arg.Any<CancellationToken>());
+        await act.Should().ThrowAsync<EmailNotConfirmedException>();
+        await _seasonPassRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, CancellationToken.None);
     }
 
     [Fact]

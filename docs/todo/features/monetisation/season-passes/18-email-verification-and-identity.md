@@ -8,9 +8,9 @@
 
 Not Started | In Progress | **Complete** *(code; one external config step outstanding)*
 
-> **Update (June 2026):** The email-confirmation *gate* is temporarily suspended per ADR-0012 - it does not currently block season-pass acquisition. The token flow code exists; the gate is re-enabled once the verification email template is live.
+> **Update (July 2026):** **Complete and live.** The Brevo "Confirm your email address" template is live (id 6) and sent on registration, so the email-confirmation **gate is re-enabled** (ADR 0014, superseding the temporary ADR-0012 suspension). It blocks unconfirmed users on **both** the free-acquire and paid-checkout paths (403). Existing users were grandfathered to confirmed via a one-off `UPDATE`; the `EmailConfirmationTokens` table ships in the baseline migration, so no separate migration was needed.
 
-> **Done in code (A9).** `EmailConfirmationToken` + repo; confirmation token issued and emailed on registration via a resilient sender; `confirm-email` + `resend-confirmation` endpoints and a client confirm page; a custom `ILookupNormalizer` strips `+alias` so plus-aliases collide on the unique email index; acquiring a Season Pass requires a confirmed email (soft login). **Outstanding (external):** create the Brevo "Email confirmation" template and set `Brevo:Templates:EmailConfirmation` (sending is safely skipped while it's 0), and run the `EmailConfirmationTokens` migration + the one-off grandfather `UPDATE`.
+> **Done in code (A9).** `EmailConfirmationToken` + repo; confirmation token issued and emailed on registration via a resilient sender; `confirm-email` + `resend-confirmation` endpoints and a client confirm page; a custom `ILookupNormalizer` strips `+alias` so plus-aliases collide on the unique email index; acquiring **or purchasing** a Season Pass requires a confirmed email.
 
 ## Type
 

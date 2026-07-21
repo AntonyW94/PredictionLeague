@@ -4,6 +4,8 @@
 <EditForm Model="Model" OnValidSubmit="HandleSubmitAsync" class="@($"base-form {SizeClass}".Trim())">
     <FluentValidationValidator />
 
+    @Hero
+
     <div class="form-container @ContainerClass">
         <ApiError Message="@ErrorMessage" />
         <ApiSuccess Message="@SuccessMessage" />
@@ -25,6 +27,7 @@
     [Parameter, EditorRequired] public RenderFragment ChildContent { get; set; } = null!;
     [Parameter, EditorRequired] public Func<Task<HttpResponseMessage>> SubmitAction { get; set; } = null!;
     [Parameter] public RenderFragment? Header { get; set; }
+    [Parameter] public RenderFragment? Hero { get; set; }
     [Parameter] public string? ContainerClass { get; set; }
     [Parameter] public bool IsSaveDisabled { get; set; }
     [Parameter] public string SuccessRedirectUrl { get; set; } = "/";

@@ -6,7 +6,9 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete**
+
+> **Built and live on prod.** `IPaymentService` + `StripePaymentService` (Stripe.net, one-off `payment` mode, dynamic `price_data`), `CreateCheckoutSessionCommand`, `ProcessStripeWebhookCommand` → idempotent `FulfilSeasonPassCommand`, and an `[AllowAnonymous] POST /api/stripe/webhook`. Verified end-to-end with a live card payment.
 
 ## Goal
 

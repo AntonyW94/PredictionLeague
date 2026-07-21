@@ -134,6 +134,67 @@
     content: "\F26B";
 }
 
+/* Price recommendation card (admin season pricing) - readable, stacked breakdown */
+.price-recommendation {
+    padding: var(--space-4);
+    border: 1px solid var(--green-600);
+    border-radius: var(--bs-border-radius);
+    background: var(--green-600-alpha-15);
+}
+
+.price-recommendation__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.price-recommendation__headline {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.price-recommendation__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--green-600);
+}
+
+.price-recommendation__price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--purple-1000);
+}
+
+.price-recommendation__tier {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--grey-500);
+}
+
+.price-recommendation__meta {
+    font-size: 0.85rem;
+    color: var(--grey-500);
+}
+
+.price-recommendation__breakdown {
+    margin: 0;
+    padding-left: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: 0.85rem;
+    color: var(--purple-1000);
+}
+
 /* Soft notice banner - informational warnings that should not shout (e.g. read-only forms) */
 .message-box-notice {
     display: flex;
@@ -177,6 +238,16 @@
     font-size: 1rem;
     line-height: 48px;
     transition: all 0.18s ease;
+}
+
+/* Action button that sits beside an input and should match its 48px height. */
+.btn.btn-input-height {
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 textarea.form-control {
