@@ -70,6 +70,52 @@ internal static class BadgeStateQueries
 
         var bestStreak = await dbConnection.QuerySingleOrDefaultAsync<int>(streakSql, cancellationToken, new { UserId = userId });
 
+        // Current run: consecutive scored rounds with an exact in the user's most recent season, ending at
+        // the latest scored round. Zero if they didn't score an exact in that latest round.
+        const string currentStreakSql = @"
+            WITH ScoredRounds AS (
+                SELECT r.[Id] AS RoundId, r.[RoundNumber], r.[SeasonId]
+                FROM [Rounds] r
+                WHERE EXISTS (SELECT 1 FROM [RoundResults] rr WHERE rr.[RoundId] = r.[Id])
+            ),
+            UserSeason AS (
+                SELECT TOP 1 sr.[SeasonId]
+                FROM ScoredRounds sr
+                JOIN [RoundResults] rr ON rr.[RoundId] = sr.[RoundId]
+                WHERE rr.[UserId] = @UserId
+                ORDER BY sr.[SeasonId] DESC
+            ),
+            SeasonRounds AS (
+                SELECT sr.[RoundNumber], sr.[RoundId]
+                FROM ScoredRounds sr
+                WHERE sr.[SeasonId] = (SELECT [SeasonId] FROM UserSeason)
+            ),
+            MaxRn AS (SELECT MAX([RoundNumber]) AS M FROM SeasonRounds),
+            Grid AS (
+                SELECT
+                    sr.[RoundNumber],
+                    CASE WHEN rr.[ExactScoreCount] >= 1 THEN 1 ELSE 0 END AS Hit
+                FROM SeasonRounds sr
+                LEFT JOIN [RoundResults] rr ON rr.[RoundId] = sr.[RoundId] AND rr.[UserId] = @UserId
+            ),
+            Numbered AS (
+                SELECT
+                    g.[RoundNumber],
+                    g.[Hit],
+                    ROW_NUMBER() OVER (ORDER BY g.[RoundNumber])
+                      - ROW_NUMBER() OVER (PARTITION BY g.[Hit] ORDER BY g.[RoundNumber]) AS Grp
+                FROM Grid g
+            ),
+            Islands AS (
+                SELECT COUNT(*) AS Len, MAX(n.[RoundNumber]) AS LastRn
+                FROM Numbered n
+                WHERE n.[Hit] = 1
+                GROUP BY n.[Grp]
+            )
+            SELECT ISNULL((SELECT i.Len FROM Islands i JOIN MaxRn m ON i.LastRn = m.M), 0);";
+
+        var currentStreak = await dbConnection.QuerySingleOrDefaultAsync<int>(currentStreakSql, cancellationToken, new { UserId = userId });
+
         const string everPresentSql = @"
             WITH Season AS (
                 SELECT TOP 1 r.[SeasonId]
@@ -107,7 +153,7 @@ internal static class BadgeStateQueries
             ? new EverPresentProgress(everPresentRow.RoundsPredicted, everPresentRow.RoundsTotal, everPresentRow.RoundsPredicted < everPresentRow.RoundsTotal)
             : null;
 
-        var metrics = new BadgeProgressMetrics(scalars.SeasonExactTotal, scalars.BestExactsInRound, bestStreak, scalars.LeaguesJoined, everPresent);
+        var metrics = new BadgeProgressMetrics(scalars.SeasonExactTotal, scalars.BestExactsInRound, bestStreak, currentStreak, scalars.LeaguesJoined, everPresent);
 
         return new BadgeUserState(earned, metrics);
     }

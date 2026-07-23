@@ -18,4 +18,8 @@ public record BadgeDto(
     double Progress,
     string ProgressLabel,
     int Count,
-    DateTime? LastAwardedUtc);
+    DateTime? LastAwardedUtc)
+{
+    /// <summary>Optional second progress line, e.g. On Fire's live "current run" alongside the best.</summary>
+    public string SecondaryLabel { get; init; } = string.Empty;
+}

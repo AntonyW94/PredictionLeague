@@ -63,6 +63,10 @@
                                 <p class="tp-badge-card__name">@badge.Name @Roman(badge.Tier)</p>
                                 <p class="tp-badge-card__metric">@badge.Description</p>
                                 <p class="tp-badge-card__progress @ProgressClass(badge)">@badge.ProgressLabel</p>
+                                @if (!string.IsNullOrEmpty(badge.SecondaryLabel))
+                                {
+                                    <p class="tp-badge-card__secondary">@badge.SecondaryLabel</p>
+                                }
                             </div>
                         }
                     </div>

@@ -21,7 +21,12 @@ public class EvaluateBadgesForRoundCommandHandler(
             return;
 
         var seasonId = round.SeasonId;
-        var awardedUtc = round.CompletedDateUtc ?? dateTimeProvider.UtcNow;
+
+        // The achievement date. Prefer the round's completion time; fall back to its last kick-off (the
+        // round finished around then) when completion isn't recorded, so retrospective awards are dated
+        // to when they really happened rather than to "now". Only an empty round uses the clock.
+        var awardedUtc = round.CompletedDateUtc
+            ?? (round.Matches.Any() ? round.Matches.Max(m => m.MatchDateTimeUtc) : dateTimeProvider.UtcNow);
 
         async Task Award(string userId, string badgeKey, DateTime whenUtc, int? leagueId = null, int? roundId = null, int? seasonScopeId = null, string? detail = null)
         {

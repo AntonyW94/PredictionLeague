@@ -433,6 +433,13 @@
     color: var(--grey-400);
 }
 
+.tp-badge-card__secondary {
+    font-size: 0.75rem;
+    color: var(--grey-500);
+    margin: 2px 0 0;
+    font-variant-numeric: tabular-nums;
+}
+
 /* Tablet and up: roomier cards, matching the design prototype. */
 @media (min-width: 768px) {
     .tp-badges-grid {

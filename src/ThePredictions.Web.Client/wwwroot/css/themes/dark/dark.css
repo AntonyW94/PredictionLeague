@@ -841,6 +841,10 @@
     color: var(--white-alpha-30);
 }
 
+.theme-dark .tp-badge-card__secondary {
+    color: var(--white-alpha-50);
+}
+
 /* ============================================
    LOADING
    ============================================ */

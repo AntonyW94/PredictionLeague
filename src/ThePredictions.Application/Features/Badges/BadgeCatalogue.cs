@@ -108,9 +108,20 @@ public static class BadgeCatalogue
             .DefaultIfEmpty(default)
             .Max();
 
+        // On Fire shows the live current run beneath the best, since a streak is dynamic (it can drop
+        // to zero). The best (metric) drives the ring; the current run is informational.
+        var secondaryLabel = group.GroupKey == BadgeGroupKeys.OnFire
+            ? state.Metrics.CurrentStreak > 0
+                ? $"On a {state.Metrics.CurrentStreak}-round run"
+                : "No current run"
+            : string.Empty;
+
         return new BadgeDto(group.GroupKey, group.Name, group.Description, group.Glyph, group.Category,
             state2, tier, maxTier, thresholds, progress, progressLabel, 0,
-            lastAwarded == default ? null : lastAwarded);
+            lastAwarded == default ? null : lastAwarded)
+        {
+            SecondaryLabel = secondaryLabel
+        };
     }
 
     private static BadgeDto BuildSingle(BadgeGroup group, BadgeUserState state, DateTime nowUtc)
@@ -192,6 +203,7 @@ internal sealed record BadgeProgressMetrics(
     int SeasonExactTotal,
     int BestExactsInRound,
     int BestStreak,
+    int CurrentStreak,
     int LeaguesJoined,
     EverPresentProgress? EverPresent);
 
