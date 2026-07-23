@@ -41,7 +41,8 @@ public class EvaluateBadgesForRoundCommandHandler(
         {
             await Award(r.UserId, BadgeKeys.OffTheMark, awardedUtc);
 
-            if (r.TotalPoints > 0)
+            // Scored points this round = got at least one result right (TotalPoints is unreliable).
+            if (r.ExactScoreCount > 0 || r.CorrectResultCount > 0)
                 await Award(r.UserId, BadgeKeys.OnTheBoard, awardedUtc);
 
             if (r.ExactScoreCount >= 1)

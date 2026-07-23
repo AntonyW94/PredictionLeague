@@ -14,7 +14,7 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             SELECT
                 [UserId] AS UserId,
                 [ExactScoreCount] AS ExactScoreCount,
-                [TotalPoints] AS TotalPoints
+                [CorrectResultCount] AS CorrectResultCount
             FROM [RoundResults]
             WHERE [RoundId] = @RoundId;";
 
