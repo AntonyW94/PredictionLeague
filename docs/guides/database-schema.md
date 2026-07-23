@@ -624,6 +624,40 @@ display. Reuses Brevo template 9 (Predictions Missing).
 
 ---
 
+### UserBadges
+
+One row per badge a user has earned (Achievements & Badges feature). All badges are global - earned
+once, in any league, and counted for that badge regardless of how many leagues the user is in.
+`AwardedUtc` holds the real achievement date (backdated when badges are awarded retrospectively).
+`LeagueId` is provenance for the caption; `RoundId`/`SeasonId` scope the repeatable badges. Progress
+toward the next tier is computed live on read and never stored here - the table only records what has
+actually been earned.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| Id | int | NO | IDENTITY | Primary key |
+| UserId | nvarchar(450) | NO | | FK to AspNetUsers - who earned the badge |
+| BadgeKey | nvarchar(50) | NO | | Stable badge key, e.g. `marksman-2`, `sharpshooter-3`, `champion` |
+| AwardedUtc | datetime2 | NO | | When it was achieved (backdated for retrospective awards) |
+| LeagueId | int | YES | | FK to Leagues - where it happened (provenance for the caption) |
+| RoundId | int | YES | | FK to Rounds - scope for per-round badges |
+| SeasonId | int | YES | | FK to Seasons - scope for per-season badges |
+| Detail | nvarchar(100) | YES | | Caption extra, e.g. the score, streak length or season name |
+
+**Constraints:**
+- PK: `Id`
+- UNIQUE: `(UserId, BadgeKey, RoundId, SeasonId)` (`UX_UserBadges_UserBadgeRoundSeason`) - the idempotency key. SQL Server treats NULLs as equal in a unique index, so lifetime badges (RoundId + SeasonId both NULL) dedupe to one row ever, per-round badges (RoundId set) to one per round, and per-season badges (SeasonId set) to one per season.
+- FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
+- FK: `LeagueId` → `Leagues.Id` (NO ACTION)
+- FK: `RoundId` → `Rounds.Id` (NO ACTION)
+- FK: `SeasonId` → `Seasons.Id` (NO ACTION)
+
+> Only `UserId` cascades (GDPR delete of a user removes their badges); the provenance/scope FKs are
+> NO ACTION to avoid SQL Server multiple-cascade-path errors. Holds no personal data beyond the
+> `UserId` FK, so it is copied verbatim by the database refresh tool and needs no anonymisation.
+
+---
+
 ## Prediction Tables
 
 ### UserPredictions

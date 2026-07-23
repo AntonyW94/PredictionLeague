@@ -67,7 +67,8 @@ public class DatabaseRefresher(
         "PrizeNotifications",
         "LeagueWelcomeNotifications",
         "PredictionReminderNotifications",
-        "LeaguePayouts"
+        "LeaguePayouts",
+        "UserBadges"
     ];
 
     private static readonly string[] AllTables = TableCopyOrder
