@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using ThePredictions.API.Filters;
 using ThePredictions.Application.Features.Admin.Rounds.Commands;
 using ThePredictions.Application.Features.Admin.Seasons.Commands;
+using ThePredictions.Application.Features.Badges.Commands;
 using ThePredictions.Application.Features.External.Tasks.Commands;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -27,6 +28,19 @@ public class TasksController(IMediator mediator) : ApiControllerBase
     {
         var command = new UpdateAllLiveScoresCommand();
         await mediator.Send(command, cancellationToken);
+
+        return NoContent();
+    }
+
+    [HttpPost("backfill-badges")]
+    [SwaggerOperation(
+        Summary = "Backfill achievement badges",
+        Description = "One-off replay of the badge evaluator over every completed round in chronological order, awarding existing players' historical badges with backdated achievement dates. Idempotent - safe to re-run.")]
+    [SwaggerResponse(204, "Badges backfilled successfully")]
+    [SwaggerResponse(401, "Invalid or missing API key")]
+    public async Task<IActionResult> BackfillBadgesAsync(CancellationToken cancellationToken)
+    {
+        await mediator.Send(new BackfillBadgesCommand(), cancellationToken);
 
         return NoContent();
     }

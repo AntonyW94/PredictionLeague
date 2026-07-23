@@ -6,6 +6,7 @@
 @inject ILogger<Home> Logger
 
 @using System.Net.Http.Json
+@using ThePredictions.Contracts.Badges
 @using ThePredictions.Contracts.Homepage
 @using ThePredictions.Domain.Common.Enumerations
 
@@ -35,24 +36,25 @@
             @* 2. How It Works (light) *@
             <div class="home-section-light py-5">
                 <div class="container px-4">
-                    <h2 class="text-center fw-bold mb-5">How It Works</h2>
+                    <h2 class="text-center fw-bold mb-3">How It Works</h2>
+                    <p class="text-center home-intro-lead mx-auto mb-5">The Predictions is a season-long game of football knowledge. Predict the scores, climb the leaderboards, and win prizes in your leagues. Here's how to get started in three simple steps.</p>
                     <div class="row g-4 text-center">
                         <div class="col-md-4">
-                            <div class="feature-icon mb-3"><i class="bi bi-pencil-square"></i></div>
-                            <h4 class="fw-bold">1. Predict Scores</h4>
-                            <p>Submit your score predictions for matches each round before the deadline.</p>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="feature-icon mb-3"><i class="bi bi-trophy"></i></div>
-                            <h4 class="fw-bold">2. Score Points</h4>
-                            <p>Earn 5 points for a perfect score, 3 for the correct result, and climb the weekly, monthly, and overall leaderboards.</p>
+                            <div class="feature-icon mb-3"><i class="bi bi-ticket-perforated"></i></div>
+                            <h4 class="fw-bold">1. Get a Season Pass</h4>
+                            <p>Pay a single, one-off Season Pass fee to unlock the site for the whole season. That is the only thing you pay us for - it is a game of skill, not gambling.</p>
                         </div>
 
                         <div class="col-md-4">
                             <div class="feature-icon mb-3"><i class="bi bi-people-fill"></i></div>
-                            <h4 class="fw-bold">3. Compete & Win</h4>
-                            <p>Create private leagues to challenge your friends, family, and colleagues for the ultimate bragging rights!</p>
+                            <h4 class="fw-bold">2. Join Leagues</h4>
+                            <p>With your pass you can join as many leagues as you like. Leagues are free to enter, or the admin sets an entry fee that becomes the prize pot - they pay it out in full, we take no cut and never hold the money.</p>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="feature-icon mb-3"><i class="bi bi-trophy-fill"></i></div>
+                            <h4 class="fw-bold">3. Predict, Score & Compete</h4>
+                            <p>Predict scores each round - 5 points for a perfect score, 3 for the right result. Climb the leaderboards, earn badges, and win prizes in your money leagues.</p>
                         </div>
                     </div>
                 </div>
@@ -210,39 +212,22 @@
                 </div>
             </div>
 
-            @* 6. Testimonials (light) *@
+            @* 6. Badges showcase (light) *@
             <div class="home-section-light py-5">
                 <div class="container px-4">
-                    <h2 class="text-center fw-bold mb-5">What Our Players Are Saying</h2>
-                    <div class="row g-4">
-                        <div class="col-md-4">
-                            <div class="card testimonial-card text-white p-4 h-100">
-                                <div class="card-body text-center">
-                                    <img src="https://randomuser.me/api/portraits/men/32.jpg" class="rounded-circle mb-3" alt="User testimonial photo">
-                                    <p class="card-text fst-italic">"This has completely changed how I watch football on the weekend. Every match matters now!"</p>
-                                    <footer class="blockquote-footer text-white-50 mt-3">Louis L, Northampton</footer>
-                                </div>
+                    <h2 class="text-center fw-bold mb-3">Collect Badges as You Play</h2>
+                    <p class="text-center home-intro-lead mx-auto mb-5">Every round earns you more than points. Unlock badges for your milestones, level them up from bronze to silver to gold, and chase the rare honours - all for free, simply by playing.</p>
+                    <div class="home-badges-grid">
+                        @foreach (var badge in _showcaseBadges)
+                        {
+                            <div class="home-badge @(badge.State == "Locked" ? "home-badge--locked" : "")">
+                                <BadgeIcon Badge="badge" Size="96" ShowTierStars="true" />
+                                <span class="home-badge__name">@badge.Name</span>
+                                <span class="home-badge__tag home-badge__tag--@TagClass(badge)">@badge.ProgressLabel</span>
                             </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card testimonial-card text-white p-4 h-100">
-                                <div class="card-body text-center">
-                                    <img src="https://randomuser.me/api/portraits/women/44.jpg" class="rounded-circle mb-3" alt="User testimonial photo">
-                                    <p class="card-text fst-italic">"Our office league has never been more competitive. The banter is brilliant, and the platform is so easy to use."</p>
-                                    <footer class="blockquote-footer text-white-50 mt-3">Mitch W, Kent</footer>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card testimonial-card text-white p-4 h-100">
-                                <div class="card-body text-center">
-                                    <img src="https://randomuser.me/api/portraits/men/3.jpg" class="rounded-circle mb-3" alt="User testimonial photo">
-                                    <p class="card-text fst-italic">"Finally beat my dad in our family league last season. Best feeling ever! Can't wait for the new season to start."</p>
-                                    <footer class="blockquote-footer text-white-50 mt-3">Ross H, Kent</footer>
-                                </div>
-                            </div>
-                        </div>
+                        }
                     </div>
+                    <p class="text-center home-badges-note mx-auto mt-5">Badges are earned automatically as you play - there is nothing extra to buy. Register to start your collection and see how you rank on the badges leaderboard.</p>
                 </div>
             </div>
 
@@ -263,6 +248,35 @@
     private int _currentIndex;
     private System.Timers.Timer? _autoAdvanceTimer;
     private double _touchStartX;
+
+    // Hand-built sample badges for the marketing showcase. The homepage is anonymous (no API), so
+    // these illustrate the real states a player collects: levelled collections climbing bronze ->
+    // silver -> gold, one-off badges, a competitive honour, and one still locked. Empty thresholds
+    // and a zero LastAwardedUtc are fine - BadgeIcon only reads state, tier, progress and glyph.
+    private static readonly IReadOnlyList<BadgeDto> _showcaseBadges =
+    [
+        new BadgeDto("marksman", "Marksman", "Exact scores in a season", "target", "Collection", "InProgress", 2, 3, [], 0.66, "10 / 15", 10, null),
+        new BadgeDto("sharpshooter", "Sharpshooter", "Exact scores in one round", "crosshair", "Collection", "Earned", 3, 3, [], 1, "Best 5", 5, null),
+        new BadgeDto("on-fire", "On Fire", "Rounds in a row with an exact score", "flame", "Collection", "InProgress", 1, 3, [], 0.85, "6 / 7", 6, null),
+        new BadgeDto("first-blood", "First Blood", "Your first-ever exact score", "bullseye", "Badge", "Earned", 1, 1, [], 1, "Earned", 1, null),
+        new BadgeDto("beat-the-crowd", "Beat the Crowd", "Back the minority result and win", "crowd", "Badge", "Earned", 1, 1, [], 1, "Earned", 1, null),
+        new BadgeDto("founder", "Founder", "Create your own league", "shield", "Badge", "Earned", 1, 1, [], 1, "Earned", 1, null),
+        new BadgeDto("champion", "Champion", "Win a league", "trophy", "Honour", "Earned", 1, 1, [], 1, "Earned", 1, null),
+        new BadgeDto("podium", "Podium", "Finish top 3 in a league", "podium", "Honour", "Locked", 0, 1, [], 0, "Locked", 0, null),
+    ];
+
+    // Colour the little status line under each showcase badge to match its icon: gold for an honour or
+    // a maxed-out multi-tier collection, grey for locked, green for one-off badges and any progress.
+    private static string TagClass(BadgeDto badge)
+    {
+        if (badge.State == "Locked")
+            return "locked";
+
+        var done = badge.State == "Earned"
+            && (badge.Category == "Honour" || (badge.MaxTier > 1 && badge.Tier >= badge.MaxTier));
+
+        return done ? "done" : "go";
+    }
 
     protected override async Task OnInitializedAsync()
     {

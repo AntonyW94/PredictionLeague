@@ -1,0 +1,180 @@
+@inject IBadgeService BadgeService
+@inject IJSRuntime JsRuntime
+@implements IDisposable
+@using ThePredictions.Contracts.Badges
+@using ThePredictions.Web.Client.Services.Badges
+@using ThePredictions.Web.Client.Utilities
+
+<div class="section h-100">
+    <h3 class="text-white text-center fw-bold mb-4">Badges</h3>
+
+    @if (_isLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center flex-grow-1">
+            <div class="spinner-border text-white" role="status">
+                <span class="visually-hidden">Loading badges...</span>
+            </div>
+        </div>
+    }
+    else if (_tile is null || _tile.TotalCount == 0 || _carousel.Count == 0)
+    {
+        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
+            <i class="bi bi-award empty-state-icon"></i>
+            <p class="text-white-50 mt-2 mb-0 text-center">No badges yet - start predicting to earn your first.</p>
+        </div>
+    }
+    else
+    {
+        <div class="tp-badge-tile">
+            <div class="tp-badge-tile__progress">
+                <div class="tp-badge-tile__progress-label">
+                    <span>Collected</span>
+                    <span><b>@_tile.EarnedCount</b> / @_tile.TotalCount</span>
+                </div>
+                <div class="tp-badge-tile__bar">
+                    <div class="tp-badge-tile__bar-fill" style="width: @(ProgressPercent)%"></div>
+                </div>
+                @if (_tile.YourRank is { } rank)
+                {
+                    <div class="tp-badge-tile__rank">
+                        <i class="bi bi-trophy" aria-hidden="true"></i>
+                        <span>@rank<sup>@FormattingUtilities.GetOrdinal(rank)</sup> of @_tile.TotalPlayers for badges</span>
+                    </div>
+                }
+            </div>
+
+            <div class="tp-badge-tile__carousel-wrap">
+                <button type="button" class="tp-badge-tile__nav" @onclick="ScrollPreviousAsync" disabled="@_atStart" aria-label="Previous badges">
+                    <span class="bi bi-chevron-left"></span>
+                </button>
+
+                <div class="tp-badge-tile__carousel" @ref="_carouselElement">
+                    @foreach (var badge in _carousel)
+                    {
+                        <div class="tp-badge-tile__slide">
+                            <BadgeIcon Badge="badge" Size="74" />
+                            <div class="tp-badge-tile__slide-name">@badge.Name</div>
+                            <div class="tp-badge-tile__slide-tag @(IsRecentlyEarned(badge) ? "tp-badge-tile__slide-tag--new" : "tp-badge-tile__slide-tag--soon")">
+                                @SlideLabel(badge)
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <button type="button" class="tp-badge-tile__nav" @onclick="ScrollNextAsync" disabled="@_atEnd" aria-label="Next badges">
+                    <span class="bi bi-chevron-right"></span>
+                </button>
+            </div>
+
+            <a class="btn green-button w-100 mt-2" href="/badges">View all badges</a>
+        </div>
+    }
+</div>
+
+@code {
+    // A badge counts as "recently earned" for the tile ordering and its New tag if it was
+    // awarded within the last 10 days.
+    private const int RecentlyEarnedDays = 10;
+
+    private BadgesTileDto? _tile;
+    private List<BadgeDto> _carousel = [];
+    private bool _isLoading = true;
+
+    private ElementReference _carouselElement;
+    private DotNetObjectReference<BadgesTile>? _selfRef;
+    private bool _carouselRegistered;
+    private bool _atStart = true;
+    private bool _atEnd = true;
+
+    private int ProgressPercent => _tile is null || _tile.TotalCount == 0
+        ? 0
+        : (int)Math.Round(100.0 * _tile.EarnedCount / _tile.TotalCount);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _tile = await BadgeService.GetTileAsync();
+            _carousel = OrderCarousel(_tile?.Carousel ?? []);
+        }
+        catch
+        {
+            _tile = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Register once the carousel is actually in the DOM. It is NOT rendered on the first render
+        // (the loading spinner is showing then), so we cannot key off firstRender - we register on the
+        // first render after loading completes, guarded so it only happens once.
+        if (_carouselRegistered || _isLoading || _carousel.Count == 0)
+            return;
+
+        _carouselRegistered = true;
+        _selfRef ??= DotNetObjectReference.Create(this);
+        await JsRuntime.InvokeVoidAsync("blazorInterop.registerBadgeCarousel", _carouselElement, _selfRef, nameof(OnCarouselEdgesChanged));
+    }
+
+    // Recently earned first (newest first), then closest-to-next by progress descending.
+    private static List<BadgeDto> OrderCarousel(IReadOnlyList<BadgeDto> badges)
+    {
+        var cutoff = DateTime.UtcNow.AddDays(-RecentlyEarnedDays);
+
+        return badges
+            .OrderByDescending(b => b.LastAwardedUtc >= cutoff)
+            .ThenByDescending(b => b.LastAwardedUtc ?? DateTime.MinValue)
+            .ThenByDescending(b => b.Progress)
+            .ToList();
+    }
+
+    private bool IsRecentlyEarned(BadgeDto badge) =>
+        badge.LastAwardedUtc is { } awarded && awarded >= DateTime.UtcNow.AddDays(-RecentlyEarnedDays);
+
+    private string SlideLabel(BadgeDto badge)
+    {
+        if (!IsRecentlyEarned(badge))
+            return badge.ProgressLabel;
+
+        var days = (int)(DateTime.UtcNow - badge.LastAwardedUtc!.Value).TotalDays;
+
+        return days switch
+        {
+            <= 0 => "Earned today",
+            1 => "Earned 1d ago",
+            _ => $"Earned {days}d ago"
+        };
+    }
+
+    [JSInvokable]
+    public void OnCarouselEdgesChanged(bool atStart, bool atEnd)
+    {
+        _atStart = atStart;
+        _atEnd = atEnd;
+        StateHasChanged();
+    }
+
+    private async Task ScrollPreviousAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("blazorInterop.scrollBadgeCarousel", _carouselElement, -1);
+    }
+
+    private async Task ScrollNextAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("blazorInterop.scrollBadgeCarousel", _carouselElement, 1);
+    }
+
+    public void Dispose()
+    {
+        if (_selfRef is null)
+            return;
+
+        // Best-effort listener teardown; the JS side no-ops if the element is already gone.
+        _ = JsRuntime.InvokeVoidAsync("blazorInterop.unregisterBadgeCarousel", _carouselElement);
+        _selfRef.Dispose();
+    }
+}

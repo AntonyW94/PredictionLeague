@@ -57,6 +57,7 @@
 @import url('components/prediction-split.css');
 @import url('components/incomplete-predictions.css');
 @import url('components/live-indicator.css');
+@import url('components/tp-badges.css');
 
 /* Light theme overrides (scoped under .admin-light) */
 @import url('themes/light/layout.css');

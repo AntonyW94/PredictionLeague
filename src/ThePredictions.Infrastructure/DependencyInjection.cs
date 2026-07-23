@@ -108,6 +108,8 @@ public static class DependencyInjection
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<ISeasonPassRepository, SeasonPassRepository>();
         services.AddScoped<IOnboardingSkipRepository, OnboardingSkipRepository>();
+        services.AddScoped<IUserBadgeRepository, UserBadgeRepository>();
+        services.AddScoped<IBadgeEvaluationRepository, BadgeEvaluationRepository>();
         services.AddScoped<IUserPayoutDetailsRepository, UserPayoutDetailsRepository>();
         services.AddScoped<ILeaguePayoutRepository, LeaguePayoutRepository>();
         services.AddScoped<ITeamRepository, TeamRepository>();

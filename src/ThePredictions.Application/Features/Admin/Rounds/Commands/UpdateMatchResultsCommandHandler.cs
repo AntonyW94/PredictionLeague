@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using MediatR;
+using ThePredictions.Application.Features.Badges.Commands;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Application.Services.Boosts;
@@ -107,6 +108,10 @@ public class UpdateMatchResultsCommandHandler(
                 };
                 await mediator.Send(processPrizesCommand, cancellationToken);
             }
+
+            // Stats and prizes are finalised, so award any badges earned this round before the digest
+            // goes out. Idempotent, so re-completing the round won't double-award.
+            await mediator.Send(new EvaluateBadgesForRoundCommand(round.Id), cancellationToken);
 
             // Stats and prizes are now finalised for the round, so send the results digest.
             // Idempotent via Round.ResultsDigestSentUtc, so re-completing the round won't re-send.

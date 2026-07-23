@@ -1,0 +1,658 @@
+/* Badges feature - shared BadgeIcon, the dashboard tile and the full page.
+   All classes are namespaced .tp-badge* to avoid colliding with the existing
+   leaderboard .badge pills. Colour semantics: green = progress/earned,
+   medal gold = tier climbed & honours, grey = locked.
+
+   Local tokens default to the light theme here; dark-mode values are overridden
+   under .theme-dark in themes/dark/dark.css (the class sits on an ancestor, so
+   these custom properties inherit the dark values automatically). */
+
+:root {
+    --tp-badge-progress: var(--green-600);
+    --tp-badge-progress-soft: var(--green-600-alpha-15);
+    --tp-badge-ring-track: #e4e1ea;
+    --tp-badge-locked: #c4c0cc;
+    --tp-badge-locked-soft: #eeecf1;
+    --tp-badge-gold: #b7972a;
+    --tp-badge-gold-soft: rgba(201, 176, 55, 0.16);
+    --tp-badge-bronze: var(--bronze);
+    --tp-badge-silver: #8f8f8f;
+    --tp-badge-bronze-soft: rgba(106, 56, 5, 0.12);
+    --tp-badge-silver-soft: rgba(143, 143, 143, 0.16);
+    /* Section cards (the panel each group sits in) and the inner badge tiles.
+       Kept distinct so tiles read as items within a section, not the page. */
+    --tp-badge-section-bg: var(--white);
+    --tp-badge-section-border: var(--grey-200);
+    --tp-badge-card-bg: var(--purple-50);
+}
+
+/* ============================================
+   BADGE ICON (shared circular face)
+   ============================================ */
+
+.tp-badge-icon {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.tp-badge-icon__face {
+    display: block;
+}
+
+.tp-badge-icon__disc {
+    fill: var(--tp-badge-progress-soft);
+}
+
+.tp-badge-icon--gold .tp-badge-icon__disc {
+    fill: var(--tp-badge-gold-soft);
+}
+
+.tp-badge-icon--locked .tp-badge-icon__disc {
+    fill: transparent;
+}
+
+.tp-badge-icon__track {
+    stroke: var(--tp-badge-ring-track);
+}
+
+.tp-badge-icon__ring {
+    stroke: var(--tp-badge-progress);
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tp-badge-icon--gold .tp-badge-icon__ring {
+    stroke: var(--tp-badge-gold);
+}
+
+.tp-badge-icon__glyph {
+    color: var(--tp-badge-progress);
+}
+
+.tp-badge-icon--gold .tp-badge-icon__glyph {
+    color: var(--tp-badge-gold);
+}
+
+.tp-badge-icon--bronze .tp-badge-icon__disc {
+    fill: var(--tp-badge-bronze-soft);
+}
+
+.tp-badge-icon--bronze .tp-badge-icon__ring {
+    stroke: var(--tp-badge-bronze);
+}
+
+.tp-badge-icon--bronze .tp-badge-icon__glyph {
+    color: var(--tp-badge-bronze);
+}
+
+.tp-badge-icon--silver .tp-badge-icon__disc {
+    fill: var(--tp-badge-silver-soft);
+}
+
+.tp-badge-icon--silver .tp-badge-icon__ring {
+    stroke: var(--tp-badge-silver);
+}
+
+.tp-badge-icon--silver .tp-badge-icon__glyph {
+    color: var(--tp-badge-silver);
+}
+
+.tp-badge-icon--locked .tp-badge-icon__glyph {
+    color: var(--tp-badge-locked);
+}
+
+/* Tier stars */
+.tp-badge-icon__stars {
+    display: inline-flex;
+    gap: 4px;
+    margin-top: 0.625rem;
+}
+
+.tp-badge-icon__star {
+    width: 15px;
+    height: 15px;
+}
+
+.tp-badge-icon__star path {
+    fill: none;
+    stroke: var(--tp-badge-locked);
+}
+
+.tp-badge-icon__star--on.tp-badge-icon__star--bronze path {
+    fill: var(--tp-badge-bronze);
+    stroke: var(--tp-badge-bronze);
+}
+
+.tp-badge-icon__star--on.tp-badge-icon__star--silver path {
+    fill: var(--tp-badge-silver);
+    stroke: var(--tp-badge-silver);
+}
+
+.tp-badge-icon__star--on.tp-badge-icon__star--gold path {
+    fill: var(--tp-badge-gold);
+    stroke: var(--tp-badge-gold);
+}
+
+/* ============================================
+   DASHBOARD TILE
+   ============================================ */
+
+.tp-badge-tile {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.tp-badge-tile__progress {
+    margin-bottom: 1rem;
+}
+
+.tp-badge-tile__progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    margin-bottom: 0.375rem;
+    color: var(--grey-500);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badge-tile__progress-label b {
+    color: var(--purple-1000);
+    font-weight: 700;
+}
+
+.tp-badge-tile__bar {
+    height: 8px;
+    background: var(--tp-badge-ring-track);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.tp-badge-tile__bar-fill {
+    height: 100%;
+    background: var(--green-600);
+    border-radius: 20px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tp-badge-tile__carousel-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tp-badge-tile__nav {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--grey-200);
+    background: var(--white);
+    color: var(--purple-1000);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.tp-badge-tile__nav:hover:not(:disabled) {
+    border-color: var(--green-600);
+    color: var(--green-600);
+}
+
+.tp-badge-tile__nav:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.tp-badge-tile__carousel {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 2px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    flex: 1;
+}
+
+.tp-badge-tile__carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.tp-badge-tile__slide {
+    flex: 0 0 92px;
+    scroll-snap-align: start;
+    text-align: center;
+}
+
+.tp-badge-tile__slide-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: 3px;
+    color: var(--purple-1000);
+}
+
+.tp-badge-tile__slide-tag {
+    font-size: 0.65rem;
+    margin-top: 1px;
+}
+
+.tp-badge-tile__slide-tag--new {
+    color: var(--green-600);
+}
+
+.tp-badge-tile__slide-tag--soon {
+    color: var(--grey-500);
+}
+
+/* Competitive nudge under the progress bar: the player's site-wide badge standing. */
+.tp-badge-tile__rank {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--grey-500);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badge-tile__rank .bi {
+    color: var(--green-600);
+    font-size: 0.85rem;
+}
+
+.tp-badge-tile__rank sup {
+    font-size: 0.65em;
+}
+
+/* ============================================
+   FULL PAGE
+   ============================================ */
+
+.tp-badges-page {
+    width: 100%;
+    max-width: 66.25rem;
+    margin: 0 auto;
+}
+
+.tp-badges-page__eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--green-600);
+    font-weight: 600;
+    margin: 0 0 0.625rem;
+}
+
+.tp-badges-page__title {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--purple-1000);
+    margin: 0 0 0.75rem;
+}
+
+.tp-badges-page__lead {
+    font-size: 1.0625rem;
+    color: var(--grey-500);
+    max-width: 64ch;
+    margin: 0;
+}
+
+/* Back link shown when viewing another player's page. */
+.tp-badge-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--green-600);
+    text-decoration: none;
+}
+
+.tp-badge-back:hover {
+    text-decoration: underline;
+}
+
+/* Prominent overall-progress panel under the hero. */
+.tp-badges-summary {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: var(--tp-badge-section-bg);
+    border: 1px solid var(--tp-badge-section-border);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 4px 12px var(--black-alpha-15);
+}
+
+.tp-badges-summary__figures {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.tp-badges-summary__count {
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badges-summary__earned {
+    font-size: 2.75rem;
+    font-weight: 700;
+    color: var(--green-600);
+}
+
+.tp-badges-summary__total {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--grey-500);
+    margin-left: 0.25rem;
+}
+
+.tp-badges-summary__caption {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--purple-1000);
+    padding-bottom: 0.4rem;
+}
+
+.tp-badges-summary__bar {
+    height: 14px;
+    background: var(--tp-badge-ring-track);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.tp-badges-summary__fill {
+    height: 100%;
+    background: var(--green-600);
+    border-radius: 20px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tp-badges-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--tp-badge-section-border);
+}
+
+.tp-badges-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.8rem;
+    color: var(--grey-500);
+}
+
+.tp-badges-legend__dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    flex: none;
+}
+
+.tp-badges-legend__dot--green {
+    background: var(--green-600);
+}
+
+.tp-badges-legend__dot--gold {
+    background: var(--tp-badge-gold);
+}
+
+.tp-badges-legend__dot--locked {
+    background: var(--tp-badge-locked);
+}
+
+.tp-badges-section {
+    margin-top: 1.25rem;
+    padding: 1.5rem;
+    background: var(--tp-badge-section-bg);
+    border: 1px solid var(--tp-badge-section-border);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 4px 12px var(--black-alpha-15);
+}
+
+.tp-badges-section__heading {
+    font-size: 0.9375rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--grey-500);
+    margin: 0 0 0.375rem;
+}
+
+.tp-badges-section__sub {
+    font-size: 0.9rem;
+    color: var(--grey-500);
+    max-width: 62ch;
+    margin: 0 0 1.375rem;
+}
+
+.tp-badges-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.tp-badge-card {
+    background: var(--tp-badge-card-bg);
+    border: 1px solid var(--tp-badge-section-border);
+    border-radius: var(--bs-border-radius);
+    padding: 22px 15px 18px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.16s ease, border-color 0.16s ease;
+}
+
+.tp-badge-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--green-600);
+}
+
+.tp-badge-card--locked {
+    background: var(--tp-badge-locked-soft);
+}
+
+.tp-badge-card__name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0.875rem 0 0;
+    color: var(--purple-1000);
+}
+
+.tp-badge-card__metric {
+    font-size: 0.8rem;
+    color: var(--grey-500);
+    margin: 2px 0 0;
+}
+
+.tp-badge-card__progress {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin: 6px 0 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badge-card__progress--go {
+    color: var(--green-600);
+}
+
+.tp-badge-card__progress--done {
+    color: var(--tp-badge-gold);
+}
+
+.tp-badge-card__progress--locked {
+    color: var(--grey-400);
+}
+
+.tp-badge-card__secondary {
+    font-size: 0.75rem;
+    color: var(--grey-500);
+    margin: 2px 0 0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ============================================
+   LEADERBOARD (site-wide badge standings)
+   ============================================ */
+
+.tp-badge-board__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.375rem;
+}
+
+.tp-badge-board__head .tp-badges-section__sub {
+    margin-bottom: 0;
+}
+
+/* The "you're Nth of N" figure, echoing the summary count. */
+.tp-badge-board__you {
+    flex: none;
+    text-align: right;
+    line-height: 1.1;
+}
+
+.tp-badge-board__you-rank {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--green-600);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badge-board__you-rank sup {
+    font-size: 0.55em;
+    font-weight: 600;
+}
+
+.tp-badge-board__you-caption {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--grey-500);
+}
+
+/* Keep the full list readable when it runs long. */
+.tp-badge-board__scroll {
+    max-height: 30rem;
+    overflow-y: auto;
+}
+
+.tp-badge-board__scroll::-webkit-scrollbar {
+    width: 0.5rem;
+}
+
+.tp-badge-board__scroll::-webkit-scrollbar-track {
+    background: var(--grey-200);
+    border-radius: 0.25rem;
+}
+
+.tp-badge-board__scroll::-webkit-scrollbar-thumb {
+    background: var(--grey-400);
+    border-radius: 0.25rem;
+}
+
+.tp-badge-board__scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--grey-500);
+}
+
+.tp-badge-board {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tp-badge-board__row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--bs-border-radius);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.tp-badge-board__row + .tp-badge-board__row {
+    margin-top: 2px;
+}
+
+.tp-badge-board__row:hover,
+.tp-badge-board__row:focus-visible {
+    background: var(--tp-badge-card-bg);
+    border-color: var(--green-600);
+    outline: none;
+}
+
+.tp-badge-board__row--you {
+    background: var(--tp-badge-progress-soft);
+    border-color: var(--green-600);
+}
+
+.tp-badge-board__rank {
+    flex: none;
+    width: 2.25rem;
+    font-weight: 700;
+    color: var(--grey-500);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badge-board__row--you .tp-badge-board__rank {
+    color: var(--green-600);
+}
+
+.tp-badge-board__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 600;
+    color: var(--purple-1000);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tp-badge-board__count {
+    flex: none;
+    font-weight: 700;
+    color: var(--green-600);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badge-board__count-total {
+    font-weight: 600;
+    color: var(--grey-500);
+}
+
+/* Tablet and up: roomier cards, matching the design prototype. */
+@media (min-width: 768px) {
+    .tp-badges-grid {
+        grid-template-columns: repeat(auto-fill, minmax(186px, 1fr));
+    }
+
+    .tp-badges-page__title {
+        font-size: 2.5rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tp-badge-icon__ring,
+    .tp-badge-tile__bar-fill,
+    .tp-badge-card,
+    .tp-badge-board__row {
+        transition: none;
+    }
+}
