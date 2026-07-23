@@ -20,6 +20,9 @@ public interface IBadgeEvaluationRepository
 
     Task<IReadOnlyList<SocialiteAward>> GetSocialiteAwardsAsync(CancellationToken cancellationToken);
 
+    /// <summary>Account/setup badges for all qualifying users (add mobile, add bank details, create a league).</summary>
+    Task<IReadOnlyList<AccountBadgeAward>> GetAccountBadgeAwardsAsync(CancellationToken cancellationToken);
+
     Task<IReadOnlyList<UserLeagueRank>> GetSeasonStandingsAsync(int seasonId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<string>> GetEverPresentUsersAsync(int seasonId, CancellationToken cancellationToken);

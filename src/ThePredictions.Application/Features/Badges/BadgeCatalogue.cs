@@ -37,6 +37,12 @@ public static class BadgeCatalogue
             [new(BadgeKeys.BeatTheCrowd, 0)]),
         new(BadgeKeys.EverPresent, "Ever-Present", "Predict every match of a full season", "calendar", BadgeCategory, BadgeScope.PerSeason,
             [new(BadgeKeys.EverPresent, 0)]),
+        new(BadgeKeys.OnCall, "On Call", "Add a mobile number", "phone", BadgeCategory, BadgeScope.Lifetime,
+            [new(BadgeKeys.OnCall, 0)]),
+        new(BadgeKeys.Banked, "Banked", "Add your bank details", "wallet", BadgeCategory, BadgeScope.Lifetime,
+            [new(BadgeKeys.Banked, 0)]),
+        new(BadgeKeys.Founder, "Founder", "Create your own league", "shield", BadgeCategory, BadgeScope.Lifetime,
+            [new(BadgeKeys.Founder, 0)]),
 
         // Honours (placings)
         new(BadgeKeys.Champion, "Champion", "Win a league", "trophy", HonourCategory, BadgeScope.Lifetime,
@@ -97,7 +103,7 @@ public static class BadgeCatalogue
             : nextThreshold > 0 ? Math.Min(1d, metric / (double)nextThreshold) : 0d;
 
         var progressLabel = maxed
-            ? $"Best {metric} - top level"
+            ? $"Best {metric}"
             : $"{metric} / {nextThreshold}";
 
         var state2 = maxed ? "Earned" : tier > 0 || metric > 0 ? "InProgress" : "Locked";

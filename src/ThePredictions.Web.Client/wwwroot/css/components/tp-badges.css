@@ -17,6 +17,8 @@
     --tp-badge-gold-soft: rgba(201, 176, 55, 0.16);
     --tp-badge-bronze: var(--bronze);
     --tp-badge-silver: #8f8f8f;
+    --tp-badge-bronze-soft: rgba(106, 56, 5, 0.12);
+    --tp-badge-silver-soft: rgba(143, 143, 143, 0.16);
     /* Section cards (the panel each group sits in) and the inner badge tiles.
        Kept distinct so tiles read as items within a section, not the page. */
     --tp-badge-section-bg: var(--white);
@@ -69,6 +71,30 @@
 
 .tp-badge-icon--gold .tp-badge-icon__glyph {
     color: var(--tp-badge-gold);
+}
+
+.tp-badge-icon--bronze .tp-badge-icon__disc {
+    fill: var(--tp-badge-bronze-soft);
+}
+
+.tp-badge-icon--bronze .tp-badge-icon__ring {
+    stroke: var(--tp-badge-bronze);
+}
+
+.tp-badge-icon--bronze .tp-badge-icon__glyph {
+    color: var(--tp-badge-bronze);
+}
+
+.tp-badge-icon--silver .tp-badge-icon__disc {
+    fill: var(--tp-badge-silver-soft);
+}
+
+.tp-badge-icon--silver .tp-badge-icon__ring {
+    stroke: var(--tp-badge-silver);
+}
+
+.tp-badge-icon--silver .tp-badge-icon__glyph {
+    color: var(--tp-badge-silver);
 }
 
 .tp-badge-icon--locked .tp-badge-icon__glyph {

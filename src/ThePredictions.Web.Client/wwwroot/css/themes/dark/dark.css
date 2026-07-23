@@ -757,6 +757,8 @@
     --tp-badge-gold-soft: rgba(224, 194, 74, 0.14);
     --tp-badge-bronze: #CC8200;
     --tp-badge-silver: var(--grey-300);
+    --tp-badge-bronze-soft: rgba(204, 130, 0, 0.16);
+    --tp-badge-silver-soft: rgba(206, 206, 206, 0.14);
     --tp-badge-section-bg: var(--purple-800);
     --tp-badge-section-border: var(--white-alpha-08);
     --tp-badge-card-bg: var(--purple-1000);
@@ -950,10 +952,6 @@
 .theme-dark .bg-purple-1000 {
     border-top: 1px solid var(--white-alpha-08);
     border-bottom: 1px solid var(--white-alpha-08);
-}
-
-.theme-dark .testimonial-card {
-    border: 1px solid var(--white-alpha-10);
 }
 
 /* ============================================

@@ -108,7 +108,13 @@ public class EvaluateBadgesForRoundCommandHandler(
                 await Award(s.UserId, badgeKey, s.AwardedUtc, detail: $"{s.Rank} leagues");
         }
 
-        // 7. Season-end honours + Ever-Present.
+        // 7. Account/setup badges (add mobile, add bank details, create a league) for all users, dated to
+        // when they did it. Evaluated here (idempotent) so they land at the next round completion.
+        var accountAwards = await evaluationRepository.GetAccountBadgeAwardsAsync(cancellationToken);
+        foreach (var a in accountAwards)
+            await Award(a.UserId, a.BadgeKey, a.AwardedUtc);
+
+        // 8. Season-end honours + Ever-Present.
         var isLastRound = await roundRepository.IsLastRoundOfSeasonAsync(round.Id, seasonId, cancellationToken);
         if (!isLastRound)
             return;

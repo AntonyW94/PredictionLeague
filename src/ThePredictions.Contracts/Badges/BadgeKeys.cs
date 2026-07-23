@@ -23,6 +23,9 @@ public static class BadgeKeys
     public const string OnTheBoard = "on-the-board";
     public const string BeatTheCrowd = "beat-the-crowd";
     public const string EverPresent = "ever-present";
+    public const string OnCall = "on-call";
+    public const string Banked = "banked";
+    public const string Founder = "founder";
 
     // Honours (placings)
     public const string Champion = "champion";

@@ -47,8 +47,21 @@
 
     private bool IsLocked => Badge.State == "Locked";
 
-    // green = progress/earned, gold = honours (placings), locked greys out.
-    private string Variant => Badge.Category == "Honour" && !IsLocked ? "gold" : "green";
+    // Collections take the medal of the tier reached (bronze -> silver -> gold), matching their stars, and
+    // green while still working toward the first tier. Honours are gold; one-off badges are green. Locked
+    // greys out via the --locked class regardless of variant.
+    private string Variant => Badge.Category switch
+    {
+        "Honour" => "gold",
+        "Collection" => Badge.Tier switch
+        {
+            >= 3 => "gold",
+            2 => "silver",
+            1 => "bronze",
+            _ => "green"
+        },
+        _ => "green"
+    };
 
     // Earned badges show a full ring; everything else fills to its live progress.
     private double Fraction => IsLocked ? 0 : Badge.State == "Earned" ? 1 : Math.Clamp(Badge.Progress, 0, 1);
@@ -97,6 +110,9 @@
         "rosette" => """<circle cx="60" cy="52" r="14" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="60" cy="52" r="5" fill="currentColor"/><path d="M53 64 L50 80 L60 74 L70 80 L67 64 Z" fill="currentColor" opacity="0.85"/>""",
         "trophy" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M49 42 H71 V52 A11 11 0 0 1 49 52 Z"/><path d="M49 46 H43 A5 5 0 0 0 48 56"/><path d="M71 46 H77 A5 5 0 0 1 72 56"/><line x1="60" y1="63" x2="60" y2="71"/><path d="M52 78 H68 L66 71 H54 Z" fill="currentColor"/></g>""",
         "podium" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="44" y="62" width="14" height="16"/><rect x="53" y="52" width="14" height="26"/><rect x="62" y="68" width="14" height="10"/></g>""",
+        "phone" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="48" y="38" width="24" height="44" rx="5"/><line x1="56" y1="44" x2="64" y2="44"/></g><circle cx="60" cy="75" r="2.5" fill="currentColor"/>""",
+        "wallet" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="40" y="47" width="40" height="27" rx="4"/><line x1="40" y1="56" x2="80" y2="56"/></g><circle cx="70" cy="65" r="2.6" fill="currentColor"/>""",
+        "shield" => """<path d="M60 39 L77 46 V60 C77 70 70 77 60 81 C50 77 43 70 43 60 V46 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M53 60 L58 65 L68 54" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>""",
         _ => """<circle cx="60" cy="60" r="16" fill="none" stroke="currentColor" stroke-width="3"/>"""
     };
 }

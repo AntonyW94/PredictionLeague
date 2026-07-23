@@ -180,6 +180,31 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
         return (await QueryAsync<SocialiteAward>(sql, null, cancellationToken)).ToList();
     }
 
+    public async Task<IReadOnlyList<AccountBadgeAward>> GetAccountBadgeAwardsAsync(CancellationToken cancellationToken)
+    {
+        // Founder and Banked are dated to the relevant record's creation time. A mobile number has no
+        // "added" timestamp, so On Call is dated to the user's earliest league join (a proxy for when they
+        // set up), falling back to terms-accepted, then now.
+        const string sql = @"
+            SELECT l.[AdministratorUserId] AS UserId, 'founder' AS BadgeKey, MIN(l.[CreatedAtUtc]) AS AwardedUtc
+            FROM [Leagues] l
+            WHERE l.[AdministratorUserId] IS NOT NULL
+            GROUP BY l.[AdministratorUserId]
+            UNION ALL
+            SELECT p.[UserId], 'banked', p.[CreatedAtUtc]
+            FROM [UserPayoutDetails] p
+            UNION ALL
+            SELECT u.[Id], 'on-call',
+                COALESCE(
+                    (SELECT MIN(lm.[JoinedAtUtc]) FROM [LeagueMembers] lm WHERE lm.[UserId] = u.[Id]),
+                    u.[TermsAcceptedAtUtc],
+                    SYSUTCDATETIME())
+            FROM [AspNetUsers] u
+            WHERE u.[PhoneNumber] IS NOT NULL AND LEN(LTRIM(RTRIM(u.[PhoneNumber]))) > 0;";
+
+        return (await QueryAsync<AccountBadgeAward>(sql, null, cancellationToken)).ToList();
+    }
+
     public async Task<IReadOnlyList<UserLeagueRank>> GetSeasonStandingsAsync(int seasonId, CancellationToken cancellationToken)
     {
         const string sql = @"
