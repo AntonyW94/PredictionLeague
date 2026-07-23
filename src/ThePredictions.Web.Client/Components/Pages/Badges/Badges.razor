@@ -28,20 +28,27 @@
         }
         else
         {
-            <header class="tp-badges-page__header">
-                <p class="tp-badges-page__eyebrow">@_badges.EarnedCount of @_badges.TotalCount collected</p>
-                <h1 class="tp-badges-page__title">Badges &amp; Achievements</h1>
-                <p class="tp-badges-page__lead">
-                    Circular badges in your own colours. Each has a glyph, a ring that fills as you close on the next
-                    level, tier stars, and a caption that spells out exactly what earns it.
-                </p>
+            <PageHero Title="Badges &amp; achievements" Icon="bi-award">
+                Earn badges from your very first round - each one spells out exactly what unlocks it.
+            </PageHero>
 
+            <div class="tp-badges-summary">
+                <div class="tp-badges-summary__figures">
+                    <div class="tp-badges-summary__count">
+                        <span class="tp-badges-summary__earned">@_badges.EarnedCount</span>
+                        <span class="tp-badges-summary__total">/ @_badges.TotalCount</span>
+                    </div>
+                    <div class="tp-badges-summary__caption">badges collected</div>
+                </div>
+                <div class="tp-badges-summary__bar" role="progressbar" aria-valuenow="@_badges.EarnedCount" aria-valuemin="0" aria-valuemax="@_badges.TotalCount">
+                    <div class="tp-badges-summary__fill" style="width: @(CollectedPercent)%"></div>
+                </div>
                 <div class="tp-badges-legend">
                     <span><span class="tp-badges-legend__dot tp-badges-legend__dot--green"></span> Green - your progress &amp; earned badges</span>
                     <span><span class="tp-badges-legend__dot tp-badges-legend__dot--gold"></span> Medal - tier climbed &amp; honours</span>
                     <span><span class="tp-badges-legend__dot tp-badges-legend__dot--locked"></span> Grey - still locked</span>
                 </div>
-            </header>
+            </div>
 
             @if (_badges.Collections.Count > 0)
             {
@@ -115,6 +122,10 @@
     private UserBadgesDto? _badges;
     private bool _isLoading = true;
     private string? _errorMessage;
+
+    private int CollectedPercent => _badges is null || _badges.TotalCount == 0
+        ? 0
+        : (int)Math.Round(100.0 * _badges.EarnedCount / _badges.TotalCount);
 
     protected override async Task OnInitializedAsync()
     {

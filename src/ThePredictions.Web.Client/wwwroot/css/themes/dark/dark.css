@@ -757,6 +757,9 @@
     --tp-badge-gold-soft: rgba(224, 194, 74, 0.14);
     --tp-badge-bronze: #CC8200;
     --tp-badge-silver: var(--grey-300);
+    --tp-badge-section-bg: var(--purple-800);
+    --tp-badge-section-border: var(--white-alpha-08);
+    --tp-badge-card-bg: var(--purple-1000);
 }
 
 /* Tile */
@@ -802,12 +805,19 @@
 }
 
 .theme-dark .tp-badges-legend {
-    background: var(--purple-600);
-    border-color: transparent;
+    border-top-color: var(--white-alpha-08);
 }
 
 .theme-dark .tp-badges-legend span {
     color: var(--white-alpha-70);
+}
+
+.theme-dark .tp-badges-summary__caption {
+    color: var(--white);
+}
+
+.theme-dark .tp-badges-summary__total {
+    color: var(--white-alpha-50);
 }
 
 .theme-dark .tp-badge-card {

@@ -17,6 +17,11 @@
     --tp-badge-gold-soft: rgba(201, 176, 55, 0.16);
     --tp-badge-bronze: var(--bronze);
     --tp-badge-silver: #8f8f8f;
+    /* Section cards (the panel each group sits in) and the inner badge tiles.
+       Kept distinct so tiles read as items within a section, not the page. */
+    --tp-badge-section-bg: var(--white);
+    --tp-badge-section-border: var(--grey-200);
+    --tp-badge-card-bg: var(--purple-50);
 }
 
 /* ============================================
@@ -250,15 +255,71 @@
     margin: 0;
 }
 
+/* Prominent overall-progress panel under the hero. */
+.tp-badges-summary {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: var(--tp-badge-section-bg);
+    border: 1px solid var(--tp-badge-section-border);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 4px 12px var(--black-alpha-15);
+}
+
+.tp-badges-summary__figures {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.tp-badges-summary__count {
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badges-summary__earned {
+    font-size: 2.75rem;
+    font-weight: 700;
+    color: var(--green-600);
+}
+
+.tp-badges-summary__total {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--grey-500);
+    margin-left: 0.25rem;
+}
+
+.tp-badges-summary__caption {
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--purple-1000);
+    padding-bottom: 0.4rem;
+}
+
+.tp-badges-summary__bar {
+    height: 14px;
+    background: var(--tp-badge-ring-track);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.tp-badges-summary__fill {
+    height: 100%;
+    background: var(--green-600);
+    border-radius: 20px;
+    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .tp-badges-legend {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 18px;
     margin-top: 1.25rem;
-    padding: 14px 16px;
-    background: var(--white);
-    border: 1px solid var(--grey-200);
-    border-radius: 14px;
+    padding-top: 1rem;
+    border-top: 1px solid var(--tp-badge-section-border);
 }
 
 .tp-badges-legend span {
@@ -289,7 +350,12 @@
 }
 
 .tp-badges-section {
-    margin-top: 2.5rem;
+    margin-top: 1.25rem;
+    padding: 1.5rem;
+    background: var(--tp-badge-section-bg);
+    border: 1px solid var(--tp-badge-section-border);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 4px 12px var(--black-alpha-15);
 }
 
 .tp-badges-section__heading {
@@ -315,8 +381,8 @@
 }
 
 .tp-badge-card {
-    background: var(--white);
-    border: 1px solid var(--grey-200);
+    background: var(--tp-badge-card-bg);
+    border: 1px solid var(--tp-badge-section-border);
     border-radius: var(--bs-border-radius);
     padding: 22px 15px 18px;
     text-align: center;
