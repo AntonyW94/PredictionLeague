@@ -11,6 +11,10 @@ public class GetUserBadgesQueryHandler(IApplicationReadDbConnection dbConnection
     public async Task<UserBadgesDto> Handle(GetUserBadgesQuery request, CancellationToken cancellationToken)
     {
         var state = await BadgeStateQueries.LoadAsync(dbConnection, request.UserId, cancellationToken);
-        return BadgeCatalogue.BuildPage(state, dateTimeProvider.UtcNow);
+
+        const string nameSql = "SELECT [FirstName] + ' ' + LEFT([LastName], 1) FROM [AspNetUsers] WHERE [Id] = @UserId;";
+        var ownerName = await dbConnection.QuerySingleOrDefaultAsync<string>(nameSql, cancellationToken, new { request.UserId }) ?? string.Empty;
+
+        return BadgeCatalogue.BuildPage(state, dateTimeProvider.UtcNow) with { OwnerName = ownerName };
     }
 }

@@ -3,6 +3,7 @@
 @implements IDisposable
 @using ThePredictions.Contracts.Badges
 @using ThePredictions.Web.Client.Services.Badges
+@using ThePredictions.Web.Client.Utilities
 
 <div class="section h-100">
     <h3 class="text-white text-center fw-bold mb-4">Badges</h3>
@@ -33,6 +34,13 @@
                 <div class="tp-badge-tile__bar">
                     <div class="tp-badge-tile__bar-fill" style="width: @(ProgressPercent)%"></div>
                 </div>
+                @if (_tile.YourRank is { } rank)
+                {
+                    <div class="tp-badge-tile__rank">
+                        <i class="bi bi-trophy" aria-hidden="true"></i>
+                        <span>@rank<sup>@FormattingUtilities.GetOrdinal(rank)</sup> of @_tile.TotalPlayers for badges</span>
+                    </div>
+                }
             </div>
 
             <div class="tp-badge-tile__carousel-wrap">

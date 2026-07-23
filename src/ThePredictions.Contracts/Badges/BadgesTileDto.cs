@@ -7,4 +7,9 @@ namespace ThePredictions.Contracts.Badges;
 public record BadgesTileDto(
     int EarnedCount,
     int TotalCount,
-    IReadOnlyList<BadgeDto> Carousel);
+    IReadOnlyList<BadgeDto> Carousel)
+{
+    /// <summary>The player's rank on the site-wide badges leaderboard, and how many players there are.</summary>
+    public int? YourRank { get; init; }
+    public int TotalPlayers { get; init; }
+}

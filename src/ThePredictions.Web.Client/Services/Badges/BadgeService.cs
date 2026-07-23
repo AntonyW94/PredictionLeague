@@ -10,8 +10,18 @@ public class BadgeService(HttpClient httpClient) : IBadgeService
         return await httpClient.GetFromJsonAsync<UserBadgesDto>("api/badges");
     }
 
+    public async Task<UserBadgesDto?> GetBadgesForUserAsync(string userId)
+    {
+        return await httpClient.GetFromJsonAsync<UserBadgesDto>($"api/badges/user/{userId}");
+    }
+
     public async Task<BadgesTileDto?> GetTileAsync()
     {
         return await httpClient.GetFromJsonAsync<BadgesTileDto>("api/badges/tile");
+    }
+
+    public async Task<BadgeLeaderboardDto?> GetLeaderboardAsync()
+    {
+        return await httpClient.GetFromJsonAsync<BadgeLeaderboardDto>("api/badges/leaderboard");
     }
 }

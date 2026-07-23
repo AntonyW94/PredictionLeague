@@ -221,6 +221,26 @@
     color: var(--grey-500);
 }
 
+/* Competitive nudge under the progress bar: the player's site-wide badge standing. */
+.tp-badge-tile__rank {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--grey-500);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badge-tile__rank .bi {
+    color: var(--green-600);
+    font-size: 0.85rem;
+}
+
+.tp-badge-tile__rank sup {
+    font-size: 0.65em;
+}
+
 /* ============================================
    FULL PAGE
    ============================================ */
@@ -253,6 +273,22 @@
     color: var(--grey-500);
     max-width: 64ch;
     margin: 0;
+}
+
+/* Back link shown when viewing another player's page. */
+.tp-badge-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--green-600);
+    text-decoration: none;
+}
+
+.tp-badge-back:hover {
+    text-decoration: underline;
 }
 
 /* Prominent overall-progress panel under the hero. */
@@ -440,6 +476,141 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* ============================================
+   LEADERBOARD (site-wide badge standings)
+   ============================================ */
+
+.tp-badge-board__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.375rem;
+}
+
+.tp-badge-board__head .tp-badges-section__sub {
+    margin-bottom: 0;
+}
+
+/* The "you're Nth of N" figure, echoing the summary count. */
+.tp-badge-board__you {
+    flex: none;
+    text-align: right;
+    line-height: 1.1;
+}
+
+.tp-badge-board__you-rank {
+    display: block;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--green-600);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badge-board__you-rank sup {
+    font-size: 0.55em;
+    font-weight: 600;
+}
+
+.tp-badge-board__you-caption {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--grey-500);
+}
+
+/* Keep the full list readable when it runs long. */
+.tp-badge-board__scroll {
+    max-height: 30rem;
+    overflow-y: auto;
+}
+
+.tp-badge-board__scroll::-webkit-scrollbar {
+    width: 0.5rem;
+}
+
+.tp-badge-board__scroll::-webkit-scrollbar-track {
+    background: var(--grey-200);
+    border-radius: 0.25rem;
+}
+
+.tp-badge-board__scroll::-webkit-scrollbar-thumb {
+    background: var(--grey-400);
+    border-radius: 0.25rem;
+}
+
+.tp-badge-board__scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--grey-500);
+}
+
+.tp-badge-board {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tp-badge-board__row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--bs-border-radius);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.tp-badge-board__row + .tp-badge-board__row {
+    margin-top: 2px;
+}
+
+.tp-badge-board__row:hover,
+.tp-badge-board__row:focus-visible {
+    background: var(--tp-badge-card-bg);
+    border-color: var(--green-600);
+    outline: none;
+}
+
+.tp-badge-board__row--you {
+    background: var(--tp-badge-progress-soft);
+    border-color: var(--green-600);
+}
+
+.tp-badge-board__rank {
+    flex: none;
+    width: 2.25rem;
+    font-weight: 700;
+    color: var(--grey-500);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badge-board__row--you .tp-badge-board__rank {
+    color: var(--green-600);
+}
+
+.tp-badge-board__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 600;
+    color: var(--purple-1000);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tp-badge-board__count {
+    flex: none;
+    font-weight: 700;
+    color: var(--green-600);
+    font-variant-numeric: tabular-nums;
+}
+
+.tp-badge-board__count-total {
+    font-weight: 600;
+    color: var(--grey-500);
+}
+
 /* Tablet and up: roomier cards, matching the design prototype. */
 @media (min-width: 768px) {
     .tp-badges-grid {
@@ -454,7 +625,8 @@
 @media (prefers-reduced-motion: reduce) {
     .tp-badge-icon__ring,
     .tp-badge-tile__bar-fill,
-    .tp-badge-card {
+    .tp-badge-card,
+    .tp-badge-board__row {
         transition: none;
     }
 }

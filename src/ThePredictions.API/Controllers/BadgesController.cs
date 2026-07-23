@@ -22,4 +22,16 @@ public class BadgesController(IMediator mediator) : ApiControllerBase
     {
         return Ok(await mediator.Send(new GetBadgesTileQuery(CurrentUserId), cancellationToken));
     }
+
+    [HttpGet("leaderboard")]
+    public async Task<ActionResult<BadgeLeaderboardDto>> GetLeaderboardAsync(CancellationToken cancellationToken)
+    {
+        return Ok(await mediator.Send(new GetBadgeLeaderboardQuery(CurrentUserId), cancellationToken));
+    }
+
+    [HttpGet("user/{userId}")]
+    public async Task<ActionResult<UserBadgesDto>> GetForUserAsync(string userId, CancellationToken cancellationToken)
+    {
+        return Ok(await mediator.Send(new GetUserBadgesQuery(userId), cancellationToken));
+    }
 }

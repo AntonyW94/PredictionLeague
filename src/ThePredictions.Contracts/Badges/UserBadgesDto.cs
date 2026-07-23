@@ -6,4 +6,8 @@ public record UserBadgesDto(
     int TotalCount,
     IReadOnlyList<BadgeDto> Collections,
     IReadOnlyList<BadgeDto> Badges,
-    IReadOnlyList<BadgeDto> Honours);
+    IReadOnlyList<BadgeDto> Honours)
+{
+    /// <summary>Display name (first name + surname initial) of whose page this is; used when viewing another player.</summary>
+    public string OwnerName { get; init; } = string.Empty;
+}

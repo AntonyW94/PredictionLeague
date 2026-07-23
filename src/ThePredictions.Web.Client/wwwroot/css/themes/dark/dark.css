@@ -845,6 +845,51 @@
     color: var(--white-alpha-50);
 }
 
+/* Tile rank line */
+.theme-dark .tp-badge-tile__rank {
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .tp-badge-tile__rank .bi {
+    color: var(--green-300);
+}
+
+/* Leaderboard */
+.theme-dark .tp-badge-board__you-caption,
+.theme-dark .tp-badge-board__rank {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .tp-badge-board__row:hover,
+.theme-dark .tp-badge-board__row:focus-visible {
+    background: var(--white-alpha-05);
+    border-color: var(--green-600);
+}
+
+.theme-dark .tp-badge-board__row--you {
+    border-color: var(--green-600);
+}
+
+.theme-dark .tp-badge-board__row--you .tp-badge-board__rank {
+    color: var(--green-300);
+}
+
+.theme-dark .tp-badge-board__name {
+    color: var(--white);
+}
+
+.theme-dark .tp-badge-board__count-total {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .tp-badge-board__scroll::-webkit-scrollbar-track {
+    background: var(--white-alpha-08);
+}
+
+.theme-dark .tp-badge-board__scroll::-webkit-scrollbar-thumb {
+    background: var(--white-alpha-15);
+}
+
 /* ============================================
    LOADING
    ============================================ */

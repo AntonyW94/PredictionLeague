@@ -1,8 +1,11 @@
 @page "/badges"
+@page "/badges/{UserId}"
 @attribute [Authorize]
 @using ThePredictions.Contracts.Badges
 @using ThePredictions.Web.Client.Services.Badges
+@using ThePredictions.Web.Client.Utilities
 @inject IBadgeService BadgeService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Badges</PageTitle>
 
@@ -22,15 +25,28 @@
         {
             <div class="empty-state">
                 <i class="bi bi-award empty-state-icon"></i>
-                <p>We couldn't load your badges right now. Please try again.</p>
+                <p>We couldn't load @(IsViewingOther ? "these badges" : "your badges") right now. Please try again.</p>
                 <a class="btn purple-accent-button" href="/dashboard">Back to dashboard</a>
             </div>
         }
         else
         {
-            <PageHero Title="Badges &amp; achievements" Icon="bi-award">
-                Earn badges from your very first round - each one spells out exactly what unlocks it.
-            </PageHero>
+            @if (IsViewingOther)
+            {
+                <PageHero Title="@($"{_badges.OwnerName}'s badges")" Icon="bi-award">
+                    Every badge this player has unlocked, and the ones still up for grabs.
+                </PageHero>
+
+                <a class="tp-badge-back" href="/badges">
+                    <i class="bi bi-arrow-left" aria-hidden="true"></i> Back to leaderboard
+                </a>
+            }
+            else
+            {
+                <PageHero Title="Badges &amp; achievements" Icon="bi-award">
+                    Earn badges from your very first round - each one spells out exactly what unlocks it.
+                </PageHero>
+            }
 
             <div class="tp-badges-summary">
                 <div class="tp-badges-summary__figures">
@@ -49,6 +65,42 @@
                     <span><span class="tp-badges-legend__dot tp-badges-legend__dot--locked"></span> Grey - still locked</span>
                 </div>
             </div>
+
+            @if (!IsViewingOther && _leaderboard is { Rows.Count: > 0 })
+            {
+                <section class="tp-badges-section">
+                    <div class="tp-badge-board__head">
+                        <div>
+                            <h2 class="tp-badges-section__heading">Leaderboard</h2>
+                            <p class="tp-badges-section__sub">Every player, ranked by badges collected. Tap a name to see their badges.</p>
+                        </div>
+                        @if (_leaderboard.YourRank is { } rank)
+                        {
+                            <div class="tp-badge-board__you">
+                                <span class="tp-badge-board__you-rank">@rank<sup>@FormattingUtilities.GetOrdinal(rank)</sup></span>
+                                <span class="tp-badge-board__you-caption">of @_leaderboard.TotalPlayers</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="tp-badge-board__scroll">
+                        <ul class="tp-badge-board">
+                            @foreach (var row in _leaderboard.Rows)
+                            {
+                                <li class="tp-badge-board__row @(row.IsCurrentUser ? "tp-badge-board__row--you" : "")"
+                                    @onclick="() => ViewPlayer(row.UserId)"
+                                    role="button"
+                                    tabindex="0"
+                                    @onkeydown="(e) => OnRowKeyDown(e, row.UserId)">
+                                    <span class="tp-badge-board__rank">@row.Rank</span>
+                                    <span class="tp-badge-board__name">@row.DisplayName</span>
+                                    <span class="tp-badge-board__count">@row.BadgeCount <span class="tp-badge-board__count-total">/ @row.TotalBadges</span></span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </section>
+            }
 
             @if (_badges.Collections.Count > 0)
             {
@@ -123,29 +175,62 @@
 </div>
 
 @code {
+    [Parameter] public string? UserId { get; set; }
+
     private UserBadgesDto? _badges;
+    private BadgeLeaderboardDto? _leaderboard;
     private bool _isLoading = true;
     private string? _errorMessage;
+
+    private bool IsViewingOther => !string.IsNullOrEmpty(UserId);
 
     private int CollectedPercent => _badges is null || _badges.TotalCount == 0
         ? 0
         : (int)Math.Round(100.0 * _badges.EarnedCount / _badges.TotalCount);
 
-    protected override async Task OnInitializedAsync()
+    // OnParametersSetAsync so navigating from one player's page to another (the route parameter
+    // changes without the component being disposed) reloads the data.
+    protected override async Task OnParametersSetAsync()
     {
+        _isLoading = true;
+        _errorMessage = null;
+        _leaderboard = null;
+
         try
         {
-            _badges = await BadgeService.GetBadgesAsync();
+            if (IsViewingOther)
+            {
+                _badges = await BadgeService.GetBadgesForUserAsync(UserId!);
+            }
+            else
+            {
+                _badges = await BadgeService.GetBadgesAsync();
+                _leaderboard = await BadgeService.GetLeaderboardAsync();
+            }
         }
         catch
         {
-            _errorMessage = "Could not load your badges. Please try again.";
+            _errorMessage = IsViewingOther
+                ? "Could not load these badges. Please try again."
+                : "Could not load your badges. Please try again.";
             _badges = null;
+            _leaderboard = null;
         }
         finally
         {
             _isLoading = false;
         }
+    }
+
+    private void ViewPlayer(string userId)
+    {
+        NavigationManager.NavigateTo($"/badges/{userId}");
+    }
+
+    private void OnRowKeyDown(KeyboardEventArgs e, string userId)
+    {
+        if (e.Key is "Enter" or " ")
+            ViewPlayer(userId);
     }
 
     private static string Roman(int tier) => tier switch
