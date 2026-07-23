@@ -40,9 +40,10 @@
 }
 
 .navbar-logo {
-    height: 1.875rem;
-    margin-right: 0.625rem;
-    border-radius: var(--bs-border-radius);
+    display: inline-block;
+    height: 2rem;
+    width: 11.25rem;
+    background: url("/images/logo-header-light.svg") left center / contain no-repeat;
 }
 
 .navbar-overlay .navbar-brand {

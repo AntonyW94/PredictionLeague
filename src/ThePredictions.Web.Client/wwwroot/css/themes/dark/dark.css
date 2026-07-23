@@ -266,6 +266,15 @@
     filter: none;
 }
 
+/* Theme-matched logos: dark-mode variants */
+.theme-dark .navbar-logo {
+    background-image: url("/images/logo-header-dark.png");
+}
+
+.theme-dark .auth-logo {
+    background-image: url("/images/logo-header-dark.png");
+}
+
 .theme-dark .navbar-nav .nav-item .nav-link,
 .theme-dark .navbar-nav .nav-item .navbar-text {
     color: var(--white) !important;
