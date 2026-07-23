@@ -223,11 +223,16 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
     {
         // Rank 1 by boosted points over each calendar month's rounds, per league, for months where every
         // round is complete. Keyed by the month's final round so it is repeatable and dated to that round.
+        // League competitions only - months are not a tournament concept (tournaments use stages), so a
+        // tournament season yields no month winners.
         const string sql = @"
             WITH MonthRounds AS (
                 SELECT r.[Id] AS RoundId, r.[RoundNumber], r.[Status], MONTH(r.[StartDateUtc]) AS Mth
                 FROM [Rounds] r
+                JOIN [Seasons] s ON s.[Id] = r.[SeasonId]
+                JOIN [Competitions] c ON c.[Id] = s.[CompetitionId]
                 WHERE r.[SeasonId] = @SeasonId
+                    AND c.[Type] = 0
             ),
             CompleteMonths AS (
                 SELECT Mth FROM MonthRounds GROUP BY Mth HAVING SUM(CASE WHEN [Status] <> 'Completed' THEN 1 ELSE 0 END) = 0
@@ -249,7 +254,7 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
                 GROUP BY lrr.[LeagueId], lrr.[UserId], mr.Mth
             ),
             Ranked AS (
-                SELECT [LeagueId], [UserId], Mth, RANK() OVER (PARTITION BY [LeagueId], Mth ORDER BY Pts DESC) AS Rnk
+                SELECT [LeagueId], [UserId], Mth, Pts, RANK() OVER (PARTITION BY [LeagueId], Mth ORDER BY Pts DESC) AS Rnk
                 FROM Totals
             )
             SELECT
@@ -260,7 +265,7 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
                 DATENAME(month, DATEFROMPARTS(2000, rk.Mth, 1)) AS Detail
             FROM Ranked rk
             JOIN MonthMeta mm ON mm.Mth = rk.Mth
-            WHERE rk.Rnk = 1;";
+            WHERE rk.Rnk = 1 AND rk.Pts > 0;";
 
         return (await QueryAsync<MonthStageWinner>(sql, new { SeasonId = seasonId }, cancellationToken)).ToList();
     }
@@ -300,7 +305,7 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
                 GROUP BY lrr.[LeagueId], lrr.[UserId], sr.Stage
             ),
             Ranked AS (
-                SELECT [LeagueId], [UserId], Stage, RANK() OVER (PARTITION BY [LeagueId], Stage ORDER BY Pts DESC) AS Rnk
+                SELECT [LeagueId], [UserId], Stage, Pts, RANK() OVER (PARTITION BY [LeagueId], Stage ORDER BY Pts DESC) AS Rnk
                 FROM Totals
             )
             SELECT
@@ -311,7 +316,7 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
                 rk.Stage AS Detail
             FROM Ranked rk
             JOIN StageMeta sm ON sm.Stage = rk.Stage
-            WHERE rk.Rnk = 1;";
+            WHERE rk.Rnk = 1 AND rk.Pts > 0;";
 
         return (await QueryAsync<MonthStageWinner>(sql, new { SeasonId = seasonId }, cancellationToken)).ToList();
     }
