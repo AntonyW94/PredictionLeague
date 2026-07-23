@@ -43,6 +43,8 @@ public static class BadgeCatalogue
             [new(BadgeKeys.Banked, 0)]),
         new(BadgeKeys.Founder, "Founder", "Create your own league", "shield", BadgeCategory, BadgeScope.Lifetime,
             [new(BadgeKeys.Founder, 0)]),
+        new(BadgeKeys.Veteran, "Veteran", "Return for a second season", "clock", BadgeCategory, BadgeScope.Lifetime,
+            [new(BadgeKeys.Veteran, 0)]),
 
         // Honours (placings)
         new(BadgeKeys.Champion, "Champion", "Win a league", "trophy", HonourCategory, BadgeScope.Lifetime,
@@ -50,7 +52,11 @@ public static class BadgeCatalogue
         new(BadgeKeys.Podium, "Podium", "Finish top 3 in a league", "podium", HonourCategory, BadgeScope.Lifetime,
             [new(BadgeKeys.Podium, 0)]),
         new(BadgeKeys.RoundWinner, "Round Winner", "Finish 1st in a round", "rosette", HonourCategory, BadgeScope.PerRound,
-            [new(BadgeKeys.RoundWinner, 0)])
+            [new(BadgeKeys.RoundWinner, 0)]),
+        new(BadgeKeys.MonthWinner, "Month Winner", "Top a league for a calendar month", "calendar-star", HonourCategory, BadgeScope.PerRound,
+            [new(BadgeKeys.MonthWinner, 0)]),
+        new(BadgeKeys.StageWinner, "Stage Winner", "Win a stage of a tournament", "bracket", HonourCategory, BadgeScope.PerRound,
+            [new(BadgeKeys.StageWinner, 0)])
     ];
 
     public static readonly int TotalBadgeCount = Groups.Sum(g => g.Tiers.Count);

@@ -114,7 +114,17 @@ public class EvaluateBadgesForRoundCommandHandler(
         foreach (var a in accountAwards)
             await Award(a.UserId, a.BadgeKey, a.AwardedUtc);
 
-        // 8. Season-end honours + Ever-Present.
+        // 8. Month and stage winners for any period that is now fully complete (repeatable, keyed by the
+        // period's final round, dated to it).
+        var monthWinners = await evaluationRepository.GetMonthWinnersAsync(seasonId, cancellationToken);
+        foreach (var w in monthWinners)
+            await Award(w.UserId, BadgeKeys.MonthWinner, w.AwardedUtc, leagueId: w.LeagueId, roundId: w.RoundId, detail: w.Detail);
+
+        var stageWinners = await evaluationRepository.GetStageWinnersAsync(seasonId, cancellationToken);
+        foreach (var w in stageWinners)
+            await Award(w.UserId, BadgeKeys.StageWinner, w.AwardedUtc, leagueId: w.LeagueId, roundId: w.RoundId, detail: w.Detail);
+
+        // 9. Season-end honours + Ever-Present.
         var isLastRound = await roundRepository.IsLastRoundOfSeasonAsync(round.Id, seasonId, cancellationToken);
         if (!isLastRound)
             return;

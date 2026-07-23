@@ -31,4 +31,9 @@ public static class BadgeKeys
     public const string Champion = "champion";
     public const string Podium = "podium";
     public const string RoundWinner = "round-winner";
+    public const string MonthWinner = "month-winner";
+    public const string StageWinner = "stage-winner";
+
+    // Longevity
+    public const string Veteran = "veteran";
 }

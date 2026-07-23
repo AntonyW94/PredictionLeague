@@ -200,9 +200,120 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
                     u.[TermsAcceptedAtUtc],
                     SYSUTCDATETIME())
             FROM [AspNetUsers] u
-            WHERE u.[PhoneNumber] IS NOT NULL AND LEN(LTRIM(RTRIM(u.[PhoneNumber]))) > 0;";
+            WHERE u.[PhoneNumber] IS NOT NULL AND LEN(LTRIM(RTRIM(u.[PhoneNumber]))) > 0
+            UNION ALL
+            SELECT v.[UserId], 'veteran', v.SeasonStart
+            FROM (
+                SELECT s.[UserId], s.SeasonStart,
+                    ROW_NUMBER() OVER (PARTITION BY s.[UserId] ORDER BY s.SeasonStart) AS Rn
+                FROM (
+                    SELECT rr.[UserId], r.[SeasonId], MIN(m.[MatchDateTimeUtc]) AS SeasonStart
+                    FROM [RoundResults] rr
+                    JOIN [Rounds] r ON r.[Id] = rr.[RoundId]
+                    JOIN [Matches] m ON m.[RoundId] = r.[Id]
+                    GROUP BY rr.[UserId], r.[SeasonId]
+                ) s
+            ) v
+            WHERE v.Rn = 2;";
 
         return (await QueryAsync<AccountBadgeAward>(sql, null, cancellationToken)).ToList();
+    }
+
+    public async Task<IReadOnlyList<MonthStageWinner>> GetMonthWinnersAsync(int seasonId, CancellationToken cancellationToken)
+    {
+        // Rank 1 by boosted points over each calendar month's rounds, per league, for months where every
+        // round is complete. Keyed by the month's final round so it is repeatable and dated to that round.
+        const string sql = @"
+            WITH MonthRounds AS (
+                SELECT r.[Id] AS RoundId, r.[RoundNumber], r.[Status], MONTH(r.[StartDateUtc]) AS Mth
+                FROM [Rounds] r
+                WHERE r.[SeasonId] = @SeasonId
+            ),
+            CompleteMonths AS (
+                SELECT Mth FROM MonthRounds GROUP BY Mth HAVING SUM(CASE WHEN [Status] <> 'Completed' THEN 1 ELSE 0 END) = 0
+            ),
+            MonthMeta AS (
+                SELECT
+                    mr.Mth,
+                    (SELECT TOP 1 x.RoundId FROM MonthRounds x WHERE x.Mth = mr.Mth ORDER BY x.RoundNumber DESC) AS TerminalRoundId,
+                    (SELECT MAX(m.[MatchDateTimeUtc]) FROM [Matches] m JOIN MonthRounds y ON y.RoundId = m.[RoundId] WHERE y.Mth = mr.Mth) AS LastDate
+                FROM MonthRounds mr
+                WHERE mr.Mth IN (SELECT Mth FROM CompleteMonths)
+                GROUP BY mr.Mth
+            ),
+            Totals AS (
+                SELECT lrr.[LeagueId], lrr.[UserId], mr.Mth, SUM(lrr.[BoostedPoints]) AS Pts
+                FROM [LeagueRoundResults] lrr
+                JOIN MonthRounds mr ON mr.RoundId = lrr.[RoundId]
+                WHERE mr.Mth IN (SELECT Mth FROM CompleteMonths)
+                GROUP BY lrr.[LeagueId], lrr.[UserId], mr.Mth
+            ),
+            Ranked AS (
+                SELECT [LeagueId], [UserId], Mth, RANK() OVER (PARTITION BY [LeagueId], Mth ORDER BY Pts DESC) AS Rnk
+                FROM Totals
+            )
+            SELECT
+                rk.[UserId] AS UserId,
+                rk.[LeagueId] AS LeagueId,
+                mm.TerminalRoundId AS RoundId,
+                mm.LastDate AS AwardedUtc,
+                DATENAME(month, DATEFROMPARTS(2000, rk.Mth, 1)) AS Detail
+            FROM Ranked rk
+            JOIN MonthMeta mm ON mm.Mth = rk.Mth
+            WHERE rk.Rnk = 1;";
+
+        return (await QueryAsync<MonthStageWinner>(sql, new { SeasonId = seasonId }, cancellationToken)).ToList();
+    }
+
+    public async Task<IReadOnlyList<MonthStageWinner>> GetStageWinnersAsync(int seasonId, CancellationToken cancellationToken)
+    {
+        // Rank 1 by boosted points over each tournament stage (group / knockout, from TournamentRoundMappings),
+        // per league, for stages where every round is complete. Keyed by the stage's final round.
+        const string sql = @"
+            WITH StageRounds AS (
+                SELECT
+                    r.[Id] AS RoundId,
+                    r.[RoundNumber],
+                    r.[Status],
+                    CASE WHEN trm.[Stages] LIKE '%Group%' THEN 'Group stage' ELSE 'Knockout stage' END AS Stage
+                FROM [Rounds] r
+                JOIN [TournamentRoundMappings] trm ON trm.[SeasonId] = r.[SeasonId] AND trm.[RoundNumber] = r.[RoundNumber]
+                WHERE r.[SeasonId] = @SeasonId
+            ),
+            CompleteStages AS (
+                SELECT Stage FROM StageRounds GROUP BY Stage HAVING SUM(CASE WHEN [Status] <> 'Completed' THEN 1 ELSE 0 END) = 0
+            ),
+            StageMeta AS (
+                SELECT
+                    sr.Stage,
+                    (SELECT TOP 1 x.RoundId FROM StageRounds x WHERE x.Stage = sr.Stage ORDER BY x.RoundNumber DESC) AS TerminalRoundId,
+                    (SELECT MAX(m.[MatchDateTimeUtc]) FROM [Matches] m JOIN StageRounds y ON y.RoundId = m.[RoundId] WHERE y.Stage = sr.Stage) AS LastDate
+                FROM StageRounds sr
+                WHERE sr.Stage IN (SELECT Stage FROM CompleteStages)
+                GROUP BY sr.Stage
+            ),
+            Totals AS (
+                SELECT lrr.[LeagueId], lrr.[UserId], sr.Stage, SUM(lrr.[BoostedPoints]) AS Pts
+                FROM [LeagueRoundResults] lrr
+                JOIN StageRounds sr ON sr.RoundId = lrr.[RoundId]
+                WHERE sr.Stage IN (SELECT Stage FROM CompleteStages)
+                GROUP BY lrr.[LeagueId], lrr.[UserId], sr.Stage
+            ),
+            Ranked AS (
+                SELECT [LeagueId], [UserId], Stage, RANK() OVER (PARTITION BY [LeagueId], Stage ORDER BY Pts DESC) AS Rnk
+                FROM Totals
+            )
+            SELECT
+                rk.[UserId] AS UserId,
+                rk.[LeagueId] AS LeagueId,
+                sm.TerminalRoundId AS RoundId,
+                sm.LastDate AS AwardedUtc,
+                rk.Stage AS Detail
+            FROM Ranked rk
+            JOIN StageMeta sm ON sm.Stage = rk.Stage
+            WHERE rk.Rnk = 1;";
+
+        return (await QueryAsync<MonthStageWinner>(sql, new { SeasonId = seasonId }, cancellationToken)).ToList();
     }
 
     public async Task<IReadOnlyList<UserLeagueRank>> GetSeasonStandingsAsync(int seasonId, CancellationToken cancellationToken)

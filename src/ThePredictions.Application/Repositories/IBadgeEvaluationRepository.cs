@@ -23,6 +23,12 @@ public interface IBadgeEvaluationRepository
     /// <summary>Account/setup badges for all qualifying users (add mobile, add bank details, create a league).</summary>
     Task<IReadOnlyList<AccountBadgeAward>> GetAccountBadgeAwardsAsync(CancellationToken cancellationToken);
 
+    /// <summary>Month winners (rank 1 by boosted points over a calendar month's rounds) for fully-completed months.</summary>
+    Task<IReadOnlyList<MonthStageWinner>> GetMonthWinnersAsync(int seasonId, CancellationToken cancellationToken);
+
+    /// <summary>Stage winners (group / knockout) for fully-completed tournament stages.</summary>
+    Task<IReadOnlyList<MonthStageWinner>> GetStageWinnersAsync(int seasonId, CancellationToken cancellationToken);
+
     Task<IReadOnlyList<UserLeagueRank>> GetSeasonStandingsAsync(int seasonId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<string>> GetEverPresentUsersAsync(int seasonId, CancellationToken cancellationToken);
