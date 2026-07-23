@@ -1,0 +1,102 @@
+@using ThePredictions.Contracts.Badges
+
+@* Circular badge face: a track ring, a progress ring that fills toward the next level/target,
+   the badge glyph, and optional bronze/silver/gold tier stars. Colours are driven by CSS classes
+   (green for progress/earned, medal gold for honours, grey when locked) so both themes work. *@
+
+<span class="tp-badge-icon tp-badge-icon--@Variant @(IsLocked ? "tp-badge-icon--locked" : "")">
+    <svg class="tp-badge-icon__face" viewBox="0 0 120 120" style="width: @(Size)px; height: @(Size)px;" role="img" aria-label="@AriaLabel">
+        <circle class="tp-badge-icon__disc" cx="60" cy="60" r="40" />
+        <circle class="tp-badge-icon__track" cx="60" cy="60" r="50" fill="none" stroke-width="8" />
+        @if (!IsLocked)
+        {
+            <circle class="tp-badge-icon__ring" cx="60" cy="60" r="50" fill="none" stroke-width="8" stroke-linecap="round"
+                    stroke-dasharray="@CircumferenceText" stroke-dashoffset="@DashOffsetText" transform="rotate(-90 60 60)" />
+        }
+        <g class="tp-badge-icon__glyph">@GlyphMarkup</g>
+    </svg>
+
+    @if (ShowTierStars && Badge.MaxTier > 1)
+    {
+        <span class="tp-badge-icon__stars">
+            @for (var i = 0; i < Badge.MaxTier; i++)
+            {
+                var on = i < Badge.Tier;
+                var metal = MetalClass(i);
+                <svg class="tp-badge-icon__star @(on ? "tp-badge-icon__star--on " + metal : "")" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3 L14.6 9 L21 9.5 L16 13.8 L17.6 20 L12 16.5 L6.4 20 L8 13.8 L3 9.5 L9.4 9 Z" stroke-width="1.6" stroke-linejoin="round" />
+                </svg>
+            }
+        </span>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public BadgeDto Badge { get; set; } = default!;
+
+    // Rendered face diameter in pixels. Page cards use 112, the dashboard tile uses 74.
+    [Parameter]
+    public int Size { get; set; } = 112;
+
+    [Parameter]
+    public bool ShowTierStars { get; set; }
+
+    private const double Radius = 50;
+    private static readonly double Circumference = 2 * Math.PI * Radius;
+
+    private bool IsLocked => Badge.State == "Locked";
+
+    // green = progress/earned, gold = honours (placings), locked greys out.
+    private string Variant => Badge.Category == "Honour" && !IsLocked ? "gold" : "green";
+
+    // Earned badges show a full ring; everything else fills to its live progress.
+    private double Fraction => IsLocked ? 0 : Badge.State == "Earned" ? 1 : Math.Clamp(Badge.Progress, 0, 1);
+
+    private string CircumferenceText => Circumference.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
+
+    private string DashOffsetText => (Circumference * (1 - Fraction)).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
+
+    private string AriaLabel
+    {
+        get
+        {
+            var stateWord = Badge.State switch
+            {
+                "Earned" => "earned",
+                "InProgress" => "in progress",
+                _ => "locked"
+            };
+
+            return $"{Badge.Name}, {stateWord}";
+        }
+    }
+
+    private static string MetalClass(int index) => index switch
+    {
+        0 => "tp-badge-icon__star--bronze",
+        1 => "tp-badge-icon__star--silver",
+        _ => "tp-badge-icon__star--gold"
+    };
+
+    private MarkupString GlyphMarkup => new(GlyphSvg(Badge.Glyph));
+
+    // Glyph paths ported from the design prototype. Every stroke/fill uses currentColor so the
+    // parent .tp-badge-icon__glyph colour (set per state in CSS) drives them in both themes.
+    private static string GlyphSvg(string glyph) => glyph switch
+    {
+        "target" => """<g fill="none" stroke="currentColor" stroke-width="3"><circle cx="60" cy="60" r="21"/><circle cx="60" cy="60" r="13"/></g><circle cx="60" cy="60" r="4.5" fill="currentColor"/>""",
+        "crosshair" => """<g fill="none" stroke="currentColor" stroke-width="3"><circle cx="60" cy="60" r="19"/><line x1="60" y1="33" x2="60" y2="45"/><line x1="60" y1="75" x2="60" y2="87"/><line x1="33" y1="60" x2="45" y2="60"/><line x1="75" y1="60" x2="87" y2="60"/></g><circle cx="60" cy="60" r="4" fill="currentColor"/>""",
+        "bullseye" => """<g fill="none" stroke="currentColor" stroke-width="3"><circle cx="60" cy="60" r="21"/><circle cx="60" cy="60" r="12"/></g><circle cx="60" cy="60" r="7" fill="currentColor"/>""",
+        "network" => """<g fill="none" stroke="currentColor" stroke-width="3"><line x1="60" y1="44" x2="46" y2="72"/><line x1="60" y1="44" x2="74" y2="72"/><line x1="46" y1="72" x2="74" y2="72"/></g><g fill="currentColor"><circle cx="60" cy="42" r="6.5"/><circle cx="45" cy="73" r="6.5"/><circle cx="75" cy="73" r="6.5"/></g>""",
+        "flame" => """<path d="M60 38 C 63 50 74 55 72 67 A 12 12 0 1 1 48 67 C 47 59 54 57 55 50 C 56 55 60 53 60 38 Z" fill="currentColor" opacity="0.14"/><path d="M60 38 C 63 50 74 55 72 67 A 12 12 0 1 1 48 67 C 47 59 54 57 55 50 C 56 55 60 53 60 38 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M60 58 C 64 64 63 72 60 75 C 57 72 56 66 58 63 C 59 66 60 62 60 58 Z" fill="currentColor"/>""",
+        "flag" => """<g stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="52" y1="38" x2="52" y2="82"/><path d="M52 41 L74 47 L52 53 Z" fill="currentColor"/></g>""",
+        "scoreboard" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="42" y="46" width="36" height="28" rx="4"/><line x1="60" y1="46" x2="60" y2="74"/></g><g fill="currentColor"><circle cx="51" cy="60" r="2.6"/><circle cx="69" cy="60" r="2.6"/></g>""",
+        "crowd" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="46" y1="74" x2="46" y2="58"/><line x1="53" y1="74" x2="53" y2="54"/><line x1="67" y1="74" x2="67" y2="54"/><line x1="74" y1="74" x2="74" y2="58"/></g><line x1="60" y1="74" x2="60" y2="44" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>""",
+        "calendar" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><rect x="42" y="46" width="36" height="30" rx="4"/><line x1="42" y1="55" x2="78" y2="55"/><line x1="51" y1="42" x2="51" y2="49"/><line x1="69" y1="42" x2="69" y2="49"/><path d="M52 64 L58 70 L69 60"/></g>""",
+        "rosette" => """<circle cx="60" cy="52" r="14" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="60" cy="52" r="5" fill="currentColor"/><path d="M53 64 L50 80 L60 74 L70 80 L67 64 Z" fill="currentColor" opacity="0.85"/>""",
+        "trophy" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M49 42 H71 V52 A11 11 0 0 1 49 52 Z"/><path d="M49 46 H43 A5 5 0 0 0 48 56"/><path d="M71 46 H77 A5 5 0 0 1 72 56"/><line x1="60" y1="63" x2="60" y2="71"/><path d="M52 78 H68 L66 71 H54 Z" fill="currentColor"/></g>""",
+        "podium" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="44" y="62" width="14" height="16"/><rect x="53" y="52" width="14" height="26"/><rect x="62" y="68" width="14" height="10"/></g>""",
+        _ => """<circle cx="60" cy="60" r="16" fill="none" stroke="currentColor" stroke-width="3"/>"""
+    };
+}

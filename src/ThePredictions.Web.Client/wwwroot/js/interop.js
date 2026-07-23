@@ -263,6 +263,32 @@ window.blazorInterop = {
             behavior: smooth ? 'smooth' : 'auto'
         });
     },
+    // Badges dashboard tile carousel: the arrow buttons scroll the row and their
+    // disabled state tracks whether we're at the start/end. A scroll + resize
+    // listener reports the edge state back to Blazor so the buttons stay in sync.
+    registerBadgeCarousel: function (el, dotNetHelper, methodName) {
+        if (!el) return;
+        const notify = () => {
+            const atStart = el.scrollLeft <= 2;
+            const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2;
+            dotNetHelper.invokeMethodAsync(methodName, atStart, atEnd);
+        };
+        el._badgeScrollHandler = notify;
+        el.addEventListener('scroll', notify, { passive: true });
+        window.addEventListener('resize', notify);
+        notify();
+    },
+    unregisterBadgeCarousel: function (el) {
+        if (!el || !el._badgeScrollHandler) return;
+        el.removeEventListener('scroll', el._badgeScrollHandler);
+        window.removeEventListener('resize', el._badgeScrollHandler);
+        delete el._badgeScrollHandler;
+    },
+    scrollBadgeCarousel: function (el, direction) {
+        if (!el) return;
+        const step = Math.max(160, el.clientWidth * 0.8);
+        el.scrollBy({ left: direction * step, behavior: 'smooth' });
+    },
     _visibilityHandler: null,
     // Registers a callback invoked whenever the tab's visibility changes (Page
     // Visibility API), so the client can pause polling on a hidden tab. Returns

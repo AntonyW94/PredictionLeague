@@ -1,0 +1,164 @@
+@page "/badges"
+@attribute [Authorize]
+@using ThePredictions.Contracts.Badges
+@using ThePredictions.Web.Client.Services.Badges
+@inject IBadgeService BadgeService
+
+<PageTitle>Badges</PageTitle>
+
+<div class="page-container page-container--top">
+    <div class="tp-badges-page">
+        <ApiError Message="@_errorMessage" />
+
+        @if (_isLoading)
+        {
+            <div class="d-flex justify-content-center py-5">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading badges...</span>
+                </div>
+            </div>
+        }
+        else if (_badges is null)
+        {
+            <div class="empty-state">
+                <i class="bi bi-award empty-state-icon"></i>
+                <p>We couldn't load your badges right now. Please try again.</p>
+                <a class="btn purple-accent-button" href="/dashboard">Back to dashboard</a>
+            </div>
+        }
+        else
+        {
+            <header class="tp-badges-page__header">
+                <p class="tp-badges-page__eyebrow">@_badges.EarnedCount of @_badges.TotalCount collected</p>
+                <h1 class="tp-badges-page__title">Badges &amp; Achievements</h1>
+                <p class="tp-badges-page__lead">
+                    Circular badges in your own colours. Each has a glyph, a ring that fills as you close on the next
+                    level, tier stars, and a caption that spells out exactly what earns it.
+                </p>
+
+                <div class="tp-badges-legend">
+                    <span><span class="tp-badges-legend__dot tp-badges-legend__dot--green"></span> Green - your progress &amp; earned badges</span>
+                    <span><span class="tp-badges-legend__dot tp-badges-legend__dot--gold"></span> Medal - tier climbed &amp; honours</span>
+                    <span><span class="tp-badges-legend__dot tp-badges-legend__dot--locked"></span> Grey - still locked</span>
+                </div>
+            </header>
+
+            @if (_badges.Collections.Count > 0)
+            {
+                <section class="tp-badges-section">
+                    <h2 class="tp-badges-section__heading">Collections</h2>
+                    <p class="tp-badges-section__sub">Levelled badges. The ring fills toward the next level and the stars climb bronze to silver to gold.</p>
+                    <div class="tp-badges-grid">
+                        @foreach (var badge in _badges.Collections)
+                        {
+                            <div class="tp-badge-card @(badge.State == "Locked" ? "tp-badge-card--locked" : "")">
+                                <BadgeIcon Badge="badge" ShowTierStars="true" />
+                                <p class="tp-badge-card__name">@badge.Name @Roman(badge.Tier)</p>
+                                <p class="tp-badge-card__metric">@badge.Description</p>
+                                <p class="tp-badge-card__progress @ProgressClass(badge)">@badge.ProgressLabel</p>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (_badges.Badges.Count > 0)
+            {
+                <section class="tp-badges-section">
+                    <h2 class="tp-badges-section__heading">Badges</h2>
+                    <p class="tp-badges-section__sub">One-off achievements. A full green ring means earned; a hollow grey circle is still up for grabs.</p>
+                    <div class="tp-badges-grid">
+                        @foreach (var badge in _badges.Badges)
+                        {
+                            <div class="tp-badge-card @(badge.State == "Locked" ? "tp-badge-card--locked" : "")">
+                                <BadgeIcon Badge="badge" />
+                                <p class="tp-badge-card__name">@badge.Name</p>
+                                <p class="tp-badge-card__metric">@badge.Description</p>
+                                <p class="tp-badge-card__progress @ProgressClass(badge)">@StateLabel(badge)</p>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (_badges.Honours.Count > 0)
+            {
+                <section class="tp-badges-section">
+                    <h2 class="tp-badges-section__heading">Honours</h2>
+                    <p class="tp-badges-section__sub">Competitive placings, shown in medal colours because they are about finishing position.</p>
+                    <div class="tp-badges-grid">
+                        @foreach (var badge in _badges.Honours)
+                        {
+                            <div class="tp-badge-card @(badge.State == "Locked" ? "tp-badge-card--locked" : "")">
+                                <BadgeIcon Badge="badge" />
+                                <p class="tp-badge-card__name">@badge.Name</p>
+                                <p class="tp-badge-card__metric">@badge.Description</p>
+                                <p class="tp-badge-card__progress @ProgressClass(badge)">@StateLabel(badge)</p>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (_badges.Collections.Count == 0 && _badges.Badges.Count == 0 && _badges.Honours.Count == 0)
+            {
+                <div class="empty-state">
+                    <i class="bi bi-award empty-state-icon"></i>
+                    <p>There are no badges to show yet.</p>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private UserBadgesDto? _badges;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _badges = await BadgeService.GetBadgesAsync();
+        }
+        catch
+        {
+            _errorMessage = "Could not load your badges. Please try again.";
+            _badges = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string Roman(int tier) => tier switch
+    {
+        1 => "I",
+        2 => "II",
+        3 => "III",
+        4 => "IV",
+        5 => "V",
+        _ => string.Empty
+    };
+
+    // A maxed-out collection and any earned honour read as "done" (medal gold); active progress is
+    // green; locked greys out.
+    private static string ProgressClass(BadgeDto badge)
+    {
+        if (badge.State == "Locked")
+            return "tp-badge-card__progress--locked";
+
+        var maxed = badge.State == "Earned" && (badge.Category == "Honour" || badge.Tier >= badge.MaxTier);
+
+        return maxed ? "tp-badge-card__progress--done" : "tp-badge-card__progress--go";
+    }
+
+    private static string StateLabel(BadgeDto badge) => badge.State switch
+    {
+        "Earned" => "Earned",
+        "InProgress" => badge.ProgressLabel,
+        _ => "Locked"
+    };
+}
