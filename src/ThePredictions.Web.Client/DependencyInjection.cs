@@ -1,6 +1,7 @@
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using ThePredictions.Web.Client.Authentication;
+using ThePredictions.Web.Client.Services.Badges;
 using ThePredictions.Web.Client.Services.Boosts;
 using ThePredictions.Web.Client.Services.Browser;
 using ThePredictions.Web.Client.Services.Consent;
@@ -33,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<ISeasonPassService, SeasonPassService>();
         services.AddScoped<IOnboardingService, OnboardingService>();
+        services.AddScoped<IBadgeService, BadgeService>();
         services.AddScoped<IPayoutService, PayoutService>();
         services.AddScoped<IRunningCostService, RunningCostService>();
         services.AddScoped<IPricingSettingsService, PricingSettingsService>();

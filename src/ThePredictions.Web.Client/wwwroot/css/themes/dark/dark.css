@@ -742,6 +742,96 @@
 }
 
 /* ============================================
+   BADGES FEATURE (tp-badge*)
+   The tile sits on a purple-600 section and the page cards sit on the
+   purple-900 page surface, so lift the local tokens and text colours.
+   ============================================ */
+
+.theme-dark {
+    --tp-badge-progress: #12cf72;
+    --tp-badge-progress-soft: rgba(0, 185, 96, 0.18);
+    --tp-badge-ring-track: rgba(255, 255, 255, 0.12);
+    --tp-badge-locked: rgba(255, 255, 255, 0.28);
+    --tp-badge-locked-soft: rgba(255, 255, 255, 0.05);
+    --tp-badge-gold: #E0C24A;
+    --tp-badge-gold-soft: rgba(224, 194, 74, 0.14);
+    --tp-badge-bronze: #CC8200;
+    --tp-badge-silver: var(--grey-300);
+}
+
+/* Tile */
+.theme-dark .tp-badge-tile__progress-label {
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .tp-badge-tile__progress-label b {
+    color: var(--white);
+}
+
+.theme-dark .tp-badge-tile__nav {
+    background: var(--purple-600);
+    border-color: var(--white-alpha-15);
+    color: var(--white);
+}
+
+.theme-dark .tp-badge-tile__nav:hover:not(:disabled) {
+    border-color: var(--green-600);
+    color: var(--green-300);
+}
+
+.theme-dark .tp-badge-tile__slide-name {
+    color: var(--white);
+}
+
+.theme-dark .tp-badge-tile__slide-tag--soon {
+    color: var(--white-alpha-50);
+}
+
+/* Page */
+.theme-dark .tp-badges-page__title {
+    color: var(--white);
+}
+
+.theme-dark .tp-badges-page__lead,
+.theme-dark .tp-badges-section__sub {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .tp-badges-section__heading {
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .tp-badges-legend {
+    background: var(--purple-600);
+    border-color: transparent;
+}
+
+.theme-dark .tp-badges-legend span {
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .tp-badge-card {
+    background: var(--purple-1000);
+    border-color: var(--white-alpha-08);
+}
+
+.theme-dark .tp-badge-card--locked {
+    background: var(--white-alpha-05);
+}
+
+.theme-dark .tp-badge-card__name {
+    color: var(--white);
+}
+
+.theme-dark .tp-badge-card__metric {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .tp-badge-card__progress--locked {
+    color: var(--white-alpha-30);
+}
+
+/* ============================================
    LOADING
    ============================================ */
 
