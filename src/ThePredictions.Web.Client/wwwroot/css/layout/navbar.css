@@ -40,9 +40,11 @@
 }
 
 .navbar-logo {
+    display: inline-block;
     height: 1.875rem;
+    aspect-ratio: 1;
     margin-right: 0.625rem;
-    border-radius: var(--bs-border-radius);
+    background: url("/images/logo-icon-light.svg") center / contain no-repeat;
 }
 
 .navbar-overlay .navbar-brand {
