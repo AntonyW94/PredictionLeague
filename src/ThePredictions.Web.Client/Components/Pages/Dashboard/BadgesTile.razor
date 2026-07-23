@@ -5,7 +5,7 @@
 @using ThePredictions.Web.Client.Services.Badges
 
 <div class="section h-100">
-    <h3 class="text-white text-center fw-bold mb-4">Your Badges</h3>
+    <h3 class="text-white text-center fw-bold mb-4">Badges</h3>
 
     @if (_isLoading)
     {
@@ -74,6 +74,7 @@
 
     private ElementReference _carouselElement;
     private DotNetObjectReference<BadgesTile>? _selfRef;
+    private bool _carouselRegistered;
     private bool _atStart = true;
     private bool _atEnd = true;
 
@@ -100,9 +101,13 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _carousel.Count == 0)
+        // Register once the carousel is actually in the DOM. It is NOT rendered on the first render
+        // (the loading spinner is showing then), so we cannot key off firstRender - we register on the
+        // first render after loading completes, guarded so it only happens once.
+        if (_carouselRegistered || _isLoading || _carousel.Count == 0)
             return;
 
+        _carouselRegistered = true;
         _selfRef ??= DotNetObjectReference.Create(this);
         await JsRuntime.InvokeVoidAsync("blazorInterop.registerBadgeCarousel", _carouselElement, _selfRef, nameof(OnCarouselEdgesChanged));
     }

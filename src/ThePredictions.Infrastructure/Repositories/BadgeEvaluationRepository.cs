@@ -169,7 +169,7 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
                 SELECT
                     [UserId],
                     COALESCE([ApprovedAtUtc], [JoinedAtUtc]) AS JoinDate,
-                    ROW_NUMBER() OVER (PARTITION BY [UserId] ORDER BY COALESCE([ApprovedAtUtc], [JoinedAtUtc]), [LeagueId]) AS Rn
+                    CAST(ROW_NUMBER() OVER (PARTITION BY [UserId] ORDER BY COALESCE([ApprovedAtUtc], [JoinedAtUtc]), [LeagueId]) AS INT) AS Rn
                 FROM [LeagueMembers]
                 WHERE [Status] = 'Approved'
             )
@@ -197,7 +197,7 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
                 SELECT
                     [LeagueId],
                     [UserId],
-                    RANK() OVER (PARTITION BY [LeagueId] ORDER BY Pts DESC) AS Rnk
+                    CAST(RANK() OVER (PARTITION BY [LeagueId] ORDER BY Pts DESC) AS INT) AS Rnk
                 FROM Totals
             )
             SELECT [UserId] AS UserId, [LeagueId] AS LeagueId, [Rnk] AS Rank
