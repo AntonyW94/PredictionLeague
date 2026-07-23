@@ -2,7 +2,9 @@
 
 ## Status
 
-Not Started | **In Progress** | Complete
+Not Started | In Progress | **Complete**
+
+Shipped to production (PR #128, merged to master and deployed; historical badges backfilled).
 
 ## Summary
 
@@ -119,30 +121,33 @@ Data sources (mostly existing aggregates):
 - [x] Badge display (tile + full page)
 - [x] Progress tracking (live, computed on read)
 - [x] Retrospective backfill (`BackfillBadgesCommand` + `POST /api/external/tasks/backfill-badges`)
-- [ ] Unlock notifications (digest email line) - see follow-ups
+- [~] Unlock notifications - digest email line deferred to its own plan: [`../badges-digest-email/`](../badges-digest-email/)
 
-## Status of the build
+## What shipped
 
-Delivered on branch `achievements-badges` (builds clean under
-`/p:TreatWarningsAsErrors=true`; Domain coverage 100% line + branch; all evaluation
-SQL executed read-only against the dev DB and returns sensibly):
+Delivered via PR #128 (merged to master, deployed to dev and prod; builds clean under
+`/p:TreatWarningsAsErrors=true`; Domain coverage 100% line + branch). **26 badges**:
+12 collection tiers (Marksman, Sharpshooter, On Fire, Socialite - coloured bronze/silver/gold
+by tier), 9 one-off Badges (Off the Mark, First Blood, On the Board, Beat the Crowd,
+Ever-Present, On Call, Banked, Founder, Veteran) and 5 Honours (Champion, Podium, Round
+Winner, Month Winner, Stage Winner; Month Winner league-only, Stage Winner tournament-only).
 
 - Migration `0004_CreateUserBadges.sql`, schema docs, DatabaseTools copy order.
 - Contracts, `AwardedBadge` domain entity (+ tests), `UserBadgeRepository`.
 - `BadgeCatalogue`, read model (`BadgeStateQueries`) and API (`GET /api/badges`,
-  `GET /api/badges/tile`).
+  `GET /api/badges/tile`, `GET /api/badges/leaderboard`, `GET /api/badges/user/{id}`).
 - `BadgeEvaluationRepository`, `EvaluateBadgesForRoundCommand` (hooked into round
   completion after prizes, before the digest), `BackfillBadgesCommand` + task endpoint.
 - Frontend: `BadgeService`, `BadgeIcon`, dashboard `BadgesTile` (progress bar + arrow
-  carousel, full-width Play-tab row), `/badges` page, nav link, `tp-badges.css` (light + dark).
+  carousel + leaderboard rank), `/badges` page (with the site-wide leaderboard and
+  click-through to each player), nav link, `tp-badges.css` (light + dark).
+- Homepage reworked: badges showcase replaces testimonials, and "How it works" explains
+  the Season Pass -> leagues -> predict/compete/earn model.
+- Retrospective backfill run on dev and prod; historical badges awarded with backdated dates.
 
-### Follow-ups (not yet done)
+### Follow-ups (tracked separately)
 
-- **Digest email line.** Evaluation runs *before* the digest sends so the data is
-  available, but the digest email body/template does not yet render newly earned badges -
-  it needs the newly awarded list threaded through `SendRoundDigestEmailsCommand` and a
-  Brevo template tweak.
-- **Deploy steps (manual, when ready):** apply the migration (additive, safe ahead of the
-  code deploy), then run the backfill task endpoint once.
-- End-to-end run in the app against a seeded DB has not been done (build + read-only SQL
-  checks only).
+- **Digest email line** - render newly earned badges in the round-results email:
+  [`../badges-digest-email/`](../badges-digest-email/).
+- **Drop `RoundResults.TotalPoints`** - the vestigial column that caused the On the Board
+  bug: [`../../../architecture/drop-roundresults-totalpoints/`](../../../architecture/drop-roundresults-totalpoints/).
