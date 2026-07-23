@@ -116,7 +116,33 @@ Data sources (mostly existing aggregates):
 ## Requirements
 
 - [x] Achievement definitions (locked above)
-- [ ] Badge display (tile + full page)
-- [ ] Progress tracking (live, computed on read)
-- [ ] Unlock notifications (digest email line)
-- [ ] Retrospective backfill
+- [x] Badge display (tile + full page)
+- [x] Progress tracking (live, computed on read)
+- [x] Retrospective backfill (`BackfillBadgesCommand` + `POST /api/external/tasks/backfill-badges`)
+- [ ] Unlock notifications (digest email line) - see follow-ups
+
+## Status of the build
+
+Delivered on branch `achievements-badges` (builds clean under
+`/p:TreatWarningsAsErrors=true`; Domain coverage 100% line + branch; all evaluation
+SQL executed read-only against the dev DB and returns sensibly):
+
+- Migration `0004_CreateUserBadges.sql`, schema docs, DatabaseTools copy order.
+- Contracts, `AwardedBadge` domain entity (+ tests), `UserBadgeRepository`.
+- `BadgeCatalogue`, read model (`BadgeStateQueries`) and API (`GET /api/badges`,
+  `GET /api/badges/tile`).
+- `BadgeEvaluationRepository`, `EvaluateBadgesForRoundCommand` (hooked into round
+  completion after prizes, before the digest), `BackfillBadgesCommand` + task endpoint.
+- Frontend: `BadgeService`, `BadgeIcon`, dashboard `BadgesTile` (progress bar + arrow
+  carousel, full-width Play-tab row), `/badges` page, nav link, `tp-badges.css` (light + dark).
+
+### Follow-ups (not yet done)
+
+- **Digest email line.** Evaluation runs *before* the digest sends so the data is
+  available, but the digest email body/template does not yet render newly earned badges -
+  it needs the newly awarded list threaded through `SendRoundDigestEmailsCommand` and a
+  Brevo template tweak.
+- **Deploy steps (manual, when ready):** apply the migration (additive, safe ahead of the
+  code deploy), then run the backfill task endpoint once.
+- End-to-end run in the app against a seeded DB has not been done (build + read-only SQL
+  checks only).
