@@ -49,9 +49,8 @@ main {
     width: 100%;
     max-width: 30rem;
     height: 6.25rem;
-    /* Hero background is always dark (purple gradient over photo) in both
-       themes, so always use the light-coloured "dark-mode" header wordmark. */
-    background: url("/images/logo-header-dark.svg") center / contain no-repeat;
+    /* Home hero always uses the full-colour (light) header wordmark. */
+    background: url("/images/logo-header-light.svg") center / contain no-repeat;
 }
 
 .table-responsive {
