@@ -38,7 +38,7 @@ CI green) and open a PR for review. No input needed until review.
 
 - **api-documentation** - Swashbuckle request/response examples + a standard
   `ApiErrorResponse` contract.
-- **query-monitoring** - slow-query logging with a sensible threshold (~500ms).
+- **query-monitoring** - slow-query logging (~500ms threshold) shipped 2026-07-25; the residual (reviewing the logged slow queries to add missing indexes) is judgement work, not hands-off.
 - **third-party-licences** - auto-generated open-source attribution page, linked
   in the footer.
 

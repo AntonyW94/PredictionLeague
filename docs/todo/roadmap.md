@@ -34,7 +34,7 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 | 13 | Query handler integration tests (Phase 3) | Medium | Catches SQL mapping bugs. Highest-value test tier after domain tests | [Detailed plan](architecture/test-suite/README.md) |
 | 14 | Command handler unit tests (Phase 5) | Medium | Test business logic orchestration with mocked repositories | [Detailed plan](architecture/test-suite/README.md) |
 | 15 | Code consistency audit | Medium | Clean up tech debt now that patterns are established | [Outline](architecture/code-consistency-audit/README.md) |
-| 16 | Query performance monitoring | Medium | Find slow queries before users feel them | [Outline](architecture/query-monitoring/README.md) |
+| 16 | Query performance monitoring | Medium | Slow-query logging shipped (see Already Complete); remaining work is reviewing logged slow queries to add missing indexes | [Outline](architecture/query-monitoring/README.md) |
 | 17 | E2E tests with Playwright (Phase 7) | High | Confidence for critical user journeys | [Detailed plan](architecture/test-suite/README.md) |
 
 ---
@@ -165,3 +165,4 @@ These items from the original backlog are already implemented:
 | JWT hardening (ClockSkew + algorithms) | Explicit 30s `ClockSkew` + `ValidAlgorithms` allow-list (HmacSha256) on `TokenValidationParameters`. Plan removed; SameSite=Strict on the refresh cookie remains an accepted risk. |
 | Origin-header email links | Emailed links (password reset, email confirmation, league notifications) now build from configured `SiteSettings.ResolvedBaseUrl`, never the attacker-controllable `Origin` header. Closes the reset-link poisoning / account-takeover vector; consolidates the duplicated base-URL fallback. Plan removed. |
 | Drop RoundResults.TotalPoints | DbUp migration `0005_DropRoundResultsTotalPoints.sql` drops the vestigial, unread global points column (points are per-league in `LeagueRoundResults`). Schema doc updated; refresher is column-agnostic so needs no change. Plan removed. |
+| Slow-query logging | Read queries slower than a configurable threshold (`QueryMonitoringSettings`, default 500ms) are logged at Warning via `DapperReadDbConnection`. The query-monitoring plan is trimmed to the remaining missing-index review. |
