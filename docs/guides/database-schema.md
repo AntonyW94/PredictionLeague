@@ -686,14 +686,14 @@ User score predictions for matches.
 
 ### RoundResults
 
-Aggregated results per user per round (across all leagues).
+Aggregated results per user per round (across all leagues). League-agnostic, so it holds outcome
+counts only - points are per-league and live in `LeagueRoundResults`.
 
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | Id | int | NO | IDENTITY | Primary key |
 | RoundId | int | NO | | FK to Rounds |
 | UserId | nvarchar(450) | NO | | FK to AspNetUsers |
-| TotalPoints | int | NO | 0 | Total points earned |
 | ExactScoreCount | int | NO | 0 | Number of exact scores |
 | CorrectResultCount | int | NO | 0 | Number of correct results |
 | IncorrectCount | int | NO | 0 | Number of incorrect predictions |
