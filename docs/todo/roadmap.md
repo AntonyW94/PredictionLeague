@@ -119,7 +119,6 @@ These are parked. They're low priority, depend on scale, or are nice-to-haves.
 - Admin IP protection
 - API key rotation
 - Penetration testing
-- Third-party licences
 
 ---
 
@@ -166,3 +165,4 @@ These items from the original backlog are already implemented:
 | Origin-header email links | Emailed links (password reset, email confirmation, league notifications) now build from configured `SiteSettings.ResolvedBaseUrl`, never the attacker-controllable `Origin` header. Closes the reset-link poisoning / account-takeover vector; consolidates the duplicated base-URL fallback. Plan removed. |
 | Drop RoundResults.TotalPoints | DbUp migration `0005_DropRoundResultsTotalPoints.sql` drops the vestigial, unread global points column (points are per-league in `LeagueRoundResults`). Schema doc updated; refresher is column-agnostic so needs no change. Plan removed. |
 | Slow-query logging | Read queries slower than a configurable threshold (`QueryMonitoringSettings`, default 500ms) are logged at Warning via `DapperReadDbConnection`. The query-monitoring plan is trimmed to the remaining missing-index review. |
+| Third-party licences page | `/licences` page (linked in the footer) lists the distributed open-source packages and their licences, generated from each package's NuGet `.nuspec` licence metadata. Plan removed. |

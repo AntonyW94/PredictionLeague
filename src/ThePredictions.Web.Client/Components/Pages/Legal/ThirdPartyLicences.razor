@@ -1,0 +1,90 @@
+@page "/licences"
+
+<PageTitle>Third-Party Licences - The Predictions</PageTitle>
+
+<div class="legal-page">
+    <article class="legal-page__content shadow">
+        <h1>Open-Source Licences</h1>
+        <p class="legal-page__updated">Last generated: @LastGenerated</p>
+
+        <section>
+            <p>
+                The Predictions is built on open-source software. We are grateful to the maintainers of
+                the packages below and acknowledge their licences. Each entry links to the project so you
+                can read its full licence terms.
+            </p>
+            <p>
+                This list covers the third-party packages distributed as part of the application. It is
+                generated from the projects' NuGet package licence metadata; see the note at the foot of
+                this page for how it is refreshed.
+            </p>
+        </section>
+
+        <section>
+            <h2>Packages</h2>
+            <ul>
+                @foreach (var package in Packages.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    <li>
+                        <strong>@package.Name</strong> @package.Version - @package.Licence
+                        (<a href="@package.Url" target="_blank" rel="noopener noreferrer">project</a>)
+                    </li>
+                }
+            </ul>
+        </section>
+
+        <section>
+            <h2>How this list is maintained</h2>
+            <p>
+                The entries are taken from the <code>&lt;license&gt;</code> metadata in each package's
+                <code>.nuspec</code> (the authoritative, author-declared licence). When a package is
+                added, removed or upgraded, this list is regenerated from that metadata. Development-only
+                and test-only packages are excluded because they are not distributed to users.
+            </p>
+        </section>
+    </article>
+</div>
+
+@code {
+    // Generated 2026-07-25 from the NuGet package licence metadata of the shipping projects
+    // (Domain, Application, Infrastructure, API, Web, Web.Client, Contracts, Validators, Hosting.Shared).
+    // SPDX identifiers come from each package's .nuspec <license expression>; where a package declares
+    // only a licence file/URL, the type was read from the embedded LICENSE (or linked when unavailable).
+    // Dev-only/test-only packages (e.g. the WASM DevServer, xUnit, NSubstitute) are excluded - they are
+    // not distributed. To refresh: re-read the shipping csproj PackageReferences and their .nuspec
+    // licence metadata, then update this list.
+    private const string LastGenerated = "25 July 2026";
+
+    private sealed record PackageLicence(string Name, string Version, string Licence, string Url);
+
+    private static readonly PackageLicence[] Packages =
+    [
+        new("Ardalis.GuardClauses", "5.0.0", "MIT", "https://github.com/ardalis/guardclauses"),
+        new("AspNetCore.HealthChecks.SqlServer", "8.0.2", "Apache-2.0", "https://github.com/Xabaril/AspNetCore.Diagnostics.HealthChecks"),
+        new("Azure.Extensions.AspNetCore.Configuration.Secrets", "1.4.0", "MIT", "https://github.com/Azure/azure-sdk-for-net"),
+        new("Blazored.LocalStorage", "4.5.0", "MIT", "https://github.com/Blazored/LocalStorage"),
+        new("brevo_csharp", "1.1.1", "See licence", "https://github.com/getbrevo/brevo-csharp/blob/master/LICENSE.txt"),
+        new("Dapper", "2.1.66", "Apache-2.0", "https://github.com/DapperLib/Dapper"),
+        new("FluentValidation", "12.1.1", "Apache-2.0", "https://fluentvalidation.net/"),
+        new("FluentValidation.DependencyInjectionExtensions", "12.1.1", "Apache-2.0", "https://fluentvalidation.net/"),
+        new("MediatR", "14.0.0", "RPL-1.5 (Reciprocal Public License)", "https://mediatr.io/"),
+        new("Microsoft.AspNetCore.Authentication.Google", "8.0.14", "MIT", "https://asp.net/"),
+        new("Microsoft.AspNetCore.Authentication.JwtBearer", "8.0.14", "MIT", "https://asp.net/"),
+        new("Microsoft.AspNetCore.Components.Authorization", "8.0.14", "MIT", "https://asp.net/"),
+        new("Microsoft.AspNetCore.Components.WebAssembly", "8.0.14", "MIT", "https://asp.net/"),
+        new("Microsoft.AspNetCore.WebUtilities", "8.0.14", "MIT", "https://asp.net/"),
+        new("Microsoft.Data.SqlClient", "6.1.4", "MIT", "https://aka.ms/sqlclientproject"),
+        new("Microsoft.Extensions.Configuration.Abstractions", "8.0.0", "MIT", "https://dot.net/"),
+        new("Microsoft.Extensions.Http", "8.0.1", "MIT", "https://dot.net/"),
+        new("Microsoft.Extensions.Http.Resilience", "8.10.0", "MIT", "https://dot.net/"),
+        new("Microsoft.Extensions.Identity.Stores", "8.0.14", "MIT", "https://asp.net/"),
+        new("Microsoft.OpenApi", "1.6.14", "MIT", "https://github.com/Microsoft/OpenAPI.NET"),
+        new("Polly", "8.5.2", "BSD-3-Clause", "https://github.com/App-vNext/Polly"),
+        new("Serilog.AspNetCore", "8.0.3", "Apache-2.0", "https://github.com/serilog/serilog-aspnetcore"),
+        new("Serilog.Expressions", "5.0.0", "Apache-2.0", "https://github.com/serilog/serilog-expressions"),
+        new("Serilog.Sinks.Datadog.Logs", "0.6.0", "See licence", "https://github.com/DataDog/serilog-sinks-datadog-logs/blob/master/LICENSE"),
+        new("Stripe.net", "52.1.1", "Apache-2.0", "https://github.com/stripe/stripe-dotnet"),
+        new("Swashbuckle.AspNetCore", "6.9.0", "MIT", "https://github.com/domaindrivendev/Swashbuckle.AspNetCore"),
+        new("System.IdentityModel.Tokens.Jwt", "8.15.0", "MIT", "https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet")
+    ];
+}
