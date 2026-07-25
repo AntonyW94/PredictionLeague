@@ -12,6 +12,7 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
 {
     private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
     private readonly IEmailService _emailService = Substitute.For<IEmailService>();
+    private readonly IOptions<SiteSettings> _siteOptions = Options.Create(new SiteSettings { BaseUrl = "https://test.local" });
     private readonly NotifyLeagueAdminOfJoinRequestCommandHandler _handler;
 
     private readonly BrevoSettings _brevoSettings = new()
@@ -25,7 +26,7 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
     public NotifyLeagueAdminOfJoinRequestCommandHandlerTests()
     {
         var options = Options.Create(_brevoSettings);
-        _handler = new NotifyLeagueAdminOfJoinRequestCommandHandler(_dbConnection, _emailService, options);
+        _handler = new NotifyLeagueAdminOfJoinRequestCommandHandler(_dbConnection, _emailService, options, _siteOptions);
     }
 
     [Fact]
@@ -71,7 +72,7 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
         // Arrange
         var settingsWithoutTemplates = new BrevoSettings { Templates = null };
         var options = Options.Create(settingsWithoutTemplates);
-        var handler = new NotifyLeagueAdminOfJoinRequestCommandHandler(_dbConnection, _emailService, options);
+        var handler = new NotifyLeagueAdminOfJoinRequestCommandHandler(_dbConnection, _emailService, options, _siteOptions);
         var command = new NotifyLeagueAdminOfJoinRequestCommand("admin-user", "Test League", 1, "Jane", "Doe");
 
         // Act

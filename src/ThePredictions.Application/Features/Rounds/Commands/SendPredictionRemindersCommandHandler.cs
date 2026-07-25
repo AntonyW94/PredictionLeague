@@ -65,9 +65,7 @@ public class SendPredictionRemindersCommandHandler(
             cancellationToken);
 
         var throttleCutoff = nowUtc - ThrottleWindow;
-        var baseUrl = string.IsNullOrWhiteSpace(_siteSettings.BaseUrl)
-            ? "https://www.thepredictions.co.uk"
-            : _siteSettings.BaseUrl.TrimEnd('/');
+        var baseUrl = _siteSettings.ResolvedBaseUrl;
         var predictionsUrl = $"{baseUrl}/predictions/{request.RoundId}";
 
         var sentCount = 0;

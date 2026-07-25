@@ -8,5 +8,4 @@ public record RegisterCommand(
     string LastName,
     string Email,
     string Password,
-    bool MarketingOptIn,
-    string ConfirmUrlBase) : IRequest<AuthenticationResponse>;
+    bool MarketingOptIn) : IRequest<AuthenticationResponse>;

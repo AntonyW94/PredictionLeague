@@ -14,8 +14,6 @@ public class GetEmailTestDefaultsQueryHandler(
     IOptions<SiteSettings> siteSettings)
     : IRequestHandler<GetEmailTestDefaultsQuery, EmailTestDefaultsDto>
 {
-    private const string FallbackBaseUrl = "https://www.thepredictions.co.uk";
-
     public async Task<EmailTestDefaultsDto> Handle(GetEmailTestDefaultsQuery request, CancellationToken cancellationToken)
     {
         var templates = await catalog.GetTemplatesAsync(cancellationToken);
@@ -38,8 +36,7 @@ public class GetEmailTestDefaultsQueryHandler(
             new { UserId = request.DataUserId })
             ?? new EmailTestUserData(string.Empty, string.Empty, string.Empty);
 
-        var configuredBaseUrl = siteSettings.Value.BaseUrl;
-        var baseUrl = string.IsNullOrWhiteSpace(configuredBaseUrl) ? FallbackBaseUrl : configuredBaseUrl;
+        var baseUrl = siteSettings.Value.ResolvedBaseUrl;
 
         var defaults = resolver.Resolve(template.ParamNames, user, baseUrl);
         return new EmailTestDefaultsDto(new Dictionary<string, string>(defaults));

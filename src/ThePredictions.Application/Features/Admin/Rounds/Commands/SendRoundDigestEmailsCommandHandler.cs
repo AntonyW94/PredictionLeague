@@ -54,9 +54,7 @@ public class SendRoundDigestEmailsCommandHandler(
 
         var digests = await mediator.Send(new GetRoundDigestQuery(round.Id), cancellationToken);
 
-        var baseUrl = string.IsNullOrWhiteSpace(_siteSettings.BaseUrl)
-            ? "https://www.thepredictions.co.uk"
-            : _siteSettings.BaseUrl.TrimEnd('/');
+        var baseUrl = _siteSettings.ResolvedBaseUrl;
 
         foreach (var digest in digests)
         {

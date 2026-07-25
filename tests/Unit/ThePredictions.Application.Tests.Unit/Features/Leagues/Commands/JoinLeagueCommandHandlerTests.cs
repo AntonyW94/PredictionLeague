@@ -180,7 +180,7 @@ public class JoinLeagueCommandHandlerTests
     {
         // Arrange — approval off: the joiner is auto-approved and told they can take part
         var league = CreateLeague(id: 5, requiresMemberApproval: false);
-        var command = new JoinLeagueCommand("new-user", "Jane", "Doe", LeagueId: 5, EntryCode: null, LeagueUrlBase: "https://www.thepredictions.co.uk");
+        var command = new JoinLeagueCommand("new-user", "Jane", "Doe", LeagueId: 5, EntryCode: null);
 
         _leagueRepository.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(league);
 
@@ -193,8 +193,7 @@ public class JoinLeagueCommandHandlerTests
                 n.MemberUserId == "new-user" &&
                 n.LeagueId == 5 &&
                 n.LeagueName == "Test League" &&
-                n.SeasonId == 1 &&
-                n.LeagueUrlBase == "https://www.thepredictions.co.uk"),
+                n.SeasonId == 1),
             Arg.Any<CancellationToken>());
 
         await _mediator.DidNotReceive().Send(Arg.Any<NotifyLeagueAdminOfJoinRequestCommand>(), Arg.Any<CancellationToken>());

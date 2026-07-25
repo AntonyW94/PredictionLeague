@@ -48,9 +48,7 @@ public class SendPrizeNotificationsCommandHandler(
 
         var winners = await mediator.Send(new GetPrizeWinnersForRoundQuery(round.Id), cancellationToken);
 
-        var baseUrl = string.IsNullOrWhiteSpace(_siteSettings.BaseUrl)
-            ? "https://www.thepredictions.co.uk"
-            : _siteSettings.BaseUrl.TrimEnd('/');
+        var baseUrl = _siteSettings.ResolvedBaseUrl;
 
         var sentLog = new List<PrizeNotification>();
         var emailsSent = 0;

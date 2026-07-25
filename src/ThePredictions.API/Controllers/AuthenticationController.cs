@@ -39,15 +39,12 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         [FromBody, SwaggerParameter("Registration details including email, password, first name, and last name", Required = true)] RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        var confirmUrlBase = $"{Request.Headers["Origin"]}/authentication/confirm-email";
-
         var command = new RegisterCommand(
             request.FirstName,
             request.LastName,
             request.Email,
             request.Password,
-            request.MarketingOptIn,
-            confirmUrlBase);
+            request.MarketingOptIn);
         var result = await mediator.Send(command, cancellationToken);
 
         if (result is not SuccessfulAuthenticationResponse success)
@@ -84,9 +81,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
     [SwaggerResponse(401, "Not authenticated")]
     public async Task<IActionResult> ResendConfirmationAsync(CancellationToken cancellationToken)
     {
-        var confirmUrlBase = $"{Request.Headers["Origin"]}/authentication/confirm-email";
-
-        await mediator.Send(new ResendConfirmationCommand(CurrentUserId, confirmUrlBase), cancellationToken);
+        await mediator.Send(new ResendConfirmationCommand(CurrentUserId), cancellationToken);
         return Ok(new { message = "If your email still needs confirming, a new link is on its way." });
     }
 
@@ -207,11 +202,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         [FromBody, SwaggerParameter("Email address for password reset", Required = true)] RequestPasswordResetRequest request,
         CancellationToken cancellationToken)
     {
-        // Build the reset URL base from the request
-        // This allows the client URL to be determined dynamically
-        var resetUrlBase = $"{Request.Headers["Origin"]}/authentication/reset-password";
-
-        var command = new RequestPasswordResetCommand(request.Email, resetUrlBase);
+        var command = new RequestPasswordResetCommand(request.Email);
         await mediator.Send(command, cancellationToken);
 
         // Always return OK to prevent email enumeration

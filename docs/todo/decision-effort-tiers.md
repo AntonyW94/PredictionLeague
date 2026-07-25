@@ -49,8 +49,6 @@ July 2026 review plans, all fully specified with decisions already made:
 - **security/refresh-tokens-in-urls** - exchange-code redesign of the Google
   callback; hands-off to build, but merging to production requires the manual
   mobile test checklist on dev to pass.
-- **security/origin-header-email-links** - configured base URL instead of the
-  Origin header for emailed links.
 - **architecture/transaction-context-hardening** - nesting-safe transactions,
   real rollback, post-commit side effects.
 - **architecture/composition-root-and-hosting** - Application DI, options

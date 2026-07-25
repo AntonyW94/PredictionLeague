@@ -15,6 +15,7 @@ public class RequestPasswordResetCommandHandler(
     IPasswordResetTokenRepository tokenRepository,
     IEmailService emailService,
     IOptions<BrevoSettings> brevoSettings,
+    IOptions<SiteSettings> siteSettings,
     IDateTimeProvider dateTimeProvider,
     ILogger<RequestPasswordResetCommandHandler> logger)
     : IRequestHandler<RequestPasswordResetCommand, Unit>
@@ -22,6 +23,7 @@ public class RequestPasswordResetCommandHandler(
     private const int MaxRequestsPerHour = 3;
 
     private readonly BrevoSettings _brevoSettings = brevoSettings.Value;
+    private readonly SiteSettings _siteSettings = siteSettings.Value;
 
     public async Task<Unit> Handle(RequestPasswordResetCommand request, CancellationToken cancellationToken)
     {
@@ -51,11 +53,11 @@ public class RequestPasswordResetCommandHandler(
 
         if (hasPassword)
         {
-            await SendPasswordResetEmailAsync(user, request.ResetUrlBase, cancellationToken);
+            await SendPasswordResetEmailAsync(user, cancellationToken);
         }
         else
         {
-            await SendGoogleUserEmailAsync(user, request.ResetUrlBase);
+            await SendGoogleUserEmailAsync(user);
         }
 
         return Unit.Value;
@@ -63,7 +65,6 @@ public class RequestPasswordResetCommandHandler(
 
     private async Task SendPasswordResetEmailAsync(
         ApplicationUser user,
-        string resetUrlBase,
         CancellationToken cancellationToken)
     {
         // Create and store the token
@@ -71,8 +72,9 @@ public class RequestPasswordResetCommandHandler(
         var resetToken = PasswordResetToken.Create(tokenString, user.Id, dateTimeProvider);
         await tokenRepository.CreateAsync(resetToken, cancellationToken);
 
-        // Build the reset link (no email in URL for security)
-        var resetLink = $"{resetUrlBase}?token={resetToken.Token}";
+        // Build the reset link from configured site settings, never a request header
+        // (attacker-controllable). No email in the URL for security.
+        var resetLink = $"{_siteSettings.ResolvedBaseUrl}/authentication/reset-password?token={resetToken.Token}";
 
         var templateId = _brevoSettings.Templates?.PasswordReset
             ?? throw new InvalidOperationException("PasswordReset email template ID is not configured");
@@ -89,13 +91,10 @@ public class RequestPasswordResetCommandHandler(
         logger.LogInformation("Password reset email sent to User (ID: {UserId})", user.Id);
     }
 
-    private async Task SendGoogleUserEmailAsync(
-        ApplicationUser user,
-        string resetUrlBase)
+    private async Task SendGoogleUserEmailAsync(ApplicationUser user)
     {
-        // Extract base URL (remove the reset-password path)
-        var baseUrl = resetUrlBase.Replace("/authentication/reset-password", "");
-        var loginLink = $"{baseUrl}/authentication/login";
+        // Link base comes from configured site settings, never a request header.
+        var loginLink = $"{_siteSettings.ResolvedBaseUrl}/authentication/login";
 
         var templateId = _brevoSettings.Templates?.PasswordResetGoogleUser
             ?? throw new InvalidOperationException("PasswordResetGoogleUser email template ID is not configured");
