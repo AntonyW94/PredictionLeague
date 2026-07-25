@@ -23,7 +23,6 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 
 | # | Item | Effort | Why | Plan |
 |---|------|--------|-----|------|
-| 3 | Database migrations (DbUp) | Medium | Manual schema changes across 3 databases is unsustainable | [Outline](architecture/database-migrations/README.md) |
 | 4 | Request timeout configuration | Low | No explicit timeouts currently = silent hangs in production | [Outline](architecture/request-timeouts/README.md) |
 | 6 | Health check endpoints | Low | Small implementation, enables monitoring. Needed for alerting and E2E workflow | [Outline](architecture/health-checks/README.md) |
 | 7 | Football API resilience | High | Site completely fails if the API goes down. Circuit breaker + caching essential | [Outline](architecture/football-api-resilience/README.md) |
@@ -69,7 +68,6 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 | 31 | Email preferences | Medium | Let users control what they receive | [Outline](features/email-notifications/email-preferences/README.md) |
 | 32 | Notifications UI | Medium | Dashboard alerts tile exists; extend to bell icon and dropdown for general notifications | [Outline](features/user-experience/notifications-ui/README.md) |
 | 33 | Accessibility (WCAG basics) | Medium | Right thing to do, also a legal consideration | [Outline](features/user-experience/accessibility/README.md) |
-| 34 | Achievement badges | Medium | Gamification to increase retention | [Outline](features/user-experience/achievements-badges/README.md) |
 | 35 | Prediction history | Medium | Data exists in DB and is shown in league dashboards; needs a dedicated history view | [Outline](features/user-experience/prediction-history/README.md) |
 | 36 | League notifications | Medium | Join request notifications exist; extend to broader league events | [Outline](features/email-notifications/league-notifications/README.md) |
 | 37 | Admin dashboard | Medium | Admin CRUD pages exist; need a summary/overview page with stats | [Outline](features/admin-moderation/admin-dashboard/README.md) |
@@ -79,7 +77,6 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 | 41 | Social sharing | Low | Organic growth driver | [Outline](features/user-experience/social-sharing/README.md) |
 | 42 | Digest emails | Medium | Weekly summaries for less active users | [Outline](features/email-notifications/digest-emails/README.md) |
 | 43 | League moderation | Medium | Basic member management exists; extend to full moderation tools | [Outline](features/admin-moderation/league-moderation/README.md) |
-| 44 | Live score auto-update (no refresh) | Low | Scores update in the DB every minute but the WASM client doesn't auto-refresh; add 10s client polling on live pages (SignalR is the later upgrade) | [Outline](features/user-experience/live-score-updates/README.md) |
 
 ---
 
@@ -160,3 +157,8 @@ These items from the original backlog are already implemented:
 | Round results digest emails | Per-user post-round digest (Brevo template 11), per-league links, admin resend, idempotent via `Round.ResultsDigestSentUtc` |
 | Prize-won notifications | Celebratory email to winners (Brevo template 12), idempotent via `PrizeNotifications` sent-log, admin resend |
 | Email test tool (admin) | `/admin/email-tests` page with live Brevo template discovery and smart parameter defaults |
+| Database migrations (DbUp) | DbUp migrator + numbered embedded scripts + per-env migrate workflows (ADR-0013). Plan removed. |
+| Achievement badges | Badge catalogue, awarding engine (hooked into match-result updates), backfill command, and display. Plan removed. |
+| Live score auto-update | Client-side visibility-aware 10s polling on the league and user dashboards (`LiveScorePollingService`). Cache-backed reads + stale banner deferred to caching/resilience work. Plan removed. |
+| Incomplete predictions visibility | Round-completion query, admin completion page, dashboard tile, reminder wiring. Plan removed. |
+| Season Passes (Standard launch) | Standard tier live on prod: Stripe Checkout + webhook fulfilment, acquire-first gate + free/trial flow, running-costs calculator, email-confirmation gate (ADR 0014). Only the deferred SMS/Premium tier + self-service refunds remain (see `features/monetisation/season-passes/`). |

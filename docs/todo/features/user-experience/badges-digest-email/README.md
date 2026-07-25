@@ -14,7 +14,7 @@ As a player, I want the results email to tell me which badges I just earned, so 
 
 ## Context / why this is cheap
 
-Badge evaluation is deliberately hooked into `UpdateMatchResultsCommandHandler` **after** prizes and **before** `SendRoundDigestEmailsCommand`, so by the time the digest is built the new awards already exist. The only missing piece is passing the newly awarded badges through to the email and rendering them. See the badges feature at [`../achievements-badges/`](../achievements-badges/).
+Badge evaluation is deliberately hooked into `UpdateMatchResultsCommandHandler` **after** prizes and **before** `SendRoundDigestEmailsCommand`, so by the time the digest is built the new awards already exist. The only missing piece is passing the newly awarded badges through to the email and rendering them. The badges feature itself is already shipped in code (`BadgeCatalogue`, `EvaluateBadgesForRoundCommandHandler`); its plan has been completed and removed.
 
 ## Acceptance Criteria
 

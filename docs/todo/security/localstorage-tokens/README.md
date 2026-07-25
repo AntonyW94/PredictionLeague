@@ -27,8 +27,7 @@ A04:2021 - Insecure Design
 ## Problem Description
 
 **Affected Files:**
-- `ThePredictions.Web.Client/Services/AuthStateProvider.cs`
-- `ThePredictions.Web.Client/Services/TokenStorageService.cs`
+- `ThePredictions.Web.Client/Authentication/ApiAuthenticationStateProvider.cs` (stores the access token in localStorage; there is no separate token-storage service)
 
 **Security Concerns:**
 - XSS attacks could steal access tokens

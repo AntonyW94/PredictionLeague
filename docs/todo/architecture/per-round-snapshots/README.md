@@ -120,7 +120,7 @@ Both tables get the obvious composite PKs. Add covering indexes for likely query
 ## Dependencies
 
 - [ ] None blocking. This is a foundation for other work, not built on top of anything.
-- [ ] Strongly recommended: do this **before** [database-migrations (DbUp)](../database-migrations/README.md) lands so the schema changes can be added to the eventual migration baseline. Otherwise this becomes "yet another manual schema change."
+- [x] DbUp migrations have now shipped (ADR-0013), so this plan's schema changes should be written as a **new numbered migration** under `tools/ThePredictions.DatabaseTools/Migrations/` rather than a manual schema change.
 
 ## Technical Notes
 
