@@ -255,7 +255,7 @@ Then deploy to **dev** (`dev.thepredictions.co.uk`) and complete ALL of the foll
 ## Out of scope
 
 - Moving the access token out of localStorage ([`docs/todo/security/localstorage-tokens/README.md`](../localstorage-tokens/README.md) - separately deferred).
-- JWT hardening items ([`docs/todo/security/jwt-security-hardening/README.md`](../jwt-security-hardening/README.md)).
+- JWT hardening items (`ClockSkew` + `ValidAlgorithms` shipped July 2026; SameSite=Strict on the refresh cookie remains an accepted risk - see `docs/security/accepted-risks.md`).
 - The `RefreshTokenCommandHandler` reuse grace window design (existing, deliberate).
 - Standardising the ExternalAuthController route prefix (noted controller-convention drift; separate concern).
 

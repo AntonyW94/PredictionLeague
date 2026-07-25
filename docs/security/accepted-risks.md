@@ -87,7 +87,7 @@ These items are known constraints of the current architecture. Each has a remedi
 | **Decision** | **Deferred** - Required for cross-site authentication |
 | **Rationale** | Necessary for the OAuth flow where the API and client may be on different subdomains. |
 | **Mitigations** | - Cookies marked `Secure` (HTTPS only)<br>- Cookies marked `HttpOnly`<br>- Refresh token rotation invalidates old tokens |
-| **Plan** | [`docs/todo/security/jwt-security-hardening/`](../todo/security/jwt-security-hardening/) |
+| **Plan** | Deferred until the login/cookie system is reworked; no standalone plan doc. The rest of the JWT hardening (explicit `ClockSkew`, `ValidAlgorithms` allow-list) shipped July 2026. |
 | **Reviewed** | January 27, 2026 |
 
 ### 7. Server-Side Validation Gap (MediatR Pipeline)
@@ -116,8 +116,8 @@ Some scanners may flag the absence of `X-XSS-Protection`. In this application, t
 ### 9. JWT Algorithm Not Restricted
 
 Some scanners flag that JWT accepts multiple algorithms. In this application:
-- Only HS256 is configured in `TokenValidationParameters`
-- The `ValidAlgorithms` property could be added for defence-in-depth but is not critical
+- Only HS256 is issued (`AuthenticationTokenService`) and accepted
+- A `ValidAlgorithms` allow-list (`HmacSha256`) plus an explicit 30-second `ClockSkew` are now set on `TokenValidationParameters` (July 2026), so this is closed as defence-in-depth
 
 ### 10. Rate Limiting Not Detected
 

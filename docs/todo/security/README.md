@@ -9,7 +9,6 @@ These items have been reviewed and deferred with documented mitigations:
 | Item | Reason | Mitigations |
 |------|--------|-------------|
 | [open-redirect](open-redirect/) | Waiting for login system changes | N/A - to be fixed |
-| [jwt-security-hardening](jwt-security-hardening/) | Waiting for login system changes | N/A - to be fixed |
 | [localstorage-tokens](localstorage-tokens/) | Blazor WASM architecture | Strong CSP, short expiry, XSS prevention |
 
 ## Planned Improvements

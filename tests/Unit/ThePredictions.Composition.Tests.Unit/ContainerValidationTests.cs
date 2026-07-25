@@ -1,8 +1,11 @@
 using FluentAssertions;
 using FluentAssertions.Execution;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using ThePredictions.API;
 using ThePredictions.Application.Common.Interfaces;
 using ThePredictions.Application.Configuration;
@@ -101,5 +104,26 @@ public class ContainerValidationTests
             var act = () => scope.ServiceProvider.GetRequiredService(handlerInterface);
             act.Should().NotThrow($"{handlerInterface} must resolve with all constructor dependencies registered");
         }
+    }
+
+    /// <summary>
+    /// Guards the JWT hardening: token validation must use a tight, explicit clock skew (not the
+    /// 5-minute default) and only accept the HMAC-SHA256 algorithm we actually sign with, closing
+    /// off algorithm-confusion attacks. These live in the AddJwtBearer options and would otherwise
+    /// only be observable at runtime.
+    /// </summary>
+    [Fact]
+    public void JwtBearerOptions_ShouldUseTightClockSkewAndAlgorithmAllowList()
+    {
+        using var provider = BuildHostProvider();
+
+        var jwtBearerOptions = provider
+            .GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
+            .Get(JwtBearerDefaults.AuthenticationScheme);
+
+        using var assertionScope = new AssertionScope();
+        jwtBearerOptions.TokenValidationParameters.ClockSkew.Should().Be(TimeSpan.FromSeconds(30));
+        jwtBearerOptions.TokenValidationParameters.ValidAlgorithms.Should().ContainSingle()
+            .Which.Should().Be(SecurityAlgorithms.HmacSha256);
     }
 }
