@@ -54,7 +54,7 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 | 24 | Cookie consent | Medium | GDPR mandatory before public launch in the UK | [Outline](features/legal-compliance/cookie-consent/README.md) |
 | 25 | Audit logging | Medium | Track who did what, for security and debugging | [Outline](security/audit-logging/README.md) |
 | 26 | Data export (GDPR) | Medium | GDPR right to data portability | [Outline](features/legal-compliance/data-export/README.md) |
-| 27 | Deferred security items | Medium | JWT hardening, open redirect fix. Clean up once login system is stable | [Outline](security/) |
+| 27 | Deferred security items | Medium | SameSite=Strict on refresh cookie (accepted risk), open redirect fix. Clean up once login system is stable. JWT ClockSkew + algorithm allow-list already shipped. | [Outline](security/) |
 
 ---
 
@@ -162,3 +162,4 @@ These items from the original backlog are already implemented:
 | Live score auto-update | Client-side visibility-aware 10s polling on the league and user dashboards (`LiveScorePollingService`). Cache-backed reads + stale banner deferred to caching/resilience work. Plan removed. |
 | Incomplete predictions visibility | Round-completion query, admin completion page, dashboard tile, reminder wiring. Plan removed. |
 | Season Passes (Standard launch) | Standard tier live on prod: Stripe Checkout + webhook fulfilment, acquire-first gate + free/trial flow, running-costs calculator, email-confirmation gate (ADR 0014). Only the deferred SMS/Premium tier + self-service refunds remain (see `features/monetisation/season-passes/`). |
+| JWT hardening (ClockSkew + algorithms) | Explicit 30s `ClockSkew` + `ValidAlgorithms` allow-list (HmacSha256) on `TokenValidationParameters`. Plan removed; SameSite=Strict on the refresh cookie remains an accepted risk. |

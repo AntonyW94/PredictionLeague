@@ -36,8 +36,6 @@ Conventional, technical changes with an unambiguous correct implementation. An
 agent can do these autonomously on a branch (keeping the 100% domain coverage and
 CI green) and open a PR for review. No input needed until review.
 
-- **jwt-security-hardening** - add explicit `ClockSkew` + a `ValidAlgorithms`
-  allow-list to token validation.
 - **api-documentation** - Swashbuckle request/response examples + a standard
   `ApiErrorResponse` contract.
 - **query-monitoring** - slow-query logging with a sensible threshold (~500ms).

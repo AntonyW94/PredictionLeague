@@ -194,7 +194,16 @@ public static class DependencyInjection
                         ValidateIssuerSigningKey = true,
                         ValidIssuer = jwtSettings.Issuer,
                         ValidAudience = jwtSettings.Audience,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+
+                        // Explicit, tight clock skew (default is 5 minutes) so an expired
+                        // token is rejected promptly rather than lingering valid for minutes.
+                        ClockSkew = TimeSpan.FromSeconds(30),
+
+                        // Restrict the accepted signing algorithm to the one we actually issue
+                        // with (HMAC-SHA256, see AuthenticationTokenService) to close off
+                        // algorithm-confusion attacks.
+                        ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 }
                     };
                 })
                 .AddGoogle(options =>
