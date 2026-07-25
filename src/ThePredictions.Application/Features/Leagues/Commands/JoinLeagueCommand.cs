@@ -8,6 +8,5 @@ public record JoinLeagueCommand(
     string JoiningUserFirstName,
     string JoiningUserLastName,
     int? LeagueId,
-    string? EntryCode,
-    string? LeagueUrlBase = null
+    string? EntryCode
 ) : IRequest<int>, ITransactionalRequest;

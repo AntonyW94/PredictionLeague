@@ -12,13 +12,15 @@ public class EmailConfirmationSender(
     IEmailConfirmationTokenRepository tokenRepository,
     IEmailService emailService,
     IOptions<BrevoSettings> brevoSettings,
+    IOptions<SiteSettings> siteSettings,
     IDateTimeProvider dateTimeProvider,
     ILogger<EmailConfirmationSender> logger)
     : IEmailConfirmationSender
 {
     private readonly BrevoSettings _brevoSettings = brevoSettings.Value;
+    private readonly SiteSettings _siteSettings = siteSettings.Value;
 
-    public async Task SendAsync(ApplicationUser user, string confirmUrlBase, CancellationToken cancellationToken)
+    public async Task SendAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
         // One active token per user.
         await tokenRepository.DeleteByUserIdAsync(user.Id, cancellationToken);
@@ -35,7 +37,8 @@ public class EmailConfirmationSender(
             return;
         }
 
-        var confirmLink = $"{confirmUrlBase}?token={token.Token}";
+        // Link base comes from configured site settings, never a request header (attacker-controllable).
+        var confirmLink = $"{_siteSettings.ResolvedBaseUrl}/authentication/confirm-email?token={token.Token}";
 
         try
         {

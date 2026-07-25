@@ -281,7 +281,7 @@ A second architecture review (2026-07-06, four parallel deep-dives: CQRS discipl
 |------|--------|
 | [`security/server-validation-gap`](../../security/server-validation-gap/README.md) | Rewritten: revive client-side validation, enforce server-side at the API boundary (implements 1.1) |
 | [`security/refresh-tokens-in-urls`](../../security/refresh-tokens-in-urls/README.md) | Rewritten: replace the raw refresh token in the Google callback URL with a 60-second exchange code (mobile-safe) |
-| [`security/origin-header-email-links`](../../security/origin-header-email-links/README.md) | Stop deriving emailed URLs (password reset, league emails) from the attacker-controllable Origin header; delivers the `SiteSettings` base-URL helper from 4.7 |
+| `security/origin-header-email-links` (shipped July 2026, plan removed) | Stopped deriving emailed URLs (password reset, league emails) from the attacker-controllable Origin header; delivered the `SiteSettings.ResolvedBaseUrl` helper from 4.7 |
 | [`architecture/transaction-context-hardening`](../transaction-context-hardening/README.md) | Nesting-safe transactions, real rollback, side effects after commit (implements 2.2, hardens 2.9) |
 | [`architecture/composition-root-and-hosting`](../composition-root-and-hosting/README.md) | `AddApplicationServices`, options binding for both hosts, shared host pipeline (security headers on the Web host), package/reference hygiene |
 | [`architecture/error-contract-standardisation`](../error-contract-standardisation/README.md) | One API error shape, 401/403 split, cancellation handling (implements 4.4) |

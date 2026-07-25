@@ -33,11 +33,13 @@ public class RequestPasswordResetCommandHandlerTests
     public RequestPasswordResetCommandHandlerTests()
     {
         var options = Options.Create(_brevoSettings);
+        var siteOptions = Options.Create(new SiteSettings { BaseUrl = "https://test.local" });
         _handler = new RequestPasswordResetCommandHandler(
             _userManager,
             _tokenRepository,
             _emailService,
             options,
+            siteOptions,
             _dateTimeProvider,
             _logger);
     }
@@ -46,7 +48,7 @@ public class RequestPasswordResetCommandHandlerTests
     public async Task Handle_ShouldReturnUnit_WhenUserDoesNotExist()
     {
         // Arrange
-        var command = new RequestPasswordResetCommand("unknown@example.com", "https://example.com/authentication/reset-password");
+        var command = new RequestPasswordResetCommand("unknown@example.com");
 
         _userManager.FindByEmailAsync(command.Email).Returns((ApplicationUser?)null);
 
@@ -61,7 +63,7 @@ public class RequestPasswordResetCommandHandlerTests
     public async Task Handle_ShouldNotSendEmail_WhenUserDoesNotExist()
     {
         // Arrange
-        var command = new RequestPasswordResetCommand("unknown@example.com", "https://example.com/authentication/reset-password");
+        var command = new RequestPasswordResetCommand("unknown@example.com");
 
         _userManager.FindByEmailAsync(command.Email).Returns((ApplicationUser?)null);
 
@@ -77,7 +79,7 @@ public class RequestPasswordResetCommandHandlerTests
     public async Task Handle_ShouldReturnUnit_WhenRateLimitExceeded()
     {
         // Arrange
-        var command = new RequestPasswordResetCommand("john@example.com", "https://example.com/authentication/reset-password");
+        var command = new RequestPasswordResetCommand("john@example.com");
         var user = new ApplicationUser { Id = "user-1", Email = command.Email };
 
         _userManager.FindByEmailAsync(command.Email).Returns(user);
@@ -95,7 +97,7 @@ public class RequestPasswordResetCommandHandlerTests
     public async Task Handle_ShouldNotSendEmail_WhenRateLimitExceeded()
     {
         // Arrange
-        var command = new RequestPasswordResetCommand("john@example.com", "https://example.com/authentication/reset-password");
+        var command = new RequestPasswordResetCommand("john@example.com");
         var user = new ApplicationUser { Id = "user-1", Email = command.Email };
 
         _userManager.FindByEmailAsync(command.Email).Returns(user);
@@ -114,7 +116,7 @@ public class RequestPasswordResetCommandHandlerTests
     public async Task Handle_ShouldSendPasswordResetEmail_WhenUserHasPassword()
     {
         // Arrange
-        var command = new RequestPasswordResetCommand("john@example.com", "https://example.com/authentication/reset-password");
+        var command = new RequestPasswordResetCommand("john@example.com");
         var user = new ApplicationUser { Id = "user-1", Email = command.Email, FirstName = "John" };
 
         _userManager.FindByEmailAsync(command.Email).Returns(user);
@@ -134,7 +136,7 @@ public class RequestPasswordResetCommandHandlerTests
     public async Task Handle_ShouldCreateResetToken_WhenUserHasPassword()
     {
         // Arrange
-        var command = new RequestPasswordResetCommand("john@example.com", "https://example.com/authentication/reset-password");
+        var command = new RequestPasswordResetCommand("john@example.com");
         var user = new ApplicationUser { Id = "user-1", Email = command.Email, FirstName = "John" };
 
         _userManager.FindByEmailAsync(command.Email).Returns(user);
@@ -154,7 +156,7 @@ public class RequestPasswordResetCommandHandlerTests
     public async Task Handle_ShouldSendGoogleUserEmail_WhenUserDoesNotHavePassword()
     {
         // Arrange
-        var command = new RequestPasswordResetCommand("john@example.com", "https://example.com/authentication/reset-password");
+        var command = new RequestPasswordResetCommand("john@example.com");
         var user = new ApplicationUser { Id = "user-1", Email = command.Email, FirstName = "John" };
 
         _userManager.FindByEmailAsync(command.Email).Returns(user);
@@ -174,7 +176,7 @@ public class RequestPasswordResetCommandHandlerTests
     public async Task Handle_ShouldNotCreateResetToken_WhenUserDoesNotHavePassword()
     {
         // Arrange
-        var command = new RequestPasswordResetCommand("john@example.com", "https://example.com/authentication/reset-password");
+        var command = new RequestPasswordResetCommand("john@example.com");
         var user = new ApplicationUser { Id = "user-1", Email = command.Email, FirstName = "John" };
 
         _userManager.FindByEmailAsync(command.Email).Returns(user);

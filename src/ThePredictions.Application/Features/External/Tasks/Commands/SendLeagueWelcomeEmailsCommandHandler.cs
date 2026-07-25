@@ -43,9 +43,7 @@ public class SendLeagueWelcomeEmailsCommandHandler(
         if (leagues.Count == 0)
             return new SendLeagueWelcomeEmailsResult(LeaguesProcessed: 0, EmailsSent: 0);
 
-        var baseUrl = string.IsNullOrWhiteSpace(_siteSettings.BaseUrl)
-            ? "https://www.thepredictions.co.uk"
-            : _siteSettings.BaseUrl.TrimEnd('/');
+        var baseUrl = _siteSettings.ResolvedBaseUrl;
 
         var emailsSent = 0;
 

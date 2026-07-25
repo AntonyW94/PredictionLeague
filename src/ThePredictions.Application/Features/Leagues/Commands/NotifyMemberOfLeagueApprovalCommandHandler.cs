@@ -6,9 +6,10 @@ using ThePredictions.Application.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class NotifyMemberOfLeagueApprovalCommandHandler(IApplicationReadDbConnection dbConnection, IEmailService emailService, IOptions<BrevoSettings> brevoSettings) : IRequestHandler<NotifyMemberOfLeagueApprovalCommand>
+public class NotifyMemberOfLeagueApprovalCommandHandler(IApplicationReadDbConnection dbConnection, IEmailService emailService, IOptions<BrevoSettings> brevoSettings, IOptions<SiteSettings> siteSettings) : IRequestHandler<NotifyMemberOfLeagueApprovalCommand>
 {
     private readonly BrevoSettings _brevoSettings = brevoSettings.Value;
+    private readonly SiteSettings _siteSettings = siteSettings.Value;
 
     public async Task Handle(NotifyMemberOfLeagueApprovalCommand request, CancellationToken cancellationToken)
     {
@@ -46,23 +47,12 @@ public class NotifyMemberOfLeagueApprovalCommandHandler(IApplicationReadDbConnec
                 FIRST_NAME = member.FirstName,
                 LEAGUE_NAME = request.LeagueName,
                 SEASON_NAME = member.SeasonName,
-                LEAGUE_URL = BuildLeagueDashboardUrl(request.LeagueUrlBase, request.LeagueId)
+                // Built from configured site settings, never a request header (attacker-controllable).
+                LEAGUE_URL = $"{_siteSettings.ResolvedBaseUrl}/leagues/{request.LeagueId}/dashboard"
             };
 
             await emailService.SendTemplatedEmailAsync(member.Email, templateId, parameters);
         }
-    }
-
-    // The caller passes the request origin (e.g. https://www.thepredictions.co.uk), matching how the
-    // confirmation/reset emails build their links. Fall back to the canonical site if it's missing so
-    // the email's button always has a working destination.
-    private static string BuildLeagueDashboardUrl(string? leagueUrlBase, int leagueId)
-    {
-        var baseUrl = string.IsNullOrWhiteSpace(leagueUrlBase)
-            ? "https://www.thepredictions.co.uk"
-            : leagueUrlBase.TrimEnd('/');
-
-        return $"{baseUrl}/leagues/{leagueId}/dashboard";
     }
 }
 

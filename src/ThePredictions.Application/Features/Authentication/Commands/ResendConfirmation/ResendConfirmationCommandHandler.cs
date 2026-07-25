@@ -37,7 +37,7 @@ public class ResendConfirmationCommandHandler(
             return Unit.Value;
         }
 
-        await emailConfirmationSender.SendAsync(user, request.ConfirmUrlBase, cancellationToken);
+        await emailConfirmationSender.SendAsync(user, cancellationToken);
 
         return Unit.Value;
     }

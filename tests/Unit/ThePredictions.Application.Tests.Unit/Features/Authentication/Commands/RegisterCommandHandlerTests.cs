@@ -28,7 +28,7 @@ public class RegisterCommandHandlerTests
     }
 
     private static RegisterCommand BuildCommand(string email = "john@example.com", bool marketingOptIn = false) =>
-        new("John", "Doe", email, "Password123!", marketingOptIn, "https://app/authentication/confirm-email");
+        new("John", "Doe", email, "Password123!", marketingOptIn);
 
     [Fact]
     public async Task Handle_ShouldReturnSuccessfulResponse_WhenRegistrationIsValid()
@@ -176,7 +176,6 @@ public class RegisterCommandHandlerTests
         // Assert
         await _emailConfirmationSender.Received(1).SendAsync(
             Arg.Any<ApplicationUser>(),
-            command.ConfirmUrlBase,
             Arg.Any<CancellationToken>());
     }
 

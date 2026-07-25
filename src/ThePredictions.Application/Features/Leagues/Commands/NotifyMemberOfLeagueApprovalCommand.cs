@@ -6,5 +6,4 @@ public record NotifyMemberOfLeagueApprovalCommand(
     string MemberUserId,
     int LeagueId,
     string LeagueName,
-    int SeasonId,
-    string? LeagueUrlBase) : IRequest;
+    int SeasonId) : IRequest;

@@ -53,7 +53,7 @@ public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
 
         foreach (var memberUserId in autoApprovedUserIds)
         {
-            await mediator.Send(new NotifyMemberOfLeagueApprovalCommand(memberUserId, league.Id, league.Name, league.SeasonId, request.LeagueUrlBase), cancellationToken);
+            await mediator.Send(new NotifyMemberOfLeagueApprovalCommand(memberUserId, league.Id, league.Name, league.SeasonId), cancellationToken);
         }
     }
 

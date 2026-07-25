@@ -6,9 +6,10 @@ using ThePredictions.Application.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConnection dbConnection, IEmailService emailService, IOptions<BrevoSettings> brevoSettings) : IRequestHandler<NotifyLeagueAdminOfJoinRequestCommand>
+public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConnection dbConnection, IEmailService emailService, IOptions<BrevoSettings> brevoSettings, IOptions<SiteSettings> siteSettings) : IRequestHandler<NotifyLeagueAdminOfJoinRequestCommand>
 {
     private readonly BrevoSettings _brevoSettings = brevoSettings.Value;
+    private readonly SiteSettings _siteSettings = siteSettings.Value;
 
     public async Task Handle(NotifyLeagueAdminOfJoinRequestCommand request, CancellationToken cancellationToken)
     {
@@ -44,22 +45,13 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConn
                 LEAGUE_NAME = request.LeagueName,
                 SEASON_NAME = admin.SeasonName,
                 ADMIN_NAME = admin.FirstName,
-                DASHBOARD_URL = BuildAdminDashboardUrl(request.LeagueUrlBase)
+                // Deep-links to the dashboard's Admin tab, where pending join requests are actioned.
+                // Built from configured site settings, never a request header (attacker-controllable).
+                DASHBOARD_URL = $"{_siteSettings.ResolvedBaseUrl}/dashboard?tab=admin"
             };
 
             await emailService.SendTemplatedEmailAsync(admin.Email, templateId, parameters);
         }
-    }
-
-    // Deep-links to the dashboard's Admin tab, where pending join requests are actioned. The base comes
-    // from the request origin (the join is HTTP-triggered); falls back to the canonical site if absent.
-    private static string BuildAdminDashboardUrl(string? leagueUrlBase)
-    {
-        var baseUrl = string.IsNullOrWhiteSpace(leagueUrlBase)
-            ? "https://www.thepredictions.co.uk"
-            : leagueUrlBase.TrimEnd('/');
-
-        return $"{baseUrl}/dashboard?tab=admin";
     }
 }
 

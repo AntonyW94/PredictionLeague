@@ -58,8 +58,7 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ISeaso
                 request.JoiningUserId,
                 league.Id,
                 league.Name,
-                league.SeasonId,
-                request.LeagueUrlBase), cancellationToken);
+                league.SeasonId), cancellationToken);
         }
         else
         {
@@ -68,8 +67,7 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ISeaso
                 league.Name,
                 league.SeasonId,
                 request.JoiningUserFirstName,
-                request.JoiningUserLastName,
-                request.LeagueUrlBase), cancellationToken);
+                request.JoiningUserLastName), cancellationToken);
         }
     }
 }

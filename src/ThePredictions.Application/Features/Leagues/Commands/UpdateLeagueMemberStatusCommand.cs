@@ -7,6 +7,5 @@ public record UpdateLeagueMemberStatusCommand(
     int LeagueId,
     string MemberId,
     string UpdatingUserId,
-    LeagueMemberStatus NewStatus,
-    string? LeagueUrlBase = null
+    LeagueMemberStatus NewStatus
 ) : IRequest;

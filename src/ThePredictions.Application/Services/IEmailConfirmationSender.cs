@@ -9,5 +9,5 @@ public interface IEmailConfirmationSender
     /// Resilient: if the email template isn't configured yet or sending fails, it logs and returns
     /// without throwing, so registration is never blocked by email delivery.
     /// </summary>
-    Task SendAsync(ApplicationUser user, string confirmUrlBase, CancellationToken cancellationToken);
+    Task SendAsync(ApplicationUser user, CancellationToken cancellationToken);
 }

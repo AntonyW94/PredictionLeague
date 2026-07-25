@@ -35,7 +35,7 @@ public class RegisterCommandHandler(
         await userManager.AddToRoleAsync(newUser, nameof(ApplicationUserRole.Player));
 
         // Issue + email a confirmation link. Resilient: never blocks registration on email delivery.
-        await emailConfirmationSender.SendAsync(newUser, request.ConfirmUrlBase, cancellationToken);
+        await emailConfirmationSender.SendAsync(newUser, cancellationToken);
 
         var (accessToken, refreshToken, expiresAtUtc) = await tokenService.GenerateTokensAsync(newUser, cancellationToken);
 

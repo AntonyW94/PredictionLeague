@@ -56,9 +56,7 @@ public class SendScheduledRemindersCommandHandler(
             return;
         }
 
-        var baseUrl = string.IsNullOrWhiteSpace(_siteSettings.BaseUrl)
-            ? "https://www.thepredictions.co.uk"
-            : _siteSettings.BaseUrl.TrimEnd('/');
+        var baseUrl = _siteSettings.ResolvedBaseUrl;
         var predictionsUrl = $"{baseUrl}/predictions/{nextRound.Id}";
 
         foreach (var user in usersToChase)
