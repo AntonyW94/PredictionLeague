@@ -2,8 +2,6 @@
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
         <!-- NETSDK1198: Publish profile not found. Suppressed because publish profiles
              are only needed in the Web (server) project, not this WASM client project. -->
         <NoWarn>$(NoWarn);NETSDK1198</NoWarn>

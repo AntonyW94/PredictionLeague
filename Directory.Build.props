@@ -1,0 +1,33 @@
+<Project>
+
+  <!--
+    Solution-wide build settings. Applies to every project under the repo root,
+    including tests\ and tools\ThePredictions.DatabaseTools (all are in the solution
+    and already build clean under these settings in CI, which passes
+    /p:TreatWarningsAsErrors=true on the command line).
+
+    Do NOT weaken TreatWarningsAsErrors here. Suppress a specific diagnostic with a
+    targeted, commented NoWarn instead.
+  -->
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Makes the .editorconfig IDExxxx style/naming rules participate in the build
+         (so file-scoped namespaces, using placement and the naming conventions are
+         enforced as warnings, which TreatWarningsAsErrors then hardens into errors). -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!--
+      AnalysisLevel is left at the .NET 8 default ('latest' = minimal CA rule set).
+      Raising it to 'latest-recommended' is OWED follow-up work: it surfaces ~130+
+      analyser findings that cascade across Domain/Application/Web.Client/Infrastructure/
+      API/Web, including culture-sensitive identity-normalisation changes (CA1304/CA1311
+      on NormalizedUserName/RoleName) that must ship in their own reviewed, tested PR
+      rather than being buried in this tooling change. See the build-tooling plan.
+    -->
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+</Project>
