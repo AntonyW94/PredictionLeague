@@ -26,10 +26,7 @@ public abstract class AuthControllerBase(IConfiguration configuration) : ApiCont
     {
         var cookieOptions = BuildCookieOptions();
         if (persistent)
-        {
-            var expiryDays = double.Parse(configuration["JwtSettings:RefreshTokenExpiryDays"]!);
-            cookieOptions.Expires = DateTime.UtcNow.AddDays(expiryDays);
-        }
+            cookieOptions.Expires = PersistentCookieExpiry();
 
         try
         {
@@ -45,6 +42,21 @@ public abstract class AuthControllerBase(IConfiguration configuration) : ApiCont
     // Whether a refresh should re-issue a persistent cookie, read from the companion flag written at
     // login. Absent (a session predating remember-me) defaults to persistent, preserving old behaviour.
     protected bool ShouldPersistSession() => Request.Cookies[RememberMeCookieName] != "0";
+
+    // Writes only the remember-me preference cookie (not the refresh-token cookie). The external
+    // (Google) sign-in redirect uses this to mark the session persistent before the client exchanges
+    // the URL token at the refresh endpoint, so all Google logins are remembered by default.
+    protected void SetRememberMePreference(bool persistent)
+    {
+        var cookieOptions = BuildCookieOptions();
+        if (persistent)
+            cookieOptions.Expires = PersistentCookieExpiry();
+
+        Response.Cookies.Append(RememberMeCookieName, persistent ? "1" : "0", cookieOptions);
+    }
+
+    private DateTimeOffset PersistentCookieExpiry() =>
+        DateTime.UtcNow.AddDays(double.Parse(configuration["JwtSettings:RefreshTokenExpiryDays"]!));
 
     protected void DeleteTokenCookie()
     {

@@ -50,8 +50,9 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         if (result is not SuccessfulAuthenticationResponse success)
             return result.IsSuccess ? Ok(result) : BadRequest(result);
 
-        // A brand-new account stays signed in persistently (there is no remember-me choice at register).
-        SetTokenCookie(success.RefreshTokenForCookie, persistent: true);
+        // Session-scoped after register: the user didn't make a remember-me choice, so don't silently
+        // persist for 30 days. They can opt in via the checkbox next time they log in.
+        SetTokenCookie(success.RefreshTokenForCookie, persistent: false);
         return Ok(success);
 
     }
@@ -234,8 +235,9 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         if (result is not SuccessfulResetPasswordResponse success)
             return BadRequest(result);
 
-        // Auto-login after a reset stays persistent (no remember-me choice in this flow).
-        SetTokenCookie(success.RefreshTokenForCookie, persistent: true);
+        // Session-scoped auto-login after a reset (no remember-me choice in this flow); the user can
+        // opt in to being remembered on their next explicit login.
+        SetTokenCookie(success.RefreshTokenForCookie, persistent: false);
         return Ok(success);
     }
 }
