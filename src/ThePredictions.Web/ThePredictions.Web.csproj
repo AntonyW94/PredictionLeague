@@ -133,6 +133,7 @@ System.IO.File.WriteAllText(FilePath, content);
             <CssFilesToBundle Include="$(PublishCssDir)components\buttons.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\carousel.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\forms.css" />
+            <CssFilesToBundle Include="$(PublishCssDir)components\error-display.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\modals.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\rank-display.css" />
             <CssFilesToBundle Include="$(PublishCssDir)components\user-avatar.css" />

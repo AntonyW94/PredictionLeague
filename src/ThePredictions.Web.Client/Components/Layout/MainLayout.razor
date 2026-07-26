@@ -17,8 +17,11 @@
                     <ErrorContent Context="exception">
                         <ErrorDisplay Code="500"
                                       Title="Something went wrong"
+                                      Icon="bi-exclamation-triangle"
                                       Message="An unexpected error occurred. Try again, or refresh the page if it keeps happening.">
-                            <button class="btn green-button input-height" @onclick="RecoverFromError">Try again</button>
+                            <button class="btn green-button btn-input-height" @onclick="RecoverFromError">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Try again
+                            </button>
                             <a href="/" class="text-grey-500 text-decoration-none mt-2">Back to dashboard</a>
                         </ErrorDisplay>
                     </ErrorContent>

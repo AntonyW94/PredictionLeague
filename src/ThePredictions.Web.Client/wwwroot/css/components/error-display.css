@@ -1,0 +1,45 @@
+/* Styling for the shared ErrorDisplay card (404 / 403 / 500).
+   Colours come from design tokens and the message uses the .text-grey-500 utility so it inherits
+   the existing light/dark theme overrides - no theme-specific rules are needed here. */
+
+/* Vertically centre the card in the viewport for a balanced, focused error page. */
+.error-page {
+    align-items: center;
+}
+
+/* Slightly narrower and taller than a form card so the single message reads as a moment, not a form. */
+.error-card {
+    max-width: 480px;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+}
+
+/* Circular, brand-tinted badge that anchors the card and gives each error some personality. */
+.error-icon {
+    width: 88px;
+    height: 88px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--green-600-alpha-15);
+    color: var(--green-600);
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+/* Oversized status code - the visual hook of the page. */
+.error-code {
+    font-size: clamp(3rem, 12vw, 4.5rem);
+    line-height: 1;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.5rem;
+}
+
+/* Keep the supporting copy to a comfortable measure and centred under the heading. */
+.error-message {
+    max-width: 42ch;
+    margin-left: auto;
+    margin-right: auto;
+}
