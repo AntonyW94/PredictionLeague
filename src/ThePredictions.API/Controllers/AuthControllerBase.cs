@@ -8,21 +8,33 @@ public abstract class AuthControllerBase(IConfiguration configuration) : ApiCont
 {
     private const string RefreshTokenCookieName = "refreshToken";
 
+    // Companion flag cookie recording the user's "remember me" choice at login. The server can't
+    // otherwise tell whether a refresh-token cookie it receives was persistent or session-scoped, so
+    // the refresh endpoint reads this to re-issue the cookie with the same lifetime.
+    private const string RememberMeCookieName = "rememberMe";
+
     // Shared across the www/dev subdomains in real environments. Local development
     // (localhost / loopback IPs) can't match this domain, so the cookie falls back
     // to a host-only cookie there - see BuildCookieOptions.
     private const string SharedCookieDomain = ".thepredictions.co.uk";
 
-    protected void SetTokenCookie(string token)
+    // persistent = true keeps the user signed in across browser restarts (a dated cookie for the
+    // configured refresh-token lifetime); false writes a session cookie that the browser clears on
+    // close. The companion rememberMe cookie is written with the same lifetime so a later refresh
+    // can preserve the choice.
+    protected void SetTokenCookie(string token, bool persistent)
     {
-        var expiryDays = double.Parse(configuration["JwtSettings:RefreshTokenExpiryDays"]!);
-
         var cookieOptions = BuildCookieOptions();
-        cookieOptions.Expires = DateTime.UtcNow.AddDays(expiryDays);
+        if (persistent)
+        {
+            var expiryDays = double.Parse(configuration["JwtSettings:RefreshTokenExpiryDays"]!);
+            cookieOptions.Expires = DateTime.UtcNow.AddDays(expiryDays);
+        }
 
         try
         {
             Response.Cookies.Append(RefreshTokenCookieName, token, cookieOptions);
+            Response.Cookies.Append(RememberMeCookieName, persistent ? "1" : "0", cookieOptions);
         }
         catch (Exception ex)
         {
@@ -30,11 +42,17 @@ public abstract class AuthControllerBase(IConfiguration configuration) : ApiCont
         }
     }
 
+    // Whether a refresh should re-issue a persistent cookie, read from the companion flag written at
+    // login. Absent (a session predating remember-me) defaults to persistent, preserving old behaviour.
+    protected bool ShouldPersistSession() => Request.Cookies[RememberMeCookieName] != "0";
+
     protected void DeleteTokenCookie()
     {
         // A cookie can only be cleared by a Set-Cookie whose Domain/Path/Secure/SameSite
         // match the original, so reuse the same options the cookie was written with.
-        Response.Cookies.Delete(RefreshTokenCookieName, BuildCookieOptions());
+        var cookieOptions = BuildCookieOptions();
+        Response.Cookies.Delete(RefreshTokenCookieName, cookieOptions);
+        Response.Cookies.Delete(RememberMeCookieName, cookieOptions);
     }
 
     private CookieOptions BuildCookieOptions()

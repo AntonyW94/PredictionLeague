@@ -50,7 +50,8 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         if (result is not SuccessfulAuthenticationResponse success)
             return result.IsSuccess ? Ok(result) : BadRequest(result);
 
-        SetTokenCookie(success.RefreshTokenForCookie);
+        // A brand-new account stays signed in persistently (there is no remember-me choice at register).
+        SetTokenCookie(success.RefreshTokenForCookie, persistent: true);
         return Ok(success);
 
     }
@@ -103,7 +104,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         if (result is not SuccessfulAuthenticationResponse success)
             return Unauthorized(result);
 
-        SetTokenCookie(success.RefreshTokenForCookie);
+        SetTokenCookie(success.RefreshTokenForCookie, persistent: request.RememberMe);
         return Ok(result);
 
     }
@@ -166,7 +167,8 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
 
         logger.LogDebug("Refresh successful; setting new refresh token cookie.");
 
-        SetTokenCookie(success.RefreshTokenForCookie);
+        // Preserve the original remember-me choice (from the companion cookie) across token rotation.
+        SetTokenCookie(success.RefreshTokenForCookie, persistent: ShouldPersistSession());
         return Ok(success);
     }
 
@@ -232,7 +234,8 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         if (result is not SuccessfulResetPasswordResponse success)
             return BadRequest(result);
 
-        SetTokenCookie(success.RefreshTokenForCookie);
+        // Auto-login after a reset stays persistent (no remember-me choice in this flow).
+        SetTokenCookie(success.RefreshTokenForCookie, persistent: true);
         return Ok(success);
     }
 }
