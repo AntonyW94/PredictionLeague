@@ -4,7 +4,17 @@
 
 Not Started | **In Progress** | Complete
 
-> **Verified June 2026:** The reminder system is live - cron-triggered `SendScheduledRemindersCommand`/`Handler` with milestone timing (5d/3d/1d/6h/1h), per-user dedup, round `DisplayName`, and Brevo template 9 (Predictions Missing). Outstanding scope for this card is the richer urgency-based template redesign (e.g. `URGENCY` / `TIME_REMAINING` merge data), which is not yet built.
+> **Verified June 2026:** The reminder system is live - cron-triggered `SendScheduledRemindersCommand`/`Handler` with milestone timing (5d/3d/1d/6h/1h), per-user dedup, round `DisplayName`, and Brevo template 9 (Predictions Missing).
+>
+> **Code shipped (2026-07-25):** the handler now also sends `PREDICTIONS_URL`, `URGENCY`
+> (`relaxed`/`soon`/`urgent`) and `TIME_REMAINING` (human-readable, e.g. "6 hours"), computed
+> per user from the time left until their deadline (`ReminderUrgencyFormatter`). The existing
+> template ignores the new params harmlessly until it is redesigned to use them.
+>
+> **Outstanding (manual, owner):** redesign Brevo template 9 to use the urgency conditionals
+> and CTA (Task 2), then test each tier (Task 3). Both are Brevo-UI/API + live-send tasks,
+> intentionally not done in code - and template 9 is a live template, not to be modified without
+> the owner's go-ahead. The full template spec below is the guide for that work.
 
 ## Summary
 
@@ -222,11 +232,11 @@ If you prefer the Brevo drag-and-drop editor over raw HTML:
 
 ## Tasks
 
-| # | Task | Description | Type |
-|---|------|-------------|------|
-| 1 | [Code Changes](./01-code-changes.md) | Add `PREDICTIONS_URL`, `URGENCY`, and `TIME_REMAINING` to the handler | Code |
-| 2 | Brevo Template | Design and build the template in Brevo's editor | Manual |
-| 3 | Test | Send test emails for each urgency tier, verify links and conditional content | Manual |
+| # | Task | Description | Type | Status |
+|---|------|-------------|------|--------|
+| 1 | [Code Changes](./01-code-changes.md) | Add `PREDICTIONS_URL`, `URGENCY`, and `TIME_REMAINING` to the handler | Code | ✅ Done (2026-07-25) |
+| 2 | Brevo Template | Design and build the template in Brevo's editor | Manual | ⬜ Outstanding |
+| 3 | Test | Send test emails for each urgency tier, verify links and conditional content | Manual | ⬜ Outstanding |
 
 ## Dependencies
 
