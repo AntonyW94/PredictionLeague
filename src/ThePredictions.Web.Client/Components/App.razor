@@ -11,10 +11,28 @@
                     </div>
                 </div>
             </Authorizing>
-            <NotAuthorized>
-                <RedirectToLogin />
+            <NotAuthorized Context="authState">
+                @* Signed in but lacking permission (e.g. a non-admin hitting an admin route) gets a
+                   branded 403; an unauthenticated visitor is sent to log in as before. *@
+                @if (authState.User.Identity?.IsAuthenticated == true)
+                {
+                    <ErrorDisplay Code="403"
+                                  Title="Access denied"
+                                  Message="You don't have permission to view this page. If you think this is a mistake, get in touch." />
+                }
+                else
+                {
+                    <RedirectToLogin />
+                }
             </NotAuthorized>
         </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(MainLayout)">
+            <ErrorDisplay Code="404"
+                          Title="Page not found"
+                          Message="The page you're looking for doesn't exist or may have moved." />
+        </LayoutView>
+    </NotFound>
 </Router>

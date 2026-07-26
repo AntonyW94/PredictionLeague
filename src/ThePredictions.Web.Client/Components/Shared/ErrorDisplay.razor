@@ -1,0 +1,31 @@
+@* Branded, centred error block reused by the 404 (NotFound), 403 (NotAuthorized) and 500
+   (error-boundary) states. Renders on the app's purple background, so text is light. Pass a
+   ChildContent to supply custom actions (e.g. a retry button); otherwise a "Back to dashboard"
+   link is shown. Styling uses existing utility classes/tokens - no new CSS file. *@
+
+<div class="text-center d-flex flex-column justify-content-center align-items-center"
+     style="min-height:70vh;padding:2rem 1rem;">
+    <p class="fw-bold text-green-600 mb-2" style="font-size:clamp(3rem,12vw,5rem);line-height:1;">@Code</p>
+    <h1 class="text-white fw-bold mb-3">@Title</h1>
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <p class="text-white-50 mb-4" style="max-width:34rem;">@Message</p>
+    }
+    <div class="d-flex gap-2 flex-wrap justify-content-center">
+        @if (ChildContent is not null)
+        {
+            @ChildContent
+        }
+        else
+        {
+            <a href="/" class="btn green-button input-height px-4">Back to dashboard</a>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Code { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
