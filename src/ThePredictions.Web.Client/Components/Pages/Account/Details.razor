@@ -55,6 +55,12 @@
                                 <InputText id="phoneNumber" class="form-control" @bind-Value="_model.PhoneNumber" />
                                 <StyledValidationMessage For="@(() => _model.PhoneNumber!)" />
                             </div>
+
+                            <label for="marketingOptIn" class="consent-toggle mb-3 @(_model.MarketingOptIn ? "consent-toggle-active" : "")">
+                                <InputCheckbox id="marketingOptIn" class="consent-toggle-input" @bind-Value="_model.MarketingOptIn" />
+                                <i class="bi bi-check-lg consent-toggle-tick" aria-hidden="true"></i>
+                                <span>Send me occasional updates about new features.</span>
+                            </label>
                     </ChildContent>
                 </BaseFormComponent>
                 </div>
@@ -100,7 +106,8 @@
         {
             FirstName = _model!.FirstName,
             LastName = _model!.LastName,
-            PhoneNumber = _model.PhoneNumber
+            PhoneNumber = _model.PhoneNumber,
+            MarketingOptIn = _model.MarketingOptIn
         };
 
         return Http.PutAsJsonAsync("api/account/details", request);

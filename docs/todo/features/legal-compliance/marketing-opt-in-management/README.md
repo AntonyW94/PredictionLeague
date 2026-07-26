@@ -2,27 +2,44 @@
 
 ## Status
 
-Not Started | **In Progress** | Complete
+Not Started | **In Progress (account toggle shipped; Google sign-up capture outstanding)** | Complete
 
-> **Verified June 2026:** Foundation only. `ApplicationUser.MarketingOptInAtUtc` and registration-time consent capture (`RecordRegistrationConsent`) exist. Outstanding: a post-registration opt-in/out toggle on the account page, an update endpoint, and marketing-consent wiring for Google sign-up.
+> **Shipped (2026-07-25):** users can now change their marketing opt-in after registration from the
+> account page (`/account/details`). The toggle is pre-populated from their current
+> `MarketingOptInAtUtc` (NULL = off), and saving folds into the existing details update:
+> `ApplicationUser.SetMarketingOptIn` stamps `UtcNow` when ticked and clears it when unticked. This
+> makes marketing consent viewable, settable and revocable for **all** users, including Google
+> sign-ups (who can opt in here).
 
 ## Summary
 
-Lets users change their marketing opt-in choice after registration, and extends the opt-in flow to cover Google sign-up. Required for GDPR compliance — marketing consent must be revocable, and it must be available to all sign-up paths, not just email.
+Lets users change their marketing opt-in choice after registration, and extends the opt-in flow to
+cover Google sign-up. Required for GDPR compliance - marketing consent must be revocable, and it
+must be available to all sign-up paths.
 
 ## Priority
 
-**High** (compliance gap before onboarding outside friends-and-family)
+**Medium** (the compliance-critical "revocable" part is now covered; what remains is capturing the
+choice *at* Google sign-up time).
 
-## Requirements
+## Outstanding requirement
 
-- [ ] Marketing opt-in toggle on the Account Settings page (`/account/details`) using the same button-style toggle as Register
-- [ ] API endpoint to update `MarketingOptInAtUtc` (set to `UtcNow` when ticked, `NULL` when unticked)
-- [ ] Pre-populate the toggle from the user's current `MarketingOptInAtUtc` value (NULL = off)
-- [ ] Wire the marketing checkbox on the Register page through to Google sign-up (currently it only applies to email sign-up — Google flow always defaults to NULL). Likely via cookie set before redirect, read by `LoginWithGoogleCommandHandler` on callback.
+- [ ] **Capture the marketing choice during Google sign-up.** The Register page's marketing checkbox
+      only applies to email sign-up; the Google flow currently defaults new users to `NULL` (opted
+      out - a safe default). To capture the user's choice at Google sign-up, the checkbox value would
+      need to survive the OAuth redirect round-trip.
 
 ## Technical Notes
 
-- Existing column: `[AspNetUsers].[MarketingOptInAtUtc]` (datetime2, nullable). No schema change needed.
-- Existing domain hook: `ApplicationUser.RecordRegistrationConsent` already toggles the column. A separate `SetMarketingOptIn(bool, DateTime)` method is the cleanest extension for the post-registration toggle so the registration-only `RecordRegistrationConsent` keeps a tight scope.
-- This loses the original opt-in date if a user toggles off then on again. If audit-trail granularity is ever needed, add a separate `MarketingOptOutAtUtc` column at that point.
+- **Approach for the residual:** set a short-lived first-party cookie with the marketing choice on the
+  client immediately before redirecting to Google, then read it in `ExternalAuthController` on the
+  callback and pass it into `LoginWithGoogleCommand` so `CreateNewUserFromExternalLogin` records the
+  chosen consent instead of the hardcoded `false`. Mind the OAuth redirect round-trip: the cookie must
+  be `SameSite=Lax` (top-level navigation) to be readable on return, and it only applies to **new**
+  Google users (linking an existing account must not change their consent).
+- This is deliberately split from the account-toggle work: it touches the external-auth flow and
+  can't be unit-tested end-to-end the way the account toggle can. It is a lower priority because the
+  default (opted out) is GDPR-safe and users can opt in from the account page at any time.
+- Existing column: `[AspNetUsers].[MarketingOptInAtUtc]` (datetime2, nullable). No schema change.
+- Toggling off then on again loses the original opt-in date. If audit-trail granularity is ever
+  needed, add a separate `MarketingOptOutAtUtc` column at that point.

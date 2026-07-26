@@ -74,7 +74,7 @@ July 2026 review plans, all fully specified with decisions already made:
 | per-round-snapshots | Still wanted, now round emails shipped without it? |
 | data-export (GDPR) | What goes in the export bundle |
 | remember-me | Persistent-login cookie lifetime |
-| marketing-opt-in-management | Where the account toggle lives. **Partial:** `MarketingOptInAtUtc` + registration consent exist; the account-page toggle + wiring are not built. |
+| marketing-opt-in-management | Account-page toggle + endpoint wiring shipped 2026-07-25 (consent now revocable for all users). Residual: capturing the choice during Google sign-up (OAuth cookie round-trip) - not hands-off. |
 | audit-logging / admin-activity-log | Which events to record |
 | api-key-rotation | Rotation process (dual-key window?) |
 | staging-environment | Separate staging, or is dev enough? |

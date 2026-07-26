@@ -5,5 +5,6 @@ public record UserDetails(
     string LastName,
     string Email,
     string? PhoneNumber,
-    string PreferredTheme
+    string PreferredTheme,
+    bool MarketingOptIn
 );

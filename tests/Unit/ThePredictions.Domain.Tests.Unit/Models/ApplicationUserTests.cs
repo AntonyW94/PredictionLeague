@@ -319,4 +319,51 @@ public class ApplicationUserTests
     }
 
     #endregion
+
+    #region SetMarketingOptIn
+
+    [Fact]
+    public void SetMarketingOptIn_ShouldStampMarketingTimestamp_WhenOptedIn()
+    {
+        // Arrange
+        var user = ApplicationUser.Create("John", "Doe", "john@example.com");
+        var nowUtc = new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc);
+
+        // Act
+        user.SetMarketingOptIn(marketingOptIn: true, nowUtc);
+
+        // Assert
+        user.MarketingOptInAtUtc.Should().Be(nowUtc);
+    }
+
+    [Fact]
+    public void SetMarketingOptIn_ShouldClearMarketingTimestamp_WhenOptedOut()
+    {
+        // Arrange
+        var user = ApplicationUser.Create("John", "Doe", "john@example.com");
+        user.SetMarketingOptIn(marketingOptIn: true, new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc));
+
+        // Act
+        user.SetMarketingOptIn(marketingOptIn: false, new DateTime(2026, 6, 1, 12, 0, 0, DateTimeKind.Utc));
+
+        // Assert
+        user.MarketingOptInAtUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetMarketingOptIn_ShouldNotChangeTermsAcceptance()
+    {
+        // Arrange - a registered user whose terms were accepted at registration
+        var user = ApplicationUser.Create("John", "Doe", "john@example.com");
+        var registeredUtc = new DateTime(2026, 4, 28, 10, 0, 0, DateTimeKind.Utc);
+        user.RecordRegistrationConsent(marketingOptIn: false, registeredUtc);
+
+        // Act - later toggling marketing must leave the terms timestamp alone
+        user.SetMarketingOptIn(marketingOptIn: true, new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc));
+
+        // Assert
+        user.TermsAcceptedAtUtc.Should().Be(registeredUtc);
+    }
+
+    #endregion
 }
