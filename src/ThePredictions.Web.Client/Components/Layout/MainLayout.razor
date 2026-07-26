@@ -15,10 +15,12 @@
                         @Body
                     </ChildContent>
                     <ErrorContent Context="exception">
-                        <div class="text-center py-5">
-                            <p class="text-white">Something went wrong. Please try refreshing the page.</p>
-                            <button class="btn btn-outline-light mt-2" @onclick="RecoverFromError">Try Again</button>
-                        </div>
+                        <ErrorDisplay Code="500"
+                                      Title="Something went wrong"
+                                      Message="An unexpected error occurred. Try again, or refresh the page if it keeps happening.">
+                            <button class="btn green-button input-height" @onclick="RecoverFromError">Try again</button>
+                            <a href="/" class="text-grey-500 text-decoration-none mt-2">Back to dashboard</a>
+                        </ErrorDisplay>
                     </ErrorContent>
                 </LoggingErrorBoundary>
             </article>

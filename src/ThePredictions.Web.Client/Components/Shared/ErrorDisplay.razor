@@ -1,0 +1,33 @@
+@* Branded, centred error card reused by the 404 (NotFound), 403 (NotAuthorized) and 500
+   (error-boundary) states. Renders inside the app's `form-container` card so the text picks up the
+   same light/dark theme overrides as the login/register cards (bare text-white would be invisible on
+   the light-theme background). Pass ChildContent for custom actions (e.g. a retry button); otherwise
+   a "Back to dashboard" link is shown. Uses existing classes/tokens - no new CSS. *@
+
+<div class="page-container">
+    <div class="form-container shadow text-center">
+        <p class="fw-bold text-green-600 mb-2" style="font-size:clamp(3rem,12vw,4.5rem);line-height:1;">@Code</p>
+        <h1 class="text-purple-1000 fw-bold mb-3">@Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Message))
+        {
+            <p class="text-purple-1000 mb-4">@Message</p>
+        }
+        <div class="d-grid gap-2">
+            @if (ChildContent is not null)
+            {
+                @ChildContent
+            }
+            else
+            {
+                <a href="/" class="btn green-button input-height">Back to dashboard</a>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Code { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

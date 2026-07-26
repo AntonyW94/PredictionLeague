@@ -70,7 +70,6 @@ July 2026 review plans, all fully specified with decisions already made:
 | football-api-resilience (caching) | Acceptable staleness TTLs; user banner yes/no. **Partial:** retry/health-check resilience already shipped; only the read-through cache + degraded banner remain. |
 | caching-strategy | Which endpoints + TTLs (safe defaults: teams/seasons) |
 | pagination | Default page size + response envelope shape |
-| error-pages | Tone/copy, or just "match the site" |
 | per-round-snapshots | Still wanted, now round emails shipped without it? |
 | data-export (GDPR) | What goes in the export bundle |
 | marketing-opt-in-management | Account-page toggle + endpoint wiring shipped 2026-07-25 (consent now revocable for all users). Residual: capturing the choice during Google sign-up (OAuth cookie round-trip) - not hands-off. |
