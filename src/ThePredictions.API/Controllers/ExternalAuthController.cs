@@ -81,6 +81,10 @@ public class ExternalAuthController(ILogger<ExternalAuthController> logger, IMed
         switch (result)
         {
             case SuccessfulAuthenticationResponse success:
+                // Google sign-ins are always remembered: mark the session persistent so the follow-up
+                // refresh-token exchange (the client posts the URL token) writes a persistent cookie,
+                // regardless of any remember-me preference left over from a prior email login.
+                SetRememberMePreference(persistent: true);
                 var encodedToken = WebUtility.UrlEncode(success.RefreshTokenForCookie);
                 return Redirect($"{returnUrl}?refreshToken={encodedToken}&source={source}");
 

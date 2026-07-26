@@ -73,7 +73,11 @@
                 <StyledValidationMessage For="@(() => _model.Password)" />
             </div>
 
-            <div class="text-end mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <label class="d-flex align-items-center gap-2 text-purple-1000 small mb-0" style="cursor:pointer;">
+                    <InputCheckbox @bind-Value="_model.RememberMe" />
+                    <span>Remember me</span>
+                </label>
                 <NavLink href="/authentication/forgot-password" class="text-grey-500 small text-decoration-none">
                     Forgot password?
                 </NavLink>

@@ -46,7 +46,6 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 | # | Item | Effort | Why | Plan |
 |---|------|--------|-----|------|
 | 18 | Copyright footer | Trivial | Needed before any public users see the site | [Outline](features/legal-compliance/copyright-footer/README.md) |
-| 19 | Remember me | Low | Users expect persistent login | [Outline](features/authentication/remember-me/README.md) |
 | 20 | Error pages (404, 500) | Low | Basic error page exists but no specific 404/500 pages | [Outline](features/user-experience/error-pages/README.md) |
 | 21 | Privacy & terms pages | Low | Legal requirement for any site collecting user data | [Outline](features/legal-compliance/privacy-terms-pages/README.md) |
 | 22 | Signup legal checkboxes | Low | Legal requirement; depends on #21 existing first | [Outline](features/legal-compliance/signup-legal-checkboxes/README.md) |
@@ -169,3 +168,4 @@ These items from the original backlog are already implemented:
 | Marketing opt-in toggle | Users can change (and revoke) marketing consent on `/account/details`; folds into the details save via `ApplicationUser.SetMarketingOptIn`, pre-populated from `MarketingOptInAtUtc`. Plan trimmed to the remaining Google-signup capture. |
 | Reminder email urgency params + template | The reminder handler sends `PREDICTIONS_URL`, `URGENCY` and `TIME_REMAINING` (`ReminderUrgencyFormatter`); Brevo template 9 was redesigned and pushed via the API with urgency banners/pills/copy and a conditional subject. Only an optional owner test-send remains. |
 | Email logo refresh (all templates) | All nine Brevo templates + their repo source copies swapped from the old `Logo.png` to the new `logo-header-dark.png` lockup (wordmark now in the logo). Pushed via the API. |
+| Remember me | Login has a "Remember me" checkbox: ticked = persistent refresh-token cookie (survives browser restart), unticked = session cookie. A companion `rememberMe` cookie preserves the choice across token refresh. Register and reset-password auto-login are session-scoped (no explicit choice made); Google sign-ins are always persistent by default. Plan removed. |

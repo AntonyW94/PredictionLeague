@@ -50,7 +50,9 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         if (result is not SuccessfulAuthenticationResponse success)
             return result.IsSuccess ? Ok(result) : BadRequest(result);
 
-        SetTokenCookie(success.RefreshTokenForCookie);
+        // Session-scoped after register: the user didn't make a remember-me choice, so don't silently
+        // persist for 30 days. They can opt in via the checkbox next time they log in.
+        SetTokenCookie(success.RefreshTokenForCookie, persistent: false);
         return Ok(success);
 
     }
@@ -103,7 +105,7 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         if (result is not SuccessfulAuthenticationResponse success)
             return Unauthorized(result);
 
-        SetTokenCookie(success.RefreshTokenForCookie);
+        SetTokenCookie(success.RefreshTokenForCookie, persistent: request.RememberMe);
         return Ok(result);
 
     }
@@ -166,7 +168,8 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
 
         logger.LogDebug("Refresh successful; setting new refresh token cookie.");
 
-        SetTokenCookie(success.RefreshTokenForCookie);
+        // Preserve the original remember-me choice (from the companion cookie) across token rotation.
+        SetTokenCookie(success.RefreshTokenForCookie, persistent: ShouldPersistSession());
         return Ok(success);
     }
 
@@ -232,7 +235,9 @@ public class AuthenticationController(ILogger<AuthenticationController> logger, 
         if (result is not SuccessfulResetPasswordResponse success)
             return BadRequest(result);
 
-        SetTokenCookie(success.RefreshTokenForCookie);
+        // Session-scoped auto-login after a reset (no remember-me choice in this flow); the user can
+        // opt in to being remembered on their next explicit login.
+        SetTokenCookie(success.RefreshTokenForCookie, persistent: false);
         return Ok(success);
     }
 }
