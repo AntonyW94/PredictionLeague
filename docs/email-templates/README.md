@@ -19,7 +19,7 @@ of cases, so both are listed.
 | Brevo template name | Config key | File | Brevo id | Trigger (handler) | Merge tags (`{{ params.X }}`) | CTA link |
 |---------------------|-----------|------|---------|-------------------|-------------------------------|----------|
 | Join League Request | `JoinLeagueRequest` | [join-league-request.html](join-league-request.html) | 10 | `NotifyLeagueAdminOfJoinRequestCommandHandler` | `ADMIN_NAME`, `FIRST_NAME`, `LAST_NAME`, `LEAGUE_NAME`, `SEASON_NAME`, `DASHBOARD_URL` | `{{ params.DASHBOARD_URL }}` → `/dashboard?tab=admin` |
-| Predictions Missing | `PredictionsMissing` | [predictions-missing.html](predictions-missing.html) | 9 | `SendScheduledRemindersCommandHandler` | `FIRST_NAME`, `ROUND_NAME`, `DEADLINE`, `PREDICTIONS_URL` | `{{ params.PREDICTIONS_URL }}` → `/predictions/{roundId}` |
+| Predictions Missing | `PredictionsMissing` | [predictions-missing.html](predictions-missing.html) | 9 | `SendScheduledRemindersCommandHandler` | `FIRST_NAME`, `ROUND_NAME`, `DEADLINE`, `PREDICTIONS_URL`, `URGENCY`, `TIME_REMAINING` | `{{ params.PREDICTIONS_URL }}` → `/predictions/{roundId}` |
 | League Join Approved | `LeagueJoinApproved` | [league-join-approved.html](league-join-approved.html) | 5 | `NotifyMemberOfLeagueApprovalCommandHandler` | `FIRST_NAME`, `LEAGUE_NAME`, `SEASON_NAME`, `LEAGUE_URL` | `{{ params.LEAGUE_URL }}` → `/leagues/{id}/dashboard` |
 | Confirm Email Address | `EmailConfirmation` | [email-confirmation.html](email-confirmation.html) | 6 | `EmailConfirmationSender` | `FIRST_NAME`, `CONFIRM_LINK` | `{{ params.CONFIRM_LINK }}` |
 | Password Reset – Google User | `PasswordResetGoogleUser` | [password-reset-google-user.html](password-reset-google-user.html) | 7 | `RequestPasswordResetCommandHandler` | `FIRST_NAME`, `LOGIN_LINK` | `{{ params.LOGIN_LINK }}` |
@@ -54,8 +54,9 @@ Copy an existing file and keep these conventions:
    horizontal scroll), `border:1px solid #F0EAF5`, `border-radius:16px`, soft shadow.
 4. **Outlook lock:** wrap the card in the MSO ghost table
    (`<!--[if mso]><table width="600">…<![endif]-->`) since Outlook ignores `max-width`.
-5. **Header:** purple gradient `linear-gradient(135deg,#3D195B 0%,#2C0A3D 100%)`, with the
-   logo + "The Predictions" wordmark lockup (logo `alt=""` because the wordmark text is present).
+5. **Header:** purple gradient `linear-gradient(135deg,#3D195B 0%,#2C0A3D 100%)`, with the single
+   `logo-header-dark.png` lockup (the dark-background variant, ~202x40). The wordmark is part of the
+   logo now, so there is **no** separate "The Predictions" text and the image takes `alt="The Predictions"`.
 6. **Hero (centred):** a pill + an `<h1>` in `#2C0A3D`, **centre-aligned** - put `align="center"` and
    `text-align:center` on the hero `<td>`. Every template opens with a centred hero for a consistent
    feel; the celebratory Prize Won email also adds a large emoji above the pill. Everything *below* the

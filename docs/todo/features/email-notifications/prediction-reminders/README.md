@@ -2,19 +2,23 @@
 
 ## Status
 
-Not Started | **In Progress** | Complete
+Not Started | In Progress | **Complete (template live; optional test-send verification remaining)**
 
 > **Verified June 2026:** The reminder system is live - cron-triggered `SendScheduledRemindersCommand`/`Handler` with milestone timing (5d/3d/1d/6h/1h), per-user dedup, round `DisplayName`, and Brevo template 9 (Predictions Missing).
 >
 > **Code shipped (2026-07-25):** the handler now also sends `PREDICTIONS_URL`, `URGENCY`
 > (`relaxed`/`soon`/`urgent`) and `TIME_REMAINING` (human-readable, e.g. "6 hours"), computed
-> per user from the time left until their deadline (`ReminderUrgencyFormatter`). The existing
-> template ignores the new params harmlessly until it is redesigned to use them.
+> per user from the time left until their deadline (`ReminderUrgencyFormatter`).
 >
-> **Outstanding (manual, owner):** redesign Brevo template 9 to use the urgency conditionals
-> and CTA (Task 2), then test each tier (Task 3). Both are Brevo-UI/API + live-send tasks,
-> intentionally not done in code - and template 9 is a live template, not to be modified without
-> the owner's go-ahead. The full template spec below is the guide for that work.
+> **Brevo template shipped (2026-07-25):** template 9 was redesigned and pushed via the API - the
+> new `The Predictions` logo lockup (`logo-header-dark.png`), an urgency banner (amber for `soon`,
+> red for `urgent`, none for `relaxed`), a matching pill/heading/body per tier, a Time-remaining row
+> in the info panel, and a conditional subject line - all driven by `{% if params.URGENCY %}`. The
+> source copy `docs/email-templates/predictions-missing.html` and the README merge-tag row were
+> updated to match. If `URGENCY` is missing it falls through to `relaxed`, a safe default.
+>
+> **Optional (owner):** a client-render test send of each tier via `/admin/email-tests` before the
+> next season starts. Not blocking - no reminders send between seasons.
 
 ## Summary
 
@@ -235,8 +239,8 @@ If you prefer the Brevo drag-and-drop editor over raw HTML:
 | # | Task | Description | Type | Status |
 |---|------|-------------|------|--------|
 | 1 | [Code Changes](./01-code-changes.md) | Add `PREDICTIONS_URL`, `URGENCY`, and `TIME_REMAINING` to the handler | Code | ✅ Done (2026-07-25) |
-| 2 | Brevo Template | Design and build the template in Brevo's editor | Manual | ⬜ Outstanding |
-| 3 | Test | Send test emails for each urgency tier, verify links and conditional content | Manual | ⬜ Outstanding |
+| 2 | Brevo Template | Redesign template 9 (urgency conditionals, banner, new logo, conditional subject) | API | ✅ Done (2026-07-25, pushed via API) |
+| 3 | Test | Send test emails for each urgency tier, verify links and conditional content | Manual | ⬜ Optional owner verify (via `/admin/email-tests`) before next season |
 
 ## Dependencies
 

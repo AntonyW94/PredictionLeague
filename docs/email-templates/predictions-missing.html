@@ -1,10 +1,9 @@
-<!-- Brevo template id 9 · "Predictions Missing" (config key: PredictionsMissing)
-     Subject:      {{ params.FIRST_NAME }}, you haven't submitted your predictions yet!
-     Preview text: Your score predictions for {{ params.ROUND_NAME }} are due soon
-     Merge tags:   FIRST_NAME, ROUND_NAME, DEADLINE, PREDICTIONS_URL -->
-<html><body><!-- Preheader: fills the inbox snippet, hidden in the body -->
+<!-- Brevo template id 9 - "Predictions Missing" (config key: PredictionsMissing)
+     Subject:      conditional on URGENCY (relaxed / soon / urgent)
+     Preview text: conditional on URGENCY
+     Merge tags:   FIRST_NAME, ROUND_NAME, DEADLINE, PREDICTIONS_URL, URGENCY, TIME_REMAINING --><html><body>
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F8F5FA;opacity:0;">
-  Your score predictions for {{ params.ROUND_NAME }} are due soon.
+  {% if params.URGENCY == "urgent" %}Only {{ params.TIME_REMAINING }} left to submit your {{ params.ROUND_NAME }} predictions.{% elif params.URGENCY == "soon" %}Your {{ params.ROUND_NAME }} predictions close in {{ params.TIME_REMAINING }}.{% else %}Your {{ params.ROUND_NAME }} predictions are due soon.{% endif %}
   &#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;&#8203;
 </div>
 
@@ -19,24 +18,30 @@
         <!-- Header -->
         <tr>
           <td style="background:#3D195B;background:linear-gradient(135deg,#3D195B 0%,#2C0A3D 100%);padding:22px 32px;">
-            <table role="presentation" cellpadding="0" cellspacing="0">
-              <tr>
-                <td valign="middle" style="padding-right:12px;">
-                  <img src="https://www.thepredictions.co.uk/images/Logo.png" alt="" width="40" height="40" style="display:block;border:0;outline:none;text-decoration:none;width:40px;height:40px;border-radius:8px;">
-                </td>
-                <td valign="middle" style="color:#ffffff;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;letter-spacing:.2px;">
-                  The Predictions
-                </td>
-              </tr>
-            </table>
+            <img src="https://www.thepredictions.co.uk/images/logo-header-dark.png" alt="The Predictions" width="202" height="40" style="display:block;border:0;outline:none;text-decoration:none;width:202px;height:40px;">
           </td>
         </tr>
 
+        <!-- Urgency banner (soon / urgent only) -->
+        {% if params.URGENCY == "urgent" %}
+        <tr><td style="background:#DC3545;padding:12px 16px;text-align:center;color:#ffffff;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-weight:700;font-size:16px;">&#9888;&#65039; Only {{ params.TIME_REMAINING }} left!</td></tr>
+        {% elif params.URGENCY == "soon" %}
+        <tr><td style="background:#FFC107;padding:12px 16px;text-align:center;color:#663C00;font-family:'Segoe UI',Arial,Helvetica,sans-serif;font-weight:700;font-size:16px;">&#9203; Predictions close in {{ params.TIME_REMAINING }}</td></tr>
+        {% endif %}
+
         <!-- Hero -->
         <tr>
-          <td align="center" style="padding:36px 32px 8px;text-align:center;">
-            <span style="display:inline-block;background:#FFF4E5;color:#B54708;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;">&#9203; Reminder</span>
+          <td align="center" style="padding:32px 32px 8px;text-align:center;">
+            {% if params.URGENCY == "urgent" %}
+            <span style="display:inline-block;background:#FDECEC;color:#A32D2D;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;">&#9888;&#65039; Last chance</span>
+            <h1 style="margin:18px 0 0;color:#2C0A3D;font-size:26px;line-height:1.25;font-weight:800;">Last chance to predict</h1>
+            {% elif params.URGENCY == "soon" %}
+            <span style="display:inline-block;background:#FFF4E5;color:#B54708;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;">&#9203; Closing soon</span>
+            <h1 style="margin:18px 0 0;color:#2C0A3D;font-size:26px;line-height:1.25;font-weight:800;">Don't miss {{ params.ROUND_NAME }}</h1>
+            {% else %}
+            <span style="display:inline-block;background:#F0EAF5;color:#5D3E85;font-size:13px;font-weight:700;padding:6px 12px;border-radius:999px;">&#9203; Reminder</span>
             <h1 style="margin:18px 0 0;color:#2C0A3D;font-size:26px;line-height:1.25;font-weight:800;">Predictions due soon</h1>
+            {% endif %}
           </td>
         </tr>
 
@@ -44,7 +49,13 @@
         <tr>
           <td style="padding:16px 32px 8px;color:#475467;font-size:16px;line-height:1.6;">
             <p style="margin:0 0 16px;">Hi {{ params.FIRST_NAME }},</p>
-            <p style="margin:0 0 20px;">This is a friendly reminder to submit your predictions before the deadline below. Don't miss out on points!</p>
+            {% if params.URGENCY == "urgent" %}
+            <p style="margin:0 0 20px;">This is your final reminder - <strong>{{ params.ROUND_NAME }}</strong> predictions close in just <strong>{{ params.TIME_REMAINING }}</strong>. Submit now or you'll miss the round entirely.</p>
+            {% elif params.URGENCY == "soon" %}
+            <p style="margin:0 0 20px;">Time's ticking - you haven't submitted your <strong>{{ params.ROUND_NAME }}</strong> predictions yet, and the deadline is <strong>{{ params.TIME_REMAINING }}</strong> away. Get them in now.</p>
+            {% else %}
+            <p style="margin:0 0 20px;">Just a heads-up - your predictions for <strong>{{ params.ROUND_NAME }}</strong> are open. You've got <strong>{{ params.TIME_REMAINING }}</strong> to get them in. Don't miss out on points!</p>
+            {% endif %}
           </td>
         </tr>
 
@@ -57,7 +68,9 @@
                   <p style="margin:0 0 4px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">Round</p>
                   <p style="margin:0 0 14px;color:#2C0A3D;font-size:17px;font-weight:700;">{{ params.ROUND_NAME }}</p>
                   <p style="margin:0 0 4px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">Deadline</p>
-                  <p style="margin:0;color:#2C0A3D;font-size:17px;font-weight:700;">{{ params.DEADLINE }}</p>
+                  <p style="margin:0 0 14px;color:#2C0A3D;font-size:17px;font-weight:700;">{{ params.DEADLINE }}</p>
+                  <p style="margin:0 0 4px;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">Time remaining</p>
+                  <p style="margin:0;color:#2C0A3D;font-size:17px;font-weight:700;">{{ params.TIME_REMAINING }}</p>
                 </td>
               </tr>
             </table>
