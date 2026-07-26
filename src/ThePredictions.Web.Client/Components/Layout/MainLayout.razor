@@ -18,8 +18,8 @@
                         <ErrorDisplay Code="500"
                                       Title="Something went wrong"
                                       Message="An unexpected error occurred. Try again, or refresh the page if it keeps happening.">
-                            <button class="btn green-button input-height px-4" @onclick="RecoverFromError">Try again</button>
-                            <a href="/" class="btn btn-outline-light input-height px-4">Back to dashboard</a>
+                            <button class="btn green-button input-height" @onclick="RecoverFromError">Try again</button>
+                            <a href="/" class="text-grey-500 text-decoration-none mt-2">Back to dashboard</a>
                         </ErrorDisplay>
                     </ErrorContent>
                 </LoggingErrorBoundary>
