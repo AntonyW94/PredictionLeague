@@ -61,12 +61,16 @@ public class SendScheduledRemindersCommandHandler(
 
         foreach (var user in usersToChase)
         {
+            var timeRemaining = user.DeadlineUtc - nowUtc;
+
             var parameters = new
             {
                 FIRST_NAME = user.FirstName,
                 ROUND_NAME = user.RoundName,
                 DEADLINE = dateFormatter.FormatDeadline(user.DeadlineUtc),
-                PREDICTIONS_URL = predictionsUrl
+                PREDICTIONS_URL = predictionsUrl,
+                URGENCY = ReminderUrgencyFormatter.GetUrgencyTier(timeRemaining),
+                TIME_REMAINING = ReminderUrgencyFormatter.FormatTimeRemaining(timeRemaining)
             };
             await emailService.SendTemplatedEmailAsync(user.Email, templateId.Value, parameters);
 

@@ -90,7 +90,7 @@ For Phase 2, the prize-won WhatsApp portion is gated behind Phase 4. Build the e
 
 | # | Plan | Status |
 |---|---|---|
-| 9 | [Prediction reminder redesign](../email-notifications/prediction-reminders/README.md) - extended to send WhatsApp at T-3h to opted-in users alongside the email | Partially planned |
+| 9 | Prediction reminder - the email redesign shipped (2026-07-25, plan removed); the remaining comms work is extending it to send WhatsApp at T-3h to opted-in users alongside the email | WhatsApp extension not started |
 | 10 | Add WhatsApp send to prize-won notification (re-uses Phase 4 infra) | Not Started |
 
 ### Phase 6 - Observability
