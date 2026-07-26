@@ -44,7 +44,7 @@ public class AccountController(IMediator mediator) : ApiControllerBase
         [FromBody, SwaggerParameter("Updated profile information", Required = true)] UpdateUserDetailsRequest request,
         CancellationToken cancellationToken)
     {
-        var command = new UpdateUserDetailsCommand(CurrentUserId, request.FirstName, request.LastName, request.PhoneNumber);
+        var command = new UpdateUserDetailsCommand(CurrentUserId, request.FirstName, request.LastName, request.PhoneNumber, request.MarketingOptIn);
         await mediator.Send(command, cancellationToken);
 
         return NoContent();

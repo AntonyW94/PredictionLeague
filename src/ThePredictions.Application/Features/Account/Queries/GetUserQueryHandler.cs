@@ -14,7 +14,8 @@ public class GetUserQueryHandler(IApplicationReadDbConnection dbConnection) : IR
                 [LastName],
                 [Email],
                 [PhoneNumber],
-                [PreferredTheme]
+                [PreferredTheme],
+                CAST(CASE WHEN [MarketingOptInAtUtc] IS NOT NULL THEN 1 ELSE 0 END AS bit) AS MarketingOptIn
             FROM [AspNetUsers]
             WHERE [Id] = @UserId;";
 

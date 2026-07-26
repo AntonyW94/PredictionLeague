@@ -40,6 +40,14 @@ public class ApplicationUser : IdentityUser
         MarketingOptInAtUtc = marketingOptIn ? nowUtc : null;
     }
 
+    // Changes the marketing opt-in after registration (e.g. from the account page). Stamps the opt-in
+    // time when ticked and clears it when unticked. Kept separate from RecordRegistrationConsent so the
+    // registration-only terms acceptance is not touched here.
+    public void SetMarketingOptIn(bool marketingOptIn, DateTime nowUtc)
+    {
+        MarketingOptInAtUtc = marketingOptIn ? nowUtc : null;
+    }
+
     private static void Validate(string firstName, string lastName)
     {
         Guard.Against.NullOrWhiteSpace(firstName);

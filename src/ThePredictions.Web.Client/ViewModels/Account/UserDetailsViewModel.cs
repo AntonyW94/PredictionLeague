@@ -12,6 +12,7 @@ public class UserDetailsViewModel
     public string LastName { get; set; } = string.Empty;
     public string Email { get; } = string.Empty;
     public string? PhoneNumber { get; set; }
+    public bool MarketingOptIn { get; set; }
 
     public UserDetailsViewModel(UserDetails dto)
     {
@@ -19,6 +20,7 @@ public class UserDetailsViewModel
         LastName = dto.LastName;
         Email = dto.Email;
         PhoneNumber = dto.PhoneNumber;
+        MarketingOptIn = dto.MarketingOptIn;
     }
 
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
