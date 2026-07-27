@@ -32,6 +32,9 @@ opens the native share sheet so it can be sent to anyone.
       abbreviation-badge fallback when a logo is missing or cannot be decoded.
 - [x] "How I did" state: once a match is scored the card shows the actual score and
       colour-codes the pick (exact / correct-result / incorrect).
+- [x] Real brand logo in the card header (embedded resource), with **light and dark**
+      colour schemes that mirror the player's selected UI theme: the client passes its
+      active theme when Share is tapped, falling back to the user's saved `PreferredTheme`.
 - [x] Share button on the Active Rounds `RoundCard` footer, shown only when the
       player has predicted **and** the browser supports the Web Share API (files),
       with a download fallback otherwise.

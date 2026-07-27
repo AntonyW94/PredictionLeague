@@ -28,6 +28,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Brand logos composited into the prediction share card (see ShareCardRenderer). Embedded
+             so the framework-dependent publish always has them regardless of the web host layout. -->
+        <EmbeddedResource Include="Assets\logo-header-dark.png" />
+        <EmbeddedResource Include="Assets\logo-header-light.png" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\ThePredictions.Application\ThePredictions.Application.csproj" />
         <ProjectReference Include="..\ThePredictions.Contracts\ThePredictions.Contracts.csproj" />
     </ItemGroup>

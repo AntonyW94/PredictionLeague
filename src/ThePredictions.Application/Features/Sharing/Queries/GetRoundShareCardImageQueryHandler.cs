@@ -20,7 +20,8 @@ public class GetRoundShareCardImageQueryHandler(
                 r.[DisplayName] AS RoundDisplayName,
                 s.[Name] AS SeasonName,
                 c.[Type] AS CompetitionType,
-                u.[FirstName] AS PlayerFirstName
+                u.[FirstName] AS PlayerFirstName,
+                u.[PreferredTheme]
             FROM
                 [Rounds] r
             JOIN
@@ -109,7 +110,14 @@ public class GetRoundShareCardImageQueryHandler(
 
         var playerName = string.IsNullOrWhiteSpace(round.PlayerFirstName) ? null : round.PlayerFirstName;
 
-        var model = new ShareCardModel(playerName, round.SeasonName, roundLabel, matches);
+        // The theme the client is showing wins; fall back to the saved preference, then to light
+        // (the app's default). Only an explicit "dark" produces the dark card.
+        var themeValue = string.IsNullOrWhiteSpace(request.Theme) ? round.PreferredTheme : request.Theme;
+        var theme = string.Equals(themeValue, "dark", StringComparison.OrdinalIgnoreCase)
+            ? ShareCardTheme.Dark
+            : ShareCardTheme.Light;
+
+        var model = new ShareCardModel(playerName, round.SeasonName, roundLabel, matches, theme);
 
         return await renderer.RenderAsync(model, cancellationToken);
     }
@@ -120,7 +128,8 @@ public class GetRoundShareCardImageQueryHandler(
         string? RoundDisplayName,
         string SeasonName,
         int CompetitionType,
-        string? PlayerFirstName);
+        string? PlayerFirstName,
+        string? PreferredTheme);
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record ShareCardMatchResult(

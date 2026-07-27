@@ -37,9 +37,10 @@ public class RoundsController(IMediator mediator) : ApiControllerBase
     [SwaggerResponse(404, "No predictions to share for this round")]
     public async Task<IActionResult> GetShareCardAsync(
         [SwaggerParameter("Round identifier")] int roundId,
+        [FromQuery][SwaggerParameter("Theme to render in ('light' or 'dark'); defaults to the user's saved preference")] string? theme,
         CancellationToken cancellationToken)
     {
-        var image = await mediator.Send(new GetRoundShareCardImageQuery(roundId, CurrentUserId), cancellationToken);
+        var image = await mediator.Send(new GetRoundShareCardImageQuery(roundId, CurrentUserId, theme), cancellationToken);
 
         if (image is null)
             return NotFound();

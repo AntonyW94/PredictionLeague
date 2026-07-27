@@ -1,8 +1,10 @@
 @using ThePredictions.Contracts.Dashboard
 @using ThePredictions.Domain.Common.Enumerations
 @using ThePredictions.Web.Client.Services.Leagues
+@using ThePredictions.Web.Client.Services.Theme
 
 @inject ILeagueService LeagueService
+@inject IThemeService ThemeService
 @inject IJSRuntime JsRuntime
 
 <div class="card slide @(Wide ? "round-card--wide" : "")">
@@ -196,7 +198,7 @@
 
         try
         {
-            var image = await LeagueService.GetShareCardAsync(Round.Id);
+            var image = await LeagueService.GetShareCardAsync(Round.Id, ThemeService.CurrentTheme);
 
             if (image is null || image.Length == 0)
                 return;

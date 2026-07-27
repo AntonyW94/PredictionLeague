@@ -23,7 +23,7 @@ public class GetRoundShareCardImageQueryHandlerTests
     {
         // The round lookup (QuerySingleOrDefaultAsync) returns null by default, standing in for a
         // round that does not exist or a user that is not found.
-        var result = await _handler.Handle(new GetRoundShareCardImageQuery(99, "user-1"), CancellationToken.None);
+        var result = await _handler.Handle(new GetRoundShareCardImageQuery(99, "user-1", "dark"), CancellationToken.None);
 
         result.Should().BeNull();
         await _renderer.DidNotReceiveWithAnyArgs().RenderAsync(default!, CancellationToken.None);
