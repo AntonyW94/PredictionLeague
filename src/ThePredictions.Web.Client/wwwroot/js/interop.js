@@ -27,6 +27,11 @@ window.blazorInterop = {
     // tap. If generating the image outran that window the direct share is blocked; rather than fail
     // silently we then show the finished card in a preview whose Share button is a fresh gesture, so
     // it always succeeds. Fast case: one tap. Slow case: the card appears and one more tap sends it.
+    //
+    // Only the file is shared (no title/text): passing accompanying text makes iOS/Android treat it
+    // as "a message with an attachment" and show a generic file icon, whereas a file on its own gets
+    // a proper image thumbnail in the share sheet. The card is self-contained, so it needs no caption.
+    // title/text are retained on the signature for callers but intentionally unused.
     sharePredictions: async function (base64Png, fileName, title, text) {
         let blob;
         try {
@@ -88,7 +93,7 @@ window.blazorInterop = {
 
         if (result && result.isConfirmed) {
             try {
-                await navigator.share({ files: [file], title: title, text: text });
+                await navigator.share({ files: [file] });
                 return 'shared';
             } catch (error) {
                 if (error && error.name === 'AbortError') {
