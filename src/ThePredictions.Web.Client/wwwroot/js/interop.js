@@ -59,7 +59,7 @@ window.blazorInterop = {
 
         // Fast path: share straight away while the tap's activation is still valid.
         try {
-            await navigator.share({ files: [file], title: title, text: text });
+            await navigator.share({ files: [file] });
             return 'shared';
         } catch (error) {
             if (error && error.name === 'AbortError') {
