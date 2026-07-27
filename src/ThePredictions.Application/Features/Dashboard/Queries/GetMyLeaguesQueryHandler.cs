@@ -245,7 +245,11 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             FROM [LeagueMembers] lm
             JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
             JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
+            -- Filter RoundResults to this season inside the join. Without this we pull in every
+            -- RoundResult the user has ever recorded across all seasons and then zero the out-of-season
+            -- ones in the SUM, which scans progressively more data each new season for no benefit.
             LEFT JOIN [RoundResults] rr ON rr.[UserId] = lm.[UserId]
+                AND rr.[RoundId] IN (SELECT rInSeason.[Id] FROM [Rounds] rInSeason WHERE rInSeason.[SeasonId] = lg.[SeasonId])
             LEFT JOIN [Rounds] r ON r.[Id] = rr.[RoundId] AND r.[SeasonId] = lg.[SeasonId]
             WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
                 AND lm.[Status] = @ApprovedStatus
