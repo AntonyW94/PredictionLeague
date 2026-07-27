@@ -31,6 +31,15 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
         return await httpClient.GetFromJsonAsync<List<ActiveRoundDto>>("api/dashboard/active-rounds") ?? [];
     }
 
+    public async Task<byte[]?> GetShareCardAsync(int roundId, string theme)
+    {
+        var response = await httpClient.GetAsync($"api/rounds/{roundId}/share-card?theme={Uri.EscapeDataString(theme)}");
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await response.Content.ReadAsByteArrayAsync();
+    }
+
     public async Task<List<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId)
     {
         return await httpClient.GetFromJsonAsync<List<LeaderboardEntryDto>>($"api/leagues/{leagueId}/leaderboard/overall") ?? [];

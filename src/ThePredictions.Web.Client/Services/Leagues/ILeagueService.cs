@@ -13,6 +13,7 @@ public interface ILeagueService
     Task<List<AvailableLeagueDto>> GetAvailableLeaguesAsync();
     Task<List<LeagueLeaderboardDto>> GetLeaderboardsAsync();
     Task<List<ActiveRoundDto>> GetActiveRoundsAsync();
+    Task<byte[]?> GetShareCardAsync(int roundId, string theme);
     Task<List<LeaderboardEntryDto>> GetOverallLeaderboardAsync(int leagueId);
     Task<List<LeaderboardEntryDto>> GetMonthlyLeaderboardAsync(int leagueId, int month);
     Task<ExactScoresLeaderboardDto> GetExactScoresLeaderboardAsync(int leagueId);

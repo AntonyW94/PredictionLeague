@@ -72,7 +72,7 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 | 38 | Statistics dashboard | Medium | Some stats exist across league dashboards; needs a unified personal stats page | [Outline](features/user-experience/statistics-dashboard/README.md) |
 | 39 | Season recap | Medium | End-of-season summary. Shareable, fun | [Outline](features/user-experience/season-recap/README.md) |
 | 40 | Head-to-head comparison | Medium | Social/competitive feature | [Outline](features/user-experience/head-to-head/README.md) |
-| 41 | Social sharing | Low | Organic growth driver | [Outline](features/user-experience/social-sharing/README.md) |
+| 41 | Social sharing (per-content OG) | Low | Image share of predictions shipped (see Already Complete); remaining work is per-content Open Graph/Twitter card images, which need crawler-facing server-rendered meta tags in the Web host | [Outline](features/user-experience/social-sharing/README.md) |
 | 42 | Digest emails | Medium | Weekly summaries for less active users | [Outline](features/email-notifications/digest-emails/README.md) |
 | 43 | League moderation | Medium | Basic member management exists; extend to full moderation tools | [Outline](features/admin-moderation/league-moderation/README.md) |
 
@@ -169,3 +169,4 @@ These items from the original backlog are already implemented:
 | Email logo refresh (all templates) | All nine Brevo templates + their repo source copies swapped from the old `Logo.png` to the new `logo-header-dark.png` lockup (wordmark now in the logo). Pushed via the API. |
 | Remember me | Login has a "Remember me" checkbox: ticked = persistent refresh-token cookie (survives browser restart), unticked = session cookie. A companion `rememberMe` cookie preserves the choice across token refresh. Register and reset-password auto-login are session-scoped (no explicit choice made); Google sign-ins are always persistent by default. Plan removed. |
 | Branded error pages | Reusable `ErrorDisplay` component drives branded 404 (Router `NotFound`), 403 (authenticated-but-forbidden via `NotAuthorized`) and 500 (error-boundary fallback + `/Error`) states, each with a "Back to dashboard" action. Plan removed. |
+| Social sharing (image share) | bet365-style share of a player's own predictions: `GET /api/rounds/{roundId}/share-card` returns a branded PNG (SkiaSharp renderer behind `IShareCardRenderer`, embedded brand logo, team logos fetched server-side with an abbreviation-badge fallback, colour-coded once scored, light/dark theme mirroring the player's UI), surfaced by a Share button on the Active Rounds tile that opens the native share sheet (Web Share API) with a download fallback. Plan trimmed to the remaining per-content Open Graph image residual. |
