@@ -83,7 +83,7 @@ season-recap *(partial - recap tile shipped; standalone/shareable surface not bu
 statistics-dashboard - prediction-history - notifications-ui -
 prize-summary-badges - monthly-leaderboard-scenarios - digest-emails *(the periodic/weekly digest; the round-results digest already ships)* -
 email-preferences - league-notifications *(partial - join-request/approval emails ship; broader league-event notifications + opt-out remain)* -
-head-to-head - social-sharing *(partial - baseline OG/Twitter tags ship; share buttons remain)* -
+head-to-head - social-sharing *(partial - image share of predictions + native share sheet ship; only per-content Open Graph/Twitter card images remain)* -
 help-documentation - accessibility - admin-dashboard
 
 ## Tier D - Big builds / business, legal, or external-account decisions

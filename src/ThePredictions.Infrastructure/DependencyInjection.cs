@@ -151,6 +151,13 @@ public static class DependencyInjection
         })
             .AddResilienceHandler("FootballApi", FootballApiResilienceConfiguration.Configure);
 
+        services.AddHttpClient<IShareCardRenderer, ShareCardRenderer>(client =>
+        {
+            // Team logos are small remote assets; a short timeout keeps a slow logo host from
+            // stalling the share-card response - a missing logo just falls back to a badge.
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+
         services.AddScoped<ILeagueStatsService, LeagueStatsService>();
         services.AddScoped<ILeagueMembershipService, LeagueMembershipService>();
         services.AddScoped<ISeasonAccessService, SeasonAccessService>();

@@ -21,6 +21,39 @@ window.blazorInterop = {
     getWindowWidth: function () {
         return window.innerWidth;
     },
+    // Shares a PNG (base64) via the native share sheet using the Web Share API. On devices that
+    // can share files (mobile Chrome / Safari) this opens the OS share sheet with the image;
+    // otherwise it falls back to downloading the image. Returns a status string the caller ignores.
+    sharePredictions: async function (base64Png, fileName, title, text) {
+        try {
+            const response = await fetch(`data:image/png;base64,${base64Png}`);
+            const blob = await response.blob();
+            const file = new File([blob], fileName, { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: title, text: text });
+                return 'shared';
+            }
+
+            // Fallback: no file-sharing support (typically desktop) - download the image instead.
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = fileName;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+            URL.revokeObjectURL(url);
+            return 'downloaded';
+        } catch (error) {
+            // AbortError means the user dismissed the share sheet - not a failure.
+            if (error && error.name === 'AbortError') {
+                return 'cancelled';
+            }
+            console.error('[Share] Could not share predictions', error);
+            return 'error';
+        }
+    },
     copyText: function (text) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
