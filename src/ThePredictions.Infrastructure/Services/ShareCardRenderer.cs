@@ -11,29 +11,33 @@ namespace ThePredictions.Infrastructure.Services;
 /// Renders a prediction share card to a PNG using SkiaSharp. Team logos are fetched over HTTP
 /// (raster or SVG - the football data stores badges and flags as SVG) and, when one is missing or
 /// cannot be decoded, a coloured abbreviation badge is drawn instead so the card always renders.
-/// The layout is a single branded column: header (brand logo, title, subtitle) then one row per
-/// match. Light and dark colour schemes mirror the player's UI theme.
+/// Each match is a full-width row: the home team on the left, the away team on the right, and the
+/// prediction in the centre as an outcome-coloured pill mirroring the site's prediction badges.
+/// Light and dark colour schemes mirror the player's UI theme.
 /// </summary>
 public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer> logger) : IShareCardRenderer
 {
     private const int Width = 1080;
     private const int Padding = 60;
     private const int HeaderHeight = 320;
-    private const int RowHeight = 112;
+    private const int RowHeight = 128;
     private const int BottomPadding = 56;
     private const int LogoSize = 64;
     private const int SvgRasterSize = 128;
 
-    // Outcome colours read on both light and dark cards, so they are theme-independent.
+    // Outcome colours mirror the site's prediction badges: green (exact), amber (correct result -
+    // a yellow-tinted pill with orange disc/text), red (incorrect). Theme-independent.
     private static readonly SKColor ExactColour = SKColor.Parse("#00B960");
-    private static readonly SKColor CorrectColour = SKColor.Parse("#CC8200");
+    private static readonly SKColor CorrectDisc = SKColor.Parse("#CC8200");
+    private static readonly SKColor CorrectTint = SKColor.Parse("#EBFF01");
     private static readonly SKColor IncorrectColour = SKColor.Parse("#E90052");
-    private static readonly SKColor BadgeFill = SKColor.Parse("#5D3E85");
+    private static readonly SKColor White = SKColor.Parse("#FFFFFF");
+    private static readonly SKColor AbbreviationBadgeFill = SKColor.Parse("#5D3E85");
 
-    // Brand logos are embedded resources (see the .csproj) so they are always present in a
-    // framework-dependent publish. Decoded once and reused - SKImage is immutable and safe to share.
     private static readonly Lazy<SKImage?> DarkLogo = new(() => LoadEmbeddedLogo("logo-header-dark.png"));
     private static readonly Lazy<SKImage?> LightLogo = new(() => LoadEmbeddedLogo("logo-header-light.png"));
+
+    private enum OutcomeGlyph { None, Tick, Cross }
 
     public async Task<byte[]> RenderAsync(ShareCardModel model, CancellationToken cancellationToken)
     {
@@ -73,26 +77,28 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
             ? new Palette(
                 BackgroundTop: SKColor.Parse("#2C0A3D"),
                 BackgroundBottom: SKColor.Parse("#3D195B"),
-                Title: SKColor.Parse("#FFFFFF"),
+                Title: White,
                 Subtitle: SKColor.Parse("#B9A6CC"),
                 RowFill: new SKColor(255, 255, 255, 16),
                 RowBorder: SKColor.Empty,
-                NeutralChipFill: new SKColor(255, 255, 255, 26),
-                NeutralChipBorder: new SKColor(255, 255, 255, 60),
-                NeutralScore: SKColor.Parse("#FFFFFF"),
-                ChipTintAlpha: 54,
+                NeutralPillFill: new SKColor(255, 255, 255, 28),
+                NeutralScore: White,
+                CorrectTintBase: CorrectDisc,
+                TintAlpha: 60,
+                ScoreTextWhite: true,
                 Logo: DarkLogo.Value)
             : new Palette(
                 BackgroundTop: SKColor.Parse("#F4EEFA"),
                 BackgroundBottom: SKColor.Parse("#E9DEF4"),
                 Title: SKColor.Parse("#2C0A3D"),
                 Subtitle: SKColor.Parse("#6E5C86"),
-                RowFill: SKColor.Parse("#FFFFFF"),
+                RowFill: White,
                 RowBorder: SKColor.Parse("#E3D7F0"),
-                NeutralChipFill: SKColor.Parse("#F1EAF9"),
-                NeutralChipBorder: SKColor.Parse("#DCCEEE"),
+                NeutralPillFill: SKColor.Parse("#EFE7F7"),
                 NeutralScore: SKColor.Parse("#2C0A3D"),
-                ChipTintAlpha: 40,
+                CorrectTintBase: CorrectTint,
+                TintAlpha: 40,
+                ScoreTextWhite: false,
                 Logo: LightLogo.Value);
     }
 
@@ -128,8 +134,6 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
         }
         catch (Exception exception)
         {
-            // A missing or undecodable logo (network error, bad SVG, 404) is non-fatal: the card
-            // falls back to an abbreviation badge, so log at debug and carry on.
             logger.LogDebug(exception, "Could not fetch team logo for share card from {LogoUrl}", url);
             return null;
         }
@@ -220,7 +224,7 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
 
         if (palette.Logo is { } logo)
         {
-            var targetHeight = 86f;
+            var targetHeight = 84f;
             var targetWidth = targetHeight * logo.Width / logo.Height;
             var maxWidth = Width - 300;
 
@@ -230,21 +234,18 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
                 targetHeight = targetWidth * logo.Height / logo.Width;
             }
 
-            var logoRect = SKRect.Create(centreX - (targetWidth / 2f), 56, targetWidth, targetHeight);
+            var logoRect = SKRect.Create(centreX - (targetWidth / 2f), 58, targetWidth, targetHeight);
             canvas.DrawImage(logo, logoRect, new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
         }
 
-        var title = string.IsNullOrWhiteSpace(model.PlayerName)
-            ? "My Predictions"
-            : $"{model.PlayerName}'s Predictions";
-
         using var titleFont = CreateFont(58, bold: true);
         using var titlePaint = CreatePaint(palette.Title);
+        var title = string.IsNullOrWhiteSpace(model.PlayerName) ? "My Predictions" : $"{model.PlayerName}'s Predictions";
         DrawText(canvas, title, centreX, 210, titleFont, titlePaint, SKTextAlign.Center);
 
         using var subtitleFont = CreateFont(31, bold: false);
         using var subtitlePaint = CreatePaint(palette.Subtitle);
-        DrawText(canvas, $"{model.SeasonName}  -  {model.RoundLabel}", centreX, 272, subtitleFont, subtitlePaint, SKTextAlign.Center);
+        DrawText(canvas, $"{model.SeasonName}  -  {model.RoundLabel}", centreX, 270, subtitleFont, subtitlePaint, SKTextAlign.Center);
     }
 
     private static void DrawMatchRow(
@@ -254,67 +255,125 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
         IReadOnlyDictionary<string, SKImage?> logos,
         Palette palette)
     {
-        var centreX = Width / 2f;
         var centreY = rowTop + (RowHeight / 2f);
         var rowRect = SKRect.Create(Padding, rowTop + 8, Width - (2 * Padding), RowHeight - 16);
 
         using (var rowPaint = new SKPaint { Color = palette.RowFill, IsAntialias = true })
-            canvas.DrawRoundRect(rowRect, 18, 18, rowPaint);
+            canvas.DrawRoundRect(rowRect, 20, 20, rowPaint);
 
         if (palette.RowBorder != SKColor.Empty)
         {
             using var borderPaint = new SKPaint { Color = palette.RowBorder, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
-            canvas.DrawRoundRect(rowRect, 18, 18, borderPaint);
+            canvas.DrawRoundRect(rowRect, 20, 20, borderPaint);
         }
 
-        var homeLogoCentre = centreX - 168;
-        var awayLogoCentre = centreX + 168;
+        // Teams pinned to the outer edges so the row uses its full width.
+        var homeLogoCentre = Padding + 46;
+        var awayLogoCentre = Width - Padding - 46;
 
         DrawTeamLogo(canvas, match.HomeTeamLogoUrl, match.HomeTeamAbbreviation, homeLogoCentre, centreY, logos);
         DrawTeamLogo(canvas, match.AwayTeamLogoUrl, match.AwayTeamAbbreviation, awayLogoCentre, centreY, logos);
 
-        using var nameFont = CreateFont(29, bold: false);
+        using var nameFont = CreateFont(29, bold: true);
         using var namePaint = CreatePaint(palette.Title);
-        DrawText(canvas, match.HomeTeamShortName, homeLogoCentre - (LogoSize / 2f) - 20, centreY, nameFont, namePaint, SKTextAlign.Right);
-        DrawText(canvas, match.AwayTeamShortName, awayLogoCentre + (LogoSize / 2f) + 20, centreY, nameFont, namePaint, SKTextAlign.Left);
+        DrawText(canvas, match.HomeTeamShortName, homeLogoCentre + (LogoSize / 2f) + 18, centreY, nameFont, namePaint, SKTextAlign.Left);
+        DrawText(canvas, match.AwayTeamShortName, awayLogoCentre - (LogoSize / 2f) - 18, centreY, nameFont, namePaint, SKTextAlign.Right);
 
-        DrawScoreBadge(canvas, match, centreX, centreY, palette);
+        DrawScoreBadge(canvas, match, Width / 2f, centreY, palette);
     }
 
     private static void DrawScoreBadge(SKCanvas canvas, ShareCardMatch match, float centreX, float centreY, Palette palette)
     {
-        const float chipWidth = 150f;
-        const float chipHeight = 62f;
+        const float pillHeight = 58f;
+        var radius = pillHeight / 2f;
+        var scoreText = $"{match.PredictedHomeScore} - {match.PredictedAwayScore}";
 
-        var (fill, border, textColour) = match.IsScored
-            ? OutcomeChip(match.Outcome, palette.ChipTintAlpha)
-            : (palette.NeutralChipFill, palette.NeutralChipBorder, palette.NeutralScore);
-
-        var chipCentreY = match.IsScored ? centreY - 11 : centreY;
-        var chipRect = SKRect.Create(centreX - (chipWidth / 2f), chipCentreY - (chipHeight / 2f), chipWidth, chipHeight);
-
-        using (var fillPaint = new SKPaint { Color = fill, IsAntialias = true })
-            canvas.DrawRoundRect(chipRect, 16, 16, fillPaint);
-
-        using (var borderPaint = new SKPaint { Color = border, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f })
-            canvas.DrawRoundRect(chipRect, 16, 16, borderPaint);
-
-        using (var scoreFont = CreateFont(40, bold: true))
-        using (var scorePaint = CreatePaint(textColour))
-            DrawText(canvas, $"{match.PredictedHomeScore} - {match.PredictedAwayScore}", centreX, chipCentreY, scoreFont, scorePaint, SKTextAlign.Center);
+        using var scoreFont = CreateFont(34, bold: true);
+        var textWidth = scoreFont.MeasureText(scoreText);
+        var pillCentreY = match.IsScored ? centreY - 16 : centreY;
 
         if (match.IsScored)
         {
+            var (accent, tint, glyph) = OutcomeVisual(match.Outcome, palette.TintAlpha, palette.CorrectTintBase);
+            var scoreColour = palette.ScoreTextWhite ? White : accent;
+
+            const float gap = 12f;
+            const float rightPad = 28f;
+            var pillWidth = pillHeight + gap + textWidth + rightPad;
+            var left = centreX - (pillWidth / 2f);
+            var pillRect = SKRect.Create(left, pillCentreY - (pillHeight / 2f), pillWidth, pillHeight);
+
+            using (var pillPaint = new SKPaint { Color = tint, IsAntialias = true })
+                canvas.DrawRoundRect(pillRect, radius, radius, pillPaint);
+
+            var discCentre = new SKPoint(left + (pillHeight / 2f), pillCentreY);
+            using (var discPaint = new SKPaint { Color = accent, IsAntialias = true })
+                canvas.DrawCircle(discCentre, pillHeight / 2f, discPaint);
+
+            DrawGlyph(canvas, glyph, discCentre, pillHeight * 0.24f);
+
+            // Centre the score in the space between the disc and the pill's right padding.
+            var textCentre = (left + pillHeight + gap + (left + pillWidth - rightPad)) / 2f;
+            using var scorePaint = CreatePaint(scoreColour);
+            DrawText(canvas, scoreText, textCentre, pillCentreY, scoreFont, scorePaint, SKTextAlign.Center);
+
             using var actualFont = CreateFont(23, bold: false);
             using var actualPaint = CreatePaint(palette.Subtitle);
-            DrawText(canvas, $"FT {match.ActualHomeScore}-{match.ActualAwayScore}", centreX, centreY + 30, actualFont, actualPaint, SKTextAlign.Center);
+            DrawText(canvas, $"FT {match.ActualHomeScore}-{match.ActualAwayScore}", centreX, centreY + 33, actualFont, actualPaint, SKTextAlign.Center);
+        }
+        else
+        {
+            const float sidePad = 30f;
+            var pillWidth = textWidth + (2 * sidePad);
+            var pillRect = SKRect.Create(centreX - (pillWidth / 2f), pillCentreY - (pillHeight / 2f), pillWidth, pillHeight);
+
+            using (var pillPaint = new SKPaint { Color = palette.NeutralPillFill, IsAntialias = true })
+                canvas.DrawRoundRect(pillRect, radius, radius, pillPaint);
+
+            using var scorePaint = CreatePaint(palette.NeutralScore);
+            DrawText(canvas, scoreText, centreX, pillCentreY, scoreFont, scorePaint, SKTextAlign.Center);
         }
     }
 
-    private static (SKColor Fill, SKColor Border, SKColor Text) OutcomeChip(PredictionOutcome outcome, byte tintAlpha)
+    // Returns the solid accent colour (icon disc + light-theme score text), the translucent pill
+    // tint, and which glyph to stamp in the disc, for a scored prediction.
+    private static (SKColor Accent, SKColor Tint, OutcomeGlyph Glyph) OutcomeVisual(PredictionOutcome outcome, byte tintAlpha, SKColor correctTintBase)
     {
-        var colour = OutcomeColour(outcome);
-        return (colour.WithAlpha(tintAlpha), colour.WithAlpha(170), colour);
+        return outcome switch
+        {
+            PredictionOutcome.ExactScore => (ExactColour, ExactColour.WithAlpha(tintAlpha), OutcomeGlyph.Tick),
+            PredictionOutcome.CorrectResult => (CorrectDisc, correctTintBase.WithAlpha(tintAlpha), OutcomeGlyph.Tick),
+            PredictionOutcome.Incorrect => (IncorrectColour, IncorrectColour.WithAlpha(tintAlpha), OutcomeGlyph.Cross),
+            _ => (ExactColour, ExactColour.WithAlpha(tintAlpha), OutcomeGlyph.None)
+        };
+    }
+
+    // A white tick or cross centred in the icon disc, drawn as stroked paths so it scales cleanly.
+    private static void DrawGlyph(SKCanvas canvas, OutcomeGlyph glyph, SKPoint centre, float size)
+    {
+        if (glyph == OutcomeGlyph.None)
+            return;
+
+        using var paint = new SKPaint
+        {
+            Color = White,
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = size * 0.42f,
+            StrokeCap = SKStrokeCap.Round,
+            StrokeJoin = SKStrokeJoin.Round
+        };
+
+        if (glyph == OutcomeGlyph.Tick)
+        {
+            canvas.DrawLine(centre.X - (size * 1.05f), centre.Y + (size * 0.05f), centre.X - (size * 0.30f), centre.Y + (size * 0.75f), paint);
+            canvas.DrawLine(centre.X - (size * 0.30f), centre.Y + (size * 0.75f), centre.X + (size * 1.05f), centre.Y - (size * 0.75f), paint);
+        }
+        else
+        {
+            canvas.DrawLine(centre.X - (size * 0.8f), centre.Y - (size * 0.8f), centre.X + (size * 0.8f), centre.Y + (size * 0.8f), paint);
+            canvas.DrawLine(centre.X - (size * 0.8f), centre.Y + (size * 0.8f), centre.X + (size * 0.8f), centre.Y - (size * 0.8f), paint);
+        }
     }
 
     private static void DrawTeamLogo(
@@ -336,23 +395,12 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
             return;
         }
 
-        using var badgePaint = new SKPaint { Color = BadgeFill, IsAntialias = true };
+        using var badgePaint = new SKPaint { Color = AbbreviationBadgeFill, IsAntialias = true };
         canvas.DrawCircle(centreX, centreY, LogoSize / 2f, badgePaint);
 
         using var abbreviationFont = CreateFont(22, bold: true);
-        using var abbreviationPaint = CreatePaint(SKColor.Parse("#FFFFFF"));
+        using var abbreviationPaint = CreatePaint(White);
         DrawText(canvas, abbreviation, centreX, centreY, abbreviationFont, abbreviationPaint, SKTextAlign.Center);
-    }
-
-    private static SKColor OutcomeColour(PredictionOutcome outcome)
-    {
-        return outcome switch
-        {
-            PredictionOutcome.ExactScore => ExactColour,
-            PredictionOutcome.CorrectResult => CorrectColour,
-            PredictionOutcome.Incorrect => IncorrectColour,
-            _ => ExactColour
-        };
     }
 
     private static SKFont CreateFont(float size, bool bold)
@@ -386,9 +434,10 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
         SKColor Subtitle,
         SKColor RowFill,
         SKColor RowBorder,
-        SKColor NeutralChipFill,
-        SKColor NeutralChipBorder,
+        SKColor NeutralPillFill,
         SKColor NeutralScore,
-        byte ChipTintAlpha,
+        SKColor CorrectTintBase,
+        byte TintAlpha,
+        bool ScoreTextWhite,
         SKImage? Logo);
 }
