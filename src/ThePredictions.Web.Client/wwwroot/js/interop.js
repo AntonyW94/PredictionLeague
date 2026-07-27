@@ -21,21 +21,26 @@ window.blazorInterop = {
     getWindowWidth: function () {
         return window.innerWidth;
     },
-    // Shares a PNG (base64) via the native share sheet using the Web Share API. On devices that
-    // can share files (mobile Chrome / Safari) this opens the OS share sheet with the image;
-    // otherwise it falls back to downloading the image. Returns a status string the caller ignores.
+    // Shares a PNG (base64) via the native share sheet using the Web Share API.
+    //
+    // navigator.share() needs "transient user activation" - it must run within a few seconds of the
+    // tap. If generating the image outran that window the direct share is blocked; rather than fail
+    // silently we then show the finished card in a preview whose Share button is a fresh gesture, so
+    // it always succeeds. Fast case: one tap. Slow case: the card appears and one more tap sends it.
     sharePredictions: async function (base64Png, fileName, title, text) {
+        let blob;
         try {
-            const response = await fetch(`data:image/png;base64,${base64Png}`);
-            const blob = await response.blob();
-            const file = new File([blob], fileName, { type: 'image/png' });
+            blob = await (await fetch(`data:image/png;base64,${base64Png}`)).blob();
+        } catch (error) {
+            console.error('[Share] Could not build the image', error);
+            return 'error';
+        }
 
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: title, text: text });
-                return 'shared';
-            }
+        const file = new File([blob], fileName, { type: 'image/png' });
+        const canShareFiles = !!(navigator.canShare && navigator.canShare({ files: [file] }));
 
-            // Fallback: no file-sharing support (typically desktop) - download the image instead.
+        // No file sharing at all (typically desktop) - download the image.
+        if (!canShareFiles) {
             const url = URL.createObjectURL(blob);
             const anchor = document.createElement('a');
             anchor.href = url;
@@ -45,14 +50,56 @@ window.blazorInterop = {
             document.body.removeChild(anchor);
             URL.revokeObjectURL(url);
             return 'downloaded';
-        } catch (error) {
-            // AbortError means the user dismissed the share sheet - not a failure.
-            if (error && error.name === 'AbortError') {
-                return 'cancelled';
-            }
-            console.error('[Share] Could not share predictions', error);
-            return 'error';
         }
+
+        // Fast path: share straight away while the tap's activation is still valid.
+        try {
+            await navigator.share({ files: [file], title: title, text: text });
+            return 'shared';
+        } catch (error) {
+            if (error && error.name === 'AbortError') {
+                return 'cancelled';  // user dismissed the share sheet - don't nag with a preview
+            }
+            // Blocked (activation window elapsed while the image was generated) - fall through.
+        }
+
+        // Preview fallback: the image is ready, so a tap on Share here shares reliably.
+        const previewUrl = URL.createObjectURL(blob);
+        let result;
+        try {
+            result = await Swal.fire({
+                title: 'Your predictions are ready',
+                imageUrl: previewUrl,
+                imageAlt: 'Your predictions',
+                width: 440,
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-share-fill"></i> <strong>Share</strong>',
+                cancelButtonText: 'Close',
+                customClass: {
+                    popup: 'swal2-admin-light',
+                    confirmButton: 'swal2-btn-green',
+                    cancelButton: 'swal2-btn-red'
+                },
+                buttonsStyling: false
+            });
+        } finally {
+            URL.revokeObjectURL(previewUrl);
+        }
+
+        if (result && result.isConfirmed) {
+            try {
+                await navigator.share({ files: [file], title: title, text: text });
+                return 'shared';
+            } catch (error) {
+                if (error && error.name === 'AbortError') {
+                    return 'cancelled';
+                }
+                console.error('[Share] Could not share predictions', error);
+                return 'error';
+            }
+        }
+
+        return 'dismissed';
     },
     copyText: function (text) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
