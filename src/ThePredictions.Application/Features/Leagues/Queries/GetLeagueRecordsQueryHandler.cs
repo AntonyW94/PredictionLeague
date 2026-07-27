@@ -15,7 +15,15 @@ public class GetLeagueRecordsQueryHandler(
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.UserId, cancellationToken);
 
+        // Runs under READ UNCOMMITTED for the same reason as GetMyLeaguesQueryHandler: this read-only
+        // "records" tile spans high-contention tables (LeagueRoundResults / RoundResults / Winnings) and
+        // was blocking for seconds behind the results/stats write path, because the database has no
+        // READ_COMMITTED_SNAPSHOT and it cannot be enabled on this managed instance. The query itself is
+        // fast (tens of ms); the lock wait was the cost. Dirty reads here are cosmetic and self-correct,
+        // and the isolation level is reset at the end of the batch so it cannot leak to other reads.
         const string sql = @"
+            SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
             DECLARE @SeasonId int = (SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId);
 
             SELECT
@@ -196,7 +204,9 @@ public class GetLeagueRecordsQueryHandler(
                     ORDER BY TotalPoints DESC, r.[RoundNumber] ASC
                 ) top_gameweek
             WHERE
-                l.[Id] = @LeagueId;";
+                l.[Id] = @LeagueId;
+
+            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;";
 
         var result = await dbConnection.QuerySingleOrDefaultAsync<LeagueRecordsDto>(
             sql,

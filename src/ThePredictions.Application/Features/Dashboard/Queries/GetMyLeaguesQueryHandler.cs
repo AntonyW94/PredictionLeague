@@ -10,7 +10,15 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
 {
     public async Task<IEnumerable<MyLeagueDto>> Handle(GetMyLeaguesQuery request, CancellationToken cancellationToken)
     {
+        // Runs under READ UNCOMMITTED. This dashboard tile is a high-frequency read that was blocking for
+        // several seconds behind the results/stats write path, because the database does not have
+        // READ_COMMITTED_SNAPSHOT enabled and it cannot be turned on for this managed instance. The tile is
+        // a live view that auto-refreshes, so a transient dirty read self-corrects on the next poll, whereas
+        // the multi-second lock wait was user-visible. The isolation level is reset at the end of the batch
+        // so it cannot leak to other reads that reuse the pooled connection.
         const string sql = @"
+        SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
         WITH MyLeagues AS (
             SELECT
                 l.[Id] AS LeagueId,
@@ -313,7 +321,9 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             CASE WHEN ar.[Status] = @InProgressStatus THEN 0 ELSE 1 END ASC,
             l.[SeasonStartDateUtc] ASC,
             l.[Price] DESC,
-            l.[LeagueName]";
+            l.[LeagueName];
+
+        SET TRANSACTION ISOLATION LEVEL READ COMMITTED;";
 
         return await dbConnection.QueryAsync<MyLeagueDto>(
             sql,
