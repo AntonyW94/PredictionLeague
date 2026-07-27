@@ -10,7 +10,15 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
 {
     public async Task<IEnumerable<MyLeagueDto>> Handle(GetMyLeaguesQuery request, CancellationToken cancellationToken)
     {
+        // Runs under READ UNCOMMITTED. This dashboard tile is a high-frequency read that was blocking for
+        // several seconds behind the results/stats write path, because the database does not have
+        // READ_COMMITTED_SNAPSHOT enabled and it cannot be turned on for this managed instance. The tile is
+        // a live view that auto-refreshes, so a transient dirty read self-corrects on the next poll, whereas
+        // the multi-second lock wait was user-visible. The isolation level is reset at the end of the batch
+        // so it cannot leak to other reads that reuse the pooled connection.
         const string sql = @"
+        SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
         WITH MyLeagues AS (
             SELECT
                 l.[Id] AS LeagueId,
@@ -237,7 +245,11 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             FROM [LeagueMembers] lm
             JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
             JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
+            -- Filter RoundResults to this season inside the join. Without this we pull in every
+            -- RoundResult the user has ever recorded across all seasons and then zero the out-of-season
+            -- ones in the SUM, which scans progressively more data each new season for no benefit.
             LEFT JOIN [RoundResults] rr ON rr.[UserId] = lm.[UserId]
+                AND rr.[RoundId] IN (SELECT rInSeason.[Id] FROM [Rounds] rInSeason WHERE rInSeason.[SeasonId] = lg.[SeasonId])
             LEFT JOIN [Rounds] r ON r.[Id] = rr.[RoundId] AND r.[SeasonId] = lg.[SeasonId]
             WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
                 AND lm.[Status] = @ApprovedStatus
@@ -313,7 +325,9 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             CASE WHEN ar.[Status] = @InProgressStatus THEN 0 ELSE 1 END ASC,
             l.[SeasonStartDateUtc] ASC,
             l.[Price] DESC,
-            l.[LeagueName]";
+            l.[LeagueName];
+
+        SET TRANSACTION ISOLATION LEVEL READ COMMITTED;";
 
         return await dbConnection.QueryAsync<MyLeagueDto>(
             sql,
