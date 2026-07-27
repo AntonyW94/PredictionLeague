@@ -35,9 +35,10 @@ opens the native share sheet so it can be sent to anyone.
 - [x] Real brand logo in the card header (embedded resource), with **light and dark**
       colour schemes that mirror the player's selected UI theme: the client passes its
       active theme when Share is tapped, falling back to the user's saved `PreferredTheme`.
-- [x] Share button on the Active Rounds `RoundCard` footer, shown only when the
-      player has predicted **and** the browser supports the Web Share API (files),
-      with a download fallback otherwise.
+- [x] Share button in two places: the Active Rounds `RoundCard` footer (shown once
+      the player has predicted) and the league dashboard `RoundResultsTile` (the
+      "how I did" brag, shown when the player took part in the selected round). Both
+      use the native share sheet with a download fallback.
 - [x] Web Share API interop shim (`navigator.canShare` / `navigator.share`).
 
 ## Residual (follow-up, not in this iteration)

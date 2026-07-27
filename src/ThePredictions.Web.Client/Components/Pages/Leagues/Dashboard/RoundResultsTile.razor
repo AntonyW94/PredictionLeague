@@ -1,5 +1,7 @@
 @inject LeagueDashboardStateService State
 @inject IJSRuntime JsRuntime
+@inject ILeagueService LeagueService
+@inject IThemeService ThemeService
 
 @implements IAsyncDisposable
 
@@ -9,6 +11,7 @@
 @using ThePredictions.Domain.Common.Enumerations
 @using ThePredictions.Web.Client.Components.Pages.Boosts
 @using ThePredictions.Web.Client.Services.Leagues
+@using ThePredictions.Web.Client.Services.Theme
 
 <div class="section">
     <h5 class="text-white fw-bold mb-3 text-center">Round Results</h5>
@@ -29,6 +32,28 @@
                 </button>
             }
         </div>
+    }
+
+    @if (CanShareSelectedRound)
+    {
+        <div class="d-flex justify-content-center mb-3">
+            <button type="button" class="btn purple-button" @onclick="SharePredictionsAsync" disabled="@_isSharing">
+                @if (_isSharing)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span>Preparing...</span>
+                }
+                else
+                {
+                    <span class="bi bi-share-fill me-2"></span>
+                    <span>Share my predictions</span>
+                }
+            </button>
+        </div>
+        @if (_shareMessage is not null)
+        {
+            <p class="text-center text-white-50 small mb-3">@_shareMessage</p>
+        }
     }
 
     <ApiError Message="@State.RoundResultsError" />
@@ -122,6 +147,53 @@
     private double _touchStartX;
     private ElementReference _roundPillContainerRef;
     private bool _pendingScrollIntoView;
+    private bool _isSharing;
+    private string? _shareMessage;
+
+    // Only offer the share button when the current user actually appears in the selected round's
+    // results - i.e. they took part, so the share-card endpoint has predictions to render.
+    private bool CanShareSelectedRound =>
+        State.SelectedRoundId is not null
+        && !string.IsNullOrEmpty(CurrentUserId)
+        && State.CurrentRoundResults.Any(p => p.UserId == CurrentUserId);
+
+    // Fetches a server-rendered PNG of the current user's predictions for the selected round and
+    // hands it to the native share sheet (Web Share API), falling back to a download on browsers
+    // without file sharing. The card is rendered in the user's active theme.
+    private async Task SharePredictionsAsync()
+    {
+        if (_isSharing || State.SelectedRoundId is not { } roundId)
+            return;
+
+        _isSharing = true;
+        _shareMessage = null;
+
+        try
+        {
+            var image = await LeagueService.GetShareCardAsync(roundId, ThemeService.CurrentTheme);
+
+            if (image is null || image.Length == 0)
+            {
+                _shareMessage = "You have no predictions to share for this round.";
+                return;
+            }
+
+            var base64 = Convert.ToBase64String(image);
+            var fileName = $"predictions-round-{roundId}.png";
+            var roundNumber = State.ViewableRounds.FirstOrDefault(r => r.Id == roundId)?.RoundNumber;
+            var shareText = roundNumber is { } number ? $"My Round {number} predictions" : "My predictions";
+
+            await JsRuntime.InvokeAsync<string>("blazorInterop.sharePredictions", base64, fileName, "My Predictions", shareText);
+        }
+        catch
+        {
+            _shareMessage = "Could not prepare the share image. Please try again.";
+        }
+        finally
+        {
+            _isSharing = false;
+        }
+    }
 
     private DateTime? DeadlineUtc => State.ViewableRounds.FirstOrDefault(r => r.Id == State.SelectedRoundId.GetValueOrDefault())?.DeadlineUtc;
 
