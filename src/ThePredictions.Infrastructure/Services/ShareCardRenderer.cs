@@ -267,9 +267,10 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
             canvas.DrawRoundRect(rowRect, 20, 20, borderPaint);
         }
 
-        // Teams pinned to the outer edges so the row uses its full width.
-        var homeLogoCentre = Padding + 46;
-        var awayLogoCentre = Width - Padding - 46;
+        // Teams sit a comfortable inset from the row edges (not hard against them), which also pulls
+        // each team closer to the central score so the row reads as one unit.
+        var homeLogoCentre = Padding + 66;
+        var awayLogoCentre = Width - Padding - 66;
 
         DrawTeamLogo(canvas, match.HomeTeamLogoUrl, match.HomeTeamAbbreviation, homeLogoCentre, centreY, logos);
         DrawTeamLogo(canvas, match.AwayTeamLogoUrl, match.AwayTeamAbbreviation, awayLogoCentre, centreY, logos);
