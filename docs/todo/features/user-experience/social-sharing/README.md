@@ -47,17 +47,24 @@ opens the native share sheet so it can be sent to anyone.
       use the native share sheet with a download fallback.
 - [x] Web Share API interop shim (`navigator.canShare` / `navigator.share`).
 
-## Residual (follow-up, not in this iteration)
+## Link previews (Open Graph / Twitter)
 
-- [ ] **Per-content Open Graph / Twitter card image.** The Web host currently does
-      `MapFallbackToFile("index.html")` with **static** OG tags, and social crawlers
-      do not run the WASM app - so per-content `og:image` link unfurls need
-      server-side meta-tag rendering in `ThePredictions.Web` (middleware ahead of the
-      fallback that serves crawler-facing HTML with per-round meta tags pointing at a
-      public, unauthenticated variant of the share-card endpoint). The static
-      site-wide OG/Twitter baseline in `index.html` remains in place until then.
-- [ ] Share **results** surface beyond the active-rounds tile (e.g. a season recap
-      share) - overlaps with the `season-recap` plan.
+- [x] **Generic site-wide preview upgraded.** The `index.html` OG/Twitter tags now
+      point at a purpose-built branded 1200x630 banner (`images/og-preview.png` -
+      logo, tagline, description, URL on the brand background) instead of the bare
+      logo, with `og:image:width/height` and `alt` so the large-card unfurl renders
+      reliably. This is the preview any link to the site shows.
+
+## Residual (deliberately deferred - low value)
+
+- [ ] **Per-content (per-round) link previews.** Making a pasted link unfurl with a
+      *specific round's* card (rather than the generic banner) needs crawler-facing,
+      server-rendered HTML in `ThePredictions.Web` plus a public, unauthenticated
+      image endpoint (crawlers are not logged in, so it cannot show the sharer's own
+      predictions - only a generic round card). Judged low value: the feature already
+      shares the rich image directly, and there is no per-round share link in the UI.
+- [ ] Share **results** surface beyond the tiles (e.g. a season recap share) -
+      overlaps with the `season-recap` plan.
 
 ## Notes
 
