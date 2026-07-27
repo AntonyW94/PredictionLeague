@@ -56,10 +56,22 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
         catch (IOException ex) when (ex.Message.Contains("The client reset the request stream"))
         {
             logger.LogInformation("Client reset the request stream. Request path: {Path}", context.Request.Path);
-        } 
-        catch (Exception ex) when (ex.Message.Contains("A task was canceled"))
+        }
+        catch (OperationCanceledException)
         {
-            logger.LogInformation("Task cancelled. Request path: {Path}", context.Request.Path);
+            // The request was cancelled - almost always the client disconnecting or navigating away
+            // mid-request (TaskCanceledException derives from OperationCanceledException). This is not a
+            // server fault, so log at Information rather than Error, and do not emit a 500 - there is
+            // typically no client left to receive one.
+            logger.LogInformation("Request cancelled. Request path: {Path}", context.Request.Path);
+        }
+        catch (Exception ex) when (context.RequestAborted.IsCancellationRequested)
+        {
+            // The client aborted mid-request, but the cancellation surfaced from the data provider as a
+            // SqlException ("Operation cancelled by user." / "the batch is aborted ... abort signal sent
+            // from client") rather than an OperationCanceledException. Same meaning - informational, not
+            // an error.
+            logger.LogInformation("Request cancelled by client ({ExceptionType}). Request path: {Path}", ex.GetType().Name, context.Request.Path);
         }
         catch (Exception ex)
         {
