@@ -28,8 +28,12 @@ opens the native share sheet so it can be sent to anyone.
 - [x] Server-rendered share card: `GET /api/rounds/{roundId}/share-card` returns a
       PNG of the current user's predictions for the round (SkiaSharp renderer in
       Infrastructure behind `IShareCardRenderer`; data via a read-side query).
-- [x] Team logos fetched server-side via a typed `HttpClient`, with a graceful
-      abbreviation-badge fallback when a logo is missing or cannot be decoded.
+- [x] Team logos fetched server-side via a typed `HttpClient` and rasterised
+      (badges/flags are stored as **SVG**, handled via `Svg.Skia`; raster logos
+      decode directly), with a graceful abbreviation-badge fallback when a logo is
+      missing or cannot be decoded.
+- [x] Scores shown as tinted **badge/pill** chips matching the website's outcome
+      chips (green exact / orange correct-result / red incorrect; neutral pre-result).
 - [x] "How I did" state: once a match is scored the card shows the actual score and
       colour-codes the pick (exact / correct-result / incorrect).
 - [x] Real brand logo in the card header (embedded resource), with **light and dark**

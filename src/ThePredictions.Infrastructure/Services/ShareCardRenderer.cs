@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
+using Svg.Skia;
 using ThePredictions.Application.Features.Sharing.Models;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Enumerations;
@@ -8,18 +9,20 @@ namespace ThePredictions.Infrastructure.Services;
 
 /// <summary>
 /// Renders a prediction share card to a PNG using SkiaSharp. Team logos are fetched over HTTP
-/// and, when one is missing or cannot be decoded, a coloured abbreviation badge is drawn instead
-/// so the card always renders. The layout is a single branded column: header (brand logo, title,
-/// subtitle), one row per match, footer. Light and dark colour schemes mirror the player's UI theme.
+/// (raster or SVG - the football data stores badges and flags as SVG) and, when one is missing or
+/// cannot be decoded, a coloured abbreviation badge is drawn instead so the card always renders.
+/// The layout is a single branded column: header (brand logo, title, subtitle) then one row per
+/// match. Light and dark colour schemes mirror the player's UI theme.
 /// </summary>
 public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer> logger) : IShareCardRenderer
 {
     private const int Width = 1080;
     private const int Padding = 60;
-    private const int HeaderHeight = 260;
-    private const int RowHeight = 104;
-    private const int FooterHeight = 96;
-    private const int LogoSize = 60;
+    private const int HeaderHeight = 320;
+    private const int RowHeight = 112;
+    private const int BottomPadding = 56;
+    private const int LogoSize = 64;
+    private const int SvgRasterSize = 128;
 
     // Outcome colours read on both light and dark cards, so they are theme-independent.
     private static readonly SKColor ExactColour = SKColor.Parse("#00B960");
@@ -29,8 +32,8 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
 
     // Brand logos are embedded resources (see the .csproj) so they are always present in a
     // framework-dependent publish. Decoded once and reused - SKImage is immutable and safe to share.
-    private static readonly Lazy<SKImage?> DarkLogo = new(() => LoadLogo("logo-header-dark.png"));
-    private static readonly Lazy<SKImage?> LightLogo = new(() => LoadLogo("logo-header-light.png"));
+    private static readonly Lazy<SKImage?> DarkLogo = new(() => LoadEmbeddedLogo("logo-header-dark.png"));
+    private static readonly Lazy<SKImage?> LightLogo = new(() => LoadEmbeddedLogo("logo-header-light.png"));
 
     public async Task<byte[]> RenderAsync(ShareCardModel model, CancellationToken cancellationToken)
     {
@@ -39,7 +42,7 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
 
         try
         {
-            var height = HeaderHeight + (model.Matches.Count * RowHeight) + FooterHeight;
+            var height = HeaderHeight + (model.Matches.Count * RowHeight) + BottomPadding;
 
             using var surface = SKSurface.Create(new SKImageInfo(Width, height));
             var canvas = surface.Canvas;
@@ -52,8 +55,6 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
                 var rowTop = HeaderHeight + (i * RowHeight);
                 DrawMatchRow(canvas, model.Matches[i], rowTop, logos, palette);
             }
-
-            DrawFooter(canvas, height, palette);
 
             using var image = surface.Snapshot();
             using var data = image.Encode();
@@ -76,9 +77,10 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
                 Subtitle: SKColor.Parse("#B9A6CC"),
                 RowFill: new SKColor(255, 255, 255, 16),
                 RowBorder: SKColor.Empty,
-                Divider: new SKColor(255, 255, 255, 38),
+                NeutralChipFill: new SKColor(255, 255, 255, 26),
+                NeutralChipBorder: new SKColor(255, 255, 255, 60),
                 NeutralScore: SKColor.Parse("#FFFFFF"),
-                Footer: SKColor.Parse("#FFFFFF"),
+                ChipTintAlpha: 54,
                 Logo: DarkLogo.Value)
             : new Palette(
                 BackgroundTop: SKColor.Parse("#F4EEFA"),
@@ -87,9 +89,10 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
                 Subtitle: SKColor.Parse("#6E5C86"),
                 RowFill: SKColor.Parse("#FFFFFF"),
                 RowBorder: SKColor.Parse("#E3D7F0"),
-                Divider: SKColor.Parse("#D9CCEA"),
+                NeutralChipFill: SKColor.Parse("#F1EAF9"),
+                NeutralChipBorder: SKColor.Parse("#DCCEEE"),
                 NeutralScore: SKColor.Parse("#2C0A3D"),
-                Footer: SKColor.Parse("#4A2E6C"),
+                ChipTintAlpha: 40,
                 Logo: LightLogo.Value);
     }
 
@@ -121,19 +124,70 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
         try
         {
             var bytes = await httpClient.GetByteArrayAsync(url, cancellationToken);
-            using var data = SKData.CreateCopy(bytes);
-            return SKImage.FromEncodedData(data);
+            return DecodeLogo(bytes);
         }
         catch (Exception exception)
         {
-            // A missing or undecodable logo (network error, SVG, 404) is non-fatal: the card falls
-            // back to an abbreviation badge, so log at debug and carry on.
+            // A missing or undecodable logo (network error, bad SVG, 404) is non-fatal: the card
+            // falls back to an abbreviation badge, so log at debug and carry on.
             logger.LogDebug(exception, "Could not fetch team logo for share card from {LogoUrl}", url);
             return null;
         }
     }
 
-    private static SKImage? LoadLogo(string fileName)
+    // Team logos are a mix of raster (PNG) and SVG (Premier League badges, circle-flags), so sniff
+    // the payload and rasterise SVG - SkiaSharp decodes raster only.
+    private static SKImage? DecodeLogo(byte[] bytes)
+    {
+        if (LooksLikeSvg(bytes))
+            return RasteriseSvg(bytes);
+
+        using var data = SKData.CreateCopy(bytes);
+        return SKImage.FromEncodedData(data);
+    }
+
+    private static bool LooksLikeSvg(byte[] bytes)
+    {
+        var index = 0;
+
+        if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+            index = 3;
+
+        while (index < bytes.Length && bytes[index] is 0x20 or 0x09 or 0x0A or 0x0D)
+            index++;
+
+        return index < bytes.Length && bytes[index] == (byte)'<';
+    }
+
+    private static SKImage? RasteriseSvg(byte[] bytes)
+    {
+        using var stream = new MemoryStream(bytes);
+        using var svg = new SKSvg();
+        var picture = svg.Load(stream);
+
+        var bounds = picture?.CullRect ?? SKRect.Empty;
+        if (picture is null || bounds.Width <= 0 || bounds.Height <= 0)
+            return null;
+
+        var scale = Math.Min(SvgRasterSize / bounds.Width, SvgRasterSize / bounds.Height);
+        var drawWidth = bounds.Width * scale;
+        var drawHeight = bounds.Height * scale;
+
+        using var surface = SKSurface.Create(new SKImageInfo(SvgRasterSize, SvgRasterSize));
+        surface.Canvas.Clear(SKColors.Transparent);
+
+        var matrix = SKMatrix.CreateScaleTranslation(
+            scale,
+            scale,
+            ((SvgRasterSize - drawWidth) / 2f) - (bounds.Left * scale),
+            ((SvgRasterSize - drawHeight) / 2f) - (bounds.Top * scale));
+
+        surface.Canvas.DrawPicture(picture, in matrix);
+        surface.Canvas.Flush();
+        return surface.Snapshot();
+    }
+
+    private static SKImage? LoadEmbeddedLogo(string fileName)
     {
         var resourceName = $"ThePredictions.Infrastructure.Assets.{fileName}";
         using var stream = typeof(ShareCardRenderer).Assembly.GetManifestResourceStream(resourceName);
@@ -166,9 +220,9 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
 
         if (palette.Logo is { } logo)
         {
-            var targetHeight = 74f;
+            var targetHeight = 86f;
             var targetWidth = targetHeight * logo.Width / logo.Height;
-            var maxWidth = Width - 260;
+            var maxWidth = Width - 300;
 
             if (targetWidth > maxWidth)
             {
@@ -176,7 +230,7 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
                 targetHeight = targetWidth * logo.Height / logo.Width;
             }
 
-            var logoRect = SKRect.Create(centreX - (targetWidth / 2f), 44, targetWidth, targetHeight);
+            var logoRect = SKRect.Create(centreX - (targetWidth / 2f), 56, targetWidth, targetHeight);
             canvas.DrawImage(logo, logoRect, new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
         }
 
@@ -186,11 +240,11 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
 
         using var titleFont = CreateFont(58, bold: true);
         using var titlePaint = CreatePaint(palette.Title);
-        DrawText(canvas, title, centreX, 168, titleFont, titlePaint, SKTextAlign.Center);
+        DrawText(canvas, title, centreX, 210, titleFont, titlePaint, SKTextAlign.Center);
 
-        using var subtitleFont = CreateFont(32, bold: false);
+        using var subtitleFont = CreateFont(31, bold: false);
         using var subtitlePaint = CreatePaint(palette.Subtitle);
-        DrawText(canvas, $"{model.SeasonName}  -  {model.RoundLabel}", centreX, 218, subtitleFont, subtitlePaint, SKTextAlign.Center);
+        DrawText(canvas, $"{model.SeasonName}  -  {model.RoundLabel}", centreX, 272, subtitleFont, subtitlePaint, SKTextAlign.Center);
     }
 
     private static void DrawMatchRow(
@@ -204,8 +258,8 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
         var centreY = rowTop + (RowHeight / 2f);
         var rowRect = SKRect.Create(Padding, rowTop + 8, Width - (2 * Padding), RowHeight - 16);
 
-        using var rowPaint = new SKPaint { Color = palette.RowFill, IsAntialias = true };
-        canvas.DrawRoundRect(rowRect, 18, 18, rowPaint);
+        using (var rowPaint = new SKPaint { Color = palette.RowFill, IsAntialias = true })
+            canvas.DrawRoundRect(rowRect, 18, 18, rowPaint);
 
         if (palette.RowBorder != SKColor.Empty)
         {
@@ -213,30 +267,54 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
             canvas.DrawRoundRect(rowRect, 18, 18, borderPaint);
         }
 
-        var homeLogoCentre = centreX - 150;
-        var awayLogoCentre = centreX + 150;
+        var homeLogoCentre = centreX - 168;
+        var awayLogoCentre = centreX + 168;
 
         DrawTeamLogo(canvas, match.HomeTeamLogoUrl, match.HomeTeamAbbreviation, homeLogoCentre, centreY, logos);
         DrawTeamLogo(canvas, match.AwayTeamLogoUrl, match.AwayTeamAbbreviation, awayLogoCentre, centreY, logos);
 
-        using var nameFont = CreateFont(30, bold: false);
+        using var nameFont = CreateFont(29, bold: false);
         using var namePaint = CreatePaint(palette.Title);
-        DrawText(canvas, match.HomeTeamShortName, homeLogoCentre - (LogoSize / 2f) - 22, centreY, nameFont, namePaint, SKTextAlign.Right);
-        DrawText(canvas, match.AwayTeamShortName, awayLogoCentre + (LogoSize / 2f) + 22, centreY, nameFont, namePaint, SKTextAlign.Left);
+        DrawText(canvas, match.HomeTeamShortName, homeLogoCentre - (LogoSize / 2f) - 20, centreY, nameFont, namePaint, SKTextAlign.Right);
+        DrawText(canvas, match.AwayTeamShortName, awayLogoCentre + (LogoSize / 2f) + 20, centreY, nameFont, namePaint, SKTextAlign.Left);
 
-        var scoreColour = match.IsScored ? OutcomeColour(match.Outcome) : palette.NeutralScore;
-        var scoreY = match.IsScored ? centreY - 12 : centreY;
+        DrawScoreBadge(canvas, match, centreX, centreY, palette);
+    }
 
-        using var scoreFont = CreateFont(46, bold: true);
-        using var scorePaint = CreatePaint(scoreColour);
-        DrawText(canvas, $"{match.PredictedHomeScore} - {match.PredictedAwayScore}", centreX, scoreY, scoreFont, scorePaint, SKTextAlign.Center);
+    private static void DrawScoreBadge(SKCanvas canvas, ShareCardMatch match, float centreX, float centreY, Palette palette)
+    {
+        const float chipWidth = 150f;
+        const float chipHeight = 62f;
+
+        var (fill, border, textColour) = match.IsScored
+            ? OutcomeChip(match.Outcome, palette.ChipTintAlpha)
+            : (palette.NeutralChipFill, palette.NeutralChipBorder, palette.NeutralScore);
+
+        var chipCentreY = match.IsScored ? centreY - 11 : centreY;
+        var chipRect = SKRect.Create(centreX - (chipWidth / 2f), chipCentreY - (chipHeight / 2f), chipWidth, chipHeight);
+
+        using (var fillPaint = new SKPaint { Color = fill, IsAntialias = true })
+            canvas.DrawRoundRect(chipRect, 16, 16, fillPaint);
+
+        using (var borderPaint = new SKPaint { Color = border, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 2.5f })
+            canvas.DrawRoundRect(chipRect, 16, 16, borderPaint);
+
+        using (var scoreFont = CreateFont(40, bold: true))
+        using (var scorePaint = CreatePaint(textColour))
+            DrawText(canvas, $"{match.PredictedHomeScore} - {match.PredictedAwayScore}", centreX, chipCentreY, scoreFont, scorePaint, SKTextAlign.Center);
 
         if (match.IsScored)
         {
-            using var actualFont = CreateFont(24, bold: false);
+            using var actualFont = CreateFont(23, bold: false);
             using var actualPaint = CreatePaint(palette.Subtitle);
-            DrawText(canvas, $"FT {match.ActualHomeScore}-{match.ActualAwayScore}", centreX, centreY + 26, actualFont, actualPaint, SKTextAlign.Center);
+            DrawText(canvas, $"FT {match.ActualHomeScore}-{match.ActualAwayScore}", centreX, centreY + 30, actualFont, actualPaint, SKTextAlign.Center);
         }
+    }
+
+    private static (SKColor Fill, SKColor Border, SKColor Text) OutcomeChip(PredictionOutcome outcome, byte tintAlpha)
+    {
+        var colour = OutcomeColour(outcome);
+        return (colour.WithAlpha(tintAlpha), colour.WithAlpha(170), colour);
     }
 
     private static void DrawTeamLogo(
@@ -264,19 +342,6 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
         using var abbreviationFont = CreateFont(22, bold: true);
         using var abbreviationPaint = CreatePaint(SKColor.Parse("#FFFFFF"));
         DrawText(canvas, abbreviation, centreX, centreY, abbreviationFont, abbreviationPaint, SKTextAlign.Center);
-    }
-
-    private static void DrawFooter(SKCanvas canvas, int height, Palette palette)
-    {
-        var centreX = Width / 2f;
-        var footerTop = height - FooterHeight;
-
-        using var dividerPaint = new SKPaint { Color = palette.Divider, IsAntialias = true, StrokeWidth = 2 };
-        canvas.DrawLine(Padding, footerTop, Width - Padding, footerTop, dividerPaint);
-
-        using var footerFont = CreateFont(30, bold: true);
-        using var footerPaint = CreatePaint(palette.Footer);
-        DrawText(canvas, "thepredictions.co.uk", centreX, footerTop + (FooterHeight / 2f), footerFont, footerPaint, SKTextAlign.Center);
     }
 
     private static SKColor OutcomeColour(PredictionOutcome outcome)
@@ -321,8 +386,9 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
         SKColor Subtitle,
         SKColor RowFill,
         SKColor RowBorder,
-        SKColor Divider,
+        SKColor NeutralChipFill,
+        SKColor NeutralChipBorder,
         SKColor NeutralScore,
-        SKColor Footer,
+        byte ChipTintAlpha,
         SKImage? Logo);
 }
