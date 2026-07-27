@@ -31,7 +31,9 @@ opens the native share sheet so it can be sent to anyone.
 - [x] Team logos fetched server-side via a typed `HttpClient` and rasterised
       (badges/flags are stored as **SVG**, handled via `Svg.Skia`; raster logos
       decode directly), with a graceful abbreviation-badge fallback when a logo is
-      missing or cannot be decoded.
+      missing or cannot be decoded. Decoded logos are cached (`IMemoryCache`, 12h)
+      so renders are fast - important because a slow render pushes the client's Web
+      Share call outside its short user-activation window and the first share no-ops.
 - [x] Scores shown as tinted **badge/pill** chips matching the website's outcome
       chips (green exact / orange correct-result / red incorrect; neutral pre-result).
 - [x] "How I did" state: once a match is scored the card shows the actual score and

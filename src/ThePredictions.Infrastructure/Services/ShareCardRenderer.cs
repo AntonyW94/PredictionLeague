@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
 using Svg.Skia;
@@ -15,8 +16,10 @@ namespace ThePredictions.Infrastructure.Services;
 /// prediction in the centre as an outcome-coloured pill mirroring the site's prediction badges.
 /// Light and dark colour schemes mirror the player's UI theme.
 /// </summary>
-public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer> logger) : IShareCardRenderer
+public class ShareCardRenderer(HttpClient httpClient, IMemoryCache cache, ILogger<ShareCardRenderer> logger) : IShareCardRenderer
 {
+    private static readonly TimeSpan LogoCacheTtl = TimeSpan.FromHours(12);
+
     private const int Width = 1080;
     private const int Padding = 60;
     private const int HeaderHeight = 320;
@@ -41,34 +44,28 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
 
     public async Task<byte[]> RenderAsync(ShareCardModel model, CancellationToken cancellationToken)
     {
+        // Logos are cached and shared (SKImage is immutable and safe to reuse across renders), so
+        // they are owned by the cache here and must not be disposed.
         var logos = await FetchLogosAsync(model.Matches, cancellationToken);
         var palette = BuildPalette(model.Theme);
 
-        try
+        var height = HeaderHeight + (model.Matches.Count * RowHeight) + BottomPadding;
+
+        using var surface = SKSurface.Create(new SKImageInfo(Width, height));
+        var canvas = surface.Canvas;
+
+        DrawBackground(canvas, height, palette);
+        DrawHeader(canvas, model, palette);
+
+        for (var i = 0; i < model.Matches.Count; i++)
         {
-            var height = HeaderHeight + (model.Matches.Count * RowHeight) + BottomPadding;
-
-            using var surface = SKSurface.Create(new SKImageInfo(Width, height));
-            var canvas = surface.Canvas;
-
-            DrawBackground(canvas, height, palette);
-            DrawHeader(canvas, model, palette);
-
-            for (var i = 0; i < model.Matches.Count; i++)
-            {
-                var rowTop = HeaderHeight + (i * RowHeight);
-                DrawMatchRow(canvas, model.Matches[i], rowTop, logos, palette);
-            }
-
-            using var image = surface.Snapshot();
-            using var data = image.Encode();
-            return data.ToArray();
+            var rowTop = HeaderHeight + (i * RowHeight);
+            DrawMatchRow(canvas, model.Matches[i], rowTop, logos, palette);
         }
-        finally
-        {
-            foreach (var logo in logos.Values)
-                logo?.Dispose();
-        }
+
+        using var image = surface.Snapshot();
+        using var data = image.Encode();
+        return data.ToArray();
     }
 
     private static Palette BuildPalette(ShareCardTheme theme)
@@ -127,10 +124,22 @@ public class ShareCardRenderer(HttpClient httpClient, ILogger<ShareCardRenderer>
         if (!Uri.TryCreate(url, UriKind.Absolute, out _))
             return null;
 
+        // Cache the decoded logo across requests. Fetching and rasterising ~20 SVG badges per card
+        // is the slow part of a render; caching keeps renders fast enough that the client's Web Share
+        // call stays inside its short user-activation window (otherwise the first share is a no-op).
+        var cacheKey = $"share-card-logo::{url}";
+        if (cache.TryGetValue(cacheKey, out SKImage? cached))
+            return cached;
+
         try
         {
             var bytes = await httpClient.GetByteArrayAsync(url, cancellationToken);
-            return DecodeLogo(bytes);
+            var image = DecodeLogo(bytes);
+
+            if (image is not null)
+                cache.Set(cacheKey, image, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = LogoCacheTtl });
+
+            return image;
         }
         catch (Exception exception)
         {
