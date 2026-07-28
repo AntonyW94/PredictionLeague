@@ -111,11 +111,12 @@ public class UpdateMatchResultsCommandHandler(
 
             // Stats and prizes are finalised, so award any badges earned this round before the digest
             // goes out. Idempotent, so re-completing the round won't double-award.
-            await mediator.Send(new EvaluateBadgesForRoundCommand(round.Id), cancellationToken);
+            var badgesAwarded = await mediator.Send(new EvaluateBadgesForRoundCommand(round.Id), cancellationToken);
 
-            // Stats and prizes are now finalised for the round, so send the results digest.
+            // Stats and prizes are now finalised for the round, so send the results digest, passing the
+            // badges just earned so the email can celebrate them.
             // Idempotent via Round.ResultsDigestSentUtc, so re-completing the round won't re-send.
-            await mediator.Send(new SendRoundDigestEmailsCommand(round.Id), cancellationToken);
+            await mediator.Send(new SendRoundDigestEmailsCommand(round.Id, BadgesAwarded: badgesAwarded), cancellationToken);
 
             // Then the celebratory prize emails - winners see "here's how you did" before "and you won!".
             // Idempotent via the PrizeNotifications sent-log, so re-completing the round won't re-send.

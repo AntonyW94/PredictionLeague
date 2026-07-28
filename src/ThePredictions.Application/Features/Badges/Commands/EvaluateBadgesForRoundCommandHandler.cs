@@ -1,4 +1,5 @@
 using MediatR;
+using ThePredictions.Application.Features.Badges;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Contracts.Badges;
 using ThePredictions.Domain.Common;
@@ -10,15 +11,17 @@ public class EvaluateBadgesForRoundCommandHandler(
     IRoundRepository roundRepository,
     IBadgeEvaluationRepository evaluationRepository,
     IUserBadgeRepository userBadgeRepository,
-    IDateTimeProvider dateTimeProvider) : IRequestHandler<EvaluateBadgesForRoundCommand>
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<EvaluateBadgesForRoundCommand, IReadOnlyList<RoundBadgeAward>>
 {
     private const int MinimumCrowdForBeatTheCrowd = 5;
 
-    public async Task Handle(EvaluateBadgesForRoundCommand request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<RoundBadgeAward>> Handle(EvaluateBadgesForRoundCommand request, CancellationToken cancellationToken)
     {
+        var newAwards = new List<RoundBadgeAward>();
+
         var round = await roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
         if (round is null)
-            return;
+            return newAwards;
 
         var seasonId = round.SeasonId;
 
@@ -28,11 +31,17 @@ public class EvaluateBadgesForRoundCommandHandler(
         var awardedUtc = round.CompletedDateUtc
             ?? (round.Matches.Any() ? round.Matches.Max(m => m.MatchDateTimeUtc) : dateTimeProvider.UtcNow);
 
+        // AwardAsync returns true only on a genuinely new insert, so we collect those to tell the digest
+        // exactly what the player earned this round (per-round, season and lifetime badges alike - which a
+        // WHERE RoundId query could not, since lifetime/season awards store a null RoundId).
         async Task Award(string userId, string badgeKey, DateTime whenUtc, int? leagueId = null, int? roundId = null, int? seasonScopeId = null, string? detail = null)
         {
-            await userBadgeRepository.AwardAsync(
+            var isNewAward = await userBadgeRepository.AwardAsync(
                 AwardedBadge.Create(userId, badgeKey, whenUtc, leagueId, roundId, seasonScopeId, detail),
                 cancellationToken);
+
+            if (isNewAward)
+                newAwards.Add(new RoundBadgeAward(userId, badgeKey));
         }
 
         // 1. Per-user round results: first steps + Sharpshooter.
@@ -128,7 +137,7 @@ public class EvaluateBadgesForRoundCommandHandler(
         // 9. Season-end honours + Ever-Present.
         var isLastRound = await roundRepository.IsLastRoundOfSeasonAsync(round.Id, seasonId, cancellationToken);
         if (!isLastRound)
-            return;
+            return newAwards;
 
         var standings = await evaluationRepository.GetSeasonStandingsAsync(seasonId, cancellationToken);
         foreach (var s in standings)
@@ -142,5 +151,7 @@ public class EvaluateBadgesForRoundCommandHandler(
         var everPresent = await evaluationRepository.GetEverPresentUsersAsync(seasonId, cancellationToken);
         foreach (var userId in everPresent)
             await Award(userId, BadgeKeys.EverPresent, awardedUtc, seasonScopeId: seasonId);
+
+        return newAwards;
     }
 }

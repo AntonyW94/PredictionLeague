@@ -158,6 +158,8 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(10);
         });
 
+        services.AddSingleton<IBadgeIconRenderer, BadgeIconRenderer>();
+
         services.AddScoped<ILeagueStatsService, LeagueStatsService>();
         services.AddScoped<ILeagueMembershipService, LeagueMembershipService>();
         services.AddScoped<ISeasonAccessService, SeasonAccessService>();

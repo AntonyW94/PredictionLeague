@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Features.Admin.Rounds.Queries;
+using ThePredictions.Application.Features.Badges;
 using ThePredictions.Application.Formatters;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
@@ -56,8 +57,24 @@ public class SendRoundDigestEmailsCommandHandler(
 
         var baseUrl = _siteSettings.ResolvedBaseUrl;
 
+        // Group the newly-earned badges by user, collapsing each collection to the single highest tier
+        // earned this round (so a player who jumped bronze -> gold sees one gold Sharpshooter, not three).
+        var badgesByUser = (request.BadgesAwarded ?? [])
+            .Select(award => new { award.UserId, Display = BadgeCatalogue.Resolve(award.BadgeKey) })
+            .Where(x => x.Display is not null)
+            .GroupBy(x => x.UserId)
+            .ToDictionary(
+                userGroup => userGroup.Key,
+                userGroup => userGroup
+                    .GroupBy(x => x.Display!.GroupKey)
+                    .Select(tierGroup => tierGroup.OrderByDescending(x => x.Display!.Tier).First().Display!)
+                    .OrderBy(display => display.Name)
+                    .ToList());
+
         foreach (var digest in digests)
         {
+            var earnedBadges = badgesByUser.TryGetValue(digest.UserId, out var badges) ? badges : [];
+
             var parameters = new
             {
                 FIRST_NAME = digest.FirstName,
@@ -66,6 +83,11 @@ public class SendRoundDigestEmailsCommandHandler(
                 EXACT_SCORES = digest.ExactScoreCount,
                 NEXT_ROUND_NAME = digest.NextRoundName ?? string.Empty,
                 NEXT_ROUND_DEADLINE = digest.NextRoundDeadlineUtc.HasValue ? dateFormatter.FormatDeadline(digest.NextRoundDeadlineUtc.Value) : string.Empty,
+                BADGES = earnedBadges.Select(badge => new
+                {
+                    NAME = badge.Name,
+                    ICON_URL = $"{baseUrl}/api/badges/{badge.Key}.png"
+                }).ToList(),
                 LEAGUES = digest.Leagues.Select(league => new
                 {
                     LEAGUE_NAME = league.LeagueName,

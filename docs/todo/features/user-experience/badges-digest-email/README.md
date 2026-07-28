@@ -2,7 +2,21 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
+
+> **Approach decided (2026-07-27):** badge icons are shown as **hosted PNGs**, not the
+> app's inline SVG (email clients strip SVG/CSS). A public endpoint
+> `GET /api/badges/{key}.png` rasterises the badge face server-side (reusing the
+> share-card SkiaSharp + `Svg.Skia` stack; glyph markup centralised in
+> `Contracts.Badges.BadgeGlyphs`, colours baked per variant, cached 24h). The
+> newly-earned awards are surfaced by making `EvaluateBadgesForRoundCommand` return
+> the genuine inserts (a `WHERE RoundId` query can't - lifetime/season badges store a
+> null RoundId), threaded into `SendRoundDigestEmailsCommand`, and passed to the Brevo
+> template as a repeatable `BADGES` list (`NAME`, `ICON_URL`), collapsing collection
+> tiers to the highest earned. The badge name is always text (+ `alt`) so it survives
+> image-blocking clients. **Note: the Brevo template is shared across dev/prod - the
+> new `{% if params.BADGES %}` block is additive/backward-compatible (hidden when the
+> param is absent, i.e. prod's current sends), but pushing it needs explicit go-ahead.**
 
 ## Summary
 
