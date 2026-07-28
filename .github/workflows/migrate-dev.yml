@@ -12,3 +12,13 @@ jobs:
       environment: dev
     secrets:
       MIGRATE_CONNECTION_STRING: ${{ secrets.DEV_CONNECTION_STRING }}
+
+  notify:
+    if: always()
+    needs: [migrate]
+    uses: ./.github/workflows/notify-slack.yml
+    with:
+      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      notify-on: always
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -42,3 +42,15 @@ jobs:
       - name: Report Success
         if: success()
         run: echo "Production database backed up successfully!"
+
+  # Failures only: this runs daily on a schedule, so a success message every morning
+  # would be noise that trains you to ignore the channel.
+  notify:
+    if: always()
+    needs: [migrate, backup]
+    uses: ./.github/workflows/notify-slack.yml
+    with:
+      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      notify-on: failure
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

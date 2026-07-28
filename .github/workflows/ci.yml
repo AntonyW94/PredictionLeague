@@ -37,3 +37,14 @@ jobs:
           '/p:ExcludeByFile="**/*.g.cs%2c**/obj/**"'
           /p:Threshold=100
           '/p:ThresholdType="line%2cbranch"'
+
+  # Failures only: CI runs on every push, and a green run is already visible on the PR.
+  notify:
+    if: always()
+    needs: [build-and-test]
+    uses: ./.github/workflows/notify-slack.yml
+    with:
+      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      notify-on: failure
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
