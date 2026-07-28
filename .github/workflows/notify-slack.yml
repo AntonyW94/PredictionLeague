@@ -1,0 +1,79 @@
+name: Notify Slack (shared)
+
+# Posts a one-line outcome to the #github Slack channel via an incoming webhook.
+#
+# Called via `workflow_call` from the TOP-LEVEL workflows only. Deliberately never called
+# from migrate-shared.yml: that has seven callers, so notifying there would post a second
+# message every time a deploy, backup or refresh ran its migration step.
+#
+# SLACK_WEBHOOK_URL is optional on purpose. If it is not set the notification is skipped
+# with a log line instead of failing the run, so this can be merged and live in the repo
+# before the secret exists.
+
+on:
+  workflow_call:
+    inputs:
+      status:
+        description: 'Overall outcome of the calling workflow: success or failure.'
+        required: true
+        type: string
+      notify-on:
+        description: 'always (post success and failure) or failure (post failures only).'
+        required: false
+        default: always
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: false
+
+jobs:
+  notify:
+    if: inputs.notify-on == 'always' || inputs.status == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post outcome to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          STATUS: ${{ inputs.status }}
+          WORKFLOW: ${{ github.workflow }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SLACK_WEBHOOK_URL:-}" ]; then
+            echo "SLACK_WEBHOOK_URL is not set - skipping the Slack notification."
+            exit 0
+          fi
+
+          if [ "${STATUS}" = "success" ]; then
+            icon=":white_check_mark:"
+            colour="#00B960"
+            outcome="succeeded"
+          else
+            icon=":x:"
+            colour="#E90052"
+            outcome="failed"
+          fi
+
+          text="${icon} *${WORKFLOW}* ${outcome} on \`${REF_NAME}\`"
+          text="${text}"$'\n'"<${RUN_URL}|Run #${RUN_NUMBER}> - ${ACTOR}"
+
+          payload=$(jq -n \
+            --arg colour "${colour}" \
+            --arg text "${text}" \
+            '{attachments: [{color: $colour, blocks: [{type: "section", text: {type: "mrkdwn", text: $text}}]}]}')
+
+          http=$(curl -sS -o /tmp/slack-response.txt -w '%{http_code}' \
+            -X POST -H 'Content-type: application/json' \
+            --data "${payload}" "${SLACK_WEBHOOK_URL}")
+
+          if [ "${http}" != "200" ]; then
+            echo "Slack webhook returned HTTP ${http}:"
+            cat /tmp/slack-response.txt
+            exit 1
+          fi
+
+          echo "Posted ${STATUS} notification for ${WORKFLOW}."

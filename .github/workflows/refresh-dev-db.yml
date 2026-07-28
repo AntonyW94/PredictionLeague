@@ -65,3 +65,13 @@ jobs:
           echo "Test accounts created:"
           echo "  testplayer@dev.local / [password in secrets]"
           echo "  testadmin@dev.local / [password in secrets]"
+
+  notify:
+    if: always()
+    needs: [migrate, refresh]
+    uses: ./.github/workflows/notify-slack.yml
+    with:
+      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      notify-on: always
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
