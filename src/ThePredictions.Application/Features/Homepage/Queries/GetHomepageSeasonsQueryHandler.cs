@@ -20,14 +20,14 @@ public class GetHomepageSeasonsQueryHandler(IApplicationReadDbConnection dbConne
                 c.[Type] AS CompetitionType,
                 s.[StartDateUtc],
                 s.[EndDateUtc],
-                CASE
+                CAST(CASE
                     WHEN GETUTCDATE() BETWEEN s.[StartDateUtc] AND s.[EndDateUtc] THEN 1
                     ELSE 0
-                END AS IsInProgress,
-                CASE
+                END AS bit) AS IsInProgress,
+                CAST(CASE
                     WHEN s.[StartDateUtc] > GETUTCDATE() THEN 1
                     ELSE 0
-                END AS IsUpcoming,
+                END AS bit) AS IsUpcoming,
                 ISNULL(stats.[LeagueCount], 0) AS LeagueCount,
                 ISNULL(players.[PlayerCount], 0) AS PlayerCount,
                 ISNULL(stats.[TotalPrizeFund], 0) AS TotalPrizeFund
@@ -91,8 +91,8 @@ public class GetHomepageSeasonsQueryHandler(IApplicationReadDbConnection dbConne
         CompetitionType CompetitionType,
         DateTime StartDateUtc,
         DateTime EndDateUtc,
-        int IsInProgress,
-        int IsUpcoming,
+        bool IsInProgress,
+        bool IsUpcoming,
         int LeagueCount,
         int PlayerCount,
         decimal TotalPrizeFund);

@@ -95,11 +95,11 @@
                                                 </div>
 
                                                 <div class="competitions-slide__status mb-4">
-                                                    @if (season.IsInProgress == 1)
+                                                    @if (season.IsInProgress)
                                                     {
                                                         <span class="badge bg-green-600 text-purple-1000 fw-bold px-3 py-2">In Progress</span>
                                                     }
-                                                    else if (season.IsUpcoming == 1)
+                                                    else if (season.IsUpcoming)
                                                     {
                                                         <span class="badge bg-purple-300 text-white fw-bold px-3 py-2">Starting @season.StartDateUtc.ToString("dd MMM")</span>
                                                     }
@@ -123,8 +123,8 @@
                                                     }
                                                 </div>
 
-                                                <div class="competitions-slide__cta mt-4" style="visibility: @(season.IsInProgress == 1 || season.IsUpcoming == 1 ? "visible" : "hidden")">
-                                                    @if (season.IsInProgress == 1)
+                                                <div class="competitions-slide__cta mt-4" style="visibility: @(season.IsInProgress || season.IsUpcoming ? "visible" : "hidden")">
+                                                    @if (season.IsInProgress)
                                                     {
                                                         <NavLink class="btn btn-lg green-button px-5" href="authentication/login">
                                                             Login to Play

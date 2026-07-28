@@ -48,12 +48,12 @@ public class GetMonthlyLeaderboardQueryHandler(
                     ELSE NULL
                 END AS [SnapshotRank],
 
-                CASE WHEN EXISTS (
-                    SELECT 1 
-                    FROM [Rounds] r 
-                    JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId] 
+                CAST(CASE WHEN EXISTS (
+                    SELECT 1
+                    FROM [Rounds] r
+                    JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
                     WHERE l.[Id] = @LeagueId AND r.[Status] = @InProgressStatus
-                ) THEN 1 ELSE 0 END AS [IsRoundInProgress]
+                ) THEN 1 ELSE 0 END AS bit) AS [IsRoundInProgress]
             FROM 
                 [LeagueMembers] lm
             JOIN 
@@ -94,7 +94,7 @@ public class GetMonthlyLeaderboardQueryHandler(
             TotalPoints = e.TotalPoints,
             UserId = e.UserId,
             SnapshotRank = e.SnapshotRank,
-            IsRoundInProgress = e.IsRoundInProgress == 1
+            IsRoundInProgress = e.IsRoundInProgress
         });
     }
 
@@ -102,7 +102,6 @@ public class GetMonthlyLeaderboardQueryHandler(
     // parameter N must line up with SELECT column N (by name and type). Keep the order of
     // these parameters identical to the SELECT column order above, or materialisation throws
     // at runtime ("A parameterless default constructor or one matching signature ... is required").
-    // IsRoundInProgress is a CASE ... THEN 1 ELSE 0 column, so it arrives as an int.
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record MonthlyLeaderboardQueryResult(
         long Rank,
@@ -110,5 +109,5 @@ public class GetMonthlyLeaderboardQueryHandler(
         int? TotalPoints,
         string UserId,
         long? SnapshotRank,
-        int IsRoundInProgress);
+        bool IsRoundInProgress);
 }

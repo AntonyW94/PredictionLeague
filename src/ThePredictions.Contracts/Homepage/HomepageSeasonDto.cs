@@ -8,8 +8,8 @@ public record HomepageSeasonDto(
     CompetitionType CompetitionType,
     DateTime StartDateUtc,
     DateTime EndDateUtc,
-    int IsInProgress,
-    int IsUpcoming,
+    bool IsInProgress,
+    bool IsUpcoming,
     int LeagueCount,
     int PlayerCount,
     decimal TotalPrizeFund

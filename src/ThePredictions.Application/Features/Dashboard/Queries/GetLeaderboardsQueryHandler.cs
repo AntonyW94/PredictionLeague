@@ -43,11 +43,11 @@ public class GetLeaderboardsQueryHandler(IApplicationReadDbConnection connection
                 JOIN
                     [Seasons] s ON l.[SeasonId] = s.[Id]
                 CROSS APPLY (
-                    SELECT CASE WHEN EXISTS (
+                    SELECT CAST(CASE WHEN EXISTS (
                         SELECT 1
                         FROM [Rounds] r
                         WHERE r.[SeasonId] = l.[SeasonId] AND r.[Status] = @InProgressStatus
-                    ) THEN 1 ELSE 0 END AS IsInProgress
+                    ) THEN 1 ELSE 0 END AS bit) AS IsInProgress
                 ) ar
                 LEFT JOIN
                     [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = l.[Id]
@@ -128,11 +128,11 @@ public class GetLeaderboardsQueryHandler(IApplicationReadDbConnection connection
                         TotalPoints = entry.TotalPoints,
                         UserId = entry.UserId,
                         SnapshotRank = entry.SnapshotRank,
-                        IsRoundInProgress = entry.IsRoundInProgress == 1
+                        IsRoundInProgress = entry.IsRoundInProgress
                     }).ToList()
                 }
             })
-            .OrderBy(x => x.IsRoundInProgress == 1 ? 0 : 1)
+            .OrderBy(x => x.IsRoundInProgress ? 0 : 1)
             .ThenBy(x => x.SeasonStartDateUtc)
             .ThenByDescending(x => x.LeaguePrice)
             .ThenBy(x => x.Dto.LeagueName)
@@ -157,7 +157,7 @@ public class GetLeaderboardsQueryHandler(IApplicationReadDbConnection connection
         public int TotalPoints { get; init; }
         public string UserId { get; init; } = null!;
         public long? SnapshotRank { get; init; }
-        public int IsRoundInProgress { get; init; }
+        public bool IsRoundInProgress { get; init; }
         public bool IsArchivedByUser { get; init; }
     }
 }

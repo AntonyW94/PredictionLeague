@@ -54,7 +54,8 @@ Dapper matches a positional `record`'s constructor to the result set **positiona
 - The generic argument to `QueryAsync<T>` / `QuerySingleOrDefaultAsync<T>` must be a `private record XxxQueryResult(...)` co-located in the handler (or another Application-owned row type), kept in lockstep with the `SELECT` column order and carrying the standard ordering comment.
 - Map from the result record to the outward Contracts DTO **by name** afterwards (explicit constructor call or object initialiser), so a Contracts reshape becomes a compile error in the handler.
 - Scalars (`int`, `bool`, `string`) and named tuples private to the handler are exempt.
-- Computed/`CASE`/`COALESCE` columns must be aliased and counted as a column in the ordering; type the record parameter to match the column (e.g. `int` for `CASE ... THEN 1 ELSE 0`) and convert in the mapping step.
+- Computed/`CASE`/`COALESCE` columns must be aliased and counted as a column in the ordering, and the record parameter typed to match the column.
+- **Boolean-shaped `CASE` expressions must be cast to `bit` in the SQL:** `CAST(CASE WHEN ... THEN 1 ELSE 0 END AS bit) AS IsFinished`. An uncast `CASE ... THEN 1 ELSE 0 END` is an `int`, which forces an `int` result-record parameter and an `== 1` conversion in C# - and lets the int flag leak out through the DTO to the UI. Model booleans as booleans from the SQL outwards.
 
 This keeps the fragile positional coupling inside a single file, next to its SQL, instead of extending it into the shared Contracts assembly where a UI-motivated constructor reorder would break queries at runtime.
 
