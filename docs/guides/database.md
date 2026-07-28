@@ -51,7 +51,7 @@ await _connection.QueryAsync<League>(sql);
 
 Dapper matches a positional `record`'s constructor to the result set **positionally** - parameter *N* must line up with `SELECT` column *N* by both name and type. A mismatch is not caught by the compiler or unit tests; it throws at runtime (`InvalidOperationException: A parameterless default constructor or one matching signature (...) is required`).
 
-- The generic argument to `QueryAsync<T>` / `QuerySingleOrDefaultAsync<T>` must be a `private record XxxQueryResult(...)` co-located in the handler (or another Application-owned row type), kept in lockstep with the `SELECT` column order and carrying the standard ordering comment.
+- The generic argument to `QueryAsync<T>` / `QuerySingleOrDefaultAsync<T>` must be a `private record XxxQueryResult(...)` co-located in the handler (or another Application-owned row type), kept in lockstep with the `SELECT` column order.
 - Map from the result record to the outward Contracts DTO **by name** afterwards (explicit constructor call or object initialiser), so a Contracts reshape becomes a compile error in the handler.
 - Scalars (`int`, `bool`, `string`) and named tuples private to the handler are exempt.
 - Computed/`CASE`/`COALESCE` columns must be aliased and counted as a column in the ordering, and the record parameter typed to match the column.
