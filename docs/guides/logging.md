@@ -239,9 +239,73 @@ _logger.LogInformation("Completed processing Round (ID: {RoundId})", roundId);
 ### Authentication Events
 
 ```csharp
-_logger.LogInformation("User (Email: {UserEmail}) logged in from IP (Address: {IpAddress})",
-    email, ipAddress);
+// CORRECT - identifiers only
+_logger.LogInformation("Login succeeded for User (ID: {UserId}).", user.Id);
+_logger.LogInformation("Login failed for User (ID: {UserId}): incorrect password.", user.Id);
 
-_logger.LogWarning("Failed login attempt for User (Email: {UserEmail}) from IP (Address: {IpAddress})",
-    email, ipAddress);
+// When no account matched, there is no identifier to log - say so without echoing the input
+_logger.LogInformation("Login failed: no account exists for the supplied email address.");
 ```
+
+## Never Log Personal Data
+
+**Log identifiers, never names, email addresses or phone numbers.** Logs are shipped to
+Datadog, a third-party processor, and personal data there is outside the reach of the
+anonymisation and verification the database tooling applies.
+
+```csharp
+// WRONG - sends personal data to a third party
+_logger.LogInformation("Sent digest to {Email}", user.Email);
+_logger.LogWarning("Failed login for {Email}", request.Email);
+
+// CORRECT
+_logger.LogInformation("Sent digest to User (ID: {UserId})", user.Id);
+```
+
+A `UserId` is enough to identify the record when investigating; the email address adds
+nothing you cannot look up. If a failed operation has no id available - a login attempt
+for an address with no account, for instance - log the fact without echoing the input.
+
+## What Is Logged Automatically
+
+`LoggingBehaviour` sits in the MediatR pipeline and records the name, outcome and duration
+of **every command**, so a handler does not need to log that it ran:
+
+```text
+CreateLeagueCommand completed in 84ms
+SubmitPredictionsCommand failed after 12ms (ValidationException)
+```
+
+- **Queries are skipped.** They are high-frequency reads, and reads slow enough to matter
+  are already reported by `DapperReadDbConnection` at Warning.
+- It is registered **before** `ValidationBehaviour` in `API/DependencyInjection.cs`.
+  Registration order is execution order, so commands rejected by validation are recorded
+  too - they would otherwise leave no trace at all.
+
+Add an explicit log on top of this only when the command name alone does not carry the
+answer you would want later: authentication outcomes, payment and fulfilment steps, and
+anything where "did this actually happen for this user" is a question you expect to be
+asked.
+
+## Choosing a Level
+
+| Level | Use for | Reaches Datadog |
+|-------|---------|-----------------|
+| `Debug` | Local diagnosis only | No |
+| `Information` | What happened: commands, auth outcomes, payments, scheduled work | Yes |
+| `Warning` | Something needs a human to look: slow queries, degraded dependencies | Yes, **and alerts** |
+| `Error` | An unhandled fault | Yes, **and alerts** |
+
+Two rules follow from Warning and Error being wired to Slack alert channels:
+
+**A rejected command is `Information`, not `Warning`.** Failed validation or a passed
+deadline is usually the user's mistake and needs no action from us. Logging it higher
+fills the alerts channel with noise and trains everyone to ignore it.
+
+**Only raise to `Warning` if you would want to be interrupted.** `Warning` posts to
+`#alerts-warnings` and `Error` to `#alerts-errors`, both grouped per environment. If a
+message does not warrant investigation, it belongs at `Information`.
+
+Serilog's minimum level is `Warning` globally with `ThePredictions` overridden to
+`Information` (`appsettings.json`), so our own code logs at Information while third-party
+libraries stay quiet.
