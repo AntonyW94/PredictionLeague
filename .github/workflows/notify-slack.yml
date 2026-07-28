@@ -58,13 +58,27 @@ jobs:
             outcome="failed"
           fi
 
-          text="${icon} *${WORKFLOW}* ${outcome} on \`${REF_NAME}\`"
-          text="${text}"$'\n'"<${RUN_URL}|Run #${RUN_NUMBER}> - ${ACTOR}"
+          # Slack builds desktop and mobile notification previews from the TOP-LEVEL text
+          # field. A payload made only of blocks or attachments gives it nothing to preview,
+          # which shows up as "No preview available" on the push notification. So the headline
+          # goes in text (previewable, and also the accessibility fallback), and the run link
+          # sits in the coloured attachment below it. fallback covers older clients that do
+          # not render blocks at all.
+          headline="${icon} *${WORKFLOW}* ${outcome} on \`${REF_NAME}\`"
+          detail="<${RUN_URL}|Run #${RUN_NUMBER}> - ${ACTOR}"
 
           payload=$(jq -n \
             --arg colour "${colour}" \
-            --arg text "${text}" \
-            '{attachments: [{color: $colour, blocks: [{type: "section", text: {type: "mrkdwn", text: $text}}]}]}')
+            --arg headline "${headline}" \
+            --arg detail "${detail}" \
+            '{
+               text: $headline,
+               attachments: [{
+                 color: $colour,
+                 fallback: $headline,
+                 blocks: [{type: "section", text: {type: "mrkdwn", text: $detail}}]
+               }]
+             }')
 
           http=$(curl -sS -o /tmp/slack-response.txt -w '%{http_code}' \
             -X POST -H 'Content-type: application/json' \
