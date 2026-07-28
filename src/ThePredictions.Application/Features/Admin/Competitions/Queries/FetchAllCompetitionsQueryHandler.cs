@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Competitions;
@@ -24,6 +25,27 @@ public class FetchAllCompetitionsQueryHandler(IApplicationReadDbConnection dbCon
             ORDER BY
                 c.[Name] ASC;";
 
-        return await dbConnection.QueryAsync<CompetitionDto>(sql, cancellationToken);
+        var competitions = await dbConnection.QueryAsync<CompetitionQueryResult>(sql, cancellationToken);
+
+        return competitions.Select(c => new CompetitionDto(
+            c.Id,
+            c.Code,
+            c.Name,
+            c.Type,
+            c.LogoUrl,
+            c.Description,
+            c.ApiLeagueId,
+            c.SeasonCount));
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record CompetitionQueryResult(
+        int Id,
+        string Code,
+        string Name,
+        int Type,
+        string? LogoUrl,
+        string? Description,
+        int? ApiLeagueId,
+        int SeasonCount);
 }

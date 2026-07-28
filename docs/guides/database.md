@@ -45,6 +45,20 @@ var sql = $"SELECT * FROM [Leagues] WHERE [Id] = {leagueId}";
 await _connection.QueryAsync<League>(sql);
 ```
 
+## Result Mapping
+
+**Query handlers materialise into private result records, never directly into Contracts DTOs.**
+
+Dapper matches a positional `record`'s constructor to the result set **positionally** - parameter *N* must line up with `SELECT` column *N* by both name and type. A mismatch is not caught by the compiler or unit tests; it throws at runtime (`InvalidOperationException: A parameterless default constructor or one matching signature (...) is required`).
+
+- The generic argument to `QueryAsync<T>` / `QuerySingleOrDefaultAsync<T>` must be a `private record XxxQueryResult(...)` co-located in the handler (or another Application-owned row type), kept in lockstep with the `SELECT` column order.
+- Map from the result record to the outward Contracts DTO **by name** afterwards (explicit constructor call or object initialiser), so a Contracts reshape becomes a compile error in the handler.
+- Scalars (`int`, `bool`, `string`) and named tuples private to the handler are exempt.
+- Computed/`CASE`/`COALESCE` columns must be aliased and counted as a column in the ordering, and the record parameter typed to match the column.
+- **Boolean-shaped `CASE` expressions must be cast to `bit` in the SQL:** `CAST(CASE WHEN ... THEN 1 ELSE 0 END AS bit) AS IsFinished`. An uncast `CASE ... THEN 1 ELSE 0 END` is an `int`, which forces an `int` result-record parameter and an `== 1` conversion in C# - and lets the int flag leak out through the DTO to the UI. Model booleans as booleans from the SQL outwards.
+
+This keeps the fragile positional coupling inside a single file, next to its SQL, instead of extending it into the shared Contracts assembly where a UI-motivated constructor reorder would break queries at runtime.
+
 ## DateTime Handling
 
 **All dates are stored and retrieved in UTC.**

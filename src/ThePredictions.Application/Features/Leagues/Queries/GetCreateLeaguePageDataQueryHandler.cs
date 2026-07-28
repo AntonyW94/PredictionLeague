@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Seasons;
@@ -21,13 +22,26 @@ public class GetCreateLeaguePageDataQueryHandler(IApplicationReadDbConnection db
             WHERE s.[IsActive] = 1
             ORDER BY s.[StartDateUtc] DESC;";
 
-        var seasons = await dbConnection.QueryAsync<SeasonLookupDto>(sql, cancellationToken);
+        var seasons = await dbConnection.QueryAsync<SeasonLookupQueryResult>(sql, cancellationToken);
 
         return new CreateLeaguePageData
         {
-            Seasons = seasons.ToList(),
+            Seasons = seasons
+                .Select(s => new SeasonLookupDto(
+                    s.Id,
+                    s.Name,
+                    s.StartDateUtc,
+                    s.IsTournament))
+                .ToList(),
             DefaultPointsForExactScore = PublicLeagueSettings.PointsForExactScore,
             DefaultPointsForCorrectResult = PublicLeagueSettings.PointsForCorrectResult
         };
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record SeasonLookupQueryResult(
+        int Id,
+        string Name,
+        DateTime StartDateUtc,
+        bool IsTournament);
 }

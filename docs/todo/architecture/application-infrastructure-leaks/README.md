@@ -476,7 +476,7 @@ No other observable behaviour changes: the status-enum mapping is a mechanical 1
 - The knockout 90-minute rule extraction to Domain (`docs/todo/architecture/handler-domain-logic-extraction/README.md` owns it).
 - Adding `CancellationToken` to `IUserManager` (decision recorded above: not doing it).
 - Creating a `ThePredictions.Infrastructure.Tests.Unit` project and writing new handler tests (test-suite plan scope).
-- Query-handler Dapper result-record conversions (`docs/todo/architecture/dapper-result-records/README.md`).
+- Query-handler Dapper result-record conversions (already shipped - see the "Dapper Result Mapping" rule in the root `CLAUDE.md`).
 - Any database or Brevo template changes (none are needed; template ids and configuration keys are untouched).
 
 ## Verification checklist

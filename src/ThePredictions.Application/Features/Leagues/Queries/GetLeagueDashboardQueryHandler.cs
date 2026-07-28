@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Rounds;
@@ -83,7 +84,7 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
         {
             request.LeagueId
         };
-        var rounds = await dbConnection.QueryAsync<RoundDto>(roundsSql, cancellationToken, parameters);
+        var rounds = await dbConnection.QueryAsync<RoundQueryResult>(roundsSql, cancellationToken, parameters);
 
         const string membersSql = @"
             SELECT
@@ -101,7 +102,7 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
                 u.[FirstName],
                 u.[LastName]";
 
-        var members = await dbConnection.QueryAsync<LeagueDashboardMemberDto>(
+        var members = await dbConnection.QueryAsync<LeagueDashboardMemberQueryResult>(
             membersSql, cancellationToken, new
             {
                 request.LeagueId,
@@ -119,8 +120,40 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
             TotalPrizeFund = leagueInfo.TotalPrizeFund,
             IsFinished = leagueInfo.IsFinished,
             IsFree = leagueInfo.IsFree,
-            Members = members.ToList(),
-            ViewableRounds = rounds.ToList()
+            Members = members
+                .Select(m => new LeagueDashboardMemberDto(
+                    m.FullName,
+                    m.Status,
+                    m.JoinedAtUtc))
+                .ToList(),
+            ViewableRounds = rounds
+                .Select(r => new RoundDto(
+                    r.Id,
+                    r.SeasonId,
+                    r.RoundNumber,
+                    r.ApiRoundName,
+                    r.StartDateUtc,
+                    r.DeadlineUtc,
+                    r.Status,
+                    r.MatchCount))
+                .ToList()
         };
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record RoundQueryResult(
+        int Id,
+        int SeasonId,
+        int RoundNumber,
+        string? ApiRoundName,
+        DateTime StartDateUtc,
+        DateTime DeadlineUtc,
+        RoundStatus Status,
+        int MatchCount);
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record LeagueDashboardMemberQueryResult(
+        string FullName,
+        string Status,
+        DateTime JoinedAtUtc);
 }

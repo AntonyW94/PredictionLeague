@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.ServiceFees;
@@ -19,6 +20,17 @@ public class GetServiceFeesQueryHandler(IApplicationReadDbConnection dbConnectio
             ORDER BY
                 sf.[Provider];";
 
-        return await dbConnection.QueryAsync<ServiceFeeDto>(sql, cancellationToken);
+        var fees = await dbConnection.QueryAsync<ServiceFeeQueryResult>(sql, cancellationToken);
+
+        return fees.Select(f => new ServiceFeeDto(
+            f.Provider,
+            f.PercentFee,
+            f.FixedFee));
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record ServiceFeeQueryResult(
+        string Provider,
+        decimal PercentFee,
+        decimal FixedFee);
 }

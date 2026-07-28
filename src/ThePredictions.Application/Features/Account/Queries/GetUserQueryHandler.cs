@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Account;
@@ -19,6 +20,25 @@ public class GetUserQueryHandler(IApplicationReadDbConnection dbConnection) : IR
             FROM [AspNetUsers]
             WHERE [Id] = @UserId;";
 
-        return await dbConnection.QuerySingleOrDefaultAsync<UserDetails>(sql, cancellationToken, new { request.UserId });
+        var user = await dbConnection.QuerySingleOrDefaultAsync<UserQueryResult>(sql, cancellationToken, new { request.UserId });
+
+        return user is null
+            ? null
+            : new UserDetails(
+                user.FirstName,
+                user.LastName,
+                user.Email,
+                user.PhoneNumber,
+                user.PreferredTheme,
+                user.MarketingOptIn);
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record UserQueryResult(
+        string FirstName,
+        string LastName,
+        string Email,
+        string? PhoneNumber,
+        string PreferredTheme,
+        bool MarketingOptIn);
 }

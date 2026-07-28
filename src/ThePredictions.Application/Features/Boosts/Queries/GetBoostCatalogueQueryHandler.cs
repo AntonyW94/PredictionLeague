@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Boosts;
@@ -23,7 +24,31 @@ public class GetBoostCatalogueQueryHandler(IApplicationReadDbConnection dbConnec
             ORDER BY
                 bd.[Name];";
 
-        var items = await dbConnection.QueryAsync<BoostCatalogueItemDto>(sql, cancellationToken);
-        return items.ToList();
+        var items = await dbConnection.QueryAsync<BoostCatalogueItemQueryResult>(sql, cancellationToken);
+
+        return items
+            .Select(i => new BoostCatalogueItemDto
+            {
+                Code = i.Code,
+                Name = i.Name,
+                Description = i.Description,
+                Tooltip = i.Tooltip,
+                Scope = i.Scope,
+                ImageUrl = i.ImageUrl,
+                SelectedImageUrl = i.SelectedImageUrl,
+                DisabledImageUrl = i.DisabledImageUrl
+            })
+            .ToList();
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record BoostCatalogueItemQueryResult(
+        string Code,
+        string Name,
+        string? Description,
+        string? Tooltip,
+        string Scope,
+        string? ImageUrl,
+        string? SelectedImageUrl,
+        string? DisabledImageUrl);
 }

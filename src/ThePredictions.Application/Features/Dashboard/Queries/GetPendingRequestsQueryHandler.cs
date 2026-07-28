@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Dashboard;
@@ -40,7 +41,7 @@ public class GetPendingRequestsQueryHandler(IApplicationReadDbConnection dbConne
             ORDER BY
                 lm.[JoinedAtUtc] DESC";
 
-        return await dbConnection.QueryAsync<LeagueRequestDto>(
+        var requests = await dbConnection.QueryAsync<LeagueRequestQueryResult>(
             sql,
             cancellationToken,
             new
@@ -50,5 +51,30 @@ public class GetPendingRequestsQueryHandler(IApplicationReadDbConnection dbConne
                 PendingStatus = nameof(LeagueMemberStatus.Pending),
                 RejectedStatus = nameof(LeagueMemberStatus.Rejected)
             });
+
+        return requests.Select(r => new LeagueRequestDto(
+            r.LeagueId,
+            r.LeagueName,
+            r.SeasonName,
+            r.Status,
+            r.JoinedAtUtc,
+            r.EntryDeadlineUtc,
+            r.AdminName,
+            r.MemberCount,
+            r.EntryFee,
+            r.PotValue));
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record LeagueRequestQueryResult(
+        int LeagueId,
+        string LeagueName,
+        string SeasonName,
+        LeagueMemberStatus Status,
+        DateTime JoinedAtUtc,
+        DateTime EntryDeadlineUtc,
+        string AdminName,
+        int MemberCount,
+        decimal EntryFee,
+        decimal PotValue);
 }

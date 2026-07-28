@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.SeasonPasses;
@@ -26,6 +27,15 @@ public class GetSeasonTeamsQueryHandler(IApplicationReadDbConnection dbConnectio
             ORDER BY
                 t.[Name];";
 
-        return await dbConnection.QueryAsync<SeasonTeamDto>(sql, cancellationToken, new { request.SeasonId });
+        var teams = await dbConnection.QueryAsync<SeasonTeamQueryResult>(sql, cancellationToken, new { request.SeasonId });
+
+        return teams.Select(t => new SeasonTeamDto(
+            t.Name,
+            t.LogoUrl));
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record SeasonTeamQueryResult(
+        string Name,
+        string? LogoUrl);
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -53,10 +54,45 @@ public class GetLeagueByIdQueryHandler(
                 l.[RequiresMemberApproval],
                 l.[IsListed];";
 
-        return await dbConnection.QuerySingleOrDefaultAsync<LeagueDto>(
+        var league = await dbConnection.QuerySingleOrDefaultAsync<LeagueQueryResult>(
             sql,
             cancellationToken,
             new { request.Id }
         );
+
+        return league is null
+            ? null
+            : new LeagueDto(
+                league.Id,
+                league.Name,
+                league.SeasonName,
+                league.MemberCount,
+                league.Price,
+                league.EntryCode,
+                league.EntryDeadlineUtc,
+                league.PointsForExactScore,
+                league.PointsForCorrectResult,
+                league.SeasonId,
+                league.IsTournament,
+                league.HasPrizeScheme,
+                league.RequiresMemberApproval,
+                league.IsListed);
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record LeagueQueryResult(
+        int Id,
+        string Name,
+        string SeasonName,
+        int MemberCount,
+        decimal Price,
+        string EntryCode,
+        DateTime EntryDeadlineUtc,
+        int PointsForExactScore,
+        int PointsForCorrectResult,
+        int SeasonId,
+        bool IsTournament,
+        bool HasPrizeScheme,
+        bool RequiresMemberApproval,
+        bool IsListed);
 }

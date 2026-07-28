@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Teams;
@@ -30,7 +31,9 @@ public class FetchAllTeamsQueryHandler(IApplicationReadDbConnection dbConnection
                 ORDER BY
                     t.[Name] ASC";
 
-            return await dbConnection.QueryAsync<TeamDto>(sql, cancellationToken, new { request.SeasonId });
+            var seasonTeams = await dbConnection.QueryAsync<TeamQueryResult>(sql, cancellationToken, new { request.SeasonId });
+
+            return seasonTeams.Select(ToDto);
         }
 
         const string allTeamsSql = @"
@@ -44,6 +47,28 @@ public class FetchAllTeamsQueryHandler(IApplicationReadDbConnection dbConnection
             FROM [Teams]
             ORDER BY [Name] ASC";
 
-        return await dbConnection.QueryAsync<TeamDto>(allTeamsSql, cancellationToken);
+        var allTeams = await dbConnection.QueryAsync<TeamQueryResult>(allTeamsSql, cancellationToken);
+
+        return allTeams.Select(ToDto);
     }
+
+    private static TeamDto ToDto(TeamQueryResult team)
+    {
+        return new TeamDto(
+            team.Id,
+            team.Name,
+            team.ShortName,
+            team.LogoUrl,
+            team.Abbreviation,
+            team.ApiTeamId);
+    }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record TeamQueryResult(
+        int Id,
+        string Name,
+        string ShortName,
+        string LogoUrl,
+        string Abbreviation,
+        int? ApiTeamId);
 }

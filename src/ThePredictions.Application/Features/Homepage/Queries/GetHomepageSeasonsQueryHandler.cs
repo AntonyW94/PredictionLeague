@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Homepage;
+using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Homepage.Queries;
 
@@ -18,14 +20,14 @@ public class GetHomepageSeasonsQueryHandler(IApplicationReadDbConnection dbConne
                 c.[Type] AS CompetitionType,
                 s.[StartDateUtc],
                 s.[EndDateUtc],
-                CASE
+                CAST(CASE
                     WHEN GETUTCDATE() BETWEEN s.[StartDateUtc] AND s.[EndDateUtc] THEN 1
                     ELSE 0
-                END AS IsInProgress,
-                CASE
+                END AS bit) AS IsInProgress,
+                CAST(CASE
                     WHEN s.[StartDateUtc] > GETUTCDATE() THEN 1
                     ELSE 0
-                END AS IsUpcoming,
+                END AS bit) AS IsUpcoming,
                 ISNULL(stats.[LeagueCount], 0) AS LeagueCount,
                 ISNULL(players.[PlayerCount], 0) AS PlayerCount,
                 ISNULL(stats.[TotalPrizeFund], 0) AS TotalPrizeFund
@@ -63,6 +65,31 @@ public class GetHomepageSeasonsQueryHandler(IApplicationReadDbConnection dbConne
             ORDER BY
                 s.[StartDateUtc]";
 
-        return await dbConnection.QueryAsync<HomepageSeasonDto>(sql, cancellationToken);
+        var seasons = await dbConnection.QueryAsync<HomepageSeasonQueryResult>(sql, cancellationToken);
+
+        return seasons.Select(s => new HomepageSeasonDto(
+            s.Id,
+            s.Name,
+            s.CompetitionType,
+            s.StartDateUtc,
+            s.EndDateUtc,
+            s.IsInProgress,
+            s.IsUpcoming,
+            s.LeagueCount,
+            s.PlayerCount,
+            s.TotalPrizeFund));
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record HomepageSeasonQueryResult(
+        int Id,
+        string Name,
+        CompetitionType CompetitionType,
+        DateTime StartDateUtc,
+        DateTime EndDateUtc,
+        bool IsInProgress,
+        bool IsUpcoming,
+        int LeagueCount,
+        int PlayerCount,
+        decimal TotalPrizeFund);
 }

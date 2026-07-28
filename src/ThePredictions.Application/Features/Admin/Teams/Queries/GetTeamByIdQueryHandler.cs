@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Teams;
@@ -20,6 +21,25 @@ public class GetTeamByIdQueryHandler(IApplicationReadDbConnection dbConnection)
             FROM [Teams]
             WHERE [Id] = @Id";
 
-        return await dbConnection.QuerySingleOrDefaultAsync<TeamDto>(sql, cancellationToken, new { request.Id });
+        var team = await dbConnection.QuerySingleOrDefaultAsync<TeamQueryResult>(sql, cancellationToken, new { request.Id });
+
+        return team is null
+            ? null
+            : new TeamDto(
+                team.Id,
+                team.Name,
+                team.ShortName,
+                team.LogoUrl,
+                team.Abbreviation,
+                team.ApiTeamId);
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record TeamQueryResult(
+        int Id,
+        string Name,
+        string ShortName,
+        string LogoUrl,
+        string Abbreviation,
+        int? ApiTeamId);
 }

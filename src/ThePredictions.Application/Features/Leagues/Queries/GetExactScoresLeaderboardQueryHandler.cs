@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -43,13 +44,28 @@ public class GetExactScoresLeaderboardQueryHandler(
                 [ExactScoresCount] DESC,
                 [PlayerName]";
 
-        var leaderboardEntries = await connection.QueryAsync<ExactScoresLeaderboardEntryDto>(entriesSql, cancellationToken, new { request.LeagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
-      
+        var leaderboardEntries = await connection.QueryAsync<ExactScoresLeaderboardQueryResult>(entriesSql, cancellationToken, new { request.LeagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+
         var leaderboard = new ExactScoresLeaderboardDto
         {
-            Entries = leaderboardEntries.ToList()
+            Entries = leaderboardEntries
+                .Select(e => new ExactScoresLeaderboardEntryDto
+                {
+                    Rank = e.Rank,
+                    PlayerName = e.PlayerName,
+                    ExactScoresCount = e.ExactScoresCount,
+                    UserId = e.UserId
+                })
+                .ToList()
         };
 
         return leaderboard;
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record ExactScoresLeaderboardQueryResult(
+        long Rank,
+        string PlayerName,
+        int ExactScoresCount,
+        string UserId);
 }

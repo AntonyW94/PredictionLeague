@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.SeasonPasses;
@@ -53,9 +54,32 @@ public class GetAvailableSeasonPassesQueryHandler(IApplicationReadDbConnection d
             ORDER BY
                 s.[StartDateUtc] DESC;";
 
-        return await dbConnection.QueryAsync<AvailableSeasonPassDto>(
+        var passes = await dbConnection.QueryAsync<AvailableSeasonPassQueryResult>(
             sql,
             cancellationToken,
             new { request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+
+        return passes.Select(p => new AvailableSeasonPassDto(
+            p.SeasonId,
+            p.SeasonName,
+            p.CompetitionLogoUrl,
+            p.RequiresPayment,
+            p.StandardPrice,
+            p.PremiumPrice,
+            p.IsTrialEligible,
+            p.PlayerCount,
+            p.NextEntryDeadlineUtc));
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record AvailableSeasonPassQueryResult(
+        int SeasonId,
+        string SeasonName,
+        string? CompetitionLogoUrl,
+        bool RequiresPayment,
+        decimal? StandardPrice,
+        decimal? PremiumPrice,
+        bool IsTrialEligible,
+        int PlayerCount,
+        DateTime? NextEntryDeadlineUtc);
 }

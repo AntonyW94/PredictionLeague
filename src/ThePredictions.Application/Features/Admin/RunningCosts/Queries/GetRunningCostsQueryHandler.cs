@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.RunningCosts;
@@ -23,6 +24,25 @@ public class GetRunningCostsQueryHandler(IApplicationReadDbConnection dbConnecti
             ORDER BY
                 [Name];";
 
-        return await dbConnection.QueryAsync<RunningCostDto>(sql, cancellationToken);
+        var costs = await dbConnection.QueryAsync<RunningCostQueryResult>(sql, cancellationToken);
+
+        return costs.Select(c => new RunningCostDto(
+            c.Id,
+            c.Name,
+            c.Amount,
+            c.Frequency,
+            c.StartDateUtc,
+            c.EndDateUtc,
+            c.Notes));
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record RunningCostQueryResult(
+        int Id,
+        string Name,
+        decimal Amount,
+        string Frequency,
+        DateTime StartDateUtc,
+        DateTime? EndDateUtc,
+        string? Notes);
 }

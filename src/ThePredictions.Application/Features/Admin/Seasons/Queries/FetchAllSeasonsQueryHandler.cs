@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Seasons;
+using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Admin.Seasons.Queries;
 
@@ -53,6 +55,47 @@ public class FetchAllSeasonsQueryHandler(IApplicationReadDbConnection dbConnecti
             ORDER BY
                 s.[StartDateUtc] DESC;";
 
-        return await dbConnection.QueryAsync<SeasonDto>(sql, cancellationToken);
+        var seasons = await dbConnection.QueryAsync<SeasonQueryResult>(sql, cancellationToken);
+
+        return seasons.Select(s => new SeasonDto(
+            s.Id,
+            s.Name,
+            s.StartDateUtc,
+            s.EndDateUtc,
+            s.IsActive,
+            s.NumberOfRounds,
+            s.CompetitionId,
+            s.CompetitionName,
+            s.CompetitionType,
+            s.ApiLeagueId,
+            s.RoundCount,
+            s.DraftCount,
+            s.PublishedCount,
+            s.InProgressCount,
+            s.CompletedCount,
+            s.TeamCount,
+            s.PassStandardPrice,
+            s.PassPremiumPrice));
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record SeasonQueryResult(
+        int Id,
+        string Name,
+        DateTime StartDateUtc,
+        DateTime EndDateUtc,
+        bool IsActive,
+        int NumberOfRounds,
+        int CompetitionId,
+        string CompetitionName,
+        CompetitionType CompetitionType,
+        int? ApiLeagueId,
+        int RoundCount,
+        int DraftCount,
+        int PublishedCount,
+        int InProgressCount,
+        int CompletedCount,
+        int TeamCount,
+        decimal? PassStandardPrice,
+        decimal? PassPremiumPrice);
 }

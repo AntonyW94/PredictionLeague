@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.EmailSettings;
@@ -18,13 +19,17 @@ public class GetEmailSettingsQueryHandler(IApplicationReadDbConnection dbConnect
             ORDER BY
                 es.[Id];";
 
-        var settings = await dbConnection.QuerySingleOrDefaultAsync<EmailSettingsDto>(sql, cancellationToken);
+        var settings = await dbConnection.QuerySingleOrDefaultAsync<EmailSettingsQueryResult>(sql, cancellationToken);
 
         // Fall back to the built-in default if no row has been seeded yet (emails on).
         if (settings is not null)
-            return settings;
+            return new EmailSettingsDto(settings.EmailsEnabled);
 
         var defaults = DomainEmailSettings.CreateDefault();
         return new EmailSettingsDto(defaults.EmailsEnabled);
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record EmailSettingsQueryResult(
+        bool EmailsEnabled);
 }

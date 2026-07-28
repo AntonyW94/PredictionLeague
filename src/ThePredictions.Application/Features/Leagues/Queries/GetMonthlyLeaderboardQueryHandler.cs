@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -47,12 +48,12 @@ public class GetMonthlyLeaderboardQueryHandler(
                     ELSE NULL
                 END AS [SnapshotRank],
 
-                CASE WHEN EXISTS (
-                    SELECT 1 
-                    FROM [Rounds] r 
-                    JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId] 
+                CAST(CASE WHEN EXISTS (
+                    SELECT 1
+                    FROM [Rounds] r
+                    JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
                     WHERE l.[Id] = @LeagueId AND r.[Status] = @InProgressStatus
-                ) THEN 1 ELSE 0 END AS [IsRoundInProgress]
+                ) THEN 1 ELSE 0 END AS bit) AS [IsRoundInProgress]
             FROM 
                 [LeagueMembers] lm
             JOIN 
@@ -73,7 +74,7 @@ public class GetMonthlyLeaderboardQueryHandler(
                 [Rank] ASC,
                 [PlayerName] ASC;";
 
-        return await dbConnection.QueryAsync<LeaderboardEntryDto>(
+        var entries = await dbConnection.QueryAsync<MonthlyLeaderboardQueryResult>(
             sql,
             cancellationToken,
             new
@@ -85,5 +86,24 @@ public class GetMonthlyLeaderboardQueryHandler(
                 CompletedStatus = nameof(RoundStatus.Completed)
             }
         );
+
+        return entries.Select(e => new LeaderboardEntryDto
+        {
+            Rank = e.Rank,
+            PlayerName = e.PlayerName,
+            TotalPoints = e.TotalPoints,
+            UserId = e.UserId,
+            SnapshotRank = e.SnapshotRank,
+            IsRoundInProgress = e.IsRoundInProgress
+        });
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record MonthlyLeaderboardQueryResult(
+        long Rank,
+        string PlayerName,
+        int? TotalPoints,
+        string UserId,
+        long? SnapshotRank,
+        bool IsRoundInProgress);
 }

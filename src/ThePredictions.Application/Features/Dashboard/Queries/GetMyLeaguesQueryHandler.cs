@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Leagues;
@@ -329,7 +330,7 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
 
         SET TRANSACTION ISOLATION LEVEL READ COMMITTED;";
 
-        return await dbConnection.QueryAsync<MyLeagueDto>(
+        var leagues = await dbConnection.QueryAsync<MyLeagueQueryResult>(
             sql,
             cancellationToken,
             new
@@ -341,5 +342,79 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
                 InProgressStatus = nameof(RoundStatus.InProgress),
                 CompletedStatus = nameof(RoundStatus.Completed)
             });
+
+        return leagues.Select(l => new MyLeagueDto(
+            l.Id,
+            l.Name,
+            l.SeasonName,
+            l.CompetitionType,
+            l.SeasonStartDateUtc,
+            l.EntryDeadlineUtc,
+            l.CurrentRound,
+            l.CurrentMonth,
+            l.RoundStartDateUtc,
+            l.MemberCount,
+            l.Rank,
+            l.MonthRank,
+            l.RoundRank,
+            l.PreRoundOverallRank,
+            l.PreRoundMonthRank,
+            l.StableRoundRank,
+            l.RoundStatus,
+            l.InProgressCount,
+            l.CompletedCount,
+            l.PrizeMoneyWon,
+            l.PrizeMoneyRemaining,
+            l.TotalPrizeFund,
+            l.EntryFee,
+            l.IsFree,
+            l.RoundsWon,
+            l.MonthsWon,
+            l.IsFinished,
+            l.IsArchivedByUser,
+            l.StageName,
+            l.StageRank,
+            l.PreRoundStageRank));
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record MyLeagueQueryResult(
+        int Id,
+        string Name,
+        string SeasonName,
+        CompetitionType CompetitionType,
+        DateTime? SeasonStartDateUtc,
+        DateTime? EntryDeadlineUtc,
+
+        string CurrentRound,
+        string CurrentMonth,
+        DateTime? RoundStartDateUtc,
+        int? MemberCount,
+
+        int? Rank,
+        int? MonthRank,
+        int? RoundRank,
+
+        int? PreRoundOverallRank,
+        int? PreRoundMonthRank,
+        int? StableRoundRank,
+        string RoundStatus,
+        int InProgressCount,
+        int CompletedCount,
+
+        decimal PrizeMoneyWon,
+        decimal PrizeMoneyRemaining,
+        decimal TotalPrizeFund,
+        decimal EntryFee,
+        bool IsFree,
+
+        int RoundsWon,
+        int MonthsWon,
+
+        bool IsFinished,
+        bool IsArchivedByUser,
+
+        string? StageName,
+        int? StageRank,
+        int? PreRoundStageRank);
 }

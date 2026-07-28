@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -41,6 +42,27 @@ public class GetLeagueRoundsForDashboardQueryHandler(
             CompletedStatus = nameof(RoundStatus.Completed)
         };
 
-        return await dbConnection.QueryAsync<RoundDto>(sql, cancellationToken, parameters);
+        var rounds = await dbConnection.QueryAsync<RoundQueryResult>(sql, cancellationToken, parameters);
+
+        return rounds.Select(r => new RoundDto(
+            r.Id,
+            r.SeasonId,
+            r.RoundNumber,
+            r.ApiRoundName,
+            r.StartDateUtc,
+            r.DeadlineUtc,
+            r.Status,
+            r.MatchCount));
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record RoundQueryResult(
+        int Id,
+        int SeasonId,
+        int RoundNumber,
+        string? ApiRoundName,
+        DateTime StartDateUtc,
+        DateTime DeadlineUtc,
+        RoundStatus Status,
+        int MatchCount);
 }

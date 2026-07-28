@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Dashboard;
@@ -30,15 +31,25 @@ public class GetPendingMembersForAdminQueryHandler(IApplicationReadDbConnection 
             ORDER BY
                 l.[Name]";
 
-        var adminLeagues = (await dbConnection.QueryAsync<AdminLeagueSummaryDto>(
-            leaguesSql,
-            cancellationToken,
-            new
-            {
-                request.UserId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                PendingStatus = nameof(LeagueMemberStatus.Pending)
-            })).ToList();
+        var adminLeagues = (await dbConnection.QueryAsync<AdminLeagueSummaryQueryResult>(
+                leaguesSql,
+                cancellationToken,
+                new
+                {
+                    request.UserId,
+                    ApprovedStatus = nameof(LeagueMemberStatus.Approved),
+                    PendingStatus = nameof(LeagueMemberStatus.Pending)
+                }))
+            .Select(l => new AdminLeagueSummaryDto(
+                l.LeagueId,
+                l.LeagueName,
+                l.EntryDeadlineUtc,
+                l.MemberCount,
+                l.PendingCount,
+                l.Price,
+                l.IsFree,
+                l.EntryCode))
+            .ToList();
 
         if (!adminLeagues.Any())
         {
@@ -69,7 +80,7 @@ public class GetPendingMembersForAdminQueryHandler(IApplicationReadDbConnection 
                 l.[Name],
                 lm.[JoinedAtUtc]";
 
-        var members = await dbConnection.QueryAsync<PendingLeagueMemberDto>(
+        var members = await dbConnection.QueryAsync<PendingLeagueMemberQueryResult>(
             membersSql,
             cancellationToken,
             new
@@ -82,7 +93,33 @@ public class GetPendingMembersForAdminQueryHandler(IApplicationReadDbConnection 
         {
             IsAdminOfOpenLeague = true,
             AdminLeagues = adminLeagues,
-            Members = members.ToList()
+            Members = members
+                .Select(m => new PendingLeagueMemberDto(
+                    m.LeagueId,
+                    m.LeagueName,
+                    m.UserId,
+                    m.MemberName,
+                    m.JoinedAtUtc))
+                .ToList()
         };
     }
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record AdminLeagueSummaryQueryResult(
+        int LeagueId,
+        string LeagueName,
+        DateTime EntryDeadlineUtc,
+        int MemberCount,
+        int PendingCount,
+        decimal Price,
+        bool IsFree,
+        string? EntryCode);
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record PendingLeagueMemberQueryResult(
+        int LeagueId,
+        string LeagueName,
+        string UserId,
+        string MemberName,
+        DateTime JoinedAtUtc);
 }
