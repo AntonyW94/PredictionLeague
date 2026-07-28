@@ -14,12 +14,13 @@ namespace ThePredictions.Application.Tests.Unit.Features.Account.Commands;
 public class UpdateUserDetailsCommandHandlerTests
 {
     private readonly IUserManager _userManager = Substitute.For<IUserManager>();
+    private readonly IBadgeAwardService _badgeAwardService = Substitute.For<IBadgeAwardService>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc));
     private readonly UpdateUserDetailsCommandHandler _handler;
 
     public UpdateUserDetailsCommandHandlerTests()
     {
-        _handler = new UpdateUserDetailsCommandHandler(_userManager, _dateTimeProvider);
+        _handler = new UpdateUserDetailsCommandHandler(_userManager, _badgeAwardService, _dateTimeProvider);
     }
 
     [Fact]

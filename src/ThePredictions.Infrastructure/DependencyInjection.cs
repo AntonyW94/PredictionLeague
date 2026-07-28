@@ -159,6 +159,7 @@ public static class DependencyInjection
         });
 
         services.AddSingleton<IBadgeIconRenderer, BadgeIconRenderer>();
+        services.AddScoped<IBadgeAwardService, BadgeAwardService>();
 
         services.AddScoped<ILeagueStatsService, LeagueStatsService>();
         services.AddScoped<ILeagueMembershipService, LeagueMembershipService>();

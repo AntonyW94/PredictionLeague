@@ -18,12 +18,13 @@ public class CreateLeagueCommandHandlerTests
     private readonly ICompetitionRepository _competitionRepository = Substitute.For<ICompetitionRepository>();
     private readonly ISeasonAccessService _seasonAccessService = Substitute.For<ISeasonAccessService>();
     private readonly IFieldEncryptionService _fieldEncryptionService = Substitute.For<IFieldEncryptionService>();
+    private readonly IBadgeAwardService _badgeAwardService = Substitute.For<IBadgeAwardService>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
     private readonly CreateLeagueCommandHandler _handler;
 
     public CreateLeagueCommandHandlerTests()
     {
-        _handler = new CreateLeagueCommandHandler(_leagueRepository, _seasonRepository, _competitionRepository, _seasonAccessService, _fieldEncryptionService, _dateTimeProvider);
+        _handler = new CreateLeagueCommandHandler(_leagueRepository, _seasonRepository, _competitionRepository, _seasonAccessService, _fieldEncryptionService, _badgeAwardService, _dateTimeProvider);
     }
 
     private Season CreateSeason(int id = 1) =>
