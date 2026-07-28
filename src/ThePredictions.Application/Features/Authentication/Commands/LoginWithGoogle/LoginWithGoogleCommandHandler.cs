@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using ThePredictions.Application.Common.Exceptions;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Authentication;
@@ -14,7 +15,8 @@ namespace ThePredictions.Application.Features.Authentication.Commands.LoginWithG
 public class LoginWithGoogleCommandHandler(
     IUserManager userManager,
     IAuthenticationTokenService tokenService,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    ILogger<LoginWithGoogleCommandHandler> logger)
     : IRequestHandler<LoginWithGoogleCommand, AuthenticationResponse>
 {
     public async Task<AuthenticationResponse> Handle(LoginWithGoogleCommand request, CancellationToken cancellationToken)
@@ -22,7 +24,10 @@ public class LoginWithGoogleCommandHandler(
         const string provider = "Google";
 
         if (!request.AuthenticateResult.Succeeded || request.AuthenticateResult.Principal == null)
+        {
+            logger.LogInformation("Google sign-in failed: the external authentication result did not succeed.");
             return new ExternalLoginFailedAuthenticationResponse("External authentication failed.", request.Source);
+        }
 
         var principal = request.AuthenticateResult.Principal;
         var providerKey = principal.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -36,12 +41,20 @@ public class LoginWithGoogleCommandHandler(
 
             var userByEmail = await userManager.FindByEmailAsync(email);
             if (userByEmail != null)
+            {
                 user = await LinkExternalLoginToExistingUser(userByEmail, provider, providerKey);
+                logger.LogInformation("Google sign-in linked to existing User (ID: {UserId}).", user.Id);
+            }
             else
+            {
                 user = await CreateNewUserFromExternalLogin(principal, provider, providerKey);
+                logger.LogInformation("Google sign-in created new User (ID: {UserId}).", user.Id);
+            }
         }
 
         var (accessToken, refreshToken, expiresAtUtc) = await tokenService.GenerateTokensAsync(user, cancellationToken);
+
+        logger.LogInformation("Google sign-in succeeded for User (ID: {UserId}).", user.Id);
 
         return new SuccessfulAuthenticationResponse(
             AccessToken: accessToken,

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using ThePredictions.Application.Configuration;
@@ -30,7 +31,7 @@ public class CreateCheckoutSessionCommandHandlerTests
         _userManager.FindByIdAsync(UserId).Returns(new ApplicationUser { Id = UserId, EmailConfirmed = true });
 
         var siteSettings = Options.Create(new SiteSettings { BaseUrl = "https://dev.thepredictions.co.uk" });
-        _handler = new CreateCheckoutSessionCommandHandler(_seasonRepository, _seasonPassRepository, _userManager, _paymentService, siteSettings);
+        _handler = new CreateCheckoutSessionCommandHandler(_seasonRepository, _seasonPassRepository, _userManager, _paymentService, siteSettings, Substitute.For<ILogger<CreateCheckoutSessionCommandHandler>>());
 
         _paymentService.CreateCheckoutSessionAsync(Arg.Any<PaymentCheckoutRequest>(), Arg.Any<CancellationToken>())
             .Returns(new PaymentCheckoutResult("cs_test_123", CheckoutUrl));

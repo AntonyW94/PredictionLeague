@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using ThePredictions.Application.Features.Authentication.Commands.Login;
 using ThePredictions.Application.Services;
@@ -16,7 +17,7 @@ public class LoginCommandHandlerTests
 
     public LoginCommandHandlerTests()
     {
-        _handler = new LoginCommandHandler(_userManager, _tokenService);
+        _handler = new LoginCommandHandler(_userManager, _tokenService, Substitute.For<ILogger<LoginCommandHandler>>());
     }
 
     [Fact]
