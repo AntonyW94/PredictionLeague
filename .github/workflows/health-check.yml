@@ -1,6 +1,6 @@
 name: Health Check
 
-# Polls production every 15 minutes and reports failures to #github.
+# Polls production hourly and reports failures to #github.
 #
 # This exists because the Datadog monitors only fire when something IS logged. If the site
 # stops serving, the log sink breaks, or the host has a wobble, silence looks identical to
@@ -11,9 +11,10 @@ name: Health Check
 
 on:
   schedule:
-    # Every 15 minutes. GitHub treats scheduled runs as best-effort and can delay them under
-    # load, so treat this as "checked regularly", not "checked exactly on the quarter hour".
-    - cron: '*/15 * * * *'
+    # Hourly. GitHub treats scheduled runs as best-effort and can delay them under load, so
+    # treat this as "checked roughly every hour", not "checked exactly on the hour". The
+    # trade-off is up to an hour of downtime before anything reaches Slack.
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 permissions:
