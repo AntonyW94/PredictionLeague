@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common;
@@ -13,7 +14,8 @@ public class AcquireSeasonPassCommandHandler(
     ISeasonRepository seasonRepository,
     ISeasonPassRepository seasonPassRepository,
     IUserManager userManager,
-    IDateTimeProvider dateTimeProvider) : IRequestHandler<AcquireSeasonPassCommand>
+    IDateTimeProvider dateTimeProvider,
+    ILogger<AcquireSeasonPassCommandHandler> logger) : IRequestHandler<AcquireSeasonPassCommand>
 {
     public async Task Handle(AcquireSeasonPassCommand request, CancellationToken cancellationToken)
     {
@@ -31,7 +33,13 @@ public class AcquireSeasonPassCommandHandler(
 
         // Idempotent: the user already holds a pass for this season.
         if (await seasonPassRepository.ExistsForUserSeasonAsync(request.UserId, request.SeasonId, cancellationToken))
+        {
+            logger.LogInformation(
+                "Season Pass acquire skipped: User (ID: {UserId}) already holds a pass for Season (ID: {SeasonId}).",
+                request.UserId,
+                request.SeasonId);
             return;
+        }
 
         var season = await seasonRepository.GetByIdAsync(request.SeasonId, cancellationToken);
         Guard.Against.EntityNotFound(request.SeasonId, season, nameof(Season));
@@ -40,6 +48,11 @@ public class AcquireSeasonPassCommandHandler(
         if (!season!.RequiresPayment)
         {
             await seasonPassRepository.AddAsync(SeasonPass.CreateFree(request.UserId, request.SeasonId, dateTimeProvider), cancellationToken);
+
+            logger.LogInformation(
+                "Season Pass granted (Free) to User (ID: {UserId}) for Season (ID: {SeasonId}).",
+                request.UserId,
+                request.SeasonId);
             return;
         }
 
@@ -48,6 +61,11 @@ public class AcquireSeasonPassCommandHandler(
         if (existingRecordCount == 0)
         {
             await seasonPassRepository.AddAsync(SeasonPass.CreateTrial(request.UserId, request.SeasonId, dateTimeProvider), cancellationToken);
+
+            logger.LogInformation(
+                "Season Pass granted (Trial) to User (ID: {UserId}) for Season (ID: {SeasonId}).",
+                request.UserId,
+                request.SeasonId);
             return;
         }
 

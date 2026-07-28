@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using ThePredictions.Application.Common.Exceptions;
 using ThePredictions.Application.Common.Models;
@@ -27,7 +28,7 @@ public class LoginWithGoogleCommandHandlerTests
 
     public LoginWithGoogleCommandHandlerTests()
     {
-        _handler = new LoginWithGoogleCommandHandler(_userManager, _tokenService, _dateTimeProvider);
+        _handler = new LoginWithGoogleCommandHandler(_userManager, _tokenService, _dateTimeProvider, Substitute.For<ILogger<LoginWithGoogleCommandHandler>>());
     }
 
     private static AuthenticateResult CreateSuccessfulAuthResult(

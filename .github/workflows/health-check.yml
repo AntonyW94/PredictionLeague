@@ -1,0 +1,84 @@
+name: Health Check
+
+# Polls production every 15 minutes and reports failures to #github.
+#
+# This exists because the Datadog monitors only fire when something IS logged. If the site
+# stops serving, the log sink breaks, or the host has a wobble, silence looks identical to
+# health - and there is no Datadog Agent on this shared hosting, so there are no
+# infrastructure metrics or process monitoring to fall back on.
+#
+# Production only. Dev restarts on every deploy and would generate false alarms.
+
+on:
+  schedule:
+    # Every 15 minutes. GitHub treats scheduled runs as best-effort and can delay them under
+    # load, so treat this as "checked regularly", not "checked exactly on the quarter hour".
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      SITE: https://www.thepredictions.co.uk
+    steps:
+      - name: Liveness
+        run: |
+          set -euo pipefail
+
+          # /health/live runs no checks (Predicate = _ => false), so a 200 means the process is
+          # serving requests. Retries absorb an app-pool recycle or a deploy restart, so a
+          # momentary blip does not raise an alert. -f is required for --retry-all-errors to
+          # treat an HTTP 5xx as retryable rather than a successful response.
+          if curl -fsS -o /tmp/live.json \
+               --retry 3 --retry-delay 10 --retry-all-errors --max-time 30 \
+               "${SITE}/health/live"; then
+            echo "Liveness OK: $(cat /tmp/live.json)"
+          else
+            echo "::error::Liveness check failed - ${SITE}/health/live did not return 200 after retries."
+            exit 1
+          fi
+
+      - name: Database readiness
+        run: |
+          set -euo pipefail
+
+          # /health/ready covers the database AND the football API. Deliberately NOT using -f
+          # here: a football-api outage makes this endpoint return 503, and a third-party being
+          # down is not our site being down. Only the database entry is treated as fatal.
+          curl -sS -o /tmp/ready.json --retry 3 --retry-delay 10 --max-time 30 \
+            "${SITE}/health/ready" || true
+
+          if [ ! -s /tmp/ready.json ]; then
+            echo "::error::Readiness check returned no body - the site is not responding."
+            exit 1
+          fi
+
+          echo "Response: $(cat /tmp/ready.json)"
+
+          database=$(jq -r '.checks[]? | select(.name == "database") | .status' /tmp/ready.json 2>/dev/null || echo "")
+          football=$(jq -r '.checks[]? | select(.name == "football-api") | .status' /tmp/ready.json 2>/dev/null || echo "")
+
+          echo "database=${database:-unknown} football-api=${football:-unknown}"
+
+          if [ "${football}" != "Healthy" ]; then
+            echo "::warning::Football API health check reported '${football:-no result}'. Not treated as a failure."
+          fi
+
+          if [ "${database}" != "Healthy" ]; then
+            echo "::error::Database health check reported '${database:-no result}'."
+            exit 1
+          fi
+
+  notify:
+    if: always()
+    needs: [check]
+    uses: ./.github/workflows/notify-slack.yml
+    with:
+      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      notify-on: failure
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using ThePredictions.Application.Common.Exceptions;
 using ThePredictions.Application.Common.Models;
@@ -24,7 +25,7 @@ public class RegisterCommandHandlerTests
 
     public RegisterCommandHandlerTests()
     {
-        _handler = new RegisterCommandHandler(_userManager, _tokenService, _emailConfirmationSender, _dateTimeProvider);
+        _handler = new RegisterCommandHandler(_userManager, _tokenService, _emailConfirmationSender, _dateTimeProvider, Substitute.For<ILogger<RegisterCommandHandler>>());
     }
 
     private static RegisterCommand BuildCommand(string email = "john@example.com", bool marketingOptIn = false) =>

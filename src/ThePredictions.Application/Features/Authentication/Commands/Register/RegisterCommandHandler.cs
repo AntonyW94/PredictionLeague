@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Authentication;
 using ThePredictions.Domain.Common;
@@ -11,14 +12,18 @@ public class RegisterCommandHandler(
     IUserManager userManager,
     IAuthenticationTokenService tokenService,
     IEmailConfirmationSender emailConfirmationSender,
-    IDateTimeProvider dateTimeProvider)
+    IDateTimeProvider dateTimeProvider,
+    ILogger<RegisterCommandHandler> logger)
     : IRequestHandler<RegisterCommand, AuthenticationResponse>
 {
     public async Task<AuthenticationResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
     {
         var userExists = await userManager.FindByEmailAsync(request.Email);
         if (userExists != null)
+        {
+            logger.LogInformation("Registration rejected: an account already exists for User (ID: {UserId}).", userExists.Id);
             return new FailedAuthenticationResponse("Registration could not be completed. If you already have an account, please try logging in.");
+        }
 
         var newUser = ApplicationUser.Create(
             request.FirstName,
@@ -38,6 +43,8 @@ public class RegisterCommandHandler(
         await emailConfirmationSender.SendAsync(newUser, cancellationToken);
 
         var (accessToken, refreshToken, expiresAtUtc) = await tokenService.GenerateTokensAsync(newUser, cancellationToken);
+
+        logger.LogInformation("Registration completed for User (ID: {UserId}); marketing opt-in {MarketingOptIn}.", newUser.Id, request.MarketingOptIn);
 
         return new SuccessfulAuthenticationResponse(
             AccessToken: accessToken,

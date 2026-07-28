@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using ThePredictions.Application.Features.SeasonPasses.Commands;
 using ThePredictions.Application.Repositories;
@@ -27,7 +28,7 @@ public class AcquireSeasonPassCommandHandlerTests
         // Default: a confirmed user exists.
         _userManager.FindByIdAsync(UserId).Returns(new ApplicationUser { Id = UserId, EmailConfirmed = true });
 
-        _handler = new AcquireSeasonPassCommandHandler(_seasonRepository, _seasonPassRepository, _userManager, _dateTimeProvider);
+        _handler = new AcquireSeasonPassCommandHandler(_seasonRepository, _seasonPassRepository, _userManager, _dateTimeProvider, Substitute.For<ILogger<AcquireSeasonPassCommandHandler>>());
     }
 
     private Season FreeSeason() =>

@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Repositories;
@@ -18,7 +19,8 @@ public class CreateCheckoutSessionCommandHandler(
     ISeasonPassRepository seasonPassRepository,
     IUserManager userManager,
     IPaymentService paymentService,
-    IOptions<SiteSettings> siteSettings) : IRequestHandler<CreateCheckoutSessionCommand, CreateCheckoutSessionResponse>
+    IOptions<SiteSettings> siteSettings,
+    ILogger<CreateCheckoutSessionCommandHandler> logger) : IRequestHandler<CreateCheckoutSessionCommand, CreateCheckoutSessionResponse>
 {
     private const string DefaultBaseUrl = "https://www.thepredictions.co.uk";
 
@@ -59,6 +61,15 @@ public class CreateCheckoutSessionCommandHandler(
         var result = await paymentService.CreateCheckoutSessionAsync(
             new PaymentCheckoutRequest(request.UserId, request.SeasonId, request.Tier, amountToCharge, smsFeePaid, successUrl, cancelUrl),
             cancellationToken);
+
+        // Money: this is the start of the trail that "I paid and did not get access" is settled
+        // against, paired with the fulfilment logs in FulfilSeasonPassCommandHandler.
+        logger.LogInformation(
+            "Checkout session created for User (ID: {UserId}), Season (ID: {SeasonId}), tier {Tier}, amount {AmountToCharge}.",
+            request.UserId,
+            request.SeasonId,
+            request.Tier,
+            amountToCharge);
 
         return new CreateCheckoutSessionResponse(result.Url);
     }

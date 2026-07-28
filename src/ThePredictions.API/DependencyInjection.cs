@@ -229,6 +229,9 @@ public static class DependencyInjection
             services.AddMediatR(cfg =>
             {
                 cfg.RegisterServicesFromAssembly(typeof(IAssemblyMarker).Assembly);
+                // Registration order is execution order, outermost first. Logging goes first so it
+                // also records commands rejected by validation, which would otherwise leave no trace.
+                cfg.AddOpenBehavior(typeof(LoggingBehaviour<,>));
                 cfg.AddOpenBehavior(typeof(ValidationBehaviour<,>));
                 cfg.AddOpenBehavior(typeof(TransactionBehaviour<,>));
 
