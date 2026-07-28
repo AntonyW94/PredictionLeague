@@ -122,6 +122,8 @@ private record UserQueryResult(string Id, string FullName, string Email, bool Is
 
 Computed/`CASE`/`COALESCE` columns must be aliased (`... AS HasSeasonPass`) and counted as a column in this ordering. The C# mapping from the result record to the outward DTO is by name and is **not** affected — only the `SELECT`↔`record` pairing is positional.
 
+**Query handlers materialise into private result records, never directly into Contracts DTOs.** The generic argument to `QueryAsync<T>` / `QuerySingleOrDefaultAsync<T>` must be a `private record XxxQueryResult(...)` co-located in the handler (or another Application-owned row type), kept in lockstep with the SELECT column order and carrying the standard ordering comment. Map from the result record to the outward Contracts DTO by name afterwards. Scalars (`int`, `bool`, `string`) are exempt. This keeps the fragile positional coupling inside a single file, next to its SQL, instead of extending it into the shared Contracts assembly where a UI-motivated constructor reorder would break queries at runtime.
+
 ### Testing & Code Coverage
 
 The Domain project **must maintain 100% line and branch coverage**. After writing or modifying code:

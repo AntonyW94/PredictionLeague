@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Competitions;
@@ -24,6 +25,31 @@ public class FetchAllCompetitionsQueryHandler(IApplicationReadDbConnection dbCon
             ORDER BY
                 c.[Name] ASC;";
 
-        return await dbConnection.QueryAsync<CompetitionDto>(sql, cancellationToken);
+        var competitions = await dbConnection.QueryAsync<CompetitionQueryResult>(sql, cancellationToken);
+
+        return competitions.Select(c => new CompetitionDto(
+            c.Id,
+            c.Code,
+            c.Name,
+            c.Type,
+            c.LogoUrl,
+            c.Description,
+            c.ApiLeagueId,
+            c.SeasonCount));
     }
+
+    // NOTE: Dapper matches a record's constructor to the result columns POSITIONALLY -
+    // parameter N must line up with SELECT column N (by name and type). Keep the order of
+    // these parameters identical to the SELECT column order above, or materialisation throws
+    // at runtime ("A parameterless default constructor or one matching signature ... is required").
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record CompetitionQueryResult(
+        int Id,
+        string Code,
+        string Name,
+        int Type,
+        string? LogoUrl,
+        string? Description,
+        int? ApiLeagueId,
+        int SeasonCount);
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -75,7 +76,7 @@ public class GetStageLeaderboardQueryHandler(
                 [Rank] ASC,
                 [PlayerName] ASC;";
 
-        return await dbConnection.QueryAsync<LeaderboardEntryDto>(
+        var entries = await dbConnection.QueryAsync<StageLeaderboardQueryResult>(
             sql,
             cancellationToken,
             new
@@ -89,5 +90,29 @@ public class GetStageLeaderboardQueryHandler(
                 CompletedStatus = nameof(RoundStatus.Completed)
             }
         );
+
+        return entries.Select(e => new LeaderboardEntryDto
+        {
+            Rank = e.Rank,
+            PlayerName = e.PlayerName,
+            TotalPoints = e.TotalPoints,
+            UserId = e.UserId,
+            SnapshotRank = e.SnapshotRank,
+            IsRoundInProgress = e.IsRoundInProgress == 1
+        });
     }
+
+    // NOTE: Dapper matches a record's constructor to the result columns POSITIONALLY -
+    // parameter N must line up with SELECT column N (by name and type). Keep the order of
+    // these parameters identical to the SELECT column order above, or materialisation throws
+    // at runtime ("A parameterless default constructor or one matching signature ... is required").
+    // IsRoundInProgress is a CASE ... THEN 1 ELSE 0 column, so it arrives as an int.
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record StageLeaderboardQueryResult(
+        long Rank,
+        string PlayerName,
+        int? TotalPoints,
+        string UserId,
+        long? SnapshotRank,
+        int IsRoundInProgress);
 }

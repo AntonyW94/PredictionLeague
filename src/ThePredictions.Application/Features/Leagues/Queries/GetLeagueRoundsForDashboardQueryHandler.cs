@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -41,6 +42,31 @@ public class GetLeagueRoundsForDashboardQueryHandler(
             CompletedStatus = nameof(RoundStatus.Completed)
         };
 
-        return await dbConnection.QueryAsync<RoundDto>(sql, cancellationToken, parameters);
+        var rounds = await dbConnection.QueryAsync<RoundQueryResult>(sql, cancellationToken, parameters);
+
+        return rounds.Select(r => new RoundDto(
+            r.Id,
+            r.SeasonId,
+            r.RoundNumber,
+            r.ApiRoundName,
+            r.StartDateUtc,
+            r.DeadlineUtc,
+            r.Status,
+            r.MatchCount));
     }
+
+    // NOTE: Dapper matches a record's constructor to the result columns POSITIONALLY -
+    // parameter N must line up with SELECT column N (by name and type). Keep the order of
+    // these parameters identical to the SELECT column order above, or materialisation throws
+    // at runtime ("A parameterless default constructor or one matching signature ... is required").
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record RoundQueryResult(
+        int Id,
+        int SeasonId,
+        int RoundNumber,
+        string? ApiRoundName,
+        DateTime StartDateUtc,
+        DateTime DeadlineUtc,
+        RoundStatus Status,
+        int MatchCount);
 }

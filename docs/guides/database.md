@@ -45,6 +45,19 @@ var sql = $"SELECT * FROM [Leagues] WHERE [Id] = {leagueId}";
 await _connection.QueryAsync<League>(sql);
 ```
 
+## Result Mapping
+
+**Query handlers materialise into private result records, never directly into Contracts DTOs.**
+
+Dapper matches a positional `record`'s constructor to the result set **positionally** - parameter *N* must line up with `SELECT` column *N* by both name and type. A mismatch is not caught by the compiler or unit tests; it throws at runtime (`InvalidOperationException: A parameterless default constructor or one matching signature (...) is required`).
+
+- The generic argument to `QueryAsync<T>` / `QuerySingleOrDefaultAsync<T>` must be a `private record XxxQueryResult(...)` co-located in the handler (or another Application-owned row type), kept in lockstep with the `SELECT` column order and carrying the standard ordering comment.
+- Map from the result record to the outward Contracts DTO **by name** afterwards (explicit constructor call or object initialiser), so a Contracts reshape becomes a compile error in the handler.
+- Scalars (`int`, `bool`, `string`) and named tuples private to the handler are exempt.
+- Computed/`CASE`/`COALESCE` columns must be aliased and counted as a column in the ordering; type the record parameter to match the column (e.g. `int` for `CASE ... THEN 1 ELSE 0`) and convert in the mapping step.
+
+This keeps the fragile positional coupling inside a single file, next to its SQL, instead of extending it into the shared Contracts assembly where a UI-motivated constructor reorder would break queries at runtime.
+
 ## DateTime Handling
 
 **All dates are stored and retrieved in UTC.**

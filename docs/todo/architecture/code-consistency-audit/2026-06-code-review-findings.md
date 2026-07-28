@@ -288,7 +288,7 @@ A second architecture review (2026-07-06, four parallel deep-dives: CQRS discipl
 | [`architecture/client-service-layer-consolidation`](../client-service-layer-consolidation/README.md) | Move 28 raw-HttpClient components onto the service layer, fix silently swallowed write failures, atomic league save |
 | [`architecture/handler-domain-logic-extraction`](../handler-domain-logic-extraction/README.md) | Extract scheduling/knockout/state-machine logic from the giant admin handlers into tested Domain services |
 | [`architecture/application-infrastructure-leaks`](../application-infrastructure-leaks/README.md) | Brevo template IDs behind `IEmailTemplateCatalog`, move `FieldEncryptionService` to Infrastructure, normalise football API statuses, CancellationToken gaps |
-| [`architecture/dapper-result-records`](../dapper-result-records/README.md) | Standardise query handlers on private result records instead of materialising into Contracts DTOs |
+| ~~`architecture/dapper-result-records`~~ | **Shipped.** Query handlers now materialise into private result records instead of Contracts DTOs; the rule lives in the root `CLAUDE.md` and `docs/guides/database.md`. Plan removed. |
 | [`architecture/build-tooling`](../build-tooling/README.md) | `Directory.Build.props` + `.editorconfig` so CI strictness applies locally |
 
 The [`architecture/test-suite`](../test-suite/README.md) plan was also updated with current coverage numbers and an Infrastructure pure-logic unit test phase.

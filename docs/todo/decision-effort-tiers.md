@@ -59,8 +59,6 @@ July 2026 review plans, all fully specified with decisions already made:
   machine logic into tested Domain services.
 - **architecture/application-infrastructure-leaks** - email template resolver,
   crypto to Infrastructure, provider status normalisation.
-- **architecture/dapper-result-records** - private result records in all query
-  handlers.
 - **architecture/build-tooling** - `Directory.Build.props` + `.editorconfig` shipped (2026-07-25); only the `AnalysisLevel` raise to `latest-recommended` remains (a cascading, multi-project code-change effort - see the plan).
 
 ## Tier B - One quick decision, then build

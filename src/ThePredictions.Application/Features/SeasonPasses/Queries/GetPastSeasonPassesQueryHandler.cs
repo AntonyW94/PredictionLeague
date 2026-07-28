@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.SeasonPasses;
@@ -48,9 +49,26 @@ public class GetPastSeasonPassesQueryHandler(IApplicationReadDbConnection dbConn
             ORDER BY
                 s.[StartDateUtc] DESC;";
 
-        return await dbConnection.QueryAsync<PastSeasonPassDto>(
+        var passes = await dbConnection.QueryAsync<PastSeasonPassQueryResult>(
             sql,
             cancellationToken,
             new { request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+
+        return passes.Select(p => new PastSeasonPassDto(
+            p.SeasonId,
+            p.SeasonName,
+            p.CompetitionLogoUrl,
+            p.PlayerCount));
     }
+
+    // NOTE: Dapper matches a record's constructor to the result columns POSITIONALLY -
+    // parameter N must line up with SELECT column N (by name and type). Keep the order of
+    // these parameters identical to the SELECT column order above, or materialisation throws
+    // at runtime ("A parameterless default constructor or one matching signature ... is required").
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record PastSeasonPassQueryResult(
+        int SeasonId,
+        string SeasonName,
+        string? CompetitionLogoUrl,
+        int PlayerCount);
 }

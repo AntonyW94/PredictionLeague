@@ -208,7 +208,7 @@ public class GetLeagueRecordsQueryHandler(
 
             SET TRANSACTION ISOLATION LEVEL READ COMMITTED;";
 
-        var result = await dbConnection.QuerySingleOrDefaultAsync<LeagueRecordsDto>(
+        var result = await dbConnection.QuerySingleOrDefaultAsync<LeagueRecordsQueryResult>(
             sql,
             cancellationToken,
             new
@@ -220,6 +220,75 @@ public class GetLeagueRecordsQueryHandler(
                 MonthlyPrizeType = PrizeType.Monthly
             });
 
-        return result;
+        return result is null
+            ? null
+            : new LeagueRecordsDto
+            {
+                IsFree = result.IsFree,
+                TopRoundPlayerName = result.TopRoundPlayerName,
+                TopRoundPoints = result.TopRoundPoints,
+                TopRoundNumber = result.TopRoundNumber,
+                LowestRoundPlayerName = result.LowestRoundPlayerName,
+                LowestRoundPoints = result.LowestRoundPoints,
+                LowestRoundNumber = result.LowestRoundNumber,
+                MostExactInRoundPlayerName = result.MostExactInRoundPlayerName,
+                MostExactInRoundCount = result.MostExactInRoundCount,
+                MostExactInRoundNumber = result.MostExactInRoundNumber,
+                ChampionName = result.ChampionName,
+                ChampionPoints = result.ChampionPoints,
+                TopEarnerName = result.TopEarnerName,
+                TopEarnerAmount = result.TopEarnerAmount,
+                MostRoundsWonPlayerName = result.MostRoundsWonPlayerName,
+                MostRoundsWonCount = result.MostRoundsWonCount,
+                MostMonthsWonPlayerName = result.MostMonthsWonPlayerName,
+                MostMonthsWonCount = result.MostMonthsWonCount,
+                TotalExactScores = result.TotalExactScores,
+                BiggestPrizePlayerName = result.BiggestPrizePlayerName,
+                BiggestPrizeAmount = result.BiggestPrizeAmount,
+                BiggestPrizeDescription = result.BiggestPrizeDescription,
+                HighestGameweekRoundNumber = result.HighestGameweekRoundNumber,
+                HighestGameweekPoints = result.HighestGameweekPoints
+            };
     }
+
+    // NOTE: Dapper matches a record's constructor to the result columns POSITIONALLY -
+    // parameter N must line up with SELECT column N (by name and type). Keep the order of
+    // these parameters identical to the SELECT column order above, or materialisation throws
+    // at runtime ("A parameterless default constructor or one matching signature ... is required").
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record LeagueRecordsQueryResult(
+        bool IsFree,
+
+        string? TopRoundPlayerName,
+        int TopRoundPoints,
+        int? TopRoundNumber,
+
+        string? LowestRoundPlayerName,
+        int LowestRoundPoints,
+        int? LowestRoundNumber,
+
+        string? MostExactInRoundPlayerName,
+        int MostExactInRoundCount,
+        int? MostExactInRoundNumber,
+
+        string? ChampionName,
+        int ChampionPoints,
+
+        string? TopEarnerName,
+        decimal TopEarnerAmount,
+
+        string? MostRoundsWonPlayerName,
+        int MostRoundsWonCount,
+
+        string? MostMonthsWonPlayerName,
+        int MostMonthsWonCount,
+
+        int TotalExactScores,
+
+        string? BiggestPrizePlayerName,
+        decimal BiggestPrizeAmount,
+        string? BiggestPrizeDescription,
+
+        int? HighestGameweekRoundNumber,
+        int HighestGameweekPoints);
 }

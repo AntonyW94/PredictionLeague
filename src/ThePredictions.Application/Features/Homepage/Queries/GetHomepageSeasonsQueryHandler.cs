@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Homepage;
+using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Homepage.Queries;
 
@@ -63,6 +65,35 @@ public class GetHomepageSeasonsQueryHandler(IApplicationReadDbConnection dbConne
             ORDER BY
                 s.[StartDateUtc]";
 
-        return await dbConnection.QueryAsync<HomepageSeasonDto>(sql, cancellationToken);
+        var seasons = await dbConnection.QueryAsync<HomepageSeasonQueryResult>(sql, cancellationToken);
+
+        return seasons.Select(s => new HomepageSeasonDto(
+            s.Id,
+            s.Name,
+            s.CompetitionType,
+            s.StartDateUtc,
+            s.EndDateUtc,
+            s.IsInProgress,
+            s.IsUpcoming,
+            s.LeagueCount,
+            s.PlayerCount,
+            s.TotalPrizeFund));
     }
+
+    // NOTE: Dapper matches a record's constructor to the result columns POSITIONALLY -
+    // parameter N must line up with SELECT column N (by name and type). Keep the order of
+    // these parameters identical to the SELECT column order above, or materialisation throws
+    // at runtime ("A parameterless default constructor or one matching signature ... is required").
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record HomepageSeasonQueryResult(
+        int Id,
+        string Name,
+        CompetitionType CompetitionType,
+        DateTime StartDateUtc,
+        DateTime EndDateUtc,
+        int IsInProgress,
+        int IsUpcoming,
+        int LeagueCount,
+        int PlayerCount,
+        decimal TotalPrizeFund);
 }

@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Seasons;
+using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Admin.Seasons.Queries;
 
@@ -53,6 +55,53 @@ public class GetSeasonByIdQueryHandler(IApplicationReadDbConnection dbConnection
             WHERE
                 s.[Id] = @Id";
 
-        return await dbConnection.QuerySingleOrDefaultAsync<SeasonDto>(sql, cancellationToken, new { request.Id });
+        var season = await dbConnection.QuerySingleOrDefaultAsync<SeasonQueryResult>(sql, cancellationToken, new { request.Id });
+
+        return season is null
+            ? null
+            : new SeasonDto(
+                season.Id,
+                season.Name,
+                season.StartDateUtc,
+                season.EndDateUtc,
+                season.IsActive,
+                season.NumberOfRounds,
+                season.CompetitionId,
+                season.CompetitionName,
+                season.CompetitionType,
+                season.ApiLeagueId,
+                season.RoundCount,
+                season.DraftCount,
+                season.PublishedCount,
+                season.InProgressCount,
+                season.CompletedCount,
+                season.TeamCount,
+                season.PassStandardPrice,
+                season.PassPremiumPrice);
     }
+
+    // NOTE: Dapper matches a record's constructor to the result columns POSITIONALLY -
+    // parameter N must line up with SELECT column N (by name and type). Keep the order of
+    // these parameters identical to the SELECT column order above, or materialisation throws
+    // at runtime ("A parameterless default constructor or one matching signature ... is required").
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record SeasonQueryResult(
+        int Id,
+        string Name,
+        DateTime StartDateUtc,
+        DateTime EndDateUtc,
+        bool IsActive,
+        int NumberOfRounds,
+        int CompetitionId,
+        string CompetitionName,
+        CompetitionType CompetitionType,
+        int? ApiLeagueId,
+        int RoundCount,
+        int DraftCount,
+        int PublishedCount,
+        int InProgressCount,
+        int CompletedCount,
+        int TeamCount,
+        decimal? PassStandardPrice,
+        decimal? PassPremiumPrice);
 }

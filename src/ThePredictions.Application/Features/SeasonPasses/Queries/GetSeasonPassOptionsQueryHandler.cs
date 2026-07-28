@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.SeasonPasses;
@@ -42,9 +43,44 @@ public class GetSeasonPassOptionsQueryHandler(IApplicationReadDbConnection dbCon
             WHERE
                 s.[Id] = @SeasonId;";
 
-        return await dbConnection.QuerySingleOrDefaultAsync<SeasonPassOptionsDto>(
+        var options = await dbConnection.QuerySingleOrDefaultAsync<SeasonPassOptionsQueryResult>(
             sql,
             cancellationToken,
             new { request.UserId, request.SeasonId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+
+        return options is null
+            ? null
+            : new SeasonPassOptionsDto(
+                options.SeasonId,
+                options.SeasonName,
+                options.CompetitionLogoUrl,
+                options.CompetitionDescription,
+                options.RequiresPayment,
+                options.StandardPrice,
+                options.PremiumPrice,
+                options.IsTrialEligible,
+                options.AlreadyHeld,
+                options.EntryOpen,
+                options.PlayerCount,
+                options.NextEntryDeadlineUtc);
     }
+
+    // NOTE: Dapper matches a record's constructor to the result columns POSITIONALLY -
+    // parameter N must line up with SELECT column N (by name and type). Keep the order of
+    // these parameters identical to the SELECT column order above, or materialisation throws
+    // at runtime ("A parameterless default constructor or one matching signature ... is required").
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private record SeasonPassOptionsQueryResult(
+        int SeasonId,
+        string SeasonName,
+        string? CompetitionLogoUrl,
+        string? CompetitionDescription,
+        bool RequiresPayment,
+        decimal? StandardPrice,
+        decimal? PremiumPrice,
+        bool IsTrialEligible,
+        bool AlreadyHeld,
+        bool EntryOpen,
+        int PlayerCount,
+        DateTime? NextEntryDeadlineUtc);
 }
