@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
+using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Features.Admin.EmailTests.Commands;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Models;
@@ -16,7 +18,12 @@ public class SendTestEmailCommandHandlerTests
 
     public SendTestEmailCommandHandlerTests()
     {
-        _handler = new SendTestEmailCommandHandler(_userManager, _emailService, Substitute.For<ILogger<SendTestEmailCommandHandler>>());
+        _handler = new SendTestEmailCommandHandler(
+            _userManager,
+            _emailService,
+            Options.Create(new BrevoSettings()),
+            Options.Create(new SiteSettings()),
+            Substitute.For<ILogger<SendTestEmailCommandHandler>>());
     }
 
     private static SendTestEmailCommand Command() =>

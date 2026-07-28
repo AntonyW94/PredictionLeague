@@ -61,6 +61,49 @@ public static class BadgeCatalogue
 
     public static readonly int TotalBadgeCount = Groups.Sum(g => g.Tiers.Count);
 
+    /// <summary>
+    /// Resolves a badge key (including a collection tier key such as "sharpshooter-2") to its
+    /// display metadata - name, glyph and the colour variant to render. Returns null for an
+    /// unknown key. The variant mirrors <c>BadgeIcon.razor</c>: honours are gold, collection tiers
+    /// step bronze -> silver -> gold, and one-off badges are green.
+    /// </summary>
+    public static BadgeDisplay? Resolve(string key)
+    {
+        foreach (var group in Groups)
+        {
+            var tierIndex = -1;
+            for (var i = 0; i < group.Tiers.Count; i++)
+            {
+                if (group.Tiers[i].Key == key)
+                {
+                    tierIndex = i;
+                    break;
+                }
+            }
+
+            if (tierIndex < 0)
+                continue;
+
+            var tier = tierIndex + 1;
+            var variant = group.Category switch
+            {
+                HonourCategory => "gold",
+                CollectionCategory => tier switch
+                {
+                    >= 3 => "gold",
+                    2 => "silver",
+                    1 => "bronze",
+                    _ => "green"
+                },
+                _ => "green"
+            };
+
+            return new BadgeDisplay(key, group.GroupKey, group.Name, group.Glyph, variant, tier, group.Tiers.Count);
+        }
+
+        return null;
+    }
+
     internal static UserBadgesDto BuildPage(BadgeUserState state, DateTime nowUtc)
     {
         var dtos = Groups.Select(g => ToDto(g, state, nowUtc)).ToList();

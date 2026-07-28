@@ -3,6 +3,7 @@ using MediatR;
 using ThePredictions.Application.Common.Prizes;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
+using ThePredictions.Contracts.Badges;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Guards;
@@ -10,7 +11,7 @@ using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, ICompetitionRepository competitionRepository, ISeasonAccessService seasonAccessService, IFieldEncryptionService fieldEncryptionService, IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateLeagueCommand, LeagueDto>
+public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, ICompetitionRepository competitionRepository, ISeasonAccessService seasonAccessService, IFieldEncryptionService fieldEncryptionService, IBadgeAwardService badgeAwardService, IDateTimeProvider dateTimeProvider) : IRequestHandler<CreateLeagueCommand, LeagueDto>
 {
     public async Task<LeagueDto> Handle(CreateLeagueCommand request, CancellationToken cancellationToken)
     {
@@ -58,6 +59,9 @@ public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
         }
 
         var createdLeague = await leagueRepository.CreateAsync(league, cancellationToken);
+
+        // "Founder" - awarded for creating a league.
+        await badgeAwardService.AwardAsync(request.CreatingUserId, BadgeKeys.Founder, cancellationToken);
 
         return new LeagueDto(
             createdLeague.Id,

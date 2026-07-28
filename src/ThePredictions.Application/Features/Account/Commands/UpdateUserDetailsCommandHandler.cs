@@ -2,12 +2,13 @@ using Ardalis.GuardClauses;
 using MediatR;
 using ThePredictions.Application.Common.Exceptions;
 using ThePredictions.Application.Services;
+using ThePredictions.Contracts.Badges;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Guards;
 
 namespace ThePredictions.Application.Features.Account.Commands;
 
-public class UpdateUserDetailsCommandHandler(IUserManager userManager, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateUserDetailsCommand>
+public class UpdateUserDetailsCommandHandler(IUserManager userManager, IBadgeAwardService badgeAwardService, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateUserDetailsCommand>
 {
     public async Task Handle(UpdateUserDetailsCommand request, CancellationToken cancellationToken)
     {
@@ -20,5 +21,9 @@ public class UpdateUserDetailsCommandHandler(IUserManager userManager, IDateTime
         var result = await userManager.UpdateAsync(user);
         if (!result.Succeeded)
             throw new IdentityUpdateException(result.Errors);
+
+        // "On Call" - awarded the moment a mobile number is on the account.
+        if (!string.IsNullOrWhiteSpace(request.PhoneNumber))
+            await badgeAwardService.AwardAsync(request.UserId, BadgeKeys.OnCall, cancellationToken);
     }
 }

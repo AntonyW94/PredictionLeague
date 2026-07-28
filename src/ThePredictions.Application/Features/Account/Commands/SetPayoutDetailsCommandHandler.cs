@@ -2,6 +2,7 @@ using Ardalis.GuardClauses;
 using MediatR;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
+using ThePredictions.Contracts.Badges;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Models;
 
@@ -10,6 +11,7 @@ namespace ThePredictions.Application.Features.Account.Commands;
 public class SetPayoutDetailsCommandHandler(
     IUserPayoutDetailsRepository payoutDetailsRepository,
     IFieldEncryptionService fieldEncryptionService,
+    IBadgeAwardService badgeAwardService,
     IDateTimeProvider dateTimeProvider) : IRequestHandler<SetPayoutDetailsCommand>
 {
     public async Task Handle(SetPayoutDetailsCommand request, CancellationToken cancellationToken)
@@ -34,6 +36,10 @@ public class SetPayoutDetailsCommandHandler(
         }
 
         await payoutDetailsRepository.UpsertAsync(details, cancellationToken);
+
+        // "Banked" - awarded once bank details are on the account.
+        if (!string.IsNullOrWhiteSpace(request.AccountNumber))
+            await badgeAwardService.AwardAsync(request.UserId, BadgeKeys.Banked, cancellationToken);
     }
 
     private static string? NullIfBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

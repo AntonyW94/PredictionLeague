@@ -6,6 +6,7 @@
      Loop:         params.LEAGUES[] -> LEAGUE_NAME, POINTS, POSITION, MOVEMENT_ARROW, MOVEMENT_COLOUR,
                    MOVEMENT_COUNT, TOP_SCORER, TOP_SCORER_POINTS, LEAGUE_URL
                    (MOVEMENT_ARROW is a coloured up/down triangle or a grey dash; blank = no data)
+     Loop:         params.BADGES[] -> NAME, ICON_URL (badges earned this round; block hidden when empty)
      Note: the LEAGUES loop and the next-round block only render on a real send. The admin
            email-test tool sends scalar params only, so the per-league rows will be empty there
            (the next-round block shows if you fill NEXT_ROUND_NAME). ROUND_NAME / NEXT_ROUND_NAME
@@ -76,6 +77,33 @@
             </table>
           </td>
         </tr>
+
+        <!-- Badges earned this round (hidden when the player earned none) -->
+        {% if params.BADGES %}
+        <tr>
+          <td style="padding:20px 32px 0;color:#98a2b3;font-size:12px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;">
+            Badges earned
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:8px 32px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F8F5FA;border:1px solid #F0EAF5;border-radius:12px;">
+              {% for badge in params.BADGES %}
+              <tr>
+                <td style="padding:14px 20px;border-bottom:1px solid #F0EAF5;">
+                  <table role="presentation" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td valign="middle" style="width:52px;"><img src="{{ badge.ICON_URL }}" alt="{{ badge.NAME }}" width="44" height="44" style="display:block;border:0;outline:none;text-decoration:none;width:44px;height:44px;"></td>
+                      <td valign="middle" style="color:#2C0A3D;font-size:16px;font-weight:700;padding-left:14px;">{{ badge.NAME }}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+          </td>
+        </tr>
+        {% endif %}
 
         <!-- Per-league breakdown -->
         <tr>
