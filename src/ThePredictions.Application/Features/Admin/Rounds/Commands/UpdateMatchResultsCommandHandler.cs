@@ -80,11 +80,23 @@ public class UpdateMatchResultsCommandHandler(
         await leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
         await boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
         
-        if (round.Matches.All(m => m.Status is MatchStatus.Completed or MatchStatus.Postponed))
+        var isRoundFinishing = round.Matches.All(m => m.Status is MatchStatus.Completed or MatchStatus.Postponed);
+        if (isRoundFinishing)
         {
             round.UpdateStatus(RoundStatus.Completed, dateTimeProvider);
             await roundRepository.UpdateAsync(round, cancellationToken);
+        }
 
+        // Rebuild the cached ranks here, and only here. It has to be after the round's own status change,
+        // because the recompute resolves which round the cache describes from the current statuses. And it
+        // has to be before the round-completion work below, because the results digest email reads
+        // [OverallRank] and [SnapshotOverallRank] to tell each player their position and how far they
+        // moved (GetRoundDigestQueryHandler) - run the refresh after that and the email reports the
+        // previous update's figures.
+        await leagueStatsRepository.RefreshSeasonAsync(round.SeasonId, cancellationToken);
+
+        if (isRoundFinishing)
+        {
             var leagueIds = await leagueRepository.GetLeagueIdsForSeasonAsync(round.SeasonId, cancellationToken);
 
             foreach (var leagueId in leagueIds)
@@ -110,12 +122,5 @@ public class UpdateMatchResultsCommandHandler(
             // Idempotent via the PrizeNotifications sent-log, so re-completing the round won't re-send.
             await mediator.Send(new SendPrizeNotificationsCommand(round.Id), cancellationToken);
         }
-
-        // Rebuild the cached My Leagues ranks once, at the very end, so they reflect the final state of
-        // this update - the round going live, the new scores, the boosts, and the round completing.
-        // The recompute is a pure function of what is now in the database, so a single call covers all
-        // of those without caring which of them happened. Nothing above reads these columns, so there
-        // is no ordering constraint pulling it earlier.
-        await leagueStatsRepository.RefreshSeasonAsync(round.SeasonId, cancellationToken);
     }
 }
