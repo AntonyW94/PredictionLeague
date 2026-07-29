@@ -89,13 +89,13 @@ dotnet run --project tools/ThePredictions.SchemaCheck
 
 It compares each Dapper read in `src/` with the result set SQL Server describes for it, exits non-zero when a read cannot materialise, and also reports the quieter name-mapped failures below. Run it after changing any query's `SELECT` list or result type.
 
-To have it run automatically over staged files, enable the repository's hooks once per clone:
+To have it run automatically over the reads your commits touch, enable the repository's hooks once per clone (git config is not versioned, so it does not arrive with a fresh clone):
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-The hook skips when nothing relevant is staged or the database is unreachable, so it only ever blocks a commit on a real finding.
+`.githooks/pre-push` then checks the commits being pushed. It skips when they touch no `src` C# file or the database is unreachable, so it only ever blocks a push on a real finding - bypass one with `git push --no-verify`.
 
 ### Read failures are server faults, not client errors
 

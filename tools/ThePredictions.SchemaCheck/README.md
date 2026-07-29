@@ -24,24 +24,39 @@ repository root, database unreachable). Add `--strict` to fail on silent drops t
 file counts if it holds the call site **or** declares the type being materialised, since reshaping a result
 record breaks the query wherever that query lives.
 
-## The pre-commit hook
+## The pre-push hook
 
-`.githooks/pre-commit` runs the check over staged files. Enable it once per clone:
+`.githooks/pre-push` checks the reads touched by the commits being pushed, so a mismatch is caught before it
+reaches a shared branch. Enable it once per clone - git config is not versioned, so it does not travel with
+the repository:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-It is deliberately permissive about its own prerequisites and only ever fails on a real finding - it skips
-when no `src` C# file is staged (~0.1s), when `dotnet` is missing, and when the database cannot be reached.
-A hook that blocks committing on a train gets bypassed with `--no-verify` and then never runs again.
+The path is relative, so git resolves it against each working tree's own root: every worktree runs its own
+checked-out copy of the hook, and a worktree on a branch without `.githooks/` simply runs no hook.
 
-With one handler staged it takes about 3 seconds, because `--changed` cuts the work to the affected reads.
+It is deliberately permissive about its own prerequisites and only ever fails on a real finding - it skips
+when the pushed commits touch no `src` C# file (~0.4s), when `dotnet` is missing, and when the database
+cannot be reached. A hook that blocks a push on a train gets bypassed with `--no-verify` and then never runs
+again. Bypass a finding you believe is wrong with `git push --no-verify`.
+
+Pushing one changed handler takes about 3 seconds, because `--changed` cuts the work to the affected reads.
+
+How it decides what changed, from the refs git feeds it on stdin:
+
+| Case | Range checked |
+|------|---------------|
+| Updating a branch the remote already has | `<remote sha>..<local sha>` |
+| A branch the remote does not have yet | merge base with `origin/master` to the local sha |
+| Deleting a branch | nothing - skipped |
+| Run by hand with no refs on stdin | merge base with `origin/master` to `HEAD` |
 
 Two things to know:
 
-- It inspects the **working tree**, not the staged snapshot, so a partially staged file is checked as it
-  exists on disk.
+- The tool reads the **working tree**, not the commits being pushed, so a dirty tree is what actually gets
+  checked. The hook prints a note when `src/` has uncommitted changes.
 - The database-unreachable case exits `2` and the hook skips. This is why the tool probes the connection up
   front: without that probe an unreachable server turns every read into a per-query "could not be described"
   skip and the run exits `0`, which is a clean bill of health from a check that never ran.
