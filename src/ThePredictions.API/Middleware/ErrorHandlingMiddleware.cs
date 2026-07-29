@@ -33,6 +33,10 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
             logger.LogWarning("Invalid Argument/Business Rule Error: {Message}", ex.Message);
             await HandleKnownExceptionAsync(context, HttpStatusCode.BadRequest, new { message = ex.Message });
         }
+        // Handlers throw InvalidOperationException for business rules ("Round is not accepting
+        // predictions"), so it is a client error. Data-access faults must NOT reach here as this type or
+        // they would be reported as a 400 and a Warning - DapperReadDbConnection translates Dapper's
+        // InvalidOperationException into ReadQueryFailedException, which falls through to Error and 500.
         catch (InvalidOperationException ex)
         {
             logger.LogWarning("Invalid Operation Error: {Message}", ex.Message);

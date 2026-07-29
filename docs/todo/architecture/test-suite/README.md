@@ -4,7 +4,7 @@
 
 Not Started | **In Progress** | Complete
 
-> **Verified July 2026:** Counts below are `[Fact]`/`[Theory]` method counts (actual executed cases are higher, as each `[Theory]` fans out over its `InlineData`). Test files / test methods per unit project: **Domain** 42 files / 768 methods; **Validators** 26 files / 261 methods; **Application** 49 files / 301 methods; **Web.Client** 2 files / 20 methods; **Composition** 1 file / 1 method. Phase 1 (domain, 100% line/branch coverage) and Phase 2 (validators) are complete, and command-handler unit tests have begun. Coverage of the Application command/query surface remains thin: of **134** `IRequestHandler` implementations in `src/ThePredictions.Application`, only **34** have a corresponding test file (100 untested). Phases 3-4 (query-handler and repository integration), the remainder of Phase 5 (command-handler unit), and Phases 6-8 (API, E2E, CI/CD) remain outstanding.
+> **Verified July 2026:** Counts below are `[Fact]`/`[Theory]` method counts (actual executed cases are higher, as each `[Theory]` fans out over its `InlineData`). Test files / test methods per unit project: **Domain** 42 files / 768 methods; **Validators** 26 files / 261 methods; **Application** 49 files / 301 methods; **Web.Client** 2 files / 20 methods; **Composition** 1 file / 1 method; **Infrastructure** 1 file / 4 methods (project added July 2026 for `DapperReadDbConnection`). Phase 1 (domain, 100% line/branch coverage) and Phase 2 (validators) are complete, and command-handler unit tests have begun. Coverage of the Application command/query surface remains thin: of **134** `IRequestHandler` implementations in `src/ThePredictions.Application`, only **34** have a corresponding test file (100 untested). Phases 3-4 (query-handler and repository integration), the remainder of Phase 5 (command-handler unit), and Phases 6-8 (API, E2E, CI/CD) remain outstanding.
 
 This document outlines the comprehensive testing strategy for the ThePredictions application, including CI/CD integration with GitHub Actions.
 
@@ -753,6 +753,8 @@ const string sql = "INSERT INTO [Leagues] ([Name], [SeasonId]) VALUES (@SeasonId
 | Unit Tests (mocked) | ❌ No | ❌ No | Low |
 
 **You need integration tests** to catch these errors. Unit tests with mocked repositories won't help because they never execute real SQL.
+
+> **SQLite will not catch column-type mismatches.** A positional result record must match the column's CLR type exactly, and SQLite's type affinities do not reproduce SQL Server's (`int` vs `bigint` in particular). The July 2026 `SnapshotRank` bug - a `long?` parameter against an `int` column, which took down `/api/leagues/{id}/leaderboard/overall` and the monthly leaderboard - would pass a SQLite-backed suite. Query-handler tests that need to catch this class of bug must run against SQL Server (LocalDB or the dev database), or assert column types up front with `sys.sp_describe_first_result_set`, which needs no test host at all and would be a cheap first step for all ~37 read call sites.
 
 ### 9.3 Recommended Testing Strategy
 

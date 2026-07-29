@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Dapper;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ThePredictions.Application.Common.Exceptions;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
 
@@ -49,6 +50,16 @@ public class DapperReadDbConnection(
         try
         {
             return await retryPolicy.ExecuteAsync(operation, cancellationToken);
+        }
+        catch (InvalidOperationException exception)
+        {
+            // Dapper reports a result-set/result-record mismatch ("A parameterless default constructor or
+            // one matching signature ... is required for ... materialization") and a single-row query that
+            // returned multiple rows as a plain InvalidOperationException. The API error middleware maps
+            // that type to 400 Bad Request and a Warning because handlers throw it for business rules, so
+            // an unreported server-side defect would look like a client mistake. Translate it into a
+            // dedicated type that lands in the middleware's unhandled bucket - Error and 500 - instead.
+            throw new ReadQueryFailedException(exception);
         }
         finally
         {

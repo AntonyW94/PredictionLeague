@@ -110,12 +110,14 @@ tests/
 │       └── Helpers/
 │           └── TestDateTimeProvider.cs  → Shared test doubles
 └── Unit/
-    └── ThePredictions.Domain.Tests.Unit/
-        ├── Common/
-        │   ├── Exceptions/        → Exception class tests
-        │   └── Guards/            → Guard clause extension tests
-        ├── Models/                → Entity tests (one file per entity)
-        └── Services/              → Domain service tests
+    ├── ThePredictions.Domain.Tests.Unit/
+    │   ├── Common/
+    │   │   ├── Exceptions/        → Exception class tests
+    │   │   └── Guards/            → Guard clause extension tests
+    │   ├── Models/                → Entity tests (one file per entity)
+    │   └── Services/              → Domain service tests
+    └── ThePredictions.Infrastructure.Tests.Unit/
+        └── Data/                  → Read/write connection behaviour (no database required)
 ```
 
 ### Test Naming
