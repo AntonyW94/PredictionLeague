@@ -705,7 +705,11 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
 
     public async Task DeleteAsync(int leagueId, CancellationToken cancellationToken)
     {
+        // [LeagueMemberStats] has a foreign key to [Leagues] with no cascade, so its rows have to go
+        // first or the delete fails. Every approved member now has a row from the moment they join,
+        // rather than only once a round has gone live, so this is not a rare path.
         const string sql = @"
+        DELETE FROM [LeagueMemberStats] WHERE [LeagueId] = @LeagueId;
         DELETE FROM [LeagueMembers] WHERE [LeagueId] = @LeagueId;
         DELETE FROM [LeaguePrizeSettings] WHERE [LeagueId] = @LeagueId;
         DELETE FROM [LeaguePrizeScheme] WHERE [LeagueId] = @LeagueId;

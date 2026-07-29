@@ -15,6 +15,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
 {
     private readonly ILeagueRepository _leagueRepository = Substitute.For<ILeagueRepository>();
     private readonly ILeagueMemberRepository _leagueMemberRepository = Substitute.For<ILeagueMemberRepository>();
+    private readonly ILeagueStatsRepository _leagueStatsRepository = Substitute.For<ILeagueStatsRepository>();
     private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
     private readonly UpdateLeagueMemberStatusCommandHandler _handler;
@@ -22,7 +23,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
     public UpdateLeagueMemberStatusCommandHandlerTests()
     {
         _handler = new UpdateLeagueMemberStatusCommandHandler(
-            _leagueRepository, _leagueMemberRepository, _mediator, _dateTimeProvider);
+            _leagueRepository, _leagueMemberRepository, _leagueStatsRepository, _mediator, _dateTimeProvider);
     }
 
     private League CreateLeague(int id = 1, string administratorUserId = "admin-user")
@@ -179,5 +180,42 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
         // Assert
         member.Status.Should().Be(LeagueMemberStatus.Pending);
         await _leagueMemberRepository.Received(1).UpdateAsync(member, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRefreshLeagueStats_WhenMemberIsApproved()
+    {
+        // Arrange
+        var league = CreateLeague();
+        var member = CreateMember(status: LeagueMemberStatus.Pending);
+        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Approved);
+
+        _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
+        _leagueMemberRepository.GetAsync(1, "member-1", Arg.Any<CancellationToken>()).Returns(member);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await _leagueStatsRepository.Received(1).RefreshLeagueAsync(1, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotRefreshLeagueStats_WhenMemberIsRejected()
+    {
+        // Arrange - only pending members can be rejected, and a pending member is not ranked, so no
+        // rank can have moved
+        var league = CreateLeague();
+        var member = CreateMember(status: LeagueMemberStatus.Pending);
+        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Rejected);
+
+        _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
+        _leagueMemberRepository.GetAsync(1, "member-1", Arg.Any<CancellationToken>()).Returns(member);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await _leagueStatsRepository.DidNotReceiveWithAnyArgs().RefreshLeagueAsync(default, CancellationToken.None);
     }
 }

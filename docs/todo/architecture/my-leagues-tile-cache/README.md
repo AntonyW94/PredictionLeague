@@ -2,7 +2,45 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | In Progress | **Complete** (2026-07-29)
+
+> Implemented, with two deliberate departures from the plan below - both recorded in
+> [ADR-0015](../../../decisions/0015-cache-my-leagues-ranks.md), which supersedes this document as the
+> description of what exists.
+>
+> **1. No snapshots.** §2 kept the snapshot/live split and extended
+> `SnapshotRanksForRoundStartAsync` with new pre-round columns and a first-round `NULL` rule. That was
+> dropped: a pre-round rank is just a rank over the rounds *before* the active one, which is a function
+> of current data, so it does not need capturing at a moment in time. `ILeagueStatsRepository` collapsed
+> to `RefreshLeagueAsync(leagueId)` / `RefreshSeasonAsync(seasonId)`, both running one idempotent
+> recompute. This removes the ordering dependency that caused every previous bug in this table, rather
+> than adding more triggers to work around it. The pass-through `ILeagueStatsService` went with it.
+>
+> **2. Absent is `NULL`, and every rank column is nullable** - not just the two pre-round ones §1
+> proposed. A league whose season has no active round has no rank at all, which is what the live query
+> returned. The `DEFAULT ((0))` constraints were dropped too, since a default is precisely how a missing
+> rank previously surfaced as a fabricated "1st".
+>
+> Also worth knowing:
+> - The optional `StagePoints` / `ExactScoresCount` columns in §1 were **not** added - nothing reads them.
+> - §3's "member is removed / leaves" trigger has nothing to hook onto: `LeagueMember.Approve`/`Reject`
+>   both require `Pending`, and no other path takes an approved member out of a league. The recompute
+>   handles it anyway (it derives the ranked set from who is currently approved), but a future
+>   leave-league feature must call `RefreshLeagueAsync`.
+> - §3's per-minute self-heal now refreshes **unconditionally**, and is doing more than self-healing: it
+>   is the only thing that catches the parts of the tile that change with time rather than with an event
+>   (the active round rolling into a new month or stage, a completed round ageing out of its 48-hour
+>   window). Neither fires a write, so no explicit trigger is possible.
+> - §5's backfill is `RecalculateSeasonStatsCommand`, which now ends with a season refresh. Needed
+>   because the per-minute job only walks seasons still flagged active, and a finished season's leagues
+>   are still on the dashboard.
+> - §6's golden-master test was done as a one-off verification against the live query on dev rather than
+>   as a committed fixture: all eight live-computed rank families matched exactly on all 82 league/member
+>   rows. A committed integration fixture is still worth having and is **not** in place.
+
+---
+
+*Original plan follows, retained for the reasoning in "Background" and the tile→metric contract.*
 
 ## Goal
 

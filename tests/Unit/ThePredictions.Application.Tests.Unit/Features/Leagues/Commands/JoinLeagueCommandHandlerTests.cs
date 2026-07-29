@@ -14,6 +14,7 @@ namespace ThePredictions.Application.Tests.Unit.Features.Leagues.Commands;
 public class JoinLeagueCommandHandlerTests
 {
     private readonly ILeagueRepository _leagueRepository = Substitute.For<ILeagueRepository>();
+    private readonly ILeagueStatsRepository _leagueStatsRepository = Substitute.For<ILeagueStatsRepository>();
     private readonly ISeasonAccessService _seasonAccessService = Substitute.For<ISeasonAccessService>();
     private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
@@ -21,7 +22,7 @@ public class JoinLeagueCommandHandlerTests
 
     public JoinLeagueCommandHandlerTests()
     {
-        _handler = new JoinLeagueCommandHandler(_leagueRepository, _seasonAccessService, _mediator, _dateTimeProvider);
+        _handler = new JoinLeagueCommandHandler(_leagueRepository, _leagueStatsRepository, _seasonAccessService, _mediator, _dateTimeProvider);
     }
 
     private League CreateLeague(int id = 1, string administratorUserId = "admin-user", DateTime? entryDeadlineUtc = null, string? entryCode = null, bool requiresMemberApproval = true)
@@ -197,5 +198,37 @@ public class JoinLeagueCommandHandlerTests
             Arg.Any<CancellationToken>());
 
         await _mediator.DidNotReceive().Send(Arg.Any<NotifyLeagueAdminOfJoinRequestCommand>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRefreshLeagueStats_WhenJoinerIsAutoApproved()
+    {
+        // Arrange - approval off: the joiner is ranked immediately, which reorders every other member
+        var league = CreateLeague(id: 5, requiresMemberApproval: false);
+        var command = new JoinLeagueCommand("new-user", "Jane", "Doe", LeagueId: 5, EntryCode: null);
+
+        _leagueRepository.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(league);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await _leagueStatsRepository.Received(1).RefreshLeagueAsync(5, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotRefreshLeagueStats_WhenJoinerIsPendingApproval()
+    {
+        // Arrange - approval on: the joiner is not ranked yet, so nothing to recompute
+        var league = CreateLeague(id: 5);
+        var command = new JoinLeagueCommand("new-user", "Jane", "Doe", LeagueId: 5, EntryCode: null);
+
+        _leagueRepository.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(league);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await _leagueStatsRepository.DidNotReceiveWithAnyArgs().RefreshLeagueAsync(default, CancellationToken.None);
     }
 }

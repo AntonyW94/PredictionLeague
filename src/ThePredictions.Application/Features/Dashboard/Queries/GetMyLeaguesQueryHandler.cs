@@ -11,12 +11,24 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
 {
     public async Task<IEnumerable<MyLeagueDto>> Handle(GetMyLeaguesQuery request, CancellationToken cancellationToken)
     {
-        // Runs under READ UNCOMMITTED. This dashboard tile is a high-frequency read that was blocking for
-        // several seconds behind the results/stats write path, because the database does not have
-        // READ_COMMITTED_SNAPSHOT enabled and it cannot be turned on for this managed instance. The tile is
-        // a live view that auto-refreshes, so a transient dirty read self-corrects on the next poll, whereas
-        // the multi-second lock wait was user-visible. The isolation level is reset at the end of the batch
-        // so it cannot leak to other reads that reuse the pooled connection.
+        // Every per-member rank on this tile is read from the [LeagueMemberStats] cache, maintained by
+        // LeagueStatsRepository on the write path. It used to be computed here instead, with one
+        // RANK() OVER pass per tile over every member of every league the user is in. That was correct
+        // but the query grew to the point where SQL Server spent ~400ms planning it, several times what
+        // it spent running it, and the plan was being invalidated roughly once a minute by the
+        // score-update job - so most dashboard loads during a live round paid the full compile. What is
+        // left here is cheap league-level metadata: the active round, the stage name, member counts and
+        // the prize pot.
+        //
+        // The cache columns and this SELECT are a contract. If you change what a rank means, change it
+        // in LeagueStatsRepository.RecomputeAsync - not here - or the two will silently disagree.
+        //
+        // Runs under READ UNCOMMITTED. This is a high-frequency read that was blocking for several
+        // seconds behind the results/stats write path, because the database does not have
+        // READ_COMMITTED_SNAPSHOT enabled and it cannot be turned on for this managed instance. The tile
+        // is a live view that auto-refreshes, so a transient dirty read self-corrects on the next poll,
+        // whereas the multi-second lock wait was user-visible. The isolation level is reset at the end
+        // of the batch so it cannot leak to other reads that reuse the pooled connection.
         const string sql = @"
         SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
@@ -44,7 +56,7 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
         ),
 
         ActiveRounds AS (
-            SELECT 
+            SELECT
                 r.[SeasonId],
                 r.[Id] AS RoundId,
                 r.[RoundNumber],
@@ -73,7 +85,6 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             SELECT
                 r.[Id] AS RoundId,
                 r.[SeasonId],
-                r.[Status],
                 CASE WHEN trm.[Stages] LIKE '%Group%' THEN 'Group Stage' ELSE 'Knockout Stage' END AS StageName
             FROM [Rounds] r
             JOIN [TournamentRoundMappings] trm ON trm.[SeasonId] = r.[SeasonId] AND trm.[RoundNumber] = r.[RoundNumber]
@@ -103,158 +114,6 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
                 ) mw WHERE mw.[UserId] = @UserId AND mw.[Rnk] = 1 AND mw.[MonthPoints] > 0) AS UserMonthsWon
             FROM [Leagues] l
             WHERE l.[Id] IN (SELECT [LeagueId] FROM [MyLeagues])
-        ),
-
-        ActiveRoundMonthlyRanks AS (
-            SELECT
-                lm.[LeagueId],
-                lm.[UserId],
-                CAST(RANK() OVER (
-                    PARTITION BY lm.[LeagueId]
-                    ORDER BY ISNULL(SUM(CASE WHEN r.[Id] IS NOT NULL THEN lrr.[BoostedPoints] ELSE 0 END), 0) DESC
-                ) AS INT) AS ActiveMonthRank,
-                CASE
-                    WHEN NOT EXISTS (
-                        SELECT 1 FROM [Rounds] r2
-                        WHERE r2.[SeasonId] = lg.[SeasonId]
-                        AND MONTH(r2.[StartDateUtc]) = MONTH(ar.[StartDateUtc])
-                        AND YEAR(r2.[StartDateUtc]) = YEAR(ar.[StartDateUtc])
-                        AND r2.[Id] <> ar.[RoundId]
-                        AND r2.[Status] IN (@InProgressStatus, @CompletedStatus)
-                    )
-                    THEN NULL
-                    ELSE CAST(RANK() OVER (
-                        PARTITION BY lm.[LeagueId]
-                        ORDER BY ISNULL(SUM(CASE WHEN r.[Id] <> ar.[RoundId] THEN lrr.[BoostedPoints] ELSE 0 END), 0) DESC
-                    ) AS INT)
-                END AS PreRoundMonthRank
-            FROM [LeagueMembers] lm
-            JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
-            JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
-            LEFT JOIN [LeagueRoundResults] lrr ON lm.[LeagueId] = lrr.[LeagueId] AND lm.[UserId] = lrr.[UserId]
-            LEFT JOIN [Rounds] r ON lrr.[RoundId] = r.[Id]
-                AND MONTH(r.[StartDateUtc]) = MONTH(ar.[StartDateUtc])
-                AND YEAR(r.[StartDateUtc]) = YEAR(ar.[StartDateUtc])
-            WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
-                AND lm.[Status] = @ApprovedStatus
-            GROUP BY lm.[LeagueId], lm.[UserId], ar.[RoundId], lg.[SeasonId], ar.[StartDateUtc]
-        ),
-
-        ActiveStageRanks AS (
-            SELECT
-                lm.[LeagueId],
-                lm.[UserId],
-                ars.[StageName],
-                CAST(RANK() OVER (
-                    PARTITION BY lm.[LeagueId]
-                    ORDER BY ISNULL(SUM(CASE WHEN rs.[RoundId] IS NOT NULL THEN lrr.[BoostedPoints] ELSE 0 END), 0) DESC
-                ) AS INT) AS StageRank,
-                CASE
-                    WHEN NOT EXISTS (
-                        SELECT 1 FROM [RoundStages] rs2
-                        WHERE rs2.[SeasonId] = lg.[SeasonId]
-                        AND rs2.[StageName] = ars.[StageName]
-                        AND rs2.[RoundId] <> ar.[RoundId]
-                        AND rs2.[Status] IN (@InProgressStatus, @CompletedStatus)
-                    )
-                    THEN NULL
-                    ELSE CAST(RANK() OVER (
-                        PARTITION BY lm.[LeagueId]
-                        ORDER BY ISNULL(SUM(CASE WHEN rs.[RoundId] <> ar.[RoundId] THEN lrr.[BoostedPoints] ELSE 0 END), 0) DESC
-                    ) AS INT)
-                END AS PreRoundStageRank
-            FROM [LeagueMembers] lm
-            JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
-            JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
-            JOIN [RoundStages] ars ON ars.[RoundId] = ar.[RoundId]
-            LEFT JOIN [LeagueRoundResults] lrr ON lm.[LeagueId] = lrr.[LeagueId] AND lm.[UserId] = lrr.[UserId]
-            LEFT JOIN [RoundStages] rs ON lrr.[RoundId] = rs.[RoundId] AND rs.[StageName] = ars.[StageName]
-            WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
-                AND lm.[Status] = @ApprovedStatus
-            GROUP BY lm.[LeagueId], lm.[UserId], ar.[RoundId], lg.[SeasonId], ars.[StageName]
-        ),
-
-        ActiveOverallRanks AS (
-            SELECT
-                lm.[LeagueId],
-                lm.[UserId],
-                CAST(RANK() OVER (
-                    PARTITION BY lm.[LeagueId]
-                    ORDER BY ISNULL(SUM(lrr.[BoostedPoints]), 0) DESC
-                ) AS INT) AS OverallRank,
-                CASE
-                    WHEN NOT EXISTS (
-                        SELECT 1 FROM [Rounds] r2
-                        WHERE r2.[SeasonId] = lg.[SeasonId]
-                        AND r2.[RoundNumber] < ar.[RoundNumber]
-                        AND r2.[Status] IN (@InProgressStatus, @CompletedStatus)
-                    )
-                    THEN NULL
-                    ELSE CAST(RANK() OVER (
-                        PARTITION BY lm.[LeagueId]
-                        ORDER BY ISNULL(SUM(CASE WHEN rr.[RoundNumber] < ar.[RoundNumber] THEN lrr.[BoostedPoints] ELSE 0 END), 0) DESC
-                    ) AS INT)
-                END AS PreRoundOverallRank
-            FROM [LeagueMembers] lm
-            JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
-            JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
-            LEFT JOIN [LeagueRoundResults] lrr ON lm.[LeagueId] = lrr.[LeagueId] AND lm.[UserId] = lrr.[UserId]
-            LEFT JOIN [Rounds] rr ON lrr.[RoundId] = rr.[Id]
-            WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
-                AND lm.[Status] = @ApprovedStatus
-            GROUP BY lm.[LeagueId], lm.[UserId], lg.[SeasonId], ar.[RoundNumber]
-        ),
-
-        ActiveRoundRanks AS (
-            SELECT
-                lm.[LeagueId],
-                lm.[UserId],
-                CAST(RANK() OVER (
-                    PARTITION BY lm.[LeagueId]
-                    ORDER BY ISNULL(SUM(lrr.[BoostedPoints]), 0) DESC
-                ) AS INT) AS LiveRoundRank
-            FROM [LeagueMembers] lm
-            JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
-            JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
-            LEFT JOIN [LeagueRoundResults] lrr ON lm.[LeagueId] = lrr.[LeagueId] AND lm.[UserId] = lrr.[UserId] AND lrr.[RoundId] = ar.[RoundId]
-            WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
-                AND lm.[Status] = @ApprovedStatus
-            GROUP BY lm.[LeagueId], lm.[UserId]
-        ),
-
-        ActiveExactScoresRanks AS (
-            SELECT
-                lm.[LeagueId],
-                lm.[UserId],
-                CAST(RANK() OVER (
-                    PARTITION BY lm.[LeagueId]
-                    ORDER BY ISNULL(SUM(CASE WHEN r.[Id] IS NOT NULL THEN rr.[ExactScoreCount] ELSE 0 END), 0) DESC
-                ) AS INT) AS ExactScoresRank,
-                CASE
-                    WHEN NOT EXISTS (
-                        SELECT 1 FROM [Rounds] r2
-                        WHERE r2.[SeasonId] = lg.[SeasonId]
-                        AND r2.[RoundNumber] < ar.[RoundNumber]
-                        AND r2.[Status] IN (@InProgressStatus, @CompletedStatus)
-                    )
-                    THEN NULL
-                    ELSE CAST(RANK() OVER (
-                        PARTITION BY lm.[LeagueId]
-                        ORDER BY ISNULL(SUM(CASE WHEN r.[Id] IS NOT NULL AND r.[RoundNumber] < ar.[RoundNumber] THEN rr.[ExactScoreCount] ELSE 0 END), 0) DESC
-                    ) AS INT)
-                END AS PreRoundExactScoresRank
-            FROM [LeagueMembers] lm
-            JOIN [Leagues] lg ON lm.[LeagueId] = lg.[Id]
-            JOIN [ActiveRounds] ar ON lg.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
-            -- Filter RoundResults to this season inside the join. Without this we pull in every
-            -- RoundResult the user has ever recorded across all seasons and then zero the out-of-season
-            -- ones in the SUM, which scans progressively more data each new season for no benefit.
-            LEFT JOIN [RoundResults] rr ON rr.[UserId] = lm.[UserId]
-                AND rr.[RoundId] IN (SELECT rInSeason.[Id] FROM [Rounds] rInSeason WHERE rInSeason.[SeasonId] = lg.[SeasonId])
-            LEFT JOIN [Rounds] r ON r.[Id] = rr.[RoundId] AND r.[SeasonId] = lg.[SeasonId]
-            WHERE lm.[LeagueId] IN (SELECT [LeagueId] FROM [MyLeagues])
-                AND lm.[Status] = @ApprovedStatus
-            GROUP BY lm.[LeagueId], lm.[UserId], lg.[SeasonId], ar.[RoundNumber]
         )
 
         SELECT
@@ -274,17 +133,20 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             ar.[StartDateUtc] AS RoundStartDateUtc,
             ISNULL(lc.[MemberCount], 0) AS MemberCount,
 
-            aor.[OverallRank] AS Rank,
-            CASE WHEN l.[CompetitionType] = 1 THEN aes.[ExactScoresRank] ELSE armr.[ActiveMonthRank] END AS MonthRank,
+            stats.[OverallRank] AS Rank,
+            -- The Month slot is relabelled 'Exact Scores' for a tournament and ranks by exact-score
+            -- count instead of points. The cache stores both metrics under their own names; this is
+            -- the one place the swap happens, so a tournament can never show a points rank here.
+            CASE WHEN l.[CompetitionType] = 1 THEN stats.[ExactScoresRank] ELSE stats.[MonthRank] END AS MonthRank,
             CASE
                 WHEN ar.[Status] = @PublishedStatus THEN 1
-                ELSE arr.[LiveRoundRank]
+                ELSE stats.[LiveRoundRank]
             END AS RoundRank,
 
-            aor.[PreRoundOverallRank] AS PreRoundOverallRank,
-            CASE WHEN l.[CompetitionType] = 1 THEN aes.[PreRoundExactScoresRank] ELSE armr.[PreRoundMonthRank] END AS PreRoundMonthRank,
-            CASE 
-                WHEN ar.[Status] = @PublishedStatus THEN 1                    
+            stats.[SnapshotOverallRank] AS PreRoundOverallRank,
+            CASE WHEN l.[CompetitionType] = 1 THEN stats.[PreRoundExactScoresRank] ELSE stats.[SnapshotMonthRank] END AS PreRoundMonthRank,
+            CASE
+                WHEN ar.[Status] = @PublishedStatus THEN 1
                 ELSE stats.[StableRoundRank]
             END AS StableRoundRank,
 
@@ -308,19 +170,15 @@ public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
             END AS bit) AS IsFinished,
             l.[IsArchivedByUser],
 
-            asr.[StageName],
-            asr.[StageRank],
-            asr.[PreRoundStageRank]
+            rs.[StageName],
+            stats.[StageRank],
+            stats.[PreRoundStageRank]
 
         FROM [MyLeagues] l
         LEFT JOIN [LeagueMemberStats] stats ON l.[LeagueId] = stats.[LeagueId] AND l.[UserId] = stats.[UserId]
         LEFT JOIN [ActiveRounds] ar ON l.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
+        LEFT JOIN [RoundStages] rs ON rs.[RoundId] = ar.[RoundId]
         LEFT JOIN [LeagueContext] lc ON l.[LeagueId] = lc.[LeagueId]
-        LEFT JOIN [ActiveRoundMonthlyRanks] armr ON l.[LeagueId] = armr.[LeagueId] AND l.[UserId] = armr.[UserId]
-        LEFT JOIN [ActiveStageRanks] asr ON l.[LeagueId] = asr.[LeagueId] AND l.[UserId] = asr.[UserId]
-        LEFT JOIN [ActiveOverallRanks] aor ON l.[LeagueId] = aor.[LeagueId] AND l.[UserId] = aor.[UserId]
-        LEFT JOIN [ActiveRoundRanks] arr ON l.[LeagueId] = arr.[LeagueId] AND l.[UserId] = arr.[UserId]
-        LEFT JOIN [ActiveExactScoresRanks] aes ON l.[LeagueId] = aes.[LeagueId] AND l.[UserId] = aes.[UserId]
 
         ORDER BY
             CASE WHEN ar.[Status] = @InProgressStatus THEN 0 ELSE 1 END ASC,

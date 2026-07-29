@@ -16,6 +16,7 @@ public class UpdateLeagueCommandHandlerTests
 {
     private readonly ILeagueRepository _leagueRepository = Substitute.For<ILeagueRepository>();
     private readonly ISeasonRepository _seasonRepository = Substitute.For<ISeasonRepository>();
+    private readonly ILeagueStatsRepository _leagueStatsRepository = Substitute.For<ILeagueStatsRepository>();
     private readonly IFieldEncryptionService _fieldEncryptionService = Substitute.For<IFieldEncryptionService>();
     private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
@@ -23,7 +24,7 @@ public class UpdateLeagueCommandHandlerTests
 
     public UpdateLeagueCommandHandlerTests()
     {
-        _handler = new UpdateLeagueCommandHandler(_leagueRepository, _seasonRepository, _fieldEncryptionService, _mediator, _dateTimeProvider);
+        _handler = new UpdateLeagueCommandHandler(_leagueRepository, _seasonRepository, _leagueStatsRepository, _fieldEncryptionService, _mediator, _dateTimeProvider);
     }
 
     private Season CreateSeason(int id = 1) =>
@@ -200,5 +201,50 @@ public class UpdateLeagueCommandHandlerTests
 
         // Assert
         await act.Should().ThrowAsync<EntityNotFoundException>();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRefreshLeagueStats_WhenTurningApprovalOffAutoApprovesWaitingMembers()
+    {
+        // Arrange - everyone waiting is admitted at once, so every existing member's rank moves
+        var pendingMember = new LeagueMember(
+            leagueId: 1, userId: "waiting-user", status: LeagueMemberStatus.Pending,
+            isAlertDismissed: false, isArchivedByUser: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow.AddDays(-1),
+            approvedAtUtc: null, roundResults: null);
+
+        var league = CreateLeague(members: [pendingMember]);
+        var season = CreateSeason();
+        var command = new UpdateLeagueCommand(1, "Updated League", 0m,
+            _dateTimeProvider.UtcNow.AddMonths(1), 3, 1, "admin-user",
+            RequiresMemberApproval: false);
+
+        _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
+        _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(season);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await _leagueStatsRepository.Received(1).RefreshLeagueAsync(1, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotRefreshLeagueStats_WhenNoMembersWereAutoApproved()
+    {
+        // Arrange - nothing else in this handler can change who is ranked
+        var league = CreateLeague();
+        var season = CreateSeason();
+        var command = new UpdateLeagueCommand(1, "Updated League", 0m,
+            _dateTimeProvider.UtcNow.AddMonths(1), 3, 1, "admin-user");
+
+        _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
+        _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(season);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await _leagueStatsRepository.DidNotReceiveWithAnyArgs().RefreshLeagueAsync(default, CancellationToken.None);
     }
 }

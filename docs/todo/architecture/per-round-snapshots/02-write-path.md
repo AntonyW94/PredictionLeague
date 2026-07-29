@@ -12,17 +12,15 @@ When a round closes, write one `LeagueMemberRoundStats` row per participating me
 
 ## Where it hooks in
 
-[`LeagueStatsService.UpdateStableStatsAsync`](../../../src/ThePredictions.Infrastructure/Services/LeagueStatsService.cs:18) is the existing entry point that finalises a round's stats. After it finishes the existing UPDATE against `LeagueMemberStats`, call a new method:
+> **Stale as written.** [ADR-0015](../../../decisions/0015-cache-my-leagues-ranks.md) removed
+> `LeagueStatsService` and the round-scoped `UpdateStableStatsAsync` / `SnapshotRanksForRoundStartAsync`
+> methods this section described. `ILeagueStatsRepository` now exposes only `RefreshLeagueAsync` and
+> `RefreshSeasonAsync`, and `LeagueMemberStats` holds no point-in-time snapshots at all - every value is
+> recomputed from current results. The hook point below needs rewriting before this plan is picked up.
 
-```csharp
-public async Task UpdateStableStatsAsync(int roundId, CancellationToken cancellationToken)
-{
-    await statsRepository.UpdateStableStatsAsync(roundId, cancellationToken);
-    await statsRepository.WriteRoundSnapshotsAsync(roundId, cancellationToken);  // new
-}
-```
+Round completion is detected in [`UpdateMatchResultsCommandHandler`](../../../src/ThePredictions.Application/Features/Admin/Rounds/Commands/UpdateMatchResultsCommandHandler.cs), which flips the round to `Completed` and then refreshes the season's cached ranks. A `WriteRoundSnapshotsAsync(roundId)` on `LeagueStatsRepository` would be called from that same block, responsible for both INSERTs (member-level + league-level) inside one transaction.
 
-`WriteRoundSnapshotsAsync` lives on the existing `LeagueStatsRepository` and is responsible for both INSERTs (member-level + league-level) inside one transaction.
+Note that the historical snapshots this plan proposes are a genuinely different thing from the cached ranks: they are an immutable record of how a specific round finished, whereas `LeagueMemberStats` is a derived view of the present that is rebuilt on every refresh. Keep them separate.
 
 ## SQL shape
 

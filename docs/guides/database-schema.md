@@ -390,25 +390,40 @@ Junction table for users in leagues.
 
 ### LeagueMemberStats
 
-Cached ranking statistics per member per league.
+Cached ranking statistics per member per league. Every rank the **My Leagues** tile shows is read from
+here by `GetMyLeaguesQueryHandler`; nothing is computed live. `LeagueStatsRepository` is the only writer.
+
+All ranks are relative to the league's **active round** (the round the tile is showing, resolved by the
+same priority order the query uses: in progress, then completed within 48 hours, then published). A rank
+is `NULL` when it does not exist rather than 0 - the league's season has no active round, the active
+round is the first of its season/month/stage so there is no pre-round position to compare against, or the
+season has no stage mapping. `NULL` is what suppresses the change arrow on the tile, so it is meaningful.
 
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | LeagueId | int | NO | | FK to Leagues |
 | UserId | nvarchar(450) | NO | | FK to AspNetUsers |
-| OverallRank | int | NO | 0 | Current overall rank |
-| MonthRank | int | NO | 0 | Current month rank |
-| LiveRoundRank | int | NO | 0 | Live updating round rank |
-| SnapshotOverallRank | int | NO | 0 | Pre-round overall rank |
-| SnapshotMonthRank | int | NO | 0 | Pre-round month rank |
-| StableRoundRank | int | NO | 0 | Round rank after completion |
-| LiveRoundPoints | decimal(10,2) | NO | 0.00 | Live round points |
-| StableRoundPoints | decimal(10,2) | NO | 0.00 | Final round points |
+| OverallRank | int | YES | | Rank by total boosted points across all rounds |
+| MonthRank | int | YES | | Rank by boosted points in the active round's calendar month |
+| LiveRoundRank | int | YES | | Rank by boosted points in the active round, moving as matches play |
+| SnapshotOverallRank | int | YES | | `OverallRank` as at the start of the active round (rounds before it only) |
+| SnapshotMonthRank | int | YES | | `MonthRank` excluding the active round |
+| StableRoundRank | int | YES | | Rank by the league's points-per-outcome applied to finished matches of the active round only, so it does not move mid-match. **Boosted**, using the same multiplier as `LiveRoundRank` - it is that rank's arrow baseline, so the two must differ only by which matches count |
+| StageRank | int | YES | | Rank by boosted points in the active round's tournament stage |
+| PreRoundStageRank | int | YES | | `StageRank` excluding the active round |
+| ExactScoresRank | int | YES | | Rank by exact-score count across the season. Tournaments show this in the Month slot |
+| PreRoundExactScoresRank | int | YES | | `ExactScoresRank` for rounds before the active round |
+| LiveRoundPoints | decimal(10,2) | NO | 0.00 | Measure behind `LiveRoundRank`, kept for debugging |
+| StableRoundPoints | decimal(10,2) | NO | 0.00 | Measure behind `StableRoundRank`, kept for debugging |
 
 **Constraints:**
 - PK: `LeagueId, UserId` (composite)
-- FK: `LeagueId` → `Leagues.Id`
+- FK: `LeagueId` → `Leagues.Id` (**no** cascade - `LeagueRepository.DeleteAsync` removes these rows first)
 - FK: `UserId` → `AspNetUsers.Id`
+
+> `SnapshotOverallRank` / `SnapshotMonthRank` keep their original names but are no longer point-in-time
+> snapshots. They are recomputed from current results on every refresh, like every other column here.
+> See [ADR-0015](../decisions/0015-cache-my-leagues-ranks.md).
 
 ---
 
