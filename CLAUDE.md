@@ -124,6 +124,16 @@ Computed/`CASE`/`COALESCE` columns must be aliased (`... AS HasSeasonPass`) and 
 
 **Query handlers materialise into private result records, never directly into Contracts DTOs.** The generic argument to `QueryAsync<T>` / `QuerySingleOrDefaultAsync<T>` must be a `private record XxxQueryResult(...)` co-located in the handler (or another Application-owned row type), kept in lockstep with the SELECT column order. Map from the result record to the outward Contracts DTO by name afterwards. Scalars (`int`, `bool`, `string`) are exempt. This keeps the fragile positional coupling inside a single file, next to its SQL, instead of extending it into the shared Contracts assembly where a UI-motivated constructor reorder would break queries at runtime.
 
+**Type each parameter from the column, not from the DTO.** Dapper widens nothing in a positional match: an `int` column will **not** fill a `long` parameter (`Nullable<T>` aside). Classes mapped by name *do* convert, so copying a type across from the outward DTO is exactly how this breaks:
+
+```csharp
+// [SnapshotOverallRank] is an int column; LeaderboardEntryDto.SnapshotRank is long?
+private record OverallLeaderboardQueryResult(..., long? SnapshotRank, ...);  // WRONG - throws at runtime
+private record OverallLeaderboardQueryResult(..., int? SnapshotRank, ...);   // CORRECT - widens in the C# mapping
+```
+
+`RANK()` / `ROW_NUMBER()` / `COUNT_BIG()` are `bigint` (`long`); `COUNT()` and `SUM()` over an `int` column are `int`. To confirm what Dapper will see without running the app, run `EXEC sys.sp_describe_first_result_set @tsql = N'...', @params = N'...'` and read `system_type_name`. Read failures are server faults: `DapperReadDbConnection` translates Dapper's `InvalidOperationException` into `ReadQueryFailedException` so they are logged as Errors and returned as 500s instead of being mistaken for business-rule 400s. See [`docs/guides/database.md`](docs/guides/database.md#result-mapping).
+
 ### Testing & Code Coverage
 
 The Domain project **must maintain 100% line and branch coverage**. After writing or modifying code:

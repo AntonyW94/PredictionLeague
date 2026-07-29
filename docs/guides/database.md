@@ -59,6 +59,32 @@ Dapper matches a positional `record`'s constructor to the result set **positiona
 
 This keeps the fragile positional coupling inside a single file, next to its SQL, instead of extending it into the shared Contracts assembly where a UI-motivated constructor reorder would break queries at runtime.
 
+### Types must match the column exactly, not the DTO
+
+A positional record parameter must be the **exact** CLR type of the column (`Nullable<T>` aside). Dapper widens nothing: an `int` column will not fill a `long` parameter, and a `long` column will not fill an `int` one. This differs from the classes with `init` properties that Dapper maps **by name**, where it converts, so copying a type across from the outward DTO is exactly how this goes wrong:
+
+```csharp
+// [LeagueMemberStats].[SnapshotOverallRank] is an int column; LeaderboardEntryDto.SnapshotRank is long?
+private record OverallLeaderboardQueryResult(..., long? SnapshotRank, ...);  // WRONG - throws at runtime
+private record OverallLeaderboardQueryResult(..., int? SnapshotRank, ...);   // CORRECT - int? to long? widens in the C# mapping step
+```
+
+Type the parameter from the **column**, then let the C# mapping step widen into the DTO. Note that `RANK()`, `ROW_NUMBER()` and `COUNT_BIG()` return `bigint` (`long`), while `COUNT()` and `SUM()` over an `int` column return `int` - two rank-shaped columns in the same `SELECT` can legitimately need different types.
+
+To check a query's real column types without running the app, ask SQL Server directly:
+
+```sql
+EXEC sys.sp_describe_first_result_set
+    @tsql = N'<the query>',
+    @params = N'@LeagueId int, @ApprovedStatus nvarchar(50)';
+```
+
+`system_type_name` in the output is what Dapper will see. Note that SQLite-backed tests would **not** catch this class of bug, because its type affinities differ from SQL Server's.
+
+### Read failures are server faults, not client errors
+
+Dapper reports a result-set/result-record mismatch as a plain `InvalidOperationException`, the same type handlers throw for business rules, which the API error middleware maps to 400 Bad Request and logs at Warning. `DapperReadDbConnection` therefore translates any `InvalidOperationException` out of a read into `ReadQueryFailedException`, so materialisation bugs surface as a 500 and an Error rather than hiding in the client-error bucket.
+
 ## DateTime Handling
 
 **All dates are stored and retrieved in UTC.**

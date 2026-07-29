@@ -101,7 +101,10 @@ Exceptions are automatically mapped to HTTP responses:
 | `InvalidOperationException` | 400 Bad Request | Invalid state/action |
 | `ValidationException` | 400 Bad Request | FluentValidation failure |
 | `UnauthorizedAccessException` | 401 Unauthorized | Auth failure |
+| `ReadQueryFailedException` | 500 Internal Error | A read query failed to execute or materialise |
 | Other | 500 Internal Error | Unexpected errors |
+
+`InvalidOperationException` maps to **400 and a Warning** because handlers throw it for business rules, so data-access faults must never reach the middleware as that type. `DapperReadDbConnection` translates Dapper's `InvalidOperationException` (result-set/result-record mismatches, single-row queries returning multiple rows) into `ReadQueryFailedException`, which falls through to the unhandled bucket and is logged as an Error with a 500 response. Never throw a raw `InvalidOperationException` for an infrastructure failure.
 
 ### Throwing Errors in Handlers
 

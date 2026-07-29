@@ -98,12 +98,14 @@ public class GetMonthlyLeaderboardQueryHandler(
         });
     }
 
+    // SnapshotRank is [LeagueMemberStats].[SnapshotMonthRank], an int column, so it must be int? here
+    // even though LeaderboardEntryDto exposes it as long? - Dapper's constructor match is exact per column.
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record MonthlyLeaderboardQueryResult(
         long Rank,
         string PlayerName,
         int? TotalPoints,
         string UserId,
-        long? SnapshotRank,
+        int? SnapshotRank,
         bool IsRoundInProgress);
 }

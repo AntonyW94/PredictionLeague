@@ -102,6 +102,8 @@ public class GetStageLeaderboardQueryHandler(
         });
     }
 
+    // SnapshotRank is a RANK() window function here, not a stats column, so it arrives as a bigint and
+    // stays long? - unlike the overall and monthly leaderboards, which read int snapshot columns.
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
     private record StageLeaderboardQueryResult(
         long Rank,
