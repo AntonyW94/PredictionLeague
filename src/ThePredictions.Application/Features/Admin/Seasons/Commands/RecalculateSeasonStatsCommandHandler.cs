@@ -9,6 +9,7 @@ namespace ThePredictions.Application.Features.Admin.Seasons.Commands;
 public class RecalculateSeasonStatsCommandHandler(
     IRoundRepository roundRepository,
     ILeagueRepository leagueRepository,
+    ILeagueStatsRepository leagueStatsRepository,
     IBoostService boostService,
     IMediator mediator) : IRequestHandler<RecalculateSeasonStatsCommand>
 {
@@ -40,5 +41,10 @@ public class RecalculateSeasonStatsCommandHandler(
                 await mediator.Send(processPrizesCommand, cancellationToken);
             }
         }
+
+        // Rebuild the cached My Leagues ranks from the points this has just recalculated. This is also
+        // the backfill route for a season the per-minute job never visits, because that job only walks
+        // seasons still flagged active - a finished season's leagues are still on the dashboard.
+        await leagueStatsRepository.RefreshSeasonAsync(request.SeasonId, cancellationToken);
     }
 }

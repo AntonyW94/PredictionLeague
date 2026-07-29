@@ -7,7 +7,7 @@ using ThePredictions.Domain.Common.Guards;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepository, ILeagueMemberRepository leagueMemberRepository, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateLeagueMemberStatusCommand>
+public class UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepository, ILeagueMemberRepository leagueMemberRepository, ILeagueStatsRepository leagueStatsRepository, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateLeagueMemberStatusCommand>
 {
     public async Task Handle(UpdateLeagueMemberStatusCommand request, CancellationToken cancellationToken)
     {
@@ -39,8 +39,21 @@ public class UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepo
 
         await leagueMemberRepository.UpdateAsync(member, cancellationToken);
 
+        // A rank is a position relative to the other members, so admitting someone moves everybody
+        // else's cached rank too, not just the new member's. Without this the whole league's tiles stay
+        // wrong until the next results update.
+        //
+        // Only approval needs this. LeagueMember.Approve/Reject both require the member to be Pending,
+        // and a pending member is not ranked, so rejection cannot move anyone. Nothing in the app can
+        // take an already-approved member back out of a league; if that is ever added, it needs a
+        // refresh too (the recompute itself already handles it - it derives the ranked set from who is
+        // currently approved rather than from what changed).
+        var isApproved = request.NewStatus == LeagueMemberStatus.Approved;
+        if (isApproved)
+            await leagueStatsRepository.RefreshLeagueAsync(league.Id, cancellationToken);
+
         // Let the member know they can now take part once the admin has approved them.
-        if (request.NewStatus == LeagueMemberStatus.Approved)
+        if (isApproved)
             await mediator.Send(new NotifyMemberOfLeagueApprovalCommand(member.UserId, league.Id, league.Name, league.SeasonId), cancellationToken);
     }
 }

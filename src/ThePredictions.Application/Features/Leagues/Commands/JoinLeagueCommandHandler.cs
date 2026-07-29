@@ -9,7 +9,7 @@ using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonAccessService seasonAccessService, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<JoinLeagueCommand, int>
+public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ILeagueStatsRepository leagueStatsRepository, ISeasonAccessService seasonAccessService, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<JoinLeagueCommand, int>
 {
     public async Task<int> Handle(JoinLeagueCommand request, CancellationToken cancellationToken)
     {
@@ -28,6 +28,14 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ISeaso
         league.AddMember(request.JoiningUserId, dateTimeProvider);
 
         await leagueRepository.UpdateAsync(league, cancellationToken);
+
+        // A league that does not require approval admits the joiner straight away, which reorders every
+        // existing member's cached rank. A league that does require approval leaves them Pending, and
+        // pending members are not ranked, so there is nothing to recompute until they are approved.
+        var joinedAsApproved = league.Members.Any(m => m.UserId == request.JoiningUserId && m.Status == LeagueMemberStatus.Approved);
+        if (joinedAsApproved)
+            await leagueStatsRepository.RefreshLeagueAsync(league.Id, cancellationToken);
+
         await NotifyAsync(league, request, cancellationToken);
 
         return league.Id;

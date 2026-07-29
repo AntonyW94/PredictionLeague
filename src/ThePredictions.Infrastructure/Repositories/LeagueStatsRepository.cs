@@ -2,191 +2,334 @@ using Dapper;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common.Enumerations;
-using System.Data;
 
 namespace ThePredictions.Infrastructure.Repositories;
 
 public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext)
     : RepositoryBase(connectionFactory, transactionContext), ILeagueStatsRepository
 {
-    public async Task SnapshotRanksForRoundStartAsync(int roundId, CancellationToken cancellationToken)
+    public Task RefreshLeagueAsync(int leagueId, CancellationToken cancellationToken)
     {
-        await EnsureMemberStatsRowsExistAsync(roundId, cancellationToken);
-
-        const string sql = @"
-            UPDATE lms
-            SET
-                lms.[SnapshotOverallRank] = lms.[OverallRank],
-                lms.[SnapshotMonthRank] = lms.[MonthRank],
-                lms.[LiveRoundRank] = 1,
-                lms.[StableRoundRank] = 1,
-                lms.[LiveRoundPoints] = 0,
-                lms.[StableRoundPoints] = 0
-            FROM [LeagueMemberStats] lms
-            JOIN [Leagues] l ON lms.[LeagueId] = l.[Id]
-            JOIN [Rounds] r ON l.[SeasonId] = r.[SeasonId]
-            WHERE r.[Id] = @RoundId";
-
-        await Connection.ExecuteAsync(new CommandDefinition(sql, new { RoundId = roundId }, transaction: Transaction, cancellationToken: cancellationToken));
+        return RecomputeAsync(leagueId, seasonId: null, cancellationToken);
     }
 
-    public async Task UpdateLiveStatsAsync(int roundId, CancellationToken cancellationToken)
+    public Task RefreshSeasonAsync(int seasonId, CancellationToken cancellationToken)
     {
-        await EnsureMemberStatsRowsExistAsync(roundId, cancellationToken);
-
-        const string sql = @"
-
-            UPDATE lms
-            SET lms.[LiveRoundPoints] = lrr.[BoostedPoints]
-            FROM [LeagueMemberStats] lms
-            JOIN [LeagueRoundResults] lrr ON lms.[LeagueId] = lrr.[LeagueId] AND lms.[UserId] = lrr.[UserId]
-            WHERE lrr.[RoundId] = @RoundId;
-
-            WITH NewRanks AS (
-                SELECT
-                    lms.[LeagueId],
-                    lms.[UserId],
-                    RANK() OVER (PARTITION BY lms.[LeagueId] ORDER BY lms.[LiveRoundPoints] DESC) as NewRoundRank,
-                    RANK() OVER (PARTITION BY lms.[LeagueId] ORDER BY (SELECT SUM([BoostedPoints]) FROM [LeagueRoundResults] WHERE [LeagueId] = lms.[LeagueId] AND [UserId] = lms.[UserId]) DESC) as NewOverallRank,
-                    RANK() OVER (PARTITION BY lms.[LeagueId] ORDER BY (
-                                                                            SELECT SUM(lrr.[BoostedPoints])
-                                                                            FROM [LeagueRoundResults] lrr
-                                                                            JOIN [Rounds] r ON lrr.[RoundId] = r.[Id]
-                                                                            WHERE lrr.[LeagueId] = lms.[LeagueId]
-                                                                            AND lrr.[UserId] = lms.[UserId]
-                                                                            AND MONTH(r.[StartDateUtc]) = MONTH(GETUTCDATE()) AND YEAR(r.[StartDateUtc]) = YEAR(GETUTCDATE())
-                                                                      ) DESC) as NewMonthRank
-                FROM [LeagueMemberStats] lms
-                JOIN [Leagues] l ON lms.[LeagueId] = l.[Id]
-                JOIN [Rounds] r ON l.[SeasonId] = r.[SeasonId]
-                WHERE r.[Id] = @RoundId
-            )
-
-            UPDATE lms
-            SET
-                lms.[LiveRoundRank] = nr.[NewRoundRank],
-                lms.[OverallRank] = nr.[NewOverallRank],
-                lms.[MonthRank] = nr.[NewMonthRank]
-            FROM [LeagueMemberStats] lms
-            JOIN [NewRanks] nr ON lms.[LeagueId] = nr.[LeagueId] AND lms.[UserId] = nr.[UserId];";
-
-        await Connection.ExecuteAsync(new CommandDefinition(sql, new { RoundId = roundId }, transaction: Transaction, cancellationToken: cancellationToken));
+        return RecomputeAsync(leagueId: null, seasonId, cancellationToken);
     }
 
-    public async Task UpdateStableStatsAsync(int roundId, CancellationToken cancellationToken)
+    // Rebuilds every cached rank for the leagues in scope, from scratch, in one batch.
+    //
+    // The cache used to be maintained as two half-updates - a "snapshot" taken at the moment a round
+    // went live, plus a "live" update after each results change - which meant a cached value could only
+    // ever be as correct as the ordering of the calls that produced it. Every historical bug in this
+    // table came from that: a snapshot taken after the scores had already landed, a rank never
+    // recomputed because the triggering event was not wired up, a row that was never created at all.
+    //
+    // Every one of these values is instead a pure function of the current results and the league's
+    // active round, including the pre-round ones (a "pre-round" rank is just a rank over the rounds
+    // before the active one - it does not need to have been captured at that moment). So this recompute
+    // derives all of them together and is idempotent: run it as often as you like, in any order, and it
+    // converges on the same answer. The trade-off is that it always does the full league rather than a
+    // delta, which is why it is a handful of set-based statements over small tables rather than a
+    // per-member update.
+    //
+    // The active-round resolution and every ORDER BY below MUST stay in lockstep with
+    // GetMyLeaguesQueryHandler, which reads these columns. Those definitions are the contract between
+    // the two files; if you change a metric here, change it there.
+    private async Task RecomputeAsync(int? leagueId, int? seasonId, CancellationToken cancellationToken)
     {
-        await EnsureMemberStatsRowsExistAsync(roundId, cancellationToken);
-
         const string sql = @"
-            WITH StableCalc AS (
-                SELECT
-                    lm.[LeagueId],
-                    lm.[UserId],
-                    SUM(
-                        CASE
-                           WHEN up.[Outcome] = @ExactScore THEN l.[PointsForExactScore]
-                           WHEN up.[Outcome] = @CorrectResult THEN l.[PointsForCorrectResult]
-                           ELSE 0
-                        END
-                    ) as StablePoints
+            IF OBJECT_ID('tempdb..#LeagueActive') IS NOT NULL DROP TABLE #LeagueActive;
+            IF OBJECT_ID('tempdb..#MemberMeasures') IS NOT NULL DROP TABLE #MemberMeasures;
+            IF OBJECT_ID('tempdb..#StablePoints') IS NOT NULL DROP TABLE #StablePoints;
 
+            -- 1. The leagues in scope, each resolved to the round the My Leagues tile is currently
+            --    showing, plus the three 'is there anything earlier to compare against?' flags that
+            --    decide whether a pre-round rank exists at all. A league whose season has no
+            --    non-draft round has no active round, and therefore no ranks.
+            SELECT
+                l.[Id] AS LeagueId,
+                l.[SeasonId],
+                ar.[RoundId] AS ActiveRoundId,
+                ar.[RoundNumber] AS ActiveRoundNumber,
+                ar.[StartDateUtc] AS ActiveRoundStartDateUtc,
+                CASE
+                    WHEN trm.[SeasonId] IS NULL THEN NULL
+                    WHEN trm.[Stages] LIKE '%Group%' THEN 'Group Stage'
+                    ELSE 'Knockout Stage'
+                END AS ActiveStageName,
+                CASE
+                    WHEN ar.[RoundId] IS NULL THEN 0
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM [Rounds] r2
+                        WHERE r2.[SeasonId] = l.[SeasonId]
+                            AND r2.[RoundNumber] < ar.[RoundNumber]
+                            AND r2.[Status] IN (@InProgressRoundStatus, @CompletedRoundStatus)
+                    ) THEN 1
+                    ELSE 0
+                END AS HasEarlierRound,
+                CASE
+                    WHEN ar.[RoundId] IS NULL THEN 0
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM [Rounds] r2
+                        WHERE r2.[SeasonId] = l.[SeasonId]
+                            AND MONTH(r2.[StartDateUtc]) = MONTH(ar.[StartDateUtc])
+                            AND YEAR(r2.[StartDateUtc]) = YEAR(ar.[StartDateUtc])
+                            AND r2.[Id] <> ar.[RoundId]
+                            AND r2.[Status] IN (@InProgressRoundStatus, @CompletedRoundStatus)
+                    ) THEN 1
+                    ELSE 0
+                END AS HasOtherRoundThisMonth,
+                CASE
+                    WHEN ar.[RoundId] IS NULL THEN 0
+                    WHEN EXISTS (
+                        SELECT 1
+                        FROM [Rounds] r2
+                        JOIN [TournamentRoundMappings] trm2 ON trm2.[SeasonId] = r2.[SeasonId] AND trm2.[RoundNumber] = r2.[RoundNumber]
+                        WHERE r2.[SeasonId] = l.[SeasonId]
+                            AND r2.[Id] <> ar.[RoundId]
+                            AND r2.[Status] IN (@InProgressRoundStatus, @CompletedRoundStatus)
+                            AND CASE WHEN trm2.[Stages] LIKE '%Group%' THEN 'Group Stage' ELSE 'Knockout Stage' END
+                                = CASE WHEN trm.[Stages] LIKE '%Group%' THEN 'Group Stage' ELSE 'Knockout Stage' END
+                    ) THEN 1
+                    ELSE 0
+                END AS HasOtherRoundThisStage
+            INTO #LeagueActive
+            FROM [Leagues] l
+            LEFT JOIN (
+                SELECT
+                    x.[SeasonId],
+                    x.[RoundId],
+                    x.[RoundNumber],
+                    x.[StartDateUtc]
+                FROM (
+                    SELECT
+                        r.[SeasonId],
+                        r.[Id] AS RoundId,
+                        r.[RoundNumber],
+                        r.[StartDateUtc],
+                        ROW_NUMBER() OVER (
+                            PARTITION BY r.[SeasonId]
+                            ORDER BY
+                                CASE
+                                    WHEN r.[Status] = @InProgressRoundStatus THEN 0
+                                    WHEN r.[Status] = @CompletedRoundStatus AND r.[CompletedDateUtc] > DATEADD(HOUR, -48, GETUTCDATE()) THEN 1
+                                    WHEN r.[Status] = @PublishedRoundStatus THEN 2
+                                    ELSE 3
+                                END ASC,
+                                r.[RoundNumber] ASC
+                        ) AS PriorityRank
+                    FROM [Rounds] r
+                    WHERE r.[Status] <> @DraftRoundStatus
+                        AND EXISTS (
+                            SELECT 1
+                            FROM [Leagues] sl
+                            WHERE sl.[SeasonId] = r.[SeasonId]
+                                AND (@LeagueId IS NULL OR sl.[Id] = @LeagueId)
+                                AND (@SeasonId IS NULL OR sl.[SeasonId] = @SeasonId)
+                        )
+                ) x
+                WHERE x.[PriorityRank] = 1
+            ) ar ON ar.[SeasonId] = l.[SeasonId]
+            LEFT JOIN [TournamentRoundMappings] trm ON trm.[SeasonId] = l.[SeasonId] AND trm.[RoundNumber] = ar.[RoundNumber]
+            WHERE (@LeagueId IS NULL OR l.[Id] = @LeagueId)
+                AND (@SeasonId IS NULL OR l.[SeasonId] = @SeasonId);
+
+            ALTER TABLE #LeagueActive ADD PRIMARY KEY ([LeagueId]);
+
+            -- 2. Drop rows for anyone who is no longer an approved member. Nothing else deletes them,
+            --    so a member who left or was rejected would otherwise keep occupying a rank position
+            --    and push everyone below them down one.
+            DELETE lms
+            FROM [LeagueMemberStats] lms
+            JOIN #LeagueActive la ON la.[LeagueId] = lms.[LeagueId]
+            WHERE NOT EXISTS (
+                SELECT 1
                 FROM [LeagueMembers] lm
+                WHERE lm.[LeagueId] = lms.[LeagueId]
+                    AND lm.[UserId] = lms.[UserId]
+                    AND lm.[Status] = @ApprovedMemberStatus
+            );
 
-                JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
-                JOIN [Rounds] r ON l.[SeasonId] = r.[SeasonId]
-                JOIN [Matches] m ON r.[Id] = m.[RoundId]
-                JOIN [UserPredictions] up ON m.[Id] = up.[MatchId] AND up.[UserId] = lm.[UserId]
-
-                WHERE
-                    r.[Id] = @RoundId
-                    AND m.[Status] = @CompletedStatus
-
-                GROUP BY
-                    lm.[LeagueId],
-                    lm.[UserId]
-            ),
-
-            RankedStable AS (
-                SELECT
-                    stats.[LeagueId],
-                    stats.[UserId],
-                    ISNULL(sc.[StablePoints], 0) as FinalPoints,
-                    RANK() OVER (PARTITION BY stats.[LeagueId] ORDER BY ISNULL(sc.[StablePoints], 0) DESC) as FinalRank
-                FROM [LeagueMemberStats] stats
-                JOIN [Leagues] l ON stats.[LeagueId] = l.[Id]
-                JOIN [Rounds] r ON l.[SeasonId] = r.[SeasonId]
-                LEFT JOIN [StableCalc] sc ON stats.[LeagueId] = sc.[LeagueId] AND stats.[UserId] = sc.[UserId]
-                WHERE r.[Id] = @RoundId
-            )
-
-            UPDATE stats
-            SET
-                stats.[StableRoundPoints] = rs.[FinalPoints],
-                stats.[StableRoundRank] = rs.[FinalRank]
-            FROM [LeagueMemberStats] stats
-            INNER JOIN [RankedStable] rs ON stats.[LeagueId] = rs.[LeagueId] AND stats.[UserId] = rs.[UserId];";
-
-        await Connection.ExecuteAsync(new CommandDefinition(sql, new
-        {
-            RoundId = roundId,
-            CompletedStatus = nameof(MatchStatus.Completed),
-            PredictionOutcome.ExactScore,
-            PredictionOutcome.CorrectResult
-        }, transaction: Transaction, cancellationToken: cancellationToken));
-    }
-
-    // The snapshot/live/stable updates above only UPDATE existing rows, and nothing else in the
-    // pipeline creates them, so a brand-new season's leagues would never get a [LeagueMemberStats]
-    // row. That left the cached My Leagues tiles reading NULL (blank round rank, and an overall
-    // rank that fell back to a fabricated "1st"). This ensures every approved member of every
-    // league in the round's season has a row before the ranks are calculated. New rows start tied
-    // first on zero points; the subsequent UPDATEs overwrite these with the real values.
-    public async Task<int> EnsureMemberStatsRowsExistAsync(int roundId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
+            -- 3. Create rows for anyone who does not have one yet. The ranks are left NULL because a
+            --    rank we have not computed is not a rank - writing a placeholder here is what used to
+            --    surface as a fabricated '1st' on a blank tile.
             INSERT INTO [LeagueMemberStats]
             (
                 [LeagueId],
                 [UserId],
-                [OverallRank],
-                [MonthRank],
-                [LiveRoundRank],
-                [SnapshotOverallRank],
-                [SnapshotMonthRank],
-                [StableRoundRank],
                 [LiveRoundPoints],
                 [StableRoundPoints]
             )
             SELECT
                 lm.[LeagueId],
                 lm.[UserId],
-                1,
-                1,
-                1,
-                1,
-                1,
-                1,
                 0,
                 0
             FROM [LeagueMembers] lm
-            JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
-            JOIN [Rounds] r ON l.[SeasonId] = r.[SeasonId]
-            WHERE r.[Id] = @RoundId
-                AND lm.[Status] = @ApprovedStatus
+            JOIN #LeagueActive la ON la.[LeagueId] = lm.[LeagueId]
+            WHERE lm.[Status] = @ApprovedMemberStatus
                 AND NOT EXISTS (
                     SELECT 1
                     FROM [LeagueMemberStats] lms
                     WHERE lms.[LeagueId] = lm.[LeagueId]
                         AND lms.[UserId] = lm.[UserId]
-                );";
+                );
 
-        return await Connection.ExecuteAsync(new CommandDefinition(
+            -- 4. Every measure the ranks are built from, for every approved member, in one pass over
+            --    the season's rounds. Driving from [Rounds] and left-joining the results keeps a member
+            --    with no result row at zero rather than absent, which is what the tile expects.
+            SELECT
+                lm.[LeagueId],
+                lm.[UserId],
+                ISNULL(SUM(lrr.[BoostedPoints]), 0) AS OverallPoints,
+                ISNULL(SUM(CASE WHEN rnd.[RoundNumber] < la.[ActiveRoundNumber] THEN lrr.[BoostedPoints] ELSE 0 END), 0) AS PreRoundOverallPoints,
+                ISNULL(SUM(CASE
+                    WHEN MONTH(rnd.[StartDateUtc]) = MONTH(la.[ActiveRoundStartDateUtc])
+                        AND YEAR(rnd.[StartDateUtc]) = YEAR(la.[ActiveRoundStartDateUtc])
+                    THEN lrr.[BoostedPoints] ELSE 0 END), 0) AS MonthPoints,
+                ISNULL(SUM(CASE
+                    WHEN MONTH(rnd.[StartDateUtc]) = MONTH(la.[ActiveRoundStartDateUtc])
+                        AND YEAR(rnd.[StartDateUtc]) = YEAR(la.[ActiveRoundStartDateUtc])
+                        AND rnd.[Id] <> la.[ActiveRoundId]
+                    THEN lrr.[BoostedPoints] ELSE 0 END), 0) AS PreRoundMonthPoints,
+                ISNULL(SUM(CASE
+                    WHEN CASE WHEN trm.[SeasonId] IS NULL THEN NULL WHEN trm.[Stages] LIKE '%Group%' THEN 'Group Stage' ELSE 'Knockout Stage' END = la.[ActiveStageName]
+                    THEN lrr.[BoostedPoints] ELSE 0 END), 0) AS StagePoints,
+                ISNULL(SUM(CASE
+                    WHEN CASE WHEN trm.[SeasonId] IS NULL THEN NULL WHEN trm.[Stages] LIKE '%Group%' THEN 'Group Stage' ELSE 'Knockout Stage' END = la.[ActiveStageName]
+                        AND rnd.[Id] <> la.[ActiveRoundId]
+                    THEN lrr.[BoostedPoints] ELSE 0 END), 0) AS PreRoundStagePoints,
+                ISNULL(SUM(CASE WHEN rnd.[Id] = la.[ActiveRoundId] THEN lrr.[BoostedPoints] ELSE 0 END), 0) AS LiveRoundPoints,
+                ISNULL(SUM(rr.[ExactScoreCount]), 0) AS ExactScores,
+                ISNULL(SUM(CASE WHEN rnd.[RoundNumber] < la.[ActiveRoundNumber] THEN rr.[ExactScoreCount] ELSE 0 END), 0) AS PreRoundExactScores
+            INTO #MemberMeasures
+            FROM [LeagueMembers] lm
+            JOIN #LeagueActive la ON la.[LeagueId] = lm.[LeagueId]
+            JOIN [Rounds] rnd ON rnd.[SeasonId] = la.[SeasonId]
+            LEFT JOIN [LeagueRoundResults] lrr ON lrr.[LeagueId] = lm.[LeagueId] AND lrr.[UserId] = lm.[UserId] AND lrr.[RoundId] = rnd.[Id]
+            LEFT JOIN [TournamentRoundMappings] trm ON trm.[SeasonId] = rnd.[SeasonId] AND trm.[RoundNumber] = rnd.[RoundNumber]
+            LEFT JOIN [RoundResults] rr ON rr.[RoundId] = rnd.[Id] AND rr.[UserId] = lm.[UserId]
+            WHERE lm.[Status] = @ApprovedMemberStatus
+                AND la.[ActiveRoundId] IS NOT NULL
+            GROUP BY lm.[LeagueId], lm.[UserId];
+
+            ALTER TABLE #MemberMeasures ADD PRIMARY KEY ([LeagueId], [UserId]);
+
+            -- 5. The 'stable' round points are a different metric with a different source: the
+            --    league's own points-per-outcome settings applied to predictions on matches that have
+            --    actually finished, so the number does not move while a match is in play.
+            SELECT
+                lm.[LeagueId],
+                lm.[UserId],
+                SUM(CASE
+                    WHEN up.[Outcome] = @ExactScoreOutcome THEN l.[PointsForExactScore]
+                    WHEN up.[Outcome] = @CorrectResultOutcome THEN l.[PointsForCorrectResult]
+                    ELSE 0
+                END) AS StablePoints
+            INTO #StablePoints
+            FROM [LeagueMembers] lm
+            JOIN #LeagueActive la ON la.[LeagueId] = lm.[LeagueId]
+            JOIN [Leagues] l ON l.[Id] = lm.[LeagueId]
+            JOIN [Matches] m ON m.[RoundId] = la.[ActiveRoundId] AND m.[Status] = @CompletedMatchStatus
+            JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = lm.[UserId]
+            WHERE lm.[Status] = @ApprovedMemberStatus
+            GROUP BY lm.[LeagueId], lm.[UserId];
+
+            ALTER TABLE #StablePoints ADD PRIMARY KEY ([LeagueId], [UserId]);
+
+            -- 6. Rank on every measure at once. A pre-round rank is NULL when there is nothing earlier
+            --    to compare against (first round of the season, month or stage), and the stage ranks
+            --    are NULL when the season has no stage mapping at all. NULL is what suppresses the
+            --    change arrow on the tile, so these guards are load-bearing, not cosmetic.
+            WITH Ranked AS (
+                SELECT
+                    mm.[LeagueId],
+                    mm.[UserId],
+                    mm.[LiveRoundPoints],
+                    ISNULL(sp.[StablePoints], 0) AS StablePoints,
+                    CAST(RANK() OVER (PARTITION BY mm.[LeagueId] ORDER BY mm.[OverallPoints] DESC) AS INT) AS OverallRank,
+                    CASE WHEN la.[HasEarlierRound] = 0 THEN NULL
+                         ELSE CAST(RANK() OVER (PARTITION BY mm.[LeagueId] ORDER BY mm.[PreRoundOverallPoints] DESC) AS INT) END AS PreRoundOverallRank,
+                    CAST(RANK() OVER (PARTITION BY mm.[LeagueId] ORDER BY mm.[MonthPoints] DESC) AS INT) AS MonthRank,
+                    CASE WHEN la.[HasOtherRoundThisMonth] = 0 THEN NULL
+                         ELSE CAST(RANK() OVER (PARTITION BY mm.[LeagueId] ORDER BY mm.[PreRoundMonthPoints] DESC) AS INT) END AS PreRoundMonthRank,
+                    CASE WHEN la.[ActiveStageName] IS NULL THEN NULL
+                         ELSE CAST(RANK() OVER (PARTITION BY mm.[LeagueId] ORDER BY mm.[StagePoints] DESC) AS INT) END AS StageRank,
+                    CASE WHEN la.[ActiveStageName] IS NULL OR la.[HasOtherRoundThisStage] = 0 THEN NULL
+                         ELSE CAST(RANK() OVER (PARTITION BY mm.[LeagueId] ORDER BY mm.[PreRoundStagePoints] DESC) AS INT) END AS PreRoundStageRank,
+                    CAST(RANK() OVER (PARTITION BY mm.[LeagueId] ORDER BY mm.[LiveRoundPoints] DESC) AS INT) AS LiveRoundRank,
+                    CAST(RANK() OVER (PARTITION BY mm.[LeagueId] ORDER BY ISNULL(sp.[StablePoints], 0) DESC) AS INT) AS StableRoundRank,
+                    CAST(RANK() OVER (PARTITION BY mm.[LeagueId] ORDER BY mm.[ExactScores] DESC) AS INT) AS ExactScoresRank,
+                    CASE WHEN la.[HasEarlierRound] = 0 THEN NULL
+                         ELSE CAST(RANK() OVER (PARTITION BY mm.[LeagueId] ORDER BY mm.[PreRoundExactScores] DESC) AS INT) END AS PreRoundExactScoresRank
+                FROM #MemberMeasures mm
+                JOIN #LeagueActive la ON la.[LeagueId] = mm.[LeagueId]
+                LEFT JOIN #StablePoints sp ON sp.[LeagueId] = mm.[LeagueId] AND sp.[UserId] = mm.[UserId]
+            )
+
+            UPDATE lms
+            SET
+                lms.[OverallRank] = r.[OverallRank],
+                lms.[SnapshotOverallRank] = r.[PreRoundOverallRank],
+                lms.[MonthRank] = r.[MonthRank],
+                lms.[SnapshotMonthRank] = r.[PreRoundMonthRank],
+                lms.[StageRank] = r.[StageRank],
+                lms.[PreRoundStageRank] = r.[PreRoundStageRank],
+                lms.[ExactScoresRank] = r.[ExactScoresRank],
+                lms.[PreRoundExactScoresRank] = r.[PreRoundExactScoresRank],
+                lms.[LiveRoundRank] = r.[LiveRoundRank],
+                lms.[StableRoundRank] = r.[StableRoundRank],
+                lms.[LiveRoundPoints] = r.[LiveRoundPoints],
+                lms.[StableRoundPoints] = r.[StablePoints]
+            FROM [LeagueMemberStats] lms
+            JOIN [Ranked] r ON r.[LeagueId] = lms.[LeagueId] AND r.[UserId] = lms.[UserId];
+
+            -- 7. A league with no active round has nothing to rank. Clear the ranks rather than
+            --    leaving whatever the last active round produced, so the tile shows no position
+            --    instead of a stale one.
+            UPDATE lms
+            SET
+                lms.[OverallRank] = NULL,
+                lms.[SnapshotOverallRank] = NULL,
+                lms.[MonthRank] = NULL,
+                lms.[SnapshotMonthRank] = NULL,
+                lms.[StageRank] = NULL,
+                lms.[PreRoundStageRank] = NULL,
+                lms.[ExactScoresRank] = NULL,
+                lms.[PreRoundExactScoresRank] = NULL,
+                lms.[LiveRoundRank] = NULL,
+                lms.[StableRoundRank] = NULL,
+                lms.[LiveRoundPoints] = 0,
+                lms.[StableRoundPoints] = 0
+            FROM [LeagueMemberStats] lms
+            JOIN #LeagueActive la ON la.[LeagueId] = lms.[LeagueId]
+            WHERE la.[ActiveRoundId] IS NULL;
+
+            DROP TABLE #StablePoints;
+            DROP TABLE #MemberMeasures;
+            DROP TABLE #LeagueActive;";
+
+        var parameters = new
+        {
+            LeagueId = leagueId,
+            SeasonId = seasonId,
+            ApprovedMemberStatus = nameof(LeagueMemberStatus.Approved),
+            DraftRoundStatus = nameof(RoundStatus.Draft),
+            PublishedRoundStatus = nameof(RoundStatus.Published),
+            InProgressRoundStatus = nameof(RoundStatus.InProgress),
+            CompletedRoundStatus = nameof(RoundStatus.Completed),
+            CompletedMatchStatus = nameof(MatchStatus.Completed),
+            ExactScoreOutcome = PredictionOutcome.ExactScore,
+            CorrectResultOutcome = PredictionOutcome.CorrectResult
+        };
+
+        await Connection.ExecuteAsync(new CommandDefinition(
             sql,
-            new
-            {
-                RoundId = roundId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved)
-            },
+            parameters,
             transaction: Transaction,
             cancellationToken: cancellationToken));
     }

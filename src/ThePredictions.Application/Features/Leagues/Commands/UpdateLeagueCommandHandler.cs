@@ -7,7 +7,7 @@ using ThePredictions.Domain.Common.Guards;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, IFieldEncryptionService fieldEncryptionService, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateLeagueCommand>
+public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISeasonRepository seasonRepository, ILeagueStatsRepository leagueStatsRepository, IFieldEncryptionService fieldEncryptionService, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateLeagueCommand>
 {
     public async Task Handle(UpdateLeagueCommand request, CancellationToken cancellationToken)
     {
@@ -50,6 +50,11 @@ public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
         var autoApprovedUserIds = league.SetRequiresMemberApproval(request.RequiresMemberApproval, dateTimeProvider);
 
         await leagueRepository.UpdateAsync(league, cancellationToken);
+
+        // Turning approval off admits everyone who was waiting in one go, so the whole league's cached
+        // ranks shift. Nothing else in this handler can change the approved set.
+        if (autoApprovedUserIds.Any())
+            await leagueStatsRepository.RefreshLeagueAsync(league.Id, cancellationToken);
 
         foreach (var memberUserId in autoApprovedUserIds)
         {

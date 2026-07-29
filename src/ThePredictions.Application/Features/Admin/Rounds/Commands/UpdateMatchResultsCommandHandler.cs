@@ -17,7 +17,7 @@ public class UpdateMatchResultsCommandHandler(
     ILeagueRepository leagueRepository,
     IRoundRepository roundRepository,
     IUserPredictionRepository userPredictionRepository,
-    ILeagueStatsService statsService,
+    ILeagueStatsRepository leagueStatsRepository,
     ICurrentUserService currentUserService,
     IDateTimeProvider dateTimeProvider) : IRequestHandler<UpdateMatchResultsCommand>
 {
@@ -31,11 +31,6 @@ public class UpdateMatchResultsCommandHandler(
         var round = await roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
         Guard.Against.EntityNotFound(request.RoundId, round, "Round");
         var wasRoundPublished = round.Status == RoundStatus.Published;
-
-        var completedMatchIdsBefore = round.Matches
-            .Where(m => m.Status == MatchStatus.Completed)
-            .Select(m => m.Id)
-            .ToList();
 
         var matchesToUpdate = new List<Match>();
 
@@ -57,7 +52,6 @@ public class UpdateMatchResultsCommandHandler(
         {
             round.UpdateStatus(RoundStatus.InProgress, dateTimeProvider);
             await roundRepository.UpdateAsync(round, cancellationToken);
-            await statsService.TakeRoundStartSnapshotsAsync(round.Id, cancellationToken);
 
             var isLastRoundOfSeason = await roundRepository.IsLastRoundOfSeasonAsync(round.Id, round.SeasonId, cancellationToken);
             if (isLastRoundOfSeason)
@@ -86,12 +80,6 @@ public class UpdateMatchResultsCommandHandler(
         await leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
         await boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
         
-        var hasNewCompletedMatch = matchesToUpdate.Any(m => m.Status == MatchStatus.Completed && !completedMatchIdsBefore.Contains(m.Id));
-        if (hasNewCompletedMatch)
-            await statsService.UpdateStableStatsAsync(round.Id, cancellationToken);
-        
-        await statsService.UpdateLiveStatsAsync(round.Id, cancellationToken);
-      
         if (round.Matches.All(m => m.Status is MatchStatus.Completed or MatchStatus.Postponed))
         {
             round.UpdateStatus(RoundStatus.Completed, dateTimeProvider);
@@ -122,5 +110,12 @@ public class UpdateMatchResultsCommandHandler(
             // Idempotent via the PrizeNotifications sent-log, so re-completing the round won't re-send.
             await mediator.Send(new SendPrizeNotificationsCommand(round.Id), cancellationToken);
         }
+
+        // Rebuild the cached My Leagues ranks once, at the very end, so they reflect the final state of
+        // this update - the round going live, the new scores, the boosts, and the round completing.
+        // The recompute is a pure function of what is now in the database, so a single call covers all
+        // of those without caring which of them happened. Nothing above reads these columns, so there
+        // is no ordering constraint pulling it earlier.
+        await leagueStatsRepository.RefreshSeasonAsync(round.SeasonId, cancellationToken);
     }
 }
