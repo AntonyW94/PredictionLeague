@@ -408,7 +408,7 @@ season has no stage mapping. `NULL` is what suppresses the change arrow on the t
 | LiveRoundRank | int | YES | | Rank by boosted points in the active round, moving as matches play |
 | SnapshotOverallRank | int | YES | | `OverallRank` as at the start of the active round (rounds before it only) |
 | SnapshotMonthRank | int | YES | | `MonthRank` excluding the active round |
-| StableRoundRank | int | YES | | Rank by the league's points-per-outcome applied to finished matches of the active round only, so it does not move mid-match |
+| StableRoundRank | int | YES | | Rank by the league's points-per-outcome applied to finished matches of the active round only, so it does not move mid-match. **Boosted**, using the same multiplier as `LiveRoundRank` - it is that rank's arrow baseline, so the two must differ only by which matches count |
 | StageRank | int | YES | | Rank by boosted points in the active round's tournament stage |
 | PreRoundStageRank | int | YES | | `StageRank` excluding the active round |
 | ExactScoresRank | int | YES | | Rank by exact-score count across the season. Tournaments show this in the Month slot |

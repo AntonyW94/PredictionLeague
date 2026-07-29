@@ -28,6 +28,14 @@ public class LeagueRoundResult
         ExactScoreCount = exactScoreCount;
     }
 
+    /// <remarks>
+    /// Every boost here must be a <b>multiplier</b> of <see cref="BasePoints"/>, never an addition or a
+    /// flat override. <c>LeagueStatsRepository</c> recovers the multiplier for a member's round as
+    /// <c>BoostedPoints / BasePoints</c> so it can apply the same boost to a subtotal of the round
+    /// (finished matches only) without restating the rule in SQL. An additive boost would make that
+    /// ratio meaningless and would silently corrupt the round change arrow.
+    /// <c>ApplyBoost_ShouldProduceAnExactMultipleOfBasePoints_ForEveryBoostCode</c> pins this.
+    /// </remarks>
     public void ApplyBoost(string boostCode)
     {
         BoostedPoints = boostCode switch

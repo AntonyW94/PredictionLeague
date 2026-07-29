@@ -129,6 +129,18 @@ monster; hold it in reserve.
   `LiveRoundPoints` instead of dropping to zero.
 - `StableRoundRank` now refers to the same round as the rest of the tile. It previously kept whichever
   round was last processed, so a finished season could show a round-38 rank under a "Round 1" label.
+- **The round change arrow no longer credits a boost to the live window.** `StableRoundRank` is that
+  arrow's baseline and `LiveRoundRank` its current value, so the pair must differ by *which matches
+  count* and nothing else. The baseline was unboosted while the current value was boosted, so a
+  round-long boost - already in force before the live matches kicked off - was reported as movement
+  caused by them. A boosted member appeared to climb and every unboosted member appeared to fall, even
+  during a match in which nothing had been scored, and because rank is relative one boost in a league
+  gave everyone else a wrong arrow. The baseline is now boosted by the same multiplier, recovered from
+  the data as `BoostedPoints / BasePoints` rather than by restating the rule in SQL. Verified on dev
+  against league 2's most recent boosted round: the false delta ran from -7 to +4 places across 10 of 16
+  members and is now zero for all 16, with the baseline rank equal to the live rank exactly, as it must
+  be when nothing is in play. `LeagueRoundResultTests` pins the assumption this relies on - that every
+  boost is a whole-number multiplier of `BasePoints`, never additive.
 - Deleting a league no longer trips the non-cascading `LeagueMemberStats` foreign key.
 
 **Against / cost**

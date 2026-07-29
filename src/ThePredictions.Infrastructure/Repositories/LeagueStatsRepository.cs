@@ -227,20 +227,50 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
             -- 5. The 'stable' round points are a different metric with a different source: the
             --    league's own points-per-outcome settings applied to predictions on matches that have
             --    actually finished, so the number does not move while a match is in play.
+            --
+            --    The boost has to be applied here too, and getting that wrong is what made the round
+            --    change arrow lie. [StableRoundRank] is the arrow's baseline and [LiveRoundRank] is its
+            --    current value, so the pair must differ by *which matches count* and nothing else. A
+            --    round-long boost is already in force before the live matches kick off, so leaving it
+            --    off this side made the arrow credit the entire boost to the live window: a boosted
+            --    member appeared to climb, and every unboosted member appeared to fall, during a match
+            --    in which no points had been scored at all.
+            --
+            --    Rather than restate the boost arithmetic here - the rule lives in
+            --    LeagueRoundResult.ApplyBoost and should not be duplicated - the multiplier is read back
+            --    out of the data as [BoostedPoints] / [BasePoints] for the same member and round. That
+            --    is exact for any multiplicative boost and adapts on its own if another is added. It is
+            --    applied as SUM(...) * MAX(boosted) / MAX(base), multiplying before dividing so integer
+            --    arithmetic stays exact. MAX() is just a way to reach a value that is constant per
+            --    group. When there is no result row, or base points are zero, the raw total is used
+            --    unchanged - it is necessarily zero in that case, since finished-match points are a
+            --    subset of the round's points.
             SELECT
                 lm.[LeagueId],
                 lm.[UserId],
-                SUM(CASE
-                    WHEN up.[Outcome] = @ExactScoreOutcome THEN l.[PointsForExactScore]
-                    WHEN up.[Outcome] = @CorrectResultOutcome THEN l.[PointsForCorrectResult]
-                    ELSE 0
-                END) AS StablePoints
+                CASE
+                    WHEN MAX(ISNULL(lrr.[BasePoints], 0)) = 0
+                    THEN SUM(CASE
+                        WHEN up.[Outcome] = @ExactScoreOutcome THEN l.[PointsForExactScore]
+                        WHEN up.[Outcome] = @CorrectResultOutcome THEN l.[PointsForCorrectResult]
+                        ELSE 0
+                    END)
+                    ELSE SUM(CASE
+                        WHEN up.[Outcome] = @ExactScoreOutcome THEN l.[PointsForExactScore]
+                        WHEN up.[Outcome] = @CorrectResultOutcome THEN l.[PointsForCorrectResult]
+                        ELSE 0
+                    END) * MAX(lrr.[BoostedPoints]) / MAX(lrr.[BasePoints])
+                END AS StablePoints
             INTO #StablePoints
             FROM [LeagueMembers] lm
             JOIN #LeagueActive la ON la.[LeagueId] = lm.[LeagueId]
             JOIN [Leagues] l ON l.[Id] = lm.[LeagueId]
             JOIN [Matches] m ON m.[RoundId] = la.[ActiveRoundId] AND m.[Status] = @CompletedMatchStatus
             JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = lm.[UserId]
+            -- One row per member per round, so this cannot fan the aggregate out.
+            LEFT JOIN [LeagueRoundResults] lrr ON lrr.[LeagueId] = lm.[LeagueId]
+                AND lrr.[UserId] = lm.[UserId]
+                AND lrr.[RoundId] = la.[ActiveRoundId]
             WHERE lm.[Status] = @ApprovedMemberStatus
             GROUP BY lm.[LeagueId], lm.[UserId];
 
