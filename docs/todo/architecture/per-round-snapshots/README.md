@@ -25,7 +25,31 @@ Two new tables - one per-user-per-league-per-round, one per-league-per-round. Ba
 
 **Capture base facts; derive everything else at query time.**
 
-A "base fact" is something true at that moment in time that *cannot* be reliably re-derived from raw inputs because:
+> **Correction (2026-07-29): most of this is re-derivable, so this plan is an optimisation, not a
+> now-or-never data capture.** The claim below that rank "cannot be reliably re-derived" does not hold.
+> `LeagueRoundResults` already stores per-round points per member per league, and those rows stop changing
+> once a round is done, so the cumulative rank at the end of any past round is *exactly* re-derivable as
+> `SUM(BoostedPoints) WHERE RoundNumber <= N` ranked. Same for monthly, stage and exact-scores standings.
+> `UserBoostUsages.RoundId` and `Winnings.RoundNumber`/`.Month` already make boosts and prizes historical
+> too.
+>
+> That does not make this plan worthless - the justifications that survive are **query cost** (rebuilding
+> a season's worth of standings on demand gets expensive at scale) and **analytics convenience** (a clean
+> single-table time series beats a five-way join for the stats dashboard, head-to-head and recap
+> features). Both are real. But it does undercut the "Why now" section above: there is no data being lost
+> while this is unbuilt, so the backfill-gets-more-expensive argument is about effort, not about
+> recoverability.
+>
+> **The one genuinely irrecoverable gap is not in this plan at all: membership history.** `LeagueMembers`
+> has `JoinedAtUtc` and `ApprovedAtUtc` but no leave/removal record and no status-change log, so "who was
+> in this league at the end of round N" stops being answerable the day anyone can leave a league. Nothing
+> can currently remove an *approved* member, so nothing is lost yet. See
+> [historical-round-view](../../features/user-experience/historical-round-view/README.md) for the rule and
+> the two possible shapes. If snapshot rows are written per member per round, they would incidentally
+> record who was present - which is a further argument for this plan, but a fragile one, since it only
+> captures members who were present at a *round close*.
+
+A "base fact" is something true at that moment in time that is not cheaply re-derived from raw inputs because:
 - Rank depends on cumulative state of all users (not just the user being measured).
 - Cumulative points are computable but expensive at query time.
 - Rule snapshots are insurance against future rule changes.
