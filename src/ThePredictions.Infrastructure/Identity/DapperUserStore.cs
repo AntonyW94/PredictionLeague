@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using ThePredictions.Application.Data;
 using ThePredictions.Domain.Models;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Infrastructure.Identity;
 
@@ -261,14 +262,24 @@ public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailSt
 
     public async Task<IList<UserLoginInfo>> GetLoginsAsync(ApplicationUser user, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT * FROM [AspNetUserLogins] WHERE [UserId] = @UserId;";
+        const string sql = @"
+                SELECT
+                    l.[LoginProvider],
+                    l.[ProviderKey],
+                    l.[ProviderDisplayName]
+                FROM
+                    [AspNetUserLogins] l
+                WHERE
+                    l.[UserId] = @UserId;";
 
         cancellationToken.ThrowIfCancellationRequested();
 
         using var connection = Connection;
-        var logins = await connection.QueryAsync<UserLoginInfo>(sql, new { UserId = user.Id });
+        var logins = await connection.QueryAsync<UserLoginRow>(sql, new { UserId = user.Id });
 
-        return logins.ToList();
+        return logins
+            .Select(l => new UserLoginInfo(l.LoginProvider, l.ProviderKey, l.ProviderDisplayName))
+            .ToList();
     }
 
     public async Task<ApplicationUser?> FindByLoginAsync(string loginProvider, string providerKey, CancellationToken cancellationToken)
@@ -283,6 +294,13 @@ public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailSt
         using var connection = Connection;
         return await connection.QuerySingleOrDefaultAsync<ApplicationUser>(sql, new { LoginProvider = loginProvider, ProviderKey = providerKey });
     }
+
+    // UserLoginInfo's only constructor takes three arguments and it has no parameterless constructor, so
+    // Dapper cannot materialise it from the four-column [AspNetUserLogins] table - and it matches
+    // constructors positionally, so even a three-column SELECT would need the display name column aliased
+    // to the parameter name. Read into this row type and construct UserLoginInfo in C# instead.
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
+    private sealed record UserLoginRow(string LoginProvider, string ProviderKey, string? ProviderDisplayName);
 
     #endregion
 }
