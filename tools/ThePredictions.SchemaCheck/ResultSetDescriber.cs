@@ -14,6 +14,30 @@ public sealed class ResultSetDescriber(string connectionString)
     // unexpanded form, so it is parenthesised here purely to get the statement past the parser.
     private static readonly Regex InListPattern = new(@"\bIN\s+@(?<name>[A-Za-z_][A-Za-z0-9_]*)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
+    /// <summary>
+    /// Confirms the database is actually reachable. Without this an unreachable server would turn every
+    /// read into a per-query "could not be described" skip and the run would exit 0 - a clean bill of
+    /// health from a check that never ran, which is worse than no check at all.
+    /// </summary>
+    public async Task<string?> TestConnectionAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync(cancellationToken);
+
+            await using var command = connection.CreateCommand();
+            command.CommandText = "SELECT 1";
+            await command.ExecuteScalarAsync(cancellationToken);
+
+            return null;
+        }
+        catch (Exception exception) when (exception is SqlException or InvalidOperationException or ArgumentException)
+        {
+            return exception.Message.Replace("\r", " ", StringComparison.Ordinal).Replace("\n", " ", StringComparison.Ordinal);
+        }
+    }
+
     public async Task<(List<ResultColumn>? Columns, string? Error)> DescribeAsync(string sql, string declarations, CancellationToken cancellationToken)
     {
         var describable = InListPattern.Replace(sql, "IN (@${name})");

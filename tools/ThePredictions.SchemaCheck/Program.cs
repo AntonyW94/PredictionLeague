@@ -35,10 +35,41 @@ foreach (var file in Directory.EnumerateFiles(sourceRoot, "*.cs", SearchOption.A
     callSites.AddRange(scanner.Scan(tree, relativePath));
 }
 
+// --changed narrows the sweep to the reads a set of files could have affected, so a pre-commit hook can
+// stay fast. A changed file matters if it holds the call site OR declares the type being materialised - a
+// reshaped result record breaks the query in whichever file that query lives.
+var changedFiles = ParseChangedFiles(ArgumentValue(args, "--changed"));
+
+if (changedFiles is not null)
+{
+    var relevant = callSites
+        .Where(c => changedFiles.Contains(NormalisePath(c.File))
+                    || (typeIndex.Resolve(c.TypeArgument, c.File, out _) is { } shape && changedFiles.Contains(NormalisePath(shape.File))))
+        .ToList();
+
+    Console.WriteLine($"Filtered to {relevant.Count} of {callSites.Count} reads affected by {changedFiles.Count} changed file(s).");
+    callSites = relevant;
+}
+
 var describer = new ResultSetDescriber(connectionString);
+
+var connectionError = await describer.TestConnectionAsync(CancellationToken.None);
+if (connectionError is not null)
+{
+    Console.Error.WriteLine($"Could not reach the database, so nothing was checked: {connectionError}");
+    return 2;
+}
+
 var results = new List<CheckResult>();
 
-Console.WriteLine($"Checking {callSites.Count(c => c.SkipReason is null)} Dapper reads in {sourceRoot}...");
+var checkable = callSites.Count(c => c.SkipReason is null);
+if (checkable == 0)
+{
+    Console.WriteLine("No checkable Dapper reads. Nothing to do.");
+    return 0;
+}
+
+Console.WriteLine($"Checking {checkable} Dapper reads in {sourceRoot}...");
 Console.WriteLine();
 
 foreach (var callSite in callSites)
@@ -116,6 +147,21 @@ Console.WriteLine(failures == 0
     : $"{failures} problem(s) that need fixing.");
 
 return failures == 0 ? 0 : 1;
+
+static HashSet<string>? ParseChangedFiles(string? value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+        return null;
+
+    return value
+        .Split(new[] { ',', ';', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Select(NormalisePath)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+}
+
+// git reports forward slashes relative to the repository root; Path.GetRelativePath uses the platform
+// separator, so both sides are normalised before comparing.
+static string NormalisePath(string path) => path.Replace('\\', '/').Trim();
 
 static string? ArgumentValue(string[] arguments, string name)
 {

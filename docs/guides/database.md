@@ -89,6 +89,14 @@ dotnet run --project tools/ThePredictions.SchemaCheck
 
 It compares each Dapper read in `src/` with the result set SQL Server describes for it, exits non-zero when a read cannot materialise, and also reports the quieter name-mapped failures below. Run it after changing any query's `SELECT` list or result type.
 
+To have it run automatically over staged files, enable the repository's hooks once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The hook skips when nothing relevant is staged or the database is unreachable, so it only ever blocks a commit on a real finding.
+
 ### Read failures are server faults, not client errors
 
 Dapper reports a result-set/result-record mismatch as a plain `InvalidOperationException`, the same type handlers throw for business rules, which the API error middleware maps to 400 Bad Request and logs at Warning. `DapperReadDbConnection` therefore translates any `InvalidOperationException` out of a read into `ReadQueryFailedException`, so materialisation bugs surface as a 500 and an Error rather than hiding in the client-error bucket.

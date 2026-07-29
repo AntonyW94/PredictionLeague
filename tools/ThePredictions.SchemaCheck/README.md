@@ -17,7 +17,34 @@ dotnet run --project tools/ThePredictions.SchemaCheck
 Reads the connection string from `PREDICTIONS_DEV_DB`, or pass `--connection "<connection string>"`. The
 repository root is found by walking up for `ThePredictions.sln`; override with `--root <path>`.
 
-Exit code is `1` when a read cannot materialise, otherwise `0`. Add `--strict` to fail on silent drops too.
+Exit codes: `0` clean, `1` a read cannot materialise, `2` the tool could not run (no connection string, no
+repository root, database unreachable). Add `--strict` to fail on silent drops too.
+
+`--changed <paths>` narrows the sweep to the reads a comma-separated list of files could have affected. A
+file counts if it holds the call site **or** declares the type being materialised, since reshaping a result
+record breaks the query wherever that query lives.
+
+## The pre-commit hook
+
+`.githooks/pre-commit` runs the check over staged files. Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+It is deliberately permissive about its own prerequisites and only ever fails on a real finding - it skips
+when no `src` C# file is staged (~0.1s), when `dotnet` is missing, and when the database cannot be reached.
+A hook that blocks committing on a train gets bypassed with `--no-verify` and then never runs again.
+
+With one handler staged it takes about 3 seconds, because `--changed` cuts the work to the affected reads.
+
+Two things to know:
+
+- It inspects the **working tree**, not the staged snapshot, so a partially staged file is checked as it
+  exists on disk.
+- The database-unreachable case exits `2` and the hook skips. This is why the tool probes the connection up
+  front: without that probe an unreachable server turns every read into a per-query "could not be described"
+  skip and the run exits `0`, which is a clean bill of health from a check that never ran.
 
 **It never executes your SQL.** Every check goes through `sys.sp_describe_first_result_set`, which compiles
 a statement and reports its result-set metadata without running it, so pointing this at a database holding
