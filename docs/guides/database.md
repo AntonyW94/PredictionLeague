@@ -81,6 +81,22 @@ EXEC sys.sp_describe_first_result_set
 
 `system_type_name` in the output is what Dapper will see. Note that SQLite-backed tests would **not** catch this class of bug, because its type affinities differ from SQL Server's.
 
+To check every read in one go rather than one query at a time, run [`tools/ThePredictions.SchemaCheck`](../../tools/ThePredictions.SchemaCheck/README.md):
+
+```bash
+dotnet run --project tools/ThePredictions.SchemaCheck
+```
+
+It compares each Dapper read in `src/` with the result set SQL Server describes for it, exits non-zero when a read cannot materialise, and also reports the quieter name-mapped failures below. Run it after changing any query's `SELECT` list or result type.
+
+To have it run automatically over the reads your commits touch, enable the repository's hooks once per clone (git config is not versioned, so it does not arrive with a fresh clone):
+
+```bash
+git config core.hooksPath .githooks
+```
+
+`.githooks/pre-push` then checks the commits being pushed. It skips when they touch no `src` C# file or the database is unreachable, so it only ever blocks a push on a real finding - bypass one with `git push --no-verify`.
+
 ### Read failures are server faults, not client errors
 
 Dapper reports a result-set/result-record mismatch as a plain `InvalidOperationException`, the same type handlers throw for business rules, which the API error middleware maps to 400 Bad Request and logs at Warning. `DapperReadDbConnection` therefore translates any `InvalidOperationException` out of a read into `ReadQueryFailedException`, so materialisation bugs surface as a 500 and an Error rather than hiding in the client-error bucket.

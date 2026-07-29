@@ -132,7 +132,7 @@ public sealed class BoostReadRepository(IApplicationReadDbConnection dbConnectio
         var (_, roundNumber, _) = await GetRoundInfoAsync(roundId, cancellationToken);
 
         const string seasonUsesSql = @"
-                SELECT COUNT(*) AS Count
+                SELECT COUNT(*) AS [Count]
                 FROM [UserBoostUsages] ubu
                 INNER JOIN [BoostDefinitions] bd
                     ON ubu.[BoostDefinitionId] = bd.[Id]
@@ -149,7 +149,7 @@ public sealed class BoostReadRepository(IApplicationReadDbConnection dbConnectio
         var seasonUses = seasonRows.SingleOrDefault()?.Count ?? 0;
 
         const string usedThisRoundSql = @"
-                SELECT COUNT(*) AS Count
+                SELECT COUNT(*) AS [Count]
                 FROM [UserBoostUsages] ubu
                 INNER JOIN [BoostDefinitions] bd
                     ON ubu.[BoostDefinitionId] = bd.[Id]
@@ -196,7 +196,7 @@ public sealed class BoostReadRepository(IApplicationReadDbConnection dbConnectio
         var windowRows = activeWindowRows.ToList();
 
         const string windowCountSql = @"
-                    SELECT COUNT(*) AS CountInWindow
+                    SELECT COUNT(*) AS [Count]
                     FROM [UserBoostUsages] ubu
                     INNER JOIN [BoostDefinitions] bd ON ubu.[BoostDefinitionId] = bd.[Id]
                     INNER JOIN [Rounds] r ON ubu.[RoundId] = r.[Id]

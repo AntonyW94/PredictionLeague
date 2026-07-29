@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>ThePredictions.SchemaCheck</RootNamespace>
+
+    <!-- CS9057: Microsoft.CodeAnalysis ships analyzers built against a newer compiler than the SDK pinned
+         in global.json, so the compiler warns that it cannot load them. This project uses only the Roslyn
+         parsing API, so the unloaded analyzers change nothing; the alternative is downgrading Roslyn by
+         several major versions. Scoped to this project. -->
+    <NoWarn>$(NoWarn);CS9057</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Roslyn is used for syntax parsing only (no compilation, no MSBuild workspace), so the tool
+         needs nothing from the solution's own build output and cannot be broken by it. -->
+    <!-- ExcludeAssets="analyzers": this package ships analyzers built against a newer compiler than the
+         pinned SDK's (CS9057). Only the parsing API is needed here, so the analyzers are dropped rather
+         than downgrading the package. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.6.0" ExcludeAssets="analyzers" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.3.0" ExcludeAssets="analyzers" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.1.0-preview2.26190.5" />
+  </ItemGroup>
+</Project>
