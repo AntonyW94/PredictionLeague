@@ -20,7 +20,10 @@ tiny database (5 leagues, 82 approved members, 1,616 `LeagueRoundResults` rows) 
 | Round-trip floor (`SELECT 1`) | 29ms | - | - |
 | The query, cached plan | 93ms | 57ms | ~36ms |
 | The query, fresh plan | 400-500ms | 57ms | **~370-440ms** |
-| A keyed lookup against the cache | 40ms | - | ~11ms |
+| A bare keyed lookup, no other CTEs | 40ms | - | ~11ms |
+
+The last row is a prototype, not the shipped query, and it overstates what was achievable - see
+[Measured outcome](#measured-outcome) for what actually landed.
 
 So the cost was not the data, and not the ranking work - it was SQL Server **planning** the query, at
 roughly seven times what it spent running it. Production repaid that constantly: the score-update job
@@ -80,11 +83,44 @@ recompute, and reduce the query to a keyed lookup.**
    `GetMyLeaguesQueryHandler` must agree on the active-round resolution and on what each rank means.
    Both carry a comment saying so.
 
+## Measured outcome
+
+Measured on dev after deploying, with the cache populated and the per-minute refresh running. Medians of
+five runs; the box is busier than for the "before" figures above, so read the ratios rather than the
+absolutes, and note the old query re-measured slower here (719ms) than it did on an idle box (400-500ms).
+
+| | Old, live-computing | New, cached read | Change |
+|---|---|---|---|
+| Fresh plan, wall clock | 719ms | 349ms | -51% |
+| Fresh plan, of which compile | ~545ms | ~314ms | -42% |
+| Cached plan, wall clock | 130ms | 55ms | -58% |
+| Cached plan, server execution | 77ms | 17ms | -78% |
+| Cached plan, work above the 30ms round-trip floor | ~100ms | ~25ms | **4x less** |
+
+Verified byte-identical to the old query's output for all 35 dev users across all 82 league rows, and the
+Dapper result mapping checked against the live result set by `ThePredictions.SchemaCheck`.
+
+**Compile did not collapse to the ~11ms the prototype suggested, and the reason matters.** The shipped
+query still carries `MyLeagues`, `ActiveRounds`, `RoundStages` and `LeagueContext`, and `LeagueContext`
+holds two correlated subqueries containing their own `RANK() OVER` passes to count the rounds and months
+a user has won. Those are the remaining compile cost. They are also cacheable on exactly the same
+argument as the ranks - they only change when a round completes - so moving `RoundsWon` / `MonthsWon`
+into `LeagueMemberStats` is the obvious next increment, and would take the read close to the prototype's
+shape. Not done here.
+
+**One trigger we introduced.** The refresh writes to `[LeagueMemberStats]` every minute, and the read
+query joins that table, so our own refresh is now a source of statistics invalidation for the read's
+plan. At 82 rows it takes roughly six minutes of refreshes to reach the auto-stats modification
+threshold, against the old query's roughly one minute, and a recompile now costs half as much - so this
+is a large net win rather than a clean kill. `OPTION (KEEPFIXED PLAN)` on the read is a much more
+palatable mitigation now that the plan being frozen is a small keyed lookup rather than an eight-CTE
+monster; hold it in reserve.
+
 ## Consequences
 
 **For / positive**
-- The read drops from ~400ms of compilation plus 57ms of execution to a keyed lookup measured at ~11ms
-  of work, and is small enough that it stops being worth recompiling.
+- Roughly four times less work per read above the round-trip floor, and about half the compile cost when
+  the plan does get invalidated (measured above).
 - The ranking work happens once a minute for everybody instead of once per page view per person.
 - Correctness is now a property of the recompute rather than of call ordering. Verified against the live
   query on dev: all eight live-computed rank families matched exactly on all 82 league/member rows.
