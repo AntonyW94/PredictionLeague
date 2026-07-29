@@ -217,7 +217,12 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
                 AND la.[ActiveRoundId] IS NOT NULL
             GROUP BY lm.[LeagueId], lm.[UserId];
 
-            ALTER TABLE #MemberMeasures ADD PRIMARY KEY ([LeagueId], [UserId]);
+            -- A unique nonclustered index rather than a primary key. A clustered key is capped at 900
+            -- bytes and [UserId] is nvarchar(450), so ([LeagueId], [UserId]) comes to 904 and SQL Server
+            -- warns on every single execution that a long enough id would fail the insert. The
+            -- nonclustered limit is 1,700 bytes, which this sits comfortably inside, and the uniqueness
+            -- still asserts what matters: that the GROUP BY produced exactly one row per member.
+            CREATE UNIQUE NONCLUSTERED INDEX [IX_MemberMeasures_League_User] ON #MemberMeasures ([LeagueId], [UserId]);
 
             -- 5. The 'stable' round points are a different metric with a different source: the
             --    league's own points-per-outcome settings applied to predictions on matches that have
@@ -239,7 +244,7 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
             WHERE lm.[Status] = @ApprovedMemberStatus
             GROUP BY lm.[LeagueId], lm.[UserId];
 
-            ALTER TABLE #StablePoints ADD PRIMARY KEY ([LeagueId], [UserId]);
+            CREATE UNIQUE NONCLUSTERED INDEX [IX_StablePoints_League_User] ON #StablePoints ([LeagueId], [UserId]);
 
             -- 6. Rank on every measure at once. A pre-round rank is NULL when there is nothing earlier
             --    to compare against (first round of the season, month or stage), and the stage ranks
