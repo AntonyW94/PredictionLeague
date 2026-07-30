@@ -107,7 +107,7 @@ public class SubmitPredictionsCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenDeadlineHasPassed()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenDeadlineHasPassed()
     {
         // Arrange
         var match = CreateMatch(id: 10);
@@ -127,7 +127,7 @@ public class SubmitPredictionsCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*deadline*");
     }
 

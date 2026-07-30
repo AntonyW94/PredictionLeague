@@ -70,6 +70,6 @@ public class AcquireSeasonPassCommandHandler(
         }
 
         // Otherwise the pass must be paid for -> handled by Stripe checkout (Phase B), not this free-acquire path.
-        throw new InvalidOperationException($"Season (ID: {request.SeasonId}) requires payment; acquire it via checkout.");
+        throw new BusinessRuleViolationException($"Season (ID: {request.SeasonId}) requires payment; acquire it via checkout.");
     }
 }

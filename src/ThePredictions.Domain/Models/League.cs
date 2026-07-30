@@ -3,6 +3,7 @@ using Ardalis.GuardClauses;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Constants;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Models;
 
@@ -237,10 +238,10 @@ public partial class League
         Guard.Against.NullOrWhiteSpace(userId);
 
         if (_members.Any(m => m.UserId == userId))
-            throw new InvalidOperationException("This user is already a member of the league.");
+            throw new BusinessRuleViolationException("This user is already a member of the league.");
 
         if (EntryDeadlineUtc < dateTimeProvider.UtcNow)
-            throw new InvalidOperationException("The entry deadline for this league has passed.");
+            throw new BusinessRuleViolationException("The entry deadline for this league has passed.");
 
         var newMember = LeagueMember.Create(Id, userId, dateTimeProvider);
 
@@ -320,7 +321,7 @@ public partial class League
         Guard.Against.Null(scheme);
 
         if (_prizeScheme is not null)
-            throw new InvalidOperationException("The prize scheme has already been set for this league.");
+            throw new BusinessRuleViolationException("The prize scheme has already been set for this league.");
 
         ApplyPrizeScheme(scheme);
     }

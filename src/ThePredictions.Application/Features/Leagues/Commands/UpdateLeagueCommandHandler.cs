@@ -4,6 +4,7 @@ using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Guards;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
@@ -18,10 +19,10 @@ public class UpdateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
             throw new UnauthorizedAccessException("Only the league administrator can update the league.");
 
         if (league.EntryDeadlineUtc < dateTimeProvider.UtcNow)
-            throw new InvalidOperationException("This league cannot be edited because its entry deadline has passed.");
+            throw new BusinessRuleViolationException("This league cannot be edited because its entry deadline has passed.");
       
         if (league.Price != request.Price && league.Members.Count > 1)
-            throw new InvalidOperationException("The entry fee cannot be changed after other players have joined the league.");
+            throw new BusinessRuleViolationException("The entry fee cannot be changed after other players have joined the league.");
 
         var season = await seasonRepository.GetByIdAsync(league.SeasonId, cancellationToken);
         Guard.Against.EntityNotFound(league.SeasonId, season, "Season");

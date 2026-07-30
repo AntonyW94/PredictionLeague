@@ -4,6 +4,7 @@ using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
 using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
@@ -652,7 +653,7 @@ public class LeagueManagementTests
         var act = () => league.AddMember("user-1", _dateTimeProvider);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<BusinessRuleViolationException>();
     }
 
     [Fact]
@@ -673,7 +674,7 @@ public class LeagueManagementTests
         var act = () => league.AddMember("user-1", _dateTimeProvider);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<BusinessRuleViolationException>();
     }
 
     #endregion

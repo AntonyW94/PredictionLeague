@@ -83,14 +83,14 @@ public class SetPrizeSchemeCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperation_WhenNonSiteAdminChangesSetScheme()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenNonSiteAdminChangesSetScheme()
     {
         var league = CreateLeague(scheme: ExistingScheme());
         Arrange(league, isSiteAdmin: false);
 
         var act = () => _handler.Handle(new SetPrizeSchemeCommand(1, "admin-user", Request()), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*already been set*");
+        await act.Should().ThrowAsync<BusinessRuleViolationException>().WithMessage("*already been set*");
     }
 
     [Fact]
@@ -115,25 +115,25 @@ public class SetPrizeSchemeCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperation_WhenFreeLeagueHasNoPrizeFund()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenFreeLeagueHasNoPrizeFund()
     {
         var league = CreateLeague(price: 0m);
         Arrange(league, isSiteAdmin: false);
 
         var act = () => _handler.Handle(new SetPrizeSchemeCommand(1, "admin-user", Request()), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*free league*");
+        await act.Should().ThrowAsync<BusinessRuleViolationException>().WithMessage("*free league*");
         await _leagueRepository.DidNotReceiveWithAnyArgs().SavePrizeSchemeAsync(default, default!, CancellationToken.None);
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperation_WhenEntryFeeHasPence()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenEntryFeeHasPence()
     {
         var league = CreateLeague(price: 10.50m);
         Arrange(league, isSiteAdmin: false);
 
         var act = () => _handler.Handle(new SetPrizeSchemeCommand(1, "admin-user", Request()), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*whole number of pounds*");
+        await act.Should().ThrowAsync<BusinessRuleViolationException>().WithMessage("*whole number of pounds*");
     }
 }

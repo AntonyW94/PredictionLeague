@@ -74,7 +74,7 @@ public class RemoveRejectedLeagueCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenUserIsNotMemberOfLeague()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenUserIsNotMemberOfLeague()
     {
         // Arrange
         var league = CreateLeagueWithMember("other-user", LeagueMemberStatus.Rejected);
@@ -86,12 +86,12 @@ public class RemoveRejectedLeagueCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*only remove leagues with a 'Rejected' status*");
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenMemberIsNotRejected()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenMemberIsNotRejected()
     {
         // Arrange
         var league = CreateLeagueWithMember("user-1", LeagueMemberStatus.Approved);
@@ -103,7 +103,7 @@ public class RemoveRejectedLeagueCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*only remove leagues with a 'Rejected' status*");
     }
 }

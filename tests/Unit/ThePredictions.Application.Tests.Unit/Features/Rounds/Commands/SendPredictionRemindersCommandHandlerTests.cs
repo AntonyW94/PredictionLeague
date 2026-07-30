@@ -10,6 +10,7 @@ using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.Users;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common.Exceptions;
 using ThePredictions.Domain.Models;
 using Xunit;
 
@@ -126,7 +127,7 @@ public class SendPredictionRemindersCommandHandlerTests
 
         var act = () => _handler.Handle(AdminCommand("user-1"), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<BusinessRuleViolationException>();
         await _emailService.DidNotReceiveWithAnyArgs().SendTemplatedEmailAsync(default!, default, default!);
     }
 

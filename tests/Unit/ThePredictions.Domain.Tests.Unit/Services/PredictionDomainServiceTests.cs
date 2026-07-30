@@ -4,6 +4,7 @@ using ThePredictions.Domain.Models;
 using ThePredictions.Domain.Services;
 using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Tests.Unit.Services;
 
@@ -177,7 +178,7 @@ public class PredictionDomainServiceTests
 
         var act = () => _sut.SubmitPredictions(round, "user-1", scores);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<BusinessRuleViolationException>();
     }
 
     [Fact]

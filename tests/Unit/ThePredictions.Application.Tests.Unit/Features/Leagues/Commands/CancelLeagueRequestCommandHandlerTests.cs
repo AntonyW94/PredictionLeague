@@ -62,7 +62,7 @@ public class CancelLeagueRequestCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenRequestIsApproved()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenRequestIsApproved()
     {
         // Arrange
         var member = CreateMember(LeagueMemberStatus.Approved);
@@ -74,12 +74,12 @@ public class CancelLeagueRequestCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*only cancel requests that are currently pending*");
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenRequestIsRejected()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenRequestIsRejected()
     {
         // Arrange
         var member = CreateMember(LeagueMemberStatus.Rejected);
@@ -91,7 +91,7 @@ public class CancelLeagueRequestCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*only cancel requests that are currently pending*");
     }
 }

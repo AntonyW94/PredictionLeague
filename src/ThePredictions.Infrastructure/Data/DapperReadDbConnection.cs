@@ -55,10 +55,11 @@ public class DapperReadDbConnection(
         {
             // Dapper reports a result-set/result-record mismatch ("A parameterless default constructor or
             // one matching signature ... is required for ... materialization") and a single-row query that
-            // returned multiple rows as a plain InvalidOperationException. The API error middleware maps
-            // that type to 400 Bad Request and a Warning because handlers throw it for business rules, so
-            // an unreported server-side defect would look like a client mistake. Translate it into a
-            // dedicated type that lands in the middleware's unhandled bucket - Error and 500 - instead.
+            // returned multiple rows as a plain InvalidOperationException. Wrapping it names the failure in
+            // the log message instead of leaving a bare Dapper exception to be interpreted.
+            //
+            // This no longer decides the severity: InvalidOperationException is itself reported as an Error
+            // and a 500 (see ADR-0016), so an untranslated read fault is filed correctly regardless.
             throw new ReadQueryFailedException(exception);
         }
         finally

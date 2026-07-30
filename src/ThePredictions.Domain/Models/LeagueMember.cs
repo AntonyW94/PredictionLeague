@@ -1,6 +1,7 @@
 using Ardalis.GuardClauses;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Models;
 
@@ -61,7 +62,7 @@ public class LeagueMember
     public void Approve(IDateTimeProvider dateTimeProvider)
     {
         if (Status != LeagueMemberStatus.Pending)
-            throw new InvalidOperationException("Only pending members can be approved.");
+            throw new BusinessRuleViolationException("Only pending members can be approved.");
 
         Status = LeagueMemberStatus.Approved;
         ApprovedAtUtc = dateTimeProvider.UtcNow;
@@ -70,7 +71,7 @@ public class LeagueMember
     public void Reject()
     {
         if (Status != LeagueMemberStatus.Pending)
-            throw new InvalidOperationException("Only pending members can be rejected.");
+            throw new BusinessRuleViolationException("Only pending members can be rejected.");
 
         Status = LeagueMemberStatus.Rejected;
         IsAlertDismissed = false;
@@ -84,7 +85,7 @@ public class LeagueMember
     public void Archive()
     {
         if (Status != LeagueMemberStatus.Approved)
-            throw new InvalidOperationException("Only approved members can archive a league.");
+            throw new BusinessRuleViolationException("Only approved members can archive a league.");
 
         IsArchivedByUser = true;
     }

@@ -99,7 +99,9 @@ git config core.hooksPath .githooks
 
 ### Read failures are server faults, not client errors
 
-Dapper reports a result-set/result-record mismatch as a plain `InvalidOperationException`, the same type handlers throw for business rules, which the API error middleware maps to 400 Bad Request and logs at Warning. `DapperReadDbConnection` therefore translates any `InvalidOperationException` out of a read into `ReadQueryFailedException`, so materialisation bugs surface as a 500 and an Error rather than hiding in the client-error bucket.
+Dapper reports a result-set/result-record mismatch as a plain `InvalidOperationException`. `DapperReadDbConnection` translates any `InvalidOperationException` out of a read into `ReadQueryFailedException`, which names the failure in the log message instead of leaving a bare Dapper exception to be interpreted.
+
+Both types are reported as a 500 and an Error. Business rules throw `BusinessRuleViolationException` (400 and a Warning), so a materialisation bug cannot be mistaken for a client mistake - see [ADR-0016](../decisions/0016-business-rule-exception-classification.md). This used to be the other way round: `InvalidOperationException` meant "client error" and every infrastructure path had to remember to opt out, which is how a broken leaderboard spent a day logged as a Warning behind a 400.
 
 ## DateTime Handling
 
@@ -256,7 +258,7 @@ var rowsAffected = await _connection.ExecuteAsync(sql, new
 
 if (rowsAffected == 0)
 {
-    throw new InvalidOperationException("Round status has changed");
+    throw new BusinessRuleViolationException("Round status has changed");
 }
 ```
 

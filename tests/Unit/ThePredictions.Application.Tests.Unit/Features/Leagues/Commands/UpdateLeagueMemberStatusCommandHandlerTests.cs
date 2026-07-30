@@ -145,7 +145,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenInvalidStatusTransition()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenInvalidStatusTransition()
     {
         // Arrange
         var league = CreateLeague();
@@ -159,7 +159,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*status change is not permitted*");
     }
 

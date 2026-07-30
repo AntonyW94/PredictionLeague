@@ -6,6 +6,7 @@ using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Constants;
 using ThePredictions.Domain.Common.Guards;
 using ThePredictions.Domain.Models;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
@@ -28,13 +29,13 @@ public class DefinePrizeStructureCommandHandler(ILeagueRepository leagueReposito
             throw new UnauthorizedAccessException("The prize structure is now derived from the prize scheme; only a site administrator can set it manually.");
 
         if (league.EntryDeadlineUtc > dateTimeProvider.UtcNow)
-            throw new InvalidOperationException("The prize structure cannot be defined until after the entry deadline has passed.");
+            throw new BusinessRuleViolationException("The prize structure cannot be defined until after the entry deadline has passed.");
 
         var totalPrizePot = league.Price * league.Members.Count;
         var totalAllocatedPrizes = request.PrizeSettings.Sum(p => p.PrizeAmount * p.Multiplier);
 
         if (totalAllocatedPrizes != totalPrizePot)
-            throw new InvalidOperationException("The total allocated prize money must equal the total prize pot.");
+            throw new BusinessRuleViolationException("The total allocated prize money must equal the total prize pot.");
 
         var prizeSettings = request.PrizeSettings.Select(p => LeaguePrizeSetting.Create(
             request.LeagueId,

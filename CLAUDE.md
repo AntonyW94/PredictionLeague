@@ -132,7 +132,7 @@ private record OverallLeaderboardQueryResult(..., long? SnapshotRank, ...);  // 
 private record OverallLeaderboardQueryResult(..., int? SnapshotRank, ...);   // CORRECT - widens in the C# mapping
 ```
 
-`RANK()` / `ROW_NUMBER()` / `COUNT_BIG()` are `bigint` (`long`); `COUNT()` and `SUM()` over an `int` column are `int`. To confirm what Dapper will see without running the app, run `EXEC sys.sp_describe_first_result_set @tsql = N'...', @params = N'...'` and read `system_type_name`. Read failures are server faults: `DapperReadDbConnection` translates Dapper's `InvalidOperationException` into `ReadQueryFailedException` so they are logged as Errors and returned as 500s instead of being mistaken for business-rule 400s. See [`docs/guides/database.md`](docs/guides/database.md#result-mapping).
+`RANK()` / `ROW_NUMBER()` / `COUNT_BIG()` are `bigint` (`long`); `COUNT()` and `SUM()` over an `int` column are `int`. To confirm what Dapper will see without running the app, run `EXEC sys.sp_describe_first_result_set @tsql = N'...', @params = N'...'` and read `system_type_name`. Read failures are server faults, logged as Errors and returned as 500s. Business rules throw `BusinessRuleViolationException` for the 400/Warning bucket, so a materialisation bug can never be mistaken for a client mistake - see [ADR-0016](docs/decisions/0016-business-rule-exception-classification.md) and [`docs/guides/database.md`](docs/guides/database.md#result-mapping).
 
 ### Testing & Code Coverage
 

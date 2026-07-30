@@ -2,6 +2,7 @@ using FluentAssertions;
 using ThePredictions.Domain.Models;
 using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
@@ -70,7 +71,7 @@ public class LeaguePayoutTests
 
         var act = () => payout.MarkPaid(_dateTimeProvider);
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<BusinessRuleViolationException>();
     }
 
     [Fact]

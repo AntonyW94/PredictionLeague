@@ -368,6 +368,6 @@ public class Round
 // Usage in handler
 if (!round.CanAcceptPredictions())
 {
-    throw new InvalidOperationException("Round is not accepting predictions");
+    throw new BusinessRuleViolationException("Round is not accepting predictions");
 }
 ```

@@ -3,6 +3,7 @@ using MediatR;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Guards;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Admin.Competitions.Commands;
 
@@ -18,7 +19,7 @@ public class DeleteCompetitionCommandHandler(
         Guard.Against.EntityNotFound(request.Id, competition, "Competition");
 
         if (await competitionRepository.HasSeasonsAsync(request.Id, cancellationToken))
-            throw new InvalidOperationException("Cannot delete a competition that still has seasons.");
+            throw new BusinessRuleViolationException("Cannot delete a competition that still has seasons.");
 
         await competitionRepository.DeleteAsync(request.Id, cancellationToken);
     }

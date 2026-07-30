@@ -98,7 +98,7 @@ public class CreateCheckoutSessionCommandHandlerTests
 
         var act = () => _handler.Handle(new CreateCheckoutSessionCommand(UserId, SeasonId, SeasonPassTier.Standard), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<BusinessRuleViolationException>();
         await _paymentService.DidNotReceiveWithAnyArgs().CreateCheckoutSessionAsync(default!, CancellationToken.None);
     }
 
@@ -110,7 +110,7 @@ public class CreateCheckoutSessionCommandHandlerTests
 
         var act = () => _handler.Handle(new CreateCheckoutSessionCommand(UserId, SeasonId, SeasonPassTier.Standard), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<BusinessRuleViolationException>();
         await _paymentService.DidNotReceiveWithAnyArgs().CreateCheckoutSessionAsync(default!, CancellationToken.None);
     }
 
@@ -123,7 +123,7 @@ public class CreateCheckoutSessionCommandHandlerTests
 
         var act = () => _handler.Handle(new CreateCheckoutSessionCommand(UserId, SeasonId, SeasonPassTier.Standard), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<BusinessRuleViolationException>();
         await _paymentService.DidNotReceiveWithAnyArgs().CreateCheckoutSessionAsync(default!, CancellationToken.None);
     }
 
@@ -134,7 +134,7 @@ public class CreateCheckoutSessionCommandHandlerTests
 
         var act = () => _handler.Handle(new CreateCheckoutSessionCommand(UserId, SeasonId, SeasonPassTier.Premium), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<BusinessRuleViolationException>();
     }
 
     [Fact]

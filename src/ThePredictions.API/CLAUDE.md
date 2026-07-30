@@ -98,13 +98,18 @@ Exceptions are automatically mapped to HTTP responses:
 | `KeyNotFoundException` | 404 Not Found | Entity not found |
 | `EntityNotFoundException` | 404 Not Found | Custom not found |
 | `ArgumentException` | 400 Bad Request | Invalid argument |
-| `InvalidOperationException` | 400 Bad Request | Invalid state/action |
+| `BusinessRuleViolationException` | 400 Bad Request | A rule the caller could have satisfied |
 | `ValidationException` | 400 Bad Request | FluentValidation failure |
 | `UnauthorizedAccessException` | 401 Unauthorized | Auth failure |
 | `ReadQueryFailedException` | 500 Internal Error | A read query failed to execute or materialise |
+| `InvalidOperationException` | 500 Internal Error | A server-side defect - missing setting, misused API |
 | Other | 500 Internal Error | Unexpected errors |
 
-`InvalidOperationException` maps to **400 and a Warning** because handlers throw it for business rules, so data-access faults must never reach the middleware as that type. `DapperReadDbConnection` translates Dapper's `InvalidOperationException` (result-set/result-record mismatches, single-row queries returning multiple rows) into `ReadQueryFailedException`, which falls through to the unhandled bucket and is logged as an Error with a 500 response. Never throw a raw `InvalidOperationException` for an infrastructure failure.
+**Business rules throw `BusinessRuleViolationException`** (400 and a Warning) - the caller asked for something the current state does not allow, so the fault is the request's. `InvalidOperationException` is **not** caught by the middleware: it falls through to the unhandled bucket and is reported as an Error with a 500.
+
+That split is deliberately fail-safe. An unclassified fault is reported as a server problem, which is the assumption that degrades gracefully - the reverse default hid real breakage (a missing Stripe key, a result set that would not materialise) in the client-error bucket, where no alert looks for it and the 400 tells the user they did something wrong. See [ADR-0016](../../docs/decisions/0016-business-rule-exception-classification.md).
+
+Never throw `BusinessRuleViolationException` for an infrastructure or configuration failure, and never assume a bare `InvalidOperationException` from a library means a client mistake.
 
 ### Throwing Errors in Handlers
 
@@ -113,9 +118,13 @@ Exceptions are automatically mapped to HTTP responses:
 if (league is null)
     throw new KeyNotFoundException($"League with ID {id} not found");
 
-// Invalid operation
+// Business rule - the caller could have satisfied this
 if (!round.CanAcceptPredictions())
-    throw new InvalidOperationException("Round is not accepting predictions");
+    throw new BusinessRuleViolationException("Round is not accepting predictions");
+
+// Server-side defect - a missing setting is not the caller's fault
+var templateId = _brevoSettings.Templates?.PasswordReset
+    ?? throw new InvalidOperationException("PasswordReset email template ID is not configured");
 
 // Unauthorised
 if (league.AdministratorUserId != userId)

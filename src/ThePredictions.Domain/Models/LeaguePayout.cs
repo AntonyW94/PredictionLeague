@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Ardalis.GuardClauses;
 using ThePredictions.Domain.Common;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Models;
 
@@ -71,7 +72,7 @@ public class LeaguePayout
     public void MarkPaid(IDateTimeProvider dateTimeProvider)
     {
         if (IsPaid)
-            throw new InvalidOperationException("This payout has already been marked as paid.");
+            throw new BusinessRuleViolationException("This payout has already been marked as paid.");
 
         var now = dateTimeProvider.UtcNow;
         PaidAtUtc = now;

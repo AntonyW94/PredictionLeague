@@ -4,6 +4,7 @@ using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.Competitions;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Models;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Admin.Competitions.Commands;
 
@@ -18,7 +19,7 @@ public class CreateCompetitionCommandHandler(
 
         var existing = await competitionRepository.GetByCodeAsync(request.Code, cancellationToken);
         if (existing != null)
-            throw new InvalidOperationException($"A competition with code '{request.Code}' already exists.");
+            throw new BusinessRuleViolationException($"A competition with code '{request.Code}' already exists.");
 
         var competition = Competition.Create(request.Code, request.Name, request.Type, request.LogoUrl, request.Description, request.ApiLeagueId, dateTimeProvider);
 

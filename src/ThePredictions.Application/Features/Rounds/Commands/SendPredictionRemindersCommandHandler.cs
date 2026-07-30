@@ -7,6 +7,7 @@ using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Rounds;
 using ThePredictions.Domain.Common;
+using ThePredictions.Domain.Common.Exceptions;
 using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Rounds.Commands;
@@ -41,7 +42,7 @@ public class SendPredictionRemindersCommandHandler(
 
         var nowUtc = dateTimeProvider.UtcNow;
         if (round.IsClosedForPredictions(nowUtc))
-            throw new InvalidOperationException("The prediction deadline for this round has passed, so reminders can no longer be sent.");
+            throw new BusinessRuleViolationException("The prediction deadline for this round has passed, so reminders can no longer be sent.");
 
         var requestedUserIds = request.UserIds.Distinct().ToList();
         if (requestedUserIds.Count == 0)

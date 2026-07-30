@@ -1,6 +1,7 @@
 using Ardalis.GuardClauses;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Models;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Services;
 
@@ -17,7 +18,7 @@ public class PredictionDomainService(IDateTimeProvider dateTimeProvider)
         // locked the semi-finals), the per-match filter below keeps the already-locked matches untouched and
         // accepts predictions for the open ones.
         if (round.IsClosedForPredictions(utcNow))
-            throw new InvalidOperationException("The deadline for submitting predictions for this round has passed.");
+            throw new BusinessRuleViolationException("The deadline for submitting predictions for this round has passed.");
 
         var matchesById = round.Matches.ToDictionary(m => m.Id);
 

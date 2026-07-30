@@ -1,6 +1,7 @@
 using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Models;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Common.Prizes;
 
@@ -32,7 +33,7 @@ public static class PrizeSchemeFactory
     public static int ToWholePounds(decimal price)
     {
         if (price != decimal.Truncate(price))
-            throw new InvalidOperationException("The entry fee must be a whole number of pounds when prizes are enabled.");
+            throw new BusinessRuleViolationException("The entry fee must be a whole number of pounds when prizes are enabled.");
 
         return (int)price;
     }

@@ -63,7 +63,7 @@ public class DismissRejectedNotificationCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenMemberIsNotRejected()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenMemberIsNotRejected()
     {
         // Arrange
         var member = CreateMember(LeagueMemberStatus.Pending);
@@ -75,12 +75,12 @@ public class DismissRejectedNotificationCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*notification cannot be dismissed*");
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenMemberIsApproved()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenMemberIsApproved()
     {
         // Arrange
         var member = CreateMember(LeagueMemberStatus.Approved);
@@ -92,7 +92,7 @@ public class DismissRejectedNotificationCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*notification cannot be dismissed*");
     }
 }

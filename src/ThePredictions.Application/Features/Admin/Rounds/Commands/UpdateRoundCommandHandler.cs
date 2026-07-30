@@ -3,6 +3,7 @@ using MediatR;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Guards;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Commands;
 
@@ -48,7 +49,7 @@ public class UpdateRoundCommandHandler(IRoundRepository roundRepository, ICurren
           
             var matchesWithPredictions = await roundRepository.GetMatchIdsWithPredictionsAsync(matchIdsToDelete, cancellationToken);
             if (matchesWithPredictions.Any())
-                throw new InvalidOperationException("Cannot delete a match that already has user predictions.");
+                throw new BusinessRuleViolationException("Cannot delete a match that already has user predictions.");
             
             foreach (var matchToRemove in matchesToDelete)
             {
