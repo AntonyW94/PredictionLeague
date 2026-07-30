@@ -99,6 +99,30 @@ A MediatR handler that depends on a service the host never registers is **invisi
 
 When you add a handler with a new dependency, run this project. If it needs a configuration value read at registration time (or in an eagerly-built singleton constructor), add that key to the in-memory configuration in `BuildConfiguration()`.
 
+## Dapper Result Mapping / Schema Check
+
+The same blind spot applies to SQL. A query whose `SELECT` no longer matches its result record is
+**invisible to `dotnet build` and to handler unit tests**, for exactly the reason above: those tests
+mock `IApplicationReadDbConnection`, so no SQL runs. The failure surfaces as an
+`InvalidOperationException` when a real user loads the page.
+
+`tools/ThePredictions.SchemaCheck` closes that gap by asking SQL Server what each read actually
+returns and comparing it with the type being materialised:
+
+```bash
+dotnet run --project tools/ThePredictions.SchemaCheck
+```
+
+It reads the connection string from `PREDICTIONS_DEV_DB`. Exit `0` is clean, `1` means a read cannot
+materialise, `2` means the tool could not run. `--changed <paths>` narrows the sweep, and
+`git config core.hooksPath .githooks` enables a pre-push hook that checks only the reads your commits
+touch.
+
+Some reads cannot be verified and are reported as skipped rather than failures: `QueryMultiple`
+batches (SQL Server only describes a batch's first statement), multi-mapping overloads that split
+columns with `splitOn`, and types whose base class sits outside the scanned source. Treat those as
+still needing care by hand.
+
 ## Test Conventions
 
 ### Test Project Structure
