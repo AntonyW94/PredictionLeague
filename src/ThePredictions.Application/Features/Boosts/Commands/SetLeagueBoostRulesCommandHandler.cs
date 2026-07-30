@@ -5,6 +5,7 @@ using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Constants;
 using ThePredictions.Domain.Common.Guards;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Boosts.Commands;
 
@@ -26,7 +27,7 @@ public class SetLeagueBoostRulesCommandHandler(
         var alreadySet = await boostRuleRepository.HasRulesAsync(request.LeagueId, cancellationToken);
 
         if (alreadySet && !isSiteAdmin)
-            throw new InvalidOperationException("The league's boosts have already been set and can only be changed by a site administrator.");
+            throw new BusinessRuleViolationException("The league's boosts have already been set and can only be changed by a site administrator.");
 
         if (!alreadySet && !isLeagueAdmin && !isSiteAdmin)
             throw new UnauthorizedAccessException("Only the league administrator can set the league's boosts.");

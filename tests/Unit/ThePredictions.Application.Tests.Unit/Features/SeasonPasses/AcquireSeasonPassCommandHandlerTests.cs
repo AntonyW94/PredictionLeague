@@ -103,7 +103,7 @@ public class AcquireSeasonPassCommandHandlerTests
         var act = () => _handler.Handle(new AcquireSeasonPassCommand(UserId, SeasonId), CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<BusinessRuleViolationException>();
         await _seasonPassRepository.DidNotReceiveWithAnyArgs().AddAsync(default!, CancellationToken.None);
     }
 

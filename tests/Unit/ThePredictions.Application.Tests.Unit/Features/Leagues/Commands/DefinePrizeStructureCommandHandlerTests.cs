@@ -172,7 +172,7 @@ public class DefinePrizeStructureCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenEntryDeadlineHasNotPassed()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenEntryDeadlineHasNotPassed()
     {
         // Arrange
         var league = CreateLeagueWithMembers(
@@ -191,12 +191,12 @@ public class DefinePrizeStructureCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*entry deadline has passed*");
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenTotalPrizesDoNotMatchPot()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenTotalPrizesDoNotMatchPot()
     {
         // Arrange
         var league = CreateLeagueWithMembers(price: 10m, memberCount: 3); // Total pot = 30
@@ -216,7 +216,7 @@ public class DefinePrizeStructureCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*total allocated prize money must equal*");
     }
 }

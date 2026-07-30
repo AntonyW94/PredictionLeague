@@ -105,7 +105,7 @@ public class JoinLeagueCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenNoLeagueIdOrEntryCode()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenNoLeagueIdOrEntryCode()
     {
         // Arrange
         var command = new JoinLeagueCommand("new-user", "Jane", "Doe", LeagueId: null, EntryCode: null);
@@ -114,7 +114,7 @@ public class JoinLeagueCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*LeagueId*EntryCode*");
     }
 
@@ -159,7 +159,7 @@ public class JoinLeagueCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenJoiningPrivateLeagueByLeagueId()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenJoiningPrivateLeagueByLeagueId()
     {
         // Arrange — listing a private league exposes its id, so the by-id path must reject it (code required)
         var league = CreateLeague(id: 5, entryCode: "ABC123");
@@ -171,7 +171,7 @@ public class JoinLeagueCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*entry code*");
         await _leagueRepository.DidNotReceive().UpdateAsync(Arg.Any<League>(), Arg.Any<CancellationToken>());
     }

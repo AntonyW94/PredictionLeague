@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Guards;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Admin.Seasons.Commands;
 
@@ -21,7 +22,7 @@ public class DeleteSeasonCommandHandler(
 
         var hasPredictions = await seasonRepository.HasPredictionsAsync(request.SeasonId, cancellationToken);
         if (hasPredictions)
-            throw new InvalidOperationException("Cannot delete a season that has predictions. Remove all predictions first.");
+            throw new BusinessRuleViolationException("Cannot delete a season that has predictions. Remove all predictions first.");
 
         await seasonRepository.DeleteAsync(request.SeasonId, cancellationToken);
 

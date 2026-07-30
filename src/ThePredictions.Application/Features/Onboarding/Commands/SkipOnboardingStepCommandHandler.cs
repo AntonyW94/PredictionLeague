@@ -1,6 +1,7 @@
 using Ardalis.GuardClauses;
 using MediatR;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Onboarding.Commands;
 
@@ -13,7 +14,7 @@ public class SkipOnboardingStepCommandHandler(IOnboardingSkipRepository onboardi
         Guard.Against.NullOrWhiteSpace(request.StepKey);
 
         if (!OnboardingStepRegistry.OptionalKeys.Contains(request.StepKey))
-            throw new InvalidOperationException($"Onboarding step '{request.StepKey}' cannot be skipped.");
+            throw new BusinessRuleViolationException($"Onboarding step '{request.StepKey}' cannot be skipped.");
 
         await onboardingSkipRepository.AddSkipsAsync(request.UserId, [request.StepKey], cancellationToken);
     }

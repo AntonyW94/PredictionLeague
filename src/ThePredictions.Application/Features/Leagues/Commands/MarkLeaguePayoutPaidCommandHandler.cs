@@ -5,6 +5,7 @@ using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Common.Guards;
 using ThePredictions.Domain.Models;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
@@ -28,7 +29,7 @@ public class MarkLeaguePayoutPaidCommandHandler(
         var rounds = await roundRepository.GetAllForSeasonAsync(league.SeasonId, cancellationToken);
         var seasonComplete = rounds.Count > 0 && rounds.Values.All(r => r.Status == RoundStatus.Completed);
         if (!seasonComplete)
-            throw new InvalidOperationException("Payouts cannot be marked as paid until the season is complete.");
+            throw new BusinessRuleViolationException("Payouts cannot be marked as paid until the season is complete.");
 
         var payout = await leaguePayoutRepository.GetByLeagueAndUserAsync(request.LeagueId, request.WinnerUserId, cancellationToken);
 
@@ -36,7 +37,7 @@ public class MarkLeaguePayoutPaidCommandHandler(
         {
             var total = await winningsRepository.GetUserLeagueTotalAsync(request.LeagueId, request.WinnerUserId, cancellationToken);
             if (total <= 0)
-                throw new InvalidOperationException("This player has no winnings to pay out in this league.");
+                throw new BusinessRuleViolationException("This player has no winnings to pay out in this league.");
 
             payout = LeaguePayout.Create(request.LeagueId, request.WinnerUserId, total, dateTimeProvider);
         }

@@ -6,6 +6,7 @@ using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Common.Guards;
 using ThePredictions.Domain.Models;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
@@ -21,7 +22,7 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ILeagu
         // rejected for private leagues so that listing them in Available Leagues never exposes a way to
         // bypass the code.
         if (request.LeagueId.HasValue && league!.EntryCode is not null)
-            throw new InvalidOperationException("This league requires an entry code to join.");
+            throw new BusinessRuleViolationException("This league requires an entry code to join.");
 
         await seasonAccessService.EnsureCanParticipateAsync(request.JoiningUserId, league!.SeasonId, cancellationToken);
 
@@ -49,7 +50,7 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ILeagu
         if (!string.IsNullOrWhiteSpace(request.EntryCode))
             return await leagueRepository.GetByEntryCodeAsync(request.EntryCode, cancellationToken);
 
-        throw new InvalidOperationException("Either a LeagueId or an EntryCode must be provided.");
+        throw new BusinessRuleViolationException("Either a LeagueId or an EntryCode must be provided.");
     }
 
     private async Task NotifyAsync(League league, JoinLeagueCommand request, CancellationToken cancellationToken)

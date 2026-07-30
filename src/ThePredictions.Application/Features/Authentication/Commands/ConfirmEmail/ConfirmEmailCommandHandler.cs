@@ -2,6 +2,7 @@ using MediatR;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Authentication.Commands.ConfirmEmail;
 
@@ -17,17 +18,17 @@ public class ConfirmEmailCommandHandler(
     {
         var token = await tokenRepository.GetByTokenAsync(request.Token, cancellationToken);
         if (token is null)
-            throw new InvalidOperationException(InvalidLinkMessage);
+            throw new BusinessRuleViolationException(InvalidLinkMessage);
 
         if (token.IsExpired(dateTimeProvider))
         {
             await tokenRepository.DeleteByUserIdAsync(token.UserId, cancellationToken);
-            throw new InvalidOperationException(InvalidLinkMessage);
+            throw new BusinessRuleViolationException(InvalidLinkMessage);
         }
 
         var user = await userManager.FindByIdAsync(token.UserId);
         if (user is null)
-            throw new InvalidOperationException(InvalidLinkMessage);
+            throw new BusinessRuleViolationException(InvalidLinkMessage);
 
         if (!user.EmailConfirmed)
         {

@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Ardalis.GuardClauses;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Models;
 
@@ -61,7 +62,7 @@ public class TournamentRoundMapping
         var stages = GetStageList();
 
         if (!stages.Any())
-            throw new InvalidOperationException("Mapping has no valid stages.");
+            throw new BusinessRuleViolationException("Mapping has no valid stages.");
 
         return stages[0];
     }

@@ -3,6 +3,7 @@ using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
 using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
@@ -175,7 +176,7 @@ public class LeagueMemberTests
         var act = () => member.Approve(_dateTimeProvider);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Should().Throw<BusinessRuleViolationException>()
             .WithMessage("*pending*");
     }
 
@@ -195,7 +196,7 @@ public class LeagueMemberTests
         var act = () => member.Approve(_dateTimeProvider);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Should().Throw<BusinessRuleViolationException>()
             .WithMessage("*pending*");
     }
 
@@ -264,7 +265,7 @@ public class LeagueMemberTests
         var act = () => member.Reject();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Should().Throw<BusinessRuleViolationException>()
             .WithMessage("*pending*");
     }
 
@@ -284,7 +285,7 @@ public class LeagueMemberTests
         var act = () => member.Reject();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Should().Throw<BusinessRuleViolationException>()
             .WithMessage("*pending*");
     }
 
@@ -364,7 +365,7 @@ public class LeagueMemberTests
         var act = () => member.Archive();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Should().Throw<BusinessRuleViolationException>()
             .WithMessage("*approved*");
     }
 
@@ -384,7 +385,7 @@ public class LeagueMemberTests
         var act = () => member.Archive();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Should().Throw<BusinessRuleViolationException>()
             .WithMessage("*approved*");
     }
 

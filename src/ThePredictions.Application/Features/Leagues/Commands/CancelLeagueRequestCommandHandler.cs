@@ -3,6 +3,7 @@ using MediatR;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Common.Guards;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
@@ -14,7 +15,7 @@ public class CancelLeagueRequestCommandHandler(ILeagueMemberRepository leagueMem
         Guard.Against.EntityNotFound(request.UserId, member, "League Join Request");
      
         if (member.Status != LeagueMemberStatus.Pending)
-            throw new InvalidOperationException("You can only cancel requests that are currently pending.");
+            throw new BusinessRuleViolationException("You can only cancel requests that are currently pending.");
 
         await leagueMemberRepository.DeleteAsync(member, cancellationToken);
     }

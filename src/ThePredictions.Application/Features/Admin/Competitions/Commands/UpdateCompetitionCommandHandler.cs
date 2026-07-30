@@ -3,6 +3,7 @@ using MediatR;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Guards;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Admin.Competitions.Commands;
 
@@ -19,7 +20,7 @@ public class UpdateCompetitionCommandHandler(
 
         var existingWithCode = await competitionRepository.GetByCodeAsync(request.Code, cancellationToken);
         if (existingWithCode != null && existingWithCode.Id != request.Id)
-            throw new InvalidOperationException($"A competition with code '{request.Code}' already exists.");
+            throw new BusinessRuleViolationException($"A competition with code '{request.Code}' already exists.");
 
         competition.UpdateDetails(request.Code, request.Name, request.Type, request.LogoUrl, request.Description, request.ApiLeagueId);
 

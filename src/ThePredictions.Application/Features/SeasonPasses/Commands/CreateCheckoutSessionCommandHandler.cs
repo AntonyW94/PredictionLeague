@@ -42,15 +42,15 @@ public class CreateCheckoutSessionCommandHandler(
         Guard.Against.EntityNotFound(request.SeasonId, season, nameof(Season));
 
         if (!season!.RequiresPayment)
-            throw new InvalidOperationException($"Season (ID: {request.SeasonId}) is free; acquire the pass instead of paying.");
+            throw new BusinessRuleViolationException($"Season (ID: {request.SeasonId}) is free; acquire the pass instead of paying.");
 
         if (await seasonPassRepository.ExistsForUserSeasonAsync(request.UserId, request.SeasonId, cancellationToken))
-            throw new InvalidOperationException($"User (ID: {request.UserId}) already holds a pass for season (ID: {request.SeasonId}).");
+            throw new BusinessRuleViolationException($"User (ID: {request.UserId}) already holds a pass for season (ID: {request.SeasonId}).");
 
         // A user with no prior records is trial-eligible and must never be charged; they acquire a free trial instead.
         var priorRecordCount = await seasonPassRepository.CountForUserAsync(request.UserId, cancellationToken);
         if (priorRecordCount == 0)
-            throw new InvalidOperationException($"User (ID: {request.UserId}) is eligible for a free trial; acquire the pass instead of paying.");
+            throw new BusinessRuleViolationException($"User (ID: {request.UserId}) is eligible for a free trial; acquire the pass instead of paying.");
 
         var (amountToCharge, smsFeePaid) = ResolvePricing(season, request.Tier);
 
@@ -81,7 +81,7 @@ public class CreateCheckoutSessionCommandHandler(
             return (season.PassStandardPrice!.Value, 0m);
 
         if (!season.PassPremiumPrice.HasValue)
-            throw new InvalidOperationException($"Season (ID: {season.Id}) does not offer a Premium pass.");
+            throw new BusinessRuleViolationException($"Season (ID: {season.Id}) does not offer a Premium pass.");
 
         var smsFeePaid = season.PassPremiumPrice.Value - season.PassStandardPrice!.Value;
         return (season.PassPremiumPrice.Value, smsFeePaid);

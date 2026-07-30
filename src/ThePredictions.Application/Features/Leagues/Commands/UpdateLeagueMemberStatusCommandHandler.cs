@@ -4,6 +4,7 @@ using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Common.Guards;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
@@ -34,7 +35,7 @@ public class UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepo
                 break;
             
             default:
-                throw new InvalidOperationException("This status change is not permitted.");
+                throw new BusinessRuleViolationException("This status change is not permitted.");
         }
 
         await leagueMemberRepository.UpdateAsync(member, cancellationToken);

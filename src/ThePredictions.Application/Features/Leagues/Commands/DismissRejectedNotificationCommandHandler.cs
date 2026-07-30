@@ -3,6 +3,7 @@ using MediatR;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Common.Guards;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
@@ -14,7 +15,7 @@ public class DismissRejectedNotificationCommandHandler(ILeagueMemberRepository l
         Guard.Against.EntityNotFound(request.UserId, member, "League Notification");
 
         if (member.Status != LeagueMemberStatus.Rejected)
-            throw new InvalidOperationException("This notification cannot be dismissed.");
+            throw new BusinessRuleViolationException("This notification cannot be dismissed.");
 
         member.DismissAlert();
 

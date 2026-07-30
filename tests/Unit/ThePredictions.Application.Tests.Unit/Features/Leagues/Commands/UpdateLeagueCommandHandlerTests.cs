@@ -108,7 +108,7 @@ public class UpdateLeagueCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenEntryDeadlineHasPassed()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenEntryDeadlineHasPassed()
     {
         // Arrange
         var league = CreateLeague(
@@ -123,12 +123,12 @@ public class UpdateLeagueCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*entry deadline has passed*");
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperationException_WhenPriceChangedAndOtherMembersExist()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenPriceChangedAndOtherMembersExist()
     {
         // Arrange
         var members = new List<LeagueMember?>
@@ -153,7 +153,7 @@ public class UpdateLeagueCommandHandlerTests
         var act = () => _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<BusinessRuleViolationException>()
             .WithMessage("*entry fee cannot be changed*");
     }
 

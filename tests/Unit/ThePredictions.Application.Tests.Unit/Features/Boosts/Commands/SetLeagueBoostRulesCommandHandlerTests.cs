@@ -66,7 +66,7 @@ public class SetLeagueBoostRulesCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowInvalidOperation_WhenAlreadySetAndNotSiteAdmin()
+    public async Task Handle_ShouldThrowBusinessRuleViolation_WhenAlreadySetAndNotSiteAdmin()
     {
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(CreateLeague());
         _boostRuleRepository.HasRulesAsync(1, Arg.Any<CancellationToken>()).Returns(true);
@@ -74,7 +74,7 @@ public class SetLeagueBoostRulesCommandHandlerTests
 
         var act = () => _handler.Handle(new SetLeagueBoostRulesCommand(1, "admin-user", Selections()), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<BusinessRuleViolationException>();
     }
 
     [Fact]

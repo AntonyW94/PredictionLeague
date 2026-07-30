@@ -3,6 +3,7 @@ using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
 using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
@@ -64,7 +65,7 @@ public class LeaguePrizeSchemeOnLeagueTests
 
         var act = () => league.SetPrizeScheme(CreateScheme(10));
 
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<BusinessRuleViolationException>();
     }
 
     [Fact]

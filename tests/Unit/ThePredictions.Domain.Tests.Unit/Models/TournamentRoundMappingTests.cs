@@ -2,6 +2,7 @@ using FluentAssertions;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
 using Xunit;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
@@ -200,7 +201,7 @@ public class TournamentRoundMappingTests
         var act = () => mapping.GetPrimaryStage();
 
         // Assert
-        act.Should().Throw<InvalidOperationException>();
+        act.Should().Throw<BusinessRuleViolationException>();
     }
 
     #endregion
