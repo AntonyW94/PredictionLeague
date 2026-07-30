@@ -132,7 +132,9 @@ private record OverallLeaderboardQueryResult(..., long? SnapshotRank, ...);  // 
 private record OverallLeaderboardQueryResult(..., int? SnapshotRank, ...);   // CORRECT - widens in the C# mapping
 ```
 
-`RANK()` / `ROW_NUMBER()` / `COUNT_BIG()` are `bigint` (`long`); `COUNT()` and `SUM()` over an `int` column are `int`. To confirm what Dapper will see without running the app, run `EXEC sys.sp_describe_first_result_set @tsql = N'...', @params = N'...'` and read `system_type_name`. Read failures are server faults, logged as Errors and returned as 500s. Business rules throw `BusinessRuleViolationException` for the 400/Warning bucket, so a materialisation bug can never be mistaken for a client mistake - see [ADR-0016](docs/decisions/0016-business-rule-exception-classification.md) and [`docs/guides/database.md`](docs/guides/database.md#result-mapping).
+`RANK()` / `ROW_NUMBER()` / `COUNT_BIG()` are `bigint` (`long`); `COUNT()` and `SUM()` over an `int` column are `int`.
+
+**Do not check this by hand - run the schema check.** `dotnet run --project tools/ThePredictions.SchemaCheck` verifies *every* Dapper read in `src/` against the shape SQL Server actually returns, and exits non-zero on anything that cannot materialise. Unit tests cannot catch this class of bug because handler tests mock `IApplicationReadDbConnection`, so no SQL ever runs. Enable the pre-push hook once per clone with `git config core.hooksPath .githooks` and it checks the reads your commits touch before they reach a shared branch. To inspect a single query manually, `EXEC sys.sp_describe_first_result_set @tsql = N'...', @params = N'...'` and read `system_type_name`. Read failures are server faults, logged as Errors and returned as 500s. Business rules throw `BusinessRuleViolationException` for the 400/Warning bucket, so a materialisation bug can never be mistaken for a client mistake - see [ADR-0016](docs/decisions/0016-business-rule-exception-classification.md) and [`docs/guides/database.md`](docs/guides/database.md#result-mapping).
 
 ### Testing & Code Coverage
 
@@ -271,6 +273,7 @@ dotnet run --project src/ThePredictions.API      # Run API
 dotnet run --project src/ThePredictions.Web      # Run Blazor client
 dotnet build ThePredictions.sln                  # Build all
 tools\Test Coverage\coverage-unit.bat              # Run unit tests + coverage report
+dotnet run --project tools/ThePredictions.SchemaCheck   # Verify every Dapper read against SQL Server
 ```
 
 ## Claude Code on the Web — Installing the .NET SDK
