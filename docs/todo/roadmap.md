@@ -33,7 +33,7 @@ Items already completed are listed at the bottom. Work top-to-bottom within each
 | 14 | Command handler unit tests (Phase 5) | Medium | Test business logic orchestration with mocked repositories | [Detailed plan](architecture/test-suite/README.md) |
 | 15 | Code consistency audit | Medium | Clean up tech debt now that patterns are established | [Outline](architecture/code-consistency-audit/README.md) |
 | 16 | Query performance monitoring | Medium | Slow-query logging shipped (see Already Complete); remaining work is reviewing logged slow queries to add missing indexes | [Outline](architecture/query-monitoring/README.md) |
-| 17 | E2E tests with Playwright (Phase 7) | High | Confidence for critical user journeys | [Detailed plan](architecture/test-suite/README.md) |
+| 17 | E2E tests with Playwright | High | **Moved up (2026-07-30).** The remaining backlog is mostly UX journeys, so building the harness first means each feature adds its own test rather than accruing retrospective debt - and a leaderboard broke in production on 30 July with 1,647 green unit tests. Stage 1 is a smoke suite against dev needing no seeder | [Detailed plan](architecture/e2e-testing/README.md) |
 
 ---
 

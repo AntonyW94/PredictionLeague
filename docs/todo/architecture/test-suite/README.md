@@ -37,11 +37,24 @@ The codebase is **well-structured for testing**. The Clean Architecture with CQR
 | Domain Service Unit Tests | ✅ Excellent | Pure unit tests |
 | Validator Unit Tests | ✅ Excellent | Pure unit tests |
 | Command Handler Unit Tests | ✅ Good | Mock repositories with NSubstitute |
-| Query Handler Integration Tests | ✅ Good | SQLite in-memory database |
-| Repository Integration Tests | ✅ Good | SQLite in-memory database |
-| API Integration Tests | ✅ Good | WebApplicationFactory with SQLite |
+| Query Handler Integration Tests | ⚠️ Not on SQLite | Needs real SQL Server - see note below |
+| Repository Integration Tests | ⚠️ Not on SQLite | Needs real SQL Server - see note below |
+| API Integration Tests | ⚠️ Not on SQLite | WebApplicationFactory, but against real SQL Server |
 | E2E Tests | ✅ Good | Playwright on GitHub Actions |
 | Blazor Component Tests | ⚠️ Moderate | bUnit library (optional) |
+
+> **Correction (2026-07-30): the SQLite premise above is dead.** The queries are heavily T-SQL
+> specific - 73 uses of `ISNULL(`, 29 `SELECT TOP`, 22 `GETUTCDATE()`, 19 `CAST(... AS bit)`, 17
+> `OUTER APPLY`, 4 `SET TRANSACTION ISOLATION`. They would not run on SQLite, let alone pass.
+> Integration tests at these tiers need a real SQL Server, which means the container stack described
+> in [`../e2e-testing/README.md`](../e2e-testing/README.md).
+>
+> Much of the value Phases 3-4 were sold on - "catches SQL bugs" - is already covered by
+> `tools/ThePredictions.SchemaCheck`, which validates every Dapper read against real SQL Server and
+> is far cheaper to run. See [`../../../guides/testing.md`](../../../guides/testing.md).
+>
+> **Phase 7 (E2E) has been pulled forward** ahead of Phases 3-6 and now has its own plan:
+> [`../e2e-testing/README.md`](../e2e-testing/README.md).
 
 ### Cost Summary
 
