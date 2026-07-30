@@ -101,6 +101,11 @@ All of these are **listed with a reason** in the `Skipped` section rather than p
   tool does not model the split. The two in the repositories were checked by hand.
 - **Non-constant SQL.** SQL that is not a compile-time constant cannot be resolved. Interpolated strings and
   concatenations built from constants *are* folded, as are `CommandDefinition`s held in a local.
+- **Generic result types.** The type argument is read at the call site, so a read routed through a shared
+  helper taking `<T>` resolves to `T` and is skipped - one unresolvable entry standing in for every read
+  behind it. Call Dapper directly with a concrete type in each method instead. `BadgeEvaluationRepository`
+  hid 12 reads this way, 9 of them positional records that throw on drift; it now has a comment saying not
+  to factor them back into a helper.
 - **Types with the same name in different files** resolve same-file-first, and are skipped if that is
   ambiguous rather than guessed at.
 

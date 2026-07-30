@@ -116,8 +116,10 @@ tests/
     │   │   └── Guards/            → Guard clause extension tests
     │   ├── Models/                → Entity tests (one file per entity)
     │   └── Services/              → Domain service tests
-    └── ThePredictions.Infrastructure.Tests.Unit/
-        └── Data/                  → Read/write connection behaviour (no database required)
+    ├── ThePredictions.Infrastructure.Tests.Unit/
+    │   └── Data/                  → Read/write connection behaviour (no database required)
+    └── ThePredictions.API.Tests.Unit/
+        └── Middleware/            → Exception-to-status mapping (see ADR-0016)
 ```
 
 ### Test Naming

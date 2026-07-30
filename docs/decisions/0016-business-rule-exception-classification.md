@@ -44,8 +44,8 @@ An unclassified fault is therefore reported as a server problem. That is the ass
 
 **Neutral / notes**
 - `ReadQueryFailedException` is kept. It no longer decides severity, but it names the failure in the log message rather than leaving a bare Dapper exception to be read.
-- The repository-read gap is narrowed, not closed: a mismatch there is now logged correctly, but is still only caught at runtime. Giving `BadgeEvaluationRepository` non-generic reads that `SchemaCheck` can resolve is follow-up work.
-- `ErrorHandlingMiddleware` has no unit tests, so this mapping is verified by reading it. Worth covering separately.
+- The repository-read gap is narrowed, not closed: a mismatch there is now logged correctly, but is still only caught at runtime. **Followed up:** `BadgeEvaluationRepository` now calls Dapper directly with concrete result types, so `SchemaCheck` resolves all 12 of its reads (they check clean). The remaining unchecked reads are the `QueryMultiple` batches and multi-mapping overloads listed in that tool's README.
+- `ErrorHandlingMiddleware` had no unit tests, so this mapping was verified by reading it. **Followed up:** `tests/Unit/ThePredictions.API.Tests.Unit/Middleware/ErrorHandlingMiddlewareTests.cs` covers each branch, asserting log level as well as status code. Reinstating the old `catch (InvalidOperationException)` branch fails three of them.
 
 ## Alternatives considered
 

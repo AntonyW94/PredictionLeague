@@ -5,6 +5,12 @@ using ThePredictions.Application.Repositories;
 
 namespace ThePredictions.Infrastructure.Repositories;
 
+// Every read calls Dapper directly with a concrete result type rather than through a shared generic
+// helper. These reads materialise positional records (UserCount, RoundUserResult, SocialiteAward, ...),
+// which throw at runtime on any result-set drift, and a helper taking <T> hides the result type from
+// ThePredictions.SchemaCheck: it resolves the type argument at the call site, so a generic one leaves
+// every read here unchecked. Keep the CommandDefinition in a local - the tool folds that - and do not
+// factor these back into a helper.
 public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext)
     : RepositoryBase(connectionFactory, transactionContext), IBadgeEvaluationRepository
 {
@@ -18,7 +24,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             FROM [RoundResults]
             WHERE [RoundId] = @RoundId;";
 
-        return (await QueryAsync<RoundUserResult>(sql, new { RoundId = roundId }, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, new { RoundId = roundId }, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<RoundUserResult>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<UserCount>> GetSeasonCumulativeExactsAsync(int seasonId, int roundNumber, CancellationToken cancellationToken)
@@ -33,7 +41,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
                 AND r.[RoundNumber] <= @RoundNumber
             GROUP BY rr.[UserId];";
 
-        return (await QueryAsync<UserCount>(sql, new { SeasonId = seasonId, RoundNumber = roundNumber }, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, new { SeasonId = seasonId, RoundNumber = roundNumber }, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<UserCount>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<UserCount>> GetStreaksEndingAtRoundAsync(int seasonId, int roundNumber, CancellationToken cancellationToken)
@@ -83,7 +93,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             FROM Islands i
             JOIN MaxRound m ON i.[LastRn] = m.MaxRn;";
 
-        return (await QueryAsync<UserCount>(sql, new { SeasonId = seasonId, RoundNumber = roundNumber }, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, new { SeasonId = seasonId, RoundNumber = roundNumber }, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<UserCount>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<UserLeague>> GetRoundWinnersAsync(int roundId, CancellationToken cancellationToken)
@@ -101,7 +113,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             FROM Ranked
             WHERE Rnk = 1;";
 
-        return (await QueryAsync<UserLeague>(sql, new { RoundId = roundId }, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, new { RoundId = roundId }, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<UserLeague>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<string>> GetBeatTheCrowdUsersAsync(int roundId, int minimumCrowd, CancellationToken cancellationToken)
@@ -159,7 +173,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             FROM Preds p
             JOIN MinorityMatches mm ON mm.[MatchId] = p.[MatchId] AND p.[PredOutcome] = mm.[ActualOutcome];";
 
-        return (await QueryAsync<string>(sql, new { RoundId = roundId, MinimumCrowd = minimumCrowd }, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, new { RoundId = roundId, MinimumCrowd = minimumCrowd }, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<string>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<SocialiteAward>> GetSocialiteAwardsAsync(CancellationToken cancellationToken)
@@ -177,7 +193,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             FROM Ordered
             WHERE [Rn] IN (1, 3, 5);";
 
-        return (await QueryAsync<SocialiteAward>(sql, null, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, null, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<SocialiteAward>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<AccountBadgeAward>> GetAccountBadgeAwardsAsync(CancellationToken cancellationToken)
@@ -216,7 +234,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             ) v
             WHERE v.Rn = 2;";
 
-        return (await QueryAsync<AccountBadgeAward>(sql, null, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, null, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<AccountBadgeAward>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<MonthStageWinner>> GetMonthWinnersAsync(int seasonId, CancellationToken cancellationToken)
@@ -267,7 +287,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             JOIN MonthMeta mm ON mm.Mth = rk.Mth
             WHERE rk.Rnk = 1 AND rk.Pts > 0;";
 
-        return (await QueryAsync<MonthStageWinner>(sql, new { SeasonId = seasonId }, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, new { SeasonId = seasonId }, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<MonthStageWinner>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<MonthStageWinner>> GetStageWinnersAsync(int seasonId, CancellationToken cancellationToken)
@@ -318,7 +340,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             JOIN StageMeta sm ON sm.Stage = rk.Stage
             WHERE rk.Rnk = 1 AND rk.Pts > 0;";
 
-        return (await QueryAsync<MonthStageWinner>(sql, new { SeasonId = seasonId }, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, new { SeasonId = seasonId }, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<MonthStageWinner>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<UserLeagueRank>> GetSeasonStandingsAsync(int seasonId, CancellationToken cancellationToken)
@@ -344,7 +368,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             SELECT [UserId] AS UserId, [LeagueId] AS LeagueId, [Rnk] AS Rank
             FROM Ranked;";
 
-        return (await QueryAsync<UserLeagueRank>(sql, new { SeasonId = seasonId }, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, new { SeasonId = seasonId }, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<UserLeagueRank>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<string>> GetEverPresentUsersAsync(int seasonId, CancellationToken cancellationToken)
@@ -372,7 +398,9 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             CROSS JOIN TotalMatches t
             WHERE t.Cnt > 0 AND up.Cnt >= t.Cnt;";
 
-        return (await QueryAsync<string>(sql, new { SeasonId = seasonId }, cancellationToken)).ToList();
+        var command = new CommandDefinition(sql, new { SeasonId = seasonId }, transaction: Transaction, cancellationToken: cancellationToken);
+
+        return (await Connection.QueryAsync<string>(command)).ToList();
     }
 
     public async Task<IReadOnlyList<int>> GetCompletedRoundIdsAsync(CancellationToken cancellationToken)
@@ -383,12 +411,8 @@ public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, I
             WHERE r.[Status] = 'Completed'
             ORDER BY r.[SeasonId], r.[RoundNumber];";
 
-        return (await QueryAsync<int>(sql, null, cancellationToken)).ToList();
-    }
+        var command = new CommandDefinition(sql, null, transaction: Transaction, cancellationToken: cancellationToken);
 
-    private async Task<IEnumerable<T>> QueryAsync<T>(string sql, object? parameters, CancellationToken cancellationToken)
-    {
-        var command = new CommandDefinition(sql, parameters, transaction: Transaction, cancellationToken: cancellationToken);
-        return await Connection.QueryAsync<T>(command);
+        return (await Connection.QueryAsync<int>(command)).ToList();
     }
 }
