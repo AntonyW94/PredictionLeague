@@ -4,7 +4,9 @@ This guide covers the testing tools, conventions, and coverage requirements for 
 
 ## Coverage Requirement
 
-The Domain project **must maintain 100% line and 100% branch coverage**. This is enforced by running the coverage report after any code or test changes.
+**Every project targets 100% line and branch coverage**, with `[ExcludeFromCodeCoverage]` for what is deliberately not tested - see [Coverage: 100% Everywhere](#coverage-100-everywhere-with-deliberate-exclusions) for why, and for the exclusion policy.
+
+**Enforced today on Domain only.** The gate extends per project as each one reaches 100%; Domain must not regress. Run the coverage report after any code or test change.
 
 ## Tools
 
@@ -90,6 +92,43 @@ Click any class name to see a line-by-line view with green (covered) and red (un
 ### Branch Coverage
 
 Branch coverage tracks every possible path through `if`, `switch`, `??`, ternary (`? :`), and pattern matching expressions. A single `if` statement creates 2 branches (true and false). The `??` operator also creates 2 branches (null and non-null).
+
+## Coverage: 100% Everywhere, With Deliberate Exclusions
+
+The target is **100% line and branch on every project**, not just Domain.
+
+The reason is not that 100% means more confidence than 95%. It is that **100% is a ratchet with no
+slack**. Any lower threshold leaves a buffer where new untested code lands silently until the buffer
+fills, and nobody can tell which commit spent it. At 100%, untested code fails the build at once,
+and the only way past is to type `[ExcludeFromCodeCoverage]` - which appears in a diff where it can
+be questioned. The exclusion turns "we forgot" into "we decided".
+
+### `[ExcludeFromCodeCoverage]` means deliberately not worth testing
+
+It does **not** mean "not written yet". The moment it becomes a to-do marker, the ratchet stops
+meaning anything. Pair it with a reason:
+
+```csharp
+// SQL correctness is verified by tools/ThePredictions.SchemaCheck; the mapping is exercised E2E.
+[ExcludeFromCodeCoverage]
+public class GetOverallLeaderboardQueryHandler(...)
+```
+
+Reasonable exclusions: positional result records, data-only Contracts DTOs, ORM-only constructors,
+`Program.cs` wiring, controllers that only forward to MediatR, and query handlers whose body is a
+SQL string plus a mapping - a unit test there mocks `IApplicationReadDbConnection`, so it verifies
+neither the SQL nor the `SELECT`-to-record alignment.
+
+### Enforcement is per project, and rolls out gradually
+
+`/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Today only
+`ThePredictions.Domain.Tests.Unit` references it; the rest use `coverlet.collector` alone, so they
+are measured but not gated.
+
+Extending the gate is one package reference per test project. **Do it only when that project has
+actually reached 100%**, in the same PR - never as a big-bang flip, which would leave CI red for
+weeks and destroy the signal the gate exists to give. Update the rule in the root `CLAUDE.md` as
+each project locks, so the documented rule always matches what CI enforces.
 
 ## Composition / Container Validation
 

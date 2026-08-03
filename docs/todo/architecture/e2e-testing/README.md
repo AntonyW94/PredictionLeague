@@ -27,6 +27,27 @@ against deployed dev now, and a fully isolated stack with a seeded database late
 The staging is the whole point. The expensive, opinionated part of E2E is the **seeder**, and
 building it first means guessing which scenarios matter before a single test exists.
 
+## Sequencing decision (2026-07-30)
+
+**Feature work is paused until the test debt is paid down.** The agreed order, which is also the
+order of worklist items 14-16:
+
+| Step | Work | Worklist |
+|------|------|----------|
+| 1 | **Prove the harness.** Playwright wired up with one or two login journeys, nothing more | 14 |
+| 2 | **Retrospective unit tests to 100%** line and branch on every project, using `[ExcludeFromCodeCoverage]` for what is deliberately not tested. See `../test-suite/README.md` | 15 |
+| 3 | **Stage 2 stack, then retrospective E2E for every UI feature** | 16 |
+| 4 | Resume feature work | 17 onwards |
+
+**Step 3 contains a dependency worth seeing early.** "E2E every UI feature" cannot be done against
+deployed dev: submitting a prediction needs a round whose deadline has not passed, admin flows need
+rounds in specific states, prize flows need completed results. None of that is reliable against data
+that shifts on every refresh. So the Stage 2 container and seeder are **prerequisites** for step 3,
+not an optional later upgrade - which makes step 3 by some distance the largest of the four.
+
+Step 1 remains deliberately tiny. Its only job is to prove the harness runs in CI and can drive a
+real browser against the deployed site, before any effort goes into the seeder.
+
 ---
 
 ## Stage 1 - Smoke suite against deployed dev
