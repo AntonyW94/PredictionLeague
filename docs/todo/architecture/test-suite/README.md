@@ -57,11 +57,24 @@ The codebase is **well-structured for testing**. The Clean Architecture with CQR
 | Domain Service Unit Tests | ✅ Excellent | Pure unit tests |
 | Validator Unit Tests | ✅ Excellent | Pure unit tests |
 | Command Handler Unit Tests | ✅ Good | Mock repositories with NSubstitute |
-| Query Handler Integration Tests | ✅ Good | SQLite in-memory database |
-| Repository Integration Tests | ✅ Good | SQLite in-memory database |
-| API Integration Tests | ✅ Good | WebApplicationFactory with SQLite |
+| Query Handler Integration Tests | ⚠️ Not on SQLite | Needs real SQL Server - see note below |
+| Repository Integration Tests | ⚠️ Not on SQLite | Needs real SQL Server - see note below |
+| API Integration Tests | ⚠️ Not on SQLite | WebApplicationFactory, but against real SQL Server |
 | E2E Tests | ✅ Good | Playwright on GitHub Actions |
 | Blazor Component Tests | ⚠️ Moderate | bUnit library (optional) |
+
+> **Correction (2026-07-30): the SQLite premise above is dead.** The queries are heavily T-SQL
+> specific - 73 uses of `ISNULL(`, 29 `SELECT TOP`, 22 `GETUTCDATE()`, 19 `CAST(... AS bit)`, 17
+> `OUTER APPLY`, 4 `SET TRANSACTION ISOLATION`. They would not run on SQLite, let alone pass.
+> Integration tests at these tiers need a real SQL Server, which means the container stack described
+> in [`../e2e-testing/README.md`](../e2e-testing/README.md).
+>
+> Much of the value Phases 3-4 were sold on - "catches SQL bugs" - is already covered by
+> `tools/ThePredictions.SchemaCheck`, which validates every Dapper read against real SQL Server and
+> is far cheaper to run. See [`../../../guides/testing.md`](../../../guides/testing.md).
+>
+> **Phase 7 (E2E) has been pulled forward** ahead of Phases 3-6 and now has its own plan:
+> [`../e2e-testing/README.md`](../e2e-testing/README.md).
 
 ### Cost Summary
 
@@ -1022,6 +1035,74 @@ ThePredictions.sln
 ```
 
 ---
+
+## 12a. Coverage Ratchet - 100% On Every Project (decided 2026-07-30)
+
+The target is **100% line and branch on every project**, with `[ExcludeFromCodeCoverage]` marking
+what is deliberately not tested.
+
+### Why 100% and not 80%
+
+Not because 100% means more confidence than 95% - it does not. Because **100% is a ratchet with no
+slack**. At any lower threshold there is a buffer, so new untested code lands silently until the
+buffer fills, and nobody knows which commit spent it. At 100%, untested code fails immediately, and
+the only way past is to type `[ExcludeFromCodeCoverage]` - which lands in a diff where it can be
+seen and challenged.
+
+The exclusion is the point. It converts "we forgot" into "we decided".
+
+### `[ExcludeFromCodeCoverage]` means deliberately not worth testing
+
+It does **not** mean "not done yet". The moment it becomes a to-do marker the ratchet stops meaning
+anything. Always pair it with a comment saying why, e.g. on a query handler:
+
+```csharp
+// SQL correctness is verified by tools/ThePredictions.SchemaCheck; the mapping is exercised E2E.
+[ExcludeFromCodeCoverage]
+```
+
+Expected exclusions: positional result records, data-only DTOs in Contracts, ORM-only constructors,
+`Program.cs` wiring, thin controllers that only forward to MediatR, and query handlers whose body is
+a SQL string plus a mapping.
+
+That last one deserves saying plainly: a query handler unit test mocks
+`IApplicationReadDbConnection`, so it tests neither the SQL nor the `SELECT`-to-record alignment.
+**The leaderboard failure of 2026-07-30 would have passed such a test.** `SchemaCheck` catches that
+class; a mock cannot.
+
+### How it is enforced, and why it is currently Domain-only
+
+`/p:Threshold=100` with `ThresholdType=line,branch` is already in `ci.yml`, but it is only honoured
+by **`coverlet.msbuild`**, and only `ThePredictions.Domain.Tests.Unit` references that package. The
+other seven test projects reference `coverlet.collector` alone, each carrying the comment:
+
+> `<!-- No coverlet.msbuild - 100% coverage threshold only applies to Domain tests per CLAUDE.md -->`
+
+So the gate exists and is deliberately scoped. Extending it is one package reference per test
+project - not a new CI system.
+
+### Migration: per-project ratchet, never a big-bang flip
+
+Adding `coverlet.msbuild` to `Application.Tests.Unit` today turns CI red for weeks - 86 of 144
+handlers are untested - and a permanently red build destroys the signal the gate exists to provide.
+
+**Bring one project to 100%, then add `coverlet.msbuild` to its test project in the same PR.** CI
+stays green throughout and each project locks behind you. Update the root `CLAUDE.md` testing rule
+as each one locks, so the documented rule always matches what CI actually enforces.
+
+Suggested order, most to least tractable:
+
+1. **Validators** - pure functions, already well covered
+2. **Application (commands)** - real orchestration, mockable repositories, the genuine prize
+3. **Application (queries)** - largely exclusions, decided handler by handler
+4. **Web.Client** - bUnit for components with logic; markup-only components excluded
+5. **Infrastructure** - mostly exclusions until the Stage 2 container exists, since unit-testing a
+   Dapper repository means mocking the database
+6. **API, Web** - mostly exclusions; covered by E2E
+
+The rejected alternative was blanket-excluding everything untested and flipping the threshold on
+everywhere at once. It gives the ratchet from day one, but leaves the codebase full of exclusions
+meaning "not done yet" - which is exactly the meaning the attribute must not acquire.
 
 ## 13. Implementation Priority
 

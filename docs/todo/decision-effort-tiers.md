@@ -40,6 +40,12 @@ CI green) and open a PR for review. No input needed until review.
   `ApiErrorResponse` contract.
 - **query-monitoring** - slow-query logging (~500ms threshold) shipped 2026-07-25; the residual (reviewing the logged slow queries to add missing indexes) is judgement work, not hands-off.
 
+- **architecture/e2e-testing** - Playwright smoke suite. **Stage 1 is hands-off**: it needs no
+  seeder, because `TestAccountCreator` already provisions `testplayer@dev.local` and
+  `testadmin@dev.local` on every dev refresh. Stage 2 (container + seeded database) is *not*
+  hands-off - it needs decisions on isolation and which scenarios to construct, listed as open
+  questions in the plan.
+
 July 2026 review plans, all fully specified with decisions already made:
 
 - **security/server-validation-gap** - revive client validation, add the server
