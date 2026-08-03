@@ -105,21 +105,45 @@ These items are known constraints of the current architecture. Each has a remedi
 
 ---
 
+### 8. Third-Party Logo Remains In Git History
+
+| Attribute | Value |
+|-----------|-------|
+| **Files** | `src/ThePredictions.Web.Client/wwwroot/images/Logo.png`, `lion-outline-logo.jpg` (deleted 2026-07-28) |
+| **Finding** | Both were the Premier League's lion crest, used as site branding. Deleted from the working tree and unpublished from dev and production, but they remain reachable in earlier commits of a **public** repository |
+| **Status** | **Open decision, not yet accepted** |
+
+**What was done.** The files were deleted (`20286433`) and are gone from both environments -
+`/images/lion-outline-logo.jpg` returns 404 on production. The site's own icons (`favicon.ico`,
+`favicon-16/32.png`, `apple-touch-icon.png`) are the TP monogram and were never affected.
+
+**What was not.** `github.com/AntonyW94/ThePredictions` is public, so anyone can still retrieve both
+images from earlier commits. Purging them requires a history rewrite (`git filter-repo` or BFG) plus
+a force-push, and GitHub keeps unreachable blobs addressable by SHA until Support runs garbage
+collection. That is a destructive operation on shared history and was deliberately not done without
+an explicit decision.
+
+**Decide one of:** accept the residual exposure and move this to Accepted Design Decisions, or
+schedule the rewrite. Worth noting the product takes real payments, so a league's registered
+trademark in its history is a different risk class from an ordinary asset.
+
+---
+
 ## Scanner False Positives
 
 These items may be flagged by automated security scanners but are not vulnerabilities in this context.
 
-### 8. Missing X-XSS-Protection Header
+### 9. Missing X-XSS-Protection Header
 
 Some scanners may flag the absence of `X-XSS-Protection`. In this application, the header IS present for backwards compatibility. Modern security guidance recommends either omitting it or setting it to `0`, but we keep it for older browser support.
 
-### 9. JWT Algorithm Not Restricted
+### 10. JWT Algorithm Not Restricted
 
 Some scanners flag that JWT accepts multiple algorithms. In this application:
 - Only HS256 is issued (`AuthenticationTokenService`) and accepted
 - A `ValidAlgorithms` allow-list (`HmacSha256`) plus an explicit 30-second `ClockSkew` are now set on `TokenValidationParameters` (July 2026), so this is closed as defence-in-depth
 
-### 10. Rate Limiting Not Detected
+### 11. Rate Limiting Not Detected
 
 Some scanners cannot detect rate limiting configured in code. This application has:
 - Global rate limit: 100 requests/minute per IP

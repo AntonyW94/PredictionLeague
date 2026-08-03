@@ -96,6 +96,12 @@ Slack integration is installed against the `The_Predictions` workspace with `#al
 and `#alerts-warnings` registered. With a single workspace connected the short handle form
 (`@slack-alerts-errors`) resolves; the account-prefixed form is only needed with several.
 
-Worth doing and not yet done: make `CorrelationId` a **facet** in Datadog. It is already on
-every log event via `CorrelationIdMiddleware`, but until it is a facet you cannot pivot from an
-error to the rest of that request.
+`CorrelationId` is a **facet** in Datadog (created 2026-08-03), so an error log can be filtered
+down to every other line from the same request. `CorrelationIdMiddleware` stamps it on every request
+via `LogContext.PushProperty`, and Serilog's `FromLogContext` enricher carries it to the sink.
+
+Note the correlation id identifies **one HTTP request**, not a user journey: the Blazor client never
+sends `X-Correlation-Id`, so the middleware generates a fresh GUID per request and a page load making
+five API calls produces five unrelated ids. Making the client generate and propagate one is a small
+change to its HTTP handler, deliberately not done - per-request tracing answers "what happened in the
+request that failed", which is what the alerting needs.
