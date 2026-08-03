@@ -8,6 +8,14 @@
 
 **High.** The production host (`ThePredictions.Web`) serves every response **without any security headers** (no CSP, no X-Content-Type-Options, no X-Frame-Options, no Referrer-Policy, no Permissions-Policy) because `UseSecurityHeaders()` is only wired into the standalone `ThePredictions.API` host, which is not what gets deployed. Fixing that is Phase 1 and is deliberately small so it can ship on its own. The remaining phases are Medium priority structural work: application-layer registrations are smeared across the Infrastructure and API `DependencyInjection` classes, the two host `Program.cs` files have drifted (the standalone API host runs with empty `IOptions` because it never binds the options sections the Web host binds), and several package/project references sit in the wrong project.
 
+> **Amendment 2026-08-03 (EctManager comparison review).** When the options bindings move into
+> the owning layers, bind them with `AddOptions<T>().Bind(...).Validate(...).ValidateOnStart()`
+> rather than plain `services.Configure<T>(...)`. Nothing currently validates any settings class,
+> so a missing Stripe key, Brevo template ID or connection string surfaces as a runtime 500 on the
+> first request that needs it - which is exactly the misfiling ADR-0016 was written about.
+> `ValidateOnStart()` turns it into a boot failure naming the missing key. EctManager does this for
+> every settings class in its worker services.
+
 All findings below were verified against the code on 2026-07-06. Line numbers refer to the files as they stand on `master` at that date; re-check them before editing because nearby commits may shift them slightly. **Where the code differs from this document, follow the code.**
 
 ## Relationship to the 2026-06 code review audit

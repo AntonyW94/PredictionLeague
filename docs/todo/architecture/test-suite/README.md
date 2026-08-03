@@ -6,6 +6,26 @@ Not Started | **In Progress** | Complete
 
 > **Verified July 2026:** Counts below are `[Fact]`/`[Theory]` method counts (actual executed cases are higher, as each `[Theory]` fans out over its `InlineData`). Test files / test methods per unit project: **Domain** 42 files / 768 methods; **Validators** 26 files / 261 methods; **Application** 49 files / 301 methods; **Web.Client** 2 files / 20 methods; **Composition** 1 file / 1 method; **Infrastructure** 1 file / 4 methods (project added July 2026 for `DapperReadDbConnection`). Phase 1 (domain, 100% line/branch coverage) and Phase 2 (validators) are complete, and command-handler unit tests have begun. Coverage of the Application command/query surface remains thin: of **134** `IRequestHandler` implementations in `src/ThePredictions.Application`, only **34** have a corresponding test file (100 untested). Phases 3-4 (query-handler and repository integration), the remainder of Phase 5 (command-handler unit), and Phases 6-8 (API, E2E, CI/CD) remain outstanding.
 
+> **Amendment 2026-08-03 (EctManager comparison review): the SQLite in-memory choice for the
+> integration tiers needs revisiting before Phase 3 starts.** Section 6 and the tables below assume
+> SQLite, but this codebase's queries depend on `RANK() OVER`, `CROSS APPLY`, `MERGE`,
+> `SCOPE_IDENTITY()` and `CAST(... AS bit)` - none of which SQLite evaluates the way SQL Server
+> does, and some of which it rejects outright. Integration tests on SQLite would therefore pass
+> against SQL the real database would reject, which is worse than no test because it reads as
+> coverage. Section 6 already half-concedes this ("test MERGE at API level or use the dev SQL Server
+> database").
+>
+> The recommended replacement, which is what EctManager does: spin a throwaway SQL Server container
+> per run (Testcontainers), **build its schema by running the committed DbUp migrations**, and reset
+> state between tests with Respawn. That has a second payoff - it becomes continuous proof that the
+> migration set builds a working schema from scratch, which nothing checks today. It also removes
+> the "which SQL can we actually test?" branch that runs through this plan.
+>
+> Worth adding alongside it: two reflection gates that fail the build when a new MediatR handler or
+> repository has no integration test class (EctManager's `HandlerCoverageGateTests` and
+> `RepositoryCoverageGateTests`). Those are what stop the suite rotting once written. This pairs with
+> roadmap item 1 (machine-enforced conventions).
+
 This document outlines the comprehensive testing strategy for the ThePredictions application, including CI/CD integration with GitHub Actions.
 
 ## Table of Contents

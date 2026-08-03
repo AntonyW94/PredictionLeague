@@ -61,6 +61,27 @@ July 2026 review plans, all fully specified with decisions already made:
   crypto to Infrastructure, provider status normalisation.
 - **architecture/build-tooling** - `Directory.Build.props` + `.editorconfig` shipped (2026-07-25); only the `AnalysisLevel` raise to `latest-recommended` remains (a cascading, multi-project code-change effort - see the plan).
 
+From the EctManager comparison, 2026-08-03 (roadmap items 1, 2, 3, 5, 6, 10; no plan
+documents yet, so work from the roadmap row until one is written):
+
+- **machine-enforced conventions** (roadmap 1) - banned-symbol analyser for
+  `DateTime.Now`/`DateTime.Today`, plus a conventions test project gating
+  no-repositories-in-query-handlers, no-`IMediator`-in-handlers and Get/Fetch naming,
+  each with a burn-down allowlist. Hands-off to build; the ~20 existing Get/Fetch
+  violations need allowlisting rather than renaming in the same PR.
+- **supply-chain & dependency hygiene** (roadmap 2) - SHA-pin the GitHub Actions,
+  add central package management, cache NuGet, lock-file the DatabaseTools project.
+- **FluentAssertions to AwesomeAssertions** (roadmap 3) - namespace-level migration off
+  a dependency that can never be updated again (7.0.0 is the last free version).
+- **`TimeProvider`** (roadmap 6) - replace the bespoke `IDateTimeProvider` with the BCL
+  type and `FakeTimeProvider` in tests.
+- **working-practice tooling** (roadmap 10) - a pre-commit-checks doc that reproduces every
+  CI gate locally, a scheduled security-audit workflow, and repo `.claude/skills`.
+
+Not hands-off, despite sitting in the same review: **multi-result-set reads** (roadmap 5)
+needs a call on which screens to batch and accepts a `SchemaCheck` blind spot, so it belongs
+behind the integration-test work rather than in this tier.
+
 ## Tier B - One quick decision, then build
 
 | Plan | The one decision needed |
