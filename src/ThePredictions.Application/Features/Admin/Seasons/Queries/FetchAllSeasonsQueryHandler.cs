@@ -47,7 +47,8 @@ public class FetchAllSeasonsQueryHandler(IApplicationReadDbConnection dbConnecti
                     ) firstRoundTeams
                 ) AS TeamCount,
                 s.[PassStandardPrice],
-                s.[PassPremiumPrice]
+                s.[PassPremiumPrice],
+                (SELECT COUNT(*) FROM [SeasonPasses] sp WHERE sp.[SeasonId] = s.[Id]) AS PassHolderCount
             FROM
                 [Seasons] s
             JOIN
@@ -75,7 +76,8 @@ public class FetchAllSeasonsQueryHandler(IApplicationReadDbConnection dbConnecti
             s.CompletedCount,
             s.TeamCount,
             s.PassStandardPrice,
-            s.PassPremiumPrice));
+            s.PassPremiumPrice,
+            s.PassHolderCount));
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
@@ -97,5 +99,6 @@ public class FetchAllSeasonsQueryHandler(IApplicationReadDbConnection dbConnecti
         int CompletedCount,
         int TeamCount,
         decimal? PassStandardPrice,
-        decimal? PassPremiumPrice);
+        decimal? PassPremiumPrice,
+        int PassHolderCount);
 }

@@ -1226,7 +1226,8 @@ main.theme-dark:has(.admin-light) .navbar-logo {
 }
 
 /* Status pills using grey-200 / grey-500 become invisible on dark. */
-.theme-dark .season-status-pill.draft {
+.theme-dark .season-status-pill.draft,
+.theme-dark .season-status-pill.free {
     background: var(--white-alpha-15);
     color: var(--white-alpha-70);
 }

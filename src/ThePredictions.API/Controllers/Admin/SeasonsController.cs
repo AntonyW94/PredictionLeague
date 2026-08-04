@@ -100,6 +100,21 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
         return Ok(result);
     }
 
+    [HttpGet("{seasonId:int}/pass-holders")]
+    [SwaggerOperation(
+        Summary = "Get the Season Pass holders for a season",
+        Description = "Returns every user who holds a Season Pass for the season, with the tier, how the pass arose, what they paid, and when. Ordered oldest first.")]
+    [SwaggerResponse(200, "Pass holders retrieved successfully", typeof(IEnumerable<SeasonPassHolderDto>))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    public async Task<ActionResult<IEnumerable<SeasonPassHolderDto>>> GetPassHoldersAsync(
+        [SwaggerParameter("Season identifier")] int seasonId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetSeasonPassHoldersQuery(seasonId);
+        return Ok(await mediator.Send(query, cancellationToken));
+    }
+
     [HttpGet("price-recommendation")]
     [SwaggerOperation(
         Summary = "Get a recommended Standard price",

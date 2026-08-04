@@ -231,7 +231,8 @@ public class CreateSeasonCommandHandler(
             competition.ApiLeagueId,
             0, 0, 0, 0, 0, 0,
             createdSeason.PassStandardPrice,
-            createdSeason.PassPremiumPrice
+            createdSeason.PassPremiumPrice,
+            0
         );
     }
 }

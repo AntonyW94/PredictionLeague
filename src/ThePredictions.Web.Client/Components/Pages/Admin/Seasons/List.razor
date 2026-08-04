@@ -95,6 +95,12 @@
                                     {
                                         <span class="season-status-pill completed">@season.CompletedCount Completed</span>
                                     }
+                                    @if (season.PassHolderCount > 0)
+                                    {
+                                        <span class="season-status-pill passes" title="Season Pass holders - open Edit to see who">
+                                            @season.PassHolderCount @(season.PassHolderCount == 1 ? "Pass" : "Passes")
+                                        </span>
+                                    }
                                 </span>
                             </div>
                             <div class="d-flex align-items-center gap-2">

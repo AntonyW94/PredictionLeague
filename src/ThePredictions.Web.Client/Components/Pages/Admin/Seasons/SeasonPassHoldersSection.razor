@@ -1,0 +1,110 @@
+@inject HttpClient Http
+
+@using System.Globalization
+@using ThePredictions.Contracts.Admin.Seasons
+@using ThePredictions.Domain.Common.Enumerations
+
+<div class="mb-2">
+    <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+        <h5 class="fw-bold mb-0">Season Pass holders</h5>
+        @if (_holders is { Count: > 0 })
+        {
+            <span class="fw-bold text-nowrap" style="color: var(--purple-1000)">
+                @_holders.Count @(_holders.Count == 1 ? "player" : "players") · @Money(TotalCollected)
+            </span>
+        }
+    </div>
+    <p class="form-text text-white-50 mb-3">
+        Everyone taking part in this season - whether they bought a pass, used their free first season, or joined a free season.
+    </p>
+
+    <ApiError Message="@_errorMessage" />
+
+    @if (_isLoading)
+    {
+        <div class="d-flex justify-content-center py-4">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (_holders is { Count: > 0 })
+    {
+        <div class="member-list">
+            @foreach (var holder in _holders)
+            {
+                <div class="member-row">
+                    <UserAvatar FullName="@holder.FullName" />
+                    <div class="member-info">
+                        <span class="member-name">@holder.FullName</span>
+                        <span class="member-date">@holder.Email</span>
+                        <span class="season-status-pills">
+                            <span class="season-status-pill @SourceClass(holder.Source)">@SourceLabel(holder.Source)</span>
+                            @if (holder.Tier == SeasonPassTier.Premium)
+                            {
+                                <span class="season-status-pill in-progress">Premium</span>
+                            }
+                        </span>
+                    </div>
+                    <div class="d-flex flex-column text-end text-nowrap">
+                        <span class="member-name">@Money(holder.AmountPaid + holder.SmsFeePaid)</span>
+                        <span class="member-date">@holder.AcquiredAtUtc.ToString("dd MMM yyyy")</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state" style="padding: var(--space-6);">
+            <span class="bi bi-ticket-perforated empty-state-icon"></span>
+            <p class="empty-state-title">No Season Pass holders yet</p>
+            <p class="empty-state-text">Players appear here as soon as they take part in this season.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly CultureInfo Uk = new("en-GB");
+
+    [Parameter, EditorRequired]
+    public int SeasonId { get; set; }
+
+    private List<SeasonPassHolderDto>? _holders;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    private decimal TotalCollected => _holders?.Sum(h => h.AmountPaid + h.SmsFeePaid) ?? 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _holders = await Http.GetFromJsonAsync<List<SeasonPassHolderDto>>($"api/admin/seasons/{SeasonId}/pass-holders") ?? [];
+        }
+        catch
+        {
+            _errorMessage = "An error occurred while loading the Season Pass holders.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string SourceLabel(SeasonPassSource source) => source switch
+    {
+        SeasonPassSource.Purchased => "Paid",
+        SeasonPassSource.Trial => "Free first season",
+        _ => "Free season"
+    };
+
+    private static string SourceClass(SeasonPassSource source) => source switch
+    {
+        SeasonPassSource.Purchased => "purchased",
+        SeasonPassSource.Trial => "trial",
+        _ => "free"
+    };
+
+    private static string Money(decimal value) => value.ToString("C2", Uk);
+}
