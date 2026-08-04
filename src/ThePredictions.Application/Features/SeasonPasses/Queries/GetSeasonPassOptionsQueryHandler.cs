@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.SeasonPasses;
-using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.SeasonPasses.Queries;
 
@@ -24,11 +23,13 @@ public class GetSeasonPassOptionsQueryHandler(IApplicationReadDbConnection dbCon
                 CAST(CASE WHEN EXISTS (SELECT 1 FROM [SeasonPasses] sp WHERE sp.[UserId] = @UserId AND sp.[SeasonId] = s.[Id]) THEN 1 ELSE 0 END AS BIT) AS AlreadyHeld,
                 CAST(CASE WHEN EXISTS (SELECT 1 FROM [Leagues] l WHERE l.[SeasonId] = s.[Id] AND l.[EntryDeadlineUtc] > GETUTCDATE()) THEN 1 ELSE 0 END AS BIT) AS EntryOpen,
                 (
-                    SELECT COUNT(DISTINCT lm.[UserId])
-                    FROM [LeagueMembers] lm
-                    INNER JOIN [Leagues] l2 ON l2.[Id] = lm.[LeagueId]
-                    WHERE l2.[SeasonId] = s.[Id]
-                        AND lm.[Status] = @ApprovedStatus
+                    -- Everyone taking part in the season, counted from the pass rather than
+                    -- from league membership: a pass is written for every participation
+                    -- (purchase, trial, or free season) and is unique per user per season,
+                    -- so it counts a player who has not picked a league yet exactly once.
+                    SELECT COUNT(*)
+                    FROM [SeasonPasses] sp2
+                    WHERE sp2.[SeasonId] = s.[Id]
                 ) AS PlayerCount,
                 (
                     SELECT MIN(l3.[EntryDeadlineUtc])
@@ -46,7 +47,7 @@ public class GetSeasonPassOptionsQueryHandler(IApplicationReadDbConnection dbCon
         var options = await dbConnection.QuerySingleOrDefaultAsync<SeasonPassOptionsQueryResult>(
             sql,
             cancellationToken,
-            new { request.UserId, request.SeasonId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+            new { request.UserId, request.SeasonId });
 
         return options is null
             ? null
