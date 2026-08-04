@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.SeasonPasses;
-using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.SeasonPasses.Queries;
 
@@ -17,11 +16,10 @@ public class GetPastSeasonPassesQueryHandler(IApplicationReadDbConnection dbConn
                 s.[Name] AS SeasonName,
                 c.[LogoUrl] AS CompetitionLogoUrl,
                 (
-                    SELECT COUNT(DISTINCT lm.[UserId])
-                    FROM [LeagueMembers] lm
-                    INNER JOIN [Leagues] l2 ON l2.[Id] = lm.[LeagueId]
-                    WHERE l2.[SeasonId] = s.[Id]
-                        AND lm.[Status] = @ApprovedStatus
+                    -- Pass holders, not league members - see GetSeasonPassOptionsQueryHandler.
+                    SELECT COUNT(*)
+                    FROM [SeasonPasses] sp2
+                    WHERE sp2.[SeasonId] = s.[Id]
                 ) AS PlayerCount
             FROM
                 [Seasons] s
@@ -52,7 +50,7 @@ public class GetPastSeasonPassesQueryHandler(IApplicationReadDbConnection dbConn
         var passes = await dbConnection.QueryAsync<PastSeasonPassQueryResult>(
             sql,
             cancellationToken,
-            new { request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+            new { request.UserId });
 
         return passes.Select(p => new PastSeasonPassDto(
             p.SeasonId,

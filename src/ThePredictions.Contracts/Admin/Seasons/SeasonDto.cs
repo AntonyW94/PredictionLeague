@@ -20,5 +20,6 @@ public record SeasonDto(
     int CompletedCount,
     int TeamCount,
     decimal? PassStandardPrice,
-    decimal? PassPremiumPrice
+    decimal? PassPremiumPrice,
+    int PassHolderCount
 ) : SeasonLookupDto(Id, Name, StartDateUtc);

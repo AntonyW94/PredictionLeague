@@ -767,6 +767,27 @@
     color: var(--white);
 }
 
+/* Season Pass source pills (how a player came to hold a pass) */
+.season-status-pill.purchased {
+    background: var(--green-600);
+    color: var(--white);
+}
+
+.season-status-pill.trial {
+    background: var(--purple-300);
+    color: var(--white);
+}
+
+.season-status-pill.free {
+    background: var(--grey-200);
+    color: var(--grey-500);
+}
+
+.season-status-pill.passes {
+    background: var(--purple-800);
+    color: var(--white);
+}
+
 .season-row-actions {
     display: flex;
     gap: var(--space-2);

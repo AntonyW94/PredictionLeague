@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.SeasonPasses;
-using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.SeasonPasses.Queries;
 
@@ -21,11 +20,10 @@ public class GetAvailableSeasonPassesQueryHandler(IApplicationReadDbConnection d
                 s.[PassPremiumPrice] AS PremiumPrice,
                 CAST(CASE WHEN (SELECT COUNT(*) FROM [SeasonPasses] WHERE [UserId] = @UserId) = 0 THEN 1 ELSE 0 END AS BIT) AS IsTrialEligible,
                 (
-                    SELECT COUNT(DISTINCT lm.[UserId])
-                    FROM [LeagueMembers] lm
-                    INNER JOIN [Leagues] l2 ON l2.[Id] = lm.[LeagueId]
-                    WHERE l2.[SeasonId] = s.[Id]
-                        AND lm.[Status] = @ApprovedStatus
+                    -- Pass holders, not league members - see GetSeasonPassOptionsQueryHandler.
+                    SELECT COUNT(*)
+                    FROM [SeasonPasses] sp2
+                    WHERE sp2.[SeasonId] = s.[Id]
                 ) AS PlayerCount,
                 (
                     SELECT MIN(l3.[EntryDeadlineUtc])
@@ -57,7 +55,7 @@ public class GetAvailableSeasonPassesQueryHandler(IApplicationReadDbConnection d
         var passes = await dbConnection.QueryAsync<AvailableSeasonPassQueryResult>(
             sql,
             cancellationToken,
-            new { request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+            new { request.UserId });
 
         return passes.Select(p => new AvailableSeasonPassDto(
             p.SeasonId,
