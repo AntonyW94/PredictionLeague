@@ -5,6 +5,7 @@ using ThePredictions.Application.Features.Admin.Seasons.Commands;
 using ThePredictions.Application.Features.Admin.Seasons.Queries;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.Seasons;
+using ThePredictions.Contracts.Common;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
 using Swashbuckle.AspNetCore.Annotations;
@@ -102,17 +103,43 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
 
     [HttpGet("{seasonId:int}/pass-holders")]
     [SwaggerOperation(
-        Summary = "Get the Season Pass holders for a season",
-        Description = "Returns every user who holds a Season Pass for the season, with the tier, how the pass arose, what they paid, and when. Ordered oldest first.")]
-    [SwaggerResponse(200, "Pass holders retrieved successfully", typeof(IEnumerable<SeasonPassHolderDto>))]
+        Summary = "Get a page of the Season Pass holders for a season",
+        Description = "Returns one sorted, filtered page of the users who hold a Season Pass for the season, with the tier, how the pass arose, what they paid, and when, plus the money collected across the whole matching set. Page size is snapped to one of the allowed sizes and the page number is clamped into range.")]
+    [SwaggerResponse(200, "Pass holders retrieved successfully", typeof(SeasonPassHoldersPageDto))]
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(403, "Not authorised - admin role required")]
-    public async Task<ActionResult<IEnumerable<SeasonPassHolderDto>>> GetPassHoldersAsync(
+    [SwaggerResponse(404, "Season not found")]
+    public async Task<ActionResult<SeasonPassHoldersPageDto>> GetPassHoldersAsync(
         [SwaggerParameter("Season identifier")] int seasonId,
+        [FromQuery, SwaggerParameter("1-based page number")] int page,
+        [FromQuery, SwaggerParameter("Rows per page (5, 10, 25, 50 or 100)")] int pageSize,
+        [FromQuery, SwaggerParameter("Column to sort by")] SeasonPassHolderSortField sortField,
+        [FromQuery, SwaggerParameter("Direction to sort in")] SortDirection sortDirection,
+        [FromQuery, SwaggerParameter("Only holders whose name contains this text")] string? nameFilter,
+        [FromQuery, SwaggerParameter("Only passes acquired on or after this date")] DateTime? acquiredFromUtc,
+        [FromQuery, SwaggerParameter("Only passes acquired on or before this date")] DateTime? acquiredToUtc,
+        [FromQuery, SwaggerParameter("Only passes with at least this total paid")] decimal? minimumPaid,
+        [FromQuery, SwaggerParameter("Only passes with at most this total paid")] decimal? maximumPaid,
         CancellationToken cancellationToken)
     {
-        var query = new GetSeasonPassHoldersQuery(seasonId);
-        return Ok(await mediator.Send(query, cancellationToken));
+        var query = new GetSeasonPassHoldersQuery(
+            seasonId,
+            page,
+            pageSize,
+            sortField,
+            sortDirection,
+            nameFilter,
+            acquiredFromUtc,
+            acquiredToUtc,
+            minimumPaid,
+            maximumPaid);
+
+        var holders = await mediator.Send(query, cancellationToken);
+
+        if (holders == null)
+            return NotFound();
+
+        return Ok(holders);
     }
 
     [HttpGet("price-recommendation")]

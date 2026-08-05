@@ -1,0 +1,375 @@
+@page "/admin/seasons/{SeasonId:int}/pass-holders"
+
+@attribute [Authorize(Roles = RoleNames.Administrator)]
+
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+@using System.Globalization
+@using Microsoft.AspNetCore.WebUtilities
+@using ThePredictions.Contracts.Admin.Seasons
+@using ThePredictions.Contracts.Common
+@using ThePredictions.Domain.Common.Enumerations
+
+<PageTitle>Season Pass Holders</PageTitle>
+
+<div class="page-container admin-light">
+    <div class="admin-table-container">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
+            <h3 class="fw-bold mb-0">Season Pass holders</h3>
+            @if (_result is not null)
+            {
+                <span class="fw-bold text-nowrap data-table-total">
+                    @_result.Holders.TotalCount @(_result.Holders.TotalCount == 1 ? "player" : "players") · @Money(_result.TotalCollected)
+                </span>
+            }
+        </div>
+
+        <p class="data-table-intro mb-4">
+            Everyone taking part in @SeasonName, whether they bought a pass, used their free first season, or joined a free season.
+        </p>
+
+        <ApiError Message="@_errorMessage" />
+
+        @if (HasAnyFilter)
+        {
+            <div class="data-table-filter-summary">
+                <span class="bi bi-funnel-fill"></span>
+                <span>@FilterSummary</span>
+                <button type="button" class="data-table-clear-all" @onclick="ClearAllFiltersAsync">Clear all filters</button>
+            </div>
+        }
+
+        @if (_result is null && _errorMessage is null)
+        {
+            <div class="d-flex justify-content-center align-items-center py-5">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (_result is not null)
+        {
+            @* With filters on, the headings stay even with no rows - they are how you unfilter.
+               With no filters and no holders, they would be chrome around nothing. *@
+            @if (_result.Holders.TotalCount > 0 || HasAnyFilter)
+            {
+            <div class="data-table-scroll @(_isRefreshing ? "refreshing" : "")">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <SortableColumnHeader Title="Player"
+                                                  IsSorted="@(_sortField == SeasonPassHolderSortField.Name)"
+                                                  CurrentDirection="_sortDirection"
+                                                  OnSortChanged="direction => SortAsync(SeasonPassHolderSortField.Name, direction)"
+                                                  IsFiltered="@HasNameFilter"
+                                                  OnClearFilter="ClearNameFilterAsync">
+                                <FilterContent>
+                                    <label class="data-table-filter-label" for="filter-name">Name contains</label>
+                                    <input id="filter-name" type="search" class="form-control" placeholder="e.g. Smith"
+                                           @bind="_nameFilter" @bind:after="ApplyFiltersAsync" />
+                                </FilterContent>
+                            </SortableColumnHeader>
+
+                            <SortableColumnHeader Title="Date purchased"
+                                                  AscendingLabel="Oldest first"
+                                                  DescendingLabel="Newest first"
+                                                  IsSorted="@(_sortField == SeasonPassHolderSortField.AcquiredAt)"
+                                                  CurrentDirection="_sortDirection"
+                                                  OnSortChanged="direction => SortAsync(SeasonPassHolderSortField.AcquiredAt, direction)"
+                                                  IsFiltered="@HasDateFilter"
+                                                  OnClearFilter="ClearDateFilterAsync">
+                                <FilterContent>
+                                    <label class="data-table-filter-label" for="filter-from">Purchased from</label>
+                                    <input id="filter-from" type="date" class="form-control"
+                                           @bind="_acquiredFromUtc" @bind:after="ApplyFiltersAsync" />
+                                    <label class="data-table-filter-label" for="filter-to">Purchased up to</label>
+                                    <input id="filter-to" type="date" class="form-control"
+                                           @bind="_acquiredToUtc" @bind:after="ApplyFiltersAsync" />
+                                </FilterContent>
+                            </SortableColumnHeader>
+
+                            <SortableColumnHeader Title="Price paid"
+                                                  Align="ColumnAlign.End"
+                                                  AscendingLabel="Lowest first"
+                                                  DescendingLabel="Highest first"
+                                                  IsSorted="@(_sortField == SeasonPassHolderSortField.TotalPaid)"
+                                                  CurrentDirection="_sortDirection"
+                                                  OnSortChanged="direction => SortAsync(SeasonPassHolderSortField.TotalPaid, direction)"
+                                                  IsFiltered="@HasPaidFilter"
+                                                  OnClearFilter="ClearPaidFilterAsync">
+                                <FilterContent>
+                                    <label class="data-table-filter-label" for="filter-minimum">At least (£)</label>
+                                    <input id="filter-minimum" type="number" step="0.01" min="0" class="form-control" placeholder="0.00"
+                                           @bind="_minimumPaid" @bind:after="ApplyFiltersAsync" />
+                                    <label class="data-table-filter-label" for="filter-maximum">At most (£)</label>
+                                    <input id="filter-maximum" type="number" step="0.01" min="0" class="form-control" placeholder="0.00"
+                                           @bind="_maximumPaid" @bind:after="ApplyFiltersAsync" />
+                                </FilterContent>
+                            </SortableColumnHeader>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var holder in _result.Holders.Items)
+                        {
+                            <tr>
+                                <td data-label="Player">
+                                    <div class="data-table-player">
+                                        <UserAvatar FullName="@holder.FullName" />
+                                        <div class="data-table-player-detail">
+                                            <span class="member-name">@holder.FullName</span>
+                                            <span class="member-date">@holder.Email</span>
+                                            <span class="season-status-pills">
+                                                <span class="season-status-pill @SourceClass(holder.Source)">@SourceLabel(holder.Source)</span>
+                                                @if (holder.Tier == SeasonPassTier.Premium)
+                                                {
+                                                    <span class="season-status-pill in-progress">Premium</span>
+                                                }
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                                @* Deliberately the UTC date, not the local one: the date filters are
+                                   applied against UTC on the server, so showing a local date could put a
+                                   row outside the range the admin has just typed in. *@
+                                <td data-label="Date purchased">
+                                    @holder.AcquiredAtUtc.ToString("dd MMM yyyy", Uk)
+                                </td>
+                                <td data-label="Price paid" class="data-table-cell-end" title="@PaidBreakdown(holder)">
+                                    @Money(holder.AmountPaid + holder.SmsFeePaid)
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+
+            @if (_result.Holders.TotalCount == 0)
+            {
+                <div class="empty-state">
+                    <span class="bi bi-ticket-perforated empty-state-icon"></span>
+                    <p class="empty-state-title">@(HasAnyFilter ? "No matching pass holders" : "No Season Pass holders yet")</p>
+                    <p class="empty-state-text">
+                        @(HasAnyFilter
+                            ? "Try widening or clearing the filters."
+                            : "Players appear here as soon as they take part in this season.")
+                    </p>
+                </div>
+            }
+
+            <TablePager Page="_result.Holders.Page"
+                        PageSize="_result.Holders.PageSize"
+                        TotalCount="_result.Holders.TotalCount"
+                        ItemNamePlural="players"
+                        OnPageChanged="GoToPageAsync"
+                        OnPageSizeChanged="ChangePageSizeAsync" />
+        }
+
+        <div class="mt-4">
+            <button class="btn red-button d-flex align-items-center" @onclick="BackToSeasons">
+                <span class="bi bi-arrow-left-circle-fill me-2"></span>Back to Seasons
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private static readonly CultureInfo Uk = new("en-GB");
+
+    [Parameter]
+    public int SeasonId { get; set; }
+
+    private SeasonPassHoldersPageDto? _result;
+    private string? _errorMessage;
+
+    /// <summary>Dims the table while a re-read is in flight, rather than flashing the spinner again.</summary>
+    private bool _isRefreshing;
+
+    private int _page = 1;
+    private int _pageSize = PageSizes.Default;
+    private SeasonPassHolderSortField _sortField = SeasonPassHolderSortField.AcquiredAt;
+    private SortDirection _sortDirection = SortDirection.Ascending;
+
+    private string? _nameFilter;
+    private DateTime? _acquiredFromUtc;
+    private DateTime? _acquiredToUtc;
+    private decimal? _minimumPaid;
+    private decimal? _maximumPaid;
+
+    private string SeasonName => _result is null ? "this season" : _result.SeasonName;
+
+    private bool HasNameFilter => !string.IsNullOrWhiteSpace(_nameFilter);
+    private bool HasDateFilter => _acquiredFromUtc.HasValue || _acquiredToUtc.HasValue;
+    private bool HasPaidFilter => _minimumPaid.HasValue || _maximumPaid.HasValue;
+    private bool HasAnyFilter => HasNameFilter || HasDateFilter || HasPaidFilter;
+
+    private string FilterSummary
+    {
+        get
+        {
+            var parts = new List<string>();
+
+            if (HasNameFilter)
+                parts.Add($"name contains \"{_nameFilter!.Trim()}\"");
+
+            if (_acquiredFromUtc.HasValue)
+                parts.Add($"purchased from {_acquiredFromUtc.Value.ToString("dd MMM yyyy", Uk)}");
+
+            if (_acquiredToUtc.HasValue)
+                parts.Add($"purchased up to {_acquiredToUtc.Value.ToString("dd MMM yyyy", Uk)}");
+
+            if (_minimumPaid.HasValue)
+                parts.Add($"paid at least {Money(_minimumPaid.Value)}");
+
+            if (_maximumPaid.HasValue)
+                parts.Add($"paid at most {Money(_maximumPaid.Value)}");
+
+            return $"Filtered by {string.Join(", ", parts)}";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _errorMessage = null;
+        _isRefreshing = _result is not null;
+
+        var parameters = new Dictionary<string, string?>
+        {
+            ["page"] = _page.ToString(CultureInfo.InvariantCulture),
+            ["pageSize"] = _pageSize.ToString(CultureInfo.InvariantCulture),
+            ["sortField"] = _sortField.ToString(),
+            ["sortDirection"] = _sortDirection.ToString()
+        };
+
+        if (HasNameFilter)
+            parameters["nameFilter"] = _nameFilter!.Trim();
+
+        if (_acquiredFromUtc.HasValue)
+            parameters["acquiredFromUtc"] = _acquiredFromUtc.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        if (_acquiredToUtc.HasValue)
+            parameters["acquiredToUtc"] = _acquiredToUtc.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        if (_minimumPaid.HasValue)
+            parameters["minimumPaid"] = _minimumPaid.Value.ToString(CultureInfo.InvariantCulture);
+
+        if (_maximumPaid.HasValue)
+            parameters["maximumPaid"] = _maximumPaid.Value.ToString(CultureInfo.InvariantCulture);
+
+        var url = QueryHelpers.AddQueryString($"api/admin/seasons/{SeasonId}/pass-holders", parameters);
+
+        try
+        {
+            _result = await Http.GetFromJsonAsync<SeasonPassHoldersPageDto>(url);
+
+            if (_result is not null)
+            {
+                // The server clamps a stale page number into range, so follow it rather than
+                // leaving the pager highlighting a page that is no longer there.
+                _page = _result.Holders.Page;
+                _pageSize = _result.Holders.PageSize;
+            }
+        }
+        catch
+        {
+            _errorMessage = "An error occurred while loading the Season Pass holders.";
+        }
+        finally
+        {
+            _isRefreshing = false;
+        }
+    }
+
+    private async Task SortAsync(SeasonPassHolderSortField field, SortDirection direction)
+    {
+        _sortField = field;
+        _sortDirection = direction;
+        _page = 1;
+
+        await LoadAsync();
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _page = 1;
+
+        await LoadAsync();
+    }
+
+    private async Task GoToPageAsync(int page)
+    {
+        _page = page;
+
+        await LoadAsync();
+    }
+
+    private async Task ChangePageSizeAsync(int pageSize)
+    {
+        _pageSize = pageSize;
+        _page = 1;
+
+        await LoadAsync();
+    }
+
+    private async Task ClearNameFilterAsync()
+    {
+        _nameFilter = null;
+
+        await ApplyFiltersAsync();
+    }
+
+    private async Task ClearDateFilterAsync()
+    {
+        _acquiredFromUtc = null;
+        _acquiredToUtc = null;
+
+        await ApplyFiltersAsync();
+    }
+
+    private async Task ClearPaidFilterAsync()
+    {
+        _minimumPaid = null;
+        _maximumPaid = null;
+
+        await ApplyFiltersAsync();
+    }
+
+    private async Task ClearAllFiltersAsync()
+    {
+        _nameFilter = null;
+        _acquiredFromUtc = null;
+        _acquiredToUtc = null;
+        _minimumPaid = null;
+        _maximumPaid = null;
+
+        await ApplyFiltersAsync();
+    }
+
+    private void BackToSeasons() => NavigationManager.NavigateTo("/admin/seasons");
+
+    private static string SourceLabel(SeasonPassSource source) => source switch
+    {
+        SeasonPassSource.Purchased => "Paid",
+        SeasonPassSource.Trial => "Free first season",
+        _ => "Free season"
+    };
+
+    private static string SourceClass(SeasonPassSource source) => source switch
+    {
+        SeasonPassSource.Purchased => "purchased",
+        SeasonPassSource.Trial => "trial",
+        _ => "free"
+    };
+
+    private static string PaidBreakdown(SeasonPassHolderDto holder) => holder.SmsFeePaid > 0
+        ? $"{Money(holder.AmountPaid)} pass + {Money(holder.SmsFeePaid)} SMS"
+        : Money(holder.AmountPaid);
+
+    private static string Money(decimal value) => value.ToString("C2", Uk);
+}

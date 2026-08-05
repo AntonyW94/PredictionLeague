@@ -1,0 +1,124 @@
+@using ThePredictions.Contracts.Common
+
+@*
+    A table heading that sorts on click and, when given FilterContent, opens a panel holding the
+    explicit sort choices plus that column's filter inputs.
+
+    The panel lives inside the <th> because anything else is invalid inside a <tr> and gets hoisted
+    out of the table by the browser. It is position: fixed rather than absolute so that it is never
+    clipped by the table's horizontal scroll container on narrow screens.
+*@
+
+<th class="data-table-heading @(Align == ColumnAlign.End ? "data-table-heading-end" : "")" scope="col">
+    <div class="data-table-heading-inner">
+        <button type="button" class="data-table-sort @(IsSorted ? "sorted" : "")" @onclick="ToggleSortAsync" title="Sort by @Title">
+            <span class="data-table-sort-title">@Title</span>
+            <span class="bi @SortIcon data-table-sort-icon"></span>
+        </button>
+
+        @if (FilterContent is not null)
+        {
+            <button type="button" class="data-table-filter-toggle @(IsFiltered ? "filtered" : "")"
+                    @onclick="TogglePanel" title="@(IsFiltered ? $"Filtered by {Title}" : $"Filter by {Title}")">
+                <span class="bi @(IsFiltered ? "bi-funnel-fill" : "bi-funnel")"></span>
+            </button>
+        }
+    </div>
+
+    @if (_panelOpen)
+    {
+        <div class="data-table-panel-backdrop" @onclick="ClosePanel"></div>
+        <div class="data-table-panel">
+            <div class="data-table-panel-header">
+                <span class="data-table-panel-title">@Title</span>
+                <button type="button" class="data-table-panel-close" @onclick="ClosePanel" title="Close">
+                    <span class="bi bi-x-lg"></span>
+                </button>
+            </div>
+
+            <div class="data-table-panel-sorts">
+                <button type="button" class="data-table-panel-sort @(IsSorted && CurrentDirection == SortDirection.Ascending ? "active" : "")"
+                        @onclick="() => SortAsync(SortDirection.Ascending)">
+                    <span class="bi bi-sort-up"></span> @AscendingLabel
+                </button>
+                <button type="button" class="data-table-panel-sort @(IsSorted && CurrentDirection == SortDirection.Descending ? "active" : "")"
+                        @onclick="() => SortAsync(SortDirection.Descending)">
+                    <span class="bi bi-sort-down"></span> @DescendingLabel
+                </button>
+            </div>
+
+            <div class="data-table-panel-filter">
+                @FilterContent
+            </div>
+
+            @if (IsFiltered)
+            {
+                <button type="button" class="data-table-panel-clear" @onclick="ClearFilterAsync">Clear this filter</button>
+            }
+        </div>
+    }
+</th>
+
+@code {
+    /// <summary>Column heading text, also used in the panel title and the button tooltips.</summary>
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = "";
+
+    /// <summary>True when the list is currently sorted by this column.</summary>
+    [Parameter]
+    public bool IsSorted { get; set; }
+
+    /// <summary>The direction the list is sorted in. Only meaningful when <see cref="IsSorted"/> is true.</summary>
+    [Parameter]
+    public SortDirection CurrentDirection { get; set; }
+
+    /// <summary>Raised with the direction to sort this column in.</summary>
+    [Parameter]
+    public EventCallback<SortDirection> OnSortChanged { get; set; }
+
+    /// <summary>True when this column has a filter applied, which fills in the funnel icon.</summary>
+    [Parameter]
+    public bool IsFiltered { get; set; }
+
+    /// <summary>This column's filter inputs. Omit it and the column sorts but does not filter.</summary>
+    [Parameter]
+    public RenderFragment? FilterContent { get; set; }
+
+    /// <summary>Raised when the user clears this column's filter.</summary>
+    [Parameter]
+    public EventCallback OnClearFilter { get; set; }
+
+    /// <summary>Wording for the two sort choices - "A → Z" reads wrong on a date or a price.</summary>
+    [Parameter]
+    public string AscendingLabel { get; set; } = "A → Z";
+
+    [Parameter]
+    public string DescendingLabel { get; set; } = "Z → A";
+
+    /// <summary>Right-align the heading to sit over a numeric column.</summary>
+    [Parameter]
+    public ColumnAlign Align { get; set; } = ColumnAlign.Start;
+
+    private bool _panelOpen;
+
+    private string SortIcon => IsSorted
+        ? CurrentDirection == SortDirection.Ascending ? "bi-sort-up" : "bi-sort-down"
+        : "bi-dash";
+
+    private void TogglePanel() => _panelOpen = !_panelOpen;
+
+    private void ClosePanel() => _panelOpen = false;
+
+    private async Task ToggleSortAsync()
+    {
+        var direction = IsSorted && CurrentDirection == SortDirection.Ascending
+            ? SortDirection.Descending
+            : SortDirection.Ascending;
+
+        await OnSortChanged.InvokeAsync(direction);
+    }
+
+    private async Task SortAsync(SortDirection direction) => await OnSortChanged.InvokeAsync(direction);
+
+    private async Task ClearFilterAsync() => await OnClearFilter.InvokeAsync();
+}
