@@ -15,6 +15,7 @@ using ThePredictions.Web.Client.Services.PricingSettings;
 using ThePredictions.Web.Client.Services.RunningCosts;
 using ThePredictions.Web.Client.Services.SeasonPasses;
 using ThePredictions.Web.Client.Services.Theme;
+using ThePredictions.Web.Client.Services.Time;
 using ThePredictions.Web.Client.ViewModels.Admin.Rounds;
 
 namespace ThePredictions.Web.Client;
@@ -49,5 +50,6 @@ public static class DependencyInjection
         services.AddScoped<EnterResultsViewModel>();
         services.AddScoped<IPageVisibilityService, PageVisibilityService>();
         services.AddScoped<LiveScorePollingService>();
+        services.AddScoped<ILocalDayBoundaryConverter, LocalDayBoundaryConverter>();
     }
 }

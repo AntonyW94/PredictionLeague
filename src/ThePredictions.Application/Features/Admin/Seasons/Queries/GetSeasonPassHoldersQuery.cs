@@ -14,8 +14,14 @@ namespace ThePredictions.Application.Features.Admin.Seasons.Queries;
 /// <param name="SortField">Column to order by.</param>
 /// <param name="SortDirection">Direction to order in.</param>
 /// <param name="NameFilter">Matches holders whose full name contains this text. Ignored when blank.</param>
-/// <param name="AcquiredFromUtc">Only passes acquired on or after this date. Time of day is ignored.</param>
-/// <param name="AcquiredToUtc">Only passes acquired on or before this date. The whole day is included.</param>
+/// <param name="AcquiredFromUtc">
+/// Only passes acquired at or after this instant. An exact instant, not a date: whoever is asking
+/// decides where their day starts, because only they know what time zone they are in.
+/// </param>
+/// <param name="AcquiredBeforeUtc">
+/// Only passes acquired strictly before this instant. Exclusive, so to cover a whole day pass the
+/// instant the following day begins.
+/// </param>
 /// <param name="MinimumPaid">Only passes whose total paid (including any SMS fee) is at least this.</param>
 /// <param name="MaximumPaid">Only passes whose total paid (including any SMS fee) is at most this.</param>
 public record GetSeasonPassHoldersQuery(
@@ -26,7 +32,7 @@ public record GetSeasonPassHoldersQuery(
     SortDirection SortDirection,
     string? NameFilter,
     DateTime? AcquiredFromUtc,
-    DateTime? AcquiredToUtc,
+    DateTime? AcquiredBeforeUtc,
     decimal? MinimumPaid,
     decimal? MaximumPaid
 ) : IRequest<SeasonPassHoldersPageDto?>;

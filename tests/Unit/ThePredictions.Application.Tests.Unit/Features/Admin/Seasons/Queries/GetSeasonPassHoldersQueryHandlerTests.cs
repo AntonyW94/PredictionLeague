@@ -191,24 +191,17 @@ public class GetSeasonPassHoldersQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldIgnoreTheTimeOfDay_WhenFilteringFromADate()
+    public async Task Handle_ShouldUseTheDateBoundsExactlyAsGiven_WhenFilteringOnDate()
     {
-        var from = new DateTime(2026, 8, 4, 17, 42, 33, DateTimeKind.Utc);
+        // Deliberately not midnight: the caller has already worked out where its day starts, so the
+        // handler must not round these to a UTC day and undo that.
+        var from = new DateTime(2026, 8, 3, 23, 0, 0, DateTimeKind.Utc);
+        var before = new DateTime(2026, 8, 4, 23, 0, 0, DateTimeKind.Utc);
 
-        await _handler.Handle(Query(acquiredFromUtc: from), CancellationToken.None);
+        await _handler.Handle(Query(acquiredFromUtc: from, acquiredBeforeUtc: before), CancellationToken.None);
 
-        SummaryParameter("AcquiredFromUtc").Should().Be(new DateTime(2026, 8, 4, 0, 0, 0, DateTimeKind.Utc));
-    }
-
-    [Fact]
-    public async Task Handle_ShouldIncludeTheWholeOfTheEndDate_WhenFilteringToADate()
-    {
-        var to = new DateTime(2026, 8, 4, 9, 15, 0, DateTimeKind.Utc);
-
-        await _handler.Handle(Query(acquiredToUtc: to), CancellationToken.None);
-
-        // Exclusive upper bound of the day after, so a pass bought at 23:59 on the 4th still matches.
-        SummaryParameter("AcquiredBeforeUtc").Should().Be(new DateTime(2026, 8, 5, 0, 0, 0, DateTimeKind.Utc));
+        SummaryParameter("AcquiredFromUtc").Should().Be(from);
+        SummaryParameter("AcquiredBeforeUtc").Should().Be(before);
     }
 
     [Fact]
@@ -251,10 +244,10 @@ public class GetSeasonPassHoldersQueryHandlerTests
         SortDirection sortDirection = SortDirection.Ascending,
         string? nameFilter = null,
         DateTime? acquiredFromUtc = null,
-        DateTime? acquiredToUtc = null,
+        DateTime? acquiredBeforeUtc = null,
         decimal? minimumPaid = null,
         decimal? maximumPaid = null) =>
-        new(seasonId, page, pageSize, sortField, sortDirection, nameFilter, acquiredFromUtc, acquiredToUtc, minimumPaid, maximumPaid);
+        new(seasonId, page, pageSize, sortField, sortDirection, nameFilter, acquiredFromUtc, acquiredBeforeUtc, minimumPaid, maximumPaid);
 
     private void GivenSummary(int matchingCount, decimal totalCollected, params SeasonPassHolderQueryResult[] rows)
     {

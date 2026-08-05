@@ -4,12 +4,14 @@
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject ILocalDayBoundaryConverter LocalDays
 
 @using System.Globalization
 @using Microsoft.AspNetCore.WebUtilities
 @using ThePredictions.Contracts.Admin.Seasons
 @using ThePredictions.Contracts.Common
 @using ThePredictions.Domain.Common.Enumerations
+@using ThePredictions.Web.Client.Services.Time
 
 <PageTitle>Season Pass Holders</PageTitle>
 
@@ -83,10 +85,10 @@
                                 <FilterContent>
                                     <label class="data-table-filter-label" for="filter-from">Purchased from</label>
                                     <input id="filter-from" type="date" class="form-control"
-                                           @bind="_acquiredFromUtc" @bind:after="ApplyFiltersAsync" />
+                                           @bind="_purchasedFrom" @bind:after="ApplyFiltersAsync" />
                                     <label class="data-table-filter-label" for="filter-to">Purchased up to</label>
                                     <input id="filter-to" type="date" class="form-control"
-                                           @bind="_acquiredToUtc" @bind:after="ApplyFiltersAsync" />
+                                           @bind="_purchasedTo" @bind:after="ApplyFiltersAsync" />
                                 </FilterContent>
                             </SortableColumnHeader>
 
@@ -131,9 +133,7 @@
                                     </div>
                                 </td>
                                 @* Shown in the admin's own time zone, as dates are everywhere else on
-                                   the site. The date filters are applied against the UTC day, so a pass
-                                   bought within an hour of midnight can sit a day either side of the
-                                   range while British Summer Time is in effect. *@
+                                   the site, and the date filters bound the local day to match. *@
                                 <td data-label="Date purchased">
                                     <LocalTime UtcDate="@holder.AcquiredAtUtc" Format="dd MMM yyyy, HH:mm" />
                                 </td>
@@ -196,13 +196,16 @@
     private SortDirection _sortDirection = SortDirection.Ascending;
 
     private string? _nameFilter;
-    private DateTime? _acquiredFromUtc;
-    private DateTime? _acquiredToUtc;
+
+    // The days the admin picked, in their own time zone. Converted to UTC instants on the way out.
+    private DateTime? _purchasedFrom;
+    private DateTime? _purchasedTo;
+
     private decimal? _minimumPaid;
     private decimal? _maximumPaid;
 
     private bool HasNameFilter => !string.IsNullOrWhiteSpace(_nameFilter);
-    private bool HasDateFilter => _acquiredFromUtc.HasValue || _acquiredToUtc.HasValue;
+    private bool HasDateFilter => _purchasedFrom.HasValue || _purchasedTo.HasValue;
     private bool HasPaidFilter => _minimumPaid.HasValue || _maximumPaid.HasValue;
     private bool HasAnyFilter => HasNameFilter || HasDateFilter || HasPaidFilter;
 
@@ -215,11 +218,11 @@
             if (HasNameFilter)
                 parts.Add($"name contains \"{_nameFilter!.Trim()}\"");
 
-            if (_acquiredFromUtc.HasValue)
-                parts.Add($"purchased from {_acquiredFromUtc.Value.ToString("dd MMM yyyy", Uk)}");
+            if (_purchasedFrom.HasValue)
+                parts.Add($"purchased from {_purchasedFrom.Value.ToString("dd MMM yyyy", Uk)}");
 
-            if (_acquiredToUtc.HasValue)
-                parts.Add($"purchased up to {_acquiredToUtc.Value.ToString("dd MMM yyyy", Uk)}");
+            if (_purchasedTo.HasValue)
+                parts.Add($"purchased up to {_purchasedTo.Value.ToString("dd MMM yyyy", Uk)}");
 
             if (_minimumPaid.HasValue)
                 parts.Add($"paid at least {Money(_minimumPaid.Value)}");
@@ -252,11 +255,13 @@
         if (HasNameFilter)
             parameters["nameFilter"] = _nameFilter!.Trim();
 
-        if (_acquiredFromUtc.HasValue)
-            parameters["acquiredFromUtc"] = _acquiredFromUtc.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        // The picked days are turned into the UTC instants that bound them here on the client,
+        // because this is the only place that knows what time zone the admin is in.
+        if (_purchasedFrom.HasValue)
+            parameters["acquiredFromUtc"] = AsInstant(await LocalDays.StartOfDayUtcAsync(_purchasedFrom.Value));
 
-        if (_acquiredToUtc.HasValue)
-            parameters["acquiredToUtc"] = _acquiredToUtc.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        if (_purchasedTo.HasValue)
+            parameters["acquiredBeforeUtc"] = AsInstant(await LocalDays.StartOfNextDayUtcAsync(_purchasedTo.Value));
 
         if (_minimumPaid.HasValue)
             parameters["minimumPaid"] = _minimumPaid.Value.ToString(CultureInfo.InvariantCulture);
@@ -328,8 +333,8 @@
 
     private async Task ClearDateFilterAsync()
     {
-        _acquiredFromUtc = null;
-        _acquiredToUtc = null;
+        _purchasedFrom = null;
+        _purchasedTo = null;
 
         await ApplyFiltersAsync();
     }
@@ -345,8 +350,8 @@
     private async Task ClearAllFiltersAsync()
     {
         _nameFilter = null;
-        _acquiredFromUtc = null;
-        _acquiredToUtc = null;
+        _purchasedFrom = null;
+        _purchasedTo = null;
         _minimumPaid = null;
         _maximumPaid = null;
 
@@ -368,6 +373,14 @@
         SeasonPassSource.Trial => "trial",
         _ => "free"
     };
+
+    /// <summary>
+    /// Formats a UTC instant for the query string with no zone designator on purpose. A trailing Z
+    /// makes model binding parse it as a zoned time and shift it into the server's own zone, which
+    /// would move the boundary on any host that is not itself on UTC. CreatedAtUtc is a zoneless
+    /// column holding UTC, so a zoneless UTC wall clock is exactly what it should be compared with.
+    /// </summary>
+    private static string AsInstant(DateTime utc) => utc.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture);
 
     private static string PaidBreakdown(SeasonPassHolderDto holder) => holder.SmsFeePaid > 0
         ? $"{Money(holder.AmountPaid)} pass + {Money(holder.SmsFeePaid)} SMS"

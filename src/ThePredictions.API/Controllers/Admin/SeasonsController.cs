@@ -104,7 +104,7 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
     [HttpGet("{seasonId:int}/pass-holders")]
     [SwaggerOperation(
         Summary = "Get a page of the Season Pass holders for a season",
-        Description = "Returns one sorted, filtered page of the users who hold a Season Pass for the season, with the tier, how the pass arose, what they paid, and when, plus the money collected across the whole matching set. Page size is snapped to one of the allowed sizes and the page number is clamped into range.")]
+        Description = "Returns one sorted, filtered page of the users who hold a Season Pass for the season, with the tier, how the pass arose, what they paid, and when, plus the money collected across the whole matching set. Page size is snapped to one of the allowed sizes and the page number is clamped into range. The acquisition bounds are exact instants rather than dates, because only the caller knows which time zone its days are measured in.")]
     [SwaggerResponse(200, "Pass holders retrieved successfully", typeof(SeasonPassHoldersPageDto))]
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(403, "Not authorised - admin role required")]
@@ -116,8 +116,8 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
         [FromQuery, SwaggerParameter("Column to sort by")] SeasonPassHolderSortField sortField,
         [FromQuery, SwaggerParameter("Direction to sort in")] SortDirection sortDirection,
         [FromQuery, SwaggerParameter("Only holders whose name contains this text")] string? nameFilter,
-        [FromQuery, SwaggerParameter("Only passes acquired on or after this date")] DateTime? acquiredFromUtc,
-        [FromQuery, SwaggerParameter("Only passes acquired on or before this date")] DateTime? acquiredToUtc,
+        [FromQuery, SwaggerParameter("Only passes acquired at or after this instant (inclusive)")] DateTime? acquiredFromUtc,
+        [FromQuery, SwaggerParameter("Only passes acquired before this instant (exclusive - for a whole day, pass the instant the next day begins)")] DateTime? acquiredBeforeUtc,
         [FromQuery, SwaggerParameter("Only passes with at least this total paid")] decimal? minimumPaid,
         [FromQuery, SwaggerParameter("Only passes with at most this total paid")] decimal? maximumPaid,
         CancellationToken cancellationToken)
@@ -130,7 +130,7 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
             sortDirection,
             nameFilter,
             acquiredFromUtc,
-            acquiredToUtc,
+            acquiredBeforeUtc,
             minimumPaid,
             maximumPaid);
 

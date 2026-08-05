@@ -84,9 +84,9 @@ public class GetSeasonPassHoldersQueryHandler(IApplicationReadDbConnection dbCon
     {
         var pageSize = PageSizes.Clamp(request.PageSize);
         var nameFilter = BuildNameFilter(request.NameFilter);
-        var acquiredFromUtc = request.AcquiredFromUtc?.Date;
-        var acquiredBeforeUtc = request.AcquiredToUtc?.Date.AddDays(1);
 
+        // The date bounds arrive as exact instants and are used as they are. Working out where a
+        // day starts and ends is the caller's job, because only the caller knows its time zone.
         var summary = await dbConnection.QuerySingleOrDefaultAsync<SeasonPassHoldersSummaryQueryResult>(
             SummarySql,
             cancellationToken,
@@ -94,8 +94,8 @@ public class GetSeasonPassHoldersQueryHandler(IApplicationReadDbConnection dbCon
             {
                 request.SeasonId,
                 NameFilter = nameFilter,
-                AcquiredFromUtc = acquiredFromUtc,
-                AcquiredBeforeUtc = acquiredBeforeUtc,
+                request.AcquiredFromUtc,
+                request.AcquiredBeforeUtc,
                 request.MinimumPaid,
                 request.MaximumPaid
             });
@@ -115,8 +115,8 @@ public class GetSeasonPassHoldersQueryHandler(IApplicationReadDbConnection dbCon
             {
                 request.SeasonId,
                 NameFilter = nameFilter,
-                AcquiredFromUtc = acquiredFromUtc,
-                AcquiredBeforeUtc = acquiredBeforeUtc,
+                request.AcquiredFromUtc,
+                request.AcquiredBeforeUtc,
                 request.MinimumPaid,
                 request.MaximumPaid,
                 SortField = request.SortField.ToString(),
