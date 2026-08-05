@@ -97,9 +97,11 @@
                                     }
                                     @if (season.PassHolderCount > 0)
                                     {
-                                        <span class="season-status-pill passes" title="Season Pass holders - open Edit to see who">
+                                        <button type="button" class="season-status-pill passes season-status-pill-link"
+                                                title="See who holds a Season Pass for this season"
+                                                @onclick="() => ViewPassHolders(season.Id)">
                                             @season.PassHolderCount @(season.PassHolderCount == 1 ? "Pass" : "Passes")
-                                        </span>
+                                        </button>
                                     }
                                 </span>
                             </div>
@@ -212,4 +214,5 @@
 
     private void EditSeason(int seasonId) => NavigationManager.NavigateTo($"/admin/seasons/edit/{seasonId}");
     private void ManageRounds(int seasonId) => NavigationManager.NavigateTo($"/admin/seasons/{seasonId}/rounds");
+    private void ViewPassHolders(int seasonId) => NavigationManager.NavigateTo($"/admin/seasons/{seasonId}/pass-holders");
 }

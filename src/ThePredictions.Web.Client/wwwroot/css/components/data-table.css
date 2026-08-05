@@ -1,0 +1,458 @@
+/* ==========================================================================
+   Data table - sortable, filterable, server-paged lists
+
+   Used with the SortableColumnHeader and TablePager shared components. Mobile
+   first: rows stack into labelled blocks at phone widths and become a real
+   table from tablet up. Dark theme overrides live in themes/dark/dark.css.
+   ========================================================================== */
+
+/* Strip between the hero and the table: the totals for the whole matching set,
+   plus what is currently being filtered out. */
+.data-table-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.data-table-total {
+    font-weight: 700;
+    color: var(--purple-1000);
+}
+
+.data-table-filter-note {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: 0.8rem;
+    color: var(--grey-500);
+}
+
+.data-table-filter-note .bi {
+    color: var(--orange);
+}
+
+/* --------------------------------------------------------------------------
+   Table shell
+   -------------------------------------------------------------------------- */
+
+.data-table-scroll {
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--bs-border-radius);
+    overflow: hidden;
+    transition: opacity 0.15s ease-in-out;
+}
+
+/* Dimmed while a re-read is in flight, so a sort or filter reads as "working"
+   without the spinner replacing the rows the admin is looking at. */
+.data-table-scroll.refreshing {
+    opacity: 0.5;
+}
+
+.data-table {
+    width: 100%;
+    margin: 0;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    color: var(--purple-1000);
+}
+
+/* --------------------------------------------------------------------------
+   Stacked rows (mobile base)
+   -------------------------------------------------------------------------- */
+
+.data-table thead {
+    display: block;
+    border-bottom: 1px solid var(--grey-200);
+}
+
+.data-table thead tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-3);
+}
+
+.data-table tbody,
+.data-table tbody tr {
+    display: block;
+}
+
+.data-table tbody tr {
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--grey-200);
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table tbody td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+}
+
+/* The column name each stacked cell would otherwise have lost with the header row. */
+.data-table tbody td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--grey-500);
+}
+
+/* The player cell carries the avatar and pills, so it stacks rather than
+   sitting on one line with its label. */
+.data-table tbody td[data-label="Player"] {
+    display: block;
+    padding-bottom: var(--space-2);
+}
+
+.data-table tbody td[data-label="Player"]::before {
+    content: none;
+}
+
+.data-table-player {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.data-table-player-detail {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Column headings
+   -------------------------------------------------------------------------- */
+
+.data-table-heading {
+    padding: 0;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.data-table-heading-inner {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.data-table-sort {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    border: none;
+    background: transparent;
+    padding: var(--space-1) 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--grey-500);
+    cursor: pointer;
+}
+
+.data-table-sort:hover,
+.data-table-sort.sorted {
+    color: var(--purple-1000);
+}
+
+.data-table-sort-icon {
+    font-size: 0.9rem;
+    color: var(--grey-300);
+}
+
+.data-table-sort.sorted .data-table-sort-icon {
+    color: var(--purple-300);
+}
+
+.data-table-filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    border: none;
+    background: transparent;
+    padding: var(--space-1);
+    font-size: 0.8rem;
+    color: var(--grey-400);
+    cursor: pointer;
+}
+
+.data-table-filter-toggle:hover {
+    color: var(--purple-300);
+}
+
+.data-table-filter-toggle.filtered {
+    color: var(--orange);
+}
+
+/* --------------------------------------------------------------------------
+   Sort and filter panel
+
+   Fixed rather than absolute so it is never clipped by the table, and so the
+   same markup reads as a centred sheet on a phone and a small panel on a
+   desktop without any positioning script.
+   -------------------------------------------------------------------------- */
+
+.data-table-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    background: var(--black-alpha-35);
+}
+
+.data-table-panel {
+    position: fixed;
+    z-index: 1051;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: min(22rem, calc(100vw - var(--space-8)));
+    padding: var(--space-4);
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--bs-border-radius);
+    box-shadow: 0 8px 24px var(--black-alpha-25);
+    white-space: normal;
+    text-align: left;
+}
+
+.data-table-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.data-table-panel-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--purple-1000);
+}
+
+.data-table-panel-close {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 0.85rem;
+    color: var(--grey-500);
+    cursor: pointer;
+}
+
+.data-table-panel-sorts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.data-table-panel-sort {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    border: 1px solid var(--grey-200);
+    background: var(--white);
+    border-radius: var(--bs-border-radius);
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--purple-1000);
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.data-table-panel-sort .bi {
+    color: var(--purple-300);
+}
+
+.data-table-panel-sort.active {
+    background: var(--purple-200-alpha-15);
+    border-color: var(--purple-300);
+    color: var(--purple-800);
+}
+
+.data-table-panel-filter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--grey-200);
+}
+
+.data-table-filter-label {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--grey-500);
+}
+
+.data-table-panel-clear {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--purple-300);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.data-table-clear-all {
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--purple-300);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   Pager
+   -------------------------------------------------------------------------- */
+
+.data-table-pager {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    font-size: 0.85rem;
+    color: var(--grey-500);
+}
+
+.data-table-pager-size {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.data-table-pager-size label {
+    margin: 0;
+    font-weight: 600;
+}
+
+.data-table-pager-size .form-select {
+    width: auto;
+    padding-top: var(--space-1);
+    padding-bottom: var(--space-1);
+    font-size: 0.85rem;
+}
+
+.data-table-pager-pages {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.data-table-page-button {
+    min-width: 2.25rem;
+    border: 1px solid var(--grey-200);
+    background: var(--white);
+    border-radius: var(--bs-border-radius);
+    padding: var(--space-1) var(--space-2);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--purple-1000);
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out;
+}
+
+.data-table-page-button:hover:not(:disabled) {
+    border-color: var(--purple-300);
+    color: var(--purple-300);
+}
+
+.data-table-page-button:disabled {
+    color: var(--grey-300);
+    cursor: default;
+}
+
+.data-table-page-button.active {
+    background: var(--purple-800);
+    border-color: var(--purple-800);
+    color: var(--white);
+}
+
+.data-table-page-ellipsis {
+    padding: 0 var(--space-1);
+    color: var(--grey-400);
+}
+
+/* --------------------------------------------------------------------------
+   Real table from tablet up
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 768px) {
+    .data-table-summary {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .data-table-scroll {
+        overflow-x: auto;
+    }
+
+    .data-table thead {
+        display: table-header-group;
+    }
+
+    .data-table thead tr {
+        display: table-row;
+        padding: 0;
+    }
+
+    .data-table tbody {
+        display: table-row-group;
+    }
+
+    .data-table tbody tr {
+        display: table-row;
+        padding: 0;
+    }
+
+    .data-table tbody td,
+    .data-table tbody td[data-label="Player"] {
+        display: table-cell;
+        vertical-align: middle;
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .data-table tbody td::before {
+        content: none;
+    }
+
+    .data-table-heading {
+        padding: var(--space-3) var(--space-4);
+        border-bottom: 1px solid var(--grey-200);
+    }
+
+    .data-table-heading-end {
+        text-align: right;
+    }
+
+    .data-table-cell-end {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .data-table-pager {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}

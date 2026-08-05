@@ -18,6 +18,11 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="ThePredictions.Application.Tests.Unit" />
+    <!-- NSubstitute's proxy generator needs to see internal types to build a return value for a
+         read whose result type is internal (e.g. a query handler's nested result record). Without
+         this, substituting IApplicationReadDbConnection throws "Can not create proxy for type
+         IEnumerable<...> because type ... is not accessible" the moment the handler runs. -->
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
   <ItemGroup>

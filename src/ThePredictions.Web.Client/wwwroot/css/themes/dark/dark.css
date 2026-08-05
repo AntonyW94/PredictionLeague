@@ -1414,3 +1414,99 @@ main.theme-dark:has(.admin-light) .navbar-logo {
 .theme-dark .admin-light .detail-row {
     border-bottom-color: var(--white-alpha-10);
 }
+
+/* Data table (sortable, filterable, server-paged lists). The panel and pager
+   selectors are global rather than scoped under .admin-light, because the
+   components are shared and the panel renders as a fixed overlay. */
+.theme-dark .data-table-filter-note,
+.theme-dark .data-table-pager {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .data-table-total {
+    color: var(--white);
+}
+
+.theme-dark .data-table-scroll {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-08);
+    box-shadow: 0 4px 12px var(--black-alpha-25);
+}
+
+.theme-dark .data-table {
+    color: var(--white);
+}
+
+.theme-dark .data-table thead,
+.theme-dark .data-table tbody tr,
+.theme-dark .data-table-heading {
+    border-bottom-color: var(--white-alpha-10);
+}
+
+.theme-dark .data-table tbody td::before,
+.theme-dark .data-table-sort,
+.theme-dark .data-table-filter-toggle,
+.theme-dark .data-table-filter-label,
+.theme-dark .data-table-panel-close {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .data-table-sort:hover,
+.theme-dark .data-table-sort.sorted,
+.theme-dark .data-table-panel-title {
+    color: var(--white);
+}
+
+.theme-dark .data-table-sort-icon {
+    color: var(--white-alpha-30);
+}
+
+.theme-dark .data-table-sort.sorted .data-table-sort-icon {
+    color: var(--purple-200);
+}
+
+.theme-dark .data-table-filter-toggle:hover {
+    color: var(--purple-200);
+}
+
+.theme-dark .data-table-panel {
+    background: var(--purple-800);
+    border-color: var(--white-alpha-08);
+    color: var(--white);
+}
+
+.theme-dark .data-table-panel-sort {
+    background: var(--purple-1000);
+    border-color: var(--white-alpha-15);
+    color: var(--white);
+}
+
+.theme-dark .data-table-panel-sort.active {
+    background: var(--purple-200-alpha-15);
+    border-color: var(--purple-200);
+    color: var(--white);
+}
+
+.theme-dark .data-table-panel-filter {
+    border-top-color: var(--white-alpha-10);
+}
+
+.theme-dark .data-table-page-button {
+    background: var(--purple-1000);
+    border-color: var(--white-alpha-15);
+    color: var(--white);
+}
+
+.theme-dark .data-table-page-button:disabled {
+    color: var(--white-alpha-30);
+}
+
+.theme-dark .data-table-page-button.active {
+    background: var(--purple-200);
+    border-color: var(--purple-200);
+    color: var(--white);
+}
+
+.theme-dark .data-table-page-ellipsis {
+    color: var(--white-alpha-30);
+}
