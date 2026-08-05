@@ -15,28 +15,31 @@
 
 <div class="page-container admin-light">
     <div class="admin-table-container">
-        <div class="d-flex justify-content-between align-items-center gap-2 mb-1">
-            <h3 class="fw-bold mb-0">Season Pass holders</h3>
+        <PageHero Title="Season Pass holders" Icon="bi-ticket-perforated">
             @if (_result is not null)
             {
-                <span class="fw-bold text-nowrap data-table-total">
-                    @_result.Holders.TotalCount @(_result.Holders.TotalCount == 1 ? "player" : "players") · @Money(_result.TotalCollected)
-                </span>
+                <span class="page-hero__round">@_result.SeasonName</span>
             }
-        </div>
-
-        <p class="data-table-intro mb-4">
-            Everyone taking part in @SeasonName, whether they bought a pass, used their free first season, or joined a free season.
-        </p>
+            Everyone taking part, whether they bought a pass, used their free first season, or joined a free season.
+        </PageHero>
 
         <ApiError Message="@_errorMessage" />
 
-        @if (HasAnyFilter)
+        @if (_result is not null)
         {
-            <div class="data-table-filter-summary">
-                <span class="bi bi-funnel-fill"></span>
-                <span>@FilterSummary</span>
-                <button type="button" class="data-table-clear-all" @onclick="ClearAllFiltersAsync">Clear all filters</button>
+            <div class="data-table-summary">
+                <span class="data-table-total">
+                    @_result.Holders.TotalCount @(_result.Holders.TotalCount == 1 ? "player" : "players") · @Money(_result.TotalCollected) collected
+                </span>
+
+                @if (HasAnyFilter)
+                {
+                    <span class="data-table-filter-note">
+                        <span class="bi bi-funnel-fill"></span>
+                        <span>@FilterSummary</span>
+                        <button type="button" class="data-table-clear-all" @onclick="ClearAllFiltersAsync">Clear all</button>
+                    </span>
+                }
             </div>
         }
 
@@ -48,12 +51,10 @@
                 </div>
             </div>
         }
-        else if (_result is not null)
+        @* With filters on, the headings stay even with no rows - they are how you unfilter.
+           With no filters and no holders, they would be chrome around nothing. *@
+        else if (_result is not null && (_result.Holders.TotalCount > 0 || HasAnyFilter))
         {
-            @* With filters on, the headings stay even with no rows - they are how you unfilter.
-               With no filters and no holders, they would be chrome around nothing. *@
-            @if (_result.Holders.TotalCount > 0 || HasAnyFilter)
-            {
             <div class="data-table-scroll @(_isRefreshing ? "refreshing" : "")">
                 <table class="data-table">
                     <thead>
@@ -129,11 +130,12 @@
                                         </div>
                                     </div>
                                 </td>
-                                @* Deliberately the UTC date, not the local one: the date filters are
-                                   applied against UTC on the server, so showing a local date could put a
-                                   row outside the range the admin has just typed in. *@
+                                @* Shown in the admin's own time zone, as dates are everywhere else on
+                                   the site. The date filters are applied against the UTC day, so a pass
+                                   bought within an hour of midnight can sit a day either side of the
+                                   range while British Summer Time is in effect. *@
                                 <td data-label="Date purchased">
-                                    @holder.AcquiredAtUtc.ToString("dd MMM yyyy", Uk)
+                                    <LocalTime UtcDate="@holder.AcquiredAtUtc" Format="dd MMM yyyy, HH:mm" />
                                 </td>
                                 <td data-label="Price paid" class="data-table-cell-end" title="@PaidBreakdown(holder)">
                                     @Money(holder.AmountPaid + holder.SmsFeePaid)
@@ -143,21 +145,23 @@
                     </tbody>
                 </table>
             </div>
-            }
+        }
 
-            @if (_result.Holders.TotalCount == 0)
-            {
-                <div class="empty-state">
-                    <span class="bi bi-ticket-perforated empty-state-icon"></span>
-                    <p class="empty-state-title">@(HasAnyFilter ? "No matching pass holders" : "No Season Pass holders yet")</p>
-                    <p class="empty-state-text">
-                        @(HasAnyFilter
-                            ? "Try widening or clearing the filters."
-                            : "Players appear here as soon as they take part in this season.")
-                    </p>
-                </div>
-            }
+        @if (_result is not null && _result.Holders.TotalCount == 0)
+        {
+            <div class="empty-state">
+                <span class="bi bi-ticket-perforated empty-state-icon"></span>
+                <p class="empty-state-title">@(HasAnyFilter ? "No matching pass holders" : "No Season Pass holders yet")</p>
+                <p class="empty-state-text">
+                    @(HasAnyFilter
+                        ? "Try widening or clearing the filters."
+                        : "Players appear here as soon as they take part in this season.")
+                </p>
+            </div>
+        }
 
+        @if (_result is not null)
+        {
             <TablePager Page="_result.Holders.Page"
                         PageSize="_result.Holders.PageSize"
                         TotalCount="_result.Holders.TotalCount"
@@ -196,8 +200,6 @@
     private DateTime? _acquiredToUtc;
     private decimal? _minimumPaid;
     private decimal? _maximumPaid;
-
-    private string SeasonName => _result is null ? "this season" : _result.SeasonName;
 
     private bool HasNameFilter => !string.IsNullOrWhiteSpace(_nameFilter);
     private bool HasDateFilter => _acquiredFromUtc.HasValue || _acquiredToUtc.HasValue;

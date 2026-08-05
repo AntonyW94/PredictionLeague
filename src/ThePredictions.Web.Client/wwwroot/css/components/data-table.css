@@ -6,13 +6,32 @@
    table from tablet up. Dark theme overrides live in themes/dark/dark.css.
    ========================================================================== */
 
-.data-table-intro {
-    color: var(--grey-500);
-    font-size: 0.9rem;
+/* Strip between the hero and the table: the totals for the whole matching set,
+   plus what is currently being filtered out. */
+.data-table-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
 }
 
 .data-table-total {
+    font-weight: 700;
     color: var(--purple-1000);
+}
+
+.data-table-filter-note {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: 0.8rem;
+    color: var(--grey-500);
+}
+
+.data-table-filter-note .bi {
+    color: var(--orange);
 }
 
 /* --------------------------------------------------------------------------
@@ -291,24 +310,6 @@
     cursor: pointer;
 }
 
-/* --------------------------------------------------------------------------
-   Active filter summary
-   -------------------------------------------------------------------------- */
-
-.data-table-filter-summary {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    margin-bottom: var(--space-3);
-    font-size: 0.8rem;
-    color: var(--grey-500);
-}
-
-.data-table-filter-summary .bi {
-    color: var(--orange);
-}
-
 .data-table-clear-all {
     border: none;
     background: transparent;
@@ -397,6 +398,12 @@
    -------------------------------------------------------------------------- */
 
 @media (min-width: 768px) {
+    .data-table-summary {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
     .data-table-scroll {
         overflow-x: auto;
     }

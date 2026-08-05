@@ -1418,8 +1418,7 @@ main.theme-dark:has(.admin-light) .navbar-logo {
 /* Data table (sortable, filterable, server-paged lists). The panel and pager
    selectors are global rather than scoped under .admin-light, because the
    components are shared and the panel renders as a fixed overlay. */
-.theme-dark .data-table-intro,
-.theme-dark .data-table-filter-summary,
+.theme-dark .data-table-filter-note,
 .theme-dark .data-table-pager {
     color: var(--white-alpha-50);
 }
