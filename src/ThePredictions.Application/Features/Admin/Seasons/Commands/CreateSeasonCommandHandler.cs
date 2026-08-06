@@ -125,10 +125,10 @@ public class CreateSeasonCommandHandler(
 
         foreach (var mapping in mappings)
         {
+            // Always at least one stage: the DTO carries typed enum values, so the joined string
+            // parses straight back, and TournamentRoundMapping.Create rejects an empty list.
             var stages = mapping.GetStageList();
-            var primaryStageDisplayName = stages.Count > 0
-                ? TournamentRoundNameParser.GetDefaultDisplayName(stages[0])
-                : null;
+            var primaryStageDisplayName = TournamentRoundNameParser.GetDefaultDisplayName(stages[0]);
 
             var round = Round.Create(
                 season.Id,
