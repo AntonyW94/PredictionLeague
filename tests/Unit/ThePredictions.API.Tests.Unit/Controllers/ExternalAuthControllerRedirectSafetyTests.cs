@@ -63,6 +63,21 @@ public class ExternalAuthControllerRedirectSafetyTests
         returnUrl.Should().Be("/dashboard");
     }
 
+    [Theory]
+    [InlineData("/dashboard")]
+    [InlineData("/leagues/7")]
+    [InlineData("/account/details")]
+    public void GoogleLogin_ShouldKeepALocalPath_OnEveryPlatform(string path)
+    {
+        // Regression guard. On Linux, Uri.TryCreate parses "/dashboard" as the absolute file URI
+        // "file:///dashboard"; its empty host then failed the same-host check and the return URL
+        // was thrown away, sending every Google sign-in to "/" once deployed. Windows parses the
+        // same string as relative, so this only ever failed off a developer machine.
+        var (returnUrl, _) = Sanitise(path, "/login");
+
+        returnUrl.Should().Be(path);
+    }
+
     [Fact]
     public void GoogleLogin_ShouldKeepAPathWithAQueryString()
     {
