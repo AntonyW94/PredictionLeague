@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -16,6 +17,7 @@ namespace ThePredictions.API.Controllers.External;
 [ApiKeyAuthorise]
 [DisableRateLimiting]
 [SwaggerTag("Scheduled Tasks - Automated background jobs (API key required)")]
+[ExcludeFromCodeCoverage(Justification = "Controller action: forwards to MediatR and returns the result. The behaviour under test is the handler.")]
 public class TasksController(IMediator mediator) : ApiControllerBase
 {
     [HttpPost("score-update")]

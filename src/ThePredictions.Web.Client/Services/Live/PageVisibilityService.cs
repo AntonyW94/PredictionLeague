@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.JSInterop;
 
 namespace ThePredictions.Web.Client.Services.Live;
@@ -6,6 +7,7 @@ namespace ThePredictions.Web.Client.Services.Live;
 /// Tracks the tab's visibility via the browser Page Visibility API, bridged
 /// through <c>blazorInterop.registerVisibilityCallback</c>.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Browser interop: a pass-through to JavaScript with no logic of its own.")]
 public sealed class PageVisibilityService(IJSRuntime jsRuntime) : IPageVisibilityService
 {
     private DotNetObjectReference<PageVisibilityService>? _selfReference;

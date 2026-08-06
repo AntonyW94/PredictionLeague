@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +17,7 @@ namespace ThePredictions.API.Controllers.Admin;
 [ApiController]
 [Route("api/admin/[controller]")]
 [SwaggerTag("Admin: Seasons - Manage competition seasons (Admin only)")]
+[ExcludeFromCodeCoverage(Justification = "Controller action: forwards to MediatR and returns the result. The behaviour under test is the handler.")]
 public class SeasonsController(IMediator mediator, IFootballDataService footballDataService) : ApiControllerBase
 {
     #region Create

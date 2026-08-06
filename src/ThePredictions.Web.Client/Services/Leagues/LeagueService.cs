@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Boosts;
 using ThePredictions.Contracts.Dashboard;
 using ThePredictions.Contracts.Leaderboards;
@@ -9,6 +10,7 @@ using System.Text.Json.Nodes;
 
 namespace ThePredictions.Web.Client.Services.Leagues;
 
+[ExcludeFromCodeCoverage(Justification = "Typed HttpClient wrapper: forwards to an API endpoint and deserialises the reply.")]
 public class LeagueService(HttpClient httpClient) : ILeagueService
 {
     public async Task<List<MyLeagueDto>> GetMyLeaguesAsync()

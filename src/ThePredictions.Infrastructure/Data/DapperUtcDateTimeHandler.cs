@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using System.Data;
 
 namespace ThePredictions.Infrastructure.Data;
 
+[ExcludeFromCodeCoverage(Justification = "Database plumbing: connection, transaction and type-handler wiring with no branching logic of its own.")]
 public class DapperUtcDateTimeHandler : SqlMapper.TypeHandler<DateTime>
 {
     public override void SetValue(IDbDataParameter parameter, DateTime value)

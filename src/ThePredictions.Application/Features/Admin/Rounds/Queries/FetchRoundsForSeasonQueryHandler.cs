@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class FetchRoundsForSeasonQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<FetchRoundsForSeasonQuery, IEnumerable<RoundDto>>
 {
     public async Task<IEnumerable<RoundDto>> Handle(FetchRoundsForSeasonQuery request, CancellationToken cancellationToken)

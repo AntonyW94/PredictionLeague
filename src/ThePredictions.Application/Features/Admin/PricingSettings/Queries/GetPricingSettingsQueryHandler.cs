@@ -6,6 +6,7 @@ using DomainPricingSettings = ThePredictions.Domain.Models.PricingSettings;
 
 namespace ThePredictions.Application.Features.Admin.PricingSettings.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetPricingSettingsQueryHandler(IApplicationReadDbConnection dbConnection)
     : IRequestHandler<GetPricingSettingsQuery, PricingSettingsDto>
 {

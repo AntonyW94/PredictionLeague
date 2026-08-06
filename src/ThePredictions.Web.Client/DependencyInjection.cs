@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using ThePredictions.Web.Client.Authentication;
@@ -20,6 +21,7 @@ using ThePredictions.Web.Client.ViewModels.Admin.Rounds;
 
 namespace ThePredictions.Web.Client;
 
+[ExcludeFromCodeCoverage(Justification = "Container registration: verified by ThePredictions.Composition.Tests.Unit, which resolves every handler from the real container.")]
 public static class DependencyInjection
 {
     public static void AddClientServices(this IServiceCollection services)

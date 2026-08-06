@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using ThePredictions.Contracts.SeasonPasses;
 
 namespace ThePredictions.Web.Client.Services.SeasonPasses;
 
+[ExcludeFromCodeCoverage(Justification = "Typed HttpClient wrapper: forwards to an API endpoint and deserialises the reply.")]
 public class SeasonPassService(HttpClient httpClient) : ISeasonPassService
 {
     public async Task<List<MySeasonPassDto>> GetMyPassesAsync()

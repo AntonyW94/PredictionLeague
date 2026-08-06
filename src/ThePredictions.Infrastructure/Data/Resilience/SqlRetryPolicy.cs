@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Polly;
@@ -10,6 +11,7 @@ namespace ThePredictions.Infrastructure.Data.Resilience;
 /// Wraps database operations with a Polly retry pipeline that handles transient SQL failures
 /// using exponential back-off.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Database plumbing: connection, transaction and type-handler wiring with no branching logic of its own.")]
 public class SqlRetryPolicy : ISqlRetryPolicy
 {
     private readonly ResiliencePipeline _pipeline;

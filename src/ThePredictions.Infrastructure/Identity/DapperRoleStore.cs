@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using Microsoft.AspNetCore.Identity;
 using ThePredictions.Application.Data;
@@ -5,6 +6,7 @@ using System.Data;
 
 namespace ThePredictions.Infrastructure.Identity;
 
+[ExcludeFromCodeCoverage(Justification = "ASP.NET Identity store over Dapper: SQL plus framework plumbing, exercised end to end.")]
 public class DapperRoleStore(IDbConnectionFactory connectionFactory) : IRoleStore<IdentityRole>
 {
     private IDbConnection Connection => connectionFactory.CreateConnection();

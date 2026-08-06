@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.JSInterop;
 
 namespace ThePredictions.Web.Client.Services.Browser;
 
+[ExcludeFromCodeCoverage(Justification = "Browser interop: a pass-through to JavaScript with no logic of its own.")]
 public class BrowserService(IJSRuntime jsRuntime) : IBrowserService
 {
     public async Task<bool> IsDesktop()

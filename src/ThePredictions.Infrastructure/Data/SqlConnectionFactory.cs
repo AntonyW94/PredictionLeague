@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -7,6 +8,7 @@ using System.Data;
 
 namespace ThePredictions.Infrastructure.Data;
 
+[ExcludeFromCodeCoverage(Justification = "Database plumbing: connection, transaction and type-handler wiring with no branching logic of its own.")]
 public class SqlConnectionFactory : IDbConnectionFactory
 {
     private readonly string _connectionString;

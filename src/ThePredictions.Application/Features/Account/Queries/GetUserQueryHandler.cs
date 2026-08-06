@@ -5,6 +5,7 @@ using ThePredictions.Contracts.Account;
 
 namespace ThePredictions.Application.Features.Account.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetUserQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetUserQuery, UserDetails?>
 {
     public async Task<UserDetails?> Handle(GetUserQuery request, CancellationToken cancellationToken)

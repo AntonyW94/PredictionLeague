@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
@@ -8,4 +9,5 @@ namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 /// carries an <c>AlreadyNotified</c> flag (from the <c>PrizeNotifications</c> sent-log) so the send
 /// command can skip prizes a winner has already been told about.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record GetPrizeWinnersForRoundQuery(int RoundId) : IRequest<IReadOnlyList<PrizeWinner>>;

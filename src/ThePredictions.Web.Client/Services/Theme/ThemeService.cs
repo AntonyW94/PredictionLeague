@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using Blazored.LocalStorage;
 using ThePredictions.Contracts.Account;
 
 namespace ThePredictions.Web.Client.Services.Theme;
 
+[ExcludeFromCodeCoverage(Justification = "Browser interop: a pass-through to JavaScript with no logic of its own.")]
 public class ThemeService(ILocalStorageService localStorage, HttpClient httpClient) : IThemeService
 {
     private const string StorageKey = "themePreference";

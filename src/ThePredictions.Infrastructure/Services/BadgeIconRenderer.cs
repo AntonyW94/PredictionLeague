@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
 using SkiaSharp;
 using Svg.Skia;
@@ -14,6 +15,7 @@ namespace ThePredictions.Infrastructure.Services;
 /// colours baked in per variant. Composes the SVG and rasterises it with Svg.Skia (the share-card
 /// stack); results are cached since badge art is stable.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Image renderer: SkiaSharp drawing plus HTTP asset fetches. Correctness is visual, not assertable in a unit test.")]
 public class BadgeIconRenderer(IMemoryCache cache) : IBadgeIconRenderer
 {
     private const int RenderSize = 240;         // 2x the 120-unit badge viewBox for crisp email icons

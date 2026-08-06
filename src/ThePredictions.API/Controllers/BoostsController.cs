@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace ThePredictions.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [SwaggerTag("Boosts - Apply score multipliers to predictions")]
+[ExcludeFromCodeCoverage(Justification = "Controller action: forwards to MediatR and returns the result. The behaviour under test is the handler.")]
 public class BoostsController(IBoostService boostService, IMediator mediator) : ApiControllerBase
 {
     [HttpGet("available")]

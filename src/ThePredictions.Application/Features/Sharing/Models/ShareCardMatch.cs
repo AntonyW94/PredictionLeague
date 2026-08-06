@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Sharing.Models;
@@ -13,6 +14,7 @@ namespace ThePredictions.Application.Features.Sharing.Models;
 /// <paramref name="ActualAwayScore"/> should be shown and the pick colour-coded by
 /// <paramref name="Outcome"/>.
 /// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 public record ShareCardMatch(
     string HomeTeamShortName,
     string HomeTeamAbbreviation,

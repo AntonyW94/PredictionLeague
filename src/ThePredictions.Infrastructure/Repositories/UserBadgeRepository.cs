@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Repositories;
@@ -5,6 +6,7 @@ using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Infrastructure.Repositories;
 
+[ExcludeFromCodeCoverage(Justification = "Repository: a thin Dapper wrapper over SQL. A unit test would assert only that a mocked connection received a string; correctness lives in the SQL.")]
 public class UserBadgeRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext)
     : RepositoryBase(connectionFactory, transactionContext), IUserBadgeRepository
 {

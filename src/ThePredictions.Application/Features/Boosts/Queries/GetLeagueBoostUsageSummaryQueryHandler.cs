@@ -7,6 +7,7 @@ using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Boosts.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetLeagueBoostUsageSummaryQueryHandler(
     IApplicationReadDbConnection dbConnection,
     ILeagueMembershipService membershipService)

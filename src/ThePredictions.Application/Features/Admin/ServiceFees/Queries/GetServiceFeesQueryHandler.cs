@@ -5,6 +5,7 @@ using ThePredictions.Contracts.Admin.ServiceFees;
 
 namespace ThePredictions.Application.Features.Admin.ServiceFees.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetServiceFeesQueryHandler(IApplicationReadDbConnection dbConnection)
     : IRequestHandler<GetServiceFeesQuery, IEnumerable<ServiceFeeDto>>
 {

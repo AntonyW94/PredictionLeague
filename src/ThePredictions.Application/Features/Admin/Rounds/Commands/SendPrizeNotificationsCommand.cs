@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Commands;
@@ -9,4 +10,5 @@ namespace ThePredictions.Application.Features.Admin.Rounds.Commands;
 /// prize processing never double-notifies. Set <see cref="Force"/> to re-send to every current
 /// winner regardless of the log (admin "resend prize emails" action).
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record SendPrizeNotificationsCommand(int RoundId, bool Force = false) : IRequest;

@@ -10,6 +10,7 @@ namespace ThePredictions.Web.Client.Components.Shared;
 /// Integrates FluentValidation validators with Blazor's EditForm validation system.
 /// Replaces Blazored.FluentValidation with a simple, maintainable implementation.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Blazor component: rendering behaviour, untestable without bUnit.")]
 public class FluentValidationValidator : ComponentBase, IDisposable
 {
     [CascadingParameter]

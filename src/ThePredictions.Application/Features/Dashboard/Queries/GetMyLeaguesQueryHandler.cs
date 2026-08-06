@@ -6,6 +6,7 @@ using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Dashboard.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
     : IRequestHandler<GetMyLeaguesQuery, IEnumerable<MyLeagueDto>>
 {

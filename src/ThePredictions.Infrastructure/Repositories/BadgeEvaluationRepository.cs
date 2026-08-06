@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Badges.Evaluation;
@@ -11,6 +12,7 @@ namespace ThePredictions.Infrastructure.Repositories;
 // ThePredictions.SchemaCheck: it resolves the type argument at the call site, so a generic one leaves
 // every read here unchecked. Keep the CommandDefinition in a local - the tool folds that - and do not
 // factor these back into a helper.
+[ExcludeFromCodeCoverage(Justification = "Repository: a thin Dapper wrapper over SQL. A unit test would assert only that a mocked connection received a string; correctness lives in the SQL.")]
 public class BadgeEvaluationRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext)
     : RepositoryBase(connectionFactory, transactionContext), IBadgeEvaluationRepository
 {

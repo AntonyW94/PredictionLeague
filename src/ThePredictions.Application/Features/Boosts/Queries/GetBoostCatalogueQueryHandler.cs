@@ -5,6 +5,7 @@ using ThePredictions.Contracts.Boosts;
 
 namespace ThePredictions.Application.Features.Boosts.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetBoostCatalogueQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetBoostCatalogueQuery, List<BoostCatalogueItemDto>>
 {
     public async Task<List<BoostCatalogueItemDto>> Handle(GetBoostCatalogueQuery request, CancellationToken cancellationToken)

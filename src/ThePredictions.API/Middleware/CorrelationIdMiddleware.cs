@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using Serilog.Context;
 
 namespace ThePredictions.API.Middleware;
 
+[ExcludeFromCodeCoverage(Justification = "Middleware wiring: registration and header plumbing, exercised end to end.")]
 public class CorrelationIdMiddleware(RequestDelegate next)
 {
     internal const string HeaderName = "X-Correlation-Id";

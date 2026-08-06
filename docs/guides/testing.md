@@ -125,7 +125,15 @@ grepped and counted:
 | `Dapper row type: properties only, no logic to test.` | Private `XxxRow` types a handler materialises into |
 | `Options type bound from configuration: properties only, no logic to test.` | `*Settings` / `*Options` classes bound from `appsettings` |
 
-A one-off exclusion should say something specific rather than reuse a row above.
+A one-off exclusion should say something specific rather than reuse a row above. The other recurring
+reasons cover query handlers, MediatR request records, repositories, Identity stores, database
+plumbing, controllers, middleware, health checks, image renderers, third-party API clients, Blazor
+components, typed `HttpClient` wrappers and browser interop.
+
+**Never exclude a type that already has a test file.** If someone wrote `FooTests.cs`, `Foo` is
+something we test, and excluding it hides passing tests and makes them look pointless. This rule
+matters most for query handlers: the category is excluded wholesale, but seven of them have real
+tests because they do more than SQL plus a mapping, and those stay measured.
 
 Reasonable exclusions: positional result records, data-only Contracts DTOs, ORM-only constructors,
 `Program.cs` wiring, controllers that only forward to MediatR, and query handlers whose body is a

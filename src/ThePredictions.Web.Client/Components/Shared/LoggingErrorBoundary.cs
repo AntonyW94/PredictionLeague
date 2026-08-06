@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.Logging;
@@ -5,6 +6,7 @@ using ThePredictions.Web.Client.Authentication;
 
 namespace ThePredictions.Web.Client.Components.Shared;
 
+[ExcludeFromCodeCoverage(Justification = "Blazor component: rendering behaviour, untestable without bUnit.")]
 public class LoggingErrorBoundary : ErrorBoundary
 {
     [Inject]

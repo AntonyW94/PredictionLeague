@@ -5,6 +5,7 @@ using ThePredictions.Contracts.Admin.RunningCosts;
 
 namespace ThePredictions.Application.Features.Admin.RunningCosts.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetRunningCostsQueryHandler(IApplicationReadDbConnection dbConnection)
     : IRequestHandler<GetRunningCostsQuery, IEnumerable<RunningCostDto>>
 {

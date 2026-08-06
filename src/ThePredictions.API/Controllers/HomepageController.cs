@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +12,7 @@ namespace ThePredictions.API.Controllers;
 [Route("api/[controller]")]
 [AllowAnonymous]
 [SwaggerTag("Homepage — public data for the landing page")]
+[ExcludeFromCodeCoverage(Justification = "Controller action: forwards to MediatR and returns the result. The behaviour under test is the handler.")]
 public class HomepageController(IMediator mediator) : ControllerBase
 {
     [HttpGet("seasons")]

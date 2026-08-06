@@ -6,6 +6,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace ThePredictions.Infrastructure.HealthChecks;
 
+[ExcludeFromCodeCoverage(Justification = "Health check: endpoint wiring and a live dependency probe, verified by hitting the endpoint.")]
 public static class HealthCheckEndpointExtensions
 {
     [SuppressMessage("ReSharper", "UnusedMethodReturnValue.Global")]

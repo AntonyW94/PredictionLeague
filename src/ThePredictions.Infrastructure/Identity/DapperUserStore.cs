@@ -8,6 +8,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Infrastructure.Identity;
 
+[ExcludeFromCodeCoverage(Justification = "ASP.NET Identity store over Dapper: SQL plus framework plumbing, exercised end to end.")]
 public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailStore<ApplicationUser>, IUserRoleStore<ApplicationUser>, IUserLoginStore<ApplicationUser>
 {
     private readonly IDbConnectionFactory _connectionFactory;

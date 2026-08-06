@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ namespace ThePredictions.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 [SwaggerTag("Predictions - Submit and retrieve match predictions")]
+[ExcludeFromCodeCoverage(Justification = "Controller action: forwards to MediatR and returns the result. The behaviour under test is the handler.")]
 public class PredictionsController(IMediator mediator) : ApiControllerBase
 {
     [HttpGet("{roundId:int}")]

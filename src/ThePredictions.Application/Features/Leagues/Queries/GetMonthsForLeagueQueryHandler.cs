@@ -8,6 +8,7 @@ using System.Globalization;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetMonthsForLeagueQueryHandler(
     IApplicationReadDbConnection dbConnection,
     ILeagueMembershipService membershipService) : IRequestHandler<GetMonthsForLeagueQuery, IEnumerable<MonthDto>>
