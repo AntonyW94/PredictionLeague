@@ -138,7 +138,7 @@ private record OverallLeaderboardQueryResult(..., int? SnapshotRank, ...);   // 
 
 ### Testing & Code Coverage
 
-The Domain and Validators projects **must maintain 100% line and branch coverage** - both are gated in CI, so a drop fails the build. Every other project targets 100% but is measured only; see [`docs/guides/testing.md`](docs/guides/testing.md#enforcement-is-per-project-and-rolls-out-gradually) for how a project joins the gate. After writing or modifying code:
+The Domain, Validators, Contracts and Hosting.Shared projects **must maintain 100% line and branch coverage** - all four are gated in CI, so a drop fails the build. Every other project targets 100% but is measured only; see [`docs/guides/testing.md`](docs/guides/testing.md#enforcement-is-per-project-and-rolls-out-gradually) for how a project joins the gate. After writing or modifying code:
 
 1. Write unit tests for all new/changed logic
 2. Run the coverage script: `tools\Test Coverage\coverage-unit.bat`

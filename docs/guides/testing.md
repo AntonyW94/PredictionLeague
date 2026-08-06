@@ -161,9 +161,9 @@ code-behind** - that file is measured normally.
 
 ### Enforcement is per project, and rolls out gradually
 
-`/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Today
-`ThePredictions.Domain.Tests.Unit` and `ThePredictions.Validators.Tests.Unit` reference it; the rest
-use `coverlet.collector` alone, so they are measured but not gated.
+`/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Today the test projects
+for **Domain, Validators, Contracts and Hosting.Shared** reference it; the rest use
+`coverlet.collector` alone, so they are measured but not gated.
 
 A gated test project whose subject assembly has dependencies must scope the measurement with an
 `<Include>` property, or the threshold sees those dependencies too and fails on their coverage.
