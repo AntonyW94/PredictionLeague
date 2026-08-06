@@ -121,9 +121,15 @@ neither the SQL nor the `SELECT`-to-record alignment.
 
 ### Enforcement is per project, and rolls out gradually
 
-`/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Today only
-`ThePredictions.Domain.Tests.Unit` references it; the rest use `coverlet.collector` alone, so they
-are measured but not gated.
+`/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Today
+`ThePredictions.Domain.Tests.Unit` and `ThePredictions.Validators.Tests.Unit` reference it; the rest
+use `coverlet.collector` alone, so they are measured but not gated.
+
+A gated test project whose subject assembly has dependencies must scope the measurement with an
+`<Include>` property, or the threshold sees those dependencies too and fails on their coverage.
+`ThePredictions.Validators.Tests.Unit` sets `<Include>[ThePredictions.Validators]*</Include>` so
+only the Validators assembly counts, not the Contracts and Domain assemblies it pulls in. Domain
+needs no filter: it depends on nothing outside the global `[ThePredictions.Tests.*]*` exclusion.
 
 Extending the gate is one package reference per test project. **Do it only when that project has
 actually reached 100%**, in the same PR - never as a big-bang flip, which would leave CI red for
