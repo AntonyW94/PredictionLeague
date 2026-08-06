@@ -194,6 +194,20 @@ public class Round
     /// </summary>
     public bool RecalculateBatchPredictionLocks()
     {
+        var batchedMatches = CollectPredictionBatches();
+        if (batchedMatches.Count == 0)
+            return false;
+
+        return ApplyBatchLockTimes(batchedMatches);
+    }
+
+    /// <summary>
+    /// Pairs each lockable match with its prediction batch. A match is not batchable until its teams
+    /// are confirmed, and postponed matches plus any whose API round name does not parse to a known
+    /// stage are skipped.
+    /// </summary>
+    private List<(Match Match, int Batch)> CollectPredictionBatches()
+    {
         var batchedMatches = new List<(Match Match, int Batch)>();
 
         foreach (var match in _matches)
@@ -207,16 +221,20 @@ public class Round
             batchedMatches.Add((match, TournamentRoundNameParser.GetPredictionBatch(stage)));
         }
 
-        if (batchedMatches.Count == 0)
-            return false;
+        return batchedMatches;
+    }
 
+    /// <summary>
+    /// The earliest batch uses the round deadline (no custom lock); later batches lock together 30
+    /// minutes before the earliest kickoff among their own matches. Returns whether any lock moved.
+    /// </summary>
+    private static bool ApplyBatchLockTimes(List<(Match Match, int Batch)> batchedMatches)
+    {
         var earliestBatch = batchedMatches.Min(b => b.Batch);
         var changed = false;
 
         foreach (var batch in batchedMatches.GroupBy(b => b.Batch))
         {
-            // The earliest batch uses the round deadline (no custom lock); later batches lock together 30
-            // minutes before the earliest kickoff among their own matches.
             DateTime? lockTimeUtc = batch.Key == earliestBatch
                 ? null
                 : batch.Min(b => b.Match.MatchDateTimeUtc).AddMinutes(-30);

@@ -37,30 +37,52 @@ public static class PrizeApportionmentService
         Guard.Against.Negative(request.StakePounds);
         Guard.Against.Negative(request.AdminTopUpPounds);
 
-        var categories = request.Categories;
-        var n = request.EntrantCount;
-        var pot = request.StakePounds * n + request.AdminTopUpPounds;
+        var state = new ApportionmentState
+        {
+            Categories = request.Categories,
+            SubPot = BuildSubPots(request)
+        };
 
-        // Each category's sub-pot: per-entry money plus a weighted share of the admin top-up.
+        // Order matters: spillover flows forward only (Section -> Overall -> Most Exact Scores),
+        // so each step must run after every step that can spill into it.
+        ApportionRecurring(request, state);
+        ApportionSection(request, state);
+        ApportionOverall(request, state);
+        ApportionMostExactScores(state);
+
+        return new PrizeBreakdown
+        {
+            PotPounds = request.StakePounds * request.EntrantCount + request.AdminTopUpPounds,
+            Categories = BuildCategories(state)
+        };
+    }
+
+    /// <summary>
+    /// Each category's sub-pot: per-entry money plus a weighted share of the admin top-up.
+    /// </summary>
+    private static Dictionary<PrizeType, int> BuildSubPots(PrizeApportionmentRequest request)
+    {
+        var categories = request.Categories;
         var topUpShares = Distribute(request.AdminTopUpPounds, categories.Select(c => c.PerEntryPounds).ToList());
+
         var subPot = new Dictionary<PrizeType, int>();
         for (var i = 0; i < categories.Count; i++)
-            subPot[categories[i].Category] = categories[i].PerEntryPounds * n + topUpShares[i];
+            subPot[categories[i].Category] = categories[i].PerEntryPounds * request.EntrantCount + topUpShares[i];
 
-        bool Enabled(PrizeType type) => subPot.ContainsKey(type);
+        return subPot;
+    }
 
-        var slots = new Dictionary<PrizeType, List<PrizeBreakdownSlot>>();
-        var categoryTotal = new Dictionary<PrizeType, int>();
-        var spillToExact = 0;
-        var spillToOverall = 0;
-        var spillToSection = 0;
-
-        // Step 1 - Recurring (Round, Monthly): uniform per-event prize; collect the leftover to spill.
+    /// <summary>
+    /// Step 1 - Recurring (Round, Monthly): uniform per-event prize; the leftover spills OUT of the
+    /// category to the first available absorbing category, so per-event prizes never go uneven.
+    /// </summary>
+    private static void ApportionRecurring(PrizeApportionmentRequest request, ApportionmentState state)
+    {
         var recurringRemainder = 0;
-        foreach (var category in categories.Where(c => c.Kind == PrizeCategoryKind.Recurring))
+        foreach (var category in state.Categories.Where(c => c.Kind == PrizeCategoryKind.Recurring))
         {
             var events = category.Category == PrizeType.Monthly ? request.NumberOfMonths : request.NumberOfRounds;
-            var sub = subPot[category.Category];
+            var sub = state.SubPot[category.Category];
             var perEvent = events > 0 ? sub / events : 0;
             recurringRemainder += sub - perEvent * events;
 
@@ -68,95 +90,110 @@ public static class PrizeApportionmentService
             if (perEvent > 0)
                 categorySlots.Add(new PrizeBreakdownSlot { Label = EventLabel(category.Category), Amount = perEvent });
 
-            slots[category.Category] = categorySlots;
-            categoryTotal[category.Category] = perEvent * events;
+            state.Slots[category.Category] = categorySlots;
+            state.CategoryTotal[category.Category] = perEvent * events;
         }
 
-        // Route the recurring leftover to the first available absorbing category (forward-flowing).
         if (recurringRemainder > 0)
+            RouteRecurringSpillover(state, recurringRemainder);
+    }
+
+    /// <summary>
+    /// Spillover destination priority: Most Exact Scores -> Overall -> Section. When no category can
+    /// absorb it (a recurring-only scheme), it becomes a one-off bonus on the final event.
+    /// </summary>
+    private static void RouteRecurringSpillover(ApportionmentState state, int remainder)
+    {
+        if (state.Enabled(PrizeType.MostExactScores))
+            state.SpillToExact += remainder;
+        else if (state.Enabled(PrizeType.Overall))
+            state.SpillToOverall += remainder;
+        else if (state.Enabled(PrizeType.Stages))
+            state.SpillToSection += remainder;
+        else
+            AddFinalEventBonus(state, remainder);
+    }
+
+    /// <summary>
+    /// Step 2 - Section (Staged): two stages 50/50, each ranked and £5-rounded like Overall.
+    /// </summary>
+    private static void ApportionSection(PrizeApportionmentRequest request, ApportionmentState state)
+    {
+        if (!state.Enabled(PrizeType.Stages))
+            return;
+
+        var sectionAllocation = state.Categories.First(c => c.Category == PrizeType.Stages);
+        var sectionSub = state.SubPot[PrizeType.Stages] + state.SpillToSection;
+        var percentages = sectionAllocation.RankTable?.PercentagesFor(request.EntrantCount) ?? SinglePlace;
+        var stagePots = Distribute(sectionSub, new[] { 1, 1 });
+        var stageNames = new[] { GroupStageName, KnockoutStageName };
+
+        var sectionSlots = new List<PrizeBreakdownSlot>();
+        var sectionRemainder = 0;
+        for (var stage = 0; stage < stageNames.Length; stage++)
         {
-            if (Enabled(PrizeType.MostExactScores))
-                spillToExact += recurringRemainder;
-            else if (Enabled(PrizeType.Overall))
-                spillToOverall += recurringRemainder;
-            else if (Enabled(PrizeType.Stages))
-                spillToSection += recurringRemainder;
+            var (amounts, remainder) = ApportionRanked(stagePots[stage], percentages);
+            AddRankSlots(sectionSlots, amounts, stageNames[stage]);
+            sectionRemainder += remainder;
+        }
+
+        if (sectionRemainder > 0)
+        {
+            if (state.Enabled(PrizeType.MostExactScores))
+                state.SpillToExact += sectionRemainder;
+            else if (state.Enabled(PrizeType.Overall))
+                state.SpillToOverall += sectionRemainder;
             else
-                AddFinalEventBonus(categories, slots, categoryTotal, recurringRemainder);
+                AddRemainderToTopRank(sectionSlots, sectionRemainder);
         }
 
-        // Step 2 - Section (Staged): two stages 50/50, each ranked and £5-rounded like Overall.
-        if (Enabled(PrizeType.Stages))
+        state.Slots[PrizeType.Stages] = sectionSlots;
+        state.CategoryTotal[PrizeType.Stages] = sectionSlots.Sum(s => (int)s.Amount);
+    }
+
+    /// <summary>
+    /// Step 3 - Overall: ranked places, £5-rounded once a place pays more than £5.
+    /// </summary>
+    private static void ApportionOverall(PrizeApportionmentRequest request, ApportionmentState state)
+    {
+        if (!state.Enabled(PrizeType.Overall))
+            return;
+
+        var overallAllocation = state.Categories.First(c => c.Category == PrizeType.Overall);
+        var overallSub = state.SubPot[PrizeType.Overall] + state.SpillToOverall;
+        var percentages = overallAllocation.RankTable?.PercentagesFor(request.EntrantCount) ?? SinglePlace;
+
+        var overallSlots = new List<PrizeBreakdownSlot>();
+        var (amounts, remainder) = ApportionRanked(overallSub, percentages);
+        AddRankSlots(overallSlots, amounts);
+
+        if (remainder > 0)
         {
-            var sectionAllocation = categories.First(c => c.Category == PrizeType.Stages);
-            var sectionSub = subPot[PrizeType.Stages] + spillToSection;
-            var percentages = sectionAllocation.RankTable?.PercentagesFor(n) ?? SinglePlace;
-            var stagePots = Distribute(sectionSub, new[] { 1, 1 });
-            var stageNames = new[] { GroupStageName, KnockoutStageName };
-
-            var sectionSlots = new List<PrizeBreakdownSlot>();
-            var sectionRemainder = 0;
-            for (var stage = 0; stage < stageNames.Length; stage++)
-            {
-                var (amounts, remainder) = ApportionRanked(stagePots[stage], percentages);
-                AddRankSlots(sectionSlots, amounts, stageNames[stage]);
-                sectionRemainder += remainder;
-            }
-
-            if (sectionRemainder > 0)
-            {
-                if (Enabled(PrizeType.MostExactScores))
-                    spillToExact += sectionRemainder;
-                else if (Enabled(PrizeType.Overall))
-                    spillToOverall += sectionRemainder;
-                else
-                    AddRemainderToTopRank(sectionSlots, sectionRemainder);
-            }
-
-            slots[PrizeType.Stages] = sectionSlots;
-            categoryTotal[PrizeType.Stages] = sectionSlots.Sum(s => (int)s.Amount);
+            if (state.Enabled(PrizeType.MostExactScores))
+                state.SpillToExact += remainder;
+            else
+                AddRemainderToTopRank(overallSlots, remainder);
         }
 
-        // Step 3 - Overall: ranked places, £5-rounded once a place pays more than £5.
-        if (Enabled(PrizeType.Overall))
-        {
-            var overallAllocation = categories.First(c => c.Category == PrizeType.Overall);
-            var overallSub = subPot[PrizeType.Overall] + spillToOverall;
-            var percentages = overallAllocation.RankTable?.PercentagesFor(n) ?? SinglePlace;
+        state.Slots[PrizeType.Overall] = overallSlots;
+        state.CategoryTotal[PrizeType.Overall] = overallSlots.Sum(s => (int)s.Amount);
+    }
 
-            var overallSlots = new List<PrizeBreakdownSlot>();
-            var (amounts, remainder) = ApportionRanked(overallSub, percentages);
-            AddRankSlots(overallSlots, amounts);
+    /// <summary>
+    /// Step 4 - Most Exact Scores: a single £1-granular prize and the final spillover sink.
+    /// </summary>
+    private static void ApportionMostExactScores(ApportionmentState state)
+    {
+        if (!state.Enabled(PrizeType.MostExactScores))
+            return;
 
-            if (remainder > 0)
-            {
-                if (Enabled(PrizeType.MostExactScores))
-                    spillToExact += remainder;
-                else
-                    AddRemainderToTopRank(overallSlots, remainder);
-            }
+        var exactSub = state.SubPot[PrizeType.MostExactScores] + state.SpillToExact;
+        var exactSlots = new List<PrizeBreakdownSlot>();
+        if (exactSub > 0)
+            exactSlots.Add(new PrizeBreakdownSlot { Label = "Most Exact Scores", Amount = exactSub, Rank = 1 });
 
-            slots[PrizeType.Overall] = overallSlots;
-            categoryTotal[PrizeType.Overall] = overallSlots.Sum(s => (int)s.Amount);
-        }
-
-        // Step 4 - Most Exact Scores: a single prize and the final spillover sink.
-        if (Enabled(PrizeType.MostExactScores))
-        {
-            var exactSub = subPot[PrizeType.MostExactScores] + spillToExact;
-            var exactSlots = new List<PrizeBreakdownSlot>();
-            if (exactSub > 0)
-                exactSlots.Add(new PrizeBreakdownSlot { Label = "Most Exact Scores", Amount = exactSub, Rank = 1 });
-
-            slots[PrizeType.MostExactScores] = exactSlots;
-            categoryTotal[PrizeType.MostExactScores] = exactSub;
-        }
-
-        return new PrizeBreakdown
-        {
-            PotPounds = pot,
-            Categories = BuildCategories(categories, slots, categoryTotal)
-        };
+        state.Slots[PrizeType.MostExactScores] = exactSlots;
+        state.CategoryTotal[PrizeType.MostExactScores] = exactSub;
     }
 
     /// <summary>
@@ -200,29 +237,29 @@ public static class PrizeApportionmentService
         rankedSlots[0] = new PrizeBreakdownSlot { Label = top.Label, Amount = top.Amount + remainder, Rank = top.Rank, StageName = top.StageName };
     }
 
-    private static void AddFinalEventBonus(IReadOnlyList<PrizeCategoryAllocation> categories, Dictionary<PrizeType, List<PrizeBreakdownSlot>> slots, Dictionary<PrizeType, int> categoryTotal, int remainder)
+    private static void AddFinalEventBonus(ApportionmentState state, int remainder)
     {
         // Only reached when the scheme has no absorbing category (recurring-only). Keep per-event
         // prizes uniform by adding a distinct one-off bonus on the final event rather than skewing them.
-        var firstRecurring = categories.First(c => c.Kind == PrizeCategoryKind.Recurring);
+        var firstRecurring = state.Categories.First(c => c.Kind == PrizeCategoryKind.Recurring);
         var label = firstRecurring.Category == PrizeType.Monthly ? "Final month bonus" : "Final round bonus";
-        slots[firstRecurring.Category].Add(new PrizeBreakdownSlot { Label = label, Amount = remainder });
-        categoryTotal[firstRecurring.Category] += remainder;
+        state.Slots[firstRecurring.Category].Add(new PrizeBreakdownSlot { Label = label, Amount = remainder });
+        state.CategoryTotal[firstRecurring.Category] += remainder;
     }
 
-    private static IReadOnlyList<PrizeCategoryBreakdown> BuildCategories(IReadOnlyList<PrizeCategoryAllocation> categories, Dictionary<PrizeType, List<PrizeBreakdownSlot>> slots, Dictionary<PrizeType, int> categoryTotal)
+    private static IReadOnlyList<PrizeCategoryBreakdown> BuildCategories(ApportionmentState state)
     {
         // Stable display order regardless of the order categories were configured in.
         var displayOrder = new[] { PrizeType.Overall, PrizeType.Stages, PrizeType.Round, PrizeType.Monthly, PrizeType.MostExactScores };
 
         return displayOrder
-            .Where(slots.ContainsKey)
+            .Where(state.Slots.ContainsKey)
             .Select(type => new PrizeCategoryBreakdown
             {
                 Category = type,
-                Kind = categories.First(c => c.Category == type).Kind,
-                SubPotPounds = categoryTotal[type],
-                Slots = slots[type]
+                Kind = state.Categories.First(c => c.Category == type).Kind,
+                SubPotPounds = state.CategoryTotal[type],
+                Slots = state.Slots[type]
             })
             .ToList();
     }
@@ -268,6 +305,27 @@ public static class PrizeApportionmentService
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// The working state threaded through the four apportionment steps: the fixed inputs, the
+    /// breakdown built up so far, and the three forward-flowing spillover accumulators. Kept
+    /// private to the engine - <see cref="Apportion"/> stays a pure function of its request.
+    /// </summary>
+    private sealed class ApportionmentState
+    {
+        public required IReadOnlyList<PrizeCategoryAllocation> Categories { get; init; }
+        public required IReadOnlyDictionary<PrizeType, int> SubPot { get; init; }
+
+        public Dictionary<PrizeType, List<PrizeBreakdownSlot>> Slots { get; } = new();
+        public Dictionary<PrizeType, int> CategoryTotal { get; } = new();
+
+        public int SpillToExact { get; set; }
+        public int SpillToOverall { get; set; }
+        public int SpillToSection { get; set; }
+
+        /// <summary>A category is enabled precisely when the scheme allocated it a sub-pot.</summary>
+        public bool Enabled(PrizeType type) => SubPot.ContainsKey(type);
     }
 
     private static string Ordinal(int number)
