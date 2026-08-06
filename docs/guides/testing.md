@@ -162,10 +162,11 @@ figures to:
 
 | Project | Line coverage | Gated |
 |---------|---------------|-------|
-| Validators, Hosting.Shared, Contracts, Domain, API | 100% | yes |
-| Infrastructure | ~64% | no |
-| Web.Client | ~57% | no |
+| Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure, Web.Client | 100% | yes |
 | Application | ~55% | no |
+
+Those seven were taken to a genuine 100% *after* the exclusion was removed, so the figure now counts
+async bodies. Application is the only one left.
 
 The cost is that compiler-synthesised record members (`Equals`, `GetHashCode`, `ToString`, the copy
 constructor) now count. For a data-only record that is already handled by `[ExcludeFromCodeCoverage]`.
@@ -191,8 +192,8 @@ code-behind** - that file is measured normally.
 ### Enforcement is per project, and rolls out gradually
 
 `/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Today the test projects
-for **Domain, Validators, Contracts, Hosting.Shared and API** reference it. **Infrastructure,
-Web.Client and Application** are measured but not gated - see the figures below.
+for **Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure and Web.Client** reference
+it. Only **Application** is measured without being gated.
 
 **The gate measures each test project's own run, not the merged report.** A class covered
 incidentally by another project's tests still counts as uncovered for the gate, so read the

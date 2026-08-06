@@ -92,8 +92,13 @@ public sealed class LiveScorePollingService(
 
         try
         {
-            while (await timer.WaitForNextTickAsync(cancellationToken))
+            // WaitForNextTickAsync only reports false once the timer is disposed, and the timer
+            // above outlives the loop - so the loop always ends either by cancellation or by the
+            // NotLive return below, never by the tick itself.
+            while (true)
             {
+                await timer.WaitForNextTickAsync(cancellationToken);
+
                 var outcome = await PollOnceAsync(cancellationToken);
 
                 if (outcome == PollOutcome.NotLive)
@@ -113,15 +118,9 @@ public sealed class LiveScorePollingService(
     {
         Stop();
 
+        // RunLoopAsync swallows the cancellation itself, so awaiting the loop here completes
+        // normally rather than throwing.
         if (_loop is not null)
-        {
-            try
-            {
-                await _loop;
-            }
-            catch (OperationCanceledException)
-            {
-            }
-        }
+            await _loop;
     }
 }
