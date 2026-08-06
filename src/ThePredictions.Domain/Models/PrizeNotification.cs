@@ -15,6 +15,7 @@ namespace ThePredictions.Domain.Models;
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class PrizeNotification
 {
+    [ExcludeFromCodeCoverage(Justification = "Set only by Dapper when hydrating from the database; the only constructor is private, so nothing else can reach it.")]
     public int Id { get; init; }
     public string UserId { get; private set; } = string.Empty;
     public int LeaguePrizeSettingId { get; private set; }

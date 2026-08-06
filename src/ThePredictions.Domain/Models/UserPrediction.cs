@@ -8,6 +8,7 @@ namespace ThePredictions.Domain.Models;
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class UserPrediction
 {
+    [ExcludeFromCodeCoverage(Justification = "Set only by Dapper when hydrating from the database; the only constructor is private, so nothing else can reach it.")]
     public int Id { get; init; }
     public int MatchId { get; private set; }
     public string UserId { get; private set; } = string.Empty;

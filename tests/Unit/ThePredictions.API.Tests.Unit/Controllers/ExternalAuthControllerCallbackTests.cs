@@ -130,6 +130,22 @@ public class ExternalAuthControllerCallbackTests
     }
 
     [Fact]
+    public async Task GoogleCallbackAsync_ShouldFallBackToSafeDefaults_WhenGoogleReturnsNoProperties()
+    {
+        // A failed or absent external sign-in carries no properties at all, so there is no
+        // return URL to read; the user still has to land somewhere sensible.
+        GivenLoginResult(new SuccessfulAuthenticationResponse("access", DateTime.UtcNow, "refresh"));
+        var controller = BuildController();
+        _authenticationService.AuthenticateAsync(Arg.Any<HttpContext>(), Arg.Any<string>())
+            .Returns(AuthenticateResult.NoResult());
+
+        var result = await controller.GoogleCallbackAsync(CancellationToken.None);
+
+        result.Should().BeOfType<RedirectResult>()
+            .Which.Url.Should().StartWith("/?refreshToken=").And.EndWith("&source=/login");
+    }
+
+    [Fact]
     public async Task GoogleCallbackAsync_ShouldFallBackToSafeDefaults_WhenGoogleReturnsAnExternalUrl()
     {
         GivenLoginResult(new SuccessfulAuthenticationResponse("access", DateTime.UtcNow, "refresh"));

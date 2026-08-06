@@ -71,4 +71,47 @@ public class RoundCompletionPlayerDtoTests
         player.HasEnteredNothing.Should().BeFalse();
         player.MissingCount.Should().Be(0);
     }
+
+    [Fact]
+    public void TwoPlayersSharingEveryValueShouldBeEqual()
+    {
+        // The fixture list must be the same instance: a record compares collection members by
+        // reference, so two separately-built lists would make identical players unequal.
+        IReadOnlyList<MissingFixtureDto> fixtures = [new(1, 1, "Home", "Away")];
+
+        var first = new RoundCompletionPlayerDto("user-1", "Alex Player", "alex@example.com", 3, null, fixtures);
+        var second = new RoundCompletionPlayerDto("user-1", "Alex Player", "alex@example.com", 3, null, fixtures);
+
+        first.Should().Be(second);
+        first.GetHashCode().Should().Be(second.GetHashCode());
+    }
+
+    [Fact]
+    public void PlayersWithSeparateButEquivalentFixtureListsShouldNotBeEqual()
+    {
+        Player(3, 2).Should().NotBe(Player(3, 2));
+    }
+
+    [Fact]
+    public void PlayersDifferingInProgressShouldNotBeEqual()
+    {
+        Player(3, 2).Should().NotBe(Player(4, 1));
+    }
+
+    [Fact]
+    public void WithShouldCopyThePlayerAndChangeOnlyTheNamedField()
+    {
+        var original = Player(3, 2);
+
+        var copy = original with { PredictedCount = 5 };
+
+        copy.PredictedCount.Should().Be(5);
+        copy.PlayerName.Should().Be(original.PlayerName);
+    }
+
+    [Fact]
+    public void ToStringShouldIncludeTheIdentifyingFields()
+    {
+        Player(3, 2).ToString().Should().Contain("user-1").And.Contain("Alex Player");
+    }
 }
