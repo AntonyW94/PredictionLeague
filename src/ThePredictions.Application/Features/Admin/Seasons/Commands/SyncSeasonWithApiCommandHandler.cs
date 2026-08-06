@@ -479,7 +479,9 @@ public class SyncSeasonWithApiCommandHandler(
         logger.LogInformation("Tournament sync completed for Season (ID: {SeasonId}). {FixtureCount} fixtures processed, {RoundCount} rounds updated", season.Id, validFixtures.Count, allChangedRoundIds.Count);
     }
 
-    private static List<RoundWindow> CalculateRoundWindows(List<RoundFixtureSummary> sortedSummaries)
+    // internal so the window maths can be unit tested directly; InternalsVisibleTo already
+    // exposes this assembly to ThePredictions.Application.Tests.Unit.
+    internal static List<RoundWindow> CalculateRoundWindows(List<RoundFixtureSummary> sortedSummaries)
     {
         switch (sortedSummaries.Count)
         {
@@ -526,7 +528,7 @@ public class SyncSeasonWithApiCommandHandler(
 
     private record ValidFixture(int ExternalId, DateTime MatchDateTimeUtc, int HomeTeamId, int AwayTeamId, string ApiRoundName, string ApiStatus);
 
-    private record RoundFixtureSummary(string ApiRoundName, int RoundNumber, DateTime MedianDateUtc);
+    internal record RoundFixtureSummary(string ApiRoundName, int RoundNumber, DateTime MedianDateUtc);
 
-    private record RoundWindow(string ApiRoundName, int RoundNumber, DateTime WindowStart, DateTime WindowEnd);
+    internal record RoundWindow(string ApiRoundName, int RoundNumber, DateTime WindowStart, DateTime WindowEnd);
 }

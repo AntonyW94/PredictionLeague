@@ -160,7 +160,9 @@ public class CreateSeasonCommandHandler(
         }
     }
 
-    private static TournamentStage GetStageForMatchIndex(List<TournamentStage> stages, int matchIndex, int totalMatches)
+    // internal so the stage-distribution rule can be unit tested directly; InternalsVisibleTo
+    // already exposes this assembly to ThePredictions.Application.Tests.Unit.
+    internal static TournamentStage GetStageForMatchIndex(List<TournamentStage> stages, int matchIndex, int totalMatches)
     {
         // For combined knockout rounds, distribute matches across stages
         // using known knockout stage sizes (SF=2, ThirdPlace=1, Final=1)

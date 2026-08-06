@@ -112,8 +112,13 @@ public class ExternalAuthController(ILogger<ExternalAuthController> logger, IMed
         if (string.IsNullOrEmpty(url))
             return fallback;
 
-        // Handle full URLs - extract path if host matches
-        if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+        // Handle full URLs - extract path if host matches.
+        // The leading-slash check has to come first. On Linux, Uri.TryCreate accepts "/dashboard"
+        // as the absolute file URI "file:///dashboard", whose empty host then fails the same-host
+        // test below and silently discards a perfectly valid local return URL. Windows rejects the
+        // same string, so without this guard the redirect target only breaks once deployed.
+        // Paths beginning "//" or containing a backslash still fall through to IsValidLocalPath.
+        if (!url.StartsWith('/') && Uri.TryCreate(url, UriKind.Absolute, out var uri))
         {
             // Check if the URL's host matches our host (normalise to handle www/non-www mismatch)
             var requestHost = NormaliseHost(Request.Host.Host);
