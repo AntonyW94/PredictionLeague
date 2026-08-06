@@ -71,11 +71,11 @@ public class EmailTestDefaultsResolver : IEmailTestDefaultsResolver
 
     private static string Humanise(string name)
     {
+        // RemoveEmptyEntries guarantees every word has at least one character, so there is no
+        // empty-string case to guard against here.
         var words = name
             .Split('_', StringSplitOptions.RemoveEmptyEntries)
-            .Select(word => word.Length == 0
-                ? word
-                : char.ToUpperInvariant(word[0]) + word[1..].ToLowerInvariant());
+            .Select(word => char.ToUpperInvariant(word[0]) + word[1..].ToLowerInvariant());
 
         return string.Join(' ', words);
     }
