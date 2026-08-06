@@ -229,4 +229,21 @@ public class ApiAuthenticationStateProviderTests
         (await StoredTokenAsync()).Should().BeNull();
         notified.Should().BeTrue();
     }
+
+    [Theory]
+    [InlineData("not-a-jwt")]
+    [InlineData("header.payload")]
+    [InlineData("...")]
+    public async Task GetAuthenticationStateAsync_ShouldTreatAnUnreadableTokenAsInvalid(string storedToken)
+    {
+        // A corrupted or truncated value in local storage must not throw its way out of the
+        // authentication state; it should read as "not signed in" and trigger a refresh attempt.
+        _handler.FallbackStatus = HttpStatusCode.Unauthorized;
+        await SeedTokenAsync(storedToken);
+        var provider = CreateProvider();
+
+        var state = await provider.GetAuthenticationStateAsync();
+
+        state.User.Identity?.IsAuthenticated.Should().NotBe(true);
+    }
 }

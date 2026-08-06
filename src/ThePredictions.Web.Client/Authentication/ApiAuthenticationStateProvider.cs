@@ -225,11 +225,11 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
 
     private static AuthenticationState Anonymous() => new(new ClaimsPrincipal(new ClaimsIdentity()));
 
+    /// <summary>
+    /// The caller only reaches this with a non-empty token, so there is no empty case to guard.
+    /// </summary>
     private static ClaimsPrincipal CreateClaimsPrincipalFromToken(string token)
     {
-        if (string.IsNullOrEmpty(token))
-            return new ClaimsPrincipal(new ClaimsIdentity());
-
         var tokenHandler = new JwtSecurityTokenHandler();
         var jwtToken = tokenHandler.ReadJwtToken(token);
         var identity = new ClaimsIdentity(jwtToken.Claims, "jwt", "FullName", "role");

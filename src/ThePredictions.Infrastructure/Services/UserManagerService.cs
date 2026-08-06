@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Identity;
 using ThePredictions.Application.Common.Models;
 using ThePredictions.Application.Services;
@@ -5,6 +6,7 @@ using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Infrastructure.Services;
 
+[ExcludeFromCodeCoverage(Justification = "ASP.NET Identity wrapper: forwards to UserManager and maps its result, exercised end to end.")]
 public class UserManagerService(UserManager<ApplicationUser> userManager) : IUserManager
 {
     #region Create

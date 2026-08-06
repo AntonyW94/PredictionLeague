@@ -2,13 +2,19 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <IsPackable>false</IsPackable>
+    <Include>[ThePredictions.Infrastructure]*</Include>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- No coverlet.msbuild — 100% coverage threshold only applies to Domain tests per CLAUDE.md -->
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <!-- Enforces the CI /p:Threshold=100 gate. Scoped by the Include filter above so only
+         ThePredictions.Infrastructure counts, not the projects it references. -->
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="xunit.v3" Version="3.0.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0" />

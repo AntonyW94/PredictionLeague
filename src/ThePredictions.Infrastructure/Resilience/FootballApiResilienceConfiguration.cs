@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ using System.Net;
 
 namespace ThePredictions.Infrastructure.Resilience;
 
+[ExcludeFromCodeCoverage(Justification = "Polly pipeline configuration: declarative retry, circuit-breaker and timeout wiring with no logic of its own, verified against the live API.")]
 public static class FootballApiResilienceConfiguration
 {
     public static void Configure(

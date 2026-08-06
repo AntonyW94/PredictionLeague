@@ -67,6 +67,20 @@ public class AuthorizationMessageHandlerTests
     }
 
     [Fact]
+    public async Task SendAsync_ShouldTreatARequestWithNoUriAsNonAnonymous()
+    {
+        // HttpClient normally fills the URI in, but the handler must not fall over if it is absent:
+        // an unknown path is treated as needing a token rather than being waved through.
+        var token = TestJwt.Valid();
+        await SeedTokenAsync(token);
+        var request = new HttpRequestMessage { Method = HttpMethod.Get, RequestUri = null };
+
+        await _invoker.SendAsync(request, CancellationToken.None);
+
+        _apiHandler.Requests[0].BearerToken.Should().Be(token);
+    }
+
+    [Fact]
     public async Task SendAsync_ShouldNotAttachToken_ForAnonymousAuthEndpoint()
     {
         await SeedTokenAsync(TestJwt.Valid());

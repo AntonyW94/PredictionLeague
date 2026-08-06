@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using brevo_csharp.Api;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,7 @@ using ThePredictions.Application.Services;
 
 namespace ThePredictions.Infrastructure.Services;
 
+[ExcludeFromCodeCoverage(Justification = "Third-party API client: caches a live Brevo template listing. The parameter extraction it delegates to is tested separately.")]
 public class BrevoEmailTemplateCatalog(
     IOptions<BrevoSettings> settings,
     IOptions<TimeoutSettings> timeoutSettings,

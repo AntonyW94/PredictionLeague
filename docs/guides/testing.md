@@ -162,8 +162,13 @@ code-behind** - that file is measured normally.
 ### Enforcement is per project, and rolls out gradually
 
 `/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Today the test projects
-for **Domain, Validators, Contracts and Hosting.Shared** reference it; the rest use
-`coverlet.collector` alone, so they are measured but not gated.
+for **Domain, Validators, Contracts, Hosting.Shared, Infrastructure, API and Web.Client** reference
+it. Only **Application** is still measured without being gated.
+
+**The gate measures each test project's own run, not the merged report.** A class covered
+incidentally by another project's tests still counts as uncovered for the gate, so read the
+standalone figure - `dotnet test <one project> --collect:"XPlat Code Coverage"` - before assuming a
+project is ready to gate. The merged report is for reading; the per-project run is what CI enforces.
 
 A gated test project whose subject assembly has dependencies must scope the measurement with an
 `<Include>` property, or the threshold sees those dependencies too and fails on their coverage.
