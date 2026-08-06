@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Contracts.Admin.RunningCosts;
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public record RunningCostDto(
     int Id,
     string Name,

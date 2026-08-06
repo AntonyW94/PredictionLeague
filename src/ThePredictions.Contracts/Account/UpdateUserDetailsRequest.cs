@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Contracts.Account;
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class UpdateUserDetailsRequest
 {
     public string FirstName { get; init; } = string.Empty;

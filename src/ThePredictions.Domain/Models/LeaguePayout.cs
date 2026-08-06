@@ -21,7 +21,7 @@ public class LeaguePayout
 
     public bool IsPaid => PaidAtUtc.HasValue;
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]
     private LeaguePayout() { }
 
     public LeaguePayout(int id, int leagueId, string userId, decimal totalAmount, DateTime? paidAtUtc, DateTime createdAtUtc, DateTime updatedAtUtc)

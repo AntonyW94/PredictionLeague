@@ -7,7 +7,7 @@ namespace ThePredictions.Contracts.Prizes;
 /// or a single prize. <see cref="Delta"/> carries the marginal effect of one more entrant for the
 /// prospective-member "+£x" view (null when not computing a delta).
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class PrizeSlotDto
 {
     public string Label { get; init; } = string.Empty;

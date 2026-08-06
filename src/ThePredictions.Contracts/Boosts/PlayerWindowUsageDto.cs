@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Contracts.Boosts;
 
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public sealed class PlayerWindowUsageDto
 {
     public string UserId { get; init; } = string.Empty;

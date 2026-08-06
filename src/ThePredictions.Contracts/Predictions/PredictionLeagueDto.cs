@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Contracts.Predictions;
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class PredictionLeagueDto
 {
     public int LeagueId { get; init; }

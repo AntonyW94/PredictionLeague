@@ -17,7 +17,7 @@ namespace ThePredictions.Contracts.Dashboard;
 /// open. IsPredictionRevealed says whether that has happened for this match; in a combined
 /// round the earlier matches can be revealed while the later ones are still hidden.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public record ActiveRoundMatchDto(
     string? HomeTeamLogoUrl,
     string? AwayTeamLogoUrl,

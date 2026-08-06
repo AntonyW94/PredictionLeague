@@ -3,7 +3,7 @@ using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Contracts.Homepage;
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public record HomepageSeasonDto(
     int Id,
     string Name,

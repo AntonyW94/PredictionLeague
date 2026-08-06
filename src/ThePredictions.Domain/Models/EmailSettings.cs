@@ -15,7 +15,7 @@ public class EmailSettings
     public int Id { get; init; }
     public bool EmailsEnabled { get; private set; }
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]
     private EmailSettings() { }
 
     public EmailSettings(int id, bool emailsEnabled)

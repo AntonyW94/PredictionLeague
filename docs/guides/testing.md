@@ -106,13 +106,26 @@ be questioned. The exclusion turns "we forgot" into "we decided".
 ### `[ExcludeFromCodeCoverage]` means deliberately not worth testing
 
 It does **not** mean "not written yet". The moment it becomes a to-do marker, the ratchet stops
-meaning anything. Pair it with a reason:
+meaning anything. **Always give a reason, via the attribute's own `Justification` property** - not a
+comment, so the reason travels with the attribute and is visible to tooling and in review:
 
 ```csharp
-// SQL correctness is verified by tools/ThePredictions.SchemaCheck; the mapping is exercised E2E.
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "SQL is verified by tools/ThePredictions.SchemaCheck; the mapping is exercised E2E.")]
 public class GetOverallLeaderboardQueryHandler(...)
 ```
+
+Every exclusion in `src/` carries one. The recurring reasons are worded consistently so they can be
+grepped and counted:
+
+| Reason | Applies to |
+|--------|-----------|
+| `Data-only contract: properties only, no logic to test.` | `ThePredictions.Contracts` DTOs, requests and responses |
+| `Data-only type: properties only, no logic to test.` | Data-only types elsewhere (API DTOs, Domain snapshots, prize breakdown types) |
+| `Parameterless constructor for Dapper hydration: no logic to test.` | The private/public `Entity()` constructors Dapper needs |
+| `Dapper row type: properties only, no logic to test.` | Private `XxxRow` types a handler materialises into |
+| `Options type bound from configuration: properties only, no logic to test.` | `*Settings` / `*Options` classes bound from `appsettings` |
+
+A one-off exclusion should say something specific rather than reuse a row above.
 
 Reasonable exclusions: positional result records, data-only Contracts DTOs, ORM-only constructors,
 `Program.cs` wiring, controllers that only forward to MediatR, and query handlers whose body is a

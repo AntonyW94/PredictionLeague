@@ -21,7 +21,7 @@ public class SeasonPass
 
     public bool HasSmsReminders => Tier >= SeasonPassTier.Premium;
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]
     private SeasonPass() { }
 
     public SeasonPass(int id, string userId, int seasonId, SeasonPassTier tier, SeasonPassSource source,

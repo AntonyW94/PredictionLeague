@@ -2,5 +2,5 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Contracts.Admin.EmailTests;
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public record EmailTestDefaultsDto(Dictionary<string, string> Defaults);

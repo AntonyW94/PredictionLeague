@@ -6,7 +6,7 @@ namespace ThePredictions.Contracts.Payouts;
 /// Admin view of a league's end-of-season payouts: one row per winner, with outstanding/paid totals.
 /// Mark-as-paid is only available once <see cref="SeasonComplete"/> is true.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public record LeaguePayoutsDto(
     bool SeasonComplete,
     decimal OutstandingTotal,

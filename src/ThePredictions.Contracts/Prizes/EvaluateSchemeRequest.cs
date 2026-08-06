@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Contracts.Prizes;
 
 /// <summary>A draft scheme plus the context needed to preview its derived prizes in the editor.</summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class EvaluateSchemeRequest
 {
     public int SeasonId { get; set; }

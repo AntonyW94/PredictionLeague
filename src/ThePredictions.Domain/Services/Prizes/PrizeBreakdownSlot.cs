@@ -6,7 +6,7 @@ namespace ThePredictions.Domain.Services.Prizes;
 /// A single payable line in a category: a ranked place ("1st"), a per-event prize ("Per round"),
 /// a staged place ("Group stage - 1st"), or a single prize ("Most exact scores").
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 public sealed class PrizeBreakdownSlot
 {
     public string Label { get; init; } = string.Empty;

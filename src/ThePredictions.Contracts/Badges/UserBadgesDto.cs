@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Contracts.Badges;
 
 /// <summary>The full badges page: the three sections plus the overall collected count.</summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public record UserBadgesDto(
     int EarnedCount,
     int TotalCount,

@@ -8,7 +8,7 @@ namespace ThePredictions.Domain.Common.Pricing;
 /// comparable prior season to derive player numbers, <see cref="SuggestedStandardPrice"/> is null and
 /// <see cref="UnavailableReason"/> explains why.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 public class PriceRecommendation
 {
     public PriceRecommendation(

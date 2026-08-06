@@ -49,7 +49,7 @@ public class EvaluateSchemeQueryHandler(IApplicationReadDbConnection dbConnectio
         return months;
     }
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
     private sealed class SeasonRow
     {
         public int NumberOfRounds { get; init; }

@@ -6,7 +6,7 @@ namespace ThePredictions.Contracts.Prizes;
 /// The full round-number prize breakdown for a scheme at a given entrant count. Category sub-pots
 /// always sum to <see cref="Pot"/>.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class PrizeBreakdownDto
 {
     public decimal Pot { get; init; }

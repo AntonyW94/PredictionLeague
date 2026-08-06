@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Contracts.Boosts;
 
 /// <summary>A boost in the catalogue, shown as a selectable option when configuring a league.</summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class BoostCatalogueItemDto
 {
     public string Code { get; init; } = string.Empty;

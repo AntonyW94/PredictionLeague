@@ -8,7 +8,7 @@ namespace ThePredictions.Contracts.Prizes;
 /// once they join, and the attributed "+£x where your money goes" effect of their own entry.
 /// Contains numbers and the organiser's name only - no other member identities.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class PrizePreviewDto
 {
     public int LeagueId { get; init; }

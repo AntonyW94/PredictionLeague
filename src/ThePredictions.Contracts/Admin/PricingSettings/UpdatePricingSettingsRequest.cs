@@ -6,7 +6,7 @@ namespace ThePredictions.Contracts.Admin.PricingSettings;
 /// Update for the global calculator knobs. BufferRate is a fraction (0.15 = 15%);
 /// MinimumFloor is a GBP amount.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class UpdatePricingSettingsRequest
 {
     public decimal BufferRate { get; set; }

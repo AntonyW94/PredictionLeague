@@ -7,7 +7,7 @@ namespace ThePredictions.Contracts.Admin.ServiceFees;
 /// (Stripe, Sms, Email). <see cref="PercentFee"/> is a fraction (0.015 = 1.5%); <see cref="FixedFee"/>
 /// is a GBP amount per transaction/message.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public record ServiceFeeDto(
     string Provider,
     decimal PercentFee,

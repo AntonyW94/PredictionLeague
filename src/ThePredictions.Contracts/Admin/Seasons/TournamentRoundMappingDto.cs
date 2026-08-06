@@ -3,7 +3,7 @@ using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Contracts.Admin.Seasons;
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class TournamentRoundMappingDto
 {
     public int RoundNumber { get; set; }

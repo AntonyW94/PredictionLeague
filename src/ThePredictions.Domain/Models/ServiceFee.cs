@@ -19,7 +19,7 @@ public class ServiceFee
     public decimal PercentFee { get; private set; }
     public decimal FixedFee { get; private set; }
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]
     private ServiceFee() { }
 
     public ServiceFee(int id, ServiceFeeProvider provider, decimal percentFee, decimal fixedFee)

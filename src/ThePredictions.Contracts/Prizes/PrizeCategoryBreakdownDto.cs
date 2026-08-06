@@ -6,7 +6,7 @@ namespace ThePredictions.Contracts.Prizes;
 /// <summary>
 /// One category's resolved prizes at a given entrant count: the money it holds and its slots.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class PrizeCategoryBreakdownDto
 {
     public PrizeType Category { get; init; }

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace ThePredictions.Application.FootballApi.DTOs;
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class Score
 {

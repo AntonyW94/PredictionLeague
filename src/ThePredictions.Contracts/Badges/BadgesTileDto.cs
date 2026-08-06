@@ -6,7 +6,7 @@ namespace ThePredictions.Contracts.Badges;
 /// The dashboard tile: the overall collected count and the ordered carousel window
 /// (recently earned first, then closest-to-next).
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public record BadgesTileDto(
     int EarnedCount,
     int TotalCount,

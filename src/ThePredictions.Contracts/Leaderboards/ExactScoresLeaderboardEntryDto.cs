@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Contracts.Leaderboards;
 
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class ExactScoresLeaderboardEntryDto
 {
     public long Rank { get; set; }

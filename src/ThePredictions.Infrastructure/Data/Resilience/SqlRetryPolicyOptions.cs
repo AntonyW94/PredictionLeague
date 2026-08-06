@@ -5,7 +5,7 @@ namespace ThePredictions.Infrastructure.Data.Resilience;
 /// <summary>
 /// Configuration options for the SQL transient-fault retry policy.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Options type bound from configuration: properties only, no logic to test.")]
 public class SqlRetryPolicyOptions
 {
     public const string SectionName = "SqlResilience";
