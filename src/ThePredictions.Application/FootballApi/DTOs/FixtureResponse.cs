@@ -5,6 +5,7 @@ namespace ThePredictions.Application.FootballApi.DTOs;
 
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[ExcludeFromCodeCoverage(Justification = "Football API response shape: properties only, deserialised straight from the provider.")]
 public class FixtureResponse
 {
     [JsonPropertyName("fixture")]

@@ -33,6 +33,9 @@ public class OverallPrizeStrategyTests
     }
 
     [Fact]
+    public void PrizeType_ShouldBeOverall() => _strategy.PrizeType.Should().Be(PrizeType.Overall);
+
+    [Fact]
     public async Task AwardPrizes_ShouldReturnEarly_WhenRoundNotFound()
     {
         _roundRepository.GetByIdAsync(RoundId, Arg.Any<CancellationToken>())
