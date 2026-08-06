@@ -7,26 +7,55 @@ namespace ThePredictions.Contracts.Badges;
 /// </summary>
 public static class BadgeGlyphs
 {
-    public static string Svg(string glyph) => glyph switch
+    /// <summary>
+    /// A lookup table, not control flow: expressing it as a dictionary keeps the artwork as data
+    /// and stops one glyph per line counting as a branch. Ordinal so the keys stay case-sensitive,
+    /// matching the switch this replaced.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, string> Glyphs = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        "target" => """<g fill="none" stroke="currentColor" stroke-width="3"><circle cx="60" cy="60" r="21"/><circle cx="60" cy="60" r="13"/></g><circle cx="60" cy="60" r="4.5" fill="currentColor"/>""",
-        "crosshair" => """<g fill="none" stroke="currentColor" stroke-width="3"><circle cx="60" cy="60" r="19"/><line x1="60" y1="33" x2="60" y2="45"/><line x1="60" y1="75" x2="60" y2="87"/><line x1="33" y1="60" x2="45" y2="60"/><line x1="75" y1="60" x2="87" y2="60"/></g><circle cx="60" cy="60" r="4" fill="currentColor"/>""",
-        "bullseye" => """<g fill="none" stroke="currentColor" stroke-width="3"><circle cx="60" cy="60" r="21"/><circle cx="60" cy="60" r="12"/></g><circle cx="60" cy="60" r="7" fill="currentColor"/>""",
-        "network" => """<g fill="none" stroke="currentColor" stroke-width="3"><line x1="60" y1="44" x2="46" y2="72"/><line x1="60" y1="44" x2="74" y2="72"/><line x1="46" y1="72" x2="74" y2="72"/></g><g fill="currentColor"><circle cx="60" cy="42" r="6.5"/><circle cx="45" cy="73" r="6.5"/><circle cx="75" cy="73" r="6.5"/></g>""",
-        "flame" => """<path d="M60 38 C 63 50 74 55 72 67 A 12 12 0 1 1 48 67 C 47 59 54 57 55 50 C 56 55 60 53 60 38 Z" fill="currentColor" opacity="0.14"/><path d="M60 38 C 63 50 74 55 72 67 A 12 12 0 1 1 48 67 C 47 59 54 57 55 50 C 56 55 60 53 60 38 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M60 58 C 64 64 63 72 60 75 C 57 72 56 66 58 63 C 59 66 60 62 60 58 Z" fill="currentColor"/>""",
-        "flag" => """<g stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="52" y1="38" x2="52" y2="82"/><path d="M52 41 L74 47 L52 53 Z" fill="currentColor"/></g>""",
-        "scoreboard" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="42" y="46" width="36" height="28" rx="4"/><line x1="60" y1="46" x2="60" y2="74"/></g><g fill="currentColor"><circle cx="51" cy="60" r="2.6"/><circle cx="69" cy="60" r="2.6"/></g>""",
-        "crowd" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="46" y1="74" x2="46" y2="58"/><line x1="53" y1="74" x2="53" y2="54"/><line x1="67" y1="74" x2="67" y2="54"/><line x1="74" y1="74" x2="74" y2="58"/></g><line x1="60" y1="74" x2="60" y2="44" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>""",
-        "calendar" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><rect x="42" y="46" width="36" height="30" rx="4"/><line x1="42" y1="55" x2="78" y2="55"/><line x1="51" y1="42" x2="51" y2="49"/><line x1="69" y1="42" x2="69" y2="49"/><path d="M52 64 L58 70 L69 60"/></g>""",
-        "rosette" => """<circle cx="60" cy="52" r="14" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="60" cy="52" r="5" fill="currentColor"/><path d="M53 64 L50 80 L60 74 L70 80 L67 64 Z" fill="currentColor" opacity="0.85"/>""",
-        "trophy" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M49 42 H71 V52 A11 11 0 0 1 49 52 Z"/><path d="M49 46 H43 A5 5 0 0 0 48 56"/><path d="M71 46 H77 A5 5 0 0 1 72 56"/><line x1="60" y1="63" x2="60" y2="71"/><path d="M52 78 H68 L66 71 H54 Z" fill="currentColor"/></g>""",
-        "podium" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="44" y="62" width="14" height="16"/><rect x="53" y="52" width="14" height="26"/><rect x="62" y="68" width="14" height="10"/></g>""",
-        "phone" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="48" y="38" width="24" height="44" rx="5"/><line x1="56" y1="44" x2="64" y2="44"/></g><circle cx="60" cy="75" r="2.5" fill="currentColor"/>""",
-        "wallet" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="40" y="47" width="40" height="27" rx="4"/><line x1="40" y1="56" x2="80" y2="56"/></g><circle cx="70" cy="65" r="2.6" fill="currentColor"/>""",
-        "shield" => """<path d="M60 39 L77 46 V60 C77 70 70 77 60 81 C50 77 43 70 43 60 V46 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M53 60 L58 65 L68 54" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>""",
-        "calendar-star" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="42" y="46" width="36" height="30" rx="4"/><line x1="42" y1="55" x2="78" y2="55"/><line x1="51" y1="42" x2="51" y2="49"/><line x1="69" y1="42" x2="69" y2="49"/></g><path d="M60 58 L62.4 63 L68 63.5 L63.8 67.2 L65 72.5 L60 69.6 L55 72.5 L56.2 67.2 L52 63.5 L57.6 63 Z" fill="currentColor"/>""",
-        "bracket" => """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M45 49 H55"/><path d="M45 63 H55"/><path d="M55 49 V63"/><path d="M55 56 H64"/></g><circle cx="72" cy="56" r="4" fill="currentColor"/><line x1="64" y1="56" x2="68" y2="56" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>""",
-        "clock" => """<circle cx="60" cy="60" r="17" fill="none" stroke="currentColor" stroke-width="3"/><path d="M60 50 V60 L67 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>""",
-        _ => """<circle cx="60" cy="60" r="16" fill="none" stroke="currentColor" stroke-width="3"/>"""
+        ["target"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3"><circle cx="60" cy="60" r="21"/><circle cx="60" cy="60" r="13"/></g><circle cx="60" cy="60" r="4.5" fill="currentColor"/>""",
+        ["crosshair"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3"><circle cx="60" cy="60" r="19"/><line x1="60" y1="33" x2="60" y2="45"/><line x1="60" y1="75" x2="60" y2="87"/><line x1="33" y1="60" x2="45" y2="60"/><line x1="75" y1="60" x2="87" y2="60"/></g><circle cx="60" cy="60" r="4" fill="currentColor"/>""",
+        ["bullseye"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3"><circle cx="60" cy="60" r="21"/><circle cx="60" cy="60" r="12"/></g><circle cx="60" cy="60" r="7" fill="currentColor"/>""",
+        ["network"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3"><line x1="60" y1="44" x2="46" y2="72"/><line x1="60" y1="44" x2="74" y2="72"/><line x1="46" y1="72" x2="74" y2="72"/></g><g fill="currentColor"><circle cx="60" cy="42" r="6.5"/><circle cx="45" cy="73" r="6.5"/><circle cx="75" cy="73" r="6.5"/></g>""",
+        ["flame"] =
+            """<path d="M60 38 C 63 50 74 55 72 67 A 12 12 0 1 1 48 67 C 47 59 54 57 55 50 C 56 55 60 53 60 38 Z" fill="currentColor" opacity="0.14"/><path d="M60 38 C 63 50 74 55 72 67 A 12 12 0 1 1 48 67 C 47 59 54 57 55 50 C 56 55 60 53 60 38 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M60 58 C 64 64 63 72 60 75 C 57 72 56 66 58 63 C 59 66 60 62 60 58 Z" fill="currentColor"/>""",
+        ["flag"] =
+            """<g stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="52" y1="38" x2="52" y2="82"/><path d="M52 41 L74 47 L52 53 Z" fill="currentColor"/></g>""",
+        ["scoreboard"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="42" y="46" width="36" height="28" rx="4"/><line x1="60" y1="46" x2="60" y2="74"/></g><g fill="currentColor"><circle cx="51" cy="60" r="2.6"/><circle cx="69" cy="60" r="2.6"/></g>""",
+        ["crowd"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="46" y1="74" x2="46" y2="58"/><line x1="53" y1="74" x2="53" y2="54"/><line x1="67" y1="74" x2="67" y2="54"/><line x1="74" y1="74" x2="74" y2="58"/></g><line x1="60" y1="74" x2="60" y2="44" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>""",
+        ["calendar"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><rect x="42" y="46" width="36" height="30" rx="4"/><line x1="42" y1="55" x2="78" y2="55"/><line x1="51" y1="42" x2="51" y2="49"/><line x1="69" y1="42" x2="69" y2="49"/><path d="M52 64 L58 70 L69 60"/></g>""",
+        ["rosette"] =
+            """<circle cx="60" cy="52" r="14" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="60" cy="52" r="5" fill="currentColor"/><path d="M53 64 L50 80 L60 74 L70 80 L67 64 Z" fill="currentColor" opacity="0.85"/>""",
+        ["trophy"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><path d="M49 42 H71 V52 A11 11 0 0 1 49 52 Z"/><path d="M49 46 H43 A5 5 0 0 0 48 56"/><path d="M71 46 H77 A5 5 0 0 1 72 56"/><line x1="60" y1="63" x2="60" y2="71"/><path d="M52 78 H68 L66 71 H54 Z" fill="currentColor"/></g>""",
+        ["podium"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="44" y="62" width="14" height="16"/><rect x="53" y="52" width="14" height="26"/><rect x="62" y="68" width="14" height="10"/></g>""",
+        ["phone"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="48" y="38" width="24" height="44" rx="5"/><line x1="56" y1="44" x2="64" y2="44"/></g><circle cx="60" cy="75" r="2.5" fill="currentColor"/>""",
+        ["wallet"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="40" y="47" width="40" height="27" rx="4"/><line x1="40" y1="56" x2="80" y2="56"/></g><circle cx="70" cy="65" r="2.6" fill="currentColor"/>""",
+        ["shield"] =
+            """<path d="M60 39 L77 46 V60 C77 70 70 77 60 81 C50 77 43 70 43 60 V46 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M53 60 L58 65 L68 54" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>""",
+        ["calendar-star"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><rect x="42" y="46" width="36" height="30" rx="4"/><line x1="42" y1="55" x2="78" y2="55"/><line x1="51" y1="42" x2="51" y2="49"/><line x1="69" y1="42" x2="69" y2="49"/></g><path d="M60 58 L62.4 63 L68 63.5 L63.8 67.2 L65 72.5 L60 69.6 L55 72.5 L56.2 67.2 L52 63.5 L57.6 63 Z" fill="currentColor"/>""",
+        ["bracket"] =
+            """<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M45 49 H55"/><path d="M45 63 H55"/><path d="M55 49 V63"/><path d="M55 56 H64"/></g><circle cx="72" cy="56" r="4" fill="currentColor"/><line x1="64" y1="56" x2="68" y2="56" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>""",
+        ["clock"] =
+            """<circle cx="60" cy="60" r="17" fill="none" stroke="currentColor" stroke-width="3"/><path d="M60 50 V60 L67 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>""",
     };
+
+    /// <summary>Drawn when a glyph name is unknown, so a badge always renders something.</summary>
+    private const string FallbackGlyph =
+        """<circle cx="60" cy="60" r="16" fill="none" stroke="currentColor" stroke-width="3"/>""";
+
+    public static string Svg(string glyph) =>
+        glyph is not null && Glyphs.TryGetValue(glyph, out var markup) ? markup : FallbackGlyph;
 }

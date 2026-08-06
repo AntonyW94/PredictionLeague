@@ -12,6 +12,19 @@ public static class PredictionSplitChoice
     /// </summary>
     public static string? For(IEnumerable<PredictionResultDto>? results, string? userId, int matchId)
     {
+        var prediction = FindPrediction(results, userId, matchId);
+        if (prediction is null)
+            return null;
+
+        return Outcome(prediction.HomeScore!.Value, prediction.AwayScore!.Value);
+    }
+
+    /// <summary>
+    /// The user's prediction for this match, or null when there is no signed-in user, no results,
+    /// no row for them, or the row carries no usable score.
+    /// </summary>
+    private static PredictionScoreDto? FindPrediction(IEnumerable<PredictionResultDto>? results, string? userId, int matchId)
+    {
         if (string.IsNullOrEmpty(userId) || results is null)
             return null;
 
@@ -19,15 +32,14 @@ public static class PredictionSplitChoice
             .FirstOrDefault(r => r.UserId == userId)?
             .Predictions.FirstOrDefault(p => p.MatchId == matchId);
 
-        if (prediction?.HomeScore is null || prediction.AwayScore is null)
-            return null;
+        return prediction?.HomeScore is null || prediction.AwayScore is null ? null : prediction;
+    }
 
-        if (prediction.HomeScore > prediction.AwayScore)
+    private static string Outcome(int homeScore, int awayScore)
+    {
+        if (homeScore > awayScore)
             return "H";
 
-        if (prediction.HomeScore < prediction.AwayScore)
-            return "A";
-
-        return "D";
+        return homeScore < awayScore ? "A" : "D";
     }
 }

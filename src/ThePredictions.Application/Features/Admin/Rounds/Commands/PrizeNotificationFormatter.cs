@@ -18,19 +18,34 @@ public static class PrizeNotificationFormatter
     /// </summary>
     public static string Title(WonPrize prize) => prize.PrizeType switch
     {
-        PrizeType.Round => string.IsNullOrWhiteSpace(prize.PrizeRoundName)
-            ? "Round winner"
-            : $"{prize.PrizeRoundName} round winner",
-        PrizeType.Monthly => prize.Month is >= 1 and <= 12
-            ? $"{UkCulture.DateTimeFormat.GetMonthName(prize.Month.Value)} monthly winner"
-            : "Monthly winner",
+        PrizeType.Round => RoundTitle(prize),
+        PrizeType.Monthly => MonthlyTitle(prize),
         PrizeType.MostExactScores => "Most exact scores",
         PrizeType.Overall => $"Overall - {DigestEmailFormatter.Ordinal(prize.Rank)}",
-        PrizeType.Stages => string.IsNullOrWhiteSpace(prize.Stage)
-            ? $"Stage winner - {DigestEmailFormatter.Ordinal(prize.Rank)}"
-            : $"{prize.Stage} - {DigestEmailFormatter.Ordinal(prize.Rank)}",
-        _ => string.IsNullOrWhiteSpace(prize.PrizeDescription) ? "Prize" : prize.PrizeDescription!
+        PrizeType.Stages => StageTitle(prize),
+        _ => FallbackTitle(prize)
     };
+
+    /// <summary>Named rounds read better than "Round winner", but the name is not always present.</summary>
+    private static string RoundTitle(WonPrize prize) =>
+        string.IsNullOrWhiteSpace(prize.PrizeRoundName)
+            ? "Round winner"
+            : $"{prize.PrizeRoundName} round winner";
+
+    /// <summary>Falls back to the generic title when the month is missing or out of range.</summary>
+    private static string MonthlyTitle(WonPrize prize) =>
+        prize.Month is >= 1 and <= 12
+            ? $"{UkCulture.DateTimeFormat.GetMonthName(prize.Month.Value)} monthly winner"
+            : "Monthly winner";
+
+    private static string StageTitle(WonPrize prize) =>
+        string.IsNullOrWhiteSpace(prize.Stage)
+            ? $"Stage winner - {DigestEmailFormatter.Ordinal(prize.Rank)}"
+            : $"{prize.Stage} - {DigestEmailFormatter.Ordinal(prize.Rank)}";
+
+    /// <summary>An unrecognised prize type still needs a label on the email.</summary>
+    private static string FallbackTitle(WonPrize prize) =>
+        string.IsNullOrWhiteSpace(prize.PrizeDescription) ? "Prize" : prize.PrizeDescription!;
 
     /// <summary>
     /// Formats a prize amount as pounds: whole amounts drop the pence ("£10"), otherwise two

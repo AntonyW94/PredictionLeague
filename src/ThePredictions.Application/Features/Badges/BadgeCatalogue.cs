@@ -72,39 +72,46 @@ public static class BadgeCatalogue
     {
         foreach (var group in Groups)
         {
-            var tierIndex = -1;
-            for (var i = 0; i < group.Tiers.Count; i++)
-            {
-                if (group.Tiers[i].Key == key)
-                {
-                    tierIndex = i;
-                    break;
-                }
-            }
-
-            if (tierIndex < 0)
+            var tier = TierOf(group, key);
+            if (tier is null)
                 continue;
 
-            var tier = tierIndex + 1;
-            var variant = group.Category switch
-            {
-                HonourCategory => "gold",
-                // tier is tierIndex + 1, so it is always 1 or more - bronze is the floor, and a
-                // fourth arm here would be unreachable.
-                CollectionCategory => tier switch
-                {
-                    >= 3 => "gold",
-                    2 => "silver",
-                    _ => "bronze"
-                },
-                _ => "green"
-            };
+            var variant = VariantFor(group.Category, tier.Value);
 
-            return new BadgeDisplay(key, group.GroupKey, group.Name, group.Glyph, variant, tier, group.Tiers.Count);
+            return new BadgeDisplay(key, group.GroupKey, group.Name, group.Glyph, variant, tier.Value, group.Tiers.Count);
         }
 
         return null;
     }
+
+    /// <summary>The 1-based tier this key represents within the group, or null if it is not in it.</summary>
+    private static int? TierOf(BadgeGroup group, string key)
+    {
+        for (var i = 0; i < group.Tiers.Count; i++)
+        {
+            if (group.Tiers[i].Key == key)
+                return i + 1;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The colour variant to render, mirroring <c>BadgeIcon.razor</c>: honours are gold, collection
+    /// tiers step bronze -> silver -> gold, and one-off badges are green.
+    /// </summary>
+    private static string VariantFor(string category, int tier) => category switch
+    {
+        HonourCategory => "gold",
+        // tier is 1 or more, so bronze is the floor and a fourth arm here would be unreachable.
+        CollectionCategory => tier switch
+        {
+            >= 3 => "gold",
+            2 => "silver",
+            _ => "bronze"
+        },
+        _ => "green"
+    };
 
     internal static UserBadgesDto BuildPage(BadgeUserState state, DateTime nowUtc)
     {
@@ -144,58 +151,79 @@ public static class BadgeCatalogue
     {
         var tier = group.Tiers.Count(t => state.Earned.ContainsKey(t.Key));
         var maxTier = group.Tiers.Count;
-        var thresholds = group.Tiers.Select(t => t.Threshold).ToList();
         var maxed = tier == maxTier;
         var metric = MetricFor(group.GroupKey, state.Metrics);
         var nextThreshold = maxed ? 0 : group.Tiers[tier].Threshold;
+        var lastAwarded = LastAwarded(group, state);
 
-        var progress = maxed
-            ? 1d
-            : nextThreshold > 0 ? Math.Min(1d, metric / (double)nextThreshold) : 0d;
+        return new BadgeDto(group.GroupKey, group.Name, group.Description, group.Glyph, group.Category,
+            CollectionState(tier, metric, maxed),
+            tier, maxTier,
+            group.Tiers.Select(t => t.Threshold).ToList(),
+            CollectionProgress(metric, nextThreshold, maxed),
+            maxed ? $"Best {metric}" : $"{metric} / {nextThreshold}",
+            0,
+            lastAwarded == default ? null : lastAwarded)
+        {
+            SecondaryLabel = SecondaryLabelFor(group, state)
+        };
+    }
 
-        var progressLabel = maxed
-            ? $"Best {metric}"
-            : $"{metric} / {nextThreshold}";
+    /// <summary>How far round the ring goes: full once every tier is earned, otherwise the share of
+    /// the next threshold reached.</summary>
+    private static double CollectionProgress(int metric, int nextThreshold, bool maxed)
+    {
+        if (maxed)
+            return 1d;
 
-        var state2 = maxed ? "Earned" : tier > 0 || metric > 0 ? "InProgress" : "Locked";
+        return nextThreshold > 0 ? Math.Min(1d, metric / (double)nextThreshold) : 0d;
+    }
 
-        var lastAwarded = group.Tiers
+    private static string CollectionState(int tier, int metric, bool maxed)
+    {
+        if (maxed)
+            return "Earned";
+
+        return tier > 0 || metric > 0 ? "InProgress" : "Locked";
+    }
+
+    private static DateTime LastAwarded(BadgeGroup group, BadgeUserState state) =>
+        group.Tiers
             .Where(t => state.Earned.ContainsKey(t.Key))
             .Select(t => state.Earned[t.Key].LastAwardedUtc)
             .DefaultIfEmpty(default)
             .Max();
 
-        // On Fire shows the live current run beneath the best, since a streak is dynamic (it can drop
-        // to zero). The best (metric) drives the ring; the current run is informational.
-        var secondaryLabel = group.GroupKey == BadgeGroupKeys.OnFire
-            ? state.Metrics.CurrentStreak > 0
-                ? $"On a {state.Metrics.CurrentStreak}-round run"
-                : "No current run"
-            : string.Empty;
+    /// <summary>
+    /// On Fire shows the live current run beneath the best, since a streak is dynamic (it can drop
+    /// to zero). The best drives the ring; the current run is informational. No other collection
+    /// has a second line.
+    /// </summary>
+    private static string SecondaryLabelFor(BadgeGroup group, BadgeUserState state)
+    {
+        if (group.GroupKey != BadgeGroupKeys.OnFire)
+            return string.Empty;
 
-        return new BadgeDto(group.GroupKey, group.Name, group.Description, group.Glyph, group.Category,
-            state2, tier, maxTier, thresholds, progress, progressLabel, 0,
-            lastAwarded == default ? null : lastAwarded)
-        {
-            SecondaryLabel = secondaryLabel
-        };
+        return state.Metrics.CurrentStreak > 0
+            ? $"On a {state.Metrics.CurrentStreak}-round run"
+            : "No current run";
     }
 
     private static BadgeDto BuildSingle(BadgeGroup group, BadgeUserState state, DateTime nowUtc)
     {
         var key = group.GroupKey;
-        var earned = state.Earned.TryGetValue(key, out var award);
 
-        if (key == BadgeKeys.EverPresent && !earned)
+        if (state.Earned.TryGetValue(key, out var award))
+            return new BadgeDto(key, group.Name, group.Description, group.Glyph, group.Category,
+                "Earned", 1, 1, [], 1d, "Earned", award.Count, award.LastAwardedUtc);
+
+        // Ever-Present is the one badge that shows how far through the season the player is,
+        // rather than sitting flatly locked until it lands.
+        if (key == BadgeKeys.EverPresent)
             return BuildEverPresentProgress(group, state);
 
-        var state2 = earned ? "Earned" : "Locked";
-        var progressLabel = earned ? "Earned" : "Locked";
-        var count = earned ? award!.Count : 0;
-
         return new BadgeDto(key, group.Name, group.Description, group.Glyph, group.Category,
-            state2, earned ? 1 : 0, 1, [], earned ? 1d : 0d, progressLabel, count,
-            earned ? award!.LastAwardedUtc : null);
+            "Locked", 0, 1, [], 0d, "Locked", 0, null);
     }
 
     private static BadgeDto BuildEverPresentProgress(BadgeGroup group, BadgeUserState state)
