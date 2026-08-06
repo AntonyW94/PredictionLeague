@@ -95,10 +95,12 @@ public sealed class BoostService(IBoostReadRepository boostReadRepository, IBoos
         var eligibility = await GetEligibilityAsync(userId, leagueId, roundId, boostCode, cancellationToken);
         if (!eligibility.CanUse)
         {
+            // Every refusal carries a reason: BoostEligibilityResult only leaves Reason null on the
+            // Allowed path, and the deadline check above sets its own.
             return new ApplyBoostResultDto
             {
                 Success = false,
-                Error = eligibility.Reason ?? "Not eligible to use this boost.",
+                Error = eligibility.Reason,
                 AlreadyUsedThisRound = eligibility.AlreadyUsedThisRound
             };
         }

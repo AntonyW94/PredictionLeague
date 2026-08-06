@@ -10,9 +10,12 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <!-- No coverlet.msbuild: this project is measured but NOT gated. Once async method bodies
-         became visible (see docs/guides/testing.md) its real coverage was 57%, not 100%.
-         Re-add the package once it genuinely reaches 100% line and branch. -->
+    <!-- Enforces the CI /p:Threshold=100 gate. Scoped by the Include filter above so only
+         ThePredictions.Web.Client counts, not the projects it references. -->
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="xunit.v3" Version="3.0.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0" />
     <PackageReference Include="FluentAssertions" Version="7.0.0" />

@@ -246,4 +246,150 @@ public class ApiAuthenticationStateProviderTests
 
         state.User.Identity?.IsAuthenticated.Should().NotBe(true);
     }
+
+    /// <summary>Simulates the API being unreachable, e.g. mid-deploy.</summary>
+    private sealed class UnreachableHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            throw new HttpRequestException("connection refused");
+    }
+
+    private ApiAuthenticationStateProvider CreateUnreachableProvider()
+    {
+        var client = new HttpClient(new UnreachableHandler()) { BaseAddress = new Uri("https://localhost/") };
+        return new ApiAuthenticationStateProvider(client, _localStorage, Substitute.For<ILogger<ApiAuthenticationStateProvider>>(), _navigation);
+    }
+
+    // ---------- refresh failure modes ----------
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_ShouldKeepTheStoredToken_WhenTheApiIsUnreachable()
+    {
+        // A refresh that cannot reach the API is transient: the refresh token may still be good,
+        // so the session must survive a deploy rather than silently logging everyone out.
+        await SeedTokenAsync(TestJwt.Expired());
+        var provider = CreateUnreachableProvider();
+
+        var state = await provider.GetAuthenticationStateAsync();
+
+        state.User.Identity?.IsAuthenticated.Should().NotBe(true);
+        (await StoredTokenAsync()).Should().NotBeNull("a transient failure must not discard the session");
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_ShouldStayAnonymous_WhenTheRefreshReturnsNoToken()
+    {
+        await SeedTokenAsync(TestJwt.Expired());
+        _handler.EnqueueJson(HttpStatusCode.OK, new { AccessToken = (string?)null, ExpiresAtUtc = DateTime.UtcNow, RefreshTokenForCookie = "x" });
+        var provider = CreateProvider();
+
+        var state = await provider.GetAuthenticationStateAsync();
+
+        state.User.Identity?.IsAuthenticated.Should().NotBe(true);
+    }
+
+    // ---------- logging in from the URL token ----------
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    public async Task LoginWithRefreshToken_ShouldRefuse_WhenTheTokenIsMissing(string? token)
+    {
+        var provider = CreateProvider();
+
+        (await provider.LoginWithRefreshToken(token!)).Should().BeFalse();
+        _handler.SendCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task LoginWithRefreshToken_ShouldRefuse_WhenTheApiRejectsTheToken()
+    {
+        _handler.EnqueueStatus(HttpStatusCode.Unauthorized);
+        var provider = CreateProvider();
+
+        (await provider.LoginWithRefreshToken("some-token")).Should().BeFalse();
+        (await StoredTokenAsync()).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LoginWithRefreshToken_ShouldRefuse_WhenTheResponseCannotBeRead()
+    {
+        _handler.EnqueueJson(HttpStatusCode.OK, null!);
+        var provider = CreateProvider();
+
+        (await provider.LoginWithRefreshToken("some-token")).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LoginWithRefreshToken_ShouldStoreTheTokenAndSignTheUserIn()
+    {
+        var accessToken = TestJwt.Valid(new Claim(ClaimTypes.NameIdentifier, "user-1"));
+        _handler.EnqueueJson(HttpStatusCode.OK, TokenResponse(accessToken));
+        var provider = CreateProvider();
+        var notified = false;
+        provider.AuthenticationStateChanged += _ => notified = true;
+
+        var result = await provider.LoginWithRefreshToken("some-token");
+
+        result.Should().BeTrue();
+        (await StoredTokenAsync()).Should().Be(accessToken);
+        notified.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task LoginWithRefreshToken_ShouldRestoreSpacesToPluses()
+    {
+        // A base64 refresh token arriving in a URL has its '+' characters turned into spaces.
+        _handler.EnqueueJson(HttpStatusCode.OK, TokenResponse(TestJwt.Valid()));
+        var provider = CreateProvider();
+
+        await provider.LoginWithRefreshToken("a b c");
+
+        _handler.SendCount.Should().Be(1);
+    }
+
+    /// <summary>Local storage that fails, as a browser with storage disabled or quota-full does.</summary>
+    private sealed class FailingLocalStorage : Blazored.LocalStorage.ILocalStorageService
+    {
+        public ValueTask<T?> GetItemAsync<T>(string key, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("local storage unavailable");
+
+        public ValueTask SetItemAsync<T>(string key, T data, CancellationToken cancellationToken = default) => default;
+        public ValueTask RemoveItemAsync(string key, CancellationToken cancellationToken = default) => default;
+        public ValueTask RemoveItemsAsync(IEnumerable<string> keys, CancellationToken cancellationToken = default) => default;
+        public ValueTask ClearAsync(CancellationToken cancellationToken = default) => default;
+        public ValueTask<int> LengthAsync(CancellationToken cancellationToken = default) => default;
+        public ValueTask<string?> KeyAsync(int index, CancellationToken cancellationToken = default) => default;
+        public ValueTask<IEnumerable<string>> KeysAsync(CancellationToken cancellationToken = default) => default;
+        public ValueTask<bool> ContainKeyAsync(string key, CancellationToken cancellationToken = default) => default;
+        public ValueTask<string?> GetItemAsStringAsync(string key, CancellationToken cancellationToken = default) => default;
+        public ValueTask SetItemAsStringAsync(string key, string data, CancellationToken cancellationToken = default) => default;
+
+        public event EventHandler<Blazored.LocalStorage.ChangingEventArgs>? Changing { add { } remove { } }
+        public event EventHandler<Blazored.LocalStorage.ChangedEventArgs>? Changed { add { } remove { } }
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_ShouldReturnAnonymous_WhenReadingTheTokenThrows()
+    {
+        // A browser with storage blocked must land on the sign-in page, not crash the app shell.
+        var provider = new ApiAuthenticationStateProvider(
+            _httpClient, new FailingLocalStorage(), Substitute.For<ILogger<ApiAuthenticationStateProvider>>(), _navigation);
+
+        var state = await provider.GetAuthenticationStateAsync();
+
+        state.User.Identity?.IsAuthenticated.Should().NotBe(true);
+    }
+
+    [Fact]
+    public async Task GetAuthenticationStateAsync_ShouldStayAnonymous_WhenTheRefreshBodyIsNull()
+    {
+        await SeedTokenAsync(TestJwt.Expired());
+        _handler.EnqueueJson(HttpStatusCode.OK, null!);
+        var provider = CreateProvider();
+
+        var state = await provider.GetAuthenticationStateAsync();
+
+        state.User.Identity?.IsAuthenticated.Should().NotBe(true);
+    }
 }
