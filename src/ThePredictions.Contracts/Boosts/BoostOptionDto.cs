@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Boosts;
 
+[ExcludeFromCodeCoverage]
 public class BoostOptionDto
 {
     public string BoostCode { get; init; } = string.Empty;

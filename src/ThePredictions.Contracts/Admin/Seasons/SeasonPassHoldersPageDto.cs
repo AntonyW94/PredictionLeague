@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Common;
 
 namespace ThePredictions.Contracts.Admin.Seasons;
@@ -6,6 +7,7 @@ namespace ThePredictions.Contracts.Admin.Seasons;
 /// One page of Season Pass holders, plus the season it belongs to and the money collected
 /// across the whole matching set (so the header total does not change as you page through).
 /// </summary>
+[ExcludeFromCodeCoverage]
 public record SeasonPassHoldersPageDto(
     string SeasonName,
     decimal TotalCollected,

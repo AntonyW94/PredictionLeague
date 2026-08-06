@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Contracts.Leaderboards;
 
+[ExcludeFromCodeCoverage]
 public record LeagueLeaderboardDto
 {
     [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]

@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Contracts.Boosts;
 
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[ExcludeFromCodeCoverage]
 public sealed class PlayerWindowUsageDto
 {
     public string UserId { get; init; } = string.Empty;

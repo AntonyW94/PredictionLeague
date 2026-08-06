@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Admin.ServiceFees;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace ThePredictions.Contracts.Admin.ServiceFees;
 /// (Stripe, Sms, Email). <see cref="PercentFee"/> is a fraction (0.015 = 1.5%); <see cref="FixedFee"/>
 /// is a GBP amount per transaction/message.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public record ServiceFeeDto(
     string Provider,
     decimal PercentFee,

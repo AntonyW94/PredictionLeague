@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Contracts.Admin.Matches;
 
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[ExcludeFromCodeCoverage]
 public class BaseMatchRequest
 {
     public int HomeTeamId { get; set; }

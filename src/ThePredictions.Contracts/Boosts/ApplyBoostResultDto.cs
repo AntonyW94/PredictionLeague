@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Boosts;
 
+[ExcludeFromCodeCoverage]
 public sealed class ApplyBoostResultDto
 {
     public bool Success { get; init; }

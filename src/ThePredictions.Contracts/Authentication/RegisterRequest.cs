@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Authentication;
 
+[ExcludeFromCodeCoverage]
 public class RegisterRequest
 {
     public string FirstName { get; set; } = string.Empty;

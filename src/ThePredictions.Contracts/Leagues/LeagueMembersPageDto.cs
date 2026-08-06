@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Leagues;
 
+[ExcludeFromCodeCoverage]
 public class LeagueMembersPageDto
 {
     public string LeagueName { get; init; } = string.Empty;

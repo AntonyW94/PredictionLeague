@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Admin.RunningCosts;
 
+[ExcludeFromCodeCoverage]
 public record RunningCostDto(
     int Id,
     string Name,

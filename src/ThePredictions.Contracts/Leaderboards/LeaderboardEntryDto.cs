@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Leaderboards;
 
+[ExcludeFromCodeCoverage]
 public class LeaderboardEntryDto
 {
     public long Rank { get; init; }

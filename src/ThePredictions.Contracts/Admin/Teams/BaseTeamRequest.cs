@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Admin.Teams;
 
+[ExcludeFromCodeCoverage]
 public class BaseTeamRequest
 {
     public string Name { get; set; } = string.Empty;

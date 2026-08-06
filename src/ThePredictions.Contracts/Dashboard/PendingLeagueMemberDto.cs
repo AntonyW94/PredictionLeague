@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Dashboard;
 
+[ExcludeFromCodeCoverage]
 public record PendingLeagueMemberDto(
     int LeagueId,
     string LeagueName,

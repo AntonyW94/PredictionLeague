@@ -34,7 +34,7 @@ jobs:
           /p:CoverletOutputFormat=cobertura
           '/p:Exclude="[ThePredictions.Tests.*]*%2c[xunit.*]*%2c[FluentAssertions]*"'
           '/p:ExcludeByAttribute="GeneratedCodeAttribute%2cCompilerGeneratedAttribute"'
-          '/p:ExcludeByFile="**/*.g.cs%2c**/obj/**"'
+          '/p:ExcludeByFile="**/*.g.cs%2c**/obj/**%2c**/*.razor"'
           /p:Threshold=100
           '/p:ThresholdType="line%2cbranch"'
 

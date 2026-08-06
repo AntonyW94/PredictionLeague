@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Contracts.Prizes;
@@ -5,6 +6,7 @@ namespace ThePredictions.Contracts.Prizes;
 /// <summary>
 /// One category's resolved prizes at a given entrant count: the money it holds and its slots.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class PrizeCategoryBreakdownDto
 {
     public PrizeType Category { get; init; }

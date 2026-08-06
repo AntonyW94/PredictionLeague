@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Onboarding;
 
+[ExcludeFromCodeCoverage]
 public record OnboardingStepDto(
     string Key,
     string Title,

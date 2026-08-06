@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Rounds;
 
 /// <summary>
@@ -6,6 +8,7 @@ namespace ThePredictions.Contracts.Rounds;
 /// are those with confirmed teams that are not postponed and have not yet locked - i.e. matches a
 /// player can still act on.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public record RoundCompletionDto(
     int RoundId,
     string RoundName,

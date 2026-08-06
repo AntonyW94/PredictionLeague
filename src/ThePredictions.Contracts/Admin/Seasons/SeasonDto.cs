@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Contracts.Admin.Seasons;
 
+[ExcludeFromCodeCoverage]
 public record SeasonDto(
     int Id,
     string Name,

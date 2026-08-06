@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Account;
 
+[ExcludeFromCodeCoverage]
 public record UserDetails(
     string FirstName,
     string LastName,

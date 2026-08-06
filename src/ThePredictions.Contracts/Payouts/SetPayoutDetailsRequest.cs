@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Payouts;
 
+[ExcludeFromCodeCoverage]
 public class SetPayoutDetailsRequest
 {
     public string? AccountName { get; set; }

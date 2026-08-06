@@ -1,6 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Badges;
 
 /// <summary>The full badges page: the three sections plus the overall collected count.</summary>
+[ExcludeFromCodeCoverage]
 public record UserBadgesDto(
     int EarnedCount,
     int TotalCount,

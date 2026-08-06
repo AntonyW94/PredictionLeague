@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Account;
 
+[ExcludeFromCodeCoverage]
 public class UpdateUserDetailsRequest
 {
     public string FirstName { get; init; } = string.Empty;

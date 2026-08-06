@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Contracts.Prizes;
 
 /// <summary>One enabled category in a prize-scheme request: its per-entry pound allocation and an optional places-table override.</summary>
+[ExcludeFromCodeCoverage]
 public class PrizeSchemeCategoryRequest
 {
     public PrizeType Category { get; set; }

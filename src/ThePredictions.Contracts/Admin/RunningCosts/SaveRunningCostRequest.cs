@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Contracts.Admin.RunningCosts;
 
+[ExcludeFromCodeCoverage]
 public class SaveRunningCostRequest
 {
     public string Name { get; set; } = string.Empty;

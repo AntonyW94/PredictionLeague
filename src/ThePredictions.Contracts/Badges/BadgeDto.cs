@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Badges;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace ThePredictions.Contracts.Badges;
 /// <see cref="Tier"/> is the highest tier reached and whose <see cref="Progress"/> tracks the next
 /// tier; one-offs and honours use MaxTier 1. Progress values are computed live, never stored.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public record BadgeDto(
     string Key,
     string Name,

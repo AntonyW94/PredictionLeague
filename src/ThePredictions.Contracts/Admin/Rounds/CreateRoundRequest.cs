@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Admin.Matches;
 
 namespace ThePredictions.Contracts.Admin.Rounds;
 
+[ExcludeFromCodeCoverage]
 public class CreateRoundRequest
 {
     public int SeasonId { get; init; }

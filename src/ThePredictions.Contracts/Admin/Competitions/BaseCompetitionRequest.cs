@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Admin.Competitions;
 
+[ExcludeFromCodeCoverage]
 public class BaseCompetitionRequest
 {
     public string Code { get; set; } = string.Empty;

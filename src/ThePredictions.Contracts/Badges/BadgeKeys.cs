@@ -1,6 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Badges;
 
 /// <summary>Stable badge keys, shared by the server catalogue, the evaluator and the client.</summary>
+[ExcludeFromCodeCoverage]
 public static class BadgeKeys
 {
     // Collections (levelled)

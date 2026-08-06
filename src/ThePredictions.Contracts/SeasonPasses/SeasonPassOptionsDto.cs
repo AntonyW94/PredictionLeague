@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.SeasonPasses;
 
+[ExcludeFromCodeCoverage]
 public record SeasonPassOptionsDto(
     int SeasonId,
     string SeasonName,

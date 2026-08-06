@@ -119,6 +119,25 @@ Reasonable exclusions: positional result records, data-only Contracts DTOs, ORM-
 SQL string plus a mapping - a unit test there mocks `IApplicationReadDbConnection`, so it verifies
 neither the SQL nor the `SELECT`-to-record alignment.
 
+Every data-only type in `ThePredictions.Contracts` carries the attribute. A DTO that grows a
+computed property or a method has stopped being data-only - **remove the attribute and test it**
+rather than letting real logic hide behind it. The types in Contracts that already have logic
+(`PagedResult<T>`, `PageSizes`, `UserDto`, `RoundCompletionPlayerDto`, `BadgeGlyphs`) are
+deliberately *not* excluded, so they show up as a genuine gap until they are covered.
+
+### Generated Razor markup is excluded at the measurement level
+
+`**/*.razor` is in `ExcludeByFile` in both `ci.yml` and `tools/Test Coverage/coverage.runsettings`.
+The Razor compiler turns component markup into `BuildRenderTree` methods, and coverlet counted those
+as ~4,200 uncovered lines in `Web.Client` - about 95% of that project's coverable lines, and roughly
+two thirds of every uncovered line in the solution. It made the report unreadable: the number moved
+when markup changed and stood still when logic did.
+
+The cost is that `@code` blocks share the file and are excluded too. All 118 components keep their
+logic there (no `.razor.cs` code-behind, and bUnit is not referenced), so none of it is testable
+today in any case. **To bring component logic back under measurement, move it into a `.razor.cs`
+code-behind** - that file is measured normally.
+
 ### Enforcement is per project, and rolls out gradually
 
 `/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Today

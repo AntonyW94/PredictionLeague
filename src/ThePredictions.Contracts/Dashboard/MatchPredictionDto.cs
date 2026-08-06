@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Contracts.Dashboard;
 
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[ExcludeFromCodeCoverage]
 public class MatchPredictionDto
 {
     public int MatchId { get; init; }

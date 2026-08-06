@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Contracts.Admin.Rounds;
 
+[ExcludeFromCodeCoverage]
 public record MatchInRoundDto(
     int Id,
     DateTime MatchDateTimeUtc,

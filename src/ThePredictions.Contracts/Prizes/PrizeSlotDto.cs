@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Prizes;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace ThePredictions.Contracts.Prizes;
 /// or a single prize. <see cref="Delta"/> carries the marginal effect of one more entrant for the
 /// prospective-member "+£x" view (null when not computing a delta).
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class PrizeSlotDto
 {
     public string Label { get; init; } = string.Empty;

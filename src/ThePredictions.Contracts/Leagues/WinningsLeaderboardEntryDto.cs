@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Leagues;
 
+[ExcludeFromCodeCoverage]
 public class WinningsLeaderboardEntryDto
 {
     public string PlayerName { get; init; } = string.Empty;

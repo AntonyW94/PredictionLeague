@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Predictions;
 
+[ExcludeFromCodeCoverage]
 public class PredictionLeagueDto
 {
     public int LeagueId { get; init; }

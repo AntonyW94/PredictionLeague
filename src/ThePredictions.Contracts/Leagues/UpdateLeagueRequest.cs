@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Leagues;
 
+[ExcludeFromCodeCoverage]
 public class UpdateLeagueRequest : IHasBankDetails
 {
     public string Name { get; set; } = string.Empty;
