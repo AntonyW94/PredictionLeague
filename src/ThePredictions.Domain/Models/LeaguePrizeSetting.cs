@@ -7,6 +7,7 @@ namespace ThePredictions.Domain.Models;
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class LeaguePrizeSetting
 {
+    [ExcludeFromCodeCoverage(Justification = "Set only by Dapper when hydrating from the database; the only constructor is private, so nothing else can reach it.")]
     public int Id { get; init; }
     public int LeagueId { get; private set; }
     public PrizeType PrizeType { get; private set; }

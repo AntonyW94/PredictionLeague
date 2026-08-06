@@ -5,7 +5,14 @@
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
           <Format>cobertura</Format>
-          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+          <!--
+            CompilerGeneratedAttribute is deliberately NOT excluded. Every async method body
+            compiles into a state machine carrying that attribute, so excluding it hid the body of
+            every async method in the solution - a handler with forty lines of branching reported as
+            one coverable line (its constructor) and read as fully covered. GeneratedCodeAttribute
+            still covers genuine tool output.
+          -->
+          <ExcludeByAttribute>GeneratedCodeAttribute</ExcludeByAttribute>
           <!--
             **/*.razor excludes the BuildRenderTree methods the Razor compiler generates from markup.
             Coverlet counts those as ~4,200 uncovered lines in Web.Client - roughly 95% of that
@@ -13,7 +20,7 @@
             excludes @code blocks, since they share the same file; component logic is untestable
             today anyway (no bUnit, no .razor.cs code-behind). Move logic to code-behind to measure it.
           -->
-          <ExcludeByFile>**/*.g.cs,**/obj/**,**/*.razor</ExcludeByFile>
+          <ExcludeByFile>**/*.g.cs,**/obj/**,**/*.razor,**/Program.cs</ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>

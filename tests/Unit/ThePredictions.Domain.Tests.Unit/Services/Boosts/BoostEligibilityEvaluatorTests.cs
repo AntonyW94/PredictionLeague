@@ -18,6 +18,47 @@ public class BoostEligibilityEvaluatorTests
     #region Early-Exit Rejection Tests
 
     [Fact]
+    public void Evaluate_ShouldReturnNotAllowed_WhenTheRoundFallsBeforeEveryWindow()
+    {
+        // The round sits earlier than the window opens, as opposed to later than it closes - the
+        // other side of the same range check.
+        var result = BoostEligibilityEvaluator.Evaluate(
+            isEnabled: DefaultEnabled,
+            totalUsesPerSeason: DefaultTotalUses,
+            seasonUses: DefaultSeasonUses,
+            windowUses: DefaultWindowUses,
+            hasUsedThisRound: DefaultHasUsedThisRound,
+            roundNumber: 2,
+            windows: CreateWindows(5, 10, 1),
+            isUserMemberOfLeague: DefaultIsMember,
+            isRoundInLeagueSeason: true);
+
+        result.CanUse.Should().BeFalse();
+        result.Reason.Should().Contain("not available for this round");
+    }
+
+
+    [Fact]
+    public void Evaluate_ShouldTreatAnEmptyWindowListTheSameAsNoWindows()
+    {
+        // A league that has the boost enabled but has configured no windows leaves the list empty
+        // rather than null, and that must still mean "usable in any round".
+        var result = BoostEligibilityEvaluator.Evaluate(
+            isEnabled: DefaultEnabled,
+            totalUsesPerSeason: DefaultTotalUses,
+            seasonUses: DefaultSeasonUses,
+            windowUses: DefaultWindowUses,
+            hasUsedThisRound: DefaultHasUsedThisRound,
+            roundNumber: DefaultRoundNumber,
+            windows: [],
+            isUserMemberOfLeague: DefaultIsMember,
+            isRoundInLeagueSeason: true);
+
+        result.CanUse.Should().BeTrue();
+    }
+
+
+    [Fact]
     public void Evaluate_ShouldReturnNotAllowed_WhenRoundNotInLeagueSeason()
     {
         // Act

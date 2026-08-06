@@ -146,6 +146,35 @@ rather than letting real logic hide behind it. The types in Contracts that alrea
 (`PagedResult<T>`, `PageSizes`, `UserDto`, `RoundCompletionPlayerDto`, `BadgeGlyphs`) are
 deliberately *not* excluded, so they show up as a genuine gap until they are covered.
 
+### Async method bodies must stay measured
+
+`ExcludeByAttribute` lists **`GeneratedCodeAttribute` only**. Do not add `CompilerGeneratedAttribute`
+back to it, however tempting it looks for suppressing record boilerplate.
+
+Every `async` method compiles into a state machine type carrying `[CompilerGenerated]`. While that
+attribute was excluded, **the body of every async method in the solution was invisible to coverage**.
+`UpdateRoundCommandHandler` - forty-odd lines with match updates, deletions and a business-rule
+throw - reported as *one* coverable line, its constructor, and therefore as fully covered. Five
+projects were sitting on a 100% badge that did not mean what it said.
+
+Removing it roughly tripled Application's coverable lines (1,530 to 4,485) and moved the honest
+figures to:
+
+| Project | Line coverage | Gated |
+|---------|---------------|-------|
+| Validators, Hosting.Shared, Contracts, Domain, API | 100% | yes |
+| Infrastructure | ~64% | no |
+| Web.Client | ~57% | no |
+| Application | ~55% | no |
+
+The cost is that compiler-synthesised record members (`Equals`, `GetHashCode`, `ToString`, the copy
+constructor) now count. For a data-only record that is already handled by `[ExcludeFromCodeCoverage]`.
+For a record that carries logic and so cannot be excluded, test its value-equality contract - and
+note that a record holding a collection compares that member **by reference**, so two instances with
+equal-but-separate lists are not equal.
+
+`**/Program.cs` is excluded by file: host wiring, verified by the app starting.
+
 ### Generated Razor markup is excluded at the measurement level
 
 `**/*.razor` is in `ExcludeByFile` in both `ci.yml` and `tools/Test Coverage/coverage.runsettings`.
@@ -162,8 +191,8 @@ code-behind** - that file is measured normally.
 ### Enforcement is per project, and rolls out gradually
 
 `/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Today the test projects
-for **Domain, Validators, Contracts, Hosting.Shared, Infrastructure, API and Web.Client** reference
-it. Only **Application** is still measured without being gated.
+for **Domain, Validators, Contracts, Hosting.Shared and API** reference it. **Infrastructure,
+Web.Client and Application** are measured but not gated - see the figures below.
 
 **The gate measures each test project's own run, not the merged report.** A class covered
 incidentally by another project's tests still counts as uncovered for the gate, so read the
