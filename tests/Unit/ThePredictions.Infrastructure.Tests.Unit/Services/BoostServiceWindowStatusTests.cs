@@ -75,6 +75,19 @@ public class BoostServiceWindowStatusTests
     }
 
     [Fact]
+    public async Task Eligibility_ShouldTreatEveryRoundAsActive_WhenTheWindowListIsMissingEntirely()
+    {
+        GivenRound(roundNumber: 5);
+        _readRepository.GetLeagueBoostRuleAsync(LeagueId, BoostCode, Arg.Any<CancellationToken>())
+            .Returns(new LeagueBoostRuleSnapshot { IsEnabled = true, TotalUsesPerSeason = 3, Windows = null! });
+
+        var result = await GetEligibilityAsync();
+
+        result.IsRoundInActiveWindow.Should().BeTrue();
+        result.NextWindowStartRound.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Eligibility_ShouldTreatEveryRoundAsActive_WhenTheWindowListIsEmpty()
     {
         GivenRound(roundNumber: 5, windows: []);

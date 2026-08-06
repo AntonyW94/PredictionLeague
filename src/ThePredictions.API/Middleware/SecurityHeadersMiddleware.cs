@@ -60,6 +60,7 @@ public class SecurityHeadersMiddleware(RequestDelegate next)
     }
 }
 
+[ExcludeFromCodeCoverage(Justification = "Middleware registration: one UseMiddleware call, exercised end to end.")]
 public static class SecurityHeadersMiddlewareExtensions
 {
     public static void UseSecurityHeaders(this IApplicationBuilder builder)

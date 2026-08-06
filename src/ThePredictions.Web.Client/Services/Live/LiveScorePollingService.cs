@@ -47,8 +47,11 @@ public sealed class LiveScorePollingService(
             return;
 
         IsRunning = false;
-        _cancellation?.Cancel();
-        _cancellation?.Dispose();
+
+        // Non-null whenever IsRunning is true: Start assigns it before raising the flag, and the
+        // guard above means we never get here with the flag already lowered.
+        _cancellation!.Cancel();
+        _cancellation.Dispose();
         _cancellation = null;
     }
 

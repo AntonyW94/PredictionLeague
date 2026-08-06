@@ -36,6 +36,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Lets tests reach internal test seams, e.g. the time-zone id on UkEmailDateFormatter
+             whose UTC fallback is otherwise unreachable. -->
+        <InternalsVisibleTo Include="ThePredictions.Infrastructure.Tests.Unit" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\ThePredictions.Application\ThePredictions.Application.csproj" />
         <ProjectReference Include="..\ThePredictions.Contracts\ThePredictions.Contracts.csproj" />
     </ItemGroup>

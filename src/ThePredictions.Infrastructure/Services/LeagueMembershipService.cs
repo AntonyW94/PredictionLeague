@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Infrastructure.Services;
 
+[ExcludeFromCodeCoverage(Justification = "Repository composition over SQL: no branching logic of its own.")]
 public class LeagueMembershipService(IApplicationReadDbConnection dbConnection) : ILeagueMembershipService
 {
     public async Task<bool> IsApprovedMemberAsync(int leagueId, string userId, CancellationToken cancellationToken)

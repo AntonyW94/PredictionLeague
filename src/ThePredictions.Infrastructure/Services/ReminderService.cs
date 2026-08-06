@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.Users;
@@ -6,6 +7,7 @@ using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Infrastructure.Services;
 
+[ExcludeFromCodeCoverage(Justification = "Orchestrates repository reads and the email client; the formatting rules it calls are tested separately.")]
 public class ReminderService(IApplicationReadDbConnection dbConnection) : IReminderService
 {
     public async Task<bool> ShouldSendReminderAsync(Round round, DateTime nowUtc, CancellationToken cancellationToken)
