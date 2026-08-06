@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 
 namespace ThePredictions.Application.Features.Sharing.Queries;
@@ -10,4 +11,5 @@ namespace ThePredictions.Application.Features.Sharing.Queries;
 /// <paramref name="Theme"/> is the theme the client is currently showing ("light"/"dark"); when
 /// null the handler falls back to the user's saved <c>PreferredTheme</c>.
 /// </remarks>
+[ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record GetRoundShareCardImageQuery(int RoundId, string UserId, string? Theme) : IRequest<byte[]?>;

@@ -6,7 +6,14 @@
         <Configuration>
           <Format>cobertura</Format>
           <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
-          <ExcludeByFile>**/*.g.cs,**/obj/**</ExcludeByFile>
+          <!--
+            **/*.razor excludes the BuildRenderTree methods the Razor compiler generates from markup.
+            Coverlet counts those as ~4,200 uncovered lines in Web.Client - roughly 95% of that
+            project's coverable lines - which buried the real gaps everywhere else. Note this also
+            excludes @code blocks, since they share the same file; component logic is untestable
+            today anyway (no bUnit, no .razor.cs code-behind). Move logic to code-behind to measure it.
+          -->
+          <ExcludeByFile>**/*.g.cs,**/obj/**,**/*.razor</ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>

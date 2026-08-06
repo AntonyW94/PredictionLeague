@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Admin.Matches;
 
 namespace ThePredictions.Contracts.Admin.Rounds;
 
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class CreateRoundRequest
 {
     public int SeasonId { get; init; }

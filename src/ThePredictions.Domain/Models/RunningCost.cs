@@ -28,7 +28,7 @@ public class RunningCost
         _ => Amount
     };
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]
     private RunningCost() { }
 
     public RunningCost(int id, string name, decimal amount, CostFrequency frequency, DateTime startDateUtc,

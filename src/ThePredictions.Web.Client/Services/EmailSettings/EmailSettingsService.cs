@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using ThePredictions.Contracts.Admin.EmailSettings;
 
 namespace ThePredictions.Web.Client.Services.EmailSettings;
 
+[ExcludeFromCodeCoverage(Justification = "Typed HttpClient wrapper: forwards to an API endpoint and deserialises the reply.")]
 public class EmailSettingsService(HttpClient httpClient) : IEmailSettingsService
 {
     public async Task<EmailSettingsDto?> GetAsync()

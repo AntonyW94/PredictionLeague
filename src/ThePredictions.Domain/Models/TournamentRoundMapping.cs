@@ -14,7 +14,7 @@ public class TournamentRoundMapping
     public string Stages { get; private set; } = string.Empty;
     public int ExpectedMatchCount { get; private set; }
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]
     private TournamentRoundMapping() { }
 
     public TournamentRoundMapping(int id, int seasonId, int roundNumber, string displayName, string stages, int expectedMatchCount)

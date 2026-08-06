@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Boosts;
 using System.Net.Http.Json;
 
 namespace ThePredictions.Web.Client.Services.Boosts;
 
+[ExcludeFromCodeCoverage(Justification = "Typed HttpClient wrapper: forwards to an API endpoint and deserialises the reply.")]
 public class BoostClientService(HttpClient http)
 {
     public async Task<List<BoostOptionDto>?> GetAvailableBoostsAsync(int leagueId, int roundId, CancellationToken cancellationToken)

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
@@ -8,6 +9,7 @@ using System.Text.Json;
 
 namespace ThePredictions.Web.Client.Services.Leagues;
 
+[ExcludeFromCodeCoverage(Justification = "Typed HttpClient wrapper: forwards to an API endpoint and deserialises the reply.")]
 public class LeagueDashboardStateService(HttpClient httpClient)
 {
     public event Action? OnStateChange;

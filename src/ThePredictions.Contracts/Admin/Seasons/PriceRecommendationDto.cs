@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Contracts.Admin.Seasons;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace ThePredictions.Contracts.Admin.Seasons;
 /// Advisory only - the admin can override it. When there is no comparable prior season,
 /// <see cref="SuggestedStandardPrice"/> is null and <see cref="UnavailableReason"/> explains why.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public record PriceRecommendationDto(
     decimal? SuggestedStandardPrice,
     string? UnavailableReason,

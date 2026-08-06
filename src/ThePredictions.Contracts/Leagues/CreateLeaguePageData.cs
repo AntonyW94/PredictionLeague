@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Admin.Seasons;
 
 namespace ThePredictions.Contracts.Leagues;
 
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class CreateLeaguePageData
 {
     public List<SeasonLookupDto> Seasons { get; init; } = [];

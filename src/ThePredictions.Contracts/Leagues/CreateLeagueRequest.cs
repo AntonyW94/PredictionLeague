@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Prizes;
 
 namespace ThePredictions.Contracts.Leagues;
 
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class CreateLeagueRequest : IHasBankDetails
 {
     public int SeasonId { get; set; }

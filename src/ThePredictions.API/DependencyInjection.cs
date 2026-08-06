@@ -16,6 +16,7 @@ using System.Text;
 
 namespace ThePredictions.API;
 
+[ExcludeFromCodeCoverage(Justification = "Container registration: verified by ThePredictions.Composition.Tests.Unit, which resolves every handler from the real container.")]
 public static class DependencyInjection
 {
     [SuppressMessage("ReSharper", "UnusedMethodReturnValue.Global")]

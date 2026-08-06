@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Common.Interfaces;
 using ThePredictions.Contracts.Prizes;
@@ -9,6 +10,7 @@ namespace ThePredictions.Application.Features.Leagues.Commands;
 /// leagues at creation, or once on an existing schemeless league); thereafter only a site admin
 /// can override it to correct a mistake.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record SetPrizeSchemeCommand(
     int LeagueId,
     string UserId,

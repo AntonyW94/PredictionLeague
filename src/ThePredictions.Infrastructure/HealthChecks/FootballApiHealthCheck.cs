@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -5,6 +6,7 @@ using ThePredictions.Application.Configuration;
 
 namespace ThePredictions.Infrastructure.HealthChecks;
 
+[ExcludeFromCodeCoverage(Justification = "Health check: endpoint wiring and a live dependency probe, verified by hitting the endpoint.")]
 public class FootballApiHealthCheck : IHealthCheck
 {
     private readonly HttpClient _httpClient;

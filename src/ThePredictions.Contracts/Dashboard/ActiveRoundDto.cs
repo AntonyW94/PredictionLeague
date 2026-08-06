@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Contracts.Dashboard;
@@ -10,6 +11,7 @@ namespace ThePredictions.Contracts.Dashboard;
 /// is the latest point at which any match can still be predicted, honouring per-match custom lock times, so a
 /// combined round stays actionable for its later matches after the round deadline has passed.
 /// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public record ActiveRoundDto(
     int Id,
     string SeasonName,

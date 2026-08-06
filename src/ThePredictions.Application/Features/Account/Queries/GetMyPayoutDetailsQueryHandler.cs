@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -6,6 +7,7 @@ using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Account.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetMyPayoutDetailsQueryHandler(IApplicationReadDbConnection dbConnection, IFieldEncryptionService fieldEncryptionService)
     : IRequestHandler<GetMyPayoutDetailsQuery, MyPayoutDetailsDto>
 {

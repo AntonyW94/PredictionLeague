@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using ThePredictions.Application.Data;
@@ -6,6 +7,7 @@ using System.Data;
 
 namespace ThePredictions.Infrastructure.Repositories.Boosts;
 
+[ExcludeFromCodeCoverage(Justification = "Repository: a thin Dapper wrapper over SQL. A unit test would assert only that a mocked connection received a string; correctness lives in the SQL.")]
 public class BoostWriteRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext)
     : RepositoryBase(connectionFactory, transactionContext), IBoostWriteRepository
 {

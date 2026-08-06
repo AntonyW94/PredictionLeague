@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components.Authorization;
 using ThePredictions.Contracts.Authentication;
 using ThePredictions.Web.Client.Services.Theme;
@@ -6,6 +7,7 @@ using System.Text.Json;
 
 namespace ThePredictions.Web.Client.Authentication;
 
+[ExcludeFromCodeCoverage(Justification = "HTTP message handler plumbing: no branching logic of its own.")]
 public class AuthenticationService(HttpClient httpClient, AuthenticationStateProvider authenticationStateProvider, IThemeService themeService) : IAuthenticationService
 {
     public async Task<AuthenticationResponse> RegisterAsync(RegisterRequest registerRequest)

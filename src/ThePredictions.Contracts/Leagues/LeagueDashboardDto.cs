@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Contracts.Leagues;
 
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class LeagueDashboardDto
 {
     public string LeagueName { get; init; } = string.Empty;

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Badges;
 
 namespace ThePredictions.Application.Features.Badges;
@@ -239,8 +240,10 @@ internal static class BadgeGroupKeys
     public const string Socialite = "socialite";
 }
 
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 internal record BadgeTier(string Key, int Threshold);
 
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 internal record BadgeGroup(
     string GroupKey,
     string Name,
@@ -254,6 +257,7 @@ internal record EarnedBadge(string BadgeKey, int Count, DateTime LastAwardedUtc,
 
 internal sealed record EverPresentProgress(int RoundsPredicted, int RoundsTotal, bool Missed);
 
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 internal sealed record BadgeProgressMetrics(
     int SeasonExactTotal,
     int BestExactsInRound,
@@ -262,6 +266,7 @@ internal sealed record BadgeProgressMetrics(
     int LeaguesJoined,
     EverPresentProgress? EverPresent);
 
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 internal sealed record BadgeUserState(
     IReadOnlyDictionary<string, EarnedBadge> Earned,
     BadgeProgressMetrics Metrics);

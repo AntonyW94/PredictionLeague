@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
@@ -6,4 +7,5 @@ namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 /// Builds the round-results digest data for every user who predicted in the given round,
 /// grouped by user with one entry per league they belong to in the round's season.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record GetRoundDigestQuery(int RoundId) : IRequest<IReadOnlyList<UserRoundDigest>>;

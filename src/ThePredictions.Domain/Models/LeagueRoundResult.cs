@@ -13,7 +13,7 @@ public class LeagueRoundResult
     public string? AppliedBoostCode { get; init; }
     public int ExactScoreCount { get; init; }
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]
     public LeagueRoundResult() { }
 
     public LeagueRoundResult(int leagueId, int roundId, string userId, int basePoints, int boostedPoints, bool hasBoost, string? appliedBoostCode, int exactScoreCount)

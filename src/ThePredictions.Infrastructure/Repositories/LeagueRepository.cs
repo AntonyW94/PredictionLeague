@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Repositories;
@@ -9,6 +10,7 @@ using System.Data;
 
 namespace ThePredictions.Infrastructure.Repositories;
 
+[ExcludeFromCodeCoverage(Justification = "Repository: a thin Dapper wrapper over SQL. A unit test would assert only that a mocked connection received a string; correctness lives in the SQL.")]
 public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext, IDateTimeProvider dateTimeProvider)
     : RepositoryBase(connectionFactory, transactionContext), ILeagueRepository
 {

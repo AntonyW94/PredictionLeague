@@ -6,6 +6,7 @@ using DomainEmailSettings = ThePredictions.Domain.Models.EmailSettings;
 
 namespace ThePredictions.Application.Features.Admin.EmailSettings.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetEmailSettingsQueryHandler(IApplicationReadDbConnection dbConnection)
     : IRequestHandler<GetEmailSettingsQuery, EmailSettingsDto>
 {

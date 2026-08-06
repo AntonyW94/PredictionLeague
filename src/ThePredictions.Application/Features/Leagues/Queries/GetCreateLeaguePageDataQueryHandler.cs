@@ -7,6 +7,7 @@ using ThePredictions.Domain.Common.Constants;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetCreateLeaguePageDataQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetCreateLeaguePageDataQuery, CreateLeaguePageData>
 {
     public async Task<CreateLeaguePageData> Handle(GetCreateLeaguePageDataQuery request, CancellationToken cancellationToken)

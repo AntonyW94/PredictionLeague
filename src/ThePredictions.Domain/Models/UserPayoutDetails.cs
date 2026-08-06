@@ -19,7 +19,7 @@ public class UserPayoutDetails
 
     public bool HasDetails => AccountName is not null && SortCode is not null && AccountNumber is not null;
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]
     private UserPayoutDetails() { }
 
     public UserPayoutDetails(string userId, string? accountName, string? sortCode, string? accountNumber, DateTime createdAtUtc, DateTime updatedAtUtc)

@@ -7,7 +7,7 @@ namespace ThePredictions.Domain.Services.Prizes;
 /// The resolved prizes for one category at a given entrant count: the money held by the category
 /// (<see cref="SubPotPounds"/>, after any spillover in or out) and its payable slots.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 public sealed class PrizeCategoryBreakdown
 {
     public PrizeType Category { get; init; }

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Badges;
@@ -5,6 +6,7 @@ using ThePredictions.Domain.Common;
 
 namespace ThePredictions.Application.Features.Badges.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetUserBadgesQueryHandler(IApplicationReadDbConnection dbConnection, IDateTimeProvider dateTimeProvider)
     : IRequestHandler<GetUserBadgesQuery, UserBadgesDto>
 {

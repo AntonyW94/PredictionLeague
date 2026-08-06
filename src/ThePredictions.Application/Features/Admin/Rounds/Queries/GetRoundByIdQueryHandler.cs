@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetRoundByIdQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetRoundByIdQuery, RoundDetailsDto?>
 {
     public async Task<RoundDetailsDto?> Handle(GetRoundByIdQuery request, CancellationToken cancellationToken)

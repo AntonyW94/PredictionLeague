@@ -6,7 +6,7 @@ namespace ThePredictions.Domain.Services.Prizes;
 /// All the inputs the pure apportionment engine needs to turn a prize scheme into a concrete,
 /// round-number breakdown at a given entrant count. Whole pounds throughout.
 /// </summary>
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 public sealed class PrizeApportionmentRequest
 {
     /// <summary>Approved entrant count (N). The pot grows in whole stakes as this rises.</summary>

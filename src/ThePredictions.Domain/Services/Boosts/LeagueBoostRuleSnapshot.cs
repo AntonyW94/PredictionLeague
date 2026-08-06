@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Domain.Services.Boosts;
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 public sealed class LeagueBoostRuleSnapshot
 {
     public bool IsEnabled { get; init; }

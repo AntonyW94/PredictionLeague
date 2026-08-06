@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Application.Features.Sharing.Models;
 
 /// <summary>
@@ -9,6 +11,7 @@ namespace ThePredictions.Application.Features.Sharing.Models;
 /// renderer titles the card "{PlayerName}'s Predictions", falling back to "My Predictions".
 /// <paramref name="Theme"/> selects the light or dark colour scheme (and matching brand logo).
 /// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 public record ShareCardModel(
     string? PlayerName,
     string SeasonName,

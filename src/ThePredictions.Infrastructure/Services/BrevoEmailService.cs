@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using brevo_csharp.Api;
 using brevo_csharp.Client;
 using brevo_csharp.Model;
@@ -8,6 +9,7 @@ using ThePredictions.Application.Services;
 
 namespace ThePredictions.Infrastructure.Services;
 
+[ExcludeFromCodeCoverage(Justification = "Third-party API client: a thin call into an external SDK, verified against the live service.")]
 public class BrevoEmailService(
     IOptions<BrevoSettings> settings,
     IOptions<TimeoutSettings> timeoutSettings,

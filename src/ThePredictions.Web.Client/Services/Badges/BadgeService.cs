@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using ThePredictions.Contracts.Badges;
 
 namespace ThePredictions.Web.Client.Services.Badges;
 
+[ExcludeFromCodeCoverage(Justification = "Typed HttpClient wrapper: forwards to an API endpoint and deserialises the reply.")]
 public class BadgeService(HttpClient httpClient) : IBadgeService
 {
     public async Task<UserBadgesDto?> GetBadgesAsync()

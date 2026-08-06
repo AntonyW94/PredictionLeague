@@ -106,18 +106,58 @@ be questioned. The exclusion turns "we forgot" into "we decided".
 ### `[ExcludeFromCodeCoverage]` means deliberately not worth testing
 
 It does **not** mean "not written yet". The moment it becomes a to-do marker, the ratchet stops
-meaning anything. Pair it with a reason:
+meaning anything. **Always give a reason, via the attribute's own `Justification` property** - not a
+comment, so the reason travels with the attribute and is visible to tooling and in review:
 
 ```csharp
-// SQL correctness is verified by tools/ThePredictions.SchemaCheck; the mapping is exercised E2E.
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "SQL is verified by tools/ThePredictions.SchemaCheck; the mapping is exercised E2E.")]
 public class GetOverallLeaderboardQueryHandler(...)
 ```
+
+Every exclusion in `src/` carries one. The recurring reasons are worded consistently so they can be
+grepped and counted:
+
+| Reason | Applies to |
+|--------|-----------|
+| `Data-only contract: properties only, no logic to test.` | `ThePredictions.Contracts` DTOs, requests and responses |
+| `Data-only type: properties only, no logic to test.` | Data-only types elsewhere (API DTOs, Domain snapshots, prize breakdown types) |
+| `Parameterless constructor for Dapper hydration: no logic to test.` | The private/public `Entity()` constructors Dapper needs |
+| `Dapper row type: properties only, no logic to test.` | Private `XxxRow` types a handler materialises into |
+| `Options type bound from configuration: properties only, no logic to test.` | `*Settings` / `*Options` classes bound from `appsettings` |
+
+A one-off exclusion should say something specific rather than reuse a row above. The other recurring
+reasons cover query handlers, MediatR request records, repositories, Identity stores, database
+plumbing, controllers, middleware, health checks, image renderers, third-party API clients, Blazor
+components, typed `HttpClient` wrappers and browser interop.
+
+**Never exclude a type that already has a test file.** If someone wrote `FooTests.cs`, `Foo` is
+something we test, and excluding it hides passing tests and makes them look pointless. This rule
+matters most for query handlers: the category is excluded wholesale, but seven of them have real
+tests because they do more than SQL plus a mapping, and those stay measured.
 
 Reasonable exclusions: positional result records, data-only Contracts DTOs, ORM-only constructors,
 `Program.cs` wiring, controllers that only forward to MediatR, and query handlers whose body is a
 SQL string plus a mapping - a unit test there mocks `IApplicationReadDbConnection`, so it verifies
 neither the SQL nor the `SELECT`-to-record alignment.
+
+Every data-only type in `ThePredictions.Contracts` carries the attribute. A DTO that grows a
+computed property or a method has stopped being data-only - **remove the attribute and test it**
+rather than letting real logic hide behind it. The types in Contracts that already have logic
+(`PagedResult<T>`, `PageSizes`, `UserDto`, `RoundCompletionPlayerDto`, `BadgeGlyphs`) are
+deliberately *not* excluded, so they show up as a genuine gap until they are covered.
+
+### Generated Razor markup is excluded at the measurement level
+
+`**/*.razor` is in `ExcludeByFile` in both `ci.yml` and `tools/Test Coverage/coverage.runsettings`.
+The Razor compiler turns component markup into `BuildRenderTree` methods, and coverlet counted those
+as ~4,200 uncovered lines in `Web.Client` - about 95% of that project's coverable lines, and roughly
+two thirds of every uncovered line in the solution. It made the report unreadable: the number moved
+when markup changed and stood still when logic did.
+
+The cost is that `@code` blocks share the file and are excluded too. All 118 components keep their
+logic there (no `.razor.cs` code-behind, and bUnit is not referenced), so none of it is testable
+today in any case. **To bring component logic back under measurement, move it into a `.razor.cs`
+code-behind** - that file is measured normally.
 
 ### Enforcement is per project, and rolls out gradually
 

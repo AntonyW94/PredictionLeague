@@ -18,7 +18,7 @@ public class PricingSettings
     public decimal BufferRate { get; private set; }
     public decimal MinimumFloor { get; private set; }
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]
     private PricingSettings() { }
 
     public PricingSettings(int id, decimal bufferRate, decimal minimumFloor)

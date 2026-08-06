@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 
 namespace ThePredictions.Web.Client.Components.Shared;
 
+[ExcludeFromCodeCoverage(Justification = "Blazor component: rendering behaviour, untestable without bUnit.")]
 public class BaseLeaderboardComponent : ComponentBase
 {
     [CascadingParameter]

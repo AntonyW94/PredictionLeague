@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -10,6 +11,7 @@ using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Infrastructure.Services.Payments;
 
+[ExcludeFromCodeCoverage(Justification = "Third-party API client: a thin call into an external SDK, verified against the live service.")]
 public class StripePaymentService(IOptions<StripeSettings> settings, ILogger<StripePaymentService> logger) : IPaymentService
 {
     private const string PaymentMode = "payment";

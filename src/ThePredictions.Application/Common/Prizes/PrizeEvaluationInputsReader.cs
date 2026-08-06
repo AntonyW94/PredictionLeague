@@ -112,7 +112,7 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
         return months;
     }
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
     private sealed class LeagueRow
     {
         public int LeagueId { get; init; }
@@ -130,13 +130,13 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
         public int EntrantCount { get; init; }
     }
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
     private sealed class SchemeRow
     {
         public int Id { get; init; }
     }
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
     private sealed class EntryRow
     {
         public PrizeType Category { get; init; }

@@ -6,6 +6,7 @@ using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Homepage.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetHomepageSeasonsQueryHandler(IApplicationReadDbConnection dbConnection)
     : IRequestHandler<GetHomepageSeasonsQuery, IEnumerable<HomepageSeasonDto>>
 {

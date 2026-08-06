@@ -1,7 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Dashboard;
 
 namespace ThePredictions.Contracts.Predictions;
 
+[ExcludeFromCodeCoverage(Justification = "Data-only contract: properties only, no logic to test.")]
 public class PredictionPageDto
 {
     public int RoundId { get; init; }

@@ -21,7 +21,7 @@ public class AwardedBadge
     public int? SeasonId { get; private set; }
     public string? Detail { get; private set; }
 
-    [ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]
     private AwardedBadge() { }
 
     public AwardedBadge(int id, string userId, string badgeKey, DateTime awardedUtc, int? leagueId, int? roundId, int? seasonId, string? detail)

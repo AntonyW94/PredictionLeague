@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using ThePredictions.Contracts.Admin.PricingSettings;
 
 namespace ThePredictions.Web.Client.Services.PricingSettings;
 
+[ExcludeFromCodeCoverage(Justification = "Typed HttpClient wrapper: forwards to an API endpoint and deserialises the reply.")]
 public class PricingSettingsService(HttpClient httpClient) : IPricingSettingsService
 {
     public async Task<PricingSettingsDto?> GetAsync()

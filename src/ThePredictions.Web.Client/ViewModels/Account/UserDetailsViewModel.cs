@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Web.Client.ViewModels.Account;
 
+[ExcludeFromCodeCoverage(Justification = "Data-only view model: properties only, no logic to test.")]
 public class UserDetailsViewModel
 {
     [Required]

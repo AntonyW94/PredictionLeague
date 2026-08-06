@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Contracts.Rounds;
 
@@ -9,5 +10,6 @@ namespace ThePredictions.Application.Features.Rounds.Queries;
 /// league's approved members. Any approved member may read the league view; only an admin or the
 /// league owner may then send reminders (<see cref="Contracts.Rounds.RoundCompletionDto.CanSendReminders"/>).
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record GetRoundCompletionQuery(int RoundId, int? LeagueId, string CurrentUserId, bool IsSiteAdmin)
     : IRequest<RoundCompletionDto?>;

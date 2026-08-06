@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
@@ -16,6 +17,7 @@ namespace ThePredictions.Infrastructure.Services;
 /// prediction in the centre as an outcome-coloured pill mirroring the site's prediction badges.
 /// Light and dark colour schemes mirror the player's UI theme.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Image renderer: SkiaSharp drawing plus HTTP asset fetches. Correctness is visual, not assertable in a unit test.")]
 public class ShareCardRenderer(HttpClient httpClient, IMemoryCache cache, ILogger<ShareCardRenderer> logger) : IShareCardRenderer
 {
     private static readonly TimeSpan LogoCacheTtl = TimeSpan.FromHours(12);

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -5,6 +6,7 @@ using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Infrastructure.Data;
 
+[ExcludeFromCodeCoverage(Justification = "Database plumbing: connection, transaction and type-handler wiring with no branching logic of its own.")]
 public class DatabaseInitialiser(IServiceProvider serviceProvider) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)

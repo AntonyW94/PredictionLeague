@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Blazored.LocalStorage;
 
 namespace ThePredictions.Web.Client.Services.Consent;
@@ -23,6 +24,7 @@ namespace ThePredictions.Web.Client.Services.Consent;
 //
 // Bumping ConsentVersion forces every user to be re-prompted (e.g. when a new
 // non-essential category is introduced or the cookie policy materially changes).
+[ExcludeFromCodeCoverage(Justification = "Browser interop: a pass-through to JavaScript with no logic of its own.")]
 public class ConsentBannerService(ILocalStorageService localStorage) : IConsentBannerService
 {
     public const int ConsentVersion = 1;

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Common.Prizes;
 using ThePredictions.Application.Data;
@@ -7,6 +8,7 @@ using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetLeaguePayoutsQueryHandler(IApplicationReadDbConnection dbConnection, IFieldEncryptionService fieldEncryptionService)
     : IRequestHandler<GetLeaguePayoutsQuery, LeaguePayoutsDto>
 {

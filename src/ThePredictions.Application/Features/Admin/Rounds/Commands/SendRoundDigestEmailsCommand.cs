@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Features.Badges;
 
@@ -11,6 +12,7 @@ namespace ThePredictions.Application.Features.Admin.Rounds.Commands;
 /// evaluation that runs just before the digest) so the email can celebrate them; an admin resend
 /// passes none, so the badges section is simply omitted.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record SendRoundDigestEmailsCommand(
     int RoundId,
     bool Force = false,

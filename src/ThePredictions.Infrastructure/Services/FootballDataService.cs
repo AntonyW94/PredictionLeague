@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
@@ -7,6 +8,7 @@ using System.Net.Http.Json;
 
 namespace ThePredictions.Infrastructure.Services;
 
+[ExcludeFromCodeCoverage(Justification = "Third-party API client: a thin call into an external SDK, verified against the live service.")]
 public class FootballDataService : IFootballDataService
 {
     private readonly HttpClient _httpClient;

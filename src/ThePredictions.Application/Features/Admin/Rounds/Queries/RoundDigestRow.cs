@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 
 /// <summary>
@@ -9,6 +10,7 @@ namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 /// SELECT column order in <c>GetRoundDigestQueryHandler</c> must match this constructor exactly
 /// (Dapper maps positionally by name and type).
 /// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
 public record RoundDigestRow(
     string UserId,
     string Email,

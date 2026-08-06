@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Contracts.Admin.Seasons;
 using ThePredictions.Contracts.Common;
@@ -24,6 +25,7 @@ namespace ThePredictions.Application.Features.Admin.Seasons.Queries;
 /// </param>
 /// <param name="MinimumPaid">Only passes whose total paid (including any SMS fee) is at least this.</param>
 /// <param name="MaximumPaid">Only passes whose total paid (including any SMS fee) is at most this.</param>
+[ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record GetSeasonPassHoldersQuery(
     int SeasonId,
     int Page,

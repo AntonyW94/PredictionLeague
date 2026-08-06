@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
@@ -11,6 +12,7 @@ namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 /// SELECT column order in <c>GetPrizeWinnersForRoundQueryHandler</c> must match this constructor
 /// exactly (Dapper maps positionally by name and type).
 /// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
 public record PrizeWinnerRow(
     string UserId,
     string Email,

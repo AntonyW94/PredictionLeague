@@ -5,6 +5,7 @@ using ThePredictions.Contracts.Admin.Teams;
 
 namespace ThePredictions.Application.Features.Admin.Teams.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class FetchAllTeamsQueryHandler(IApplicationReadDbConnection dbConnection)
     : IRequestHandler<FetchAllTeamsQuery, IEnumerable<TeamDto>>
 {

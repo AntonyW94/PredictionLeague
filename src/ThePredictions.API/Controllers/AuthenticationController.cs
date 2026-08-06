@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -21,6 +22,7 @@ namespace ThePredictions.API.Controllers;
 [Route("api/[controller]")]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [SwaggerTag("Authentication - Register, login, logout, and token refresh")]
+[ExcludeFromCodeCoverage(Justification = "Controller action: forwards to MediatR and returns the result. The behaviour under test is the handler.")]
 public class AuthenticationController(ILogger<AuthenticationController> logger, IConfiguration configuration, IMediator mediator) : AuthControllerBase(configuration)
 {
     // Rate limiting is applied per-endpoint: the strict "auth" policy guards

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Contracts.Rounds;
 
@@ -9,6 +10,7 @@ namespace ThePredictions.Application.Features.Rounds.Commands;
 /// league's owner. Sends are deduped per (round, player): anyone reminded within the throttle window,
 /// or who no longer has any missing fixtures, is skipped.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record SendPredictionRemindersCommand(
     int RoundId,
     int? LeagueId,

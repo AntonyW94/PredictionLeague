@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Application.Features.Predictions.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetPredictionPageDataQuery, PredictionPageDto?>
 {
     public async Task<PredictionPageDto?> Handle(GetPredictionPageDataQuery request, CancellationToken cancellationToken)

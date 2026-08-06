@@ -1,5 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace ThePredictions.Web.Client.Services.Consent;
 
+[ExcludeFromCodeCoverage(Justification = "Browser interop: a pass-through to JavaScript with no logic of its own.")]
 public class CookieConsentRecord
 {
     public int Version { get; set; }

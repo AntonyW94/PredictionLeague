@@ -1,9 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using ThePredictions.Contracts.Payouts;
 
 namespace ThePredictions.Web.Client.Services.Payouts;
 
+[ExcludeFromCodeCoverage(Justification = "Typed HttpClient wrapper: forwards to an API endpoint and deserialises the reply.")]
 public class PayoutService(HttpClient httpClient) : IPayoutService
 {
     public async Task<MyPayoutDetailsDto?> GetMyPayoutDetailsAsync()

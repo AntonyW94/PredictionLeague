@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Application.Configuration;
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage(Justification = "Options type bound from configuration: properties only, no logic to test.")]
 [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
 public class FootballApiResilienceSettings
 {

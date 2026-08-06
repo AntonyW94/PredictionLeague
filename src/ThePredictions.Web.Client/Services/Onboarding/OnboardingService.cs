@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using ThePredictions.Contracts.Onboarding;
 
 namespace ThePredictions.Web.Client.Services.Onboarding;
 
+[ExcludeFromCodeCoverage(Justification = "Typed HttpClient wrapper: forwards to an API endpoint and deserialises the reply.")]
 public class OnboardingService(HttpClient httpClient) : IOnboardingService
 {
     public async Task<OnboardingChecklistDto?> GetChecklistAsync()

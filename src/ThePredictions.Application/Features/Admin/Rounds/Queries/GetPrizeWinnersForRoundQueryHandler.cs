@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 
+[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetPrizeWinnersForRoundQueryHandler(IApplicationReadDbConnection dbConnection)
     : IRequestHandler<GetPrizeWinnersForRoundQuery, IReadOnlyList<PrizeWinner>>
 {

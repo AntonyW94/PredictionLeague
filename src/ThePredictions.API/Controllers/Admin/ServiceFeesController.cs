@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace ThePredictions.API.Controllers.Admin;
 [ApiController]
 [Route("api/admin/[controller]")]
 [SwaggerTag("Admin: Service Fees - per-transaction fees charged by providers (Stripe, SMS, email)")]
+[ExcludeFromCodeCoverage(Justification = "Controller action: forwards to MediatR and returns the result. The behaviour under test is the handler.")]
 public class ServiceFeesController(IMediator mediator) : ApiControllerBase
 {
     [HttpGet]
