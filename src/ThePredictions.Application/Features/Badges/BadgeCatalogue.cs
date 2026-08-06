@@ -89,12 +89,13 @@ public static class BadgeCatalogue
             var variant = group.Category switch
             {
                 HonourCategory => "gold",
+                // tier is tierIndex + 1, so it is always 1 or more - bronze is the floor, and a
+                // fourth arm here would be unreachable.
                 CollectionCategory => tier switch
                 {
                     >= 3 => "gold",
                     2 => "silver",
-                    1 => "bronze",
-                    _ => "green"
+                    _ => "bronze"
                 },
                 _ => "green"
             };
