@@ -13,61 +13,63 @@ public class EmailTestDefaultsResolver : IEmailTestDefaultsResolver
         return defaults;
     }
 
+    /// <summary>Sample content that does not depend on the user or the environment.</summary>
+    private static readonly IReadOnlyDictionary<string, string> SampleValues = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["LEAGUE_NAME"] = "Test League",
+        ["SEASON_NAME"] = "Test Season 2026",
+        ["ROUND_NAME"] = "Round 1",
+        ["NEXT_ROUND_NAME"] = "Round 2",
+        ["DEADLINE"] = "Saturday 14:30",
+        ["NEXT_ROUND_DEADLINE"] = "Saturday 14:30",
+        ["CORRECT_RESULTS"] = "5",
+        ["EXACT_SCORES"] = "2",
+        ["POINTS"] = "18",
+        ["TOP_SCORER"] = "Sarah J",
+        ["TOP_SCORER_POINTS"] = "24"
+    };
+
+    /// <summary>Paths appended to the environment's base URL to build a working link.</summary>
+    private static readonly IReadOnlyDictionary<string, string> LinkPaths = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["RESET_LINK"] = "/authentication/reset-password?token=TEST-TOKEN",
+        ["CONFIRM_LINK"] = "/authentication/confirm-email?token=TEST-TOKEN",
+        ["LOGIN_LINK"] = "/authentication/login",
+        ["DASHBOARD_URL"] = "/dashboard",
+        ["PREDICTIONS_URL"] = "/predictions",
+        ["LEAGUE_URL"] = "/leagues"
+    };
+
     private static string ResolveOne(string name, EmailTestUserData user, string baseUrl)
     {
-        switch (name.ToUpperInvariant())
-        {
-            case "FIRST_NAME":
-            case "ADMIN_NAME":
-                return user.FirstName;
-            case "LAST_NAME":
-                return user.LastName;
-            case "NAME":
-            case "FULL_NAME":
-                return $"{user.FirstName} {user.LastName}".Trim();
-            case "EMAIL":
-                return user.Email;
-            case "LEAGUE_NAME":
-                return "Test League";
-            case "SEASON_NAME":
-                return "Test Season 2026";
-            case "ROUND_NAME":
-                return "Round 1";
-            case "NEXT_ROUND_NAME":
-                return "Round 2";
-            case "DEADLINE":
-            case "NEXT_ROUND_DEADLINE":
-                return "Saturday 14:30";
-            case "CORRECT_RESULTS":
-                return "5";
-            case "EXACT_SCORES":
-                return "2";
-            case "POINTS":
-                return "18";
-            case "TOP_SCORER":
-                return "Sarah J";
-            case "TOP_SCORER_POINTS":
-                return "24";
-            case "RESET_LINK":
-                return $"{baseUrl}/authentication/reset-password?token=TEST-TOKEN";
-            case "CONFIRM_LINK":
-                return $"{baseUrl}/authentication/confirm-email?token=TEST-TOKEN";
-            case "LOGIN_LINK":
-                return $"{baseUrl}/authentication/login";
-            case "DASHBOARD_URL":
-                return $"{baseUrl}/dashboard";
-            case "PREDICTIONS_URL":
-                return $"{baseUrl}/predictions";
-            case "LEAGUE_URL":
-                return $"{baseUrl}/leagues";
-            default:
-                if (name.EndsWith("_URL", StringComparison.OrdinalIgnoreCase) || name.EndsWith("_LINK", StringComparison.OrdinalIgnoreCase))
-                    return baseUrl;
+        var key = name.ToUpperInvariant();
 
-                // No specific rule: fall back to a readable placeholder so no input is left blank.
-                return Humanise(name);
-        }
+        var fromUser = ResolveUserField(key, user);
+        if (fromUser is not null)
+            return fromUser;
+
+        if (LinkPaths.TryGetValue(key, out var path))
+            return baseUrl + path;
+
+        if (SampleValues.TryGetValue(key, out var value))
+            return value;
+
+        if (name.EndsWith("_URL", StringComparison.OrdinalIgnoreCase) || name.EndsWith("_LINK", StringComparison.OrdinalIgnoreCase))
+            return baseUrl;
+
+        // No specific rule: fall back to a readable placeholder so no input is left blank.
+        return Humanise(name);
     }
+
+    /// <summary>Returns null when the name is not one of the user-derived fields.</summary>
+    private static string? ResolveUserField(string key, EmailTestUserData user) => key switch
+    {
+        "FIRST_NAME" or "ADMIN_NAME" => user.FirstName,
+        "LAST_NAME" => user.LastName,
+        "NAME" or "FULL_NAME" => $"{user.FirstName} {user.LastName}".Trim(),
+        "EMAIL" => user.Email,
+        _ => null
+    };
 
     private static string Humanise(string name)
     {

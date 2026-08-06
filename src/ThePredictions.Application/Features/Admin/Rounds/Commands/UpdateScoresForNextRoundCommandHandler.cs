@@ -105,17 +105,33 @@ public class UpdateScoresForNextRoundCommandHandler(
         return TournamentRoundNameParser.IsKnockoutStage(stage);
     }
 
-    internal static MatchStatus GetMatchStatus(string apiStatus, bool isKnockout) => apiStatus switch
+    /// <summary>Regular time is over and the score is final, whatever the competition.</summary>
+    private static readonly HashSet<string> FinishedStatuses = ["FT", "AET", "PEN"];
+
+    /// <summary>
+    /// The break before extra time, extra time itself, and the penalty shootout. A knockout tie is
+    /// scored on the 90-minute result, so once regular time is over the result can no longer change
+    /// for prediction purposes - these count as Completed in a knockout rather than leaving the
+    /// match live to the final whistle of the tie, which also lets end-of-round processing fire as
+    /// soon as the last match is decided on 90 minutes. In a league they are still in play.
+    /// </summary>
+    private static readonly HashSet<string> BeyondNinetyStatuses = ["BT", "ET", "P"];
+
+    private static readonly HashSet<string> LiveStatuses = ["HT", "1H", "2H", "LIVE"];
+
+    private const string PostponedStatus = "PST";
+
+    internal static MatchStatus GetMatchStatus(string apiStatus, bool isKnockout)
     {
-        "FT" or "AET" or "PEN" => MatchStatus.Completed,
-        // A knockout tie is scored on the 90-minute result, so once regular time is over the
-        // result can no longer change for prediction purposes. Treat the break before extra
-        // time (BT), extra time (ET) and the penalty shootout (P) as Completed rather than
-        // leaving the match live to the final whistle of the tie - this also lets end-of-round
-        // processing fire as soon as the last match is decided on 90 minutes.
-        "BT" or "ET" or "P" when isKnockout => MatchStatus.Completed,
-        "HT" or "1H" or "2H" or "ET" or "BT" or "P" or "LIVE" => MatchStatus.InProgress,
-        "PST" => MatchStatus.Postponed,
-        _ => MatchStatus.Scheduled
-    };
+        if (FinishedStatuses.Contains(apiStatus))
+            return MatchStatus.Completed;
+
+        if (BeyondNinetyStatuses.Contains(apiStatus))
+            return isKnockout ? MatchStatus.Completed : MatchStatus.InProgress;
+
+        if (LiveStatuses.Contains(apiStatus))
+            return MatchStatus.InProgress;
+
+        return apiStatus == PostponedStatus ? MatchStatus.Postponed : MatchStatus.Scheduled;
+    }
 }
