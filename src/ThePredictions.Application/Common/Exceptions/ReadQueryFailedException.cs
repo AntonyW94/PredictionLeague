@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Application.Common.Exceptions;
 
 /// <summary>
@@ -11,5 +12,6 @@ namespace ThePredictions.Application.Common.Exceptions;
 /// Business rules use <c>BusinessRuleViolationException</c> for the 400/Warning bucket.
 /// </para>
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Exception type: a message and an inner exception, no logic to test.")]
 public class ReadQueryFailedException(Exception innerException)
     : Exception($"A read query failed to execute or materialise: {innerException.Message}", innerException);

@@ -11,6 +11,7 @@ namespace ThePredictions.Application.Configuration;
 /// runtime from the admin UI.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[ExcludeFromCodeCoverage(Justification = "Options type bound from configuration: properties only, no logic to test.")]
 public class EmailDeliverySettings
 {
     public string[]? AllowedRecipients { get; init; }

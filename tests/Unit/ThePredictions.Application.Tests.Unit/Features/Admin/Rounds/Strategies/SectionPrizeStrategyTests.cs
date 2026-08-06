@@ -98,6 +98,9 @@ public class SectionPrizeStrategyTests
         new() { LeagueId = LeagueId, RoundId = 100 + roundNumber };
 
     [Fact]
+    public void PrizeType_ShouldBeStages() => _strategy.PrizeType.Should().Be(PrizeType.Stages);
+
+    [Fact]
     public async Task AwardPrizes_ShouldAwardGroupStage_WhenLastGroupRoundCompletesMidSeason()
     {
         SetupSeason(RoundStatus.Completed, RoundStatus.Completed, RoundStatus.Published, RoundStatus.Published);
