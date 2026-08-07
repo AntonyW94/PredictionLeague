@@ -188,9 +188,11 @@ public class GetRoundCompletionQueryHandler(
                || await membershipService.IsLeagueAdministratorAsync(request.LeagueId.Value, request.CurrentUserId, cancellationToken);
     }
 
-    private record RoundInfoRow(string RoundName, DateTime DeadlineUtc);
+    // internal so a test can supply rows for the grouping and ordering below; InternalsVisibleTo
+    // already exposes this assembly to ThePredictions.Application.Tests.Unit.
+    internal record RoundInfoRow(string RoundName, DateTime DeadlineUtc);
 
-    private record ParticipantRow(string UserId, string PlayerName, string Email, int PredictedCount, DateTime? LastRemindedUtc);
+    internal record ParticipantRow(string UserId, string PlayerName, string Email, int PredictedCount, DateTime? LastRemindedUtc);
 
-    private record MissingFixtureRow(string UserId, int MatchId, int? MatchNumber, string HomeTeam, string AwayTeam);
+    internal record MissingFixtureRow(string UserId, int MatchId, int? MatchNumber, string HomeTeam, string AwayTeam);
 }
