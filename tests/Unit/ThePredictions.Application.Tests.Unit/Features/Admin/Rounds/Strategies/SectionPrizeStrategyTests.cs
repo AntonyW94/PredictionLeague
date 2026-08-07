@@ -201,4 +201,81 @@ public class SectionPrizeStrategyTests
 
         await _winningsRepository.DidNotReceiveWithAnyArgs().AddWinningsAsync(default!, CancellationToken.None);
     }
+
+    [Fact]
+    public async Task AwardPrizes_ShouldDoNothing_WhenTheRoundIsNotInTheSeason()
+    {
+        SetupSeason(RoundStatus.Completed, RoundStatus.Completed, RoundStatus.Published, RoundStatus.Published);
+        SetupLeague([CreateStageSetting(10, GroupStage, 1, 45m)], ("user-1", 1, 10));
+
+        await _strategy.AwardPrizes(new ProcessPrizesCommand { LeagueId = LeagueId, RoundId = 999 }, CancellationToken.None);
+
+        await _winningsRepository.DidNotReceiveWithAnyArgs().AddWinningsAsync(default!, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task AwardPrizes_ShouldDoNothing_WhenTheLeagueIsGone()
+    {
+        // The round finished but the league was deleted in between, so there is nobody to pay.
+        SetupSeason(RoundStatus.Completed, RoundStatus.Completed, RoundStatus.Published, RoundStatus.Published);
+        _leagueRepository.GetByIdWithAllDataAsync(LeagueId, Arg.Any<CancellationToken>()).Returns((League?)null);
+
+        await _strategy.AwardPrizes(CommandForRound(2), CancellationToken.None);
+
+        await _winningsRepository.DidNotReceiveWithAnyArgs().AddWinningsAsync(default!, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task AwardPrizes_ShouldDoNothing_WhenNoStagePrizesAreConfigured()
+    {
+        SetupSeason(RoundStatus.Completed, RoundStatus.Completed, RoundStatus.Published, RoundStatus.Published);
+        SetupLeague([], ("user-1", 1, 10));
+
+        await _strategy.AwardPrizes(CommandForRound(2), CancellationToken.None);
+
+        await _winningsRepository.DidNotReceiveWithAnyArgs().AddWinningsAsync(default!, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task AwardPrizes_ShouldSkipAStageWithNothingToPayOut()
+    {
+        // A stage configured at zero pounds is effectively off; nobody should get a nil winning.
+        SetupSeason(RoundStatus.Completed, RoundStatus.Completed, RoundStatus.Published, RoundStatus.Published);
+        SetupLeague(
+            [CreateStageSetting(10, GroupStage, 1, 0m)],
+            ("user-1", 1, 10), ("user-1", 2, 10));
+
+        await _strategy.AwardPrizes(CommandForRound(2), CancellationToken.None);
+
+        await _winningsRepository.DidNotReceiveWithAnyArgs().AddWinningsAsync(default!, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task AwardPrizes_ShouldPayNobody_WhenThePrizeIsForARankNobodyReached()
+    {
+        // Only one entrant, but the stage pays second place only - there is no second place.
+        SetupSeason(RoundStatus.Completed, RoundStatus.Completed, RoundStatus.Published, RoundStatus.Published);
+        SetupLeague(
+            [CreateStageSetting(10, GroupStage, 2, 45m)],
+            ("user-1", 1, 10), ("user-1", 2, 10));
+
+        await _strategy.AwardPrizes(CommandForRound(2), CancellationToken.None);
+
+        await _winningsRepository.DidNotReceiveWithAnyArgs().AddWinningsAsync(default!, CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task AwardPrizes_ShouldIgnoreARoundNumberWithNoMatchingRound()
+    {
+        // A mapping can name a round number the season never created; it must be skipped rather
+        // than dragging a null into the stage.
+        SetupSeason(RoundStatus.Completed, RoundStatus.Completed);
+        SetupLeague(
+            [CreateStageSetting(10, GroupStage, 1, 45m)],
+            ("user-1", 1, 10), ("user-1", 2, 10));
+
+        await _strategy.AwardPrizes(CommandForRound(2), CancellationToken.None);
+
+        await _winningsRepository.Received(1).AddWinningsAsync(Arg.Any<IEnumerable<Winning>>(), Arg.Any<CancellationToken>());
+    }
 }
