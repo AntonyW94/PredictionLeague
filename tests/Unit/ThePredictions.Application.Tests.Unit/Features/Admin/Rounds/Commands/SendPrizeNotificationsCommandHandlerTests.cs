@@ -173,4 +173,21 @@ public class SendPrizeNotificationsCommandHandlerTests
 
         await _emailService.DidNotReceiveWithAnyArgs().SendTemplatedEmailAsync(default!, default, default!);
     }
+
+    [Fact]
+    public async Task Handle_ShouldNotSend_WhenNoTemplatesAreConfiguredAtAll()
+    {
+        // A fresh environment with no Brevo section at all must skip quietly, not throw.
+        var brevo = Options.Create(new BrevoSettings { Templates = null });
+        var handler = new SendPrizeNotificationsCommandHandler(
+            _mediator, _roundRepository, _emailService, _prizeNotificationRepository, brevo,
+            Options.Create(new SiteSettings { BaseUrl = "https://test.local" }), _dateTimeProvider,
+            Substitute.For<ILogger<SendPrizeNotificationsCommandHandler>>());
+
+        _roundRepository.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns(CompletedRound());
+
+        await handler.Handle(new SendPrizeNotificationsCommand(7), CancellationToken.None);
+
+        await _emailService.DidNotReceiveWithAnyArgs().SendTemplatedEmailAsync(default!, default, default!);
+    }
 }

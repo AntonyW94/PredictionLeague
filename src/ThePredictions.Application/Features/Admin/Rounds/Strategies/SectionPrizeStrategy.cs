@@ -94,9 +94,8 @@ public class SectionPrizeStrategy(
 
         foreach (var rankingGroup in rankings)
         {
+            // Always at least one member: rankings come from a GroupBy, so no empty-group guard.
             var winners = rankingGroup.Members;
-            if (winners.Count == 0)
-                continue;
 
             // A joint group at rank R with N members occupies slots R..R+N-1; pool their prize money.
             var firstSlot = rankingGroup.Rank;

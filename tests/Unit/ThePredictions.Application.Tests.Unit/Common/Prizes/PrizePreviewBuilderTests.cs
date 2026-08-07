@@ -73,4 +73,39 @@ public class PrizePreviewBuilderTests
 
         attribution.Should().BeEmpty();
     }
+
+    private static PrizeSchemeEvaluationRequest SingleCategoryRequest(int entrants) => new()
+    {
+        StakePounds = 13,
+        EntrantCount = entrants,
+        NumberOfRounds = 38,
+        NumberOfMonths = 9,
+        Categories = new[] { new PrizeSchemeCategoryInput { Category = PrizeType.Overall, PerEntryPounds = 13 } }
+    };
+
+    [Fact]
+    public void Build_ShouldReadNaturally_WhenTheEntryFundsASingleCategory()
+    {
+        // One contribution needs no list punctuation - "adds £13 to Overall.", not "and".
+        var perEntry = new Dictionary<PrizeType, int> { [PrizeType.Overall] = 13 };
+
+        var (_, attribution) = PrizePreviewBuilder.Build(
+            _evaluator.Evaluate(SingleCategoryRequest(16)),
+            _evaluator.Evaluate(SingleCategoryRequest(17)),
+            perEntry,
+            13m);
+
+        attribution.Should().ContainSingle();
+        attribution[0].Should().NotContain(" and ");
+        attribution[0].Should().Contain("Overall");
+    }
+
+    [Fact]
+    public void Build_ShouldJoinTheLastContributionWithAnd()
+    {
+        var (_, attribution) = PrizePreviewBuilder.Build(
+            _evaluator.Evaluate(Request(16)), _evaluator.Evaluate(Request(17)), PerEntry, 13m);
+
+        attribution[0].Should().Contain(", ").And.Contain(" and ");
+    }
 }

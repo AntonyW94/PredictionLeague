@@ -32,13 +32,13 @@ public class SendScheduledRemindersCommandHandlerTests
     private readonly IReminderService _reminderService = Substitute.For<IReminderService>();
     private readonly IEmailDateFormatter _dateFormatter = Substitute.For<IEmailDateFormatter>();
 
-    private SendScheduledRemindersCommandHandler BuildHandler(long templateId = TemplateId, string? baseUrl = "https://www.thepredictions.co.uk")
+    private SendScheduledRemindersCommandHandler BuildHandler(long templateId = TemplateId, string? baseUrl = "https://www.thepredictions.co.uk", bool templatesConfigured = true)
     {
         _dateFormatter.FormatDeadline(Arg.Any<DateTime>()).Returns("Saturday, 30 May 2026 at 15:00 (BST)");
 
         return new SendScheduledRemindersCommandHandler(
             _roundRepository, _emailService, _reminderService, _dateFormatter,
-            Options.Create(new BrevoSettings { Templates = new TemplateSettings { PredictionsMissing = templateId } }),
+            Options.Create(new BrevoSettings { Templates = templatesConfigured ? new TemplateSettings { PredictionsMissing = templateId } : null }),
             Options.Create(new SiteSettings { BaseUrl = baseUrl }),
             new TestDateTimeProvider(NowUtc),
             NullLogger<SendScheduledRemindersCommandHandler>.Instance);
@@ -211,4 +211,29 @@ public class SendScheduledRemindersCommandHandlerTests
 
     private static string? Value(object parameters, string propertyName) =>
         parameters.GetType().GetProperty(propertyName)?.GetValue(parameters)?.ToString();
+
+    [Fact]
+    public async Task Handle_ShouldNotEmail_WhenTheReminderTemplateIsNotSetUp()
+    {
+        GivenNextRound();
+        GivenDue();
+        GivenUsersToChase(User("user-1"));
+
+        await HandleAsync(BuildHandler(templateId: 0));
+
+        await _emailService.DidNotReceiveWithAnyArgs().SendTemplatedEmailAsync(default!, default, default!);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotEmail_WhenNoTemplatesAreConfiguredAtAll()
+    {
+        // A fresh environment with no Brevo section at all must skip quietly, not throw.
+        GivenNextRound();
+        GivenDue();
+        GivenUsersToChase(User("user-1"));
+
+        await HandleAsync(BuildHandler(templatesConfigured: false));
+
+        await _emailService.DidNotReceiveWithAnyArgs().SendTemplatedEmailAsync(default!, default, default!);
+    }
 }
