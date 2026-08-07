@@ -116,6 +116,7 @@ public class SendTestEmailCommandHandlerTests
 
         result.Success.Should().BeFalse();
         result.Error.Should().Be("Template not found");
+        result.SentTo.Should().Be("admin@example.com");
     }
 
     [Fact]
