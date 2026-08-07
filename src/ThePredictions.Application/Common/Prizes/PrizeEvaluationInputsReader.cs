@@ -112,8 +112,10 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
         return months;
     }
 
+    // The row types are internal so a test can supply rows to the build below; InternalsVisibleTo
+    // already exposes this assembly to ThePredictions.Application.Tests.Unit.
     [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    private sealed class LeagueRow
+    internal sealed class LeagueRow
     {
         public int LeagueId { get; init; }
         public string LeagueName { get; init; } = string.Empty;
@@ -131,13 +133,13 @@ public class PrizeEvaluationInputsReader(IApplicationReadDbConnection dbConnecti
     }
 
     [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    private sealed class SchemeRow
+    internal sealed class SchemeRow
     {
         public int Id { get; init; }
     }
 
     [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    private sealed class EntryRow
+    internal sealed class EntryRow
     {
         public PrizeType Category { get; init; }
         public int PerEntryPounds { get; init; }
