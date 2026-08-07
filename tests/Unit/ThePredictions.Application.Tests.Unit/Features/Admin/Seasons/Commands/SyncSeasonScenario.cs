@@ -145,7 +145,8 @@ internal sealed class SyncSeasonScenario
                 : null,
             League = withRoundName ? new ApiLeague { Id = ApiLeagueId, RoundName = apiRoundName } : null,
             Teams = withTeams
-                ? new Teams { Home = new ApiTeam { Id = apiHomeTeamId, Name = "Home" }, Away = new ApiTeam { Id = apiAwayTeamId, Name = "Away" } }
+                // Qualified: the Admin.Teams test namespace would otherwise shadow this DTO here.
+                ? new FootballApi.DTOs.Teams { Home = new ApiTeam { Id = apiHomeTeamId, Name = "Home" }, Away = new ApiTeam { Id = apiAwayTeamId, Name = "Away" } }
                 : null
         };
 
