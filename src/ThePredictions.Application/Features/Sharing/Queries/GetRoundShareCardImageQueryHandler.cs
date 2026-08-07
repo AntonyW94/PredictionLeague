@@ -122,8 +122,10 @@ public class GetRoundShareCardImageQueryHandler(
         return await renderer.RenderAsync(model, cancellationToken);
     }
 
+    // The row types are internal so a test can supply rows to the shaping above; InternalsVisibleTo
+    // already exposes this assembly to ThePredictions.Application.Tests.Unit.
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record ShareCardRoundResult(
+    internal record ShareCardRoundResult(
         int RoundNumber,
         string? RoundDisplayName,
         string SeasonName,
@@ -132,7 +134,7 @@ public class GetRoundShareCardImageQueryHandler(
         string? PreferredTheme);
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record ShareCardMatchResult(
+    internal record ShareCardMatchResult(
         string HomeTeamShortName,
         string HomeTeamAbbreviation,
         string? HomeTeamLogoUrl,

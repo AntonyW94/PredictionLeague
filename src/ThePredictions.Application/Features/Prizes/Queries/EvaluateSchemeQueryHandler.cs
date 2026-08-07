@@ -50,7 +50,9 @@ public class EvaluateSchemeQueryHandler(IApplicationReadDbConnection dbConnectio
     }
 
     [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    private sealed class SeasonRow
+    // internal so a test can supply a row; InternalsVisibleTo already exposes this assembly to
+    // ThePredictions.Application.Tests.Unit.
+    internal sealed class SeasonRow
     {
         public int NumberOfRounds { get; init; }
         public DateTime StartDateUtc { get; init; }
