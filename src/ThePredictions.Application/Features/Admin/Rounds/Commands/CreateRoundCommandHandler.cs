@@ -20,12 +20,19 @@ public class CreateRoundCommandHandler(IRoundRepository roundRepository, ICurren
             request.DeadlineUtc,
             request.ApiRoundName);
 
-        foreach (var matchToAdd in request.Matches)
-        {
-            round.AddMatch(matchToAdd.HomeTeamId, matchToAdd.AwayTeamId, matchToAdd.MatchDateTimeUtc, matchToAdd.ExternalId);
-        }
-
+        // Save first: a match is created against its round's id, and an unsaved round has none.
+        // Adding matches before this throws "Round ID must be greater than 0".
         var createdRound = await roundRepository.CreateAsync(round, cancellationToken);
+
+        if (request.Matches.Any())
+        {
+            foreach (var matchToAdd in request.Matches)
+            {
+                createdRound.AddMatch(matchToAdd.HomeTeamId, matchToAdd.AwayTeamId, matchToAdd.MatchDateTimeUtc, matchToAdd.ExternalId);
+            }
+
+            await roundRepository.UpdateAsync(createdRound, cancellationToken);
+        }
 
         return new RoundDto
         (

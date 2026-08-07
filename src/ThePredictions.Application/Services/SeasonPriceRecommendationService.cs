@@ -171,7 +171,9 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
         return count > 0 ? count : null;
     }
 
-    private sealed class CostRow
+    // internal so a test can supply rows for the annualisation below; InternalsVisibleTo already
+    // exposes this assembly to ThePredictions.Application.Tests.Unit.
+    internal sealed class CostRow
     {
         public decimal Amount { get; init; }
         public string Frequency { get; init; } = string.Empty;
