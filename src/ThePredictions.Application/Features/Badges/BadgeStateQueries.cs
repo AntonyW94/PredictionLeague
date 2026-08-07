@@ -158,7 +158,9 @@ internal static class BadgeStateQueries
         return new BadgeUserState(earned, metrics);
     }
 
-    private sealed record MetricScalars(int SeasonExactTotal, int BestExactsInRound, int LeaguesJoined);
+    // internal so a test can supply rows to the shaping above; InternalsVisibleTo already exposes
+    // this assembly to ThePredictions.Application.Tests.Unit.
+    internal sealed record MetricScalars(int SeasonExactTotal, int BestExactsInRound, int LeaguesJoined);
 
-    private sealed record EverPresentRow(int RoundsTotal, int RoundsPredicted);
+    internal sealed record EverPresentRow(int RoundsTotal, int RoundsPredicted);
 }
