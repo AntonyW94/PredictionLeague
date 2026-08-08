@@ -217,4 +217,19 @@ public class SendPredictionRemindersCommandHandlerTests
         await _membershipService.DidNotReceiveWithAnyArgs()
             .EnsureLeagueAdministratorAsync(default, default!, CancellationToken.None);
     }
+
+    [Fact]
+    public async Task Handle_ShouldAskAboutTheThrottleForEveryPlayerBeingChased()
+    {
+        // The throttle lookup is done in one round trip, so the whole set of ids has to reach it.
+        _roundRepository.GetByIdAsync(43, Arg.Any<CancellationToken>()).Returns(OpenRound());
+        GivenMissing(Chase("user-1"), Chase("user-2"));
+
+        await _handler.Handle(AdminCommand("user-1", "user-2"), CancellationToken.None);
+
+        await _notificationRepository.Received(1).GetLastRemindedUtcAsync(
+            43,
+            Arg.Is<IEnumerable<string>>(ids => ids.OrderBy(i => i).SequenceEqual(new[] { "user-1", "user-2" })),
+            Arg.Any<CancellationToken>());
+    }
 }

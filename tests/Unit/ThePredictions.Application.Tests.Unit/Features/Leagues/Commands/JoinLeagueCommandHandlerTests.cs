@@ -231,4 +231,20 @@ public class JoinLeagueCommandHandlerTests
         // Assert
         await _leagueStatsRepository.DidNotReceiveWithAnyArgs().RefreshLeagueAsync(default, CancellationToken.None);
     }
+
+    [Fact]
+    public async Task Handle_ShouldNotRefreshLeagueStats_WhenAnExistingApprovedMemberIsNotTheJoiner()
+    {
+        // The league already has an approved member. The joiner is still pending, so the cached
+        // ranks are untouched - the existing member must not be mistaken for the new one.
+        var league = CreateLeague(id: 5);
+        league.AddMember("existing-user", _dateTimeProvider);
+        league.Members.Single(m => m.UserId == "existing-user").Approve(_dateTimeProvider);
+
+        _leagueRepository.GetByIdAsync(5, Arg.Any<CancellationToken>()).Returns(league);
+
+        await _handler.Handle(new JoinLeagueCommand("new-user", "Jane", "Doe", LeagueId: 5, EntryCode: null), CancellationToken.None);
+
+        await _leagueStatsRepository.DidNotReceiveWithAnyArgs().RefreshLeagueAsync(default, CancellationToken.None);
+    }
 }
