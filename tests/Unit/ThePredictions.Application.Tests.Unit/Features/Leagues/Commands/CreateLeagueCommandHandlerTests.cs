@@ -242,4 +242,33 @@ public class CreateLeagueCommandHandlerTests
         // Assert
         result.MemberCount.Should().Be(1);
     }
+
+    [Fact]
+    public async Task Handle_ShouldDescribeALeagueWithNoEntryCodeAsPublic()
+    {
+        // A league with no code is open to anyone, and the screen shows the word "Public" where a
+        // private league would show its join code.
+        var season = CreateSeason();
+        _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(season);
+        _leagueRepository.GetByEntryCodeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((League?)null);
+        _leagueRepository.CreateAsync(Arg.Any<League>(), Arg.Any<CancellationToken>()).Returns(callInfo =>
+        {
+            var league = callInfo.ArgAt<League>(0);
+            return new League(
+                id: 42, name: league.Name, seasonId: league.SeasonId,
+                administratorUserId: league.AdministratorUserId,
+                entryCode: null, createdAtUtc: _dateTimeProvider.UtcNow,
+                entryDeadlineUtc: league.EntryDeadlineUtc,
+                pointsForExactScore: league.PointsForExactScore,
+                pointsForCorrectResult: league.PointsForCorrectResult,
+                price: league.Price, isFree: league.IsFree, hasPrizes: false,
+                prizeFundOverride: null, members: null, prizeSettings: null);
+        });
+
+        var result = await _handler.Handle(
+            new CreateLeagueCommand("Test League", 1, 10m, "user-1", _dateTimeProvider.UtcNow.AddMonths(1), 3, 1),
+            CancellationToken.None);
+
+        result.EntryCode.Should().Be("Public");
+    }
 }

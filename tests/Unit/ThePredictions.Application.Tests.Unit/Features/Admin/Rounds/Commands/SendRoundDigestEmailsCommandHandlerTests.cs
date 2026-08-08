@@ -240,4 +240,24 @@ public class SendRoundDigestEmailsCommandHandlerTests
 
         ((System.Collections.IList)Property<object>(CapturedParameters(), "BADGES")).Count.Should().Be(0);
     }
+
+    [Fact]
+    public async Task Handle_ShouldLeaveTheTopScorerBlank_WhenALeagueHasNoneYet()
+    {
+        // A league where nobody scored in the round has no top scorer, and the email must show an
+        // empty space rather than failing to build.
+        _roundRepository.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns(CompletedRound());
+        _mediator.Send(Arg.Any<GetRoundDigestQuery>(), Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyList<UserRoundDigest>)new List<UserRoundDigest>
+            {
+                new("u1", "antony@example.com", "Antony", "Gameweek 7", 2, 6, "Gameweek 8", null,
+                    new List<LeagueRoundDigest> { new(5, "Office League", 18, 3, 1, null, null) })
+            });
+
+        await _handler.Handle(new SendRoundDigestEmailsCommand(7), CancellationToken.None);
+
+        var leagues = (System.Collections.IList)Property<object>(CapturedParameters(), "LEAGUES");
+        Property<string>(leagues[0]!, "TOP_SCORER").Should().BeEmpty();
+        Property<int>(leagues[0]!, "TOP_SCORER_POINTS").Should().Be(0);
+    }
 }

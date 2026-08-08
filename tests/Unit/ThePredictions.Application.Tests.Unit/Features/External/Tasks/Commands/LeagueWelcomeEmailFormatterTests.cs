@@ -164,4 +164,25 @@ public class LeagueWelcomeEmailFormatterTests
 
         lines[0].Usage.Should().Be("Can be used once this season: round 7 (max 1)");
     }
+
+    [Fact]
+    public void PrizePot_ShouldMultiplyAMonthlyPrizeByTheMonthsTheSeasonRuns()
+    {
+        // A monthly prize is won once a month, so the pot counts it once per month rather than once.
+        var league = CreateLeague(prizes: [new LeagueWelcomePrize(PrizeType.Monthly, 1, null, 10m)]);
+
+        LeagueWelcomeEmailFormatter.PrizePot(league).Should().Be("£20");
+    }
+
+    [Fact]
+    public void PrizeSections_ShouldFallBackToAGenericHeading_WhenAStagePrizeHasNoStageName()
+    {
+        // Better a section headed "Stage" than one headed with a blank space.
+        var league = CreateLeague(prizes: [new LeagueWelcomePrize(PrizeType.Stages, 1, "   ", 45m)]);
+
+        var sections = LeagueWelcomeEmailFormatter.PrizeSections(league);
+
+        sections.Should().ContainSingle();
+        sections[0].Title.Should().Be("Stage");
+    }
 }

@@ -55,9 +55,8 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ILeagu
 
     private async Task NotifyAsync(League league, JoinLeagueCommand request, CancellationToken cancellationToken)
     {
-        var member = league.Members.FirstOrDefault(m => m.UserId == request.JoiningUserId);
-        if (member is null)
-            return;
+        // Always present: AddMember above either added them or threw, so no null guard.
+        var member = league.Members.First(m => m.UserId == request.JoiningUserId);
 
         // Auto-approved (the league does not require approval): tell the joiner they can take part.
         // Otherwise the request is pending: tell the admin there is someone to approve.

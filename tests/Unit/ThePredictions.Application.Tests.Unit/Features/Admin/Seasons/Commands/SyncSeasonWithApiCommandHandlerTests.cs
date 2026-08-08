@@ -417,4 +417,107 @@ public class SyncSeasonWithApiCommandHandlerTests
 
         updated.Should().ContainSingle().Which.Id.Should().Be(1);
     }
+
+    // ---------- fixtures the feed sends incomplete ----------
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreAFixtureWithNoDetailAtAll()
+    {
+        var round = Round(1, 1, Week1);
+        _scenario.GivenRounds(round);
+        _scenario.GivenApiRoundNames(RoundName(1));
+        _scenario.GivenApiFixtures(Fixture(5001, Week1, RoundName(1), withFixture: false));
+
+        await HandleAsync();
+
+        round.Matches.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreAFixtureWithNoTeamsBlockAtAll()
+    {
+        var round = Round(1, 1, Week1);
+        _scenario.GivenRounds(round);
+        _scenario.GivenApiRoundNames(RoundName(1));
+        _scenario.GivenApiFixtures(Fixture(5001, Week1, RoundName(1), withTeams: false));
+
+        await HandleAsync();
+
+        round.Matches.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreAFixtureWithOnlyOneSideNamed()
+    {
+        // A tie can arrive with the home side known and the away side still to be decided.
+        var round = Round(1, 1, Week1);
+        _scenario.GivenRounds(round);
+        _scenario.GivenApiRoundNames(RoundName(1));
+        _scenario.GivenApiFixtures(Fixture(5001, Week1, RoundName(1), withAwayTeam: false));
+
+        await HandleAsync();
+
+        round.Matches.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreAFixtureWithNoRoundName()
+    {
+        var round = Round(1, 1, Week1);
+        _scenario.GivenRounds(round);
+        _scenario.GivenApiRoundNames(RoundName(1));
+        _scenario.GivenApiFixtures(Fixture(5001, Week1, RoundName(1), withRoundName: false));
+
+        await HandleAsync();
+
+        round.Matches.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldLeaveARoundAloneWhenTheFeedListsNoFixturesForIt()
+    {
+        // The feed knows about round 2 by name but has not published its fixtures yet.
+        var round = Round(1, 1, Week1);
+        _scenario.GivenRounds(round);
+        _scenario.GivenApiRoundNames(RoundName(1), RoundName(2));
+        _scenario.GivenApiFixtures(Fixture(5001, Week1, RoundName(1)));
+
+        await HandleAsync();
+
+        await _scenario.Rounds.DidNotReceive().CreateAsync(
+            Arg.Is<Round>(r => r.ApiRoundName == RoundName(2)), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldKeepAMatchThatWasAddedByHandWithNoFeedLink()
+    {
+        // A hand-entered fixture has no external id, so the "no longer in the feed" sweep must not
+        // treat it as stale and delete it.
+        var manual = Match(2, 1, Week1, externalId: null, homeTeamId: 103, awayTeamId: 104);
+        var synced = Match(1, 1, Week1, externalId: 5001);
+        var round = Round(1, 1, Week1, matches: [synced, manual]);
+        _scenario.GivenRounds(round);
+        _scenario.GivenApiRoundNames(RoundName(1));
+        _scenario.GivenApiFixtures(Fixture(5001, Week1, RoundName(1)));
+
+        await HandleAsync();
+
+        round.Matches.Should().Contain(m => m.Id == 2);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRecordAMovedKickOffEvenForAFixtureItCannotPlace()
+    {
+        // Every fixture the feed sent carries an unnumbered round name, so there are no round
+        // windows to place them in at all. The kick-off change is still real and worth recording.
+        var match = Match(1, 1, Week1, externalId: 5001);
+        var round = Round(1, 1, Week1, matches: match);
+        _scenario.GivenRounds(round);
+        _scenario.GivenApiRoundNames("Relegation Play-offs");
+        _scenario.GivenApiFixtures(Fixture(5001, Week3, "Relegation Play-offs"));
+
+        await HandleAsync();
+
+        match.MatchDateTimeUtc.Should().Be(Week3);
+    }
 }

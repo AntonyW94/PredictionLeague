@@ -340,4 +340,17 @@ public class UpdateMatchResultsCommandHandlerTests
         await _mediator.Received(1).Send(
             Arg.Is<SendRoundDigestEmailsCommand>(c => c.BadgesAwarded == awarded), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task Handle_ShouldNotStartAPublishedRound_WhenNoFixtureHasActuallyKickedOff()
+    {
+        // A published round only moves to in-progress once a fixture is genuinely under way; a
+        // correction that leaves everything scheduled must not start it.
+        var match = BuildMatch(MatchId, MatchStatus.Scheduled);
+        var round = GivenRound(RoundStatus.Published, match);
+
+        await HandleAsync(Command(new MatchResultDto(MatchId, 0, 0, MatchStatus.Scheduled)));
+
+        round.Status.Should().Be(RoundStatus.Published);
+    }
 }

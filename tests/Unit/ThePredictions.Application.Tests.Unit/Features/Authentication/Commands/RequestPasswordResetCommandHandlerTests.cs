@@ -191,4 +191,40 @@ public class RequestPasswordResetCommandHandlerTests
         await _tokenRepository.DidNotReceive().CreateAsync(
             Arg.Any<PasswordResetToken>(), Arg.Any<CancellationToken>());
     }
+
+    private RequestPasswordResetCommandHandler HandlerWithNoTemplates() =>
+        new(_userManager, _tokenRepository, _emailService,
+            Options.Create(new BrevoSettings { Templates = null }),
+            Options.Create(new SiteSettings { BaseUrl = "https://test.local" }),
+            _dateTimeProvider, _logger);
+
+    [Fact]
+    public async Task Handle_ShouldThrow_WhenThePasswordResetTemplateIsNotConfigured()
+    {
+        // Silently doing nothing would leave someone waiting for an email that never arrives, so
+        // this fails loudly for the operator instead.
+        var command = new RequestPasswordResetCommand("john@example.com");
+        var user = new ApplicationUser { Id = "user-1", Email = command.Email, FirstName = "John" };
+        _userManager.FindByEmailAsync(command.Email).Returns(user);
+        _tokenRepository.CountByUserIdSinceAsync("user-1", Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(0);
+        _userManager.HasPasswordAsync(user).Returns(true);
+
+        var act = () => HandlerWithNoTemplates().Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*PasswordReset*");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrow_WhenTheGoogleSignInTemplateIsNotConfigured()
+    {
+        var command = new RequestPasswordResetCommand("john@example.com");
+        var user = new ApplicationUser { Id = "user-1", Email = command.Email, FirstName = "John" };
+        _userManager.FindByEmailAsync(command.Email).Returns(user);
+        _tokenRepository.CountByUserIdSinceAsync("user-1", Arg.Any<DateTime>(), Arg.Any<CancellationToken>()).Returns(0);
+        _userManager.HasPasswordAsync(user).Returns(false);
+
+        var act = () => HandlerWithNoTemplates().Handle(command, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*PasswordResetGoogleUser*");
+    }
 }
