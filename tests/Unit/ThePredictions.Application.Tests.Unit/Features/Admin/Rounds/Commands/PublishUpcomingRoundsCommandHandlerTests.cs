@@ -96,4 +96,33 @@ public class PublishUpcomingRoundsCommandHandlerTests
         round.Status.Should().Be(RoundStatus.Draft);
         await _roundRepository.DidNotReceive().UpdateAsync(Arg.Any<Round>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task Handle_ShouldPullBackARoundThatMovedBeyondTheSixWeekWindow()
+    {
+        // Fixtures get rescheduled. A published round whose start date moves out past the window
+        // has to go back to draft, or it stays visible months early.
+        var round = Round(9, RoundStatus.Published, ConfirmedMatch(9));
+        _roundRepository.GetPublishedRoundsStartingAfterAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(new Dictionary<int, Round> { [9] = round });
+
+        await _handler.Handle(new PublishUpcomingRoundsCommand(), CancellationToken.None);
+
+        round.Status.Should().Be(RoundStatus.Draft);
+        await _roundRepository.Received(1).UpdateAsync(round, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldPullBackEveryDistantRound()
+    {
+        var first = Round(9, RoundStatus.Published, ConfirmedMatch(9));
+        var second = Round(10, RoundStatus.Published, ConfirmedMatch(10));
+        _roundRepository.GetPublishedRoundsStartingAfterAsync(Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
+            .Returns(new Dictionary<int, Round> { [9] = first, [10] = second });
+
+        await _handler.Handle(new PublishUpcomingRoundsCommand(), CancellationToken.None);
+
+        first.Status.Should().Be(RoundStatus.Draft);
+        second.Status.Should().Be(RoundStatus.Draft);
+    }
 }

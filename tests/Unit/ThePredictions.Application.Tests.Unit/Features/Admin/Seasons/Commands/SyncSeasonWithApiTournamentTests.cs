@@ -240,4 +240,69 @@ public class SyncSeasonWithApiTournamentTests
 
         await _scenario.FootballData.DidNotReceiveWithAnyArgs().GetRoundsForSeasonAsync(default, default, CancellationToken.None);
     }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreAFixtureTheFeedSentWithoutTeams()
+    {
+        // A tie can appear in the feed before both sides are decided; it carries no teams and must
+        // not be counted when working out which teams to look up.
+        var placeholder = Placeholder(1, 5, SemiFinalDate, SemiFinals);
+        var round = Round(5, 1, SemiFinalDate, SemiFinals, RoundStatus.Draft, placeholder);
+        _scenario.GivenRounds(round);
+        _scenario.GivenMappings(Mapping(1, TournamentStage.SemiFinals));
+        _scenario.GivenApiFixtures(Fixture(6001, SemiFinalDate, SemiFinals, withTeams: false));
+
+        await HandleAsync();
+
+        placeholder.ExternalId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreAFixtureTheFeedSentWithNoDetailAtAll()
+    {
+        var placeholder = Placeholder(1, 5, SemiFinalDate, SemiFinals);
+        var round = Round(5, 1, SemiFinalDate, SemiFinals, RoundStatus.Draft, placeholder);
+        _scenario.GivenRounds(round);
+        _scenario.GivenMappings(Mapping(1, TournamentStage.SemiFinals));
+        _scenario.GivenApiFixtures(Fixture(6001, SemiFinalDate, SemiFinals, withFixture: false));
+
+        await HandleAsync();
+
+        placeholder.ExternalId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreATieBetweenTeamsTheSiteDoesNotKnow()
+    {
+        // The teams table is seeded separately; a tie between two unknown teams is skipped rather
+        // than creating a fixture with no sides.
+        var placeholder = Placeholder(1, 5, SemiFinalDate, SemiFinals);
+        var round = Round(5, 1, SemiFinalDate, SemiFinals, RoundStatus.Draft, placeholder);
+        _scenario.GivenRounds(round);
+        _scenario.GivenMappings(Mapping(1, TournamentStage.SemiFinals));
+        _scenario.GivenNoTeamsKnown();
+        _scenario.GivenApiFixtures(Fixture(6001, SemiFinalDate, SemiFinals));
+
+        await HandleAsync();
+
+        placeholder.ExternalId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreAStatusUpdateForATieTheRoundDoesNotHold()
+    {
+        // The feed can report a tie that was never synced into this round; there is nothing local
+        // to postpone or reinstate, so it is skipped.
+        var round = Round(5, 1, SemiFinalDate, SemiFinals, RoundStatus.Published,
+            Match(1, 5, SemiFinalDate, externalId: 6001, apiRoundName: SemiFinals));
+        _scenario.GivenRounds(round);
+        _scenario.GivenMappings(Mapping(1, TournamentStage.SemiFinals));
+        _scenario.GivenApiFixtures(
+            Fixture(6001, SemiFinalDate, SemiFinals),
+            Fixture(6002, SemiFinalDate, SemiFinals, status: "PST", apiHomeTeamId: 3, apiAwayTeamId: 4));
+
+        var act = () => HandleAsync();
+
+        await act.Should().NotThrowAsync();
+    }
 }

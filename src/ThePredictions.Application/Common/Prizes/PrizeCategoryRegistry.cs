@@ -31,8 +31,6 @@ public static class PrizeCategoryRegistry
         new RankBand(76, null, new[] { 35, 22, 15, 12, 9, 7 })
     });
 
-    public static IReadOnlyList<PrizeCategoryDefinition> All => Definitions;
-
     public static PrizeCategoryDefinition Definition(PrizeType category) =>
         Definitions.FirstOrDefault(d => d.Category == category)
         ?? throw new ArgumentOutOfRangeException(nameof(category), category, "No prize category definition is registered for this type.");
@@ -40,12 +38,14 @@ public static class PrizeCategoryRegistry
     public static bool IsAvailable(PrizeType category, bool isTournament)
     {
         var availability = Definition(category).AvailableFor;
+
+        // CategoryAvailability.All is the default arm: a switch expression over an enum always
+        // needs one, and making it the "available everywhere" case keeps it reachable.
         return availability switch
         {
-            CategoryAvailability.All => true,
             CategoryAvailability.SeasonsOnly => !isTournament,
             CategoryAvailability.TournamentsOnly => isTournament,
-            _ => false
+            _ => true
         };
     }
 

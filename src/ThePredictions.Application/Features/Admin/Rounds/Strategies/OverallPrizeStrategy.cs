@@ -46,9 +46,8 @@ public class OverallPrizeStrategy(
 
         foreach (var rankingGroup in overallRankings)
         {
+            // Always at least one member: rankings come from a GroupBy, so no empty-group guard.
             var winnersForThisRank = rankingGroup.Members;
-            if (winnersForThisRank.Count == 0)
-                continue;
 
             // A joint group at rank R with N members occupies slots R, R+1, ..., R+N-1.
             // Pool the prize money from every setting whose rank falls within those slots,

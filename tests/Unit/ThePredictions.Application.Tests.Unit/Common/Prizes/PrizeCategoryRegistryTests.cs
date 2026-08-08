@@ -84,4 +84,29 @@ public class PrizeCategoryRegistryTests
         var allocation = PrizeCategoryRegistry.RecommendedAllocation(new[] { PrizeType.Overall, PrizeType.Round }, 0);
         allocation.Values.Should().OnlyContain(v => v == 0);
     }
+
+    [Fact]
+    public void Definition_ShouldThrow_ForACategoryThatIsNotRegistered()
+    {
+        // Defensive: a new PrizeType added without a definition must fail loudly rather than
+        // silently producing a prize nobody configured.
+        var act = () => PrizeCategoryRegistry.Definition((PrizeType)999);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Theory]
+    [InlineData(PrizeType.Overall, false, true)]
+    [InlineData(PrizeType.Overall, true, true)]
+    [InlineData(PrizeType.Monthly, false, true)]
+    [InlineData(PrizeType.Monthly, true, false)]
+    [InlineData(PrizeType.Stages, false, false)]
+    [InlineData(PrizeType.Stages, true, true)]
+    public void IsAvailable_ShouldOfferOnlyTheCategoriesThatMakeSenseForTheCompetition(
+        PrizeType category, bool isTournament, bool expected)
+    {
+        // A knockout cup has no calendar months to win, and a league season has no stages, so each
+        // is offered only where it means something.
+        PrizeCategoryRegistry.IsAvailable(category, isTournament).Should().Be(expected);
+    }
 }

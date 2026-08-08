@@ -97,4 +97,45 @@ public class PrizeFreezeMapperTests
 
         settings.Should().ContainSingle();
     }
+
+    [Fact]
+    public void ToPrizeSettings_ShouldFallBackToTheFirstSlot_WhenARecurringPrizeHasNoPerEventSlot()
+    {
+        // A recurring category normally carries one unranked per-event slot. If it only has ranked
+        // ones, the first is still the per-event amount rather than nothing being settled at all.
+        var breakdown = new PrizeBreakdownDto
+        {
+            Categories =
+            [
+                new PrizeCategoryBreakdownDto
+                {
+                    Category = PrizeType.Round, Kind = PrizeCategoryKind.Recurring, SubPot = 38,
+                    Slots = [new PrizeSlotDto { Label = "1st", Amount = 5, Rank = 1 }]
+                }
+            ]
+        };
+
+        var settings = PrizeFreezeMapper.ToPrizeSettings(breakdown, 1);
+
+        settings.Should().ContainSingle();
+        settings[0].PrizeType.Should().Be(PrizeType.Round);
+        settings[0].PrizeAmount.Should().Be(5);
+    }
+
+    [Fact]
+    public void ToPrizeSettings_ShouldSettleNothing_WhenARecurringCategoryHasNoSlotsAtAll()
+    {
+        var breakdown = new PrizeBreakdownDto
+        {
+            Categories =
+            [
+                new PrizeCategoryBreakdownDto
+                {
+                    Category = PrizeType.Round, Kind = PrizeCategoryKind.Recurring, SubPot = 0, Slots = []
+                }
+            ]
+        };
+
+        PrizeFreezeMapper.ToPrizeSettings(breakdown, 1).Should().BeEmpty();
+    }
 }

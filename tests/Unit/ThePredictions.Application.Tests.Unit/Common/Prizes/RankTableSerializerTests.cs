@@ -51,4 +51,24 @@ public class RankTableSerializerTests
         var act = () => RankTableSerializer.Deserialize("[{\"MinEntrants\":2,\"MaxEntrants\":5,\"Percentages\":[60,30]}]");
         act.Should().Throw<ArgumentException>();
     }
+
+    [Fact]
+    public void Deserialize_ShouldThrow_WhenTheJsonIsTheLiteralNull()
+    {
+        // "null" parses cleanly but yields no bands, so it has to be rejected like an empty array
+        // rather than producing a table with nothing in it.
+        var act = () => RankTableSerializer.Deserialize("null");
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Deserialize_ShouldTreatAMissingPercentagesListAsEmpty()
+    {
+        // A band with no percentages is invalid, but it must fail the band's own validation rather
+        // than throwing a null reference while reading the payload.
+        var act = () => RankTableSerializer.Deserialize("[{\"MinEntrants\":2,\"MaxEntrants\":5}]");
+
+        act.Should().Throw<ArgumentException>();
+    }
 }
