@@ -247,4 +247,43 @@ public class UpdateLeagueCommandHandlerTests
         // Assert
         await _leagueStatsRepository.DidNotReceiveWithAnyArgs().RefreshLeagueAsync(default, CancellationToken.None);
     }
+
+    [Fact]
+    public async Task Handle_ShouldStoreBlankBankDetailsAsNotSuppliedRatherThanEmpty()
+    {
+        // Clearing a bank field means "I have not given you this", so it must be stored as absent
+        // rather than as an encrypted empty string that would later look like real detail.
+        var league = CreateLeague();
+        _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
+        _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(CreateSeason());
+        _fieldEncryptionService.Encrypt(Arg.Any<string?>())
+            .Returns(call => call.Arg<string?>() is { } value ? $"enc:{value}" : null);
+
+        await _handler.Handle(
+            new UpdateLeagueCommand(1, "Updated League", 5m, _dateTimeProvider.UtcNow.AddMonths(2).AddDays(-2), 4, 2,
+                "admin-user", BankAccountName: "   ", BankSortCode: "", BankAccountNumber: null),
+            CancellationToken.None);
+
+        _fieldEncryptionService.Received().Encrypt(null);
+        league.BankAccountName.Should().BeNull();
+        league.BankSortCode.Should().BeNull();
+        league.BankAccountNumber.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldTrimStrayWhitespaceFromBankDetails()
+    {
+        var league = CreateLeague();
+        _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
+        _seasonRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(CreateSeason());
+        _fieldEncryptionService.Encrypt(Arg.Any<string?>())
+            .Returns(call => call.Arg<string?>() is { } value ? $"enc:{value}" : null);
+
+        await _handler.Handle(
+            new UpdateLeagueCommand(1, "Updated League", 5m, _dateTimeProvider.UtcNow.AddMonths(2).AddDays(-2), 4, 2,
+                "admin-user", BankAccountName: "  Mr A Willson  "),
+            CancellationToken.None);
+
+        _fieldEncryptionService.Received().Encrypt("Mr A Willson");
+    }
 }

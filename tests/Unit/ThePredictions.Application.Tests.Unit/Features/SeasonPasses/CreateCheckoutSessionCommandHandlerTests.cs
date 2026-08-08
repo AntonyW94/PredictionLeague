@@ -173,4 +173,24 @@ public class CreateCheckoutSessionCommandHandlerTests
         var act = () => _handler.Handle(new CreateCheckoutSessionCommand(UserId, 0, SeasonPassTier.Standard), CancellationToken.None);
         await act.Should().ThrowAsync<ArgumentException>();
     }
+
+    [Fact]
+    public async Task Handle_ShouldSendTheShopperBackToTheCanonicalSite_WhenNoBaseUrlIsConfigured()
+    {
+        // Stripe needs an absolute return address. With nothing configured it must fall back to the
+        // real site rather than building a relative URL the payment page cannot use.
+        ArrangePayableUser();
+        var handler = new CreateCheckoutSessionCommandHandler(
+            _seasonRepository, _seasonPassRepository, _userManager, _paymentService,
+            Options.Create(new SiteSettings { BaseUrl = null }),
+            Substitute.For<ILogger<CreateCheckoutSessionCommandHandler>>());
+
+        await handler.Handle(new CreateCheckoutSessionCommand(UserId, SeasonId, SeasonPassTier.Standard), CancellationToken.None);
+
+        await _paymentService.Received(1).CreateCheckoutSessionAsync(
+            Arg.Is<PaymentCheckoutRequest>(r =>
+                r.SuccessUrl.StartsWith("https://www.thepredictions.co.uk/")
+                && r.CancelUrl.StartsWith("https://www.thepredictions.co.uk/")),
+            Arg.Any<CancellationToken>());
+    }
 }

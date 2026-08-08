@@ -224,4 +224,27 @@ public class ResetPasswordCommandHandlerTests
         // Assert
         await _tokenRepository.Received(1).DeleteExpiredTokensAsync(Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task Handle_ShouldStillExplainTheFailure_WhenNoReasonWasGiven()
+    {
+        // Defensive: a failure with no reasons must not surface as a blank message on the screen.
+        var command = new ResetPasswordCommand("valid-token", "NewPassword123!");
+        var resetToken = new PasswordResetToken(
+            "valid-token",
+            "user-1",
+            _dateTimeProvider.UtcNow.AddMinutes(-10),
+            _dateTimeProvider.UtcNow.AddHours(1));
+        var user = new ApplicationUser { Id = "user-1", Email = "john@example.com" };
+
+        _tokenRepository.GetByTokenAsync("valid-token", Arg.Any<CancellationToken>()).Returns(resetToken);
+        _userManager.FindByIdAsync("user-1").Returns(user);
+        _userManager.ResetPasswordDirectAsync(user, command.NewPassword)
+            .Returns(UserManagerResult.Failure([]));
+
+        var result = await _handler.Handle(command, CancellationToken.None);
+
+        result.Should().BeOfType<FailedResetPasswordResponse>();
+        ((FailedResetPasswordResponse)result).Message.Should().Be("Password reset failed.");
+    }
 }
