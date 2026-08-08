@@ -188,4 +188,33 @@ public class SendPredictionRemindersCommandHandlerTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
+
+    [Fact]
+    public async Task Handle_ShouldThrow_WhenNoTemplatesAreConfiguredAtAll()
+    {
+        var brevo = Options.Create(new BrevoSettings { Templates = null });
+        var handler = new SendPredictionRemindersCommandHandler(
+            _roundRepository, _reminderService, _notificationRepository, _membershipService,
+            _emailService, _dateFormatter, brevo, Options.Create(new SiteSettings()), _dateTimeProvider,
+            Substitute.For<ILogger<SendPredictionRemindersCommandHandler>>());
+        _roundRepository.GetByIdAsync(43, Arg.Any<CancellationToken>()).Returns(OpenRound());
+
+        var act = () => handler.Handle(AdminCommand("user-1"), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSkipTheOwnershipCheck_WhenALeagueScopedSendIsMadeByASiteAdmin()
+    {
+        // A site admin can chase anyone, so their own league membership is never consulted.
+        _roundRepository.GetByIdAsync(43, Arg.Any<CancellationToken>()).Returns(OpenRound());
+        GivenMissing(Chase("user-1"));
+        var command = new SendPredictionRemindersCommand(43, LeagueId: 10, ["user-1"], "admin-1", IsSiteAdmin: true);
+
+        await _handler.Handle(command, CancellationToken.None);
+
+        await _membershipService.DidNotReceiveWithAnyArgs()
+            .EnsureLeagueAdministratorAsync(default, default!, CancellationToken.None);
+    }
 }

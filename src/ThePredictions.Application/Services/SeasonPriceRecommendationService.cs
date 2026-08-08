@@ -10,7 +10,9 @@ public class SeasonPriceRecommendationService(IApplicationReadDbConnection dbCon
     : ISeasonPriceRecommendationService
 {
     // The buffer, Stripe fee and floor are admin-editable (PricingSettings). Rounding stays fixed.
-    private const decimal RoundingIncrement = 0.50m;   // round suggestions up to the nearest 50p
+    // static readonly, not const: a decimal const is inlined at its use site, leaving the generated
+    // type initialiser that sets the backing field permanently unexecuted.
+    private static readonly decimal RoundingIncrement = 0.50m;   // round suggestions up to the nearest 50p
 
     public async Task<PriceRecommendation> RecommendAsync(
         int competitionId,

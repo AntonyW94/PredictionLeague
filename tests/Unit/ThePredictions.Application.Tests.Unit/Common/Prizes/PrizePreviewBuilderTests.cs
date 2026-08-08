@@ -108,4 +108,18 @@ public class PrizePreviewBuilderTests
 
         attribution[0].Should().Contain(", ").And.Contain(" and ");
     }
+
+    [Fact]
+    public void Build_ShouldLeaveOutACategoryTheEntryDoesNotFund()
+    {
+        // A category funded entirely by the administrator's top-up gains nothing from this joiner,
+        // so it must not appear in the "your entry adds" line.
+        var perEntry = new Dictionary<PrizeType, int> { [PrizeType.Overall] = 13, [PrizeType.Round] = 0 };
+
+        var (breakdown, attribution) = PrizePreviewBuilder.Build(
+            _evaluator.Evaluate(Request(16)), _evaluator.Evaluate(Request(17)), perEntry, 13m);
+
+        breakdown.Categories.Single(c => c.Category == PrizeType.Round).Delta.Should().Be(0);
+        attribution[0].Should().NotContain("Round");
+    }
 }

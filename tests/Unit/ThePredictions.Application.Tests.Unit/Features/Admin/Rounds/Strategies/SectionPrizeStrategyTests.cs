@@ -278,4 +278,23 @@ public class SectionPrizeStrategyTests
 
         await _winningsRepository.Received(1).AddWinningsAsync(Arg.Any<IEnumerable<Winning>>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task AwardPrizes_ShouldPayNothingForAStageWithNoPrizeConfigured()
+    {
+        // The knockout stage completes but only the group stage was funded, so there is nothing to
+        // settle for it.
+        SetupSeason(RoundStatus.Completed, RoundStatus.Completed, RoundStatus.Completed, RoundStatus.Completed);
+        SetupLeague(
+            [CreateStageSetting(10, GroupStage, 1, 45m)],
+            ("user-1", 1, 10), ("user-1", 2, 10), ("user-1", 3, 10), ("user-1", 4, 10));
+
+        IEnumerable<Winning>? captured = null;
+        await _winningsRepository.AddWinningsAsync(Arg.Do<IEnumerable<Winning>>(w => captured = w.ToList()), Arg.Any<CancellationToken>());
+
+        await _strategy.AwardPrizes(CommandForRound(4), CancellationToken.None);
+
+        // Only the funded group stage pays out; the knockout stage contributes nothing.
+        captured!.Should().ContainSingle().Which.Amount.Should().Be(45m);
+    }
 }

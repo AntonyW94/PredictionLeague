@@ -176,7 +176,8 @@ public static class BadgeCatalogue
         if (maxed)
             return 1d;
 
-        return nextThreshold > 0 ? Math.Min(1d, metric / (double)nextThreshold) : 0d;
+        // Not maxed means there is a next tier, and every catalogue threshold is positive.
+        return Math.Min(1d, metric / (double)nextThreshold);
     }
 
     private static string CollectionState(int tier, int metric, bool maxed)
@@ -244,13 +245,14 @@ public static class BadgeCatalogue
             stateWord, 0, 1, [], progress, label, 0, null);
     }
 
+    // Only ever called for the four levelled collections; Socialite is the default arm because a
+    // switch expression always needs one.
     private static int MetricFor(string groupKey, BadgeProgressMetrics m) => groupKey switch
     {
         BadgeGroupKeys.Marksman => m.SeasonExactTotal,
         BadgeGroupKeys.Sharpshooter => m.BestExactsInRound,
         BadgeGroupKeys.OnFire => m.BestStreak,
-        BadgeGroupKeys.Socialite => m.LeaguesJoined,
-        _ => 0
+        _ => m.LeaguesJoined
     };
 }
 
