@@ -98,12 +98,23 @@ internal sealed class SyncSeasonScenario
                 t => new Team(id: t.LocalId, name: $"Team {t.LocalId}", shortName: $"T{t.LocalId}",
                     logoUrl: "logo", abbreviation: $"T{t.LocalId}", apiTeamId: t.ApiId));
 
-        Teams.GetByApiIdsAsync(Arg.Any<IEnumerable<int>>(), Arg.Any<CancellationToken>()).Returns(map);
+        // The ids arrive as a lazy LINQ query. The real repository enumerates them to build its
+        // query, so the stub must too - otherwise the filtering that produces them never runs.
+        Teams.GetByApiIdsAsync(Arg.Any<IEnumerable<int>>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                _ = call.Arg<IEnumerable<int>>().ToList();
+                return map;
+            });
     }
 
     public void GivenNoTeamsKnown() =>
         Teams.GetByApiIdsAsync(Arg.Any<IEnumerable<int>>(), Arg.Any<CancellationToken>())
-            .Returns(new Dictionary<int, Team>());
+            .Returns(call =>
+            {
+                _ = call.Arg<IEnumerable<int>>().ToList();
+                return new Dictionary<int, Team>();
+            });
 
     public void GivenRounds(params Round[] rounds) =>
         Rounds.GetAllForSeasonAsync(SeasonId, Arg.Any<CancellationToken>())
@@ -137,7 +148,8 @@ internal sealed class SyncSeasonScenario
         int apiAwayTeamId = ApiAwayTeamId,
         bool withTeams = true,
         bool withFixture = true,
-        bool withRoundName = true) =>
+        bool withRoundName = true,
+        bool withAwayTeam = true) =>
         new()
         {
             Fixture = withFixture
@@ -146,7 +158,11 @@ internal sealed class SyncSeasonScenario
             League = withRoundName ? new ApiLeague { Id = ApiLeagueId, RoundName = apiRoundName } : null,
             Teams = withTeams
                 // Qualified: the Admin.Teams test namespace would otherwise shadow this DTO here.
-                ? new FootballApi.DTOs.Teams { Home = new ApiTeam { Id = apiHomeTeamId, Name = "Home" }, Away = new ApiTeam { Id = apiAwayTeamId, Name = "Away" } }
+                ? new FootballApi.DTOs.Teams
+                {
+                    Home = new ApiTeam { Id = apiHomeTeamId, Name = "Home" },
+                    Away = withAwayTeam ? new ApiTeam { Id = apiAwayTeamId, Name = "Away" } : null!
+                }
                 : null
         };
 
