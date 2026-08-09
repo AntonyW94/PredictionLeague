@@ -14,6 +14,10 @@
         <ProjectReference Include="..\ThePredictions.Web.Client\ThePredictions.Web.Client.csproj">
           <TreatAsUsed>true</TreatAsUsed>
         </ProjectReference>
+        <!-- Supplies UseBlazorFrameworkFiles(), called in this project's Program.cs to serve the
+             WebAssembly client. Previously reached transitively through Infrastructure, which does not
+             use it: a data-access library should not be the reason the web host compiles. -->
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.14" />
         <PackageReference Include="Serilog.Expressions" Version="5.0.0">
           <TreatAsUsed>true</TreatAsUsed>
         </PackageReference>
