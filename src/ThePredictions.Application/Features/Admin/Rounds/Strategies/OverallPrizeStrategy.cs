@@ -46,51 +46,49 @@ public class OverallPrizeStrategy(
 
         foreach (var rankingGroup in overallRankings)
         {
-            // Always at least one member: rankings come from a GroupBy, so no empty-group guard.
-            var winnersForThisRank = rankingGroup.Members;
-
-            // A joint group at rank R with N members occupies slots R, R+1, ..., R+N-1.
-            // Pool the prize money from every setting whose rank falls within those slots,
-            // because the lower-rank finishers that would have claimed them do not exist.
-            var firstSlot = rankingGroup.Rank;
-            var lastSlot = rankingGroup.Rank + winnersForThisRank.Count - 1;
-
-            var coveredPrizeSettings = overallPrizeSettings
-                .Where(p => p.Rank >= firstSlot && p.Rank <= lastSlot)
-                .ToList();
-
-            if (coveredPrizeSettings.Count == 0)
-                continue;
-
-            var pooledPrizeAmount = coveredPrizeSettings.Sum(p => p.PrizeAmount);
-            if (pooledPrizeAmount == 0)
-                continue;
-
-            var anchorPrizeSetting = coveredPrizeSettings[0];
-
-            var individualPrizes = PrizeDistributionHelper.DistributePrizeMoney(
-                pooledPrizeAmount,
-                winnersForThisRank.Count
-            );
-
-            for (var i = 0; i < winnersForThisRank.Count; i++)
-            {
-                var winner = winnersForThisRank[i];
-                var prizeAmount = individualPrizes[i];
-
-                var newWinning = Winning.Create(
-                    winner.UserId,
-                    anchorPrizeSetting.Id,
-                    prizeAmount,
-                    null,
-                    null,
-                    dateTimeProvider
-                );
-                allNewWinnings.Add(newWinning);
-            }
+            allNewWinnings.AddRange(WinningsForRank(rankingGroup, overallPrizeSettings));
         }
 
         if (allNewWinnings.Any())
             await winningsRepository.AddWinningsAsync(allNewWinnings, cancellationToken);
+    }
+
+    /// <summary>
+    /// A joint group at rank R with N members occupies slots R, R+1, ..., R+N-1. The prize money from
+    /// every setting covering those slots is pooled and split evenly, because the lower-rank finishers
+    /// that would have claimed them do not exist. Nothing is paid where no setting covers the group,
+    /// or where the settings that do are all set to zero.
+    /// </summary>
+    private List<Winning> WinningsForRank(OverallRanking rankingGroup, List<LeaguePrizeSetting> overallPrizeSettings)
+    {
+        // Always at least one member: rankings come from a GroupBy, so no empty-group guard.
+        var winnersForThisRank = rankingGroup.Members;
+
+        var firstSlot = rankingGroup.Rank;
+        var lastSlot = rankingGroup.Rank + winnersForThisRank.Count - 1;
+
+        var coveredPrizeSettings = overallPrizeSettings
+            .Where(p => p.Rank >= firstSlot && p.Rank <= lastSlot)
+            .ToList();
+
+        if (coveredPrizeSettings.Count == 0)
+            return [];
+
+        var pooledPrizeAmount = coveredPrizeSettings.Sum(p => p.PrizeAmount);
+        if (pooledPrizeAmount == 0)
+            return [];
+
+        var anchorPrizeSetting = coveredPrizeSettings[0];
+        var individualPrizes = PrizeDistributionHelper.DistributePrizeMoney(pooledPrizeAmount, winnersForThisRank.Count);
+
+        return winnersForThisRank
+            .Select((winner, i) => Winning.Create(
+                winner.UserId,
+                anchorPrizeSetting.Id,
+                individualPrizes[i],
+                null,
+                null,
+                dateTimeProvider))
+            .ToList();
     }
 }

@@ -344,18 +344,33 @@ public class DashboardStateService(ILeagueService leagueService, ISeasonPassServ
         var originalMyLeague = myLeagueIndex >= 0 ? MyLeagues[myLeagueIndex] : null;
         var originalLeaderboard = leaderboardIndex >= 0 ? Leaderboards[leaderboardIndex] : null;
 
-        if (originalMyLeague is not null)
-            MyLeagues[myLeagueIndex] = originalMyLeague with { IsArchivedByUser = isArchived };
-
-        if (originalLeaderboard is not null)
-            Leaderboards[leaderboardIndex] = originalLeaderboard with { IsArchivedByUser = isArchived };
-
+        ApplyArchivedFlag(myLeagueIndex, leaderboardIndex, isArchived);
         NotifyStateChanged();
 
         var (success, errorMessage) = await leagueService.SetLeagueArchivedAsync(leagueId, isArchived);
         if (success)
             return;
 
+        RestoreAfterFailedArchive(myLeagueIndex, leaderboardIndex, originalMyLeague, originalLeaderboard, errorMessage);
+    }
+
+    /// <summary>
+    /// Flips the flag in whichever lists are loaded, so the change shows immediately rather than
+    /// after the round trip.
+    /// </summary>
+    private void ApplyArchivedFlag(int myLeagueIndex, int leaderboardIndex, bool isArchived)
+    {
+        if (myLeagueIndex >= 0)
+            MyLeagues[myLeagueIndex] = MyLeagues[myLeagueIndex] with { IsArchivedByUser = isArchived };
+
+        if (leaderboardIndex >= 0)
+            Leaderboards[leaderboardIndex] = Leaderboards[leaderboardIndex] with { IsArchivedByUser = isArchived };
+    }
+
+    /// <summary>Puts the lists back as they were and surfaces why the change did not stick.</summary>
+    private void RestoreAfterFailedArchive(
+        int myLeagueIndex, int leaderboardIndex, MyLeagueDto? originalMyLeague, LeagueLeaderboardDto? originalLeaderboard, string? errorMessage)
+    {
         if (originalMyLeague is not null)
             MyLeagues[myLeagueIndex] = originalMyLeague;
 

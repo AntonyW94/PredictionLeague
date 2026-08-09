@@ -179,25 +179,7 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
                 return (null, TokenRefreshStatus.TransientFailure);
             }
 
-            if (response.IsSuccessStatusCode)
-            {
-                var authResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
-                if (authResponse?.AccessToken is null)
-                    return (null, TokenRefreshStatus.TransientFailure);
-
-                await localStorage.SetItemAsync(AccessTokenKey, authResponse.AccessToken);
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.AccessToken);
-                return (authResponse.AccessToken, TokenRefreshStatus.Succeeded);
-            }
-
-            // 400/401 means the refresh token itself was rejected (expired, revoked or
-            // missing) — the session is genuinely over. Anything else (429 rate limit,
-            // 5xx, timeout) is transient and must not log the user out.
-            if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Unauthorized)
-                return (null, TokenRefreshStatus.InvalidSession);
-
-            logger.LogWarning("Transient {StatusCode} from the refresh endpoint; keeping the session.", response.StatusCode);
-            return (null, TokenRefreshStatus.TransientFailure);
+            return await ReadRefreshResponseAsync(response);
         }
         catch (Exception ex)
         {
@@ -208,6 +190,31 @@ public class ApiAuthenticationStateProvider(HttpClient httpClient, ILocalStorage
         {
             _refreshLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Stores and returns the new token on success. A 400 or 401 means the refresh token itself was
+    /// rejected - expired, revoked or missing - so the session is genuinely over. Anything else
+    /// (429, 5xx, timeout) is transient and must not log the user out.
+    /// </summary>
+    private async Task<(string? Token, TokenRefreshStatus Status)> ReadRefreshResponseAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            var authResponse = await response.Content.ReadFromJsonAsync<SuccessfulAuthenticationResponse>();
+            if (authResponse?.AccessToken is null)
+                return (null, TokenRefreshStatus.TransientFailure);
+
+            await localStorage.SetItemAsync(AccessTokenKey, authResponse.AccessToken);
+            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", authResponse.AccessToken);
+            return (authResponse.AccessToken, TokenRefreshStatus.Succeeded);
+        }
+
+        if (response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.Unauthorized)
+            return (null, TokenRefreshStatus.InvalidSession);
+
+        logger.LogWarning("Transient {StatusCode} from the refresh endpoint; keeping the session.", response.StatusCode);
+        return (null, TokenRefreshStatus.TransientFailure);
     }
 
     private static bool IsTokenValid(string token)

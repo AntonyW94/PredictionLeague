@@ -56,31 +56,47 @@ public class UpdateScoresForNextRoundCommandHandler(
         if (!liveFixtures.Any())
             return;
 
-        var season = await seasonRepository.GetByIdAsync(request.SeasonId, cancellationToken);
-        var competition = season == null
-            ? null
-            : await competitionRepository.GetByIdAsync(season.CompetitionId, cancellationToken);
-        var isTournament = competition?.IsTournament ?? false;
-
-        var matchResults = liveFixtures.Where(f => f.Fixture != null && f.Goals != null).Select(fixture =>
-        {
-            var localMatch = activeRound.Matches.First(m => m.ExternalId == fixture.Fixture!.Id);
-            var isKnockout = isTournament && IsKnockoutMatch(localMatch);
-            var (homeScore, awayScore) = GetScoreForMatch(fixture, isKnockout);
-            return new MatchResultDto(
-                localMatch.Id,
-                homeScore,
-                awayScore,
-                GetMatchStatus(fixture.Fixture!.Status.Short, isKnockout)
-            );
-        }).ToList();
+        var isTournament = await IsTournamentAsync(request.SeasonId, cancellationToken);
+        var matchResults = BuildMatchResults(liveFixtures, activeRound, isTournament);
 
         if (matchResults.Any())
-        {
-            var updateCommand = new UpdateMatchResultsCommand(activeRound.Id, matchResults);
-            await mediator.Send(updateCommand, cancellationToken);
-        }
+            await mediator.Send(new UpdateMatchResultsCommand(activeRound.Id, matchResults), cancellationToken);
     }
+
+    /// <summary>
+    /// Whether the season's competition is a knockout. Defensive on a missing season: without one
+    /// there is no competition to consult, so league rules apply.
+    /// </summary>
+    private async Task<bool> IsTournamentAsync(int seasonId, CancellationToken cancellationToken)
+    {
+        var season = await seasonRepository.GetByIdAsync(seasonId, cancellationToken);
+        if (season == null)
+            return false;
+
+        var competition = await competitionRepository.GetByIdAsync(season.CompetitionId, cancellationToken);
+        return competition?.IsTournament ?? false;
+    }
+
+    /// <summary>
+    /// One result per fixture the feed described with a score. A knockout tie is read on its
+    /// 90-minute result, so extra time neither changes the score nor keeps the tie open.
+    /// </summary>
+    private static List<MatchResultDto> BuildMatchResults(List<FixtureResponse> liveFixtures, Round activeRound, bool isTournament) =>
+        liveFixtures
+            .Where(f => f.Fixture != null && f.Goals != null)
+            .Select(fixture =>
+            {
+                var localMatch = activeRound.Matches.First(m => m.ExternalId == fixture.Fixture!.Id);
+                var isKnockout = isTournament && IsKnockoutMatch(localMatch);
+                var (homeScore, awayScore) = GetScoreForMatch(fixture, isKnockout);
+
+                return new MatchResultDto(
+                    localMatch.Id,
+                    homeScore,
+                    awayScore,
+                    GetMatchStatus(fixture.Fixture!.Status.Short, isKnockout));
+            })
+            .ToList();
 
     internal static (int HomeScore, int AwayScore) GetScoreForMatch(FixtureResponse fixture, bool isKnockout)
     {
