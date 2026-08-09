@@ -6,7 +6,7 @@ This guide covers the testing tools, conventions, and coverage requirements for 
 
 **Every project targets 100% line and branch coverage**, with `[ExcludeFromCodeCoverage]` for what is deliberately not tested - see [Coverage: 100% Everywhere](#coverage-100-everywhere-with-deliberate-exclusions) for why, and for the exclusion policy.
 
-**Enforced today on Domain only.** The gate extends per project as each one reaches 100%; Domain must not regress. Run the coverage report after any code or test change.
+**Enforced on all eight unit test projects** - Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure, Web.Client and Application. None may regress. Run the coverage report after any code or test change.
 
 ## Tools
 
@@ -114,8 +114,17 @@ comment, so the reason travels with the attribute and is visible to tooling and 
 public class GetOverallLeaderboardQueryHandler(...)
 ```
 
-Every exclusion in `src/` carries one. The recurring reasons are worded consistently so they can be
-grepped and counted:
+Every exclusion in `src/` carries one, and **`ThePredictions.Conventions.Tests.Unit` enforces both
+that and the agreed wording** - a missing `Justification`, or a new phrasing not added to that
+project's `ApprovedJustifications` list, fails the build. No off-the-shelf analyser can express this
+rule (see EctManager's ADR-0082, which investigated and found none), so it lives in a test.
+
+Be clear about what that buys: it stops an unexplained exclusion and stops the wordings drifting into
+near-duplicates. It **cannot** tell that a justification is *wrong* for the code it sits on - the
+August 2026 audit found five exclusions carrying well-formed justifications that described code they
+did not match. That is still a reading job.
+
+The recurring reasons are worded consistently so they can be grepped and counted:
 
 | Reason | Applies to |
 |--------|-----------|

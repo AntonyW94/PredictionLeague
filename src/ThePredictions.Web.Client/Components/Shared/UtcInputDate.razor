@@ -33,7 +33,17 @@
             {
                 var isoDate = Value.ToString("yyyy-MM-ddTHH:mm:ssZ");
                 _timezoneOffsetMinutes = await JsRuntime.InvokeAsync<int>("blazorInterop.getTimezoneOffset", isoDate);
+
+                // DateTime.Now is banned solution-wide (BannedSymbols.txt) but is correct here, and is
+                // the only exemption in the codebase. This component's job is local time: it renders a
+                // UTC value into a browser-local <input type="datetime-local">, and in WebAssembly
+                // DateTime.Now is the browser's own clock. Deriving the empty-value seed instead, as
+                // DateTime.UtcNow.AddMinutes(-_timezoneOffsetMinutes), would be wrong: on this path the
+                // offset was fetched for default(DateTime) (year 0001), so across a DST boundary it can
+                // differ from today's by an hour and the picker would open on the wrong time.
+#pragma warning disable RS0030
                 _localDateTime = Value != default ? Value.AddMinutes(-_timezoneOffsetMinutes) : DateTime.Now;
+#pragma warning restore RS0030
                 _initialized = true;
 
                 StateHasChanged();

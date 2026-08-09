@@ -30,4 +30,29 @@
     <AnalysisLevel>latest</AnalysisLevel>
   </PropertyGroup>
 
+  <!--
+    Microsoft.CodeAnalysis.BannedApiAnalyzers enforces the behavioural bans listed in
+    BannedSymbols.txt at build time. RS0030 defaults to warning, so TreatWarningsAsErrors above
+    hardens a banned-symbol use into a build error.
+
+    This is the one enforcement mechanism the solution was missing: EnforceCodeStyleInBuild and the
+    .editorconfig already cover style and naming, but neither can express "this API must never be
+    called". Meziantou.Analyzer was considered and rejected - its one useful rule (MA0004,
+    ConfigureAwait) exists for synchronisation contexts this solution does not have, and it ships
+    ~200 other rules that would each need suppressing under TreatWarningsAsErrors.
+
+    PrivateAssets=all keeps the analyser out of published output. Placed at the repository root
+    deliberately: unlike EctManager there is no legacy tree to spare, so every project is in scope.
+
+    Pinned to 3.3.4, which is NOT the newest release: the entire 5.x line is built against Roslyn
+    4.12, and global.json pins the SDK to 8.0.1xx/8.0.2xx, which ships Roslyn 4.9. Using 5.x fails
+    every project with CS9057 ("analyzer assembly references version 4.12.0.0 of the compiler, which
+    is newer than the currently running version 4.9.0.0"). 3.3.4 is the highest version that
+    restores and builds here. Raising it requires moving global.json to a 9.x SDK first.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
+  </ItemGroup>
+
 </Project>
