@@ -60,3 +60,8 @@ dotnet_naming_rule.private_fields_underscore_camel_case.severity = warning
 dotnet_naming_rule.interfaces_begin_with_i.symbols = interfaces
 dotnet_naming_rule.interfaces_begin_with_i.style = begins_with_i
 dotnet_naming_rule.interfaces_begin_with_i.severity = warning
+
+# --- Banned-symbol exemptions (RS0030, see BannedSymbols.txt) ---
+# There are none here on purpose. A .razor diagnostic resolves against the generated .g.cs under
+# obj/, so a path glob for a component file silently fails to match - suppress at the call site with
+# a commented `#pragma warning disable RS0030` instead, where the reason sits next to the code.

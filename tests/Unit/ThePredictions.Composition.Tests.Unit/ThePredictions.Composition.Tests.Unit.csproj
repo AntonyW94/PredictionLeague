@@ -5,7 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- No coverlet.msbuild — 100% coverage threshold only applies to Domain tests per CLAUDE.md -->
+    <!-- No coverlet.msbuild: this project owns no assembly of its own, so there is nothing for the
+         100% threshold to measure. It validates the real DI container instead. -->
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

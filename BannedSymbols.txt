@@ -1,0 +1,21 @@
+// Banned APIs for the whole solution. Format: <DocumentationCommentId>[;<message>]
+// See Microsoft.CodeAnalysis.BannedApiAnalyzers. RS0030 defaults to warning, and
+// Directory.Build.props sets TreatWarningsAsErrors, so any use below breaks the build.
+//
+// Unlike EctManager - which bans DateTime.UtcNow and mandates local time - this application stores
+// deadlines that must be unambiguous across timezones and renders them client-side, so UTC is the
+// domain language here and local time is the error. The two repositories are deliberately opposite
+// on this and must never share this file.
+//
+// Prefer the injected IDateTimeProvider over a direct DateTime.UtcNow read so the boundary is
+// testable. That is a burn-down allowlist in ThePredictions.Conventions.Tests.Unit rather than a ban
+// here, because a handful of call sites (FluentValidation validators, WASM-side services) cannot
+// reach the container.
+
+// Local time is never correct in this application: see docs/guides/code-style.md.
+P:System.DateTime.Now;Use DateTime.UtcNow (or the injected IDateTimeProvider), never DateTime.Now.
+P:System.DateTime.Today;Use DateTime.UtcNow.Date (or the injected IDateTimeProvider), never DateTime.Today.
+
+// The application is on Microsoft.Data.SqlClient; the legacy System.Data.SqlClient driver does not
+// support the same TLS and Always Encrypted behaviour and must not creep back in transitively.
+N:System.Data.SqlClient;Use Microsoft.Data.SqlClient, not the legacy System.Data.SqlClient.

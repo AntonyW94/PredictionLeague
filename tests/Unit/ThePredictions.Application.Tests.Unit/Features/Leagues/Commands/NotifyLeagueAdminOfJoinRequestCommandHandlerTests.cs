@@ -4,6 +4,7 @@ using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Leagues.Commands;
 using ThePredictions.Application.Services;
+using static ThePredictions.Application.Features.Leagues.Commands.NotifyLeagueAdminOfJoinRequestCommandHandler;
 using Xunit;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Leagues.Commands;
@@ -34,9 +35,9 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
     {
         // Arrange
         var command = new NotifyLeagueAdminOfJoinRequestCommand("admin-user", "Test League", 1, "Jane", "Doe");
-        var adminDto = new LeagueAdminDto("admin@example.com", "Admin", "2025/26");
+        var adminDto = new LeagueAdminRow("admin@example.com", "Admin", "2025/26");
 
-        _dbConnection.QuerySingleOrDefaultAsync<LeagueAdminDto>(
+        _dbConnection.QuerySingleOrDefaultAsync<LeagueAdminRow>(
                 Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object>())
             .Returns(adminDto);
 
@@ -54,9 +55,9 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
         // Arrange
         var command = new NotifyLeagueAdminOfJoinRequestCommand("admin-user", "Test League", 1, "Jane", "Doe");
 
-        _dbConnection.QuerySingleOrDefaultAsync<LeagueAdminDto>(
+        _dbConnection.QuerySingleOrDefaultAsync<LeagueAdminRow>(
                 Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object>())
-            .Returns((LeagueAdminDto?)null);
+            .Returns((LeagueAdminRow?)null);
 
         // Act
         await _handler.Handle(command, CancellationToken.None);

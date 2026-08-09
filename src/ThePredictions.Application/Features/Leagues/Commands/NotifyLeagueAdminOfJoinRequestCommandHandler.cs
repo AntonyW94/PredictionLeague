@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
@@ -33,7 +34,7 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConn
                     u.[Id] = @AdministratorUserId
                     AND s.[Id] = @SeasonId;";
 
-        var admin = await dbConnection.QuerySingleOrDefaultAsync<LeagueAdminDto>(sql, cancellationToken, new { request.AdministratorUserId, request.SeasonId });
+        var admin = await dbConnection.QuerySingleOrDefaultAsync<LeagueAdminRow>(sql, cancellationToken, new { request.AdministratorUserId, request.SeasonId });
         if (admin != null)
         {
             var templateId = _brevoSettings.Templates.JoinLeagueRequest;
@@ -53,6 +54,10 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConn
             await emailService.SendTemplatedEmailAsync(admin.Email, templateId, parameters);
         }
     }
-}
 
-public record LeagueAdminDto(string Email, string FirstName, string SeasonName);
+    // internal, not public: the Dto suffix is reserved for ThePredictions.Contracts, and keeping the
+    // row type inside the handler confines the positional SELECT-to-record coupling to this one file.
+    // InternalsVisibleTo already exposes this assembly to ThePredictions.Application.Tests.Unit.
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record LeagueAdminRow(string Email, string FirstName, string SeasonName);
+}
