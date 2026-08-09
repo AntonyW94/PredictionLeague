@@ -2,16 +2,17 @@ using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetWinningsQueryHandler(
     IApplicationReadDbConnection dbConnection,
-    ILeagueMembershipService membershipService) : IRequestHandler<GetWinningsQuery, WinningsDto>
+    ILeagueMembershipService membershipService,
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<GetWinningsQuery, WinningsDto>
 {
     public async Task<WinningsDto> Handle(GetWinningsQuery request, CancellationToken cancellationToken)
     {
@@ -21,7 +22,7 @@ public class GetWinningsQueryHandler(
         if (leagueData == null)
             return new WinningsDto();
 
-        if (leagueData.EntryDeadlineUtc > DateTime.UtcNow || !leagueData.PrizeSettings.Any())
+        if (leagueData.EntryDeadlineUtc > dateTimeProvider.UtcNow || !leagueData.PrizeSettings.Any())
         {
             return new WinningsDto
             {
@@ -302,9 +303,12 @@ public class GetWinningsQueryHandler(
         }
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-    private class LeagueData
+    // internal so a test can supply rows for the prize shaping above; InternalsVisibleTo already
+    // exposes this assembly to ThePredictions.Application.Tests.Unit.
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal class LeagueData
     {
         public DateTime EntryDeadlineUtc { get; set; }
         public decimal EntryCost { get; set; }
@@ -317,12 +321,15 @@ public class GetWinningsQueryHandler(
         public List<LeagueMemberQueryResult> LeagueMembers { get; set; } = new();
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PrizeSettingQueryResult(int Id, PrizeType PrizeType, string Name, decimal Amount, string? Stage);
-   
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record WinningsQueryResult(decimal Amount, int LeaguePrizeSettingId, PrizeType PrizeType, string WinnerName, int? RoundNumber, int? Month, string UserId);
-   
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record LeagueMemberQueryResult(string PlayerName, string UserId);
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record PrizeSettingQueryResult(int Id, PrizeType PrizeType, string Name, decimal Amount, string? Stage);
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record WinningsQueryResult(decimal Amount, int LeaguePrizeSettingId, PrizeType PrizeType, string WinnerName, int? RoundNumber, int? Month, string UserId);
+
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record LeagueMemberQueryResult(string PlayerName, string UserId);
 }
