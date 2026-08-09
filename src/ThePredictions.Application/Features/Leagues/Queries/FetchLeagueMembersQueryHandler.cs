@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -10,9 +11,9 @@ namespace ThePredictions.Application.Features.Leagues.Queries;
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class FetchLeagueMembersQueryHandler(
     IApplicationReadDbConnection dbConnection,
-    ILeagueMembershipService membershipService) : IRequestHandler<FetchLeagueMembersQuery, LeagueMembersPageDto?>
+    ILeagueMembershipService membershipService) : IRequestHandler<FetchLeagueMembersQuery, LeagueMembersPageDto>
 {
-    public async Task<LeagueMembersPageDto?> Handle(FetchLeagueMembersQuery request, CancellationToken cancellationToken)
+    public async Task<LeagueMembersPageDto> Handle(FetchLeagueMembersQuery request, CancellationToken cancellationToken)
     {
         await membershipService.EnsureLeagueAdministratorAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
@@ -59,7 +60,10 @@ public class FetchLeagueMembersQueryHandler(
         const string leagueNameSql = "SELECT [Name] FROM [Leagues] WHERE [Id] = @LeagueId;";
         var leagueName = await dbConnection.QuerySingleOrDefaultAsync<string>(leagueNameSql, cancellationToken, new { request.LeagueId });
 
-        return leagueName == null ? null : new LeagueMembersPageDto { LeagueName = leagueName };
+        if (leagueName == null)
+            throw new EntityNotFoundException("League", request.LeagueId);
+
+        return new LeagueMembersPageDto { LeagueName = leagueName };
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]

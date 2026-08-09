@@ -37,4 +37,4 @@ public record GetSeasonPassHoldersQuery(
     DateTime? AcquiredBeforeUtc,
     decimal? MinimumPaid,
     decimal? MaximumPaid
-) : IRequest<SeasonPassHoldersPageDto?>;
+) : IRequest<SeasonPassHoldersPageDto>;

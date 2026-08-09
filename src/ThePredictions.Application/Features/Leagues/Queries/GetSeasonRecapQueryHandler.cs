@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -10,9 +11,9 @@ namespace ThePredictions.Application.Features.Leagues.Queries;
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetSeasonRecapQueryHandler(
     IApplicationReadDbConnection dbConnection,
-    ILeagueMembershipService membershipService) : IRequestHandler<GetSeasonRecapQuery, SeasonRecapDto?>
+    ILeagueMembershipService membershipService) : IRequestHandler<GetSeasonRecapQuery, SeasonRecapDto>
 {
-    public async Task<SeasonRecapDto?> Handle(GetSeasonRecapQuery request, CancellationToken cancellationToken)
+    public async Task<SeasonRecapDto> Handle(GetSeasonRecapQuery request, CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.UserId, cancellationToken);
 
@@ -143,7 +144,7 @@ public class GetSeasonRecapQueryHandler(
             });
 
         if (stats == null)
-            return null;
+            throw new EntityNotFoundException("League", request.LeagueId);
 
         // Query 2: Highest position held during the season (cumulative rank trajectory)
         const string positionSql = @"

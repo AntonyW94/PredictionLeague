@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using FluentAssertions;
 using NSubstitute;
 using ThePredictions.Application.Data;
@@ -59,7 +60,7 @@ public class GetRoundCompletionQueryHandlerTests
     private static MissingFixtureRow MissingFixture(string userId, int matchId, int? matchNumber) =>
         new(userId, matchId, matchNumber, $"Home {matchId}", $"Away {matchId}");
 
-    private Task<Contracts.Rounds.RoundCompletionDto?> HandleAsync(int? leagueId = LeagueId, bool isSiteAdmin = true) =>
+    private Task<Contracts.Rounds.RoundCompletionDto> HandleAsync(int? leagueId = LeagueId, bool isSiteAdmin = true) =>
         _handler.Handle(new GetRoundCompletionQuery(RoundId, leagueId, "user-x", isSiteAdmin), CancellationToken.None);
 
     [Fact]
@@ -88,7 +89,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync(leagueId: null);
 
-        result!.CanSendReminders.Should().BeTrue();
+        result.CanSendReminders.Should().BeTrue();
         await _membershipService.DidNotReceiveWithAnyArgs()
             .EnsureApprovedMemberAsync(default, default!, CancellationToken.None);
     }
@@ -101,7 +102,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync(isSiteAdmin: false);
 
-        result!.CanSendReminders.Should().BeTrue();
+        result.CanSendReminders.Should().BeTrue();
     }
 
     [Fact]
@@ -113,7 +114,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync(isSiteAdmin: false);
 
-        result!.CanSendReminders.Should().BeFalse();
+        result.CanSendReminders.Should().BeFalse();
     }
 
     [Fact]
@@ -123,17 +124,20 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync();
 
-        result!.CanSendReminders.Should().BeTrue();
+        result.CanSendReminders.Should().BeTrue();
         await _membershipService.DidNotReceiveWithAnyArgs()
             .IsLeagueAdministratorAsync(default, default!, CancellationToken.None);
     }
 
+    // The middleware turns this into the 404 the controller used to return itself, so the outward
+    // behaviour is unchanged - but the handler now refuses rather than handing back a null for the
+    // caller to remember to check.
     [Fact]
-    public async Task Handle_ShouldReturnNothing_WhenTheRoundDoesNotExist()
+    public async Task Handle_ShouldThrowEntityNotFound_WhenTheRoundDoesNotExist()
     {
-        var result = await HandleAsync();
+        var act = () => HandleAsync();
 
-        result.Should().BeNull();
+        await act.Should().ThrowAsync<EntityNotFoundException>().WithMessage($"Round (ID: {RoundId}) was not found.");
         await _dbConnection.DidNotReceiveWithAnyArgs().QueryAsync<ParticipantRow>(default!, CancellationToken.None);
     }
 
@@ -144,7 +148,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync();
 
-        result!.RoundId.Should().Be(RoundId);
+        result.RoundId.Should().Be(RoundId);
         result.RoundName.Should().Be("Semi-finals");
         result.DeadlineUtc.Should().Be(DeadlineUtc);
     }
@@ -158,7 +162,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync();
 
-        result!.DeadlinePassed.Should().BeTrue();
+        result.DeadlinePassed.Should().BeTrue();
         result.PredictableMatchCount.Should().Be(0);
     }
 
@@ -170,7 +174,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync();
 
-        result!.DeadlinePassed.Should().BeFalse();
+        result.DeadlinePassed.Should().BeFalse();
         result.PredictableMatchCount.Should().Be(6);
     }
 
@@ -184,7 +188,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync();
 
-        var player = result!.Players.Should().ContainSingle().Subject;
+        var player = result.Players.Should().ContainSingle().Subject;
         player.UserId.Should().Be("u1");
         player.PlayerName.Should().Be("Alice A");
         player.Email.Should().Be("u1@example.com");
@@ -207,7 +211,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync();
 
-        result!.Players.Single().MissingFixtures.Select(f => f.MatchId).Should().Equal(501, 502, 503);
+        result.Players.Single().MissingFixtures.Select(f => f.MatchId).Should().Equal(501, 502, 503);
     }
 
     [Fact]
@@ -221,7 +225,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync();
 
-        result!.Players.Single(p => p.UserId == "u1").MissingFixtures.Single().MatchId.Should().Be(501);
+        result.Players.Single(p => p.UserId == "u1").MissingFixtures.Single().MatchId.Should().Be(501);
         result.Players.Single(p => p.UserId == "u2").MissingFixtures.Single().MatchId.Should().Be(502);
     }
 
@@ -233,7 +237,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync();
 
-        var player = result!.Players.Should().ContainSingle().Subject;
+        var player = result.Players.Should().ContainSingle().Subject;
         player.MissingFixtures.Should().BeEmpty();
         player.IsPartial.Should().BeFalse();
         player.HasEnteredNothing.Should().BeFalse();
@@ -253,7 +257,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync();
 
-        result!.Players.Select(p => p.UserId).Should().Equal("partial", "nothing", "done");
+        result.Players.Select(p => p.UserId).Should().Equal("partial", "nothing", "done");
     }
 
     [Fact]
@@ -271,7 +275,7 @@ public class GetRoundCompletionQueryHandlerTests
 
         var result = await HandleAsync();
 
-        result!.Players.Select(p => p.PlayerName).Should().Equal("Alice A", "Bob B", "Carla C");
+        result.Players.Select(p => p.PlayerName).Should().Equal("Alice A", "Bob B", "Carla C");
     }
 
     [Fact]

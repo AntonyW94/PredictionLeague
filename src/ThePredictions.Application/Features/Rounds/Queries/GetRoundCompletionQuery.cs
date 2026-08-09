@@ -12,4 +12,4 @@ namespace ThePredictions.Application.Features.Rounds.Queries;
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record GetRoundCompletionQuery(int RoundId, int? LeagueId, string CurrentUserId, bool IsSiteAdmin)
-    : IRequest<RoundCompletionDto?>;
+    : IRequest<RoundCompletionDto>;

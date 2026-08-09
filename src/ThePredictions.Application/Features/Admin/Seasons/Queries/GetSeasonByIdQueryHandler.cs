@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
@@ -8,9 +9,9 @@ namespace ThePredictions.Application.Features.Admin.Seasons.Queries;
 
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetSeasonByIdQueryHandler(IApplicationReadDbConnection dbConnection)
-    : IRequestHandler<GetSeasonByIdQuery, SeasonDto?>
+    : IRequestHandler<GetSeasonByIdQuery, SeasonDto>
 {
-    public async Task<SeasonDto?> Handle(GetSeasonByIdQuery request, CancellationToken cancellationToken)
+    public async Task<SeasonDto> Handle(GetSeasonByIdQuery request, CancellationToken cancellationToken)
     {
         const string sql = @"
             SELECT
@@ -59,28 +60,29 @@ public class GetSeasonByIdQueryHandler(IApplicationReadDbConnection dbConnection
 
         var season = await dbConnection.QuerySingleOrDefaultAsync<SeasonQueryResult>(sql, cancellationToken, new { request.Id });
 
-        return season is null
-            ? null
-            : new SeasonDto(
-                season.Id,
-                season.Name,
-                season.StartDateUtc,
-                season.EndDateUtc,
-                season.IsActive,
-                season.NumberOfRounds,
-                season.CompetitionId,
-                season.CompetitionName,
-                season.CompetitionType,
-                season.ApiLeagueId,
-                season.RoundCount,
-                season.DraftCount,
-                season.PublishedCount,
-                season.InProgressCount,
-                season.CompletedCount,
-                season.TeamCount,
-                season.PassStandardPrice,
-                season.PassPremiumPrice,
-                season.PassHolderCount);
+        if (season is null)
+            throw new EntityNotFoundException("Season", request.Id);
+
+        return new SeasonDto(
+            season.Id,
+            season.Name,
+            season.StartDateUtc,
+            season.EndDateUtc,
+            season.IsActive,
+            season.NumberOfRounds,
+            season.CompetitionId,
+            season.CompetitionName,
+            season.CompetitionType,
+            season.ApiLeagueId,
+            season.RoundCount,
+            season.DraftCount,
+            season.PublishedCount,
+            season.InProgressCount,
+            season.CompletedCount,
+            season.TeamCount,
+            season.PassStandardPrice,
+            season.PassPremiumPrice,
+            season.PassHolderCount);
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]

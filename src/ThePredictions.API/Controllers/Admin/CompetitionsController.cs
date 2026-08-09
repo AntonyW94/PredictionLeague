@@ -75,12 +75,7 @@ public class CompetitionsController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetCompetitionByIdQuery(competitionId);
-        var competition = await mediator.Send(query, cancellationToken);
-
-        if (competition == null)
-            return NotFound();
-
-        return Ok(competition);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     #endregion

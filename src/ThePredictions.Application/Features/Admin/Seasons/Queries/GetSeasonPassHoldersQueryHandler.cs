@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
@@ -8,7 +9,7 @@ using ThePredictions.Domain.Common.Enumerations;
 namespace ThePredictions.Application.Features.Admin.Seasons.Queries;
 
 public class GetSeasonPassHoldersQueryHandler(IApplicationReadDbConnection dbConnection)
-    : IRequestHandler<GetSeasonPassHoldersQuery, SeasonPassHoldersPageDto?>
+    : IRequestHandler<GetSeasonPassHoldersQuery, SeasonPassHoldersPageDto>
 {
     /// <summary>
     /// The column filters, shared by the summary and the page read so the two can never disagree
@@ -80,7 +81,7 @@ public class GetSeasonPassHoldersQueryHandler(IApplicationReadDbConnection dbCon
             sp.[Id] ASC
         OFFSET CAST(@Skip AS INT) ROWS FETCH NEXT CAST(@Take AS INT) ROWS ONLY;";
 
-    public async Task<SeasonPassHoldersPageDto?> Handle(GetSeasonPassHoldersQuery request, CancellationToken cancellationToken)
+    public async Task<SeasonPassHoldersPageDto> Handle(GetSeasonPassHoldersQuery request, CancellationToken cancellationToken)
     {
         var pageSize = PageSizes.Clamp(request.PageSize);
         var nameFilter = BuildNameFilter(request.NameFilter);
@@ -101,7 +102,7 @@ public class GetSeasonPassHoldersQueryHandler(IApplicationReadDbConnection dbCon
             });
 
         if (summary is null)
-            return null;
+            throw new EntityNotFoundException("Season", request.SeasonId);
 
         if (summary.MatchingCount == 0)
             return new SeasonPassHoldersPageDto(summary.SeasonName, 0, PagedResult<SeasonPassHolderDto>.Empty(pageSize));

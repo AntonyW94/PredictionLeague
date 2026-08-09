@@ -10,9 +10,9 @@ namespace ThePredictions.Application.Features.Leagues.Queries;
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetLeagueDashboardRoundResultsQueryHandler(
     IApplicationReadDbConnection dbConnection,
-    ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueDashboardRoundResultsQuery, IEnumerable<PredictionResultDto>?>
+    ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueDashboardRoundResultsQuery, IEnumerable<PredictionResultDto>>
 {
-    public async Task<IEnumerable<PredictionResultDto>?> Handle(GetLeagueDashboardRoundResultsQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<PredictionResultDto>> Handle(GetLeagueDashboardRoundResultsQuery request, CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 

@@ -111,12 +111,52 @@ That split is deliberately fail-safe. An unclassified fault is reported as a ser
 
 Never throw `BusinessRuleViolationException` for an infrastructure or configuration failure, and never assume a bare `InvalidOperationException` from a library means a client mistake.
 
+### A missing entity is thrown, never returned as null
+
+**A query handler that cannot find what it was asked for throws `EntityNotFoundException`.** It does
+not return `null` for the controller to translate. The middleware above already maps that exception to
+404, so the outward behaviour is identical - but the 404 is decided in one place instead of being
+re-implemented in every action, and the handler's return type stops being nullable, which means the
+compiler enforces the contract rather than a hand-written `if`.
+
+```csharp
+// CORRECT - the handler refuses; the middleware answers 404
+var league = await dbConnection.QuerySingleOrDefaultAsync<LeagueQueryResult>(sql, cancellationToken, new { request.Id });
+
+if (league is null)
+    throw new EntityNotFoundException("League", request.Id);
+
+return new LeagueDto(...);
+```
+
+```csharp
+// WRONG - a nullable return the caller has to remember to check
+public async Task<LeagueDto?> Handle(...) => league is null ? null : new LeagueDto(...);
+
+// ...and in the controller:
+if (result == null)
+    return NotFound();
+```
+
+Two deliberate exceptions, where `null` means "there is no value" rather than "the entity is missing":
+
+- **`GetRoundShareCardImageQueryHandler`** returns `byte[]?`. A round with no fixtures yet has no share
+  card to render, which is not the same as the round not existing - throwing "Round was not found"
+  there would be untrue.
+- **`BadgesController.GetBadgeIcon`** asks `IBadgeIconRenderer` for an unknown badge key on a public,
+  anonymous endpoint. It is a renderer returning no image, not a handler failing to find a row, and
+  turning crawler traffic into logged exceptions would be a downgrade.
+
+Note that a 404 is also the correct answer when the caller is **not allowed** to see something whose
+existence is itself private - `GetLeagueDashboardQueryHandler` throws `EntityNotFoundException` for a
+non-member so that the status code cannot be used to discover that a league exists.
+
 ### Throwing Errors in Handlers
 
 ```csharp
 // Not found
 if (league is null)
-    throw new KeyNotFoundException($"League with ID {id} not found");
+    throw new EntityNotFoundException("League", id);
 
 // Business rule - the caller could have satisfied this
 if (!round.CanAcceptPredictions())

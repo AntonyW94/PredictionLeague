@@ -81,12 +81,7 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
         CancellationToken cancellationToken)
     {
         var query = new GetSeasonByIdQuery(seasonId);
-        var season = await mediator.Send(query, cancellationToken);
-
-        if (season == null)
-            return NotFound();
-
-        return Ok(season);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{seasonId:int}/has-predictions")]
@@ -136,12 +131,7 @@ public class SeasonsController(IMediator mediator, IFootballDataService football
             minimumPaid,
             maximumPaid);
 
-        var holders = await mediator.Send(query, cancellationToken);
-
-        if (holders == null)
-            return NotFound();
-
-        return Ok(holders);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("price-recommendation")]

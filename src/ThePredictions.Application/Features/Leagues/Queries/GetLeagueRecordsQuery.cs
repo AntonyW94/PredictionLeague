@@ -5,4 +5,4 @@ using ThePredictions.Contracts.Leagues;
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
 [ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
-public record GetLeagueRecordsQuery(int LeagueId, string UserId) : IRequest<LeagueRecordsDto?>;
+public record GetLeagueRecordsQuery(int LeagueId, string UserId) : IRequest<LeagueRecordsDto>;
