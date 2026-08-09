@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -48,140 +48,15 @@ public class GetLeagueBoostUsageSummaryQueryHandler(
 
         var roundRange = await GetRoundRangeAsync(request.LeagueId, cancellationToken);
 
-        var result = new List<BoostUsageSummaryDto>();
-
-        foreach (var rule in boostRules)
-        {
-            var ruleWindows = windows
-                .Where(w => w.LeagueBoostRuleId == rule.LeagueBoostRuleId)
-                .OrderBy(w => w.StartRoundNumber)
-                .ToList();
-
-            var boostUsages = usages.Where(u => u.BoostCode == rule.BoostCode).ToList();
-
-            var windowDtos = new List<WindowUsageSummaryDto>();
-
-            if (ruleWindows.Count == 0)
-            {
-                const bool isFullSeason = true;
-                var maxUses = rule.TotalUsesPerSeason;
-                var endRound = roundRange?.MaxRoundNumber ?? 1;
-                var hasWindowPassed = HasWindowPassed(
-                    endRound, inProgressRoundNumber, lastCompletedRoundNumber);
-
-                var playerUsages = BuildPlayerUsages(
-                    members, boostUsages, null, null, maxUses, request.CurrentUserId,
-                    inProgressRoundNumber);
-
-                windowDtos.Add(new WindowUsageSummaryDto
-                {
-                    StartRoundNumber = roundRange?.MinRoundNumber ?? 1,
-                    EndRoundNumber = endRound,
-                    MaxUsesInWindow = maxUses,
-                    IsFullSeason = isFullSeason,
-                    HasWindowPassed = hasWindowPassed,
-                    PlayerUsages = playerUsages
-                });
-            }
-            else
-            {
-                var isFullSeason = ruleWindows.Count == 1
-                    && roundRange != null
-                    && ruleWindows[0].StartRoundNumber <= roundRange.MinRoundNumber
-                    && ruleWindows[0].EndRoundNumber >= roundRange.MaxRoundNumber;
-
-                foreach (var window in ruleWindows)
-                {
-                    var hasWindowPassed = HasWindowPassed(
-                        window.EndRoundNumber, inProgressRoundNumber, lastCompletedRoundNumber);
-
-                    var playerUsages = BuildPlayerUsages(
-                        members, boostUsages,
-                        window.StartRoundNumber, window.EndRoundNumber,
-                        window.MaxUsesInWindow, request.CurrentUserId,
-                        inProgressRoundNumber);
-
-                    windowDtos.Add(new WindowUsageSummaryDto
-                    {
-                        StartRoundNumber = window.StartRoundNumber,
-                        EndRoundNumber = window.EndRoundNumber,
-                        MaxUsesInWindow = window.MaxUsesInWindow,
-                        IsFullSeason = isFullSeason,
-                        HasWindowPassed = hasWindowPassed,
-                        PlayerUsages = playerUsages
-                    });
-                }
-            }
-
-            result.Add(new BoostUsageSummaryDto
-            {
-                BoostCode = rule.BoostCode,
-                Name = rule.Name,
-                ImageUrl = rule.ImageUrl,
-                TotalUsesPerSeason = rule.TotalUsesPerSeason,
-                Windows = windowDtos
-            });
-        }
-
-        return result;
-    }
-
-    private static bool HasWindowPassed(
-        int windowEndRoundNumber, int? inProgressRoundNumber, int? lastCompletedRoundNumber)
-    {
-        if (inProgressRoundNumber.HasValue)
-            return windowEndRoundNumber < inProgressRoundNumber.Value;
-
-        return lastCompletedRoundNumber.HasValue
-            && windowEndRoundNumber <= lastCompletedRoundNumber.Value;
-    }
-
-    private static List<PlayerWindowUsageDto> BuildPlayerUsages(
-        List<MemberRow> members,
-        List<UsageRow> boostUsages,
-        int? startRound,
-        int? endRound,
-        int maxUses,
-        string currentUserId,
-        int? inProgressRoundNumber)
-    {
-        return members.Select(member =>
-        {
-            var memberUsages = boostUsages
-                .Where(u => u.UserId == member.UserId);
-
-            if (startRound.HasValue && endRound.HasValue)
-            {
-                memberUsages = memberUsages
-                    .Where(u => u.RoundNumber >= startRound.Value && u.RoundNumber <= endRound.Value);
-            }
-
-            var usageList = memberUsages.ToList();
-            var usedCount = usageList.Count;
-            var remaining = Math.Max(0, maxUses - usedCount);
-
-            return new PlayerWindowUsageDto
-            {
-                UserId = member.UserId,
-                PlayerName = member.PlayerName,
-                Remaining = remaining,
-                MaxUses = maxUses,
-                IsCurrentUser = member.UserId == currentUserId,
-                Usages = usageList
-                    .OrderBy(u => u.RoundNumber)
-                    .Select(u => new BoostUsageDetailDto
-                    {
-                        RoundNumber = u.RoundNumber,
-                        PointsGained = u.PointsGained,
-                        IsInProgressRound = inProgressRoundNumber.HasValue
-                            && u.RoundNumber == inProgressRoundNumber.Value
-                    })
-                    .ToList()
-            };
-        })
-        .OrderByDescending(p => p.Usages.Sum(u => u.PointsGained ?? 0))
-        .ThenBy(p => p.PlayerName)
-        .ToList();
+        return BoostUsageSummaryBuilder.Build(
+            boostRules,
+            windows,
+            members,
+            usages,
+            roundRange,
+            inProgressRoundNumber,
+            lastCompletedRoundNumber,
+            request.CurrentUserId);
     }
 
     private async Task<IEnumerable<BoostRuleRow>> GetEnabledBoostRulesAsync(
@@ -323,10 +198,10 @@ public class GetLeagueBoostUsageSummaryQueryHandler(
             sql, cancellationToken, new { LeagueId = leagueId });
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Local")]
-    private sealed class BoostRuleRow
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+    internal sealed class BoostRuleRow
     {
         public string BoostCode { get; init; } = string.Empty;
         public string Name { get; init; } = string.Empty;
@@ -335,10 +210,10 @@ public class GetLeagueBoostUsageSummaryQueryHandler(
         public int LeagueBoostRuleId { get; init; }
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Local")]
-    private sealed class WindowRow
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+    internal sealed class WindowRow
     {
         public int LeagueBoostRuleId { get; init; }
         public int StartRoundNumber { get; init; }
@@ -346,27 +221,27 @@ public class GetLeagueBoostUsageSummaryQueryHandler(
         public int MaxUsesInWindow { get; init; }
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Local")]
-    private sealed class MemberRow
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+    internal sealed class MemberRow
     {
         public string UserId { get; init; } = string.Empty;
         public string PlayerName { get; init; } = string.Empty;
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Local")]
-    private sealed class SeasonInfoRow
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+    internal sealed class SeasonInfoRow
     {
         public int SeasonId { get; init; }
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Local")]
-    private sealed class UsageRow
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+    internal sealed class UsageRow
     {
         public string UserId { get; init; } = string.Empty;
         public string BoostCode { get; init; } = string.Empty;
@@ -374,10 +249,10 @@ public class GetLeagueBoostUsageSummaryQueryHandler(
         public int? PointsGained { get; init; }
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Local")]
-    private sealed class RoundRangeRow
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+    internal sealed class RoundRangeRow
     {
         public int MinRoundNumber { get; init; }
         public int MaxRoundNumber { get; init; }
