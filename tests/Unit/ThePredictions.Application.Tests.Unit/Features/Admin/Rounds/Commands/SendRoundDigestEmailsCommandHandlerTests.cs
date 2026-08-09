@@ -260,4 +260,25 @@ public class SendRoundDigestEmailsCommandHandlerTests
         Property<string>(leagues[0]!, "TOP_SCORER").Should().BeEmpty();
         Property<int>(leagues[0]!, "TOP_SCORER_POINTS").Should().Be(0);
     }
+
+    [Fact]
+    public async Task Handle_ShouldShowTheNextDeadlineAndLeaveTheNameBlankWhenTheNextRoundIsUnnamed()
+    {
+        // The final round of a season has no next round to name, but a scheduled one still has a
+        // deadline worth formatting.
+        _roundRepository.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns(CompletedRound());
+        _mediator.Send(Arg.Any<GetRoundDigestQuery>(), Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyList<UserRoundDigest>)new List<UserRoundDigest>
+            {
+                new("u1", "antony@example.com", "Antony", "Gameweek 7", 2, 6, null,
+                    new DateTime(2026, 6, 15, 14, 0, 0, DateTimeKind.Utc),
+                    new List<LeagueRoundDigest> { new(5, "Office League", 18, 3, 1, "Sarah J", 24) })
+            });
+
+        await _handler.Handle(new SendRoundDigestEmailsCommand(7), CancellationToken.None);
+
+        var parameters = CapturedParameters();
+        Property<string>(parameters, "NEXT_ROUND_NAME").Should().BeEmpty();
+        Property<string>(parameters, "NEXT_ROUND_DEADLINE").Should().Be("formatted");
+    }
 }

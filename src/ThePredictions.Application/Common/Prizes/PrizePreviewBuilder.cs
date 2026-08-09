@@ -57,8 +57,10 @@ public static class PrizePreviewBuilder
 
     private static List<string> BuildAttribution(IReadOnlyList<PrizeCategoryBreakdownDto> categories, decimal entryCost)
     {
+        // GetValueOrDefault, not a null-aware pattern: every category built above carries a Delta,
+        // so a null test here would be a branch that can never go the other way.
         var contributions = categories
-            .Where(c => c.Delta is > 0)
+            .Where(c => c.Delta.GetValueOrDefault() > 0)
             .Select(c => $"£{c.Delta:0} to {c.DisplayName}")
             .ToList();
 

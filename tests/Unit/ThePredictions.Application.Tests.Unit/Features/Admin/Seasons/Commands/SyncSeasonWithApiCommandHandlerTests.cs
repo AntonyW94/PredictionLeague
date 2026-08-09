@@ -520,4 +520,54 @@ public class SyncSeasonWithApiCommandHandlerTests
 
         match.MatchDateTimeUtc.Should().Be(Week3);
     }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreAFixtureWithOnlyTheAwaySideNamed()
+    {
+        var round = Round(1, 1, Week1);
+        _scenario.GivenRounds(round);
+        _scenario.GivenApiRoundNames(RoundName(1));
+        _scenario.GivenApiFixtures(Fixture(5001, Week1, RoundName(1), withHomeTeam: false));
+
+        await HandleAsync();
+
+        round.Matches.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldOrderTwoRoundsSharingAMedianByTheirRoundNumber()
+    {
+        // Two rounds whose fixtures average to the same date still need a stable order, or their
+        // windows would flip between syncs.
+        _scenario.GivenRounds();
+        _scenario.GivenApiRoundNames(RoundName(1), RoundName(2));
+        _scenario.GivenApiFixtures(
+            Fixture(5001, Week2, RoundName(2), apiHomeTeamId: 1, apiAwayTeamId: 2),
+            Fixture(5002, Week2, RoundName(1), apiHomeTeamId: 3, apiAwayTeamId: 4));
+
+        await HandleAsync();
+
+        // One window collapses to zero width and takes no fixtures, so only the other is created.
+        await _scenario.Rounds.Received(1).CreateAsync(Arg.Any<Round>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldKeepAMatchTheFeedStillLists()
+    {
+        // The sweep only removes matches the feed has dropped: one still listed stays, and a
+        // hand-added match with no feed link is never considered stale in the first place.
+        var match = Match(1, 1, Week1, externalId: 5001);
+        var dropped = Match(2, 1, Week1, externalId: 5999, homeTeamId: 103, awayTeamId: 104);
+        var manual = Match(3, 1, Week1, externalId: null, homeTeamId: 105, awayTeamId: 106);
+        var round = Round(1, 1, Week1, matches: [match, dropped, manual]);
+        _scenario.GivenRounds(round);
+        _scenario.GivenApiRoundNames(RoundName(1));
+        _scenario.GivenApiFixtures(Fixture(5001, Week1, RoundName(1)));
+
+        await HandleAsync();
+
+        round.Matches.Should().Contain(m => m.Id == 1);
+        round.Matches.Should().NotContain(m => m.Id == 2);
+        round.Matches.Should().Contain(m => m.Id == 3);
+    }
 }

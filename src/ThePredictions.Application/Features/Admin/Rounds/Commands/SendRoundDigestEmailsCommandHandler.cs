@@ -73,7 +73,9 @@ public class SendRoundDigestEmailsCommandHandler(
 
         foreach (var digest in digests)
         {
-            var earnedBadges = badgesByUser.TryGetValue(digest.UserId, out var badges) ? badges : [];
+            // GetValueOrDefault with an explicit fallback: the try-get-and-branch form compiled to
+            // more branches here than the two this actually has.
+            var earnedBadges = badgesByUser.GetValueOrDefault(digest.UserId, []);
 
             var parameters = new
             {
