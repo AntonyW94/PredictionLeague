@@ -1,17 +1,21 @@
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Dashboard;
+using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Application.Features.Dashboard.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnection)
+public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnection, IDateTimeProvider dateTimeProvider)
     : IRequestHandler<GetActiveRoundsQuery, IEnumerable<ActiveRoundDto>>
 {
     public async Task<IEnumerable<ActiveRoundDto>> Handle(GetActiveRoundsQuery request, CancellationToken cancellationToken)
     {
+        // Read the clock once: the "is this round still active" filter below and the per-match reveal
+        // decision further down must agree, which two separate UtcNow reads cannot guarantee.
+        var utcNow = dateTimeProvider.UtcNow;
+
         // Query 1: Get active rounds (upcoming + in-progress)
         const string roundsSql = @"
             SELECT
@@ -83,7 +87,7 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
             roundsSql,
             cancellationToken,
             parameters))
-            .Where(r => r.LatestPredictionDeadlineUtc > DateTime.UtcNow || r.HasUserPredicted)
+            .Where(r => r.LatestPredictionDeadlineUtc > utcNow || r.HasUserPredicted)
             .ToList();
 
         if (!rounds.Any())
@@ -152,7 +156,6 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         return rounds.Select(r =>
         {
             var status = Enum.Parse<RoundStatus>(r.Status);
-            var utcNow = DateTime.UtcNow;
 
             var activeRoundMatchDtos = matchesByRound.TryGetValue(r.Id, out var roundMatches)
                 ? roundMatches.Select(m =>
@@ -209,8 +212,11 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         });
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record ActiveRoundQueryResult(
+    // internal so a test can supply rows for the reveal rule and outcome summary above;
+    // InternalsVisibleTo already exposes this assembly to ThePredictions.Application.Tests.Unit.
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record ActiveRoundQueryResult(
         int Id,
         string SeasonName,
         int RoundNumber,
@@ -221,8 +227,9 @@ public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnecti
         int CompetitionType,
         DateTime LatestPredictionDeadlineUtc);
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record ActiveRoundMatchQueryResult(
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record ActiveRoundMatchQueryResult(
         int RoundId,
         string? HomeTeamLogoUrl,
         string? AwayTeamLogoUrl,
