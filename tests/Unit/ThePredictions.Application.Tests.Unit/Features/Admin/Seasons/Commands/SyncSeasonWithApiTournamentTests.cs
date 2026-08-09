@@ -305,4 +305,85 @@ public class SyncSeasonWithApiTournamentTests
 
         await act.Should().NotThrowAsync();
     }
+
+    [Fact]
+    public async Task Handle_ShouldLockTheLaterStageAsOneBatchWhenARoundSpansTwoStages()
+    {
+        // A round covering both semi-finals and the final locks the final with its own batch, 30
+        // minutes before the earliest kick-off in it, rather than at the round deadline.
+        var semiPlaceholder = Placeholder(1, 5, SemiFinalDate, SemiFinals);
+        var finalPlaceholder = Placeholder(2, 5, FinalDate, Final);
+        var round = Round(5, 1, SemiFinalDate, SemiFinals, RoundStatus.Draft, semiPlaceholder, finalPlaceholder);
+        _scenario.GivenRounds(round);
+        _scenario.GivenMappings(Mapping(1, TournamentStage.SemiFinals, TournamentStage.Final));
+        _scenario.GivenApiFixtures(
+            Fixture(6001, SemiFinalDate, SemiFinals),
+            Fixture(6002, FinalDate, Final, apiHomeTeamId: 3, apiAwayTeamId: 4));
+
+        await HandleAsync();
+
+        semiPlaceholder.CustomLockTimeUtc.Should().BeNull();
+        finalPlaceholder.CustomLockTimeUtc.Should().Be(FinalDate.AddMinutes(-30));
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreATieWithOnlyTheAwaySideNamed()
+    {
+        // A knockout tie can be published with one side still to be decided.
+        var placeholder = Placeholder(1, 5, SemiFinalDate, SemiFinals);
+        var round = Round(5, 1, SemiFinalDate, SemiFinals, RoundStatus.Draft, placeholder);
+        _scenario.GivenRounds(round);
+        _scenario.GivenMappings(Mapping(1, TournamentStage.SemiFinals));
+        _scenario.GivenApiFixtures(Fixture(6001, SemiFinalDate, SemiFinals, withHomeTeam: false));
+
+        await HandleAsync();
+
+        placeholder.ExternalId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreATieWhoseLeagueBlockCarriesNoStageName()
+    {
+        // The feed sends the competition but leaves the stage blank, so there is nothing to match
+        // the tie to a round with.
+        var placeholder = Placeholder(1, 5, SemiFinalDate, SemiFinals);
+        var round = Round(5, 1, SemiFinalDate, SemiFinals, RoundStatus.Draft, placeholder);
+        _scenario.GivenRounds(round);
+        _scenario.GivenMappings(Mapping(1, TournamentStage.SemiFinals));
+        _scenario.GivenApiFixtures(Fixture(6001, SemiFinalDate, SemiFinals, withRoundNameValue: false));
+
+        await HandleAsync();
+
+        placeholder.ExternalId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreATieWithOnlyTheHomeSideNamed()
+    {
+        // The other half of the draw has not finished, so the away side is still to be decided.
+        var placeholder = Placeholder(1, 5, SemiFinalDate, SemiFinals);
+        var round = Round(5, 1, SemiFinalDate, SemiFinals, RoundStatus.Draft, placeholder);
+        _scenario.GivenRounds(round);
+        _scenario.GivenMappings(Mapping(1, TournamentStage.SemiFinals));
+        _scenario.GivenApiFixtures(Fixture(6001, SemiFinalDate, SemiFinals, withAwayTeam: false));
+
+        await HandleAsync();
+
+        placeholder.ExternalId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldIgnoreATieWithNoCompetitionBlockAtAll()
+    {
+        // Without the competition block there is no stage to place the tie in.
+        var placeholder = Placeholder(1, 5, SemiFinalDate, SemiFinals);
+        var round = Round(5, 1, SemiFinalDate, SemiFinals, RoundStatus.Draft, placeholder);
+        _scenario.GivenRounds(round);
+        _scenario.GivenMappings(Mapping(1, TournamentStage.SemiFinals));
+        _scenario.GivenApiFixtures(Fixture(6001, SemiFinalDate, SemiFinals, withRoundName: false));
+
+        await HandleAsync();
+
+        placeholder.ExternalId.Should().BeNull();
+    }
 }

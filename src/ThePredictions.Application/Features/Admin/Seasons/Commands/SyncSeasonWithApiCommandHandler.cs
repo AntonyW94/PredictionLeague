@@ -45,7 +45,9 @@ public class SyncSeasonWithApiCommandHandler(
         var apiRoundNames = (await footballDataService.GetRoundsForSeasonAsync(apiLeagueId, seasonYear, cancellationToken)).ToList();
         var apiFixtures = (await footballDataService.GetAllFixturesForSeasonAsync(apiLeagueId, seasonYear, cancellationToken)).ToList();
         var allRounds = await roundRepository.GetAllForSeasonAsync(season.Id, cancellationToken);
-        var allApiTeamIds = apiFixtures.Where(f => f.Teams?.Home != null && f.Teams?.Away != null).SelectMany(f => new[] { f.Teams!.Home.Id, f.Teams!.Away.Id }).Distinct();
+        // f.Teams! on the second check: reaching it means Home was non-null, so Teams cannot be
+        // null here and a second null-conditional would add a branch that never fires.
+        var allApiTeamIds = apiFixtures.Where(f => f.Teams?.Home != null && f.Teams!.Away != null).SelectMany(f => new[] { f.Teams!.Home.Id, f.Teams!.Away.Id }).Distinct();
         var teamsByApiId = await teamRepository.GetByApiIdsAsync(allApiTeamIds, cancellationToken);
         var matchesByExternalId = new Dictionary<int, (Round Round, Match Match)>();
     
@@ -63,7 +65,8 @@ public class SyncSeasonWithApiCommandHandler(
 
         foreach (var fixture in apiFixtures)
         {
-            if (fixture.Fixture == null || fixture.Teams?.Home == null || fixture.Teams?.Away == null || fixture.League?.RoundName == null)
+            // fixture.Teams! on the third check: getting past the second proves Teams is not null.
+            if (fixture.Fixture == null || fixture.Teams?.Home == null || fixture.Teams!.Away == null || fixture.League?.RoundName == null)
                 continue;
 
             if (!teamsByApiId.TryGetValue(fixture.Teams.Home.Id, out var homeTeam) ||
@@ -113,7 +116,10 @@ public class SyncSeasonWithApiCommandHandler(
 
         foreach (var fixture in validFixtures)
         {
-            var targetWindow = roundWindows.FirstOrDefault(w => fixture.MatchDateTimeUtc >= w.WindowStart && fixture.MatchDateTimeUtc < w.WindowEnd);
+            // Windows are ordered and contiguous from DateTime.MinValue, so the first one whose end
+            // is after the fixture is the one it belongs to - no start check needed (it could never
+            // be false). With no windows at all, the fixture is unplaceable.
+            var targetWindow = roundWindows.FirstOrDefault(w => fixture.MatchDateTimeUtc < w.WindowEnd);
             if (targetWindow != null)
             {
                 if (!fixturesByRound.ContainsKey(targetWindow.ApiRoundName))
@@ -133,7 +139,9 @@ public class SyncSeasonWithApiCommandHandler(
 
         foreach (var window in roundWindows)
         {
-            if (!fixturesByRound.TryGetValue(window.ApiRoundName, out var fixtures) || !fixtures.Any())
+            // Two rounds sharing a median produce a zero-width window, which takes no fixtures at
+            // all. No emptiness check beyond this: the dictionary only ever receives non-empty lists.
+            if (!fixturesByRound.TryGetValue(window.ApiRoundName, out var fixtures))
                 continue;
 
             var round = allRounds.Values.FirstOrDefault(r => r.ApiRoundName == window.ApiRoundName);
@@ -302,7 +310,8 @@ public class SyncSeasonWithApiCommandHandler(
         var allRounds = await roundRepository.GetAllForSeasonAsync(season.Id, cancellationToken);
         var mappings = await tournamentRoundMappingRepository.GetBySeasonIdAsync(season.Id, cancellationToken);
         var allApiTeamIds = apiFixtures
-            .Where(f => f.Teams?.Home != null && f.Teams?.Away != null)
+            // f.Teams! as above: Home being non-null already proves Teams is not null.
+            .Where(f => f.Teams?.Home != null && f.Teams!.Away != null)
             .SelectMany(f => new[] { f.Teams!.Home.Id, f.Teams!.Away.Id })
             .Distinct();
         var teamsByApiId = await teamRepository.GetByApiIdsAsync(allApiTeamIds, cancellationToken);
@@ -319,7 +328,8 @@ public class SyncSeasonWithApiCommandHandler(
         var validFixtures = new List<ValidFixture>();
         foreach (var fixture in apiFixtures)
         {
-            if (fixture.Fixture == null || fixture.Teams?.Home == null || fixture.Teams?.Away == null || fixture.League?.RoundName == null)
+            // fixture.Teams! on the third check: getting past the second proves Teams is not null.
+            if (fixture.Fixture == null || fixture.Teams?.Home == null || fixture.Teams!.Away == null || fixture.League?.RoundName == null)
                 continue;
 
             if (!teamsByApiId.TryGetValue(fixture.Teams.Home.Id, out var homeTeam) ||
@@ -443,9 +453,9 @@ public class SyncSeasonWithApiCommandHandler(
             // Handle postponements
             foreach (var fixture in fixtures)
             {
-                var match = round.Matches.FirstOrDefault(m => m.ExternalId == fixture.ExternalId);
-                if (match == null)
-                    continue;
+                // Always present: the loop above either matched this fixture to an existing match,
+                // stamped its id onto a placeholder, or added it - so there is no null case here.
+                var match = round.Matches.First(m => m.ExternalId == fixture.ExternalId);
 
                 if (fixture.ApiStatus == "PST" && match.Status is not (MatchStatus.Postponed or MatchStatus.Completed))
                 {

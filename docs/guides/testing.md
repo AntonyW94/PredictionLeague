@@ -189,11 +189,11 @@ logic there (no `.razor.cs` code-behind, and bUnit is not referenced), so none o
 today in any case. **To bring component logic back under measurement, move it into a `.razor.cs`
 code-behind** - that file is measured normally.
 
-### Enforcement is per project, and rolls out gradually
+### Enforcement is per project
 
-`/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Today the test projects
-for **Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure and Web.Client** reference
-it. Only **Application** is measured without being gated.
+`/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Every unit test project
+references it, so **Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure, Web.Client
+and Application** are all gated. Application was the last to join, in August 2026.
 
 **The gate measures each test project's own run, not the merged report.** A class covered
 incidentally by another project's tests still counts as uncovered for the gate, so read the
@@ -206,10 +206,10 @@ A gated test project whose subject assembly has dependencies must scope the meas
 only the Validators assembly counts, not the Contracts and Domain assemblies it pulls in. Domain
 needs no filter: it depends on nothing outside the global `[ThePredictions.Tests.*]*` exclusion.
 
-Extending the gate is one package reference per test project. **Do it only when that project has
-actually reached 100%**, in the same PR - never as a big-bang flip, which would leave CI red for
-weeks and destroy the signal the gate exists to give. Update the rule in the root `CLAUDE.md` as
-each project locks, so the documented rule always matches what CI enforces.
+Adding a new test project to the gate is one package reference plus an `<Include>`. **Do it only
+when that project has actually reached 100%**, in the same PR - never as a big-bang flip, which
+would leave CI red for weeks and destroy the signal the gate exists to give. Update the rule in the
+root `CLAUDE.md` as each project locks, so the documented rule always matches what CI enforces.
 
 ## Composition / Container Validation
 

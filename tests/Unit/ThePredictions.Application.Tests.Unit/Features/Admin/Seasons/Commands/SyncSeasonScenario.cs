@@ -149,18 +149,22 @@ internal sealed class SyncSeasonScenario
         bool withTeams = true,
         bool withFixture = true,
         bool withRoundName = true,
-        bool withAwayTeam = true) =>
+        bool withAwayTeam = true,
+        bool withHomeTeam = true,
+        bool withRoundNameValue = true) =>
         new()
         {
             Fixture = withFixture
                 ? new Fixture { Id = externalId, Date = new DateTimeOffset(matchDateTimeUtc), Status = new Status { Short = status } }
                 : null,
-            League = withRoundName ? new ApiLeague { Id = ApiLeagueId, RoundName = apiRoundName } : null,
+            League = withRoundName
+                ? new ApiLeague { Id = ApiLeagueId, RoundName = withRoundNameValue ? apiRoundName : null! }
+                : null,
             Teams = withTeams
                 // Qualified: the Admin.Teams test namespace would otherwise shadow this DTO here.
                 ? new FootballApi.DTOs.Teams
                 {
-                    Home = new ApiTeam { Id = apiHomeTeamId, Name = "Home" },
+                    Home = withHomeTeam ? new ApiTeam { Id = apiHomeTeamId, Name = "Home" } : null!,
                     Away = withAwayTeam ? new ApiTeam { Id = apiAwayTeamId, Name = "Away" } : null!
                 }
                 : null
