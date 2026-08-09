@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using FluentAssertions;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
@@ -166,4 +167,27 @@ public class LeaguePrizeSchemeTests
         var scheme = new LeaguePrizeScheme(9, 3, _dateTimeProvider.UtcNow, "admin-user", null);
         scheme.Entries.Should().BeEmpty();
     }
+
+    #region ToWholePoundStake
+
+    [Theory]
+    [InlineData(10)]
+    [InlineData(0)]
+    public void ToWholePoundStake_ShouldAcceptAWholePoundEntryFee(int price)
+    {
+        LeaguePrizeScheme.ToWholePoundStake(price).Should().Be(price);
+    }
+
+    [Fact]
+    public void ToWholePoundStake_ShouldRejectAnEntryFeeWithPence()
+    {
+        // Prizes are worked out in whole pounds, so pence in the entry fee would leave amounts that
+        // cannot be paid out cleanly.
+        var act = () => LeaguePrizeScheme.ToWholePoundStake(10.50m);
+
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("*whole number of pounds*");
+    }
+
+    #endregion
 }

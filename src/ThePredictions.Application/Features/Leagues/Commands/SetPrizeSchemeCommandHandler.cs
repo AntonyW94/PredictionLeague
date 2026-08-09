@@ -37,7 +37,7 @@ public class SetPrizeSchemeCommandHandler(
 
         var scheme = PrizeSchemeFactory.Build(
             request.Scheme,
-            PrizeSchemeFactory.ToWholePounds(league.Price),
+            LeaguePrizeScheme.ToWholePoundStake(league.Price),
             request.UserId,
             competition.IsTournament,
             dateTimeProvider);
