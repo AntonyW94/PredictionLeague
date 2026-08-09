@@ -1,10 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Web.Client.ViewModels.Admin.Rounds;
 
-[ExcludeFromCodeCoverage(Justification = "Data-only view model: properties only, no logic to test.")]
 public class MatchViewModel(MatchInRoundDto match)
 {
     public int MatchId { get; } = match.Id;
