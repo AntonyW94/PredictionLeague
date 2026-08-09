@@ -1,11 +1,10 @@
-using MediatR;
+﻿using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Leagues;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetManageLeaguesQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetManageLeaguesQuery, ManageLeaguesDto>
 {
     public async Task<ManageLeaguesDto> Handle(GetManageLeaguesQuery request, CancellationToken cancellationToken)
@@ -49,28 +48,42 @@ public class GetManageLeaguesQueryHandler(IApplicationReadDbConnection dbConnect
         {
             result.PublicLeagues = leagues
                 .Where(l => l.LeagueCategory == "Public")
-                .Select(l => l.ToLeagueDto())
+                .Select(ToLeagueDto)
                 .ToList();
         }
 
         result.MyPrivateLeagues = leagues
             .Where(l => l.LeagueCategory == "MyPrivate")
-            .Select(l => l.ToLeagueDto())
+            .Select(ToLeagueDto)
             .ToList();
 
         if (request.IsAdmin)
         {
             result.OtherPrivateLeagues = leagues
                 .Where(l => l.LeagueCategory == "OtherPrivate")
-                .Select(l => l.ToLeagueDto())
+                .Select(ToLeagueDto)
                 .ToList();
         }
 
         return result;
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record LeagueWithCategory(
+    private static LeagueDto ToLeagueDto(LeagueWithCategory league) => new(
+        league.Id,
+        league.Name,
+        league.SeasonName,
+        league.MemberCount,
+        league.Price,
+        league.EntryCode,
+        league.EntryDeadlineUtc,
+        league.PointsForExactScore,
+        league.PointsForCorrectResult);
+
+    // internal so a test can supply rows for the visibility filter above; InternalsVisibleTo already
+    // exposes this assembly to ThePredictions.Application.Tests.Unit.
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record LeagueWithCategory(
         int Id,
         string Name,
         string SeasonName,
@@ -80,8 +93,5 @@ public class GetManageLeaguesQueryHandler(IApplicationReadDbConnection dbConnect
         DateTime EntryDeadlineUtc,
         int PointsForExactScore,
         int PointsForCorrectResult,
-        string LeagueCategory)
-    {
-        public LeagueDto ToLeagueDto() => new(Id, Name, SeasonName, MemberCount, Price, EntryCode, EntryDeadlineUtc, PointsForExactScore, PointsForCorrectResult);
-    }
+        string LeagueCategory);
 }
