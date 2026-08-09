@@ -8,6 +8,7 @@ using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Constants;
 using ThePredictions.Domain.Common.Guards;
 using ThePredictions.Domain.Common.Exceptions;
+using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
@@ -24,23 +25,9 @@ public class SetPrizeSchemeCommandHandler(
         var league = await leagueRepository.GetByIdAsync(request.LeagueId, cancellationToken);
         Guard.Against.EntityNotFound(request.LeagueId, league, "League");
 
-        var settingUser = await userManager.FindByIdAsync(request.UserId);
-        var isSiteAdmin = settingUser != null && await userManager.IsInRoleAsync(settingUser, RoleNames.Administrator);
-        var isLeagueAdmin = league.AdministratorUserId == request.UserId;
-
         var alreadySet = league.PrizeScheme is not null;
 
-        if (alreadySet && !isSiteAdmin)
-            throw new BusinessRuleViolationException("The prize scheme has already been set and can only be changed by a site administrator.");
-
-        if (!alreadySet && !isLeagueAdmin && !isSiteAdmin)
-            throw new UnauthorizedAccessException("Only the league administrator can set the prize scheme.");
-
-        // A free league with no admin top-up has a £0 pot, so prizes do not apply. The client hides the
-        // editor in this case; guard here too so a scheme can never be persisted against an empty pot.
-        var hasPrizeFund = league.Price > 0 || (league.PrizeFundOverride ?? 0) > 0;
-        if (!hasPrizeFund)
-            throw new BusinessRuleViolationException("A prize scheme cannot be set on a free league with no prize fund.");
+        await EnsureCanSetSchemeAsync(league, request.UserId, alreadySet);
 
         var season = await seasonRepository.GetByIdAsync(league.SeasonId, cancellationToken);
         Guard.Against.EntityNotFound(league.SeasonId, season, "Season");
@@ -63,5 +50,32 @@ public class SetPrizeSchemeCommandHandler(
         await leagueRepository.SavePrizeSchemeAsync(league.Id, scheme, cancellationToken);
 
         logger.LogInformation("League (ID: {LeagueId}) prize scheme set by user (ID: {UserId}){Override}", league.Id, request.UserId, alreadySet ? " as a site-admin override" : string.Empty);
+    }
+
+    /// <summary>
+    /// The scheme is a one-time decision: the league owner makes it, and only a site administrator
+    /// may change it afterwards. It also cannot be set at all where there is no pot to divide - a
+    /// free league with no top-up. The client hides the editor in that case; this guards the data.
+    /// </summary>
+    private async Task EnsureCanSetSchemeAsync(League league, string userId, bool alreadySet)
+    {
+        var settingUser = await userManager.FindByIdAsync(userId);
+        var isSiteAdmin = settingUser != null && await userManager.IsInRoleAsync(settingUser, RoleNames.Administrator);
+
+        EnsureCanSetScheme(league, userId, alreadySet, isSiteAdmin);
+    }
+
+    private static void EnsureCanSetScheme(League league, string userId, bool alreadySet, bool isSiteAdmin)
+    {
+        if (alreadySet && !isSiteAdmin)
+            throw new BusinessRuleViolationException("The prize scheme has already been set and can only be changed by a site administrator.");
+
+        var isLeagueAdmin = league.AdministratorUserId == userId;
+        if (!alreadySet && !isLeagueAdmin && !isSiteAdmin)
+            throw new UnauthorizedAccessException("Only the league administrator can set the prize scheme.");
+
+        var hasPrizeFund = league.Price > 0 || (league.PrizeFundOverride ?? 0) > 0;
+        if (!hasPrizeFund)
+            throw new BusinessRuleViolationException("A prize scheme cannot be set on a free league with no prize fund.");
     }
 }

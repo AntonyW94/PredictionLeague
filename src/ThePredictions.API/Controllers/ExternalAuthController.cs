@@ -59,21 +59,10 @@ public class ExternalAuthController(ILogger<ExternalAuthController> logger, IMed
         logger.LogInformation("Called signin-google");
 
         var authenticateResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
-        var returnUrl = authenticateResult.Properties?.Items["returnUrl"] ?? "/";
-        var source = authenticateResult.Properties?.Items["source"] ?? "/login";
 
         // Defence in depth - validate URLs again before redirect
-        var safeReturnUrl = GetSafeLocalPath(returnUrl, "/");
-        var safeSource = GetSafeLocalPath(source, "/login");
-
-        if (safeReturnUrl != returnUrl)
-            logger.LogWarning("Invalid returnUrl detected in callback: {ReturnUrl}", returnUrl);
-
-        if (safeSource != source)
-            logger.LogWarning("Invalid source detected in callback: {Source}", source);
-
-        returnUrl = safeReturnUrl;
-        source = safeSource;
+        var returnUrl = SafePathFromProperties(authenticateResult, "returnUrl", "/");
+        var source = SafePathFromProperties(authenticateResult, "source", "/login");
 
         var command = new LoginWithGoogleCommand(authenticateResult, source);
         var result = await mediator.Send(command, cancellationToken);
@@ -95,6 +84,22 @@ public class ExternalAuthController(ILogger<ExternalAuthController> logger, IMed
                 logger.LogError("Google Login result was ERROR");
                 return RedirectWithError(source, "An unknown authentication error occurred.");
         }
+    }
+
+    /// <summary>
+    /// Reads a redirect target back off the sign-in properties and forces it to a local path. The
+    /// value round-tripped through the external provider, so it is treated as untrusted on the way
+    /// back and any tampering is logged.
+    /// </summary>
+    private string SafePathFromProperties(AuthenticateResult authenticateResult, string key, string fallback)
+    {
+        var value = authenticateResult.Properties?.Items[key] ?? fallback;
+        var safeValue = GetSafeLocalPath(value, fallback);
+
+        if (safeValue != value)
+            logger.LogWarning("Invalid {Key} detected in callback: {Value}", key, value);
+
+        return safeValue;
     }
 
     private IActionResult RedirectWithError(string returnUrl, string error)

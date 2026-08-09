@@ -59,6 +59,9 @@ public class UpdateScoresForNextRoundFlowTests
     private void GivenNoActiveRound() =>
         _rounds.GetOldestInProgressRoundAsync(SeasonId, Arg.Any<CancellationToken>()).Returns((Round?)null);
 
+    private void GivenNoCompetition() =>
+        _competitions.GetByIdAsync(CompetitionId, Arg.Any<CancellationToken>()).Returns((Competition?)null);
+
     private void GivenSeasonAndCompetition(bool isTournament = false, bool seasonExists = true)
     {
         _seasons.GetByIdAsync(SeasonId, Arg.Any<CancellationToken>()).Returns(seasonExists
@@ -240,6 +243,22 @@ public class UpdateScoresForNextRoundFlowTests
 
         await _mediator.Received(1).Send(
             Arg.Is<UpdateMatchResultsCommand>(c => c.Matches.Single().Status == MatchStatus.Completed),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ShouldTreatTheSeasonAsALeague_WhenItsCompetitionCannotBeFound()
+    {
+        // Defensive: the season points at a competition that is no longer there, so knockout rules
+        // cannot be established and league rules apply.
+        GivenNoCompetition();
+        GivenActiveRound(Match(1, KickedOff, MatchStatus.InProgress, externalId: 5001));
+        GivenLiveFixtures(LiveFixture(5001, 1, 1, status: "ET"));
+
+        await HandleAsync();
+
+        await _mediator.Received(1).Send(
+            Arg.Is<UpdateMatchResultsCommand>(c => c.Matches.Single().Status == MatchStatus.InProgress),
             Arg.Any<CancellationToken>());
     }
 

@@ -4,6 +4,7 @@ using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using ThePredictions.Application.Features.Admin.Teams.Queries;
+using ThePredictions.Application.FootballApi.DTOs;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.Seasons;
@@ -66,36 +67,12 @@ public class CreateSeasonCommandHandler(
             if (apiSeason == null)
                 throw new ValidationException($"The API returned no season data for League ID {competition.ApiLeagueId.Value} and Year {seasonYear}. Please verify the details.");
 
-            // Skip date and round count validation for tournaments — the API may not have
+            // Skip date and round count validation for tournaments - the API may not have
             // accurate end dates or all round names for future knockout stages
             if (!competition.IsTournament)
-            {
-                if (request.StartDateUtc.Date != apiSeason.Start.Date)
-                    validationFailures.Add(new ValidationFailure(nameof(request.StartDateUtc), $"The Start Date does not match the API. Expected: {apiSeason.Start:yyyy-MM-dd}, but you entered: {request.StartDateUtc:yyyy-MM-dd}."));
+                validationFailures.AddRange(await ValidateScheduleAgainstApiAsync(request, competition, apiSeason, seasonYear, cancellationToken));
 
-                if (request.EndDateUtc.Date != apiSeason.End.Date)
-                    validationFailures.Add(new ValidationFailure(nameof(request.EndDateUtc), $"The End Date does not match the API. Expected: {apiSeason.End:yyyy-MM-dd}, but you entered: {request.EndDateUtc:yyyy-MM-dd}."));
-
-                var apiRoundNames = (await footballDataService.GetRoundsForSeasonAsync(competition.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
-                if (request.NumberOfRounds != apiRoundNames.Count)
-                    validationFailures.Add(new ValidationFailure(nameof(request.NumberOfRounds), $"The Number of Rounds does not match the API. Expected: {apiRoundNames.Count}, but you entered: {request.NumberOfRounds}."));
-            }
-
-            var apiTeams = (await footballDataService.GetTeamsForSeasonAsync(competition.ApiLeagueId.Value, seasonYear, cancellationToken)).ToList();
-            var localTeams = await mediator.Send(new FetchAllTeamsQuery(), cancellationToken);
-
-            var localTeamApiIds = localTeams
-                .Where(t => t.ApiTeamId.HasValue)
-                .Select(t => t.ApiTeamId.GetValueOrDefault())
-                .ToHashSet();
-
-            var missingTeams = apiTeams
-                .Where(apiTeam => !localTeamApiIds.Contains(apiTeam.Team.Id))
-                .Select(apiTeam => apiTeam.Team.Name)
-                .ToList();
-
-            if (missingTeams.Any())
-                validationFailures.Add(new ValidationFailure(nameof(competition.ApiLeagueId), $"The following teams from the API do not exist in the database: {string.Join(", ", missingTeams)}. Please add them before creating the season."));
+            validationFailures.AddRange(await FindTeamsMissingLocallyAsync(competition, seasonYear, cancellationToken));
         }
         catch (HttpRequestException ex)
         {
@@ -104,6 +81,49 @@ public class CreateSeasonCommandHandler(
 
         if (validationFailures.Any())
             throw new ValidationException(validationFailures);
+    }
+
+    /// <summary>Checks the dates and round count typed in against what the feed says.</summary>
+    private async Task<List<ValidationFailure>> ValidateScheduleAgainstApiAsync(
+        CreateSeasonCommand request, Competition competition, ApiSeason apiSeason, int seasonYear, CancellationToken cancellationToken)
+    {
+        var failures = new List<ValidationFailure>();
+
+        if (request.StartDateUtc.Date != apiSeason.Start.Date)
+            failures.Add(new ValidationFailure(nameof(request.StartDateUtc), $"The Start Date does not match the API. Expected: {apiSeason.Start:yyyy-MM-dd}, but you entered: {request.StartDateUtc:yyyy-MM-dd}."));
+
+        if (request.EndDateUtc.Date != apiSeason.End.Date)
+            failures.Add(new ValidationFailure(nameof(request.EndDateUtc), $"The End Date does not match the API. Expected: {apiSeason.End:yyyy-MM-dd}, but you entered: {request.EndDateUtc:yyyy-MM-dd}."));
+
+        var apiRoundNames = (await footballDataService.GetRoundsForSeasonAsync(competition.ApiLeagueId!.Value, seasonYear, cancellationToken)).ToList();
+        if (request.NumberOfRounds != apiRoundNames.Count)
+            failures.Add(new ValidationFailure(nameof(request.NumberOfRounds), $"The Number of Rounds does not match the API. Expected: {apiRoundNames.Count}, but you entered: {request.NumberOfRounds}."));
+
+        return failures;
+    }
+
+    /// <summary>
+    /// Any team the feed lists for the season that the site does not hold. Fixtures for those teams
+    /// could not be synced, so they have to be added before the season is created.
+    /// </summary>
+    private async Task<List<ValidationFailure>> FindTeamsMissingLocallyAsync(Competition competition, int seasonYear, CancellationToken cancellationToken)
+    {
+        var apiTeams = (await footballDataService.GetTeamsForSeasonAsync(competition.ApiLeagueId!.Value, seasonYear, cancellationToken)).ToList();
+        var localTeams = await mediator.Send(new FetchAllTeamsQuery(), cancellationToken);
+
+        var localTeamApiIds = localTeams
+            .Where(t => t.ApiTeamId.HasValue)
+            .Select(t => t.ApiTeamId.GetValueOrDefault())
+            .ToHashSet();
+
+        var missingTeams = apiTeams
+            .Where(apiTeam => !localTeamApiIds.Contains(apiTeam.Team.Id))
+            .Select(apiTeam => apiTeam.Team.Name)
+            .ToList();
+
+        return missingTeams.Any()
+            ? [new ValidationFailure(nameof(competition.ApiLeagueId), $"The following teams from the API do not exist in the database: {string.Join(", ", missingTeams)}. Please add them before creating the season.")]
+            : [];
     }
 
     private async Task SaveTournamentMappingsAndCreatePlaceholderRoundsAsync(

@@ -125,24 +125,28 @@ public sealed class BoostService(IBoostReadRepository boostReadRepository, IBoos
             };
         }
 
-        var friendlyError = error switch
-        {
-            "UnknownBoost" => "Unknown boost type.",
-            "NotConfigured" => "This boost is not configured for the selected league.",
-            "AlreadyUsedThisRound" => "You have already used a boost for this league and round.",
-            "SeasonLimitReached" => "You have reached the season limit for this boost in this league.",
-            "WindowLimitReached" => "This boost is not available any more for this round (window limit reached).",
-            "NotAvailable" => "This boost is not available for this round.",
-            _ => error
-        };
-
         return new ApplyBoostResultDto
         {
             Success = false,
-            Error = friendlyError,
+            Error = FriendlyError(error),
             AlreadyUsedThisRound = error == "AlreadyUsedThisRound"
         };
     }
+
+    /// <summary>
+    /// Turns the write's refusal code into something a player can read. An unrecognised code is
+    /// passed through rather than swallowed, so nothing is lost if a new one is added.
+    /// </summary>
+    private static string? FriendlyError(string? error) => error switch
+    {
+        "UnknownBoost" => "Unknown boost type.",
+        "NotConfigured" => "This boost is not configured for the selected league.",
+        "AlreadyUsedThisRound" => "You have already used a boost for this league and round.",
+        "SeasonLimitReached" => "You have reached the season limit for this boost in this league.",
+        "WindowLimitReached" => "This boost is not available any more for this round (window limit reached).",
+        "NotAvailable" => "This boost is not available for this round.",
+        _ => error
+    };
 
     public async Task<bool> DeleteUserBoostUsageAsync(string userId, int leagueId, int roundId, CancellationToken cancellationToken)
     {

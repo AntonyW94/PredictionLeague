@@ -9,6 +9,7 @@ using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Commands;
 
@@ -34,17 +35,8 @@ public class SendRoundDigestEmailsCommandHandler(
             return;
         }
 
-        if (round.Status != RoundStatus.Completed)
-        {
-            logger.LogInformation("Round Results Digest: Round (ID: {RoundId}) is not completed; skipping.", round.Id);
+        if (!ShouldSend(round, request))
             return;
-        }
-
-        if (round.ResultsDigestSentUtc is not null && !request.Force)
-        {
-            logger.LogInformation("Round Results Digest: Already sent for Round (ID: {RoundId}); skipping.", round.Id);
-            return;
-        }
 
         var templateId = _brevoSettings.Templates?.RoundResultsDigest;
         if (!templateId.HasValue || templateId.Value == 0)
@@ -54,12 +46,49 @@ public class SendRoundDigestEmailsCommandHandler(
         }
 
         var digests = await mediator.Send(new GetRoundDigestQuery(round.Id), cancellationToken);
+        var badgesByUser = GroupBadgesByUser(request.BadgesAwarded);
 
-        var baseUrl = _siteSettings.ResolvedBaseUrl;
+        foreach (var digest in digests)
+        {
+            // GetValueOrDefault with an explicit fallback: the try-get-and-branch form compiled to
+            // more branches here than the two this actually has.
+            var parameters = BuildParameters(digest, badgesByUser.GetValueOrDefault(digest.UserId, []));
+            await emailService.SendTemplatedEmailAsync(digest.Email, templateId.Value, parameters);
+        }
 
-        // Group the newly-earned badges by user, collapsing each collection to the single highest tier
-        // earned this round (so a player who jumped bronze -> gold sees one gold Sharpshooter, not three).
-        var badgesByUser = (request.BadgesAwarded ?? [])
+        round.MarkResultsDigestSent(dateTimeProvider);
+        await roundRepository.UpdateResultsDigestSentAsync(round, cancellationToken);
+
+        logger.LogInformation("Round Results Digest: Sent {Count} emails for Round (ID: {RoundId}).", digests.Count, round.Id);
+    }
+
+    /// <summary>
+    /// The digest only goes out once the round is genuinely finished, and only once - unless an
+    /// administrator has explicitly asked to resend it.
+    /// </summary>
+    private bool ShouldSend(Round round, SendRoundDigestEmailsCommand request)
+    {
+        if (round.Status != RoundStatus.Completed)
+        {
+            logger.LogInformation("Round Results Digest: Round (ID: {RoundId}) is not completed; skipping.", round.Id);
+            return false;
+        }
+
+        if (round.ResultsDigestSentUtc is not null && !request.Force)
+        {
+            logger.LogInformation("Round Results Digest: Already sent for Round (ID: {RoundId}); skipping.", round.Id);
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The badges each player earned this round, collapsed to the single highest tier per collection
+    /// so someone who jumped bronze to gold sees one gold Sharpshooter rather than three badges.
+    /// </summary>
+    private static Dictionary<string, List<BadgeDisplay>> GroupBadgesByUser(IReadOnlyList<RoundBadgeAward>? badgesAwarded) =>
+        (badgesAwarded ?? [])
             .Select(award => new { award.UserId, Display = BadgeCatalogue.Resolve(award.BadgeKey) })
             .Where(x => x.Display is not null)
             .GroupBy(x => x.UserId)
@@ -71,13 +100,12 @@ public class SendRoundDigestEmailsCommandHandler(
                     .OrderBy(display => display.Name)
                     .ToList());
 
-        foreach (var digest in digests)
-        {
-            // GetValueOrDefault with an explicit fallback: the try-get-and-branch form compiled to
-            // more branches here than the two this actually has.
-            var earnedBadges = badgesByUser.GetValueOrDefault(digest.UserId, []);
+    /// <summary>The merge fields for one player's email.</summary>
+    private object BuildParameters(UserRoundDigest digest, List<BadgeDisplay> earnedBadges)
+    {
+        var baseUrl = _siteSettings.ResolvedBaseUrl;
 
-            var parameters = new
+        return new
             {
                 FIRST_NAME = digest.FirstName,
                 ROUND_NAME = digest.RoundName,
@@ -103,13 +131,5 @@ public class SendRoundDigestEmailsCommandHandler(
                     LEAGUE_URL = $"{baseUrl}/leagues/{league.LeagueId}/dashboard"
                 }).ToList()
             };
-
-            await emailService.SendTemplatedEmailAsync(digest.Email, templateId.Value, parameters);
-        }
-
-        round.MarkResultsDigestSent(dateTimeProvider);
-        await roundRepository.UpdateResultsDigestSentAsync(round, cancellationToken);
-
-        logger.LogInformation("Round Results Digest: Sent {Count} emails for Round (ID: {RoundId}).", digests.Count, round.Id);
     }
 }

@@ -5,6 +5,7 @@ using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Formatters;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
+using ThePredictions.Contracts.Admin.Users;
 using ThePredictions.Contracts.Rounds;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Exceptions;
@@ -66,41 +67,56 @@ public class SendPredictionRemindersCommandHandler(
             cancellationToken);
 
         var throttleCutoff = nowUtc - ThrottleWindow;
-        var baseUrl = _siteSettings.ResolvedBaseUrl;
-        var predictionsUrl = $"{baseUrl}/predictions/{request.RoundId}";
+        var (dueNow, skippedRecentlyReminded) = SplitByThrottle(usersStillMissing, lastReminded, throttleCutoff);
 
-        var sentCount = 0;
-        var skippedRecentlyReminded = 0;
-
-        foreach (var user in usersStillMissing)
+        foreach (var user in dueNow)
         {
-            if (lastReminded.TryGetValue(user.UserId, out var remindedAt) && remindedAt > throttleCutoff)
-            {
-                skippedRecentlyReminded++;
-                continue;
-            }
-
-            var parameters = new
-            {
-                FIRST_NAME = user.FirstName,
-                ROUND_NAME = user.RoundName,
-                DEADLINE = dateFormatter.FormatDeadline(user.DeadlineUtc),
-                PREDICTIONS_URL = predictionsUrl
-            };
-            await emailService.SendTemplatedEmailAsync(user.Email, templateId.Value, parameters);
-
-            var notification = PredictionReminderNotification.Create(request.RoundId, user.UserId, request.CurrentUserId, dateTimeProvider);
-            await reminderNotificationRepository.UpsertAsync(notification, cancellationToken);
-
-            sentCount++;
-            logger.LogInformation("Sent ad-hoc prediction reminder for Round (ID: {RoundId}) to User (ID: {UserId})", request.RoundId, user.UserId);
+            await ChaseAsync(user, request, templateId.Value, cancellationToken);
         }
+
+        var sentCount = dueNow.Count;
 
         logger.LogInformation(
             "Ad-hoc prediction reminders for Round (ID: {RoundId}): sent {Sent}, skipped {SkippedRecent} recently reminded, skipped {SkippedComplete} no longer missing",
             request.RoundId, sentCount, skippedRecentlyReminded, skippedNoLongerMissing);
 
         return new SendPredictionRemindersResultDto(sentCount, skippedRecentlyReminded, skippedNoLongerMissing);
+    }
+
+    /// <summary>
+    /// Separates the players due a nudge from those chased too recently. Predictions are per season,
+    /// so without this a player in several leagues would be nudged once per league owner.
+    /// </summary>
+    private static (List<ChaseUserDto> DueNow, int SkippedRecentlyReminded) SplitByThrottle(
+        List<ChaseUserDto> usersStillMissing, IReadOnlyDictionary<string, DateTime> lastReminded, DateTime throttleCutoff)
+    {
+        var dueNow = usersStillMissing
+            .Where(u => !lastReminded.TryGetValue(u.UserId, out var remindedAt) || remindedAt <= throttleCutoff)
+            .ToList();
+
+        return (dueNow, usersStillMissing.Count - dueNow.Count);
+    }
+
+    /// <summary>
+    /// Emails one player and stamps the sent-log, so the throttle above knows not to chase them
+    /// again for a while.
+    /// </summary>
+    private async Task ChaseAsync(ChaseUserDto user, SendPredictionRemindersCommand request, long templateId, CancellationToken cancellationToken)
+    {
+        var parameters = new
+        {
+            FIRST_NAME = user.FirstName,
+            ROUND_NAME = user.RoundName,
+            DEADLINE = dateFormatter.FormatDeadline(user.DeadlineUtc),
+            PREDICTIONS_URL = $"{_siteSettings.ResolvedBaseUrl}/predictions/{request.RoundId}"
+        };
+
+        await emailService.SendTemplatedEmailAsync(user.Email, templateId, parameters);
+
+        var notification = PredictionReminderNotification.Create(request.RoundId, user.UserId, request.CurrentUserId, dateTimeProvider);
+        await reminderNotificationRepository.UpsertAsync(notification, cancellationToken);
+
+        logger.LogInformation("Sent ad-hoc prediction reminder for Round (ID: {RoundId}) to User (ID: {UserId})", request.RoundId, user.UserId);
     }
 
     private async Task AuthoriseAsync(SendPredictionRemindersCommand request, CancellationToken cancellationToken)

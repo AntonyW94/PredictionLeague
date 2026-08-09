@@ -27,28 +27,11 @@ public class SendPrizeNotificationsCommandHandler(
     public async Task Handle(SendPrizeNotificationsCommand request, CancellationToken cancellationToken)
     {
         var round = await roundRepository.GetByIdAsync(request.RoundId, cancellationToken);
-        if (round is null)
-        {
-            logger.LogWarning("Prize Won: Round (ID: {RoundId}) not found.", request.RoundId);
+        var templateId = ResolveTemplateId(round, request.RoundId);
+        if (templateId is null)
             return;
-        }
 
-        if (round.Status != RoundStatus.Completed)
-        {
-            logger.LogInformation("Prize Won: Round (ID: {RoundId}) is not completed; skipping.", round.Id);
-            return;
-        }
-
-        var templateId = _brevoSettings.Templates?.PrizeWon;
-        if (!templateId.HasValue || templateId.Value == 0)
-        {
-            logger.LogError("Prize Won: Email template ID not configured.");
-            return;
-        }
-
-        var winners = await mediator.Send(new GetPrizeWinnersForRoundQuery(round.Id), cancellationToken);
-
-        var baseUrl = _siteSettings.ResolvedBaseUrl;
+        var winners = await mediator.Send(new GetPrizeWinnersForRoundQuery(round!.Id), cancellationToken);
 
         var sentLog = new List<PrizeNotification>();
         var emailsSent = 0;
@@ -63,33 +46,10 @@ public class SendPrizeNotificationsCommandHandler(
             if (prizesToSend.Count == 0)
                 continue;
 
-            var parameters = new
-            {
-                FIRST_NAME = winner.FirstName,
-                ROUND_NAME = winner.RoundName,
-                PRIZE_COUNT = prizesToSend.Count,
-                PRIZES = prizesToSend.Select(prize => new
-                {
-                    PRIZE_TITLE = PrizeNotificationFormatter.Title(prize),
-                    LEAGUE_NAME = prize.LeagueName,
-                    PRIZE_VALUE = PrizeNotificationFormatter.Money(prize.Amount),
-                    LEAGUE_URL = $"{baseUrl}/leagues/{prize.LeagueId}/dashboard"
-                }).ToList()
-            };
-
-            await emailService.SendTemplatedEmailAsync(winner.Email, templateId.Value, parameters);
+            await emailService.SendTemplatedEmailAsync(winner.Email, templateId.Value, BuildParameters(winner, prizesToSend));
             emailsSent++;
 
-            // Only log prizes not already recorded, so a forced re-send can't violate the unique key.
-            foreach (var prize in prizesToSend.Where(prize => !prize.AlreadyNotified))
-            {
-                sentLog.Add(PrizeNotification.Create(
-                    winner.UserId,
-                    prize.LeaguePrizeSettingId,
-                    prize.RoundNumber,
-                    prize.Month,
-                    dateTimeProvider));
-            }
+            sentLog.AddRange(BuildSentLog(winner, prizesToSend));
         }
 
         if (sentLog.Count > 0)
@@ -97,4 +57,66 @@ public class SendPrizeNotificationsCommandHandler(
 
         logger.LogInformation("Prize Won: Sent {Count} emails for Round (ID: {RoundId}).", emailsSent, round.Id);
     }
+
+    /// <summary>
+    /// The template to send with, or null when there is nothing to do: no such round, a round that
+    /// has not finished, or no configured template.
+    /// </summary>
+    private long? ResolveTemplateId(Round? round, int requestedRoundId)
+    {
+        if (round is null)
+        {
+            logger.LogWarning("Prize Won: Round (ID: {RoundId}) not found.", requestedRoundId);
+            return null;
+        }
+
+        if (round.Status != RoundStatus.Completed)
+        {
+            logger.LogInformation("Prize Won: Round (ID: {RoundId}) is not completed; skipping.", round.Id);
+            return null;
+        }
+
+        var templateId = _brevoSettings.Templates?.PrizeWon;
+        if (templateId is null or 0)
+        {
+            logger.LogError("Prize Won: Email template ID not configured.");
+            return null;
+        }
+
+        return templateId;
+    }
+
+    /// <summary>The merge fields for one winner's email, listing every prize being announced.</summary>
+    private object BuildParameters(PrizeWinner winner, IReadOnlyList<WonPrize> prizesToSend)
+    {
+        var baseUrl = _siteSettings.ResolvedBaseUrl;
+
+        return new
+        {
+            FIRST_NAME = winner.FirstName,
+            ROUND_NAME = winner.RoundName,
+            PRIZE_COUNT = prizesToSend.Count,
+            PRIZES = prizesToSend.Select(prize => new
+            {
+                PRIZE_TITLE = PrizeNotificationFormatter.Title(prize),
+                LEAGUE_NAME = prize.LeagueName,
+                PRIZE_VALUE = PrizeNotificationFormatter.Money(prize.Amount),
+                LEAGUE_URL = $"{baseUrl}/leagues/{prize.LeagueId}/dashboard"
+            }).ToList()
+        };
+    }
+
+    /// <summary>
+    /// Only prizes not already recorded, so a forced re-send announces everything again without
+    /// violating the sent-log's unique key.
+    /// </summary>
+    private IEnumerable<PrizeNotification> BuildSentLog(PrizeWinner winner, IReadOnlyList<WonPrize> prizesToSend) =>
+        prizesToSend
+            .Where(prize => !prize.AlreadyNotified)
+            .Select(prize => PrizeNotification.Create(
+                winner.UserId,
+                prize.LeaguePrizeSettingId,
+                prize.RoundNumber,
+                prize.Month,
+                dateTimeProvider));
 }

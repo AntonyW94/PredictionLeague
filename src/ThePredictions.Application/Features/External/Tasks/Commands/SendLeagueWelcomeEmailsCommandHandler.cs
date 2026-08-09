@@ -43,62 +43,73 @@ public class SendLeagueWelcomeEmailsCommandHandler(
         if (leagues.Count == 0)
             return new SendLeagueWelcomeEmailsResult(LeaguesProcessed: 0, EmailsSent: 0);
 
-        var baseUrl = _siteSettings.ResolvedBaseUrl;
-
         var emailsSent = 0;
 
         foreach (var league in leagues)
         {
-            var prizeSections = LeagueWelcomeEmailFormatter.PrizeSections(league);
-            var boostLines = LeagueWelcomeEmailFormatter.BoostLines(league);
-            var hasPrizes = league.HasPrizes && prizeSections.Count > 0;
-
-            var sentLog = new List<LeagueWelcomeNotification>();
-
-            foreach (var recipient in league.Recipients)
-            {
-                var parameters = new
-                {
-                    FIRST_NAME = recipient.FirstName,
-                    LEAGUE_NAME = league.LeagueName,
-                    SEASON_NAME = league.SeasonName,
-                    MEMBER_COUNT = league.MemberCount,
-                    HAS_PRIZES = hasPrizes,
-                    PRIZE_POT = LeagueWelcomeEmailFormatter.PrizePot(league),
-                    PRIZE_SECTIONS = prizeSections.Select(section => new
-                    {
-                        SECTION_TITLE = section.Title,
-                        PRIZES = section.Prizes.Select(line => new
-                        {
-                            PRIZE_TITLE = line.Title,
-                            PRIZE_VALUE = line.Value,
-                            IS_TOP = line.IsTop
-                        }).ToList()
-                    }).ToList(),
-                    HAS_BOOSTS = boostLines.Count > 0,
-                    BOOSTS = boostLines.Select(line => new
-                    {
-                        BOOST_NAME = line.Name,
-                        BOOST_DESCRIPTION = line.Description,
-                        BOOST_USAGE = line.Usage,
-                        BOOST_IMAGE_URL = AbsoluteImageUrl(line.ImageUrl)
-                    }).ToList(),
-                    LEAGUE_URL = $"{baseUrl}/leagues/{league.LeagueId}/dashboard"
-                };
-
-                await emailService.SendTemplatedEmailAsync(recipient.Email, templateId.Value, parameters);
-                emailsSent++;
-
-                sentLog.Add(LeagueWelcomeNotification.Create(league.LeagueId, recipient.UserId, dateTimeProvider));
-            }
-
-            if (sentLog.Count > 0)
-                await welcomeNotificationRepository.AddNotificationsAsync(sentLog, cancellationToken);
-
-            logger.LogInformation("League Welcome: Sent {Count} welcome emails for League (ID: {LeagueId})", sentLog.Count, league.LeagueId);
+            emailsSent += await SendForLeagueAsync(league, templateId.Value, cancellationToken);
         }
 
         return new SendLeagueWelcomeEmailsResult(LeaguesProcessed: leagues.Count, EmailsSent: emailsSent);
+    }
+
+    /// <summary>
+    /// Welcomes everyone waiting on this league and records who was told, so a later run does not
+    /// welcome them twice.
+    /// </summary>
+    private async Task<int> SendForLeagueAsync(LeagueWelcomeLeague league, long templateId, CancellationToken cancellationToken)
+    {
+        var sentLog = new List<LeagueWelcomeNotification>();
+
+        foreach (var recipient in league.Recipients)
+        {
+            await emailService.SendTemplatedEmailAsync(recipient.Email, templateId, BuildParameters(league, recipient));
+            sentLog.Add(LeagueWelcomeNotification.Create(league.LeagueId, recipient.UserId, dateTimeProvider));
+        }
+
+        if (sentLog.Count > 0)
+            await welcomeNotificationRepository.AddNotificationsAsync(sentLog, cancellationToken);
+
+        logger.LogInformation("League Welcome: Sent {Count} welcome emails for League (ID: {LeagueId})", sentLog.Count, league.LeagueId);
+
+        return sentLog.Count;
+    }
+
+    /// <summary>The merge fields for one recipient: the league's prizes, its boosts and a way in.</summary>
+    private object BuildParameters(LeagueWelcomeLeague league, LeagueWelcomeRecipient recipient)
+    {
+        var baseUrl = _siteSettings.ResolvedBaseUrl;
+        var prizeSections = LeagueWelcomeEmailFormatter.PrizeSections(league);
+        var boostLines = LeagueWelcomeEmailFormatter.BoostLines(league);
+
+        return new
+        {
+            FIRST_NAME = recipient.FirstName,
+            LEAGUE_NAME = league.LeagueName,
+            SEASON_NAME = league.SeasonName,
+            MEMBER_COUNT = league.MemberCount,
+            HAS_PRIZES = league.HasPrizes && prizeSections.Count > 0,
+            PRIZE_POT = LeagueWelcomeEmailFormatter.PrizePot(league),
+            PRIZE_SECTIONS = prizeSections.Select(section => new
+            {
+                SECTION_TITLE = section.Title,
+                PRIZES = section.Prizes.Select(line => new
+                {
+                    PRIZE_TITLE = line.Title,
+                    PRIZE_VALUE = line.Value,
+                    IS_TOP = line.IsTop
+                }).ToList()
+            }).ToList(),
+            HAS_BOOSTS = boostLines.Count > 0,
+            BOOSTS = boostLines.Select(line => new
+            {
+                BOOST_NAME = line.Name,
+                BOOST_DESCRIPTION = line.Description,
+                BOOST_USAGE = line.Usage,
+                BOOST_IMAGE_URL = AbsoluteImageUrl(line.ImageUrl)
+            }).ToList(),
+            LEAGUE_URL = $"{baseUrl}/leagues/{league.LeagueId}/dashboard"
+        };
     }
 
     /// <summary>
