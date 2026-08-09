@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using FluentAssertions;
 using NSubstitute;
 using ThePredictions.Application.Data;
@@ -21,11 +22,11 @@ public class GetSeasonPassHoldersQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnNull_WhenSeasonDoesNotExist()
+    public async Task Handle_ShouldThrowEntityNotFound_WhenSeasonDoesNotExist()
     {
-        var result = await _handler.Handle(Query(), CancellationToken.None);
+        var act = () => _handler.Handle(Query(), CancellationToken.None);
 
-        result.Should().BeNull();
+        await act.Should().ThrowAsync<EntityNotFoundException>();
     }
 
     [Fact]
@@ -36,7 +37,7 @@ public class GetSeasonPassHoldersQueryHandlerTests
         var result = await _handler.Handle(Query(page: 3), CancellationToken.None);
 
         result.Should().NotBeNull();
-        result!.SeasonName.Should().Be("World Cup 2026");
+        result.SeasonName.Should().Be("World Cup 2026");
         result.TotalCollected.Should().Be(0);
         result.Holders.Items.Should().BeEmpty();
         result.Holders.Page.Should().Be(1);
@@ -60,7 +61,7 @@ public class GetSeasonPassHoldersQueryHandlerTests
 
         var result = await _handler.Handle(Query(), CancellationToken.None);
 
-        result!.TotalCollected.Should().Be(412.50m);
+        result.TotalCollected.Should().Be(412.50m);
         result.Holders.TotalCount.Should().Be(33);
     }
 
@@ -80,7 +81,7 @@ public class GetSeasonPassHoldersQueryHandlerTests
 
         var result = await _handler.Handle(Query(), CancellationToken.None);
 
-        result!.Holders.Items.Should().ContainSingle().Which.Should().BeEquivalentTo(
+        result.Holders.Items.Should().ContainSingle().Which.Should().BeEquivalentTo(
             new SeasonPassHolderDto("user-9", "Jane Doe", "jane@example.com", SeasonPassTier.Standard, SeasonPassSource.Trial, 11m, 4m, acquired));
     }
 
@@ -96,7 +97,7 @@ public class GetSeasonPassHoldersQueryHandlerTests
 
         var result = await _handler.Handle(Query(pageSize: requested), CancellationToken.None);
 
-        result!.Holders.PageSize.Should().Be(expected);
+        result.Holders.PageSize.Should().Be(expected);
         PageParameter("Take").Should().Be(expected);
     }
 
@@ -107,7 +108,7 @@ public class GetSeasonPassHoldersQueryHandlerTests
 
         var result = await _handler.Handle(Query(page: 99, pageSize: 5), CancellationToken.None);
 
-        result!.Holders.Page.Should().Be(3);
+        result.Holders.Page.Should().Be(3);
         PageParameter("Skip").Should().Be(10);
     }
 
@@ -120,7 +121,7 @@ public class GetSeasonPassHoldersQueryHandlerTests
 
         var result = await _handler.Handle(Query(page: requestedPage, pageSize: 5), CancellationToken.None);
 
-        result!.Holders.Page.Should().Be(1);
+        result.Holders.Page.Should().Be(1);
         PageParameter("Skip").Should().Be(0);
     }
 
@@ -165,6 +166,9 @@ public class GetSeasonPassHoldersQueryHandlerTests
     [InlineData("   ")]
     public async Task Handle_ShouldNotFilterByName_WhenTheNameFilterIsBlank(string? nameFilter)
     {
+        // The season has to exist for the handler to get as far as reading rows.
+        GivenSummary(matchingCount: 0, totalCollected: 0);
+
         await _handler.Handle(Query(nameFilter: nameFilter), CancellationToken.None);
 
         SummaryParameter("NameFilter").Should().BeNull();
@@ -173,6 +177,9 @@ public class GetSeasonPassHoldersQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldTrimTheNameFilter_WhenItHasSurroundingSpace()
     {
+        // The season has to exist for the handler to get as far as reading rows.
+        GivenSummary(matchingCount: 0, totalCollected: 0);
+
         await _handler.Handle(Query(nameFilter: "  Smith  "), CancellationToken.None);
 
         SummaryParameter("NameFilter").Should().Be("Smith");
@@ -185,6 +192,9 @@ public class GetSeasonPassHoldersQueryHandlerTests
     [InlineData("100%_[x]", "100[%][_][[]x]")]
     public async Task Handle_ShouldEscapeLikeWildcards_WhenTheNameFilterContainsThem(string nameFilter, string expected)
     {
+        // The season has to exist for the handler to get as far as reading rows.
+        GivenSummary(matchingCount: 0, totalCollected: 0);
+
         await _handler.Handle(Query(nameFilter: nameFilter), CancellationToken.None);
 
         SummaryParameter("NameFilter").Should().Be(expected);
@@ -198,6 +208,9 @@ public class GetSeasonPassHoldersQueryHandlerTests
         var from = new DateTime(2026, 8, 3, 23, 0, 0, DateTimeKind.Utc);
         var before = new DateTime(2026, 8, 4, 23, 0, 0, DateTimeKind.Utc);
 
+        // The season has to exist for the handler to get as far as reading rows.
+        GivenSummary(matchingCount: 0, totalCollected: 0);
+
         await _handler.Handle(Query(acquiredFromUtc: from, acquiredBeforeUtc: before), CancellationToken.None);
 
         SummaryParameter("AcquiredFromUtc").Should().Be(from);
@@ -207,6 +220,9 @@ public class GetSeasonPassHoldersQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldNotFilterByDate_WhenNoDatesAreGiven()
     {
+        // The season has to exist for the handler to get as far as reading rows.
+        GivenSummary(matchingCount: 0, totalCollected: 0);
+
         await _handler.Handle(Query(), CancellationToken.None);
 
         SummaryParameter("AcquiredFromUtc").Should().BeNull();
@@ -216,6 +232,9 @@ public class GetSeasonPassHoldersQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldPassThePriceRangeThrough_WhenFilteringOnPrice()
     {
+        // The season has to exist for the handler to get as far as reading rows.
+        GivenSummary(matchingCount: 0, totalCollected: 0);
+
         await _handler.Handle(Query(minimumPaid: 5m, maximumPaid: 20.50m), CancellationToken.None);
 
         SummaryParameter("MinimumPaid").Should().Be(5m);

@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
@@ -8,9 +9,9 @@ using ThePredictions.Domain.Common.Enumerations;
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetLeagueDashboardQuery, LeagueDashboardDto?>
+public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetLeagueDashboardQuery, LeagueDashboardDto>
 {
-    public async Task<LeagueDashboardDto?> Handle(GetLeagueDashboardQuery request, CancellationToken cancellationToken)
+    public async Task<LeagueDashboardDto> Handle(GetLeagueDashboardQuery request, CancellationToken cancellationToken)
     {
         if (!request.IsAdmin)
         {
@@ -25,8 +26,12 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
                 ApprovedStatus = nameof(LeagueMemberStatus.Approved)
             });
 
+            // Deliberately "not found" rather than "not allowed": a non-member must not be able to
+            // learn that a league exists by the status code they get back, so both cases answer 404
+            // with the same message. This is not a mistaken use of EntityNotFoundException - the
+            // league may well exist.
             if (!isMember)
-                return null;
+                throw new EntityNotFoundException("League", request.LeagueId);
         }
         
         const string leagueSql = @"
@@ -60,7 +65,7 @@ public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConne
                 CompletedStatus = nameof(RoundStatus.Completed)
             });
         if (leagueInfo == default)
-            return null;
+            throw new EntityNotFoundException("League", request.LeagueId);
 
         const string roundsSql = @"
             SELECT

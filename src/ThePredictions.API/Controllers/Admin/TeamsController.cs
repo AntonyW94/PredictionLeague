@@ -76,12 +76,7 @@ public class TeamsController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetTeamByIdQuery(teamId);
-        var team = await mediator.Send(query, cancellationToken);
-
-        if (team == null)
-            return NotFound();
-
-        return Ok(team);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     #endregion

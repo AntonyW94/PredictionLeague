@@ -7,4 +7,4 @@ namespace ThePredictions.Application.Features.Leagues.Queries;
 [ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
 public record GetLeagueDashboardQuery(int LeagueId,
     string UserId,
-    bool IsAdmin) : IRequest<LeagueDashboardDto?>;
+    bool IsAdmin) : IRequest<LeagueDashboardDto>;

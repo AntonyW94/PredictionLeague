@@ -91,12 +91,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetLeagueByIdQuery(leagueId, CurrentUserId);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{leagueId:int}/members")]
@@ -112,12 +107,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new FetchLeagueMembersQuery(leagueId, CurrentUserId);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{leagueId:int}/rounds/{roundId:int}/completion")]
@@ -135,12 +125,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
     {
         var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
         var query = new GetRoundCompletionQuery(roundId, leagueId, CurrentUserId, isAdmin);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpPost("{leagueId:int}/rounds/{roundId:int}/reminders")]
@@ -188,12 +173,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetLeaguePrizesPageQuery(leagueId, CurrentUserId);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{leagueId:int}/rounds/{roundId:int}/results")]
@@ -210,12 +190,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetLeagueDashboardRoundResultsQuery(leagueId, roundId, CurrentUserId);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{leagueId:int}/rounds-for-dashboard")]
@@ -248,12 +223,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
     {
         var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
         var query = new GetLeagueDashboardQuery(leagueId, CurrentUserId, isAdmin);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     #region Dashboard
@@ -410,12 +380,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetSeasonRecapQuery(leagueId, CurrentUserId);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{leagueId:int}/records")]
@@ -431,12 +396,7 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetLeagueRecordsQuery(leagueId, CurrentUserId);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     #endregion

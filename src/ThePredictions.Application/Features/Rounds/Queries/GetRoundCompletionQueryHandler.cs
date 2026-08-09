@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -10,7 +11,7 @@ namespace ThePredictions.Application.Features.Rounds.Queries;
 public class GetRoundCompletionQueryHandler(
     IApplicationReadDbConnection dbConnection,
     ILeagueMembershipService membershipService,
-    IDateTimeProvider dateTimeProvider) : IRequestHandler<GetRoundCompletionQuery, RoundCompletionDto?>
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<GetRoundCompletionQuery, RoundCompletionDto>
 {
     // A fixture counts towards completion only while a player can still act on it: teams confirmed,
     // still scheduled (not in progress, completed or postponed), and not yet locked. "Locked" mirrors
@@ -25,7 +26,7 @@ public class GetRoundCompletionQueryHandler(
         AND m.[Status] = @ScheduledStatus
         AND COALESCE(m.[CustomLockTimeUtc], @RoundDeadlineUtc) > @NowUtc";
 
-    public async Task<RoundCompletionDto?> Handle(GetRoundCompletionQuery request, CancellationToken cancellationToken)
+    public async Task<RoundCompletionDto> Handle(GetRoundCompletionQuery request, CancellationToken cancellationToken)
     {
         var canSendReminders = await AuthoriseAsync(request, cancellationToken);
 
@@ -47,7 +48,7 @@ public class GetRoundCompletionQueryHandler(
             new { request.RoundId });
 
         if (roundInfo == null)
-            return null;
+            throw new EntityNotFoundException("Round", request.RoundId);
 
         var parameters = new
         {

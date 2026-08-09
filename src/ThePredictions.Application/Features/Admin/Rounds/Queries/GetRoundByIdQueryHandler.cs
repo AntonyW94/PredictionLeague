@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Rounds;
@@ -7,9 +8,9 @@ using System.Diagnostics.CodeAnalysis;
 namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetRoundByIdQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetRoundByIdQuery, RoundDetailsDto?>
+public class GetRoundByIdQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetRoundByIdQuery, RoundDetailsDto>
 {
-    public async Task<RoundDetailsDto?> Handle(GetRoundByIdQuery request, CancellationToken cancellationToken)
+    public async Task<RoundDetailsDto> Handle(GetRoundByIdQuery request, CancellationToken cancellationToken)
     {
         const string sql = @"
             WITH ActiveMemberCount AS (
@@ -59,7 +60,7 @@ public class GetRoundByIdQueryHandler(IApplicationReadDbConnection dbConnection)
 
         var results = queryResult.ToList();
         if (!results.Any())
-            return null;
+            throw new EntityNotFoundException("Round", request.Id);
         
         var firstRow = results.First();
         var roundDto = new RoundDto(

@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
@@ -9,9 +10,9 @@ namespace ThePredictions.Application.Features.Leagues.Queries;
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetLeagueByIdQueryHandler(
     IApplicationReadDbConnection dbConnection,
-    ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueByIdQuery, LeagueDto?>
+    ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueByIdQuery, LeagueDto>
 {
-    public async Task<LeagueDto?> Handle(GetLeagueByIdQuery request, CancellationToken cancellationToken)
+    public async Task<LeagueDto> Handle(GetLeagueByIdQuery request, CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.Id, request.CurrentUserId, cancellationToken);
 
@@ -61,23 +62,24 @@ public class GetLeagueByIdQueryHandler(
             new { request.Id }
         );
 
-        return league is null
-            ? null
-            : new LeagueDto(
-                league.Id,
-                league.Name,
-                league.SeasonName,
-                league.MemberCount,
-                league.Price,
-                league.EntryCode,
-                league.EntryDeadlineUtc,
-                league.PointsForExactScore,
-                league.PointsForCorrectResult,
-                league.SeasonId,
-                league.IsTournament,
-                league.HasPrizeScheme,
-                league.RequiresMemberApproval,
-                league.IsListed);
+        if (league is null)
+            throw new EntityNotFoundException("League", request.Id);
+
+        return new LeagueDto(
+            league.Id,
+            league.Name,
+            league.SeasonName,
+            league.MemberCount,
+            league.Price,
+            league.EntryCode,
+            league.EntryDeadlineUtc,
+            league.PointsForExactScore,
+            league.PointsForCorrectResult,
+            league.SeasonId,
+            league.IsTournament,
+            league.HasPrizeScheme,
+            league.RequiresMemberApproval,
+            league.IsListed);
     }
 
     [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]

@@ -81,12 +81,7 @@ public class RoundsController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetRoundByIdQuery(roundId);
-        var roundDetails = await mediator.Send(query, cancellationToken);
-
-        if (roundDetails == null)
-            return NotFound();
-
-        return Ok(roundDetails);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpGet("{roundId:int}/completion")]
@@ -102,12 +97,7 @@ public class RoundsController(IMediator mediator) : ApiControllerBase
         CancellationToken cancellationToken)
     {
         var query = new GetRoundCompletionQuery(roundId, LeagueId: null, CurrentUserId, IsSiteAdmin: true);
-        var result = await mediator.Send(query, cancellationToken);
-
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     #endregion

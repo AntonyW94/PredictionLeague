@@ -1,3 +1,4 @@
+using ThePredictions.Domain.Common.Exceptions;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -10,9 +11,9 @@ namespace ThePredictions.Application.Features.Leagues.Queries;
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetLeagueRecordsQueryHandler(
     IApplicationReadDbConnection dbConnection,
-    ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueRecordsQuery, LeagueRecordsDto?>
+    ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueRecordsQuery, LeagueRecordsDto>
 {
-    public async Task<LeagueRecordsDto?> Handle(GetLeagueRecordsQuery request, CancellationToken cancellationToken)
+    public async Task<LeagueRecordsDto> Handle(GetLeagueRecordsQuery request, CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.UserId, cancellationToken);
 
@@ -221,9 +222,10 @@ public class GetLeagueRecordsQueryHandler(
                 MonthlyPrizeType = PrizeType.Monthly
             });
 
-        return result is null
-            ? null
-            : new LeagueRecordsDto
+        if (result is null)
+            throw new EntityNotFoundException("League", request.LeagueId);
+
+        return new LeagueRecordsDto
             {
                 IsFree = result.IsFree,
                 TopRoundPlayerName = result.TopRoundPlayerName,

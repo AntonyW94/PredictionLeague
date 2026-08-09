@@ -27,12 +27,7 @@ public class AccountController(IMediator mediator) : ApiControllerBase
     public async Task<ActionResult<UserDetails>> GetUserDetailsAsync(CancellationToken cancellationToken)
     {
         var query = new GetUserQuery(CurrentUserId);
-        var userDetails = await mediator.Send(query, cancellationToken);
-
-        if (userDetails == null)
-            return NotFound();
-
-        return Ok(userDetails);
+        return Ok(await mediator.Send(query, cancellationToken));
     }
 
     [HttpPut("details")]
