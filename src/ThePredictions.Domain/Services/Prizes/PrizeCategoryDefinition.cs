@@ -1,6 +1,6 @@
 using ThePredictions.Domain.Common.Enumerations;
 
-namespace ThePredictions.Application.Common.Prizes;
+namespace ThePredictions.Domain.Services.Prizes;
 
 /// <summary>
 /// A registry row describing a prize category: how it is scored (<see cref="Kind"/>), its default

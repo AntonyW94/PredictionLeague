@@ -1,4 +1,4 @@
-using ThePredictions.Application.Common.Helpers;
+using ThePredictions.Domain.Services.Prizes;
 using ThePredictions.Application.Features.Admin.Rounds.Commands;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common.Enumerations;
@@ -79,7 +79,7 @@ public class OverallPrizeStrategy(
             return [];
 
         var anchorPrizeSetting = coveredPrizeSettings[0];
-        var individualPrizes = PrizeDistributionHelper.DistributePrizeMoney(pooledPrizeAmount, winnersForThisRank.Count);
+        var individualPrizes = SharedPrizeSplitter.Split(pooledPrizeAmount, winnersForThisRank.Count);
 
         return winnersForThisRank
             .Select((winner, i) => Winning.Create(

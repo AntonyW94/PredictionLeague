@@ -1,4 +1,4 @@
-using ThePredictions.Application.Common.Helpers;
+using ThePredictions.Domain.Services.Prizes;
 using ThePredictions.Application.Features.Admin.Rounds.Commands;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common.Enumerations;
@@ -39,7 +39,7 @@ public class MostExactScoresPrizeStrategy(
             if (!exactScoresWinners.Any())
                 return;
 
-            var individualPrizes = PrizeDistributionHelper.DistributePrizeMoney(
+            var individualPrizes = SharedPrizeSplitter.Split(
                 exactScoresPrize.PrizeAmount,
                 exactScoresWinners.Count
             );

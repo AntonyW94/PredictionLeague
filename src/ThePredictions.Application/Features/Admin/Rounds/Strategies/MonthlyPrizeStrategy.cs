@@ -1,4 +1,4 @@
-using ThePredictions.Application.Common.Helpers;
+using ThePredictions.Domain.Services.Prizes;
 using ThePredictions.Application.Features.Admin.Rounds.Commands;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common.Enumerations;
@@ -42,7 +42,7 @@ public class MonthlyPrizeStrategy(
         if (!monthlyWinners.Any())
             return;
 
-        var individualPrizes = PrizeDistributionHelper.DistributePrizeMoney(
+        var individualPrizes = SharedPrizeSplitter.Split(
             monthlyPrize.PrizeAmount,
             monthlyWinners.Count
         );

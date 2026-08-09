@@ -1,9 +1,9 @@
 using FluentAssertions;
-using ThePredictions.Application.Common.Prizes;
+using ThePredictions.Domain.Services.Prizes;
 using ThePredictions.Domain.Common.Enumerations;
 using Xunit;
 
-namespace ThePredictions.Application.Tests.Unit.Common.Prizes;
+namespace ThePredictions.Domain.Tests.Unit.Services.Prizes;
 
 public class PrizeCategoryRegistryTests
 {
