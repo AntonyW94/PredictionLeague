@@ -1,7 +1,6 @@
 using ThePredictions.Domain.Common.Enumerations;
-using ThePredictions.Domain.Services.Prizes;
 
-namespace ThePredictions.Application.Common.Prizes;
+namespace ThePredictions.Domain.Services.Prizes;
 
 /// <summary>
 /// The extensible catalogue of prize categories. Adding a future prize type is one row here (plus a

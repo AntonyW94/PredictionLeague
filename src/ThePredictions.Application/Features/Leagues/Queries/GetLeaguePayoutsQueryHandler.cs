@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Common.Prizes;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Payouts;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Services.Prizes;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 

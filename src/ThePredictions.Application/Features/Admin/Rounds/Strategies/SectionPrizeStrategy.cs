@@ -1,4 +1,4 @@
-using ThePredictions.Application.Common.Helpers;
+using ThePredictions.Domain.Services.Prizes;
 using ThePredictions.Application.Features.Admin.Rounds.Commands;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common;
@@ -110,7 +110,7 @@ public class SectionPrizeStrategy(
                 continue;
 
             var anchor = coveredSettings[0];
-            var shares = PrizeDistributionHelper.DistributePrizeMoney(pooled, winners.Count);
+            var shares = SharedPrizeSplitter.Split(pooled, winners.Count);
 
             for (var i = 0; i < winners.Count; i++)
                 winnings.Add(Winning.Create(winners[i].UserId, anchor.Id, shares[i], null, null, dateTimeProvider));

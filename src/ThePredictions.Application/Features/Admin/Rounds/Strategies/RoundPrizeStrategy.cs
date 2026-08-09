@@ -1,4 +1,4 @@
-using ThePredictions.Application.Common.Helpers;
+using ThePredictions.Domain.Services.Prizes;
 using ThePredictions.Application.Features.Admin.Rounds.Commands;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common.Enumerations;
@@ -35,7 +35,7 @@ public class RoundPrizeStrategy(
             if (!roundWinners.Any())
                 return;
 
-            var individualPrizes = PrizeDistributionHelper.DistributePrizeMoney(
+            var individualPrizes = SharedPrizeSplitter.Split(
                 roundPrize.PrizeAmount,
                 roundWinners.Count
             );
