@@ -103,6 +103,18 @@ These items are known constraints of the current architecture. Each has a remedi
 | **Plan** | [`docs/todo/security/server-validation-gap/`](../todo/security/server-validation-gap/) |
 | **Reviewed** | January 29, 2026 |
 
+### 7a. Domain Depends On ASP.NET Identity
+
+| Attribute | Value |
+|-----------|-------|
+| **File** | `src/ThePredictions.Domain/Models/ApplicationUser.cs`, `src/ThePredictions.Domain/ThePredictions.Domain.csproj` |
+| **Finding** | `ApplicationUser` derives from `IdentityUser`, so the Domain project references `Microsoft.Extensions.Identity.Stores`. Clean architecture says the domain model should not know about an authentication framework. |
+| **CWE** | n/a - architectural, not a vulnerability |
+| **Decision** | **Accepted** - not worth the mapping layer |
+| **Rationale** | The textbook fix is a Domain `User` plus a translation layer at the Identity boundary. For a solo-maintained application that cost - a second user type, a mapping in both directions, and the drift between them - exceeds what it returns. The coupling is to Identity's *storage* abstractions only; no Domain rule reads an Identity concept, and nothing else in Domain references the package. |
+| **Mitigations** | - `ThePredictions.Conventions.Tests.Unit` asserts Domain references no other **project** in the solution, so the leak cannot spread inwards from the application layers<br>- Password hashing, lockout and token generation stay in Infrastructure behind `IUserManager`, not in Domain<br>- Reviewed each time the Identity packages are upgraded |
+| **Reviewed** | August 9, 2026 |
+
 ---
 
 ### 8. Third-Party Logo Remains In Git History

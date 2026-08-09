@@ -1,11 +1,10 @@
-using MediatR;
+﻿using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Domain.Common.Enumerations;
 using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Application.Features.External.Tasks.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetLeagueWelcomeBatchQueryHandler(IApplicationReadDbConnection dbConnection)
     : IRequestHandler<GetLeagueWelcomeBatchQuery, IReadOnlyList<LeagueWelcomeLeague>>
 {
@@ -183,8 +182,11 @@ public class GetLeagueWelcomeBatchQueryHandler(IApplicationReadDbConnection dbCo
         return months;
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record LeagueRecipientRow(
+    // internal so a test can supply rows for the grouping above; InternalsVisibleTo already exposes
+    // this assembly to ThePredictions.Application.Tests.Unit.
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record LeagueRecipientRow(
         int LeagueId,
         string LeagueName,
         string SeasonName,
@@ -197,12 +199,15 @@ public class GetLeagueWelcomeBatchQueryHandler(IApplicationReadDbConnection dbCo
         string Email,
         string FirstName);
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PrizeRow(int LeagueId, PrizeType PrizeType, int Rank, string? Stage, decimal Amount);
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record PrizeRow(int LeagueId, PrizeType PrizeType, int Rank, string? Stage, decimal Amount);
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record BoostRow(int RuleId, int LeagueId, string Name, string? Description, string? ImageUrl, int TotalUsesPerSeason);
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record BoostRow(int RuleId, int LeagueId, string Name, string? Description, string? ImageUrl, int TotalUsesPerSeason);
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record WindowRow(int LeagueBoostRuleId, int StartRoundNumber, int EndRoundNumber, int MaxUsesInWindow);
+    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal record WindowRow(int LeagueBoostRuleId, int StartRoundNumber, int EndRoundNumber, int MaxUsesInWindow);
 }
