@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.API.Middleware;
 
-[ExcludeFromCodeCoverage(Justification = "Middleware wiring: registration and header plumbing, exercised end to end.")]
 public class SecurityHeadersMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context)
