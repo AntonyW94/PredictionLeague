@@ -954,6 +954,110 @@ public class LeagueManagementTests
 
     #endregion
 
+    #region RedefinePrizeStructure
+
+    /// <summary>
+    /// The site-admin manual override. Its two rules used to live in the command handler, where the
+    /// league's own pot and deadline were read from outside the aggregate that owns them.
+    /// </summary>
+    private League LeagueWithPot(decimal price, int memberCount, DateTime entryDeadlineUtc)
+    {
+        var members = Enumerable.Range(1, memberCount)
+            .Select(i => new LeagueMember(
+                leagueId: 1, userId: $"user-{i}",
+                status: LeagueMemberStatus.Approved,
+                isAlertDismissed: false, isArchivedByUser: false,
+                joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: _dateTimeProvider.UtcNow,
+                roundResults: null))
+            .ToList();
+
+        return new League(
+            id: 1, name: "Test League", seasonId: 1,
+            administratorUserId: "admin-user", entryCode: "ABC123",
+            createdAtUtc: _dateTimeProvider.UtcNow,
+            entryDeadlineUtc: entryDeadlineUtc,
+            pointsForExactScore: 3, pointsForCorrectResult: 1,
+            price: price, isFree: false, hasPrizes: false,
+            prizeFundOverride: null,
+            members: members, prizeSettings: null);
+    }
+
+    private DateTime PassedDeadline => _dateTimeProvider.UtcNow.AddDays(-1);
+
+    [Fact]
+    public void TotalPrizePot_ShouldBeTheStakeTimesTheMemberCount()
+    {
+        var league = LeagueWithPot(price: 10m, memberCount: 4, PassedDeadline);
+
+        league.TotalPrizePot.Should().Be(40m);
+    }
+
+    [Fact]
+    public void RedefinePrizeStructure_ShouldSetThePrizes_WhenTheAllocationMatchesThePot()
+    {
+        // Arrange
+        var league = LeagueWithPot(price: 10m, memberCount: 4, PassedDeadline);
+        var prizes = new[] { LeaguePrizeSetting.Create(1, PrizeType.Overall, 1, 40m) };
+
+        // Act
+        league.RedefinePrizeStructure(prizes, totalAllocated: 40m, _dateTimeProvider);
+
+        // Assert
+        league.HasPrizes.Should().BeTrue();
+        league.PrizeSettings.Should().ContainSingle();
+    }
+
+    // Before the deadline the entrant count can still change, so there is no settled pot to divide.
+    [Fact]
+    public void RedefinePrizeStructure_ShouldThrow_WhenTheEntryDeadlineHasNotPassed()
+    {
+        // Arrange
+        var league = LeagueWithPot(price: 10m, memberCount: 4, FutureDeadline);
+        var prizes = new[] { LeaguePrizeSetting.Create(1, PrizeType.Overall, 1, 40m) };
+
+        // Act
+        var act = () => league.RedefinePrizeStructure(prizes, totalAllocated: 40m, _dateTimeProvider);
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("*cannot be defined until after the entry deadline*");
+        league.HasPrizes.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(39)]
+    [InlineData(41)]
+    public void RedefinePrizeStructure_ShouldThrow_WhenTheAllocationDoesNotEqualThePot(decimal totalAllocated)
+    {
+        // Arrange
+        var league = LeagueWithPot(price: 10m, memberCount: 4, PassedDeadline);
+        var prizes = new[] { LeaguePrizeSetting.Create(1, PrizeType.Overall, 1, totalAllocated) };
+
+        // Act
+        var act = () => league.RedefinePrizeStructure(prizes, totalAllocated, _dateTimeProvider);
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("*must equal the total prize pot*");
+        league.PrizeSettings.Should().BeEmpty();
+    }
+
+    // The deadline is checked first: an admin who is early gets told so, rather than being sent away to
+    // recompute a pot that is not final yet.
+    [Fact]
+    public void RedefinePrizeStructure_ShouldReportTheDeadline_WhenBothRulesAreBroken()
+    {
+        var league = LeagueWithPot(price: 10m, memberCount: 4, FutureDeadline);
+        var prizes = new[] { LeaguePrizeSetting.Create(1, PrizeType.Overall, 1, 5m) };
+
+        var act = () => league.RedefinePrizeStructure(prizes, totalAllocated: 5m, _dateTimeProvider);
+
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("*cannot be defined until after the entry deadline*");
+    }
+
+    #endregion
+
     #region DefinePrizes
 
     [Fact]

@@ -1,6 +1,7 @@
 using Ardalis.GuardClauses;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Models;
 
@@ -31,6 +32,23 @@ public class LeaguePrizeScheme
 
         if (entries != null)
             _entries.AddRange(entries.Where(e => e != null).Select(e => e!));
+    }
+
+    /// <summary>
+    /// Converts an entry fee to the whole-pound stake a scheme is built from, rejecting pence.
+    /// </summary>
+    /// <remarks>
+    /// The scheme allocates the stake in whole pounds per entry, so a fee of £10.50 has no
+    /// representation here and every prize derived from it would carry a rounding error. Rejecting the
+    /// fee up front is what keeps each prize a round number. Lives beside <see cref="Create"/>, whose
+    /// <c>stakePounds</c> parameter is an <c>int</c> precisely because this has already run.
+    /// </remarks>
+    public static int ToWholePoundStake(decimal price)
+    {
+        if (price != decimal.Truncate(price))
+            throw new BusinessRuleViolationException("The entry fee must be a whole number of pounds when prizes are enabled.");
+
+        return (int)price;
     }
 
     public static LeaguePrizeScheme Create(

@@ -59,23 +59,4 @@ public class PrizeSchemeFactoryTests
 
         scheme.Entries.Single().RankTableJson.Should().BeNull();
     }
-
-    [Theory]
-    [InlineData(10)]
-    [InlineData(0)]
-    public void ToWholePounds_ShouldAcceptAWholePoundEntryFee(int price)
-    {
-        PrizeSchemeFactory.ToWholePounds(price).Should().Be(price);
-    }
-
-    [Fact]
-    public void ToWholePounds_ShouldRejectAnEntryFeeWithPence()
-    {
-        // Prizes are worked out in whole pounds, so pence in the entry fee would leave amounts that
-        // cannot be paid out cleanly.
-        var act = () => PrizeSchemeFactory.ToWholePounds(10.50m);
-
-        act.Should().Throw<BusinessRuleViolationException>()
-            .WithMessage("*whole number of pounds*");
-    }
 }

@@ -77,9 +77,27 @@ public class LeagueMember
         IsAlertDismissed = false;
     }
 
+    /// <summary>
+    /// Hides the "your request was rejected" alert. Only a rejected membership has an alert to hide,
+    /// which is why this refuses any other status rather than silently setting a flag nothing reads.
+    /// </summary>
     public void DismissAlert()
     {
+        if (Status != LeagueMemberStatus.Rejected)
+            throw new BusinessRuleViolationException("This notification cannot be dismissed.");
+
         IsAlertDismissed = true;
+    }
+
+    /// <summary>
+    /// Confirms the member may withdraw this join request. Nothing on the entity changes - the caller
+    /// removes the row - but the rule belongs with the status it depends on, so a second caller cannot
+    /// delete an approved membership by forgetting to check first.
+    /// </summary>
+    public void EnsureJoinRequestCanBeCancelled()
+    {
+        if (Status != LeagueMemberStatus.Pending)
+            throw new BusinessRuleViolationException("You can only cancel requests that are currently pending.");
     }
 
     public void Archive()

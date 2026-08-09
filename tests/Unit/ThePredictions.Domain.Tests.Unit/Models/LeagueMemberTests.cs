@@ -293,11 +293,19 @@ public class LeagueMemberTests
 
     #region DismissAlert
 
+    private LeagueMember RejectedMember()
+    {
+        var member = LeagueMember.Create(1, "user-1", _dateTimeProvider);
+        member.Reject();
+
+        return member;
+    }
+
     [Fact]
-    public void DismissAlert_ShouldSetIsAlertDismissedToTrue_WhenCalled()
+    public void DismissAlert_ShouldSetIsAlertDismissedToTrue_WhenTheMemberWasRejected()
     {
         // Arrange
-        var member = LeagueMember.Create(1, "user-1", _dateTimeProvider);
+        var member = RejectedMember();
 
         // Act
         member.DismissAlert();
@@ -310,7 +318,7 @@ public class LeagueMemberTests
     public void DismissAlert_ShouldBeIdempotent_WhenCalledMultipleTimes()
     {
         // Arrange
-        var member = LeagueMember.Create(1, "user-1", _dateTimeProvider);
+        var member = RejectedMember();
 
         // Act
         member.DismissAlert();
@@ -318,6 +326,68 @@ public class LeagueMemberTests
 
         // Assert
         member.IsAlertDismissed.Should().BeTrue();
+    }
+
+    // Only a rejected membership has an alert to hide. Dismissing on any other status would set a flag
+    // nothing reads, and the rule used to live in the command handler where a second caller could miss it.
+    [Theory]
+    [InlineData(LeagueMemberStatus.Pending)]
+    [InlineData(LeagueMemberStatus.Approved)]
+    public void DismissAlert_ShouldThrow_WhenTheMemberWasNotRejected(LeagueMemberStatus status)
+    {
+        // Arrange
+        var member = new LeagueMember(
+            leagueId: 1, userId: "user-1",
+            status: status,
+            isAlertDismissed: false, isArchivedByUser: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: null, roundResults: null);
+
+        // Act
+        var act = member.DismissAlert;
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("This notification cannot be dismissed.");
+        member.IsAlertDismissed.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region EnsureJoinRequestCanBeCancelled
+
+    [Fact]
+    public void EnsureJoinRequestCanBeCancelled_ShouldNotThrow_WhenTheRequestIsStillPending()
+    {
+        // Arrange
+        var member = LeagueMember.Create(1, "user-1", _dateTimeProvider);
+
+        // Act
+        var act = member.EnsureJoinRequestCanBeCancelled;
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    // Withdrawing is for a request still waiting on the admin. Once approved or rejected the row is no
+    // longer the member's to remove, which is what stops a cancel deleting a live membership.
+    [Theory]
+    [InlineData(LeagueMemberStatus.Approved)]
+    [InlineData(LeagueMemberStatus.Rejected)]
+    public void EnsureJoinRequestCanBeCancelled_ShouldThrow_WhenTheRequestIsNoLongerPending(LeagueMemberStatus status)
+    {
+        // Arrange
+        var member = new LeagueMember(
+            leagueId: 1, userId: "user-1",
+            status: status,
+            isAlertDismissed: false, isArchivedByUser: false,
+            joinedAtUtc: _dateTimeProvider.UtcNow, approvedAtUtc: null, roundResults: null);
+
+        // Act
+        var act = member.EnsureJoinRequestCanBeCancelled;
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("You can only cancel requests that are currently pending.");
     }
 
     #endregion

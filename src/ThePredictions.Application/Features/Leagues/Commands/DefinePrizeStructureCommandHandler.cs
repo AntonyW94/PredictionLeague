@@ -6,7 +6,6 @@ using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Constants;
 using ThePredictions.Domain.Common.Guards;
 using ThePredictions.Domain.Models;
-using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
@@ -28,14 +27,10 @@ public class DefinePrizeStructureCommandHandler(ILeagueRepository leagueReposito
         if (!isSiteAdmin)
             throw new UnauthorizedAccessException("The prize structure is now derived from the prize scheme; only a site administrator can set it manually.");
 
-        if (league.EntryDeadlineUtc > dateTimeProvider.UtcNow)
-            throw new BusinessRuleViolationException("The prize structure cannot be defined until after the entry deadline has passed.");
-
-        var totalPrizePot = league.Price * league.Members.Count;
+        // A setting can be awarded many times over - ten round prizes at the same amount are one
+        // setting with a multiplier - so the total has to be worked out from the request, before the
+        // multiplier is dropped in the mapping below. The league checks it against its own pot.
         var totalAllocatedPrizes = request.PrizeSettings.Sum(p => p.PrizeAmount * p.Multiplier);
-
-        if (totalAllocatedPrizes != totalPrizePot)
-            throw new BusinessRuleViolationException("The total allocated prize money must equal the total prize pot.");
 
         var prizeSettings = request.PrizeSettings.Select(p => LeaguePrizeSetting.Create(
             request.LeagueId,
@@ -44,7 +39,7 @@ public class DefinePrizeStructureCommandHandler(ILeagueRepository leagueReposito
             p.PrizeAmount
         )).ToList();
 
-        league.DefinePrizes(prizeSettings);
+        league.RedefinePrizeStructure(prizeSettings, totalAllocatedPrizes, dateTimeProvider);
 
         await leagueRepository.UpdateAsync(league, cancellationToken);
     }

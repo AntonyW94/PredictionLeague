@@ -54,7 +54,7 @@ public class CreateLeagueCommandHandler(ILeagueRepository leagueRepository, ISea
             var competition = await competitionRepository.GetByIdAsync(season.CompetitionId, cancellationToken);
             Guard.Against.EntityNotFound(season.CompetitionId, competition, "Competition");
 
-            var scheme = PrizeSchemeFactory.Build(request.PrizeScheme, PrizeSchemeFactory.ToWholePounds(request.Price), request.CreatingUserId, competition.IsTournament, dateTimeProvider);
+            var scheme = PrizeSchemeFactory.Build(request.PrizeScheme, LeaguePrizeScheme.ToWholePoundStake(request.Price), request.CreatingUserId, competition.IsTournament, dateTimeProvider);
             league.SetPrizeScheme(scheme);
         }
 

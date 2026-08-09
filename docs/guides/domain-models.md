@@ -184,6 +184,36 @@ Why both?
 - Domain must protect its own invariants
 - Different error handling (user feedback vs fail fast)
 
+## Where A Business Rule Lives
+
+**A rule that can be decided from one entity's own state belongs on that entity**, not in the command
+handler that happens to trigger it. A handler is one caller; the entity is the only thing every caller
+has to go through. `LeagueMember.Approve()`, `Reject()`, `Archive()`, `DismissAlert()` and
+`EnsureJoinRequestCanBeCancelled()` all throw `BusinessRuleViolationException` for a wrong status, and
+`League.RedefinePrizeStructure()` refuses before the entry deadline or when the amounts do not equal
+`League.TotalPrizePot`.
+
+A rule stays in the handler when it genuinely **cannot** be decided from the entity:
+
+| The rule needs | Example | Where it lives |
+|---|---|---|
+| A second aggregate, read separately | "a competition with this code already exists" | Handler |
+| State outside the aggregate | `SetLeagueBoostRulesCommandHandler`'s write-once rule reads a boost-rules table that is not part of `League` | Handler, with a comment saying why |
+| The caller's identity or role | "only a site administrator may override this" | Handler - authorisation is not a domain invariant |
+
+The distinction is not "is it a business rule" but "can the entity enforce it alone". If it can and
+doesn't, a second code path will eventually skip it.
+
+**A method that only validates is still worth having.** `EnsureJoinRequestCanBeCancelled()` changes
+nothing - the caller deletes the row - but the rule sits with the status it depends on rather than in
+one of the callers. Say so in a doc comment, so the empty body does not read as an oversight.
+
+**Watch for a rule whose inputs the entity cannot see.** The prize-pot check compares against a total
+the caller works out, because one prize setting can be awarded many times over and that multiplier
+never reaches the entity. Passing the total in keeps the *rule* on `League`, which owns the pot, while
+leaving the caller's own arithmetic where it belongs. Recomputing it inside the entity would have
+silently changed the rule.
+
 ## Repository Pattern
 
 Repositories handle persistence and return domain entities.

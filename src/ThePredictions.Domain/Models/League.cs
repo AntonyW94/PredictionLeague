@@ -290,6 +290,43 @@ public partial class League
             _members.Remove(memberToRemove);
     }
 
+    /// <summary>
+    /// What the league has taken in entry fees: the stake multiplied by the members who have joined.
+    /// Provisional until the entry deadline, because the count can still change.
+    /// </summary>
+    public decimal TotalPrizePot => Price * _members.Count;
+
+    /// <summary>
+    /// The site-admin manual override for the prize structure. ADR-0011 superseded this with the
+    /// scheme freeze, and it is kept only for edge cases - which is exactly why its two rules live
+    /// here rather than in the caller: a rarely-walked path is the one most likely to be reimplemented
+    /// without them.
+    /// </summary>
+    /// <param name="totalAllocated">
+    /// What the caller is handing out in total. Passed in rather than summed from
+    /// <paramref name="prizes"/> because a single setting can be awarded many times over (ten round
+    /// prizes at the same amount are one setting), and that multiplier does not survive onto the
+    /// entity. The league owns the pot; the caller owns the arithmetic of its own request.
+    /// </param>
+    public void RedefinePrizeStructure(IEnumerable<LeaguePrizeSetting> prizes, decimal totalAllocated, IDateTimeProvider dateTimeProvider)
+    {
+        // Before the deadline the entrant count, and so the pot, is not final - there is nothing
+        // stable to divide up yet.
+        if (EntryDeadlineUtc > dateTimeProvider.UtcNow)
+            throw new BusinessRuleViolationException("The prize structure cannot be defined until after the entry deadline has passed.");
+
+        if (totalAllocated != TotalPrizePot)
+            throw new BusinessRuleViolationException("The total allocated prize money must equal the total prize pot.");
+
+        DefinePrizes(prizes);
+    }
+
+    /// <summary>
+    /// Replaces the prize settings outright. Unguarded on purpose: the automated freeze
+    /// (PrizeSchemeFreezeService) runs at the deadline and derives the amounts from the scheme, so it
+    /// has already satisfied the rules that <see cref="RedefinePrizeStructure"/> enforces for the
+    /// manual path. Prefer that method for anything a person triggers.
+    /// </summary>
     public void DefinePrizes(IEnumerable<LeaguePrizeSetting>? prizes)
     {
         _prizeSettings.Clear();
