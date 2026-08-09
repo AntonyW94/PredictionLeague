@@ -32,17 +32,7 @@ public class UpdateMatchResultsCommandHandler(
         Guard.Against.EntityNotFound(request.RoundId, round, "Round");
         var wasRoundPublished = round.Status == RoundStatus.Published;
 
-        var matchesToUpdate = new List<Match>();
-
-        foreach (var matchResult in request.Matches)
-        {
-            var matchToUpdate = round.Matches.FirstOrDefault(m => m.Id == matchResult.MatchId);
-            if (matchToUpdate == null)
-                continue;
-
-            matchToUpdate.UpdateScore(matchResult.HomeScore, matchResult.AwayScore, matchResult.Status);
-            matchesToUpdate.Add(matchToUpdate);
-        }
+        var matchesToUpdate = ApplyScores(round, request);
 
         if (!matchesToUpdate.Any())
             return;
@@ -59,23 +49,7 @@ public class UpdateMatchResultsCommandHandler(
         }
 
         await roundRepository.UpdateMatchScoresAsync(matchesToUpdate, cancellationToken);
-
-        var matchIds = matchesToUpdate.Select(m => m.Id).ToList();
-      
-        var predictionsToUpdate = (await userPredictionRepository.GetByMatchIdsAsync(matchIds, cancellationToken)).ToList();
-        if (predictionsToUpdate.Any())
-        {
-            foreach (var prediction in predictionsToUpdate)
-            {
-                var match = matchesToUpdate.FirstOrDefault(m => m.Id == prediction.MatchId);
-                if (match == null)
-                    continue;
-
-                prediction.SetOutcome(match.Status, match.ActualHomeTeamScore, match.ActualAwayTeamScore, dateTimeProvider);
-            }
-        }
-        
-        await userPredictionRepository.UpdateOutcomesAsync(predictionsToUpdate, cancellationToken);
+        await ScorePredictionsAsync(matchesToUpdate, cancellationToken);
         await roundRepository.UpdateRoundResultsAsync(round.Id, cancellationToken);
         await leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
         await boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
@@ -96,31 +70,65 @@ public class UpdateMatchResultsCommandHandler(
         await leagueStatsRepository.RefreshSeasonAsync(round.SeasonId, cancellationToken);
 
         if (isRoundFinishing)
+            await CompleteRoundAsync(round, cancellationToken);
+    }
+
+    /// <summary>
+    /// Applies each supplied score to the fixture it names, ignoring any that is not in this round,
+    /// and returns just the fixtures that actually changed.
+    /// </summary>
+    private static List<Match> ApplyScores(Round round, UpdateMatchResultsCommand request)
+    {
+        var matchesToUpdate = new List<Match>();
+
+        foreach (var matchResult in request.Matches)
         {
-            var leagueIds = await leagueRepository.GetLeagueIdsForSeasonAsync(round.SeasonId, cancellationToken);
+            var matchToUpdate = round.Matches.FirstOrDefault(m => m.Id == matchResult.MatchId);
+            if (matchToUpdate == null)
+                continue;
 
-            foreach (var leagueId in leagueIds)
-            {
-                var processPrizesCommand = new ProcessPrizesCommand
-                {
-                    RoundId = round.Id,
-                    LeagueId = leagueId
-                };
-                await mediator.Send(processPrizesCommand, cancellationToken);
-            }
-
-            // Stats and prizes are finalised, so award any badges earned this round before the digest
-            // goes out. Idempotent, so re-completing the round won't double-award.
-            var badgesAwarded = await mediator.Send(new EvaluateBadgesForRoundCommand(round.Id), cancellationToken);
-
-            // Stats and prizes are now finalised for the round, so send the results digest, passing the
-            // badges just earned so the email can celebrate them.
-            // Idempotent via Round.ResultsDigestSentUtc, so re-completing the round won't re-send.
-            await mediator.Send(new SendRoundDigestEmailsCommand(round.Id, BadgesAwarded: badgesAwarded), cancellationToken);
-
-            // Then the celebratory prize emails - winners see "here's how you did" before "and you won!".
-            // Idempotent via the PrizeNotifications sent-log, so re-completing the round won't re-send.
-            await mediator.Send(new SendPrizeNotificationsCommand(round.Id), cancellationToken);
+            matchToUpdate.UpdateScore(matchResult.HomeScore, matchResult.AwayScore, matchResult.Status);
+            matchesToUpdate.Add(matchToUpdate);
         }
+
+        return matchesToUpdate;
+    }
+
+    /// <summary>Re-scores every prediction against the fixtures whose scores just moved.</summary>
+    private async Task ScorePredictionsAsync(List<Match> matchesToUpdate, CancellationToken cancellationToken)
+    {
+        var matchIds = matchesToUpdate.Select(m => m.Id).ToList();
+        var predictionsToUpdate = (await userPredictionRepository.GetByMatchIdsAsync(matchIds, cancellationToken)).ToList();
+
+        foreach (var prediction in predictionsToUpdate)
+        {
+            var match = matchesToUpdate.FirstOrDefault(m => m.Id == prediction.MatchId);
+            if (match == null)
+                continue;
+
+            prediction.SetOutcome(match.Status, match.ActualHomeTeamScore, match.ActualAwayTeamScore, dateTimeProvider);
+        }
+
+        await userPredictionRepository.UpdateOutcomesAsync(predictionsToUpdate, cancellationToken);
+    }
+
+    /// <summary>
+    /// Settles prizes, awards badges, then sends the results digest and the prize emails - in that
+    /// order, so winners see "here's how you did" before "and you won!". Every step is idempotent, so
+    /// re-completing the round neither double-awards nor re-sends.
+    /// </summary>
+    private async Task CompleteRoundAsync(Round round, CancellationToken cancellationToken)
+    {
+        var leagueIds = await leagueRepository.GetLeagueIdsForSeasonAsync(round.SeasonId, cancellationToken);
+
+        foreach (var leagueId in leagueIds)
+        {
+            await mediator.Send(new ProcessPrizesCommand { RoundId = round.Id, LeagueId = leagueId }, cancellationToken);
+        }
+
+        var badgesAwarded = await mediator.Send(new EvaluateBadgesForRoundCommand(round.Id), cancellationToken);
+
+        await mediator.Send(new SendRoundDigestEmailsCommand(round.Id, BadgesAwarded: badgesAwarded), cancellationToken);
+        await mediator.Send(new SendPrizeNotificationsCommand(round.Id), cancellationToken);
     }
 }
