@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Components;
 using ThePredictions.Contracts.Admin.Matches;
 using ThePredictions.Contracts.Admin.Rounds;
@@ -6,7 +5,6 @@ using System.Net.Http.Json;
 
 namespace ThePredictions.Web.Client.ViewModels.Admin.Rounds;
 
-[ExcludeFromCodeCoverage(Justification = "Data-only view model: properties only, no logic to test.")]
 public class EnterResultsViewModel(HttpClient http, NavigationManager navigationManager)
 {
     public List<MatchViewModel> Matches { get; private set; } = [];
