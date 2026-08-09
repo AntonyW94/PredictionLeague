@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
@@ -8,7 +8,6 @@ using ThePredictions.Domain.Services.Prizes;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetLeaguePayoutsQueryHandler(IApplicationReadDbConnection dbConnection, IFieldEncryptionService fieldEncryptionService)
     : IRequestHandler<GetLeaguePayoutsQuery, LeaguePayoutsDto>
 {
@@ -131,11 +130,17 @@ public class GetLeaguePayoutsQueryHandler(IApplicationReadDbConnection dbConnect
         return new LeaguePayoutsDto(league.SeasonComplete, outstandingTotal, paidTotal, winners);
     }
 
-    private sealed record LeagueRow(string AdministratorUserId, bool SeasonComplete);
+    // internal so a test can supply rows for the shaping above; InternalsVisibleTo already exposes
+    // this assembly to ThePredictions.Application.Tests.Unit.
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal sealed record LeagueRow(string AdministratorUserId, bool SeasonComplete);
 
-    private sealed record WinningRow(string UserId, string UserName, PrizeType PrizeType, decimal Amount);
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal sealed record WinningRow(string UserId, string UserName, PrizeType PrizeType, decimal Amount);
 
-    private sealed record StoredPayoutRow(string UserId, decimal TotalAmount, DateTime? PaidAtUtc);
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal sealed record StoredPayoutRow(string UserId, decimal TotalAmount, DateTime? PaidAtUtc);
 
-    private sealed record PayoutDetailRow(string UserId, string? AccountName, string? SortCode, string? AccountNumber);
+    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
+    internal sealed record PayoutDetailRow(string UserId, string? AccountName, string? SortCode, string? AccountNumber);
 }
