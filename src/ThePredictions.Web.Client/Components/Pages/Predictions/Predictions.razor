@@ -321,7 +321,10 @@
                         Description = "No boost selected",
                         ImageUrl = "/images/boosts/none-normal.webp",
                         SelectedImageUrl = "/images/boosts/none-selected.webp",
-                        DisabledImageUrl = "/images/boosts/none-disabled.webp",
+                        // No DisabledImageUrl: "None" is always selectable, so it never renders in a
+                        // disabled state. It pointed at none-disabled.png for years, a file that never
+                        // existed - harmless only because nothing in the client reads this property.
+                        // Leave it unset rather than inventing artwork for a state that cannot occur.
                         Eligibility = new BoostEligibilityDto { BoostCode = "None", LeagueId = leagueDto.LeagueId, RoundId = _pageData.RoundId, CanUse = true, RemainingSeasonUses = int.MaxValue, RemainingWindowUses = int.MaxValue, AlreadyUsedThisRound = false }
                     };
 
