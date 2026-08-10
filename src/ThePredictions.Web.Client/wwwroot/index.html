@@ -28,9 +28,14 @@
     <meta property="twitter:image:alt" content="The Predictions - The Ultimate Football Prediction Game">
 
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <!-- Self-hosted vendor CSS. Served from our own origin so the Content-Security-Policy needs no
+         third-party style-src, and so the site is not styled by whatever a CDN happens to serve.
+         Versions are pinned in the file paths' source: Bootstrap 5.3.3, Bootstrap Icons 1.11.3,
+         SweetAlert2 11.26.25. Deliberately not part of the css/app.css bundle - bootstrap-icons.min.css
+         references its webfont with a relative url(), which bundling to a different depth would break. -->
+    <link rel="stylesheet" href="lib/bootstrap/bootstrap.min.css">
+    <link rel="stylesheet" href="lib/bootstrap-icons/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="lib/sweetalert2/sweetalert2.min.css">
     <link rel="stylesheet" href="css/app.css" />
 
     <!-- Favicons -->
@@ -48,19 +53,7 @@
         </div>
     </div>
 
-    <script>
-        (function () {
-            var path = window.location.pathname;
-            var adminPaths = ['/admin/', '/leagues'];
-            var isAdmin = adminPaths.some(function (p) { return path.startsWith(p); });
-            if (isAdmin) {
-                var container = document.querySelector('.app-loading-container');
-                if (container) {
-                    container.classList.add('app-loading-light');
-                }
-            }
-        })();
-    </script>
+    <script src="js/loading-theme.js"></script>
 
     <div id="blazor-error-ui">
         <span id="blazor-error-message">An unhandled error has occurred.</span>
@@ -68,43 +61,13 @@
         <a class="dismiss">🗙</a>
     </div>
 
-    <script>
-        window.addEventListener("error", function (e) {
-            console.error("[Blazor] Unhandled error:", e.message, "\nSource:", e.filename, "Line:", e.lineno, "Col:", e.colno, "\nError:", e.error);
-            var ui = document.getElementById("blazor-error-ui");
-            if (ui) {
-                ui.style.display = "none";
-            }
-        });
-        window.addEventListener("unhandledrejection", function (e) {
-            var detail = e.reason ? (e.reason.stack || e.reason.message || String(e.reason)) : "Unknown rejection";
-            console.error("[Blazor] Unhandled promise rejection:", detail);
-            var ui = document.getElementById("blazor-error-ui");
-            if (ui) {
-                ui.style.display = "none";
-            }
-        });
-
-        // Observe the error UI element and hide it when Blazor tries to show it
-        document.addEventListener("DOMContentLoaded", function () {
-            var ui = document.getElementById("blazor-error-ui");
-            if (ui) {
-                var observer = new MutationObserver(function () {
-                    if (ui.style.display !== "none") {
-                        console.warn("[Blazor] Error UI was shown - suppressing banner. Check console for error details above.");
-                        ui.style.display = "none";
-                    }
-                });
-                observer.observe(ui, { attributes: true, attributeFilter: ["style"] });
-            }
-        });
-    </script>
+    <script src="js/error-handlers.js"></script>
 
     <!-- Javascript Files -->
     <!-- ?v bumped when interop.js changes so browsers fetch the new file instead of a cached copy -->
     <script src="js/interop.js?v=2"></script>
     <script src="_framework/blazor.webassembly.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="lib/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="lib/sweetalert2/sweetalert2.all.min.js"></script>
 </body>
 </html>
