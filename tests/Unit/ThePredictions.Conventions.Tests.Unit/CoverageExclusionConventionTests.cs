@@ -118,14 +118,21 @@ public class CoverageExclusionConventionTests
             + "so the new category is visible in review.");
     }
 
-    // A type with a test file is a type we test, so excluding it hides passing tests and makes them look
-    // pointless. testing.md calls this out as the rule that matters most for query handlers, where the
-    // category is excluded wholesale but several members of it have real tests.
+    // A type with a unit test file is a type we test, so excluding it hides passing tests and makes them
+    // look pointless. testing.md calls this out as the rule that matters most for query handlers, where
+    // the category is excluded wholesale but several members of it have real tests.
+    //
+    // Scoped to tests/Unit, not all of tests/. The exclusions on repositories and query handlers say a
+    // *unit* test would prove nothing because the correctness lives in the SQL - which is exactly why
+    // tests/Integration exists, running that SQL against a real SQL Server. Those types stay excluded
+    // and stay right to be: the coverage gate measures each unit test project's own run, and a
+    // container-backed suite can never contribute to it. Widening this sweep to tests/Integration would
+    // therefore force the attribute off types the 100% gate still has to see covered.
     [Fact]
-    public void NoExcludedType_ShouldAlreadyHaveATestFile()
+    public void NoExcludedType_ShouldAlreadyHaveAUnitTestFile()
     {
         var testFileNames = Directory
-            .EnumerateFiles(Path.Combine(ProductionAssemblies.RepositoryRoot, "tests"), "*Tests.cs", SearchOption.AllDirectories)
+            .EnumerateFiles(Path.Combine(ProductionAssemblies.RepositoryRoot, "tests", "Unit"), "*Tests.cs", SearchOption.AllDirectories)
             .Select(Path.GetFileNameWithoutExtension)
             .Where(n => n != null)
             .Select(n => n!)
@@ -141,6 +148,8 @@ public class CoverageExclusionConventionTests
             .ToList();
 
         excludedTypesWithTests.Should().BeEmpty(
-            "a type with a test file is measured, not excluded - remove the attribute or delete the tests.");
+            "a type with a unit test file is measured, not excluded - remove the attribute or delete the "
+            + "tests. An integration test under tests/Integration does not count, because the 100% gate "
+            + "cannot see it.");
     }
 }

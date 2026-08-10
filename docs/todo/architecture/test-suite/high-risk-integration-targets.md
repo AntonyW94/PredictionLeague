@@ -34,10 +34,18 @@ removed and deleted.
 
 Tests wanted:
 
-- [ ] Attempting to remove a match that has predictions leaves it in place
-- [ ] Removing a match with no predictions succeeds
-- [ ] A match moved to another round survives the update rather than being deleted
-- [ ] Insert, update and delete in one call all apply correctly together
+- [x] Attempting to remove a match that has predictions leaves it in place
+- [x] Removing a match with no predictions succeeds
+- [x] A match moved to another round survives the update rather than being deleted
+- [x] Insert, update and delete in one call all apply correctly together
+
+**Done (August 2026)** in
+`tests/Integration/ThePredictions.Infrastructure.Tests.Integration/Repositories/RoundRepositoryUpdateTests.cs`,
+along with two the list did not name. `FK_UserPredictions_Matches` turned out to be `ON DELETE CASCADE`,
+so an unguarded delete removes the predictions with no error at all - that premise now has its own test,
+so the guard's importance is demonstrated rather than asserted in a comment. The wrong call order is
+pinned too: running `UpdateAsync` before `MoveMatchesToRoundAsync` deletes the match that was about to
+move, and a test now says so where a caller will see it.
 
 ## 2. The boost-usage secrecy predicate
 
@@ -99,10 +107,18 @@ test should still exist, because sharing a constant is itself something that can
 - [ ] The 30 repositories, `LeagueRepository` next after `RoundRepository` for the same diffing reason
 - [ ] The two ASP.NET Identity stores over Dapper
 - [ ] `TransactionBehaviour` rollback under a real transaction
-- [ ] DbUp migrations applying cleanly from empty, which the container strategy gives almost for free
+- [x] DbUp migrations applying cleanly from empty, which the container strategy gives almost for free
 
 ## Reminder on the harness
 
 Use **Testcontainers with real SQL Server, not SQLite** - already the decision in `README.md`. SQLite
 cannot evaluate the `RANK() OVER`, `CROSS APPLY`, `MERGE` or `CAST(... AS bit)` this codebase relies on,
 so a SQLite suite would pass while proving nothing about production behaviour.
+
+**Built (August 2026):** `tests/Integration/ThePredictions.Infrastructure.Tests.Integration`. One
+container per run, schema built by running the committed DbUp migrations, Respawn between tests. How to
+run it and the conventions it expects are in
+[`../../../guides/testing.md`](../../../guides/testing.md#integration-tests-against-real-sql-server). The
+migrations applying from empty came free with the strategy, exactly as predicted, and is asserted rather
+than assumed - the three real databases were baselined from an existing schema, so `0001_Baseline.sql`
+had never run anywhere as anything but a no-op.
