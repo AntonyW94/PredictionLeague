@@ -1,8 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Domain.Models;
+using ThePredictions.Persistence.SqlServer.Identity;
 using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Persistence.SqlServer.Data.Resilience;
 using ThePredictions.Persistence.SqlServer.Repositories;
@@ -37,7 +40,19 @@ public static class DependencyInjection
         services.AddHealthChecks()
             .AddSqlServer(connectionString, name: "database", tags: ["ready"]);
 
+        AddIdentityStores(services);
         AddRepositories(services);
+    }
+
+    // ASP.NET Identity resolves its stores from the container, so registering the interfaces directly is
+    // exactly what IdentityBuilder.AddUserStore/AddRoleStore do - and it lets the stores live with the
+    // adapter while Infrastructure keeps the half of AddIdentity that is not persistence (password
+    // policy, lockout, the sign-in manager, token providers). Order between the two calls does not
+    // matter: AddIdentity registers no store of its own.
+    private static void AddIdentityStores(IServiceCollection services)
+    {
+        services.AddScoped<IUserStore<ApplicationUser>, DapperUserStore>();
+        services.AddScoped<IRoleStore<IdentityRole>, DapperRoleStore>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository

@@ -63,8 +63,11 @@ public static class DependencyInjection
                 // User settings
                 options.User.RequireUniqueEmail = true;
             })
-            .AddUserStore<DapperUserStore>()
-            .AddRoleStore<DapperRoleStore>()
+            // No AddUserStore/AddRoleStore here: the stores are the persistence adapter's, and
+            // AddSqlServerPersistence registers IUserStore<ApplicationUser> and IRoleStore<IdentityRole>
+            // directly, which is exactly what those two builder methods do. What stays here is the part
+            // that is not persistence - password policy, lockout, the sign-in manager and the token
+            // providers - so a different adapter changes the stores and nothing else.
             .AddSignInManager<SignInManager<ApplicationUser>>()
             .AddDefaultTokenProviders();
 
