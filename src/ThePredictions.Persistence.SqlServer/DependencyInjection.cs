@@ -2,8 +2,11 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ThePredictions.Application.Data;
+using ThePredictions.Application.Repositories;
 using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Persistence.SqlServer.Data.Resilience;
+using ThePredictions.Persistence.SqlServer.Repositories;
+using ThePredictions.Persistence.SqlServer.Repositories.Boosts;
 
 namespace ThePredictions.Persistence.SqlServer;
 
@@ -33,5 +36,43 @@ public static class DependencyInjection
         // in the same registry.
         services.AddHealthChecks()
             .AddSqlServer(connectionString, name: "database", tags: ["ready"]);
+
+        AddRepositories(services);
+    }
+
+    // Every IXxxRepository in Application, in the order Application declares them. A new repository
+    // interface with no registration here is caught by ThePredictions.Composition.Tests.Unit, which
+    // resolves every handler from the real container.
+    private static void AddRepositories(IServiceCollection services)
+    {
+        services.AddScoped<ICompetitionRepository, CompetitionRepository>();
+        services.AddScoped<IRunningCostRepository, RunningCostRepository>();
+        services.AddScoped<IPricingSettingsRepository, PricingSettingsRepository>();
+        services.AddScoped<IServiceFeeRepository, ServiceFeeRepository>();
+        services.AddScoped<ILeagueRepository, LeagueRepository>();
+        services.AddScoped<ILeagueMemberRepository, LeagueMemberRepository>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
+        services.AddScoped<IEmailConfirmationTokenRepository, EmailConfirmationTokenRepository>();
+        services.AddScoped<IRoundRepository, RoundRepository>();
+        services.AddScoped<ISeasonRepository, SeasonRepository>();
+        services.AddScoped<ISeasonPassRepository, SeasonPassRepository>();
+        services.AddScoped<IOnboardingSkipRepository, OnboardingSkipRepository>();
+        services.AddScoped<IUserBadgeRepository, UserBadgeRepository>();
+        services.AddScoped<IBadgeEvaluationRepository, BadgeEvaluationRepository>();
+        services.AddScoped<IUserPayoutDetailsRepository, UserPayoutDetailsRepository>();
+        services.AddScoped<ILeaguePayoutRepository, LeaguePayoutRepository>();
+        services.AddScoped<ITeamRepository, TeamRepository>();
+        services.AddScoped<ITournamentRoundMappingRepository, TournamentRoundMappingRepository>();
+        services.AddScoped<IUserPredictionRepository, UserPredictionRepository>();
+        services.AddScoped<IWinningsRepository, WinningsRepository>();
+        services.AddScoped<IPrizeNotificationRepository, PrizeNotificationRepository>();
+        services.AddScoped<ILeagueWelcomeNotificationRepository, LeagueWelcomeNotificationRepository>();
+        services.AddScoped<IPredictionReminderNotificationRepository, PredictionReminderNotificationRepository>();
+        services.AddScoped<IEmailSettingsRepository, EmailSettingsRepository>();
+        services.AddScoped<IBoostReadRepository, BoostReadRepository>();
+        services.AddScoped<IBoostWriteRepository, BoostWriteRepository>();
+        services.AddScoped<ILeagueBoostRuleRepository, LeagueBoostRuleRepository>();
+        services.AddScoped<ILeagueStatsRepository, LeagueStatsRepository>();
     }
 }

@@ -1,7 +1,7 @@
 using FluentAssertions;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
-using ThePredictions.Infrastructure.Repositories;
+using ThePredictions.Persistence.SqlServer.Repositories;
 using ThePredictions.Infrastructure.Tests.Integration.Harness;
 using Xunit;
 

@@ -141,8 +141,8 @@ Each phase is one PR, master stays green and deployable throughout.
 | # | Phase | Contents |
 |---|-------|----------|
 | 0a | **Scaffold + plumbing** ✅ | Create `Persistence.SqlServer` and move the connection, transaction, read, retry and type-handler seams. `AddSqlServerPersistence()`. New gated test project. Two new layer-convention rules. |
-| 0b | **Repositories** | Move all 30 repositories and `RepositoryBase`. |
-| 0c | **Identity stores and SQL-bearing services** | `DapperUserStore`, `DapperRoleStore`, `LeagueMembershipService`, `CachedEmailSettingsProvider`, and `Microsoft.Data.SqlClient` finally leaves Infrastructure. |
+| 0b | **Repositories** ✅ | Move all 30 repositories and `RepositoryBase`, and their 29 registrations. `Microsoft.Data.SqlClient` leaves Infrastructure here rather than in 0c, because `BoostWriteRepository` was its only remaining user. |
+| 0c | **Identity stores and SQL-bearing services** | `DapperUserStore`, `DapperRoleStore`, `LeagueMembershipService`, `CachedEmailSettingsProvider`, and `Dapper` finally leaves Infrastructure. |
 | 0d | **Migration set** | Move the DbUp scripts under the adapter. Touches the root `CLAUDE.md` rule, the migrations README, `DatabaseTools` and the integration project's glob, so it is kept separate. |
 | 1 | **Conformance split** | Extract the abstract bases, `ITestDataSeeder`, and re-home the existing 29 integration tests. No new tests. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
@@ -158,6 +158,23 @@ directly, so that package cannot leave Infrastructure until 0c.
 `Data/DatabaseInitialiser.cs` deliberately stays in Infrastructure: it seeds Identity roles through
 `RoleManager` and contains no SQL, so it would work unchanged against any adapter. It is the only file
 left in `Infrastructure/Data/`.
+
+### Undeclared dependencies the split keeps exposing
+
+Removing `Microsoft.Data.SqlClient` from Infrastructure in 0b broke all eight
+`AuthenticationTokenServiceTests` with a `TypeLoadException`. `AuthenticationTokenService` uses
+`JwtSecurityTokenHandler` but **nothing declared `System.IdentityModel.Tokens.Jwt`** - it arrived
+transitively through the SQL driver, which pulls `Microsoft.IdentityModel.*` at 8.x. With the driver gone,
+the JWT handler fell back to 6.35.0 against `Microsoft.IdentityModel.Tokens` 8.14.0, and 8.x had deleted
+the `Microsoft.IdentityModel.Json.JsonConvert` the older handler calls.
+
+The hosts were unaffected because they still reach the driver through the adapter, so this was confined to
+the test project - but the accident was real: token generation depended on a database driver's dependency
+graph. Fixed by declaring `System.IdentityModel.Tokens.Jwt` in Infrastructure, pinned to 8.15.0 to match
+`ThePredictions.Web.Client`, so both ends of the token round-trip agree.
+
+Expect more of these. A package that only ever arrived transitively is invisible until the thing dragging
+it in moves, and moving things is what this plan does. Each one found gets declared where it is used.
 
 Feature areas for phases 2..N, roughly worst-first by rule density: Boosts, Rounds, Leaderboards,
 Leagues, Dashboard, Badges, Admin/Rounds, Admin/Seasons, Predictions, Authentication, Account,

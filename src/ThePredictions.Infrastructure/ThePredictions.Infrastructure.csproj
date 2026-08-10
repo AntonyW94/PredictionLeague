@@ -11,10 +11,18 @@
     <ItemGroup>
         <!-- ReSharper disable once VulnerablePackage -->
         <PackageReference Include="brevo_csharp" Version="1.1.1" />
+        <!-- Still needed by DapperUserStore and DapperRoleStore; leaves in phase 0c. -->
         <PackageReference Include="Dapper" Version="2.1.66" />
         <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="8.0.2" />
-        <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
         <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.10.0" />
+        <!-- AuthenticationTokenService uses JwtSecurityTokenHandler, so this project declares it rather
+             than inheriting it. It previously arrived transitively through Microsoft.Data.SqlClient,
+             which pulled Microsoft.IdentityModel.* at 8.x; when the persistence split removed that
+             driver, System.IdentityModel.Tokens.Jwt fell back to 6.35.0 against
+             Microsoft.IdentityModel.Tokens 8.14.0 and every JWT test failed with a TypeLoadException on
+             the Microsoft.IdentityModel.Json.JsonConvert that 8.x deleted. Pinned to 8.15.0 to match
+             ThePredictions.Web.Client, so both ends of the token round-trip agree. -->
+        <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
         <PackageReference Include="Polly" Version="8.5.2" />
         <PackageReference Include="SkiaSharp" Version="4.150.1" />
         <PackageReference Include="Stripe.net" Version="52.1.1" />

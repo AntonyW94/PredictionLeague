@@ -13,8 +13,12 @@ internal static class ProductionAssemblies
     internal static readonly Assembly Domain = typeof(Domain.Models.League).Assembly;
     internal static readonly Assembly Contracts = typeof(Contracts.Leagues.LeagueDto).Assembly;
     internal static readonly Assembly Application = typeof(Application.Common.Interfaces.IAssemblyMarker).Assembly;
-    internal static readonly Assembly Infrastructure = typeof(Infrastructure.Repositories.LeagueRepository).Assembly;
-    internal static readonly Assembly PersistenceSqlServer = typeof(Persistence.SqlServer.Data.SqlConnectionFactory).Assembly;
+    // Anchored on each assembly's DependencyInjection: every adapter has one, and unlike a repository or
+    // a connection factory it cannot move to another project without the assembly itself moving. The
+    // persistence split broke the previous anchor (Infrastructure.Repositories.LeagueRepository) by
+    // relocating exactly the type it named.
+    internal static readonly Assembly Infrastructure = typeof(Infrastructure.DependencyInjection).Assembly;
+    internal static readonly Assembly PersistenceSqlServer = typeof(Persistence.SqlServer.DependencyInjection).Assembly;
     internal static readonly Assembly Api = typeof(API.Controllers.ApiControllerBase).Assembly;
     internal static readonly Assembly Validators = typeof(Validators.Leagues.CreateLeagueRequestValidator).Assembly;
     internal static readonly Assembly WebClient = typeof(Web.Client.ViewModels.Admin.Rounds.MatchViewModel).Assembly;
