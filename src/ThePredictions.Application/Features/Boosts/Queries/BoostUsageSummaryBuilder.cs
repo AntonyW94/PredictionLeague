@@ -1,5 +1,5 @@
 using ThePredictions.Contracts.Boosts;
-using static ThePredictions.Application.Features.Boosts.Queries.GetLeagueBoostUsageSummaryQueryHandler;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Boosts.Queries;
 
@@ -9,20 +9,24 @@ namespace ThePredictions.Application.Features.Boosts.Queries;
 /// it is a pure function of rows in and DTOs out, and it holds the rules that are easy to get subtly
 /// wrong - whether a window has closed, how many uses a player has left, and the order players appear in.
 ///
-/// It does <b>not</b> hold the secrecy rule. Another player's boost for a round still open is filtered
-/// out in the handler's SQL (<c>ubu.UserId = @CurrentUserId OR r.DeadlineUtc &lt;= GETUTCDATE()</c>),
-/// so the usages arriving here have already been censored. Only an integration test against a real
-/// database can prove that predicate, and it should - it is the same class of rule as the dashboard's
-/// prediction split, where being wrong leaks what other players have done while they can still change it.
+/// It does <b>not</b> hold the secrecy rule: the usages arriving here have already been censored by
+/// <see cref="BoostUsageVisibility"/>, which the handler applies against an injected clock. That rule used to
+/// be a SQL predicate reading <c>GETUTCDATE()</c>, which no unit test could reach and no test could pin to an
+/// instant.
+///
+/// It does now hold two rules that used to be SQL. What a boost <b>won</b> is boosted points less base
+/// points, and only when a boost was actually applied - previously a <c>CASE</c> expression in the read. And
+/// a player's display name is <see cref="PlayerDisplayName"/>, previously
+/// <c>FirstName + ' ' + LEFT(LastName, 1)</c> written out in seventeen different files.
 /// </summary>
 internal static class BoostUsageSummaryBuilder
 {
     internal static List<BoostUsageSummaryDto> Build(
         IReadOnlyList<BoostRuleRow> boostRules,
-        IReadOnlyList<WindowRow> windows,
-        IReadOnlyList<MemberRow> members,
-        IReadOnlyList<UsageRow> usages,
-        RoundRangeRow? roundRange,
+        IReadOnlyList<BoostWindowRow> windows,
+        IReadOnlyList<BoostMemberRow> members,
+        IReadOnlyList<BoostUsageRow> usages,
+        BoostRoundRangeRow? roundRange,
         int? inProgressRoundNumber,
         int? lastCompletedRoundNumber,
         string currentUserId)
@@ -59,11 +63,34 @@ internal static class BoostUsageSummaryBuilder
     /// A boost with no configured windows is usable all season, so it is presented as a single window
     /// spanning the season's own round range and capped by the per-season allowance.
     /// </summary>
+    /// <summary>
+    /// What a boost actually won: the difference between the boosted and base points for that round, and only
+    /// where a boost was applied and the round has been scored. Null means "no points to report yet" rather
+    /// than zero, so the page can distinguish a boost that gained nothing from one not yet counted.
+    /// </summary>
+    /// <remarks>
+    /// Written as statements rather than a property pattern deliberately. The equivalent
+    /// <c>usage is { HasBoost: true, BasePoints: not null, BoostedPoints: not null }</c> reads well but
+    /// lowers to ten branches for three conditions, so the 100% branch gate cannot be satisfied without
+    /// contriving tests for outcomes the logic does not actually have. This form's branches match its
+    /// meaning.
+    /// </remarks>
+    internal static int? PointsGained(BoostUsageRow usage)
+    {
+        if (!usage.HasBoost)
+            return null;
+
+        if (usage.BasePoints == null || usage.BoostedPoints == null)
+            return null;
+
+        return usage.BoostedPoints.Value - usage.BasePoints.Value;
+    }
+
     private static WindowUsageSummaryDto BuildSeasonWideWindow(
         BoostRuleRow rule,
-        IReadOnlyList<MemberRow> members,
-        List<UsageRow> boostUsages,
-        RoundRangeRow? roundRange,
+        IReadOnlyList<BoostMemberRow> members,
+        List<BoostUsageRow> boostUsages,
+        BoostRoundRangeRow? roundRange,
         int? inProgressRoundNumber,
         int? lastCompletedRoundNumber,
         string currentUserId)
@@ -83,10 +110,10 @@ internal static class BoostUsageSummaryBuilder
     }
 
     private static List<WindowUsageSummaryDto> BuildConfiguredWindows(
-        List<WindowRow> ruleWindows,
-        IReadOnlyList<MemberRow> members,
-        List<UsageRow> boostUsages,
-        RoundRangeRow? roundRange,
+        List<BoostWindowRow> ruleWindows,
+        IReadOnlyList<BoostMemberRow> members,
+        List<BoostUsageRow> boostUsages,
+        BoostRoundRangeRow? roundRange,
         int? inProgressRoundNumber,
         int? lastCompletedRoundNumber,
         string currentUserId)
@@ -135,8 +162,8 @@ internal static class BoostUsageSummaryBuilder
     /// them - the table's headline is who used theirs best, not who used one first.
     /// </summary>
     internal static List<PlayerWindowUsageDto> BuildPlayerUsages(
-        IReadOnlyList<MemberRow> members,
-        List<UsageRow> boostUsages,
+        IReadOnlyList<BoostMemberRow> members,
+        List<BoostUsageRow> boostUsages,
         int? startRound,
         int? endRound,
         int maxUses,
@@ -155,7 +182,7 @@ internal static class BoostUsageSummaryBuilder
             return new PlayerWindowUsageDto
             {
                 UserId = member.UserId,
-                PlayerName = member.PlayerName,
+                PlayerName = PlayerDisplayName.Format(member.FirstName, member.LastName),
                 // Clamped: a window whose allowance was later reduced can leave a player already over
                 // it, and "-1 remaining" is not a thing the page can show.
                 Remaining = Math.Max(0, maxUses - usageList.Count),
@@ -166,7 +193,7 @@ internal static class BoostUsageSummaryBuilder
                     .Select(u => new BoostUsageDetailDto
                     {
                         RoundNumber = u.RoundNumber,
-                        PointsGained = u.PointsGained,
+                        PointsGained = PointsGained(u),
                         IsInProgressRound = inProgressRoundNumber.HasValue && u.RoundNumber == inProgressRoundNumber.Value
                     })
                     .ToList()

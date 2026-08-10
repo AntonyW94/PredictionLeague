@@ -1,16 +1,23 @@
-﻿using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Boosts;
-using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common;
 
 namespace ThePredictions.Application.Features.Boosts.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// The league's boost-usage table: who has played what, and how many uses each player has left.
+///
+/// No longer carries SQL, and therefore no longer carries <c>[ExcludeFromCodeCoverage]</c>. What is left is
+/// the sequence that matters: authorise, read, <b>censor</b>, shape. The censoring step is the reason this
+/// handler is worth measuring - a fairness rule that the handler forgot to apply would be a silent leak, and
+/// that is a failure mode the SQL version could not have, because the predicate was inside the read itself.
+/// <c>BoostUsageSecrecyTests</c> guards exactly that end to end.
+/// </summary>
 public class GetLeagueBoostUsageSummaryQueryHandler(
-    IApplicationReadDbConnection dbConnection,
-    ILeagueMembershipService membershipService)
+    ILeagueBoostUsageQuery usageQuery,
+    ILeagueMembershipService membershipService,
+    IDateTimeProvider dateTimeProvider)
     : IRequestHandler<GetLeagueBoostUsageSummaryQuery, List<BoostUsageSummaryDto>>
 {
     public async Task<List<BoostUsageSummaryDto>> Handle(
@@ -20,241 +27,24 @@ public class GetLeagueBoostUsageSummaryQueryHandler(
         await membershipService.EnsureApprovedMemberAsync(
             request.LeagueId, request.CurrentUserId, cancellationToken);
 
-        var boostRulesTask = GetEnabledBoostRulesAsync(request.LeagueId, cancellationToken);
-        var windowsTask = GetWindowsAsync(request.LeagueId, cancellationToken);
-        var membersTask = GetMembersAsync(request.LeagueId, cancellationToken);
-        var seasonInfoTask = GetSeasonInfoAsync(request.LeagueId, cancellationToken);
-        var inProgressRoundTask = GetInProgressRoundNumberAsync(request.LeagueId, cancellationToken);
-        var lastCompletedRoundTask = GetLastCompletedRoundNumberAsync(request.LeagueId, cancellationToken);
+        var data = await usageQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
-        await Task.WhenAll(boostRulesTask, windowsTask, membersTask, seasonInfoTask,
-            inProgressRoundTask, lastCompletedRoundTask);
-
-        var boostRules = boostRulesTask.Result.ToList();
-        if (boostRules.Count == 0)
+        if (data == null || data.BoostRules.Count == 0)
             return [];
 
-        var windows = windowsTask.Result.ToList();
-        var members = membersTask.Result.ToList();
-        var seasonInfo = seasonInfoTask.Result;
-        var inProgressRoundNumber = inProgressRoundTask.Result;
-        var lastCompletedRoundNumber = lastCompletedRoundTask.Result;
-
-        if (seasonInfo == null)
-            return [];
-
-        var usages = (await GetUsagesAsync(
-            request.LeagueId, seasonInfo.SeasonId, request.CurrentUserId, cancellationToken)).ToList();
-
-        var roundRange = await GetRoundRangeAsync(request.LeagueId, cancellationToken);
+        // Censor before shaping. The query returns every usage in the league; what this player may see is
+        // decided here, against the injected clock.
+        var visibleUsages = BoostUsageVisibility.VisibleTo(
+            data.Usages, request.CurrentUserId, dateTimeProvider.UtcNow);
 
         return BoostUsageSummaryBuilder.Build(
-            boostRules,
-            windows,
-            members,
-            usages,
-            roundRange,
-            inProgressRoundNumber,
-            lastCompletedRoundNumber,
+            data.BoostRules,
+            data.Windows,
+            data.Members,
+            visibleUsages,
+            data.RoundRange,
+            data.InProgressRoundNumber,
+            data.LastCompletedRoundNumber,
             request.CurrentUserId);
-    }
-
-    private async Task<IEnumerable<BoostRuleRow>> GetEnabledBoostRulesAsync(
-        int leagueId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            SELECT
-                bd.[Code] AS [BoostCode],
-                bd.[Name],
-                bd.[ImageUrl],
-                lbr.[TotalUsesPerSeason],
-                lbr.[Id] AS [LeagueBoostRuleId]
-            FROM [BoostDefinitions] bd
-            INNER JOIN [LeagueBoostRules] lbr ON lbr.[BoostDefinitionId] = bd.[Id]
-            WHERE lbr.[LeagueId] = @LeagueId AND lbr.[IsEnabled] = 1
-            ORDER BY lbr.[Id];";
-
-        return await dbConnection.QueryAsync<BoostRuleRow>(sql, cancellationToken, new { LeagueId = leagueId });
-    }
-
-    private async Task<IEnumerable<WindowRow>> GetWindowsAsync(
-        int leagueId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            SELECT
-                lbw.[LeagueBoostRuleId],
-                lbw.[StartRoundNumber],
-                lbw.[EndRoundNumber],
-                lbw.[MaxUsesInWindow]
-            FROM [LeagueBoostWindows] lbw
-            INNER JOIN [LeagueBoostRules] lbr ON lbw.[LeagueBoostRuleId] = lbr.[Id]
-            WHERE lbr.[LeagueId] = @LeagueId AND lbr.[IsEnabled] = 1
-            ORDER BY lbw.[StartRoundNumber];";
-
-        return await dbConnection.QueryAsync<WindowRow>(sql, cancellationToken, new { LeagueId = leagueId });
-    }
-
-    private async Task<IEnumerable<MemberRow>> GetMembersAsync(
-        int leagueId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            SELECT
-                u.[Id] AS [UserId],
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName]
-            FROM [LeagueMembers] lm
-            JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            WHERE lm.[LeagueId] = @LeagueId AND lm.[Status] = @ApprovedStatus
-            ORDER BY [PlayerName];";
-
-        return await dbConnection.QueryAsync<MemberRow>(
-            sql, cancellationToken,
-            new { LeagueId = leagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
-    }
-
-    private async Task<SeasonInfoRow?> GetSeasonInfoAsync(
-        int leagueId, CancellationToken cancellationToken)
-    {
-        const string sql = "SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId;";
-
-        return await dbConnection.QuerySingleOrDefaultAsync<SeasonInfoRow>(
-            sql, cancellationToken, new { LeagueId = leagueId });
-    }
-
-    private async Task<IEnumerable<UsageRow>> GetUsagesAsync(
-        int leagueId, int seasonId, string currentUserId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            SELECT
-                ubu.[UserId],
-                bd.[Code] AS [BoostCode],
-                r.[RoundNumber],
-                CASE
-                    WHEN lrr.[Id] IS NOT NULL AND lrr.[HasBoost] = 1
-                    THEN lrr.[BoostedPoints] - lrr.[BasePoints]
-                    ELSE NULL
-                END AS [PointsGained]
-            FROM [UserBoostUsages] ubu
-            INNER JOIN [BoostDefinitions] bd ON ubu.[BoostDefinitionId] = bd.[Id]
-            INNER JOIN [Rounds] r ON ubu.[RoundId] = r.[Id]
-            LEFT JOIN [LeagueRoundResults] lrr
-                ON lrr.[LeagueId] = ubu.[LeagueId]
-                AND lrr.[RoundId] = ubu.[RoundId]
-                AND lrr.[UserId] = ubu.[UserId]
-            WHERE ubu.[LeagueId] = @LeagueId
-              AND ubu.[SeasonId] = @SeasonId
-              AND (
-                  ubu.[UserId] = @CurrentUserId
-                  OR r.[DeadlineUtc] <= GETUTCDATE()
-              )
-            ORDER BY r.[RoundNumber];";
-
-        return await dbConnection.QueryAsync<UsageRow>(
-            sql, cancellationToken,
-            new { LeagueId = leagueId, SeasonId = seasonId, CurrentUserId = currentUserId });
-    }
-
-    private async Task<int?> GetInProgressRoundNumberAsync(
-        int leagueId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            SELECT TOP 1 r.[RoundNumber]
-            FROM [Rounds] r
-            INNER JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
-            WHERE l.[Id] = @LeagueId AND r.[Status] = @InProgressStatus
-            ORDER BY r.[RoundNumber];";
-
-        return await dbConnection.QuerySingleOrDefaultAsync<int?>(
-            sql, cancellationToken,
-            new { LeagueId = leagueId, InProgressStatus = nameof(RoundStatus.InProgress) });
-    }
-
-    private async Task<int?> GetLastCompletedRoundNumberAsync(
-        int leagueId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            SELECT TOP 1 r.[RoundNumber]
-            FROM [Rounds] r
-            INNER JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
-            WHERE l.[Id] = @LeagueId AND r.[Status] = @CompletedStatus
-            ORDER BY r.[RoundNumber] DESC;";
-
-        return await dbConnection.QuerySingleOrDefaultAsync<int?>(
-            sql, cancellationToken,
-            new { LeagueId = leagueId, CompletedStatus = nameof(RoundStatus.Completed) });
-    }
-
-    private async Task<RoundRangeRow?> GetRoundRangeAsync(
-        int leagueId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            SELECT
-                MIN(r.[RoundNumber]) AS [MinRoundNumber],
-                MAX(r.[RoundNumber]) AS [MaxRoundNumber]
-            FROM [Rounds] r
-            INNER JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
-            WHERE l.[Id] = @LeagueId;";
-
-        return await dbConnection.QuerySingleOrDefaultAsync<RoundRangeRow>(
-            sql, cancellationToken, new { LeagueId = leagueId });
-    }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
-    internal sealed class BoostRuleRow
-    {
-        public string BoostCode { get; init; } = string.Empty;
-        public string Name { get; init; } = string.Empty;
-        public string? ImageUrl { get; init; }
-        public int TotalUsesPerSeason { get; init; }
-        public int LeagueBoostRuleId { get; init; }
-    }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
-    internal sealed class WindowRow
-    {
-        public int LeagueBoostRuleId { get; init; }
-        public int StartRoundNumber { get; init; }
-        public int EndRoundNumber { get; init; }
-        public int MaxUsesInWindow { get; init; }
-    }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
-    internal sealed class MemberRow
-    {
-        public string UserId { get; init; } = string.Empty;
-        public string PlayerName { get; init; } = string.Empty;
-    }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
-    internal sealed class SeasonInfoRow
-    {
-        public int SeasonId { get; init; }
-    }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
-    internal sealed class UsageRow
-    {
-        public string UserId { get; init; } = string.Empty;
-        public string BoostCode { get; init; } = string.Empty;
-        public int RoundNumber { get; init; }
-        public int? PointsGained { get; init; }
-    }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-    [SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
-    internal sealed class RoundRangeRow
-    {
-        public int MinRoundNumber { get; init; }
-        public int MaxRoundNumber { get; init; }
     }
 }

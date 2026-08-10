@@ -3,7 +3,9 @@ using NSubstitute;
 using ThePredictions.Application.Features.Boosts.Queries;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Boosts;
+using ThePredictions.Persistence.SqlServer.Queries.Boosts;
 using ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
+using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
 
 namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Queries;
@@ -169,7 +171,10 @@ public class BoostUsageSecrecyTests(SqlServerDatabaseFixture fixture) : Database
         // about the secrecy predicate. The read connection is the real one.
         var membershipService = Substitute.For<ILeagueMembershipService>();
 
-        var handler = new GetLeagueBoostUsageSummaryQueryHandler(ReadDbConnection, membershipService);
+        var handler = new GetLeagueBoostUsageSummaryQueryHandler(
+            new LeagueBoostUsageQuery(ReadDbConnection),
+            membershipService,
+            new TestDateTimeProvider(DateTime.UtcNow));
 
         return await handler.Handle(
             new GetLeagueBoostUsageSummaryQuery(world.LeagueId, currentUserId),

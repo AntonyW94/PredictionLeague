@@ -1,7 +1,6 @@
 using FluentAssertions;
 using ThePredictions.Application.Features.Boosts.Queries;
 using Xunit;
-using static ThePredictions.Application.Features.Boosts.Queries.GetLeagueBoostUsageSummaryQueryHandler;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Boosts.Queries;
 
@@ -9,30 +8,35 @@ namespace ThePredictions.Application.Tests.Unit.Features.Boosts.Queries;
 /// The league's boost-usage table: who has used which boost, how many they have left, and whether the
 /// window they were allowed to use it in has closed.
 ///
-/// Note what these tests deliberately do not cover. Hiding another player's boost for a round that is
-/// still open happens in the handler's SQL, not here, so the usages reaching this builder have already
-/// been censored. That predicate needs an integration test against a real database - it is the same
-/// class of rule as the dashboard's prediction split, and being wrong leaks what other players have
-/// done while they can still change their own.
+/// Hiding another player's boost for a round that is still open is <see cref="BoostUsageVisibility"/>'s
+/// job, applied by the handler before calling this builder, so the usages reaching here have already been
+/// censored. That rule now has its own unit tests rather than needing a database.
+///
+/// Two rules moved <i>into</i> this builder when the persistence split took the SQL out of the handler:
+/// what a boost won, and how a player's name is displayed. Both are covered below.
 /// </summary>
 public class BoostUsageSummaryBuilderTests
 {
     private const string CurrentUserId = "user-me";
 
     private static BoostRuleRow Rule(string code = "DOUBLE_UP", int totalUsesPerSeason = 2, int ruleId = 1) =>
-        new() { BoostCode = code, Name = "Double Up", ImageUrl = "https://example.test/b.png", TotalUsesPerSeason = totalUsesPerSeason, LeagueBoostRuleId = ruleId };
+        new(ruleId, code, "Double Up", "https://example.test/b.png", totalUsesPerSeason);
 
-    private static WindowRow Window(int start, int end, int maxUses = 1, int ruleId = 1) =>
-        new() { LeagueBoostRuleId = ruleId, StartRoundNumber = start, EndRoundNumber = end, MaxUsesInWindow = maxUses };
+    private static BoostWindowRow Window(int start, int end, int maxUses = 1, int ruleId = 1) =>
+        new(ruleId, start, end, maxUses);
 
-    private static MemberRow Member(string userId, string name) =>
-        new() { UserId = userId, PlayerName = name };
+    // The builder formats the display name, so members carry name parts. "Me" arrives as first name only.
+    private static BoostMemberRow Member(string userId, string name) =>
+        new(userId, name, string.Empty);
 
-    private static UsageRow Usage(string userId, int roundNumber, int? pointsGained = 10, string code = "DOUBLE_UP") =>
-        new() { UserId = userId, BoostCode = code, RoundNumber = roundNumber, PointsGained = pointsGained };
+    // pointsGained is expressed as base/boosted, because computing the difference is now the builder's rule.
+    // Null means the round has no result row yet.
+    private static BoostUsageRow Usage(string userId, int roundNumber, int? pointsGained = 10, string code = "DOUBLE_UP") =>
+        new(userId, code, roundNumber, RoundDeadlineUtc: default, HasBoost: pointsGained != null,
+            BasePoints: pointsGained == null ? null : 0, BoostedPoints: pointsGained);
 
-    private static RoundRangeRow Range(int min = 1, int max = 38) =>
-        new() { MinRoundNumber = min, MaxRoundNumber = max };
+    private static BoostRoundRangeRow Range(int min = 1, int max = 38) =>
+        new(min, max);
 
     /// <summary>
     /// The round range is passed as a nullable-of-nullable so a test can say "no range at all" and be
@@ -41,10 +45,10 @@ public class BoostUsageSummaryBuilderTests
     /// </summary>
     private static List<Contracts.Boosts.BoostUsageSummaryDto> Build(
         IReadOnlyList<BoostRuleRow>? rules = null,
-        IReadOnlyList<WindowRow>? windows = null,
-        IReadOnlyList<MemberRow>? members = null,
-        IReadOnlyList<UsageRow>? usages = null,
-        Optional<RoundRangeRow?> roundRange = default,
+        IReadOnlyList<BoostWindowRow>? windows = null,
+        IReadOnlyList<BoostMemberRow>? members = null,
+        IReadOnlyList<BoostUsageRow>? usages = null,
+        Optional<BoostRoundRangeRow?> roundRange = default,
         int? inProgressRoundNumber = null,
         int? lastCompletedRoundNumber = null) =>
         BoostUsageSummaryBuilder.Build(
@@ -124,7 +128,7 @@ public class BoostUsageSummaryBuilderTests
     [Fact]
     public void Build_ShouldFallBackToASingleRound_WhenTheSeasonHasNoRoundRange()
     {
-        var result = Build(roundRange: (RoundRangeRow?)null);
+        var result = Build(roundRange: (BoostRoundRangeRow?)null);
 
         var window = result.Single().Windows.Single();
         window.StartRoundNumber.Should().Be(1);
@@ -194,7 +198,7 @@ public class BoostUsageSummaryBuilderTests
     [Fact]
     public void Build_ShouldNotTreatAWindowAsFullSeason_WhenTheRoundRangeIsUnknown()
     {
-        var result = Build(windows: [Window(1, 38)], roundRange: (RoundRangeRow?)null);
+        var result = Build(windows: [Window(1, 38)], roundRange: (BoostRoundRangeRow?)null);
 
         result.Single().Windows.Single().IsFullSeason.Should().BeFalse();
     }
