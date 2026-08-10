@@ -1,4 +1,4 @@
-# Image Storage: Self-Hosted Team Logos And User Profile Pictures
+﻿# Image Storage: Self-Hosted Team Logos And User Profile Pictures
 
 ## Status
 
@@ -23,8 +23,12 @@ Checked against the dev database and the live site on 2026-08-10.
 
 | Fact | Value |
 |---|---|
-| Database data file cap | **1,000 MB**, currently 24 MB used |
-| Database log file cap | 100 MB |
+| Database data file cap | **1,000 MB** on both dev and **production** |
+| Production data file allocated | 41 MB, of which only ~5 MB is actual table data |
+| Dev data file allocated | 24 MB |
+| Database log file cap | 100 MB (production using 7.9 MB) |
+| Largest production table | `RefreshTokens`, ~2.5 MB - and 99.4% of it is dead, see below |
+| Production users | 126 |
 | Teams with a logo | 71, all external, all SVG |
 | Logo host, 48 teams | `cdn.jsdelivr.net/npm/circle-flags@2.8.2/flags/{cc}.svg` - **MIT licensed** |
 | Logo host, 23 teams | `resources.premierleague.com/premierleague25/badges/{id}.svg` - Premier League IP |
@@ -161,9 +165,19 @@ Steps 1 to 3 are self-contained and deliver the CSP tightening. Steps 4 and 5 ar
 
 ## Notes
 
-- The 1 GB figure was measured on **dev**. Confirm the production database has the same cap before
-  relying on the headroom numbers; both are on the same Fasthosts server so they are likely identical,
-  but it has not been checked.
+- **Production confirmed on 2026-08-10**: the same 1,000 MB cap as dev, 41 MB allocated, and only
+  about 5 MB of that is real table data. So the constraint is entirely about growth, not about today.
+  At 126 users, avatars in the database would be roughly 4 MB and would work fine for a long time -
+  the blob recommendation is for the "widely used" future, and for the two reasons that hold at **any**
+  size: the nightly backup copies everything, and profile pictures are personal data that must not be
+  refreshed into dev.
+
+- **The largest production table is `RefreshTokens` and 99.4% of it is dead.** 8,714 rows, of which
+  8,328 are expired and 6,763 revoked, leaving 50 usable; the oldest dates from 2025-08-18. Nothing
+  deletes them - `RefreshTokenRepository` has no delete, and `CleanupExpiredDataCommandHandler` only
+  purges password reset tokens. Small in absolute terms today, but it grows without bound against a
+  1 GB ceiling, and it is the cheapest fix available since the cleanup job already has the pattern.
+  Tracked separately from this plan.
 - If logos live in storage rather than `wwwroot`, the "which folder do flags versus badges go in"
   question disappears: every team logo is `/api/teams/{id}/logo` regardless of origin. If they ever do
   go in `wwwroot` instead, use **one** folder named by team (`teams/arsenal.svg`, `teams/argentina.svg`)
