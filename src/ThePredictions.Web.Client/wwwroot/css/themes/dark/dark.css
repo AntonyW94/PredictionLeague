@@ -266,13 +266,13 @@
     filter: none;
 }
 
-/* Dark theme puts the logo on a dark background, so it takes the on-dark lockup. */
+/* Dark mode takes the dark-mode lockup (light ink, for the dark background). */
 .theme-dark .navbar-logo {
-    background-image: url("/images/brand/logo-lockup-on-dark.webp");
+    background-image: url("/images/brand/logo-lockup-dark-mode.webp");
 }
 
 .theme-dark .auth-logo {
-    background-image: url("/images/brand/logo-lockup-on-dark.webp");
+    background-image: url("/images/brand/logo-lockup-dark-mode.webp");
 }
 
 .theme-dark .navbar-nav .nav-item .nav-link,

@@ -49,9 +49,10 @@ main {
     width: 100%;
     max-width: 30rem;
     height: 6.25rem;
-    /* The hero sits on a dark purple gradient in both themes, so it always takes the
-       on-dark lockup rather than following the theme. */
-    background: url("/images/brand/logo-lockup-on-dark.webp") center / contain no-repeat;
+    /* Deliberately the dark-mode lockup in BOTH modes, not a mistake: the hero sits on a dark
+       purple gradient whatever the theme, so it needs the light-ink artwork for contrast. This is
+       the only place where the file name and the active mode disagree. */
+    background: url("/images/brand/logo-lockup-dark-mode.webp") center / contain no-repeat;
 }
 
 .table-responsive {

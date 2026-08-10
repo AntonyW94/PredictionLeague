@@ -37,7 +37,7 @@
     width: 100%;
     max-width: 16rem;
     height: 3.25rem;
-    background: url("/images/brand/logo-lockup-on-light.webp") center / contain no-repeat;
+    background: url("/images/brand/logo-lockup-light-mode.webp") center / contain no-repeat;
     filter: drop-shadow(0 2px 6px var(--black-alpha-25));
 }
 

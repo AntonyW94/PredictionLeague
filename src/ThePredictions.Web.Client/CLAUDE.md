@@ -118,23 +118,29 @@ Lowercase kebab-case throughout. Five rules:
    | Modifier | Values |
    |---|---|
    | state | `normal`, `selected`, `disabled`, `unknown`, `empty` |
-   | background | `on-light`, `on-dark` |
+   | mode | `light-mode`, `dark-mode` |
    | logo variant | `mark` (the TP monogram alone), `wordmark` (the words alone), `lockup` (both together) |
    | width | bare pixel number, **only** where several sizes of one image exist |
 4. **Describe what it is, never where it is used or what it looks like.** Placement changes and
    appearance is subjective; the subject does not.
 5. **Keep external platform conventions verbatim** - `favicon`, `apple-touch-icon`.
 
-#### Why `on-light` and `on-dark` rather than `light` and `dark`
+#### Why `light-mode`, not `light`
 
 Because the short form is genuinely ambiguous, and the old names were the opposite of the natural
 reading. `logo-header-light.png` contained **dark** ink: it meant "for light mode". Anyone reading
 "logo-light" would reasonably expect the light-coloured logo, and pick the wrong file.
 
-**Name the background the asset sits on.** `logo-lockup-on-dark` reads as a sentence and cannot be
-misread. It also survives the case where a dark background appears in light mode, which is real here:
-the homepage hero is a dark purple gradient in both themes, so it uses the on-dark lockup regardless
-of the active theme.
+Spelling out `-mode` removes that: `logo-lockup-light-mode` can only mean the asset for light mode,
+never "the light-coloured asset". It also matches the vocabulary the CSS already uses, `themes/light/`,
+`themes/dark/` and `.theme-dark`, so there is one word for the concept across the codebase.
+
+**The one place this reads oddly, and it is not a mistake.** `.hero-image` in `layout/layout.css` uses
+`logo-lockup-dark-mode.webp` in *both* modes, because the hero sits on a dark purple gradient whatever
+the theme and needs the light-ink artwork for contrast. That rule carries a comment saying so. If a
+second case like it appears, the honest fix is to name assets after the background they sit on
+(`-on-dark`) rather than the mode - but one exception is not worth trading away the consistency with
+`themes/`.
 
 #### The two logos must share a canvas
 
