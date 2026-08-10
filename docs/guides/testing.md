@@ -271,6 +271,13 @@ dotnet test tests\Integration\ThePredictions.Infrastructure.Tests.Integration
   what these predicates have to cope with.
 - **Never assume an identity value.** Respawn does not reseed identities, so every seeder method returns
   the id the database generated.
+- **Substitute the collaborators, never the database.** A query handler's membership check is separate SQL
+  in its own class, so NSubstitute stands in for it and keeps the test about the predicate. The read
+  connection is always the real `DapperReadDbConnection`.
+- **Prove the test bites.** A test that passes against a broken predicate is worse than no test, because
+  it reads as cover. Break the rule under test, watch the expected tests fail and nothing else, then put
+  it back. Every rule pinned so far has been verified this way, and the count of failures is recorded in
+  the commit message.
 
 ### It does not affect the 100% gate
 
@@ -340,6 +347,7 @@ tests/
 └── Integration/
     └── ThePredictions.Infrastructure.Tests.Integration/
         ├── Harness/               → Container, migrations, Respawn reset, seeding
+        ├── Queries/               → Rules that live in a SQL predicate
         ├── Repositories/          → Repository SQL against real SQL Server
         └── Schema/                → The migrations applying cleanly from empty
 ```

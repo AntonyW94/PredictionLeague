@@ -293,6 +293,231 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
+    internal async Task<int> AddLeagueAsync(int seasonId, string administratorUserId, string name = "Integration League")
+    {
+        const string sql = @"
+            INSERT INTO [Leagues]
+            (
+                [Name],
+                [SeasonId],
+                [AdministratorUserId],
+                [Price],
+                [IsFree],
+                [HasPrizes],
+                [PointsForExactScore],
+                [PointsForCorrectResult],
+                [CreatedAtUtc],
+                [RequiresMemberApproval],
+                [IsListed]
+            )
+            VALUES
+            (
+                @Name,
+                @SeasonId,
+                @AdministratorUserId,
+                @Price,
+                @IsFree,
+                @HasPrizes,
+                @PointsForExactScore,
+                @PointsForCorrectResult,
+                @CreatedAtUtc,
+                @RequiresMemberApproval,
+                @IsListed
+            );
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new
+        {
+            Name = name,
+            SeasonId = seasonId,
+            AdministratorUserId = administratorUserId,
+            Price = 0m,
+            IsFree = true,
+            HasPrizes = false,
+            PointsForExactScore = 3,
+            PointsForCorrectResult = 1,
+            CreatedAtUtc = DateTime.UtcNow,
+            RequiresMemberApproval = false,
+            IsListed = false
+        });
+    }
+
+    internal async Task AddLeagueMemberAsync(
+        int leagueId,
+        string userId,
+        LeagueMemberStatus status = LeagueMemberStatus.Approved)
+    {
+        const string sql = @"
+            INSERT INTO [LeagueMembers]
+            (
+                [LeagueId],
+                [UserId],
+                [Status],
+                [IsAlertDismissed],
+                [JoinedAtUtc],
+                [IsArchivedByUser]
+            )
+            VALUES
+            (
+                @LeagueId,
+                @UserId,
+                @Status,
+                @IsAlertDismissed,
+                @JoinedAtUtc,
+                @IsArchivedByUser
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            LeagueId = leagueId,
+            UserId = userId,
+            Status = status.ToString(),
+            IsAlertDismissed = false,
+            JoinedAtUtc = DateTime.UtcNow,
+            IsArchivedByUser = false
+        });
+    }
+
+    internal async Task<int> AddBoostDefinitionAsync(string code, string name, string scope = "Round")
+    {
+        const string sql = @"
+            INSERT INTO [BoostDefinitions]
+            (
+                [Code],
+                [Name],
+                [Scope],
+                [ImageUrl]
+            )
+            VALUES
+            (
+                @Code,
+                @Name,
+                @Scope,
+                @ImageUrl
+            );
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new
+        {
+            Code = code,
+            Name = name,
+            Scope = scope,
+            ImageUrl = $"/images/boosts/{code.ToLowerInvariant()}.webp"
+        });
+    }
+
+    internal async Task<int> AddLeagueBoostRuleAsync(
+        int leagueId,
+        int boostDefinitionId,
+        int totalUsesPerSeason = 2,
+        bool isEnabled = true)
+    {
+        const string sql = @"
+            INSERT INTO [LeagueBoostRules]
+            (
+                [LeagueId],
+                [BoostDefinitionId],
+                [TotalUsesPerSeason],
+                [IsEnabled]
+            )
+            VALUES
+            (
+                @LeagueId,
+                @BoostDefinitionId,
+                @TotalUsesPerSeason,
+                @IsEnabled
+            );
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new
+        {
+            LeagueId = leagueId,
+            BoostDefinitionId = boostDefinitionId,
+            TotalUsesPerSeason = totalUsesPerSeason,
+            IsEnabled = isEnabled
+        });
+    }
+
+    internal async Task AddBoostUsageAsync(
+        string userId,
+        int leagueId,
+        int seasonId,
+        int roundId,
+        int boostDefinitionId)
+    {
+        const string sql = @"
+            INSERT INTO [UserBoostUsages]
+            (
+                [UserId],
+                [LeagueId],
+                [SeasonId],
+                [RoundId],
+                [BoostDefinitionId],
+                [PlayedAtUtc]
+            )
+            VALUES
+            (
+                @UserId,
+                @LeagueId,
+                @SeasonId,
+                @RoundId,
+                @BoostDefinitionId,
+                @PlayedAtUtc
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            UserId = userId,
+            LeagueId = leagueId,
+            SeasonId = seasonId,
+            RoundId = roundId,
+            BoostDefinitionId = boostDefinitionId,
+            PlayedAtUtc = DateTime.UtcNow
+        });
+    }
+
+    internal async Task AddLeagueRoundResultAsync(
+        int leagueId,
+        int roundId,
+        string userId,
+        int basePoints,
+        int boostedPoints,
+        string appliedBoostCode)
+    {
+        const string sql = @"
+            INSERT INTO [LeagueRoundResults]
+            (
+                [LeagueId],
+                [RoundId],
+                [UserId],
+                [BasePoints],
+                [BoostedPoints],
+                [HasBoost],
+                [AppliedBoostCode]
+            )
+            VALUES
+            (
+                @LeagueId,
+                @RoundId,
+                @UserId,
+                @BasePoints,
+                @BoostedPoints,
+                @HasBoost,
+                @AppliedBoostCode
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            LeagueId = leagueId,
+            RoundId = roundId,
+            UserId = userId,
+            BasePoints = basePoints,
+            BoostedPoints = boostedPoints,
+            HasBoost = true,
+            AppliedBoostCode = appliedBoostCode
+        });
+    }
+
     private async Task ExecuteAsync(string sql, object parameters)
     {
         using var connection = connectionFactory.CreateConnection();

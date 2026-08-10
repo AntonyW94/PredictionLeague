@@ -17,6 +17,10 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0" />
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <!-- Only for the collaborators that are not the subject of the test - the membership service in
+         front of a query handler, whose authorisation SQL lives in its own class. The database is
+         never substituted; that is the whole point of this project. -->
+    <PackageReference Include="NSubstitute" Version="5.3.0" />
     <!-- Throwaway SQL Server per run. Not SQLite: the queries under test use RANK() OVER,
          CROSS APPLY, MERGE and CAST(... AS bit), so a SQLite suite would pass while proving
          nothing about production behaviour. -->
@@ -43,6 +47,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\ThePredictions.Infrastructure\ThePredictions.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Shared\ThePredictions.Tests.Shared\ThePredictions.Tests.Shared.csproj" />
   </ItemGroup>
 
   <!-- Lets the migration test compare the DbUp journal against the scripts committed on disk. -->

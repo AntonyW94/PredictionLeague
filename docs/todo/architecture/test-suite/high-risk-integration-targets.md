@@ -67,12 +67,19 @@ predicate itself is only reachable through a real database.
 
 Tests wanted:
 
-- [ ] Own boosts are visible in a round whose deadline has not passed
-- [ ] Another player's boosts are hidden in that same round
-- [ ] Another player's boosts appear once the deadline has passed
+- [x] Own boosts are visible in a round whose deadline has not passed
+- [x] Another player's boosts are hidden in that same round
+- [x] Another player's boosts appear once the deadline has passed
 
 Note it calls `GETUTCDATE()` rather than taking a clock, so tests must arrange round deadlines relative
 to now rather than pinning a fixed instant.
+
+**Done (August 2026)** in `tests/Integration/.../Queries/BoostUsageSecrecyTests.cs`, through `Handle`
+rather than the private read, so what is asserted is what a player would see. Two more went in alongside:
+the same world viewed by the *other* player, which rules out a predicate that is right for one user only,
+and the remaining-uses figure, which is computed from censored rows and so leaks the hidden usage if the
+predicate is wrong. Verified by mutation - replacing the deadline comparison with `1 = 1` fails three of
+the five and nothing else.
 
 ## 3. PredictableMatchPredicate, duplicated by comment
 
@@ -90,13 +97,24 @@ deadline.
 
 Tests wanted:
 
-- [ ] Both call sites return the same match set for the same data - ideally one test feeding both
-- [ ] A match with a custom lock in the future counts as predictable after the round deadline has passed
-- [ ] A match with no custom lock stops counting once the round deadline passes
-- [ ] Matches without confirmed teams, or not `Scheduled`, are excluded
+- [x] Both call sites return the same match set for the same data - ideally one test feeding both
+- [x] A match with a custom lock in the future counts as predictable after the round deadline has passed
+- [x] A match with no custom lock stops counting once the round deadline passes
+- [x] Matches without confirmed teams, or not `Scheduled`, are excluded
 
 If the two can be made to share one SQL constant, that is better than testing them separately - but the
 test should still exist, because sharing a constant is itself something that can be undone.
+
+**Done (August 2026)** in `tests/Integration/.../Queries/PredictableMatchPredicateTests.cs`, as the single
+theory this asked for: eight scenarios, each driving both call sites over one seeded fixture and asserting
+they agree. Verified by mutation - diverging the handler's copy alone fails exactly the two custom-lock
+cases, named in the failure output.
+
+**The shared constant was not done, deliberately.** The two fragments are not textually identical: the
+handler takes the deadline as `@RoundDeadlineUtc` and filters on `@RoundId`, while `ReminderService` reads
+`r.[DeadlineUtc]` and joins on `r.[Id]`. Sharing means reconciling that first, which is a production
+change to the reminder job's SQL and wants its own reviewed PR. The test does not depend on it either way,
+which is the point this list already made.
 
 ## 4. The rest, in rough priority order
 
