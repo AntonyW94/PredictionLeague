@@ -3,7 +3,7 @@ using DbUp.Builder;
 using DbUp.Engine;
 using ThePredictions.Persistence.SqlServer.Migrations;
 
-namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 
 /// <summary>
 /// Applies the committed DbUp migration set to the throwaway test database.

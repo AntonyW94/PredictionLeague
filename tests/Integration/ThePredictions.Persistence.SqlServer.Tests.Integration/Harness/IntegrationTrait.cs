@@ -1,4 +1,4 @@
-namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 
 /// <summary>
 /// The trait CI filters on. Constants rather than literals so the convention test and the classes it

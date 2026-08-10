@@ -26,7 +26,7 @@ jobs:
 
       # Category!=Integration keeps the container-backed suite out of this step: it needs a SQL Server
       # to start before anything runs, and it owns no assembly for the 100% threshold to measure.
-      # ThePredictions.Infrastructure.Tests.Integration has a test that fails if a class in it is
+      # ThePredictions.Persistence.SqlServer.Tests.Integration has a test that fails if a class in it is
       # missing the trait, so nothing can quietly fall out of both jobs.
       - name: Run unit tests with coverage
         run: >
@@ -64,7 +64,7 @@ jobs:
 
       - name: Run integration tests
         run: >
-          dotnet test tests/Integration/ThePredictions.Infrastructure.Tests.Integration/ThePredictions.Infrastructure.Tests.Integration.csproj
+          dotnet test tests/Integration/ThePredictions.Persistence.SqlServer.Tests.Integration/ThePredictions.Persistence.SqlServer.Tests.Integration.csproj
           --configuration Release
           --verbosity normal
 

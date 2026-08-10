@@ -5,7 +5,7 @@ using Testcontainers.MsSql;
 using ThePredictions.Persistence.SqlServer.Migrations;
 using Xunit;
 
-namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 
 /// <summary>
 /// One throwaway SQL Server for the whole test run: the container starts once, a database is created

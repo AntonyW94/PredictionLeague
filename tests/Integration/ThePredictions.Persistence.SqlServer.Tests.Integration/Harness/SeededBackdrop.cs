@@ -1,4 +1,4 @@
-namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 
 /// <summary>
 /// The identities of the rows <see cref="TestDataSeeder.AddBackdropAsync"/> created, so a test can hang

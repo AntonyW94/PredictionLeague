@@ -2,7 +2,7 @@ using System.Data;
 using Microsoft.Data.SqlClient;
 using ThePredictions.Application.Data;
 
-namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 
 /// <summary>
 /// The application's connection seam, pointed at the test container. Deliberately not

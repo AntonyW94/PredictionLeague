@@ -40,7 +40,7 @@ Tests wanted:
 - [x] Insert, update and delete in one call all apply correctly together
 
 **Done (August 2026)** in
-`tests/Integration/ThePredictions.Infrastructure.Tests.Integration/Repositories/RoundRepositoryUpdateTests.cs`,
+`tests/Integration/ThePredictions.Persistence.SqlServer.Tests.Integration/Repositories/RoundRepositoryUpdateTests.cs`,
 along with two the list did not name. `FK_UserPredictions_Matches` turned out to be `ON DELETE CASCADE`,
 so an unguarded delete removes the predictions with no error at all - that premise now has its own test,
 so the guard's importance is demonstrated rather than asserted in a comment. The wrong call order is
@@ -133,7 +133,7 @@ Use **Testcontainers with real SQL Server, not SQLite** - already the decision i
 cannot evaluate the `RANK() OVER`, `CROSS APPLY`, `MERGE` or `CAST(... AS bit)` this codebase relies on,
 so a SQLite suite would pass while proving nothing about production behaviour.
 
-**Built (August 2026):** `tests/Integration/ThePredictions.Infrastructure.Tests.Integration`. One
+**Built (August 2026):** `tests/Integration/ThePredictions.Persistence.SqlServer.Tests.Integration`. One
 container per run, schema built by running the committed DbUp migrations, Respawn between tests. How to
 run it and the conventions it expects are in
 [`../../../guides/testing.md`](../../../guides/testing.md#integration-tests-against-real-sql-server). The

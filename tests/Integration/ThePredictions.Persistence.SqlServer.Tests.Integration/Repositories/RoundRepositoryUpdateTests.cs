@@ -2,10 +2,10 @@ using FluentAssertions;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
 using ThePredictions.Persistence.SqlServer.Repositories;
-using ThePredictions.Infrastructure.Tests.Integration.Harness;
+using ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 using Xunit;
 
-namespace ThePredictions.Infrastructure.Tests.Integration.Repositories;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Repositories;
 
 /// <summary>
 /// <c>RoundRepository.UpdateAsync</c> works out which matches to insert, update and delete by diffing the

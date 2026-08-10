@@ -4,11 +4,11 @@ using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Infrastructure.Services;
-using ThePredictions.Infrastructure.Tests.Integration.Harness;
+using ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
 
-namespace ThePredictions.Infrastructure.Tests.Integration.Queries;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Queries;
 
 /// <summary>
 /// The rule for "a fixture a player can still act on" is written out twice - once as
