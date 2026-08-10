@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <!-- Not a test project: it holds abstract bases with no fixture, so there is nothing here to run.
+         The tests are discovered on the concrete subclasses in each adapter's own test project. Saying
+         so explicitly stops `dotnet test` on the solution reporting an empty assembly. -->
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- xunit.v3.extensibility.core rather than xunit.v3: the metapackage requires OutputType=Exe
+         because it brings a test runner, and this assembly is never executed directly - its tests are
+         discovered on the concrete subclasses in each adapter's project. The extensibility package is
+         what supplies [Fact] without the runner. No coverlet either: it owns no production assembly. -->
+    <PackageReference Include="xunit.v3.extensibility.core" Version="3.0.0" />
+    <PackageReference Include="FluentAssertions" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Application for the repository interfaces under test, Domain for the entities passed to them.
+         Deliberately NOT any adapter: the moment this project references one, the tests stop being
+         adapter-neutral and the whole point is lost. LayerDependencyConventionTests enforces that. -->
+    <ProjectReference Include="..\..\..\src\ThePredictions.Application\ThePredictions.Application.csproj" />
+  </ItemGroup>
+</Project>

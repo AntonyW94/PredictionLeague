@@ -144,7 +144,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 0b | **Repositories** ✅ | Move all 30 repositories and `RepositoryBase`, and their 29 registrations. `Microsoft.Data.SqlClient` leaves Infrastructure here rather than in 0c, because `BoostWriteRepository` was its only remaining user. |
 | 0c | **Identity stores** ✅ | `DapperUserStore` and `DapperRoleStore` only, and `Dapper` leaves Infrastructure. `LeagueMembershipService` and `CachedEmailSettingsProvider` were dropped from this phase - see below. |
 | 0d | **Migration set** ✅ | Move the DbUp scripts under the adapter, which now owns the embedded resources; `DatabaseTools` and the integration suite both read them from there. Required a journal rename on every database - see below. **Phase 0 complete.** |
-| 1 | **Conformance split** | Extract the abstract bases, `ITestDataSeeder`, and re-home the existing 29 integration tests. No new tests. |
+| 1 | **Conformance split** ✅ | Renamed the integration project to `ThePredictions.Persistence.SqlServer.Tests.Integration` (Infrastructure holds no SQL, so the old name was a lie), then extracted `ThePredictions.Persistence.Conformance` with `ITestDataSeeder`, `ITestDataInspector` and the `RoundRepositoryConformanceTests` base. No new tests. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -227,6 +227,24 @@ Two follow-ups belong with the Leagues feature area, not before it, because both
   injected query interface, never through `IApplicationReadDbConnection` directly.
 - Add the convention test that enforces it - no `*CommandHandler` in Application takes
   `IApplicationReadDbConnection`. Nothing enforces the CQRS split today at all.
+
+### Phase 1 could only move one of the three test classes
+
+The plan assumed the conformance harness was independent of the tests. It is not: a conformance suite's
+shape is determined by the interfaces it tests, and for two of the three classes those interfaces do not
+exist yet.
+
+- **`RoundRepositoryUpdateTests` moved.** It goes through `IRoundRepository`, so it was already
+  adapter-neutral in everything but its raw-SQL arrange and assert - which is exactly what
+  `ITestDataSeeder` and `ITestDataInspector` now abstract.
+- **`BoostUsageSecrecyTests` and `PredictableMatchPredicateTests` could not.** They construct handlers that
+  still contain `GETUTCDATE()`, `SELECT TOP` and `ISNULL`. They become conformance tests when phase 2
+  reaches Boosts and Rounds and moves that SQL behind query interfaces - not before.
+- **`MigrationsFromEmptyTests` never will.** Each adapter has its own migration set, so it is
+  adapter-specific by nature.
+
+Doing the extraction now was still right, and for the reason originally given: every integration test phase
+2 writes would otherwise need rewriting afterwards. The shape now exists, with one real suite proving it.
 
 ### Undeclared dependencies the split keeps exposing
 

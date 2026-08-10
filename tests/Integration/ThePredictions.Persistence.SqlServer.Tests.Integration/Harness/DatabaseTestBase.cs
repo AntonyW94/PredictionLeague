@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
+using ThePredictions.Persistence.Conformance;
 using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Persistence.SqlServer.Data.Resilience;
 using Xunit;
@@ -17,20 +18,18 @@ namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 [Collection(DatabaseCollection.Name)]
 public abstract class DatabaseTestBase : IAsyncLifetime
 {
-    private readonly SqlServerDatabaseFixture _fixture;
+    private readonly SqlServerTestHarness _harness;
 
     protected DatabaseTestBase(SqlServerDatabaseFixture fixture)
     {
-        _fixture = fixture;
-        ConnectionFactory = new TestDbConnectionFactory(fixture.ConnectionString);
-        Seed = new TestDataSeeder(ConnectionFactory);
+        _harness = new SqlServerTestHarness(fixture);
     }
 
-    internal string ConnectionString => _fixture.ConnectionString;
+    internal string ConnectionString => _harness.ConnectionString;
 
-    internal IDbConnectionFactory ConnectionFactory { get; }
+    internal IDbConnectionFactory ConnectionFactory => _harness.ConnectionFactory;
 
-    internal TestDataSeeder Seed { get; }
+    internal ITestDataSeeder Seed => _harness.Seed;
 
     /// <summary>
     /// The real <see cref="DapperReadDbConnection"/> over the test container - the seam every query
@@ -49,9 +48,9 @@ public abstract class DatabaseTestBase : IAsyncLifetime
     /// A fresh transaction context per test. Repositories take this and fall back to a new connection
     /// while no transaction is active, which is how they behave outside <c>TransactionBehaviour</c>.
     /// </summary>
-    internal IDbTransactionContext NewTransactionContext() => new DbTransactionContext(ConnectionFactory);
+    internal IDbTransactionContext NewTransactionContext() => _harness.NewTransactionContext();
 
-    public async ValueTask InitializeAsync() => await _fixture.ResetAsync();
+    public async ValueTask InitializeAsync() => await _harness.ResetAsync();
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 

@@ -345,12 +345,34 @@ tests/
         └── Middleware/            → Exception-to-status mapping (see ADR-0016)
 tests/
 └── Integration/
+    ├── ThePredictions.Persistence.Conformance/      → adapter-NEUTRAL. Abstract bases, no dialect.
+    │   └── Repositories/                            → what any IXxxRepository must do
     └── ThePredictions.Persistence.SqlServer.Tests.Integration/
-        ├── Harness/               → Container, migrations, Respawn reset, seeding
-        ├── Queries/               → Rules that live in a SQL predicate
-        ├── Repositories/          → Repository SQL against real SQL Server
+        ├── Harness/               → Container, migrations, Respawn reset, seeder, inspector
+        ├── Queries/               → Rules that live in a SQL predicate (SQL Server-specific for now)
+        ├── Repositories/          → Concrete subclasses that run the conformance suite
         └── Schema/                → The migrations applying cleanly from empty
 ```
+
+### The conformance suite
+
+`ThePredictions.Persistence.Conformance` holds **abstract** test classes: the behaviour any adapter must
+exhibit, written once, with no SQL and no dialect. Each adapter's own project derives a concrete class that
+supplies three members - the repository under test, an `ITestDataSeeder` and an `ITestDataInspector` - and
+inherits every test. `SqlServerRoundRepositoryTests` is that class for SQL Server and is about thirty lines
+long; a second adapter gets the same seven tests by writing one the same size.
+
+Arrangement and assertion both go behind interfaces because **neither can be dialect-free**: the schema
+belongs to the adapter, so there is no portable way to insert or read a row. That keeps the rule that a test
+never arranges or asserts through the code it is testing, while still letting the test itself be portable.
+
+`ConformanceSuite_ShouldNotReferenceAnyAdapter` fails the build if the conformance project ever references
+a concrete adapter, which is the one change that would silently destroy its value.
+
+**Not everything can live there yet.** `BoostUsageSecrecyTests` and `PredictableMatchPredicateTests` stay
+SQL Server-specific because the handlers they exercise still contain T-SQL. They move across as the
+persistence split reaches their feature area. `MigrationsFromEmptyTests` stays adapter-specific by nature -
+each adapter has its own migration set.
 
 ### Test Naming
 

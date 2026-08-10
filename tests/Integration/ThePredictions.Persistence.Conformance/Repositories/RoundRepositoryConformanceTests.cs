@@ -1,28 +1,37 @@
 using FluentAssertions;
+using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
-using ThePredictions.Persistence.SqlServer.Repositories;
-using ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 using Xunit;
 
-namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Repositories;
+namespace ThePredictions.Persistence.Conformance.Repositories;
 
 /// <summary>
-/// <c>RoundRepository.UpdateAsync</c> works out which matches to insert, update and delete by diffing the
-/// incoming round against the match ids already stored, and the delete is guarded by
-/// <c>NOT EXISTS (SELECT 1 FROM [UserPredictions] ...)</c>. That guard is the only thing standing between
-/// an ordinary round edit and silent data loss: <c>FK_UserPredictions_Matches</c> is
-/// <c>ON DELETE CASCADE</c>, so deleting a match takes every player's prediction for it with no error and
-/// no trace. <see cref="UserPredictions_ShouldBeCascadeDeleted_WhenAMatchIsDeletedWithoutTheGuard"/> pins
-/// that premise, so the guard's importance is demonstrated rather than asserted in a comment.
+/// What any <see cref="IRoundRepository"/> implementation must do, whatever database it speaks to.
 ///
-/// None of this is reachable by a unit test: the rule lives in a SQL predicate, and a mocked connection
-/// only proves a string was handed over.
+/// The rule that matters most here is the delete guard. <c>UpdateAsync</c> works out which matches to
+/// insert, update and delete by diffing the incoming round against what is stored, and a match that
+/// players have already predicted must survive removal. It is a data-loss guard: the schema cascades a
+/// match delete to its predictions, so getting this wrong destroys player data with no error and no trace.
+/// <see cref="Predictions_ShouldBeCascadeDeleted_WhenAMatchIsDeletedWithoutTheGuard"/> pins that premise,
+/// so the guard's importance is demonstrated rather than asserted in a comment.
+///
+/// None of it is reachable by a unit test: the rule lives in a SQL predicate, and a mocked connection only
+/// proves a string was handed over. And none of it is specific to SQL Server - a second adapter has to
+/// implement the same guard over the same cascade, so these tests are the contract, not a description of
+/// one implementation. Derive from this class, supply the three members below, and the suite runs against
+/// that adapter unchanged.
 /// </summary>
-[Trait(IntegrationTrait.Name, IntegrationTrait.Value)]
-public class RoundRepositoryUpdateTests(SqlServerDatabaseFixture fixture) : DatabaseTestBase(fixture)
+public abstract class RoundRepositoryConformanceTests
 {
-    private const string SelectMatchIdsForRound = "SELECT [Id] FROM [Matches] WHERE [RoundId] = @RoundId;";
+    /// <summary>The adapter's repository, freshly built, with no transaction in progress.</summary>
+    protected abstract IRoundRepository Repository { get; }
+
+    /// <summary>Direct writes, bypassing the repository.</summary>
+    protected abstract ITestDataSeeder Seed { get; }
+
+    /// <summary>Direct reads, bypassing the repository.</summary>
+    protected abstract ITestDataInspector Inspect { get; }
 
     #region The delete guard
 
@@ -38,16 +47,15 @@ public class RoundRepositoryUpdateTests(SqlServerDatabaseFixture fixture) : Data
 
         // Act - the admin removes the predicted fixture from the round.
         var round = RoundWith(roundId, backdrop.SeasonId, [ExistingMatch(keptMatchId, roundId, backdrop)]);
-        await CreateRepository().UpdateAsync(round, CancellationToken.None);
+        await Repository.UpdateAsync(round, CancellationToken.None);
 
         // Assert
-        var remainingMatchIds = await QueryAsync<int>(SelectMatchIdsForRound, new { RoundId = roundId });
-        remainingMatchIds.Should().BeEquivalentTo(new[] { keptMatchId, predictedMatchId },
+        var remaining = await Inspect.MatchIdsForRoundAsync(roundId);
+        remaining.Should().BeEquivalentTo(new[] { keptMatchId, predictedMatchId },
             "a fixture players have already predicted must survive the edit.");
 
-        var predictionCount = await ScalarAsync<int>(
-            "SELECT COUNT(*) FROM [UserPredictions] WHERE [MatchId] = @MatchId;", new { MatchId = predictedMatchId });
-        predictionCount.Should().Be(1, "the predictions are what the guard exists to protect.");
+        (await Inspect.PredictionCountForMatchAsync(predictedMatchId)).Should().Be(1,
+            "the predictions are what the guard exists to protect.");
     }
 
     [Fact]
@@ -61,33 +69,54 @@ public class RoundRepositoryUpdateTests(SqlServerDatabaseFixture fixture) : Data
 
         // Act
         var round = RoundWith(roundId, backdrop.SeasonId, [ExistingMatch(keptMatchId, roundId, backdrop)]);
-        await CreateRepository().UpdateAsync(round, CancellationToken.None);
+        await Repository.UpdateAsync(round, CancellationToken.None);
 
         // Assert - the guard protects predictions, not fixtures, so this one goes.
-        var remainingMatchIds = await QueryAsync<int>(SelectMatchIdsForRound, new { RoundId = roundId });
-        remainingMatchIds.Should().BeEquivalentTo(new[] { keptMatchId });
-        remainingMatchIds.Should().NotContain(unpredictedMatchId);
+        var remaining = await Inspect.MatchIdsForRoundAsync(roundId);
+        remaining.Should().BeEquivalentTo(new[] { keptMatchId });
+        remaining.Should().NotContain(unpredictedMatchId);
     }
 
     [Fact]
-    public async Task UserPredictions_ShouldBeCascadeDeleted_WhenAMatchIsDeletedWithoutTheGuard()
+    public async Task UpdateAsync_ShouldDeleteOnlyTheUnpredictedMatches_WhenSeveralAreRemovedAtOnce()
     {
-        // Arrange - this test asserts the schema, not the repository. It is here because it is the
+        // Arrange - two removals in one call, one of them predicted. The delete runs as a single statement
+        // over both ids, so the guard has to discriminate row by row.
+        var backdrop = await Seed.AddBackdropAsync();
+        var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, roundNumber: 1, deadlineUtc: DateTime.UtcNow.AddDays(2));
+        var keptMatchId = await Seed.AddMatchAsync(roundId, backdrop.HomeTeamId, backdrop.AwayTeamId);
+        var predictedMatchId = await Seed.AddMatchAsync(roundId, backdrop.AwayTeamId, backdrop.HomeTeamId);
+        var unpredictedMatchId = await Seed.AddMatchAsync(roundId, backdrop.HomeTeamId, backdrop.AwayTeamId);
+        await Seed.AddPredictionAsync(predictedMatchId, backdrop.UserId);
+
+        // Act
+        var round = RoundWith(roundId, backdrop.SeasonId, [ExistingMatch(keptMatchId, roundId, backdrop)]);
+        await Repository.UpdateAsync(round, CancellationToken.None);
+
+        // Assert
+        var remaining = await Inspect.MatchIdsForRoundAsync(roundId);
+        remaining.Should().BeEquivalentTo(new[] { keptMatchId, predictedMatchId });
+        remaining.Should().NotContain(unpredictedMatchId);
+    }
+
+    [Fact]
+    public async Task Predictions_ShouldBeCascadeDeleted_WhenAMatchIsDeletedWithoutTheGuard()
+    {
+        // Arrange - this asserts the adapter's schema, not its repository. It is here because it is the
         // reason the guard exists: without it a removed fixture silently takes its predictions.
         var backdrop = await Seed.AddBackdropAsync();
         var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, roundNumber: 1, deadlineUtc: DateTime.UtcNow.AddDays(2));
         var matchId = await Seed.AddMatchAsync(roundId, backdrop.HomeTeamId, backdrop.AwayTeamId);
         await Seed.AddPredictionAsync(matchId, backdrop.UserId);
 
-        // Act - an unguarded delete, as UpdateAsync would issue if the NOT EXISTS were dropped.
-        await ExecuteAsync("DELETE FROM [Matches] WHERE [Id] = @MatchId;", new { MatchId = matchId });
+        // Act - an unguarded delete, as UpdateAsync would issue if its guard were dropped.
+        await Seed.DeleteMatchAsync(matchId);
 
         // Assert
-        var predictionCount = await ScalarAsync<int>(
-            "SELECT COUNT(*) FROM [UserPredictions] WHERE [MatchId] = @MatchId;", new { MatchId = matchId });
-        predictionCount.Should().Be(0,
-            "FK_UserPredictions_Matches is ON DELETE CASCADE - the delete succeeds and the predictions "
-            + "vanish without an error, which is why the NOT EXISTS guard is load-bearing.");
+        (await Inspect.PredictionCountForMatchAsync(matchId)).Should().Be(0,
+            "the predictions foreign key cascades, so the delete succeeds and the predictions vanish "
+            + "without an error. That is what makes the repository's guard load-bearing, and any adapter "
+            + "whose schema does not cascade here would be storing orphaned predictions instead.");
     }
 
     #endregion
@@ -104,7 +133,7 @@ public class RoundRepositoryUpdateTests(SqlServerDatabaseFixture fixture) : Data
         var stayingMatchId = await Seed.AddMatchAsync(sourceRoundId, backdrop.HomeTeamId, backdrop.AwayTeamId);
         var movedMatchId = await Seed.AddMatchAsync(sourceRoundId, backdrop.AwayTeamId, backdrop.HomeTeamId);
 
-        var repository = CreateRepository();
+        var repository = Repository;
 
         // Act
         await repository.MoveMatchesToRoundAsync([movedMatchId], targetRoundId, CancellationToken.None);
@@ -113,24 +142,23 @@ public class RoundRepositoryUpdateTests(SqlServerDatabaseFixture fixture) : Data
 
         // Assert - the move took the fixture out of the round before the diff was computed, so the diff
         // never saw it as removed.
-        var movedMatchRoundId = await ScalarAsync<int>(
-            "SELECT [RoundId] FROM [Matches] WHERE [Id] = @MatchId;", new { MatchId = movedMatchId });
-        movedMatchRoundId.Should().Be(targetRoundId, "the moved fixture must survive the update of the round it left.");
+        (await Inspect.RoundIdForMatchAsync(movedMatchId)).Should().Be(targetRoundId,
+            "the moved fixture must survive the update of the round it left.");
     }
 
     [Fact]
     public async Task UpdateAsync_ShouldDeleteAMatchDestinedForAnotherRound_WhenTheMoveRunsAfterwards()
     {
         // Arrange - the same scenario in the wrong order. This is not desirable behaviour; it is the
-        // ordering dependency written down, so that a caller reordering the two calls fails here rather
-        // than in production.
+        // ordering dependency written down, so a caller reordering the two calls fails here rather than in
+        // production.
         var backdrop = await Seed.AddBackdropAsync();
         var sourceRoundId = await Seed.AddRoundAsync(backdrop.SeasonId, roundNumber: 1, deadlineUtc: DateTime.UtcNow.AddDays(2));
         var targetRoundId = await Seed.AddRoundAsync(backdrop.SeasonId, roundNumber: 2, deadlineUtc: DateTime.UtcNow.AddDays(9));
         var stayingMatchId = await Seed.AddMatchAsync(sourceRoundId, backdrop.HomeTeamId, backdrop.AwayTeamId);
         var matchToMoveId = await Seed.AddMatchAsync(sourceRoundId, backdrop.AwayTeamId, backdrop.HomeTeamId);
 
-        var repository = CreateRepository();
+        var repository = Repository;
 
         // Act
         var round = RoundWith(sourceRoundId, backdrop.SeasonId, [ExistingMatch(stayingMatchId, sourceRoundId, backdrop)]);
@@ -138,9 +166,7 @@ public class RoundRepositoryUpdateTests(SqlServerDatabaseFixture fixture) : Data
         await repository.MoveMatchesToRoundAsync([matchToMoveId], targetRoundId, CancellationToken.None);
 
         // Assert
-        var matchExists = await ScalarAsync<int>(
-            "SELECT COUNT(*) FROM [Matches] WHERE [Id] = @MatchId;", new { MatchId = matchToMoveId });
-        matchExists.Should().Be(0,
+        (await Inspect.MatchExistsAsync(matchToMoveId)).Should().BeFalse(
             "UpdateAsync treats a match absent from the incoming round as removed, so MoveMatchesToRoundAsync "
             + "must run before it - see UpdateRoundCommandHandler.");
     }
@@ -152,7 +178,7 @@ public class RoundRepositoryUpdateTests(SqlServerDatabaseFixture fixture) : Data
     [Fact]
     public async Task UpdateAsync_ShouldInsertUpdateAndDeleteTogether_WhenOneCallDoesAllThree()
     {
-        // Arrange - three fixtures: one to be edited, one to be left alone, one to be removed.
+        // Arrange - three fixtures: one to be edited, one resubmitted unchanged, one to be removed.
         var backdrop = await Seed.AddBackdropAsync();
         var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, roundNumber: 1, deadlineUtc: DateTime.UtcNow.AddDays(2));
         var editedMatchId = await Seed.AddMatchAsync(roundId, backdrop.HomeTeamId, backdrop.AwayTeamId, matchNumber: 1);
@@ -180,82 +206,35 @@ public class RoundRepositoryUpdateTests(SqlServerDatabaseFixture fixture) : Data
             resultsDigestSentUtc: null);
 
         // Act
-        await CreateRepository().UpdateAsync(round, CancellationToken.None);
+        await Repository.UpdateAsync(round, CancellationToken.None);
 
         // Assert - the removal happened and exactly one fixture was added.
-        var remainingMatchIds = await QueryAsync<int>(SelectMatchIdsForRound, new { RoundId = roundId });
-        remainingMatchIds.Should().HaveCount(3);
-        remainingMatchIds.Should().Contain(editedMatchId).And.Contain(secondMatchId);
-        remainingMatchIds.Should().NotContain(removedMatchId);
+        var remaining = await Inspect.MatchIdsForRoundAsync(roundId);
+        remaining.Should().HaveCount(3);
+        remaining.Should().Contain(editedMatchId).And.Contain(secondMatchId);
+        remaining.Should().NotContain(removedMatchId);
 
         // Assert - the edit landed on every column the update writes.
-        var stored = (await QueryAsync<MatchRow>(
-            @"
-            SELECT
-                m.[MatchDateTimeUtc],
-                m.[CustomLockTimeUtc],
-                m.[Status],
-                m.[ExternalId]
-            FROM
-                [Matches] m
-            WHERE
-                m.[Id] = @MatchId;",
-            new { MatchId = editedMatchId })).Single();
-
-        stored.MatchDateTimeUtc.Should().Be(newKickoff);
+        var stored = await Inspect.MatchAsync(editedMatchId);
+        stored.Should().NotBeNull();
+        stored!.MatchDateTimeUtc.Should().Be(newKickoff);
         stored.CustomLockTimeUtc.Should().Be(newLockTime);
-        stored.Status.Should().Be(nameof(MatchStatus.Postponed));
+        stored.Status.Should().Be(MatchStatus.Postponed);
         stored.ExternalId.Should().Be(4242);
 
         // Assert - and the round's own fields, which UpdateAsync writes in the same call.
-        var storedRound = (await QueryAsync<RoundRow>(
-            @"
-            SELECT
-                r.[RoundNumber],
-                r.[DisplayName],
-                r.[DeadlineUtc],
-                r.[Status],
-                r.[ApiRoundName]
-            FROM
-                [Rounds] r
-            WHERE
-                r.[Id] = @RoundId;",
-            new { RoundId = roundId })).Single();
-
-        storedRound.RoundNumber.Should().Be(7);
+        var storedRound = await Inspect.RoundAsync(roundId);
+        storedRound.Should().NotBeNull();
+        storedRound!.RoundNumber.Should().Be(7);
         storedRound.DisplayName.Should().Be("Quarter Finals");
         storedRound.DeadlineUtc.Should().Be(newDeadline);
-        storedRound.Status.Should().Be(nameof(RoundStatus.InProgress));
+        storedRound.Status.Should().Be(RoundStatus.InProgress);
         storedRound.ApiRoundName.Should().Be("Quarter-finals");
-    }
-
-    [Fact]
-    public async Task UpdateAsync_ShouldDeleteOnlyTheUnpredictedMatches_WhenSeveralAreRemovedAtOnce()
-    {
-        // Arrange - two removals in one call, one of them predicted. The delete runs as a single
-        // statement over both ids, so the guard has to discriminate row by row.
-        var backdrop = await Seed.AddBackdropAsync();
-        var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, roundNumber: 1, deadlineUtc: DateTime.UtcNow.AddDays(2));
-        var keptMatchId = await Seed.AddMatchAsync(roundId, backdrop.HomeTeamId, backdrop.AwayTeamId);
-        var predictedMatchId = await Seed.AddMatchAsync(roundId, backdrop.AwayTeamId, backdrop.HomeTeamId);
-        var unpredictedMatchId = await Seed.AddMatchAsync(roundId, backdrop.HomeTeamId, backdrop.AwayTeamId);
-        await Seed.AddPredictionAsync(predictedMatchId, backdrop.UserId);
-
-        // Act
-        var round = RoundWith(roundId, backdrop.SeasonId, [ExistingMatch(keptMatchId, roundId, backdrop)]);
-        await CreateRepository().UpdateAsync(round, CancellationToken.None);
-
-        // Assert
-        var remainingMatchIds = await QueryAsync<int>(SelectMatchIdsForRound, new { RoundId = roundId });
-        remainingMatchIds.Should().BeEquivalentTo(new[] { keptMatchId, predictedMatchId });
-        remainingMatchIds.Should().NotContain(unpredictedMatchId);
     }
 
     #endregion
 
     #region Helpers
-
-    private RoundRepository CreateRepository() => new(ConnectionFactory, NewTransactionContext());
 
     private static Round RoundWith(int roundId, int seasonId, IEnumerable<Match> matches) =>
         new(
@@ -270,10 +249,6 @@ public class RoundRepositoryUpdateTests(SqlServerDatabaseFixture fixture) : Data
             matchDateTimeUtc: DateTime.UtcNow.AddDays(3), customLockTimeUtc: null, status: MatchStatus.Scheduled,
             actualHomeTeamScore: null, actualAwayTeamScore: null, externalId: null, matchNumber: null,
             placeholderHomeName: null, placeholderAwayName: null, apiRoundName: null);
-
-    private sealed record MatchRow(DateTime MatchDateTimeUtc, DateTime? CustomLockTimeUtc, string Status, int? ExternalId);
-
-    private sealed record RoundRow(int RoundNumber, string DisplayName, DateTime DeadlineUtc, string Status, string? ApiRoundName);
 
     #endregion
 }

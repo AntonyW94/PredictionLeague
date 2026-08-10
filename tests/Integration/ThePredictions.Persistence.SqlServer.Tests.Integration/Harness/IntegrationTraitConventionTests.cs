@@ -29,8 +29,11 @@ public class IntegrationTraitConventionTests
             + "untraited class is run by neither job - add the attribute to the class.");
     }
 
+    // Deliberately not DeclaredOnly: a class deriving from a conformance base in
+    // ThePredictions.Persistence.Conformance declares no [Fact] of its own, and would otherwise escape
+    // this sweep entirely - which is exactly the class most likely to be added without the trait.
     private static bool HasTests(Type type) =>
-        type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+        type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
             .Any(m => m.GetCustomAttribute<FactAttribute>(inherit: true) != null
                       || m.GetCustomAttribute<TheoryAttribute>(inherit: true) != null);
 
