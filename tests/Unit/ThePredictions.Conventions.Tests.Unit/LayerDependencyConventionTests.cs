@@ -94,6 +94,34 @@ public class LayerDependencyConventionTests
                 + "not Contracts, whose DTOs are the API's outward shape rather than a row type.");
     }
 
+    // The conformance suite's whole value is that its tests are adapter-neutral: written once, run against
+    // any adapter. A reference to a concrete adapter would let a test reach a SqlServer type and quietly
+    // stop being portable, while still living in a project whose name promises otherwise. It reads the
+    // csproj rather than the built assembly for the usual reason - the compiler elides a reference nothing
+    // uses yet. See docs/todo/architecture/persistence-split/README.md.
+    [Fact]
+    public void ConformanceSuite_ShouldNotReferenceAnyAdapter()
+    {
+        var path = Path.Combine(
+            ProductionAssemblies.RepositoryRoot,
+            "tests", "Integration", "ThePredictions.Persistence.Conformance",
+            "ThePredictions.Persistence.Conformance.csproj");
+
+        File.Exists(path).Should().BeTrue($"expected to find the project file at '{path}'");
+
+        var references = XDocument.Load(path)
+            .Descendants("ProjectReference")
+            .Select(e => e.Attribute("Include")?.Value)
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Select(v => Path.GetFileNameWithoutExtension(v!.Replace('\\', Path.DirectorySeparatorChar)))
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToList();
+
+        references.Should().BeEquivalentTo(["ThePredictions.Application"],
+            "the conformance tests target Application's interfaces only. Referencing an adapter - or "
+            + "Infrastructure - would make them specific to one implementation.");
+    }
+
     [Fact]
     public void Contracts_ShouldOnlyReferenceDomain()
     {

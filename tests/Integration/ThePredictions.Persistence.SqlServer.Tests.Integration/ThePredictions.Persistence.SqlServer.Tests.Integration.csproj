@@ -39,6 +39,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\ThePredictions.Infrastructure\ThePredictions.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\src\ThePredictions.Persistence.SqlServer\ThePredictions.Persistence.SqlServer.csproj" />
+    <!-- The adapter-neutral conformance suite. Every test in it runs here via a concrete subclass. -->
+    <ProjectReference Include="..\ThePredictions.Persistence.Conformance\ThePredictions.Persistence.Conformance.csproj" />
     <ProjectReference Include="..\..\Shared\ThePredictions.Tests.Shared\ThePredictions.Tests.Shared.csproj" />
   </ItemGroup>
 

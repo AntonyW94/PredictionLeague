@@ -1,6 +1,7 @@
 using Dapper;
 using ThePredictions.Application.Data;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Persistence.Conformance;
 
 namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 
@@ -14,7 +15,7 @@ namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 /// deliberately forbids (an unconfirmed fixture, a postponed match) which is exactly what the
 /// predicates under test have to cope with.
 /// </summary>
-internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
+internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITestDataSeeder
 {
     private const string DefaultTheme = "light";
 
@@ -22,7 +23,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
     /// The shared backdrop nearly every test needs: a competition, an active season, two teams to
     /// play each other, and one player.
     /// </summary>
-    internal async Task<SeededBackdrop> AddBackdropAsync()
+    public async Task<SeededBackdrop> AddBackdropAsync()
     {
         var competitionId = await AddCompetitionAsync();
         var seasonId = await AddSeasonAsync(competitionId);
@@ -33,7 +34,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         return new SeededBackdrop(competitionId, seasonId, homeTeamId, awayTeamId, userId);
     }
 
-    internal async Task<int> AddCompetitionAsync(string code = "TEST")
+    public async Task<int> AddCompetitionAsync(string code = "TEST")
     {
         const string sql = @"
             INSERT INTO [Competitions]
@@ -61,7 +62,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task<int> AddSeasonAsync(int competitionId, string name = "2026/27", int numberOfRounds = 38)
+    public async Task<int> AddSeasonAsync(int competitionId, string name = "2026/27", int numberOfRounds = 38)
     {
         const string sql = @"
             INSERT INTO [Seasons]
@@ -95,7 +96,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task<int> AddTeamAsync(string name, string abbreviation)
+    public async Task<int> AddTeamAsync(string name, string abbreviation)
     {
         const string sql = @"
             INSERT INTO [Teams]
@@ -120,7 +121,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task<string> AddUserAsync(string firstName, string lastName)
+    public async Task<string> AddUserAsync(string firstName, string lastName)
     {
         var userId = Guid.NewGuid().ToString();
         var email = $"{firstName}.{lastName}@integration.test".ToLowerInvariant();
@@ -177,7 +178,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         return userId;
     }
 
-    internal async Task<int> AddRoundAsync(
+    public async Task<int> AddRoundAsync(
         int seasonId,
         int roundNumber,
         DateTime deadlineUtc,
@@ -216,7 +217,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task<int> AddMatchAsync(
+    public async Task<int> AddMatchAsync(
         int roundId,
         int? homeTeamId,
         int? awayTeamId,
@@ -260,7 +261,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task AddPredictionAsync(int matchId, string userId, int homeScore = 2, int awayScore = 1)
+    public async Task AddPredictionAsync(int matchId, string userId, int homeScore = 2, int awayScore = 1)
     {
         const string sql = @"
             INSERT INTO [UserPredictions]
@@ -293,7 +294,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task<int> AddLeagueAsync(int seasonId, string administratorUserId, string name = "Integration League")
+    public async Task<int> AddLeagueAsync(int seasonId, string administratorUserId, string name = "Integration League")
     {
         const string sql = @"
             INSERT INTO [Leagues]
@@ -342,7 +343,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task AddLeagueMemberAsync(
+    public async Task AddLeagueMemberAsync(
         int leagueId,
         string userId,
         LeagueMemberStatus status = LeagueMemberStatus.Approved)
@@ -378,7 +379,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task<int> AddBoostDefinitionAsync(string code, string name, string scope = "Round")
+    public async Task<int> AddBoostDefinitionAsync(string code, string name, string scope = "Round")
     {
         const string sql = @"
             INSERT INTO [BoostDefinitions]
@@ -406,7 +407,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task<int> AddLeagueBoostRuleAsync(
+    public async Task<int> AddLeagueBoostRuleAsync(
         int leagueId,
         int boostDefinitionId,
         int totalUsesPerSeason = 2,
@@ -438,7 +439,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task AddBoostUsageAsync(
+    public async Task AddBoostUsageAsync(
         string userId,
         int leagueId,
         int seasonId,
@@ -476,7 +477,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
         });
     }
 
-    internal async Task AddLeagueRoundResultAsync(
+    public async Task AddLeagueRoundResultAsync(
         int leagueId,
         int roundId,
         string userId,
@@ -516,6 +517,12 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory)
             HasBoost = true,
             AppliedBoostCode = appliedBoostCode
         });
+    }
+
+    public async Task DeleteMatchAsync(int matchId)
+    {
+        // No guard at all - the point is to show what the schema does on its own.
+        await ExecuteAsync("DELETE FROM [Matches] WHERE [Id] = @MatchId;", new { MatchId = matchId });
     }
 
     private async Task ExecuteAsync(string sql, object parameters)
