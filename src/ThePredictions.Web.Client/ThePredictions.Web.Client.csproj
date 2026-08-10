@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
@@ -39,4 +39,11 @@
     Development (dotnet run): Uses separate CSS files with @imports for easy debugging
     Production (dotnet publish): CSS bundling handled by MSBuild target in Web.csproj
     -->
+
+    <ItemGroup>
+        <!-- Documentation that lives beside the assets it describes, so it is found when someone is
+             looking at those files - but it is not part of the site and must not be served. -->
+        <Content Update="wwwroot\**\*.md" CopyToPublishDirectory="Never" />
+    </ItemGroup>
+
 </Project>

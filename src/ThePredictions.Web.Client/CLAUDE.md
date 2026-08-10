@@ -76,11 +76,52 @@ else
 wwwroot/css/
 ├── variables.css          → Design tokens (colours, spacing, radii)
 ├── app.css                → Global styles and imports
+├── poppins.css            → Self-hosted font faces (must bundle first)
+├── fonts/                 → Poppins woff2 - MUST stay adjacent to poppins.css
 ├── utilities/             → Reusable utility classes
 ├── components/            → Component-specific styles
 ├── layout/                → Layout and structural styles
 └── pages/                 → Page-specific styles (last resort)
 ```
+
+## Static Asset Structure
+
+```
+wwwroot/
+├── favicon.ico            → Stays at the root; browsers probe /favicon.ico regardless of markup
+├── css/                   → Ours, bundled at publish
+├── js/                    → Ours
+├── lib/                   → Third party, pinned versions, never edited by hand
+│   ├── bootstrap/         → 5.3.3
+│   ├── bootstrap-icons/   → 1.11.3, with fonts/ adjacent to its CSS
+│   └── sweetalert2/       → 11.26.25
+└── images/
+    ├── brand/             → Logos and the social preview card
+    ├── icons/             → Favicon PNGs and the Apple touch icon
+    ├── boosts/            → Boost artwork, one file per state
+    ├── content/           → Photography, with licences recorded in its README
+    └── placeholders/      → Stand-ins for absent data
+```
+
+**Naming:** lowercase kebab-case, `-light`/`-dark` for theme variants, `-normal`/`-selected`/`-disabled`
+for states, and an intrinsic-width suffix only where several sizes of one image exist
+(`hero-stadium-1600.webp`).
+
+### Nothing loads from a third party
+
+Every stylesheet, script, font and image comes from our own origin, which is what lets the
+Content-Security-Policy set `script-src 'self'` and `style-src 'self'` (see
+`SecurityHeadersMiddleware`). **Do not reintroduce a CDN or a hotlinked image.** A CDN in `script-src`
+would let an attacker who achieves HTML injection load arbitrary code from an origin the browser has
+been told to trust, which is the attack the policy exists to prevent.
+
+Adding a third-party library means vendoring it into `lib/` at a pinned exact version. Adding a
+photograph means downloading it, sizing it for the space it occupies, and recording its licence in
+`images/content/README.md`.
+
+**Webfonts must sit next to the CSS that declares them.** `css/fonts/` and
+`lib/bootstrap-icons/fonts/` look like duplication and are not: both are referenced by a relative
+`url()`, and moving them to a shared folder would silently break every icon and every font weight.
 
 ### Design Tokens (ALWAYS Use)
 
@@ -234,10 +275,17 @@ See [`docs/guides/checklists/new-css-file.md`](../../docs/guides/checklists/new-
 
 An MSBuild target bundles CSS during `dotnet publish`:
 
-1. Concatenates all CSS files into single `app.css`
-2. Prepends Google Fonts import
-3. Deletes individual CSS files
-4. Adds cache busting: `app.css?v=TIMESTAMP`
+1. Concatenates all CSS files into a single `app.css`, starting with `poppins.css` so the font faces
+   are declared before anything uses them
+2. Deletes the individual CSS files (the webfonts under `css/fonts/` and everything in `lib/` are left
+   alone)
+3. Adds cache busting: `app.css?v=TIMESTAMP`, and the same stamp to the `js/` files
+
+It **concatenates, it does not minify** - there is no minifier in the build. `wwwroot/css/app.min.css`
+is gitignored and, if present, is a stale local leftover that nothing references.
+
+Vendor CSS in `lib/` is deliberately **not** bundled: `bootstrap-icons.min.css` finds its webfont
+through a relative `url()`, and concatenating it to a different directory depth would break every icon.
 
 Verify with:
 ```bash

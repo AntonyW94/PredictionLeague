@@ -1,4 +1,4 @@
-@page "/admin/seasons/{SeasonId:int}/rounds/create"
+﻿@page "/admin/seasons/{SeasonId:int}/rounds/create"
 
 @attribute [Authorize(Roles = RoleNames.Administrator)]
 
@@ -219,7 +219,7 @@
 
     private string? GetTeamLogoUrl(int teamId)
     {
-        return teamId < 1 ? "https://placehold.co/25x25/transparent/transparent?text=" : _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl;
+        return teamId < 1 ? "/images/placeholders/transparent.svg" : _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl;
     }
 
     private Task<HttpResponseMessage> HandleCreateRoundAsync()

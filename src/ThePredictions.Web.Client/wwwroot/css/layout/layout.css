@@ -1,4 +1,4 @@
-/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+﻿/* Base: Extra-small mobile (< --breakpoint-phone-small) */
 
 main {
     background: var(--purple-100);
@@ -51,7 +51,7 @@ main {
     height: 6.25rem;
     /* Hero background is always dark (purple gradient over a photo) in both
        themes, so always use the white/green header wordmark for contrast. */
-    background: url("/images/logo-header-dark.png") center / contain no-repeat;
+    background: url("/images/brand/logo-header-dark.png") center / contain no-repeat;
 }
 
 .table-responsive {

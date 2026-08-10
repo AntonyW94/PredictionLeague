@@ -1,4 +1,4 @@
-@page "/admin/rounds/edit/{RoundId:int}"
+﻿@page "/admin/rounds/edit/{RoundId:int}"
 
 @attribute [Authorize(Roles = RoleNames.Administrator)]
 
@@ -232,7 +232,7 @@
     private string GetTeamLogoUrl(int teamId)
     {
         if (teamId < 1)
-            return "https://placehold.co/25x25/transparent/transparent?text=";
+            return "/images/placeholders/transparent.svg";
 
         return _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl ?? "";
     }
