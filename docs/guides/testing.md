@@ -369,6 +369,11 @@ never arranges or asserts through the code it is testing, while still letting th
 `ConformanceSuite_ShouldNotReferenceAnyAdapter` fails the build if the conformance project ever references
 a concrete adapter, which is the one change that would silently destroy its value.
 
+A conformance test asserts **only what the port promises**. `BoostCatalogueQueryConformanceTests`
+deliberately does not assert row order, because the port promises none - `ORDER BY` defers to the database's
+collation, so ordering is a rule the handler applies in C#. Asserting order there would fail an adapter that
+is perfectly correct.
+
 **Not everything can live there yet.** `BoostUsageSecrecyTests` and `PredictableMatchPredicateTests` stay
 SQL Server-specific because the handlers they exercise still contain T-SQL. They move across as the
 persistence split reaches their feature area. `MigrationsFromEmptyTests` stays adapter-specific by nature -
