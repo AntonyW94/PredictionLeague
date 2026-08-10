@@ -147,7 +147,19 @@ These items may be flagged by automated security scanners but are not vulnerabil
 
 ### 9. Missing X-XSS-Protection Header
 
-Some scanners may flag the absence of `X-XSS-Protection`. In this application, the header IS present for backwards compatibility. Modern security guidance recommends either omitting it or setting it to `0`, but we keep it for older browser support.
+**No longer a false positive - the scanners were right.** This entry previously claimed the header was
+present. It was not: `SecurityHeadersMiddleware` sets it, but `app.UseSecurityHeaders()` was only ever
+called from the standalone `ThePredictions.API` entry point, which is not the deployed host. Neither
+site sent it, nor any of the other headers that middleware owns, including the
+`Content-Security-Policy`. Fixed in August 2026 by registering the middleware in
+`src/ThePredictions.Web/Program.cs`.
+
+The header is deliberately kept for older browsers, which is the only part of the original entry that
+still stands. Modern guidance is to omit it or set it to `0`.
+
+**Lesson worth keeping:** a scanner reporting a missing response header is reporting what it actually
+received. Verify against a live response before recording it as a false positive - a unit test proving
+the middleware sets a header says nothing about whether the middleware runs.
 
 ### 10. JWT Algorithm Not Restricted
 
