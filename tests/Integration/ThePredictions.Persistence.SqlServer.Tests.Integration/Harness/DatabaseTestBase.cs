@@ -1,11 +1,6 @@
 using Dapper;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
-using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
 using ThePredictions.Persistence.Conformance;
-using ThePredictions.Persistence.SqlServer.Data;
-using ThePredictions.Persistence.SqlServer.Data.Resilience;
 using Xunit;
 
 namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
@@ -31,18 +26,7 @@ public abstract class DatabaseTestBase : IAsyncLifetime
 
     internal ITestDataSeeder Seed => _harness.Seed;
 
-    /// <summary>
-    /// The real <see cref="DapperReadDbConnection"/> over the test container - the seam every query
-    /// handler takes, and the one handler unit tests substitute, which is why the SQL behind it has
-    /// never run under test. Retry and slow-query logging are left at their production defaults; the
-    /// logger is silent because a passing query has nothing to report.
-    /// </summary>
-    internal IApplicationReadDbConnection ReadDbConnection => new DapperReadDbConnection(
-        ConnectionFactory,
-        new SqlRetryPolicy(Options.Create(new SqlRetryPolicyOptions()), NullLogger<SqlRetryPolicy>.Instance),
-        Options.Create(new TimeoutSettings()),
-        Options.Create(new QueryMonitoringSettings()),
-        NullLogger<DapperReadDbConnection>.Instance);
+    internal IApplicationReadDbConnection ReadDbConnection => _harness.ReadDbConnection;
 
     /// <summary>
     /// A fresh transaction context per test. Repositories take this and fall back to a new connection

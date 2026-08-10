@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Boosts.Queries;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Models;
 using ThePredictions.Persistence.SqlServer.Identity;
 using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Persistence.SqlServer.Data.Resilience;
+using ThePredictions.Persistence.SqlServer.Queries.Boosts;
 using ThePredictions.Persistence.SqlServer.Repositories;
 
 namespace ThePredictions.Persistence.SqlServer;
@@ -41,6 +43,7 @@ public static class DependencyInjection
 
         AddIdentityStores(services);
         AddRepositories(services);
+        AddQueries(services);
     }
 
     // ASP.NET Identity resolves its stores from the container, so registering the interfaces directly is
@@ -52,6 +55,14 @@ public static class DependencyInjection
     {
         services.AddScoped<IUserStore<ApplicationUser>, DapperUserStore>();
         services.AddScoped<IRoleStore<IdentityRole>, DapperRoleStore>();
+    }
+
+    // One registration per I*Query port in Application. Grows as the persistence split moves each
+    // feature area's reads out of its handlers; a missing one is caught by
+    // ThePredictions.Composition.Tests.Unit, which resolves every handler from the real container.
+    private static void AddQueries(IServiceCollection services)
+    {
+        services.AddScoped<IBoostCatalogueQuery, BoostCatalogueQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository

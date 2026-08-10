@@ -145,6 +145,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 0c | **Identity stores** ✅ | `DapperUserStore` and `DapperRoleStore` only, and `Dapper` leaves Infrastructure. `LeagueMembershipService` and `CachedEmailSettingsProvider` were dropped from this phase - see below. |
 | 0d | **Migration set** ✅ | Move the DbUp scripts under the adapter, which now owns the embedded resources; `DatabaseTools` and the integration suite both read them from there. Required a journal rename on every database - see below. **Phase 0 complete.** |
 | 1 | **Conformance split** ✅ | Renamed the integration project to `ThePredictions.Persistence.SqlServer.Tests.Integration` (Infrastructure holds no SQL, so the old name was a lie), then extracted `ThePredictions.Persistence.Conformance` with `ITestDataSeeder`, `ITestDataInspector` and the `RoundRepositoryConformanceTests` base. No new tests. |
+| 2 | **Boosts/catalogue** ✅ | `IBoostCatalogueQuery` extracted, ordering moved to C#, handler measured for the first time. Pattern established. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -263,6 +264,35 @@ graph. Fixed by declaring `System.IdentityModel.Tokens.Jwt` in Infrastructure, p
 Expect more of these. A package that only ever arrived transitively is invisible until the thing dragging
 it in moves, and moving things is what this plan does. Each one found gets declared where it is used.
 
+### The phase 2 pattern, as established by Boosts/catalogue
+
+Each area follows the same six steps. `GetBoostCatalogueQueryHandler` was done first precisely because it
+has **no rules at all** - `SELECT ... FROM [BoostDefinitions]` plus a map - so the mechanics could be proved
+before the interesting cases.
+
+1. **Port in Application**: `I<Thing>Query` with one `ExecuteAsync`, plus its `<Thing>Row` record beside it.
+2. **Implementation in the adapter**, under `Queries/<FeatureArea>/`. Every query gets a feature folder, so
+   unlike the repositories that grouping is uniform.
+3. **Classify each predicate** by the decision procedure. Scoping filters (`WHERE LeagueId = @LeagueId`,
+   `IsEnabled = 1`) are part of the fetch and stay. Semantic, temporal and visibility predicates are rules
+   and move.
+4. **Rules to C#, with unit tests.**
+5. **Drop the handler's `[ExcludeFromCodeCoverage]`.** It is now measured, so it needs tests - which is the
+   whole return on this work, not a side effect.
+6. **Conformance test the port**, asserting only what the port promises.
+
+**Ordering counts as a rule.** `ORDER BY [Name]` defers to the database's collation, so the same rows can
+arrive in a different order from a different adapter, or from the same adapter on a differently-collated
+database. The catalogue port therefore promises no order and the handler sorts with an explicit
+`StringComparer`. The conformance test deliberately does **not** assert order: pinning it would assert a
+guarantee the port does not make and would fail an adapter that is perfectly correct.
+
+**What "every rule to C#" means operationally.** The mandate was agreed for reads with no exceptions, and it
+needs a definition or it collapses into "fetch every table and filter in memory". The working line is above
+in step 3: choosing *which rows* is fetching; computing *what they mean* is a rule. Both halves of that are
+visible in the next batch, where the boost secrecy predicate and the points-gained `CASE` move while the
+league and season scoping stays.
+
 Feature areas for phases 2..N, roughly worst-first by rule density: Boosts, Rounds, Leaderboards,
 Leagues, Dashboard, Badges, Admin/Rounds, Admin/Seasons, Predictions, Authentication, Account,
 Payouts, External/Tasks.
@@ -277,6 +307,7 @@ collapses each to one.
 | Predictable fixture | `GetRoundCompletionQueryHandler.PredictableMatchPredicate` + `ReminderService.GetUsersMissingPredictionsAsync` | Integration tested 2026-08-10; collapses to one C# rule in phase "Rounds" |
 | Round outcome counts | `RoundRepository.UpdateRoundResultsAsync` MERGE + `GetActiveRoundsQueryHandler.cs:195` | Found 2026-08-10, **untested in either copy**. `RoundResults.ExactScoreCount` is stored and read by badges, digests, leaderboards, records and season recap, so the SQL is canonical and the C# is a live shadow of it. Collapses in phase "Rounds". |
 | Boost secrecy | SQL only, but reads `GETUTCDATE()` instead of `IDateTimeProvider` | Integration tested 2026-08-10; becomes a clock-injected C# filter in phase "Boosts" |
+| Player display name (`FirstName + ' ' + LEFT(LastName, 1)`) | **17 files** | Found 2026-08-10. The most duplicated rule in the codebase - a presentation format written out seventeen times in SQL. Collapses to one C# formatter, introduced with Boosts/usage-summary and adopted per area as the split proceeds. |
 
 ## Open question, not yet decided
 

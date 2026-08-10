@@ -1,55 +1,40 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Boosts;
 
 namespace ThePredictions.Application.Features.Boosts.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetBoostCatalogueQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetBoostCatalogueQuery, List<BoostCatalogueItemDto>>
+/// <summary>
+/// The boost catalogue, shown when configuring a league's boost rules.
+///
+/// No longer carries SQL, and therefore no longer carries
+/// <c>[ExcludeFromCodeCoverage]</c>: what is left is the ordering rule and the mapping, both of which a
+/// unit test can reach. The read itself is <see cref="IBoostCatalogueQuery"/>, whose SQL lives in the
+/// persistence adapter and is covered by the conformance suite.
+/// </summary>
+public class GetBoostCatalogueQueryHandler(IBoostCatalogueQuery catalogueQuery)
+    : IRequestHandler<GetBoostCatalogueQuery, List<BoostCatalogueItemDto>>
 {
     public async Task<List<BoostCatalogueItemDto>> Handle(GetBoostCatalogueQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                bd.[Code],
-                bd.[Name],
-                bd.[Description],
-                bd.[Tooltip],
-                bd.[Scope],
-                bd.[ImageUrl],
-                bd.[SelectedImageUrl],
-                bd.[DisabledImageUrl]
-            FROM
-                [BoostDefinitions] bd
-            ORDER BY
-                bd.[Name];";
+        var rows = await catalogueQuery.ExecuteAsync(cancellationToken);
 
-        var items = await dbConnection.QueryAsync<BoostCatalogueItemQueryResult>(sql, cancellationToken);
-
-        return items
-            .Select(i => new BoostCatalogueItemDto
+        return rows
+            // Alphabetical by name, ordinal-ignore-case. Sorted here rather than in the query because
+            // ORDER BY defers to the database's collation: the same rows could arrive in a different order
+            // from a different adapter, or from the same adapter on a differently-collated database. Doing
+            // it in C# makes the page's order a property of the application instead.
+            .OrderBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(r => new BoostCatalogueItemDto
             {
-                Code = i.Code,
-                Name = i.Name,
-                Description = i.Description,
-                Tooltip = i.Tooltip,
-                Scope = i.Scope,
-                ImageUrl = i.ImageUrl,
-                SelectedImageUrl = i.SelectedImageUrl,
-                DisabledImageUrl = i.DisabledImageUrl
+                Code = r.Code,
+                Name = r.Name,
+                Description = r.Description,
+                Tooltip = r.Tooltip,
+                Scope = r.Scope,
+                ImageUrl = r.ImageUrl,
+                SelectedImageUrl = r.SelectedImageUrl,
+                DisabledImageUrl = r.DisabledImageUrl
             })
             .ToList();
     }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record BoostCatalogueItemQueryResult(
-        string Code,
-        string Name,
-        string? Description,
-        string? Tooltip,
-        string Scope,
-        string? ImageUrl,
-        string? SelectedImageUrl,
-        string? DisabledImageUrl);
 }
