@@ -9,7 +9,6 @@ using ThePredictions.Persistence.SqlServer.Identity;
 using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Persistence.SqlServer.Data.Resilience;
 using ThePredictions.Persistence.SqlServer.Repositories;
-using ThePredictions.Persistence.SqlServer.Repositories.Boosts;
 
 namespace ThePredictions.Persistence.SqlServer;
 

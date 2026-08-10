@@ -4,7 +4,7 @@ using ThePredictions.Application.Data;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Contracts.Boosts;
 
-namespace ThePredictions.Persistence.SqlServer.Repositories.Boosts;
+namespace ThePredictions.Persistence.SqlServer.Repositories;
 
 [ExcludeFromCodeCoverage(Justification = "Repository: a thin Dapper wrapper over SQL. A unit test would assert only that a mocked connection received a string; correctness lives in the SQL.")]
 public class LeagueBoostRuleRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext)
