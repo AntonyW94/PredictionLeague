@@ -2,7 +2,7 @@ using Dapper;
 using ThePredictions.Application.Data;
 using ThePredictions.Domain.Common.Enumerations;
 
-namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 
 /// <summary>
 /// Inserts rows directly, bypassing the repositories, so a test arranges its world without depending

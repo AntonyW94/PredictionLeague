@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 
 /// <summary>
 /// Every test in this assembly joins this collection, which is what makes the container shared and the

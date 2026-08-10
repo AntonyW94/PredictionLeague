@@ -222,7 +222,7 @@ root `CLAUDE.md` as each project locks, so the documented rule always matches wh
 
 ## Integration Tests Against Real SQL Server
 
-`tests/Integration/ThePredictions.Infrastructure.Tests.Integration` runs the application's SQL against a
+`tests/Integration/ThePredictions.Persistence.SqlServer.Tests.Integration` runs the SQL Server adapter's SQL against a
 throwaway SQL Server. It exists because three kinds of rule are **structurally invisible** to the unit
 suite, however high its coverage goes: rules expressed in a SQL predicate, the aggregate diffing inside
 repositories, and predicates duplicated across two call sites. Handler unit tests mock
@@ -255,7 +255,7 @@ Needs a **running Docker daemon with Linux containers** (on Docker Desktop for W
 Linux engine, not Windows containers). The first run pulls ~1.5GB.
 
 ```bash
-dotnet test tests\Integration\ThePredictions.Infrastructure.Tests.Integration
+dotnet test tests\Integration\ThePredictions.Persistence.SqlServer.Tests.Integration
 ```
 
 ### Conventions specific to this project
@@ -345,7 +345,7 @@ tests/
         └── Middleware/            → Exception-to-status mapping (see ADR-0016)
 tests/
 └── Integration/
-    └── ThePredictions.Infrastructure.Tests.Integration/
+    └── ThePredictions.Persistence.SqlServer.Tests.Integration/
         ├── Harness/               → Container, migrations, Respawn reset, seeding
         ├── Queries/               → Rules that live in a SQL predicate
         ├── Repositories/          → Repository SQL against real SQL Server

@@ -3,10 +3,10 @@ using NSubstitute;
 using ThePredictions.Application.Features.Boosts.Queries;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Boosts;
-using ThePredictions.Infrastructure.Tests.Integration.Harness;
+using ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 using Xunit;
 
-namespace ThePredictions.Infrastructure.Tests.Integration.Queries;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Queries;
 
 /// <summary>
 /// <c>GetLeagueBoostUsageSummaryQueryHandler.GetUsagesAsync</c> hides another player's boost until that

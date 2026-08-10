@@ -2,7 +2,7 @@ using System.Reflection;
 using FluentAssertions;
 using Xunit;
 
-namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 
 /// <summary>
 /// CI runs the unit suite with <c>--filter "Category!=Integration"</c> so it does not have to wait for a

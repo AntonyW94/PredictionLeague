@@ -1,10 +1,10 @@
 using System.Reflection;
 using FluentAssertions;
-using ThePredictions.Infrastructure.Tests.Integration.Harness;
+using ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 using ThePredictions.Persistence.SqlServer.Migrations;
 using Xunit;
 
-namespace ThePredictions.Infrastructure.Tests.Integration.Schema;
+namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Schema;
 
 /// <summary>
 /// The three real databases were baselined from a schema that already existed, so

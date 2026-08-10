@@ -26,7 +26,7 @@ Not Started | **In Progress** | Complete
 > `RepositoryCoverageGateTests`). Those are what stop the suite rotting once written. This pairs with
 > roadmap item 1 (machine-enforced conventions).
 >
-> **Built, August 2026.** `tests/Integration/ThePredictions.Infrastructure.Tests.Integration` is the
+> **Built, August 2026.** `tests/Integration/ThePredictions.Persistence.SqlServer.Tests.Integration` is the
 > harness this amendment asked for: Testcontainers + real SQL Server, schema built by running the
 > committed DbUp migrations, Respawn between tests, its own CI job. Sections 6, 10 and 11 below still
 > describe the SQLite plan and are **superseded** by it - read them as history. The two reflection gates
