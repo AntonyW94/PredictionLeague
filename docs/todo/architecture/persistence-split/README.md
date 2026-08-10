@@ -146,6 +146,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 0d | **Migration set** ✅ | Move the DbUp scripts under the adapter, which now owns the embedded resources; `DatabaseTools` and the integration suite both read them from there. Required a journal rename on every database - see below. **Phase 0 complete.** |
 | 1 | **Conformance split** ✅ | Renamed the integration project to `ThePredictions.Persistence.SqlServer.Tests.Integration` (Infrastructure holds no SQL, so the old name was a lie), then extracted `ThePredictions.Persistence.Conformance` with `ITestDataSeeder`, `ITestDataInspector` and the `RoundRepositoryConformanceTests` base. No new tests. |
 | 2 | **Boosts/catalogue** ✅ | `IBoostCatalogueQuery` extracted, ordering moved to C#, handler measured for the first time. Pattern established. |
+| 2 | **Boosts/usage-summary** ✅ | `ILeagueBoostUsageQuery` (one composite reply, 7 reads), three rules moved to C#, handler measured. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -247,6 +248,30 @@ exist yet.
 Doing the extraction now was still right, and for the reason originally given: every integration test phase
 2 writes would otherwise need rewriting afterwards. The shape now exists, with one real suite proving it.
 
+### Moving a rule out of SQL creates a new failure mode
+
+This is the thing to watch for the rest of phase 2. While a rule is a SQL predicate it cannot fail to be
+applied - it is inside the read. Once it is a C# function the handler has to remember to call it, and a rule
+that is present, correct and unit tested but never invoked is a silent leak.
+
+The Boosts batch proved both halves of the guard:
+
+- Deleting the call outright is caught by the **compiler**, because `dateTimeProvider` becomes unread and
+  `TreatWarningsAsErrors` rejects CS9113. That is luck rather than design - it only works while the clock has
+  no other use in the handler.
+- The realistic bug - rule computed, result discarded, unfiltered list passed on - compiles cleanly and was
+  caught by **2 unit tests and 3 end-to-end tests**.
+
+So each area that moves a rule keeps at least one test that runs the whole handler, not just the rule. That
+is not redundancy with the rule's own unit tests; it is the only thing that catches an unwired rule.
+
+### A branch-coverage trap worth knowing
+
+`usage is { HasBoost: true, BasePoints: not null, BoostedPoints: not null }` reads well and lowers to **ten
+branches for three conditions**, so the 100% branch gate cannot be met without inventing tests for outcomes
+the logic does not have. Written as statements the branches match the meaning. Expect this with property
+patterns generally; the gate is right and the pattern is the problem.
+
 ### Undeclared dependencies the split keeps exposing
 
 Removing `Microsoft.Data.SqlClient` from Infrastructure in 0b broke all eight
@@ -307,7 +332,7 @@ collapses each to one.
 | Predictable fixture | `GetRoundCompletionQueryHandler.PredictableMatchPredicate` + `ReminderService.GetUsersMissingPredictionsAsync` | Integration tested 2026-08-10; collapses to one C# rule in phase "Rounds" |
 | Round outcome counts | `RoundRepository.UpdateRoundResultsAsync` MERGE + `GetActiveRoundsQueryHandler.cs:195` | Found 2026-08-10, **untested in either copy**. `RoundResults.ExactScoreCount` is stored and read by badges, digests, leaderboards, records and season recap, so the SQL is canonical and the C# is a live shadow of it. Collapses in phase "Rounds". |
 | Boost secrecy | SQL only, but reads `GETUTCDATE()` instead of `IDateTimeProvider` | Integration tested 2026-08-10; becomes a clock-injected C# filter in phase "Boosts" |
-| Player display name (`FirstName + ' ' + LEFT(LastName, 1)`) | **17 files** | Found 2026-08-10. The most duplicated rule in the codebase - a presentation format written out seventeen times in SQL. Collapses to one C# formatter, introduced with Boosts/usage-summary and adopted per area as the split proceeds. |
+| Player display name (`FirstName + ' ' + LEFT(LastName, 1)`) | **17 files** | `Domain.Services.PlayerDisplayName` added 2026-08-10 with the Boosts batch, which adopted it. **16 SQL copies remain** - each area adopts it as the split reaches it. The C# version also drops the trailing space the SQL produced for an empty surname. |
 
 ## Open question, not yet decided
 
