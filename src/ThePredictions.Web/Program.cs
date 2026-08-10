@@ -129,6 +129,14 @@ app.UseSerilogRequestLogging(options =>
 
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<ErrorHandlingMiddleware>();
+
+// Must stay ahead of UseBlazorFrameworkFiles/UseStaticFiles below: those short-circuit for a request
+// they can serve, so anything registered after them never sees index.html or the _framework assets.
+// This line was missing until August 2026 while being present in the standalone ThePredictions.API
+// entry point, which is not what gets deployed - so the headers, including the Content-Security-Policy,
+// had never been sent by either site. The other two middleware above were mirrored here; this one was not.
+app.UseSecurityHeaders();
+
 app.UseHttpsRedirection();
 app.UseCors(corsName);
 app.UseBlazorFrameworkFiles();

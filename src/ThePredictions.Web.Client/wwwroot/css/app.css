@@ -1,5 +1,7 @@
-
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap');
+﻿
+/* Poppins, self-hosted - see poppins.css. Must stay first so the font faces are declared
+   before anything uses them. */
+@import url('poppins.css');
 
 /* Design tokens (CSS variables) */
 @import url('variables.css');

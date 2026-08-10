@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
@@ -33,10 +33,9 @@
     Production (dotnet publish): Bundles all CSS into one file with cache busting
 
     This target:
-    1. Concatenates all CSS files in correct order
-    2. Prepends Google Fonts import
-    3. Deletes individual CSS files
-    4. Adds cache busting version to index.html
+    1. Concatenates all CSS files in correct order, starting with the self-hosted Poppins font faces
+    2. Deletes individual CSS files (the webfonts under css/fonts/ and wwwroot/lib/ are left alone)
+    3. Adds cache busting version to index.html
 
     Uses cross-platform C# inline tasks instead of platform-specific shell commands
     to ensure identical output on Windows (local publish) and Linux (CI/CD).
@@ -99,6 +98,8 @@ System.IO.File.WriteAllText(FilePath, content);
 
         <!-- Define CSS files in bundle order (matching @imports in app.css) -->
         <ItemGroup>
+            <!-- Poppins font faces first: they must be declared before anything that uses them. -->
+            <CssFilesToBundle Include="$(PublishCssDir)poppins.css" />
             <CssFilesToBundle Include="$(PublishCssDir)variables.css" />
             <CssFilesToBundle Include="$(PublishCssDir)utilities\typography.css" />
             <CssFilesToBundle Include="$(PublishCssDir)utilities\colours.css" />
@@ -169,8 +170,12 @@ System.IO.File.WriteAllText(FilePath, content);
             <CssFilesToBundle Include="$(PublishCssDir)app-base.css" />
         </ItemGroup>
 
-        <!-- Concatenate all CSS files with Google Fonts import at the top -->
-        <ConcatenateFiles SourceFiles="@(CssFilesToBundle)" OutputFile="$(TargetCss)" Header="@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&amp;display=swap');" />
+        <!-- Concatenate all CSS files -->
+        <!-- No Header: Poppins used to be pulled from fonts.googleapis.com here, which the
+             Content-Security-Policy blocks and which leaked every visitor's IP to Google. It is now
+             the first bundled file instead, with the woff2 files under css/fonts/ - a relative path
+             that resolves the same from css/app.css whether bundled or imported. -->
+        <ConcatenateFiles SourceFiles="@(CssFilesToBundle)" OutputFile="$(TargetCss)" />
 
         <!-- Delete individual CSS files and their compressed versions -->
         <ItemGroup>
@@ -196,6 +201,8 @@ System.IO.File.WriteAllText(FilePath, content);
         <Message Importance="high" Text="Adding cache busting version: $(CssVersion)" />
         <ReplaceInFile FilePath="$(IndexHtmlPath)" Find="href=&quot;css/app.css&quot;" ReplaceWith="href=&quot;css/app.css?v=$(CssVersion)&quot;" />
         <ReplaceInFile FilePath="$(IndexHtmlPath)" Find="src=&quot;js/interop.js&quot;" ReplaceWith="src=&quot;js/interop.js?v=$(CssVersion)&quot;" />
+        <ReplaceInFile FilePath="$(IndexHtmlPath)" Find="src=&quot;js/loading-theme.js&quot;" ReplaceWith="src=&quot;js/loading-theme.js?v=$(CssVersion)&quot;" />
+        <ReplaceInFile FilePath="$(IndexHtmlPath)" Find="src=&quot;js/error-handlers.js&quot;" ReplaceWith="src=&quot;js/error-handlers.js?v=$(CssVersion)&quot;" />
 
         <Message Importance="high" Text="Cache busting complete. Version: $(CssVersion)" />
     </Target>
