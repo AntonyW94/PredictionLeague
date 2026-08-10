@@ -14,8 +14,6 @@ using ThePredictions.Application.Services.Payments;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Models;
 using ThePredictions.Domain.Services;
-using ThePredictions.Infrastructure.Data;
-using ThePredictions.Infrastructure.Data.Resilience;
 using ThePredictions.Infrastructure.Formatters;
 using ThePredictions.Infrastructure.HealthChecks;
 using ThePredictions.Infrastructure.Identity;
@@ -33,10 +31,6 @@ public static class DependencyInjection
 {
     public static void AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<SqlRetryPolicyOptions>(
-            configuration.GetSection(SqlRetryPolicyOptions.SectionName));
-        services.AddSingleton<ISqlRetryPolicy, SqlRetryPolicy>();
-
         services.Configure<FieldEncryptionSettings>(
             configuration.GetSection(FieldEncryptionSettings.SectionName));
         services.AddSingleton<IFieldEncryptionService, FieldEncryptionService>();
@@ -45,15 +39,10 @@ public static class DependencyInjection
             configuration.GetSection(StripeSettings.SectionName));
         services.AddScoped<IPaymentService, StripePaymentService>();
 
-        services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
-        services.AddScoped<IDbTransactionContext, DbTransactionContext>();
-        services.AddScoped<IApplicationReadDbConnection, DapperReadDbConnection>();
-
-        var connectionString = configuration.GetConnectionString("DataConnection")
-                               ?? throw new InvalidOperationException("Connection string 'DataConnection' not found.");
-
+        // The connection, transaction and read seams, plus the database health probe, are registered by
+        // ThePredictions.Persistence.SqlServer.AddSqlServerPersistence. Both calls are made by the
+        // composition root; AddHealthChecks() composes, so the two checks share one registry.
         services.AddHealthChecks()
-            .AddSqlServer(connectionString, name: "database", tags: ["ready"])
             .AddCheck<FootballApiHealthCheck>("football-api", tags: ["ready"]);
 
         services.AddHttpClient<FootballApiHealthCheck>();

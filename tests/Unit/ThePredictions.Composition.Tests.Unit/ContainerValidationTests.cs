@@ -10,6 +10,7 @@ using ThePredictions.API;
 using ThePredictions.Application.Common.Interfaces;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Infrastructure;
+using ThePredictions.Persistence.SqlServer;
 using Xunit;
 
 namespace ThePredictions.Composition.Tests.Unit;
@@ -62,6 +63,9 @@ public class ContainerValidationTests
         services.AddLogging();
         services.AddDataProtection();
 
+        // Mirrors the composition root: the persistence adapter is chosen first, then the
+        // external-world adapters, then the API. A handler cannot be resolved without both.
+        services.AddSqlServerPersistence(configuration);
         services.AddInfrastructureServices(configuration);
         services.AddApiServices(configuration);
 

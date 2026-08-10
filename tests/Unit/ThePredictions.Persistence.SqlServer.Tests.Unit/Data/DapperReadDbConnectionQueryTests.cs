@@ -6,10 +6,10 @@ using Microsoft.Extensions.Options;
 using NSubstitute;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
-using ThePredictions.Infrastructure.Data;
+using ThePredictions.Persistence.SqlServer.Data;
 using Xunit;
 
-namespace ThePredictions.Infrastructure.Tests.Unit.Data;
+namespace ThePredictions.Persistence.SqlServer.Tests.Unit.Data;
 
 /// <summary>
 /// Exercises the read path against a real (in-memory) database rather than a mocked connection, so

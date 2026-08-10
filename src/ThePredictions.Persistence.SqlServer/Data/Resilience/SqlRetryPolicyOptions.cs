@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace ThePredictions.Infrastructure.Data.Resilience;
+namespace ThePredictions.Persistence.SqlServer.Data.Resilience;
 
 /// <summary>
 /// Configuration options for the SQL transient-fault retry policy.

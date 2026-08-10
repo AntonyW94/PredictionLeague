@@ -1,6 +1,6 @@
 using Microsoft.Data.SqlClient;
 
-namespace ThePredictions.Infrastructure.Data.Resilience;
+namespace ThePredictions.Persistence.SqlServer.Data.Resilience;
 
 /// <summary>
 /// Determines whether a SQL exception represents a transient fault that may

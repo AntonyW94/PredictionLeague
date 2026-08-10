@@ -6,7 +6,7 @@ using ThePredictions.Application.Common.Exceptions;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
 
-namespace ThePredictions.Infrastructure.Data;
+namespace ThePredictions.Persistence.SqlServer.Data;
 
 public class DapperReadDbConnection(
     IDbConnectionFactory connectionFactory,

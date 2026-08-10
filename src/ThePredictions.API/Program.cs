@@ -3,9 +3,11 @@ using ThePredictions.API.Middleware;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Infrastructure;
 using ThePredictions.Infrastructure.HealthChecks;
+using ThePredictions.Persistence.SqlServer;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddSqlServerPersistence(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApiServices(builder.Configuration);
 

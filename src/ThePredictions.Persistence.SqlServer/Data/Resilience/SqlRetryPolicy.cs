@@ -5,7 +5,7 @@ using Polly;
 using Polly.Retry;
 using ThePredictions.Application.Data;
 
-namespace ThePredictions.Infrastructure.Data.Resilience;
+namespace ThePredictions.Persistence.SqlServer.Data.Resilience;
 
 /// <summary>
 /// Wraps database operations with a Polly retry pipeline that handles transient SQL failures

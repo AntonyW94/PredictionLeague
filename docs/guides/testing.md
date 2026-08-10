@@ -6,7 +6,7 @@ This guide covers the testing tools, conventions, and coverage requirements for 
 
 **Every project targets 100% line and branch coverage**, with `[ExcludeFromCodeCoverage]` for what is deliberately not tested - see [Coverage: 100% Everywhere](#coverage-100-everywhere-with-deliberate-exclusions) for why, and for the exclusion policy.
 
-**Enforced on all eight unit test projects** - Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure, Web.Client and Application. None may regress. Run the coverage report after any code or test change.
+**Enforced on all nine unit test projects** - Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure, Persistence.SqlServer, Web.Client and Application. None may regress. Run the coverage report after any code or test change.
 
 ## Tools
 
@@ -201,7 +201,7 @@ code-behind** - that file is measured normally.
 ### Enforcement is per project
 
 `/p:Threshold=100` in `ci.yml` is only honoured by **`coverlet.msbuild`**. Every unit test project
-references it, so **Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure, Web.Client
+references it, so **Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure, Persistence.SqlServer, Web.Client
 and Application** are all gated. Application was the last to join, in August 2026.
 
 **The gate measures each test project's own run, not the merged report.** A class covered

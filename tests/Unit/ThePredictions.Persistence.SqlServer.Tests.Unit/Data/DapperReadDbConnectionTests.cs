@@ -7,10 +7,10 @@ using NSubstitute.ExceptionExtensions;
 using ThePredictions.Application.Common.Exceptions;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
-using ThePredictions.Infrastructure.Data;
+using ThePredictions.Persistence.SqlServer.Data;
 using Xunit;
 
-namespace ThePredictions.Infrastructure.Tests.Unit.Data;
+namespace ThePredictions.Persistence.SqlServer.Tests.Unit.Data;
 
 public class DapperReadDbConnectionTests
 {

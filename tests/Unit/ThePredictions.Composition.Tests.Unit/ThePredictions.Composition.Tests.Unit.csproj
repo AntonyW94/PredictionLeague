@@ -22,5 +22,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\ThePredictions.API\ThePredictions.API.csproj" />
     <ProjectReference Include="..\..\..\src\ThePredictions.Infrastructure\ThePredictions.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\ThePredictions.Persistence.SqlServer\ThePredictions.Persistence.SqlServer.csproj" />
   </ItemGroup>
 </Project>

@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\..\src\ThePredictions.Domain\ThePredictions.Domain.csproj" />
     <ProjectReference Include="..\..\..\src\ThePredictions.Hosting.Shared\ThePredictions.Hosting.Shared.csproj" />
     <ProjectReference Include="..\..\..\src\ThePredictions.Infrastructure\ThePredictions.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\ThePredictions.Persistence.SqlServer\ThePredictions.Persistence.SqlServer.csproj" />
     <ProjectReference Include="..\..\..\src\ThePredictions.Validators\ThePredictions.Validators.csproj" />
     <ProjectReference Include="..\..\..\src\ThePredictions.Web.Client\ThePredictions.Web.Client.csproj" />
   </ItemGroup>

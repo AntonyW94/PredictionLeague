@@ -3,8 +3,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
-using ThePredictions.Infrastructure.Data;
-using ThePredictions.Infrastructure.Data.Resilience;
+using ThePredictions.Persistence.SqlServer.Data;
+using ThePredictions.Persistence.SqlServer.Data.Resilience;
 using Xunit;
 
 namespace ThePredictions.Infrastructure.Tests.Integration.Harness;

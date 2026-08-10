@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Supplies IServiceCollection, IConfiguration, ILogger, Options and the health-check
+             abstractions from the shared framework, exactly as ThePredictions.Infrastructure does.
+             Referencing those as packages instead downgrades what MediatR already pulls in
+             transitively, which NU1605 turns into a build error. -->
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Dapper" Version="2.1.66" />
+        <!-- The SQL Server health probe belongs with the adapter that owns the connection. -->
+        <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="8.0.2" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+        <PackageReference Include="Polly" Version="8.5.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Application owns the ports this adapter implements (IDbConnectionFactory,
+             IApplicationReadDbConnection, ISqlRetryPolicy and the IXxxRepository set). The reference
+             only ever goes this way; LayerDependencyConventionTests fails the build otherwise. -->
+        <ProjectReference Include="..\ThePredictions.Application\ThePredictions.Application.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Lets the unit tests reach internal seams. -->
+        <InternalsVisibleTo Include="ThePredictions.Persistence.SqlServer.Tests.Unit" />
+    </ItemGroup>
+
+</Project>
