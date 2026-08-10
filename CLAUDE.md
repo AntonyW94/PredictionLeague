@@ -31,7 +31,9 @@ Any new tables must also be added to the database refresh tool in [`tools/ThePre
 
 ### Migration SQL — committed only under the DbUp Migrations folder
 
-Database schema changes are managed by **DbUp** (ADR-0013). Committed `.sql` files are allowed in **one** place only: [`tools/ThePredictions.DatabaseTools/Migrations/`](tools/ThePredictions.DatabaseTools/Migrations/) — embedded, numbered `NNNN_PascalCase.sql`, applied in order, and **immutable once applied** (add a new script rather than editing one). Write new schema changes as a new migration script there.
+Database schema changes are managed by **DbUp** (ADR-0013). Committed `.sql` files are allowed in **one** place only: [`src/ThePredictions.Persistence.SqlServer/Migrations/`](src/ThePredictions.Persistence.SqlServer/Migrations/) — embedded, numbered `NNNN_PascalCase.sql`, applied in order, and **immutable once applied** (add a new script rather than editing one). Write new schema changes as a new migration script there.
+
+> **Never rename or move these files, or the project or folder holding them.** DbUp journals each script by its **embedded resource name**, so those names are the live primary keys in every database's `dbo.SchemaVersions`. Changing one makes DbUp treat the script as unapplied and re-run it. `MigrationScriptsTests` pins the current names so this fails the build rather than a migration run.
 
 **Everywhere else, still do NOT create `.sql` files** (no `tools/sql/`, no loose scripts on disk). For any genuinely ad-hoc / one-off SQL outside the migration set, **present it directly in the chat window** in a fenced code block for the user to run manually.
 
@@ -230,7 +232,7 @@ Repeatable operational procedures (external-service access, credential retrieval
 7. **NEVER use US English spelling** - Use UK English
 8. **NEVER make database changes without updating `docs/guides/database-schema.md`** and the refresh tool in `tools/ThePredictions.DatabaseTools/`
 9. **NEVER leave code coverage below 100%** - Write tests or add `[ExcludeFromCodeCoverage]` for untestable code
-10. **NEVER create `.sql` files in the repository EXCEPT under `tools/ThePredictions.DatabaseTools/Migrations/`** (the DbUp migration set, ADR-0013; numbered, embedded, immutable once applied) - everywhere else, present ad-hoc SQL in the chat for the user to run manually
+10. **NEVER create `.sql` files in the repository EXCEPT under `src/ThePredictions.Persistence.SqlServer/Migrations/`** (the DbUp migration set, ADR-0013; numbered, embedded, immutable once applied, and never renamed — the resource names are journal keys) - everywhere else, present ad-hoc SQL in the chat for the user to run manually
 11. **NEVER let a query's `SELECT` column order drift from its result `record` constructor** - Dapper maps them positionally (name + type per position); a mismatch compiles and passes tests but throws at runtime. See [Dapper Result Mapping](#dapper-result-mapping--select-column-order-must-match-the-record-constructor).
 
 ## Quick Reference

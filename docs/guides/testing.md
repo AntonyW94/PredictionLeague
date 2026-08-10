@@ -236,7 +236,7 @@ for the worst-first list.
 | Piece | What it does |
 |-------|--------------|
 | **Testcontainers** | Starts one SQL Server container per test run (`Testcontainers.MsSql`, image pinned). |
-| **DbUp** | Builds the schema by running the committed migrations from `tools/ThePredictions.DatabaseTools/Migrations/`, embedded by glob from their own folder. |
+| **DbUp** | Builds the schema by running the committed migrations, read from `ThePredictions.Persistence.SqlServer` via `MigrationScripts` — the same assembly and journal identity `ThePredictions.DatabaseTools` uses, so the two cannot disagree. |
 | **Respawn** | Deletes every row between tests and leaves the schema alone, so each test arranges from empty. |
 
 **Not SQLite**, and that is not a detail. The queries under test use `RANK() OVER`, `CROSS APPLY`,

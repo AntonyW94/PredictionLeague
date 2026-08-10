@@ -177,6 +177,6 @@ monster; hold it in reserve.
 ## Related
 
 - `docs/todo/architecture/my-leagues-tile-cache/README.md` - the plan this implements.
-- Migration `tools/ThePredictions.DatabaseTools/Migrations/0006_LeagueMemberStatsCachedRanks.sql`.
+- Migration `src/ThePredictions.Persistence.SqlServer/Migrations/0006_LeagueMemberStatsCachedRanks.sql`.
 - `docs/guides/database-schema.md#leaguememberstats` - the column contract.
 - [ADR-0013](./0013-database-migrations-dbup.md) - why the schema change is a DbUp migration.

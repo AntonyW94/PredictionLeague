@@ -1,6 +1,7 @@
 using System.Reflection;
 using FluentAssertions;
 using ThePredictions.Infrastructure.Tests.Integration.Harness;
+using ThePredictions.Persistence.SqlServer.Migrations;
 using Xunit;
 
 namespace ThePredictions.Infrastructure.Tests.Integration.Schema;
@@ -15,17 +16,17 @@ namespace ThePredictions.Infrastructure.Tests.Integration.Schema;
 [Trait(IntegrationTrait.Name, IntegrationTrait.Value)]
 public class MigrationsFromEmptyTests(SqlServerDatabaseFixture fixture) : DatabaseTestBase(fixture)
 {
-    private const string MigrationsFolder = "tools/ThePredictions.DatabaseTools/Migrations";
+    private const string MigrationsFolder = "src/ThePredictions.Persistence.SqlServer/Migrations";
 
     [Fact]
     public async Task Migrations_ShouldAllBeRecordedInTheJournal_WhenAppliedToAnEmptyDatabase()
     {
         // Arrange - the fixture has already applied them; this is the assertion the run was silent about.
-        var expected = MigrationRunner.EmbeddedScriptNames();
+        var expected = MigrationScripts.Names();
 
         // Act
         var journalled = await QueryAsync<string>(
-            $"SELECT [ScriptName] FROM [{MigrationRunner.JournalSchema}].[{MigrationRunner.JournalTable}];");
+            $"SELECT [ScriptName] FROM [{MigrationScripts.JournalSchema}].[{MigrationScripts.JournalTable}];");
 
         // Assert
         journalled.Should().BeEquivalentTo(expected,
@@ -39,12 +40,12 @@ public class MigrationsFromEmptyTests(SqlServerDatabaseFixture fixture) : Databa
         var committed = Directory
             .EnumerateFiles(Path.Combine(RepositoryRoot(), MigrationsFolder), "*.sql")
             .Select(Path.GetFileName)
-            .Select(name => $"Migrations.{name}")
+            .Select(name => $"ThePredictions.Persistence.SqlServer.Migrations.{name}")
             .OrderBy(name => name, StringComparer.Ordinal)
             .ToList();
 
         // Act
-        var embedded = MigrationRunner.EmbeddedScriptNames();
+        var embedded = MigrationScripts.Names();
 
         // Assert
         embedded.Should().BeEquivalentTo(committed,

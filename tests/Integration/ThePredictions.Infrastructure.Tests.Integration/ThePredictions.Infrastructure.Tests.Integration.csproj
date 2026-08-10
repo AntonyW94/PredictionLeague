@@ -37,15 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The committed DbUp migration set, embedded from its own folder rather than copied, so the
-         schema these tests run against is the one that ships. LogicalName is set explicitly because
-         DbUp discovers scripts by resource name and applies them in that order. -->
-    <EmbeddedResource Include="..\..\..\tools\ThePredictions.DatabaseTools\Migrations\*.sql">
-      <LogicalName>Migrations.%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\..\src\ThePredictions.Infrastructure\ThePredictions.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\src\ThePredictions.Persistence.SqlServer\ThePredictions.Persistence.SqlServer.csproj" />
     <ProjectReference Include="..\..\Shared\ThePredictions.Tests.Shared\ThePredictions.Tests.Shared.csproj" />

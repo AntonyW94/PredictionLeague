@@ -1,6 +1,6 @@
-using System.Reflection;
 using DbUp;
 using DbUp.Engine;
+using ThePredictions.Persistence.SqlServer.Migrations;
 
 namespace ThePredictions.DatabaseTools;
 
@@ -23,10 +23,13 @@ public class DatabaseMigrator(string connectionString)
     {
         var upgrader = DeployChanges.To
             .SqlDatabase(connectionString)
-            .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
+            // The scripts live in the persistence adapter, which owns the schema it speaks to. Reading
+            // them from there rather than embedding a second copy here keeps one set of resource names,
+            // and therefore one set of journal keys.
+            .WithScriptsEmbeddedInAssembly(MigrationScripts.Assembly)
             .WithTransactionPerScript()
             .WithExecutionTimeout(ScriptTimeout)
-            .JournalToSqlTable("dbo", "SchemaVersions")
+            .JournalToSqlTable(MigrationScripts.JournalSchema, MigrationScripts.JournalTable)
             .LogToConsole()
             .Build();
 

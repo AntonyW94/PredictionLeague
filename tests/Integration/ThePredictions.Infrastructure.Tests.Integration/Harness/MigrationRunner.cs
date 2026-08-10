@@ -1,7 +1,7 @@
-using System.Reflection;
 using DbUp;
 using DbUp.Builder;
 using DbUp.Engine;
+using ThePredictions.Persistence.SqlServer.Migrations;
 
 namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
 
@@ -15,18 +15,16 @@ namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
 /// because the three real databases were baselined from an existing schema and so have never applied
 /// <c>0001_Baseline.sql</c> as anything but a no-op.
 ///
-/// Deliberately mirrors <c>ThePredictions.DatabaseTools.DatabaseMigrator</c> (same journal table, same
-/// transaction-per-script, same timeout) rather than referencing it: that project is an executable
-/// pinned to a newer Microsoft.Data.SqlClient than the application, and a test that reached into it
-/// would quietly test the tooling's driver instead of the application's.
+/// The scripts and the journal identity come from <see cref="MigrationScripts"/> in the persistence
+/// adapter, so this suite and <c>ThePredictions.DatabaseTools</c> cannot disagree about either. Only the
+/// DbUp wiring below is still written twice; sharing that too would mean putting a
+/// <c>dbup-sqlserver</c> dependency in the adapter, which would ship a migration engine inside the web
+/// application for no benefit.
 /// </summary>
 internal static class MigrationRunner
 {
     // DDL (the guarded baseline, index and constraint creation) can take a while on a cold container.
     private static readonly TimeSpan ScriptTimeout = TimeSpan.FromMinutes(5);
-
-    internal const string JournalSchema = "dbo";
-    internal const string JournalTable = "SchemaVersions";
 
     /// <summary>
     /// Runs every pending migration, throwing with the offending script named if any fails.
@@ -48,25 +46,14 @@ internal static class MigrationRunner
     internal static bool IsUpgradeRequired(string connectionString) =>
         Build(connectionString).IsUpgradeRequired();
 
-    /// <summary>
-    /// The migration scripts embedded in this assembly, by their DbUp script name - which is the
-    /// resource name, and therefore what lands in the journal table.
-    /// </summary>
-    internal static IReadOnlyList<string> EmbeddedScriptNames() =>
-        Assembly.GetExecutingAssembly()
-            .GetManifestResourceNames()
-            .Where(n => n.EndsWith(".sql", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(n => n, StringComparer.Ordinal)
-            .ToList();
-
     private static UpgradeEngine Build(string connectionString)
     {
         UpgradeEngineBuilder builder = DeployChanges.To
             .SqlDatabase(connectionString)
-            .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
+            .WithScriptsEmbeddedInAssembly(MigrationScripts.Assembly)
             .WithTransactionPerScript()
             .WithExecutionTimeout(ScriptTimeout)
-            .JournalToSqlTable(JournalSchema, JournalTable)
+            .JournalToSqlTable(MigrationScripts.JournalSchema, MigrationScripts.JournalTable)
             // Silenced: a passing run has nothing to say, and the baseline alone logs hundreds of
             // lines. A failure is reported by Apply, which names the script and the error.
             .LogToNowhere();

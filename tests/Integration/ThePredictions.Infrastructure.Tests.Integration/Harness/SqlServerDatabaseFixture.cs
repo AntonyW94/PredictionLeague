@@ -2,6 +2,7 @@ using Microsoft.Data.SqlClient;
 using Respawn;
 using Respawn.Graph;
 using Testcontainers.MsSql;
+using ThePredictions.Persistence.SqlServer.Migrations;
 using Xunit;
 
 namespace ThePredictions.Infrastructure.Tests.Integration.Harness;
@@ -104,7 +105,7 @@ public sealed class SqlServerDatabaseFixture : IAsyncLifetime
             SchemasToInclude = ["dbo"],
             // Clearing the journal would make DbUp re-run every script on the next reset, and the
             // schema is not what a test is allowed to change.
-            TablesToIgnore = [new Table(MigrationRunner.JournalSchema, MigrationRunner.JournalTable)]
+            TablesToIgnore = [new Table(MigrationScripts.JournalSchema, MigrationScripts.JournalTable)]
         });
     }
 }

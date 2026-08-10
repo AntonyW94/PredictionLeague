@@ -144,7 +144,7 @@ Both tables get the obvious composite PKs. Add covering indexes for likely query
 ## Dependencies
 
 - [ ] None blocking. This is a foundation for other work, not built on top of anything.
-- [x] DbUp migrations have now shipped (ADR-0013), so this plan's schema changes should be written as a **new numbered migration** under `tools/ThePredictions.DatabaseTools/Migrations/` rather than a manual schema change.
+- [x] DbUp migrations have now shipped (ADR-0013), so this plan's schema changes should be written as a **new numbered migration** under `src/ThePredictions.Persistence.SqlServer/Migrations/` rather than a manual schema change.
 
 ## Technical Notes
 

@@ -30,7 +30,8 @@ longer holds, so the rule is amended rather than silently broken.
 **We will use DbUp, driven by `tools/ThePredictions.DatabaseTools` in a new `Migrate` mode.**
 
 1. **Committed `.sql` migrations, scoped exception to rule #10.** Migration scripts live in
-   `tools/ThePredictions.DatabaseTools/Migrations/`, are committed, and are marked
+   `src/ThePredictions.Persistence.SqlServer/Migrations/` (moved there August 2026 by the
+   persistence split, with the journal keys renamed on every database to match), are committed, and are marked
    `<EmbeddedResource>`. Naming is `NNNN_PascalCaseDescription.sql`, zero-padded, so alphabetical
    order is execution order. **This folder is the only place committed `.sql` files are allowed**;
    everywhere else rule #10 still stands (present ad-hoc SQL in chat). Applied migrations are
@@ -119,4 +120,4 @@ longer holds, so the rule is amended rather than silently broken.
 - [ADR-0009](0009-platform-and-data.md) — platform & data (anticipated this tooling).
 - EctManager ADR-0074 (CI-driven migrations via a reusable workflow) — the pattern adapted here.
 - `docs/todo/architecture/database-migrations/README.md` — the design doc.
-- `tools/ThePredictions.DatabaseTools/Migrations/README.md` — script naming/conventions.
+- `src/ThePredictions.Persistence.SqlServer/Migrations/README.md` — script naming/conventions.
