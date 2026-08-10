@@ -1,7 +1,7 @@
 using System.Reflection;
 using Microsoft.Data.SqlClient;
 
-namespace ThePredictions.Infrastructure.Tests.Unit.Data.Resilience;
+namespace ThePredictions.Persistence.SqlServer.Tests.Unit.Data.Resilience;
 
 /// <summary>
 /// Builds a <see cref="SqlException"/> carrying chosen error numbers. SqlException has no public

@@ -8,6 +8,8 @@ using ThePredictions.Hosting.Shared.Extensions;
 using ThePredictions.Infrastructure;
 using ThePredictions.Infrastructure.Data;
 using ThePredictions.Infrastructure.HealthChecks;
+using ThePredictions.Persistence.SqlServer;
+using ThePredictions.Persistence.SqlServer.Data;
 using Serilog;
 
 const string corsName = "ThePredictionsCors";
@@ -58,6 +60,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")));
 
 builder.Services.AddControllers();
+builder.Services.AddSqlServerPersistence(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddApiServices(builder.Configuration);
 builder.Services.AddHostedService<DatabaseInitialiser>();

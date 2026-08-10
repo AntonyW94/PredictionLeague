@@ -14,6 +14,7 @@ internal static class ProductionAssemblies
     internal static readonly Assembly Contracts = typeof(Contracts.Leagues.LeagueDto).Assembly;
     internal static readonly Assembly Application = typeof(Application.Common.Interfaces.IAssemblyMarker).Assembly;
     internal static readonly Assembly Infrastructure = typeof(Infrastructure.Repositories.LeagueRepository).Assembly;
+    internal static readonly Assembly PersistenceSqlServer = typeof(Persistence.SqlServer.Data.SqlConnectionFactory).Assembly;
     internal static readonly Assembly Api = typeof(API.Controllers.ApiControllerBase).Assembly;
     internal static readonly Assembly Validators = typeof(Validators.Leagues.CreateLeagueRequestValidator).Assembly;
     internal static readonly Assembly WebClient = typeof(Web.Client.ViewModels.Admin.Rounds.MatchViewModel).Assembly;
@@ -21,7 +22,8 @@ internal static class ProductionAssemblies
 
     internal static readonly IReadOnlyList<Assembly> All =
     [
-        Domain, Contracts, Application, Infrastructure, Api, Validators, WebClient, HostingShared
+        Domain, Contracts, Application, Infrastructure, PersistenceSqlServer, Api, Validators, WebClient,
+        HostingShared
     ];
 
     /// <summary>
@@ -32,7 +34,7 @@ internal static class ProductionAssemblies
     /// </summary>
     internal static readonly IReadOnlyList<Assembly> ServerSide =
     [
-        Domain, Contracts, Application, Infrastructure, Api, Validators, HostingShared
+        Domain, Contracts, Application, Infrastructure, PersistenceSqlServer, Api, Validators, HostingShared
     ];
 
     /// <summary>Absolute path to the repository root, injected by the csproj as assembly metadata.</summary>

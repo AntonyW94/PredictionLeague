@@ -140,10 +140,24 @@ Each phase is one PR, master stays green and deployable throughout.
 
 | # | Phase | Contents |
 |---|-------|----------|
-| 0 | **Scaffold** | Create `Persistence.SqlServer`. Move the data plumbing, all 30 repositories, both Identity stores and the migration set. Namespace changes only, no behaviour change. `AddSqlServerPersistence()`. New layer-convention rules. |
+| 0a | **Scaffold + plumbing** ✅ | Create `Persistence.SqlServer` and move the connection, transaction, read, retry and type-handler seams. `AddSqlServerPersistence()`. New gated test project. Two new layer-convention rules. |
+| 0b | **Repositories** | Move all 30 repositories and `RepositoryBase`. |
+| 0c | **Identity stores and SQL-bearing services** | `DapperUserStore`, `DapperRoleStore`, `LeagueMembershipService`, `CachedEmailSettingsProvider`, and `Microsoft.Data.SqlClient` finally leaves Infrastructure. |
+| 0d | **Migration set** | Move the DbUp scripts under the adapter. Touches the root `CLAUDE.md` rule, the migrations README, `DatabaseTools` and the integration project's glob, so it is kept separate. |
 | 1 | **Conformance split** | Extract the abstract bases, `ITestDataSeeder`, and re-home the existing 29 integration tests. No new tests. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
+
+**Phase 0 was split into four once the survey was done.** It was planned as one PR, but the pieces turn
+out to be independently landable, because repositories depend only on Application's
+`IDbConnectionFactory` / `IDbTransactionContext` and never on the concrete plumbing. Moving them in one
+PR would also have meant a transitional state where Infrastructure referenced the adapter, which is the
+very thing the new convention rule forbids. `BoostWriteRepository` uses `Microsoft.Data.SqlClient`
+directly, so that package cannot leave Infrastructure until 0c.
+
+`Data/DatabaseInitialiser.cs` deliberately stays in Infrastructure: it seeds Identity roles through
+`RoleManager` and contains no SQL, so it would work unchanged against any adapter. It is the only file
+left in `Infrastructure/Data/`.
 
 Feature areas for phases 2..N, roughly worst-first by rule density: Boosts, Rounds, Leaderboards,
 Leagues, Dashboard, Badges, Admin/Rounds, Admin/Seasons, Predictions, Authentication, Account,

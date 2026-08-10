@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <IsPackable>false</IsPackable>
-    <Include>[ThePredictions.Infrastructure]*</Include>
+    <Include>[ThePredictions.Persistence.SqlServer]*</Include>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,7 +11,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <!-- Enforces the CI /p:Threshold=100 gate. Scoped by the Include filter above so only
-         ThePredictions.Infrastructure counts, not the projects it references. -->
+         ThePredictions.Persistence.SqlServer counts, not the projects it references. -->
     <PackageReference Include="coverlet.msbuild" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -21,9 +21,17 @@
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
     <PackageReference Include="NSubstitute" Version="5.3.0" />
+    <!-- In-memory database so the DapperReadDbConnection wrapper (retry, slow-query logging, the
+         InvalidOperationException translation) can be exercised for real rather than mocked. SQLite is
+         legitimate here precisely because none of that behaviour is dialect-specific; the SQL these
+         tests run is incidental. Real SQL correctness is the integration suite's job. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.0" />
+    <!-- SqlExceptionFactory builds a SqlException through its non-public constructors, so the tests
+         need the driver directly rather than only transitively. -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\ThePredictions.Infrastructure\ThePredictions.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\src\ThePredictions.Persistence.SqlServer\ThePredictions.Persistence.SqlServer.csproj" />
   </ItemGroup>
 </Project>

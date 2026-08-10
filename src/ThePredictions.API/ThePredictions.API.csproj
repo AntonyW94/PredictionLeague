@@ -25,6 +25,8 @@
           <TreatAsUsed>true</TreatAsUsed>
         </ProjectReference>
         <ProjectReference Include="..\ThePredictions.Infrastructure\ThePredictions.Infrastructure.csproj" />
+        <!-- Composition root: the API picks the persistence adapter. -->
+        <ProjectReference Include="..\ThePredictions.Persistence.SqlServer\ThePredictions.Persistence.SqlServer.csproj" />
         <ProjectReference Include="..\ThePredictions.Validators\ThePredictions.Validators.csproj" />
     </ItemGroup>
 

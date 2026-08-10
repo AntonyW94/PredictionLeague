@@ -6,7 +6,7 @@ using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
 using System.Data;
 
-namespace ThePredictions.Infrastructure.Data;
+namespace ThePredictions.Persistence.SqlServer.Data;
 
 [ExcludeFromCodeCoverage(Justification = "Database plumbing: connection, transaction and type-handler wiring with no branching logic of its own.")]
 public class SqlConnectionFactory : IDbConnectionFactory

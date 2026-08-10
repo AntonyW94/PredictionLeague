@@ -138,7 +138,7 @@ private record OverallLeaderboardQueryResult(..., int? SnapshotRank, ...);   // 
 
 ### Testing & Code Coverage
 
-Every project **must maintain 100% line and branch coverage** - Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure, Web.Client and Application are all gated in CI, so a drop fails the build. See [`docs/guides/testing.md`](docs/guides/testing.md#enforcement-is-per-project-and-rolls-out-gradually) for how the gate is wired up. After writing or modifying code:
+Every project **must maintain 100% line and branch coverage** - Domain, Validators, Contracts, Hosting.Shared, API, Infrastructure, Persistence.SqlServer, Web.Client and Application are all gated in CI, so a drop fails the build. See [`docs/guides/testing.md`](docs/guides/testing.md#enforcement-is-per-project-and-rolls-out-gradually) for how the gate is wired up. After writing or modifying code:
 
 1. Write unit tests for all new/changed logic
 2. Run the coverage script: `tools\Test Coverage\coverage-unit.bat`
@@ -252,7 +252,8 @@ Repeatable operational procedures (external-service access, credential retrieval
 src/
 ├── ThePredictions.Domain           → Core business entities
 ├── ThePredictions.Application      → CQRS commands/queries
-├── ThePredictions.Infrastructure   → Data access, external services
+├── ThePredictions.Persistence.SqlServer → SQL Server adapter (see docs/todo/architecture/persistence-split)
+├── ThePredictions.Infrastructure   → External services (email, payments, football API, images)
 ├── ThePredictions.API              → REST controllers
 ├── ThePredictions.Web              → Blazor server host
 ├── ThePredictions.Web.Client       → Blazor WebAssembly UI
@@ -263,7 +264,8 @@ tools/
 └── ThePredictions.DatabaseTools      → Dev database refresh & prod backup tool
 tests/
 ├── Shared/                           → Shared test helpers (TestDateTimeProvider, etc.)
-└── Unit/                             → Unit tests (xUnit + FluentAssertions)
+├── Unit/                             → Unit tests (xUnit + FluentAssertions)
+└── Integration/                      → Real SQL Server via Testcontainers (see docs/guides/testing.md)
 ```
 
 ### Useful Commands

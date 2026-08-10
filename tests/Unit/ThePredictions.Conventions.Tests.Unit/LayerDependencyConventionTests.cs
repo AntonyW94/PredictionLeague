@@ -58,14 +58,40 @@ public class LayerDependencyConventionTests
     // IXxxRepository set) and Infrastructure implements them; a reference the other way would let a
     // handler reach a concrete Dapper repository and make the abstraction decorative.
     [Fact]
-    public void Application_ShouldNotReferenceInfrastructureOrPresentation()
+    public void Application_ShouldNotReferenceInfrastructurePersistenceOrPresentation()
     {
         AssertDoesNotReference(
             "ThePredictions.Application",
             "ThePredictions.Infrastructure",
+            "ThePredictions.Persistence.SqlServer",
             "ThePredictions.API",
             "ThePredictions.Web",
             "ThePredictions.Web.Client");
+    }
+
+    // The persistence split only means something if the two adapters stay peers. Infrastructure holds
+    // the external-world adapters (Brevo, Stripe, the football API, SkiaSharp); a reference from there
+    // into the SQL Server adapter would let a mail or payment concern reach a connection directly, and
+    // swapping the database would stop being one call in the composition root. See
+    // docs/todo/architecture/persistence-split/README.md.
+    [Fact]
+    public void Infrastructure_ShouldNotReferenceThePersistenceAdapter()
+    {
+        AssertDoesNotReference(
+            "ThePredictions.Infrastructure",
+            "ThePredictions.Persistence.SqlServer");
+    }
+
+    // The mirror of the rule above, and of Infrastructure_ShouldReferenceApplication: the adapter
+    // implements Application's ports, so if this stopped holding the rules either side would be
+    // guarding a relationship that no longer exists.
+    [Fact]
+    public void PersistenceAdapter_ShouldReferenceApplicationOnly()
+    {
+        ProjectReferencesOf("ThePredictions.Persistence.SqlServer")
+            .Should().BeEquivalentTo(["ThePredictions.Application"],
+                "the adapter needs Application's interfaces and nothing else - not Infrastructure, and "
+                + "not Contracts, whose DTOs are the API's outward shape rather than a row type.");
     }
 
     [Fact]

@@ -1,8 +1,8 @@
 using FluentAssertions;
-using ThePredictions.Infrastructure.Data.Resilience;
+using ThePredictions.Persistence.SqlServer.Data.Resilience;
 using Xunit;
 
-namespace ThePredictions.Infrastructure.Tests.Unit.Data.Resilience;
+namespace ThePredictions.Persistence.SqlServer.Tests.Unit.Data.Resilience;
 
 /// <summary>
 /// Decides whether a failed database call is worth retrying. Too narrow and a routine Azure SQL
