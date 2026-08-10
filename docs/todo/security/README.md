@@ -17,6 +17,7 @@ These items have been reviewed and deferred with documented mitigations:
 |------|----------|-------------|
 | [server-validation-gap](server-validation-gap/) | High | Enforce FluentValidation server-side at the API boundary (June 2026 audit reversed the January deferral; client-side validation was also found dead) |
 | [refresh-tokens-in-urls](refresh-tokens-in-urls/) | High | Replace the raw refresh token in the Google callback URL with a 60-second exchange code (July 2026 review found a mobile-safe design; un-deferred) |
+| [refresh-token-retention](refresh-token-retention/) | Medium | Purge expired and revoked refresh tokens; 99.4% of the largest production table is dead rows going back a year, and nothing deletes them (August 2026) |
 | [account-lockout](account-lockout/) | Medium | Lock accounts after failed login attempts |
 | [audit-logging](audit-logging/) | Medium | Security event audit trail |
 | [request-security](request-security/) | Medium | Security headers review |
