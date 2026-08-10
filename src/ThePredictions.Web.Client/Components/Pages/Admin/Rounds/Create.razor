@@ -219,7 +219,7 @@
 
     private string? GetTeamLogoUrl(int teamId)
     {
-        return teamId < 1 ? "/images/placeholders/transparent.svg" : _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl;
+        return teamId < 1 ? "/images/placeholders/team-badge-empty.svg" : _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl;
     }
 
     private Task<HttpResponseMessage> HandleCreateRoundAsync()

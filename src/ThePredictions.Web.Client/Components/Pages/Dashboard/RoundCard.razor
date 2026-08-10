@@ -69,19 +69,19 @@
                             <TargetIcon Outcome="match.Outcome" />
                         </span>
                         <div class="match-preview-centre">
-                            <img src="@(match.HomeTeamLogoUrl ?? "images/placeholders/team-placeholder.svg")"
+                            <img src="@(match.HomeTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
                                  class="match-preview-logo"
                                  alt="Home"
                                  loading="lazy"
-                                 onerror="this.onerror=null; this.src='images/placeholders/team-placeholder.svg';" />
+                                 onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
                             <span class="match-preview-score">@(match.PredictedHomeScore?.ToString() ?? "-")</span>
                             <span class="match-preview-vs">-</span>
                             <span class="match-preview-score">@(match.PredictedAwayScore?.ToString() ?? "-")</span>
-                            <img src="@(match.AwayTeamLogoUrl ?? "images/placeholders/team-placeholder.svg")"
+                            <img src="@(match.AwayTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
                                  class="match-preview-logo"
                                  alt="Away"
                                  loading="lazy"
-                                 onerror="this.onerror=null; this.src='images/placeholders/team-placeholder.svg';" />
+                                 onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
                         </div>
                         @if (HasActualScore(match))
                         {

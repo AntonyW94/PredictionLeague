@@ -1,6 +1,6 @@
 ﻿/* Hero */
 .hero-section {
-    background: linear-gradient(var(--purple-900-alpha-80), var(--purple-900-alpha-80)), url('/images/content/hero-stadium.webp') no-repeat center center;
+    background: linear-gradient(var(--purple-900-alpha-80), var(--purple-900-alpha-80)), url('/images/content/stadium-floodlit.webp') no-repeat center center;
     background-size: cover;
     color: var(--white);
     padding: 6rem 0;

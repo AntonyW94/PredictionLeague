@@ -1,4 +1,4 @@
-# Blazor Client Guidelines
+﻿# Blazor Client Guidelines
 
 Rules specific to the Blazor WebAssembly client. For solution-wide patterns, see the root [`CLAUDE.md`](../../CLAUDE.md).
 
@@ -96,16 +96,54 @@ wwwroot/
 │   ├── bootstrap-icons/   → 1.11.3, with fonts/ adjacent to its CSS
 │   └── sweetalert2/       → 11.26.25
 └── images/
-    ├── brand/             → Logos and the social preview card
+    ├── brand/             → Logos and the social card
     ├── icons/             → Favicon PNGs and the Apple touch icon
     ├── boosts/            → Boost artwork, one file per state
     ├── content/           → Photography, with licences recorded in its README
     └── placeholders/      → Stand-ins for absent data
 ```
 
-**Naming:** lowercase kebab-case, `-light`/`-dark` for theme variants, `-normal`/`-selected`/`-disabled`
-for states, and an intrinsic-width suffix only where several sizes of one image exist
-(`hero-stadium-1600.webp`).
+### Naming
+
+```
+{subject}[-{variant}][-{state|background}][-{width}].{ext}
+```
+
+Lowercase kebab-case throughout. Five rules:
+
+1. **The folder supplies the category - never repeat it in the filename.** A placeholder in
+   `placeholders/` is `team-badge-unknown.svg`, not `team-placeholder.svg`.
+2. **Subject first, modifiers after**, most significant first, so related files sort together.
+3. **Fixed vocabularies, not free text:**
+   | Modifier | Values |
+   |---|---|
+   | state | `normal`, `selected`, `disabled`, `unknown`, `empty` |
+   | background | `on-light`, `on-dark` |
+   | logo variant | `mark` (the TP monogram alone), `wordmark` (the words alone), `lockup` (both together) |
+   | width | bare pixel number, **only** where several sizes of one image exist |
+4. **Describe what it is, never where it is used or what it looks like.** Placement changes and
+   appearance is subjective; the subject does not.
+5. **Keep external platform conventions verbatim** - `favicon`, `apple-touch-icon`.
+
+#### Why `on-light` and `on-dark` rather than `light` and `dark`
+
+Because the short form is genuinely ambiguous, and the old names were the opposite of the natural
+reading. `logo-header-light.png` contained **dark** ink: it meant "for light mode". Anyone reading
+"logo-light" would reasonably expect the light-coloured logo, and pick the wrong file.
+
+**Name the background the asset sits on.** `logo-lockup-on-dark` reads as a sentence and cannot be
+misread. It also survives the case where a dark background appears in light mode, which is real here:
+the homepage hero is a dark purple gradient in both themes, so it uses the on-dark lockup regardless
+of the active theme.
+
+#### The two logos must share a canvas
+
+Both are 1536x256 with the artwork centred. They are drawn with `background-size: contain`, so the
+canvas aspect ratio decides the rendered size - and when the two canvases differed the same navbar box
+rendered the logo at 180px wide in light mode and 162px in dark, an 11% jump on theme switch. If you
+replace one, pad it to the same canvas rather than trusting the export. The artwork itself differs
+slightly in proportion (about 3%), which is why they are padded to a common canvas rather than scaled
+to identical dimensions: stretching a logo to match is worse than a few pixels of transparency.
 
 ### Nothing loads from a third party
 

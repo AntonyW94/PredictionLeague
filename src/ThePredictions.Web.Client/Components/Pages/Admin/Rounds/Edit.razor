@@ -232,7 +232,7 @@
     private string GetTeamLogoUrl(int teamId)
     {
         if (teamId < 1)
-            return "/images/placeholders/transparent.svg";
+            return "/images/placeholders/team-badge-empty.svg";
 
         return _teams.FirstOrDefault(t => t.Id == teamId)?.LogoUrl ?? "";
     }
