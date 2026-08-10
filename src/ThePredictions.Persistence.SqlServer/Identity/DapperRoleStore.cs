@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using ThePredictions.Application.Data;
 using System.Data;
 
-namespace ThePredictions.Infrastructure.Identity;
+namespace ThePredictions.Persistence.SqlServer.Identity;
 
 [ExcludeFromCodeCoverage(Justification = "ASP.NET Identity store over Dapper: SQL plus framework plumbing, exercised end to end.")]
 public class DapperRoleStore(IDbConnectionFactory connectionFactory) : IRoleStore<IdentityRole>

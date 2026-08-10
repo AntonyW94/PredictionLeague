@@ -142,7 +142,7 @@ Each phase is one PR, master stays green and deployable throughout.
 |---|-------|----------|
 | 0a | **Scaffold + plumbing** ✅ | Create `Persistence.SqlServer` and move the connection, transaction, read, retry and type-handler seams. `AddSqlServerPersistence()`. New gated test project. Two new layer-convention rules. |
 | 0b | **Repositories** ✅ | Move all 30 repositories and `RepositoryBase`, and their 29 registrations. `Microsoft.Data.SqlClient` leaves Infrastructure here rather than in 0c, because `BoostWriteRepository` was its only remaining user. |
-| 0c | **Identity stores and SQL-bearing services** | `DapperUserStore`, `DapperRoleStore`, `LeagueMembershipService`, `CachedEmailSettingsProvider`, and `Dapper` finally leaves Infrastructure. |
+| 0c | **Identity stores** ✅ | `DapperUserStore` and `DapperRoleStore` only, and `Dapper` leaves Infrastructure. `LeagueMembershipService` and `CachedEmailSettingsProvider` were dropped from this phase - see below. |
 | 0d | **Migration set** | Move the DbUp scripts under the adapter. Touches the root `CLAUDE.md` rule, the migrations README, `DatabaseTools` and the integration project's glob, so it is kept separate. |
 | 1 | **Conformance split** | Extract the abstract bases, `ITestDataSeeder`, and re-home the existing 29 integration tests. No new tests. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
@@ -158,6 +158,26 @@ directly, so that package cannot leave Infrastructure until 0c.
 `Data/DatabaseInitialiser.cs` deliberately stays in Infrastructure: it seeds Identity roles through
 `RoleManager` and contains no SQL, so it would work unchanged against any adapter. It is the only file
 left in `Infrastructure/Data/`.
+
+### Why 0c dropped the two SQL-bearing services
+
+`LeagueMembershipService` and `CachedEmailSettingsProvider` were listed for 0c on the strength of "if it
+speaks SQL it moves". Reading them changed the answer, and neither blocks `Dapper` leaving Infrastructure
+because both go through `IApplicationReadDbConnection` rather than using Dapper directly.
+
+- **`CachedEmailSettingsProvider` is measured, not excluded** - it has real caching logic and its own test
+  file. Moving it wholesale would drag tested non-persistence logic into the adapter, and phase 2 would
+  move it straight back out. It is a caching decorator over a read: the cache is dialect-neutral, only the
+  read is not.
+- **`LeagueMembershipService` is authorisation.** "Is this user an approved member of this league" is a
+  rule by the decision procedure above, so phase 2 splits it - query in the adapter, rule in C# - rather
+  than relocating the pair.
+
+Moving a file twice through two PRs is worse than moving it once, correctly. Both wait for their feature
+area.
+
+The same reasoning will apply to any other class that is logic-plus-SQL rather than pure persistence.
+Phase 0 is for **relocation without behaviour change**; anything needing a split belongs to phase 2.
 
 ### Undeclared dependencies the split keeps exposing
 

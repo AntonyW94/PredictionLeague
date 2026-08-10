@@ -6,7 +6,7 @@ using ThePredictions.Domain.Models;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 
-namespace ThePredictions.Infrastructure.Identity;
+namespace ThePredictions.Persistence.SqlServer.Identity;
 
 [ExcludeFromCodeCoverage(Justification = "ASP.NET Identity store over Dapper: SQL plus framework plumbing, exercised end to end.")]
 public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailStore<ApplicationUser>, IUserRoleStore<ApplicationUser>, IUserLoginStore<ApplicationUser>

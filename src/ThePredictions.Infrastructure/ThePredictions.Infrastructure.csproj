@@ -11,8 +11,6 @@
     <ItemGroup>
         <!-- ReSharper disable once VulnerablePackage -->
         <PackageReference Include="brevo_csharp" Version="1.1.1" />
-        <!-- Still needed by DapperUserStore and DapperRoleStore; leaves in phase 0c. -->
-        <PackageReference Include="Dapper" Version="2.1.66" />
         <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="8.0.2" />
         <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="8.10.0" />
         <!-- AuthenticationTokenService uses JwtSecurityTokenHandler, so this project declares it rather
