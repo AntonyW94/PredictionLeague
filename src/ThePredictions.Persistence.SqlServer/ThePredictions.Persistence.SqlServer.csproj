@@ -28,6 +28,15 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- The schema is part of the adapter, so the adapter carries it. Embedded because DbUp reads
+             scripts as manifest resources, and it journals each one by its RESOURCE NAME - so these names
+             are the keys in every database's dbo.SchemaVersions table. Renaming this project, or moving
+             these files, renames those keys and makes DbUp treat all seven as unapplied. See the README
+             in this folder. -->
+        <EmbeddedResource Include="Migrations\*.sql" />
+    </ItemGroup>
+
+    <ItemGroup>
         <!-- Lets the unit tests reach internal seams. -->
         <InternalsVisibleTo Include="ThePredictions.Persistence.SqlServer.Tests.Unit" />
     </ItemGroup>

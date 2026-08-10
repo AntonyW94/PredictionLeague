@@ -111,7 +111,7 @@ seeder actually has to produce.
 
 1. SQL Server **service container** (`mcr.microsoft.com/mssql/server:2022-latest`) starts on the
    runner. Developer edition is free for test use.
-2. **DbUp builds the schema** from `tools/ThePredictions.DatabaseTools/Migrations/` - the same
+2. **DbUp builds the schema** from `src/ThePredictions.Persistence.SqlServer/Migrations/` - the same
    scripts production runs. Most projects hand-maintain a test schema; this one does not have to.
 3. Seeder populates data (see below).
 4. `dotnet run` the Web project against that connection string, in the background.

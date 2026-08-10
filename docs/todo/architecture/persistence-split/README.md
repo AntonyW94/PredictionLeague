@@ -143,7 +143,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 0a | **Scaffold + plumbing** ✅ | Create `Persistence.SqlServer` and move the connection, transaction, read, retry and type-handler seams. `AddSqlServerPersistence()`. New gated test project. Two new layer-convention rules. |
 | 0b | **Repositories** ✅ | Move all 30 repositories and `RepositoryBase`, and their 29 registrations. `Microsoft.Data.SqlClient` leaves Infrastructure here rather than in 0c, because `BoostWriteRepository` was its only remaining user. |
 | 0c | **Identity stores** ✅ | `DapperUserStore` and `DapperRoleStore` only, and `Dapper` leaves Infrastructure. `LeagueMembershipService` and `CachedEmailSettingsProvider` were dropped from this phase - see below. |
-| 0d | **Migration set** | Move the DbUp scripts under the adapter. Touches the root `CLAUDE.md` rule, the migrations README, `DatabaseTools` and the integration project's glob, so it is kept separate. |
+| 0d | **Migration set** ✅ | Move the DbUp scripts under the adapter, which now owns the embedded resources; `DatabaseTools` and the integration suite both read them from there. Required a journal rename on every database - see below. **Phase 0 complete.** |
 | 1 | **Conformance split** | Extract the abstract bases, `ITestDataSeeder`, and re-home the existing 29 integration tests. No new tests. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
@@ -178,6 +178,55 @@ area.
 
 The same reasoning will apply to any other class that is logic-plus-SQL rather than pure persistence.
 Phase 0 is for **relocation without behaviour change**; anything needing a split belongs to phase 2.
+
+### 0d needed a production write, because DbUp journals by resource name
+
+Moving the migration set was not a file move. DbUp keys `dbo.SchemaVersions` on each script's **embedded
+resource name**, so all seven keys were `ThePredictions.DatabaseTools.Migrations.*` on production, dev and
+backup. Moving the files renames the keys, and DbUp then sees seven unapplied scripts and re-runs them -
+`0001_Baseline.sql` being 1,353 lines of DDL.
+
+Three options were weighed. Moving the files while preserving the old resource names was rejected outright:
+it would leave scripts under the adapter whose journal keys name the tool, which is *more* confusing than
+leaving them alone. Leaving them was viable. Moving properly won, on the grounds that all seven scripts are
+effectively idempotent (`0007` deliberately matches the exact old value rather than doing a blanket
+`REPLACE`, and the other destructive one is guarded), so even a botched rename re-runs no-ops - and a month
+of downtime is exactly the window for it.
+
+The rename was run by hand on every database before the code landed, and verified. Two guards now stop this
+being re-discovered the hard way:
+
+- **`MigrationScripts`** in the adapter is the single definition of the script assembly and the journal
+  table. `DatabaseTools` and the integration suite both use it, so they cannot disagree about either -
+  previously each had its own copy of `"dbo"` / `"SchemaVersions"`, and a divergence would have silently
+  started a second journal.
+- **`MigrationScriptsTests`** asserts the seven names and their order. It is a change-detector test on
+  purpose: what it detects is a schema-history break that is otherwise invisible until a migration runs
+  against a real database, by which point the journal has already been written.
+
+What is still written twice is the DbUp *wiring* (in `DatabaseTools.DatabaseMigrator` and the test
+harness's `MigrationRunner`). Sharing that would mean a `dbup-sqlserver` reference in the adapter, which
+would ship a migration engine inside the web application. Not worth it; the scripts and the journal
+identity are shared, which is where divergence would actually hurt.
+
+### The two read-only "commands"
+
+`NotifyLeagueAdminOfJoinRequestCommandHandler` and `NotifyMemberOfLeagueApprovalCommandHandler` take
+`IApplicationReadDbConnection`, which the root `CLAUDE.md` forbids for commands. Both only read - to
+compose an email - and never write, so they are commands by MediatR shape and queries by behaviour. The
+rule's table assumes commands mutate state.
+
+**Phase 2 fixes them by default**, with no special case: each gets an injected `I<Thing>Query` like every
+other read, and the read connection disappears from the constructor. Deliberately *not* by sending a
+MediatR query from inside the command handler - that runs the pipeline twice and would subject a
+system-initiated notification to authorisation written for an HTTP caller.
+
+Two follow-ups belong with the Leagues feature area, not before it, because both would fail today:
+
+- Reword the `CLAUDE.md` CQRS rule: a command that writes uses repositories; a command may read through an
+  injected query interface, never through `IApplicationReadDbConnection` directly.
+- Add the convention test that enforces it - no `*CommandHandler` in Application takes
+  `IApplicationReadDbConnection`. Nothing enforces the CQRS split today at all.
 
 ### Undeclared dependencies the split keeps exposing
 

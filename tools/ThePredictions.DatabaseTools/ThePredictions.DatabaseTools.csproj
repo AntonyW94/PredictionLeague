@@ -15,7 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Migration scripts are embedded so DbUp can read them via WithScriptsEmbeddedInAssembly. -->
-    <EmbeddedResource Include="Migrations\*.sql" />
+    <!-- The migration set moved to the persistence adapter, which embeds it (the schema belongs to the
+         adapter that speaks to it). This tool reads the scripts out of that assembly rather than
+         carrying its own copy, so there is exactly one set of resource names and therefore one set of
+         journal keys. -->
+    <ProjectReference Include="..\..\src\ThePredictions.Persistence.SqlServer\ThePredictions.Persistence.SqlServer.csproj" />
   </ItemGroup>
 </Project>
