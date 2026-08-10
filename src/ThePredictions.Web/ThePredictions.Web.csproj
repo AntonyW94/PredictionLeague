@@ -18,6 +18,10 @@
              WebAssembly client. Previously reached transitively through Infrastructure, which does not
              use it: a data-access library should not be the reason the web host compiles. -->
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.14" />
+        <!-- CSS minifier, used by the MinifyCss inline task below. GeneratePathProperty exposes
+             $(PkgNUglify) so the task can reference the assembly directly; PrivateAssets keeps it
+             out of the published output, since it only ever runs at publish time. -->
+        <PackageReference Include="NUglify" Version="1.22.3" PrivateAssets="all" GeneratePathProperty="true" />
         <PackageReference Include="Serilog.Expressions" Version="5.0.0">
           <TreatAsUsed>true</TreatAsUsed>
         </PackageReference>
@@ -34,8 +38,10 @@
 
     This target:
     1. Concatenates all CSS files in correct order, starting with the self-hosted Poppins font faces
-    2. Deletes individual CSS files (the webfonts under css/fonts/ and wwwroot/lib/ are left alone)
-    3. Adds cache busting version to index.html
+    2. Minifies the result with NUglify
+    3. Deletes individual CSS files and all pre-compressed copies (the webfonts under css/fonts/ and
+       wwwroot/lib/ are left alone)
+    4. Adds cache busting version to index.html
 
     Uses cross-platform C# inline tasks instead of platform-specific shell commands
     to ensure identical output on Windows (local publish) and Linux (CI/CD).
@@ -66,6 +72,46 @@ foreach (var item in SourceFiles)
     }
 }
 System.IO.File.WriteAllText(OutputFile, sb.ToString());
+            ]]></Code>
+        </Task>
+    </UsingTask>
+
+    <!--
+    Minifies the bundled CSS. A real parser rather than a regex on purpose: hand-rolled CSS
+    minification breaks quietly on calc() operator spacing and on data: URIs, and a broken
+    stylesheet is a broken site. NUglify is the maintained fork of the Microsoft Ajax Minifier.
+
+    Forward slashes in the Reference path deliberately - this runs on Linux in CI as well as on
+    Windows locally. Any minifier error fails the build rather than writing a damaged stylesheet.
+    -->
+    <UsingTask TaskName="MinifyCss" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <FilePath ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Reference Include="$(PkgNUglify)/lib/netstandard2.0/NUglify.dll" />
+            <Code Type="Fragment" Language="cs"><![CDATA[
+var original = System.IO.File.ReadAllText(FilePath);
+var result = NUglify.Uglify.Css(original);
+
+if (result.HasErrors)
+{
+    foreach (var error in result.Errors)
+    {
+        Log.LogError("CSS minification failed: " + error.ToString());
+    }
+}
+else
+{
+    System.IO.File.WriteAllText(FilePath, result.Code);
+    Log.LogMessage(
+        Microsoft.Build.Framework.MessageImportance.High,
+        string.Format(
+            "CSS minified: {0:N0} -> {1:N0} bytes ({2:N1}% smaller)",
+            original.Length,
+            result.Code.Length,
+            100.0 - (result.Code.Length * 100.0 / original.Length)));
+}
             ]]></Code>
         </Task>
     </UsingTask>
@@ -177,10 +223,20 @@ System.IO.File.WriteAllText(FilePath, content);
              that resolves the same from css/app.css whether bundled or imported. -->
         <ConcatenateFiles SourceFiles="@(CssFilesToBundle)" OutputFile="$(TargetCss)" />
 
-        <!-- Delete individual CSS files and their compressed versions -->
+        <MinifyCss FilePath="$(TargetCss)" />
+
+        <!--
+        Delete every individual CSS file and ALL pre-compressed copies, app.css.br and app.css.gz
+        included. Those two used to be kept, but they are produced during publish from the pre-bundle
+        app.css, so they have always described a file that no longer exists by the time this target
+        finishes - and minifying makes them staler still. They are also unused: dev serves app.css
+        with Content-Encoding gzip whose decompressed body is the full bundle, so the host compresses
+        on the fly and never reads these. Deleting them removes the chance of a stale body being
+        served if that ever changes.
+        -->
         <ItemGroup>
-            <CompressedCssToDelete Include="$(PublishCssDir)**\*.css.br" Exclude="$(TargetCss).br" />
-            <CompressedCssToDelete Include="$(PublishCssDir)**\*.css.gz" Exclude="$(TargetCss).gz" />
+            <CompressedCssToDelete Include="$(PublishCssDir)**\*.css.br" />
+            <CompressedCssToDelete Include="$(PublishCssDir)**\*.css.gz" />
         </ItemGroup>
         <Delete Files="@(CssFilesToBundle)" />
         <Delete Files="@(CompressedCssToDelete)" />

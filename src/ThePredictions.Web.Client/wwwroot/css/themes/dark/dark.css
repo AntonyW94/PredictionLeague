@@ -1,4 +1,4 @@
-/* Dark Theme Override — restores dark purple look */
+﻿/* Dark Theme Override — restores dark purple look */
 /* Apply .theme-dark to the page container to activate */
 
 /* ============================================
@@ -266,13 +266,13 @@
     filter: none;
 }
 
-/* Theme-matched logos: dark-mode variants */
+/* Dark mode takes the dark-mode lockup (light ink, for the dark background). */
 .theme-dark .navbar-logo {
-    background-image: url("/images/logo-header-dark.png");
+    background-image: url("/images/brand/logo-lockup-dark-mode.webp");
 }
 
 .theme-dark .auth-logo {
-    background-image: url("/images/logo-header-dark.png");
+    background-image: url("/images/brand/logo-lockup-dark-mode.webp");
 }
 
 .theme-dark .navbar-nav .nav-item .nav-link,

@@ -1,4 +1,4 @@
-/* Base: Extra-small mobile (< --breakpoint-phone-small) */
+﻿/* Base: Extra-small mobile (< --breakpoint-phone-small) */
 
 /* Light theme navbar defaults */
 .navbar-custom {
@@ -43,7 +43,7 @@
     display: inline-block;
     height: 2rem;
     width: 11.25rem;
-    background: url("/images/logo-header-light.png") left center / contain no-repeat;
+    background: url("/images/brand/logo-lockup-light-mode.webp") left center / contain no-repeat;
 }
 
 .navbar-overlay .navbar-brand {

@@ -1,4 +1,4 @@
-# Blazor Client Guidelines
+﻿# Blazor Client Guidelines
 
 Rules specific to the Blazor WebAssembly client. For solution-wide patterns, see the root [`CLAUDE.md`](../../CLAUDE.md).
 
@@ -76,11 +76,96 @@ else
 wwwroot/css/
 ├── variables.css          → Design tokens (colours, spacing, radii)
 ├── app.css                → Global styles and imports
+├── poppins.css            → Self-hosted font faces (must bundle first)
+├── fonts/                 → Poppins woff2 - MUST stay adjacent to poppins.css
 ├── utilities/             → Reusable utility classes
 ├── components/            → Component-specific styles
 ├── layout/                → Layout and structural styles
 └── pages/                 → Page-specific styles (last resort)
 ```
+
+## Static Asset Structure
+
+```
+wwwroot/
+├── favicon.ico            → Stays at the root; browsers probe /favicon.ico regardless of markup
+├── css/                   → Ours, bundled at publish
+├── js/                    → Ours
+├── lib/                   → Third party, pinned versions, never edited by hand
+│   ├── bootstrap/         → 5.3.3
+│   ├── bootstrap-icons/   → 1.11.3, with fonts/ adjacent to its CSS
+│   └── sweetalert2/       → 11.26.25
+└── images/
+    ├── brand/             → Logos and the social card
+    ├── icons/             → Favicon PNGs and the Apple touch icon
+    ├── boosts/            → Boost artwork, one file per state
+    ├── content/           → Photography, with licences recorded in its README
+    └── placeholders/      → Stand-ins for absent data
+```
+
+### Naming
+
+```
+{subject}[-{variant}][-{state|background}][-{width}].{ext}
+```
+
+Lowercase kebab-case throughout. Five rules:
+
+1. **The folder supplies the category - never repeat it in the filename.** A placeholder in
+   `placeholders/` is `team-badge-unknown.svg`, not `team-placeholder.svg`.
+2. **Subject first, modifiers after**, most significant first, so related files sort together.
+3. **Fixed vocabularies, not free text:**
+   | Modifier | Values |
+   |---|---|
+   | state | `normal`, `selected`, `disabled`, `unknown`, `empty` |
+   | mode | `light-mode`, `dark-mode` |
+   | logo variant | `mark` (the TP monogram alone), `wordmark` (the words alone), `lockup` (both together) |
+   | width | bare pixel number, **only** where several sizes of one image exist |
+4. **Describe what it is, never where it is used or what it looks like.** Placement changes and
+   appearance is subjective; the subject does not.
+5. **Keep external platform conventions verbatim** - `favicon`, `apple-touch-icon`.
+
+#### Why `light-mode`, not `light`
+
+Because the short form is genuinely ambiguous, and the old names were the opposite of the natural
+reading. `logo-header-light.png` contained **dark** ink: it meant "for light mode". Anyone reading
+"logo-light" would reasonably expect the light-coloured logo, and pick the wrong file.
+
+Spelling out `-mode` removes that: `logo-lockup-light-mode` can only mean the asset for light mode,
+never "the light-coloured asset". It also matches the vocabulary the CSS already uses, `themes/light/`,
+`themes/dark/` and `.theme-dark`, so there is one word for the concept across the codebase.
+
+**The one place this reads oddly, and it is not a mistake.** `.hero-image` in `layout/layout.css` uses
+`logo-lockup-dark-mode.webp` in *both* modes, because the hero sits on a dark purple gradient whatever
+the theme and needs the light-ink artwork for contrast. That rule carries a comment saying so. If a
+second case like it appears, the honest fix is to name assets after the background they sit on
+(`-on-dark`) rather than the mode - but one exception is not worth trading away the consistency with
+`themes/`.
+
+#### The two logos must share a canvas
+
+Both are 1536x256 with the artwork centred. They are drawn with `background-size: contain`, so the
+canvas aspect ratio decides the rendered size - and when the two canvases differed the same navbar box
+rendered the logo at 180px wide in light mode and 162px in dark, an 11% jump on theme switch. If you
+replace one, pad it to the same canvas rather than trusting the export. The artwork itself differs
+slightly in proportion (about 3%), which is why they are padded to a common canvas rather than scaled
+to identical dimensions: stretching a logo to match is worse than a few pixels of transparency.
+
+### Nothing loads from a third party
+
+Every stylesheet, script, font and image comes from our own origin, which is what lets the
+Content-Security-Policy set `script-src 'self'` and `style-src 'self'` (see
+`SecurityHeadersMiddleware`). **Do not reintroduce a CDN or a hotlinked image.** A CDN in `script-src`
+would let an attacker who achieves HTML injection load arbitrary code from an origin the browser has
+been told to trust, which is the attack the policy exists to prevent.
+
+Adding a third-party library means vendoring it into `lib/` at a pinned exact version. Adding a
+photograph means downloading it, sizing it for the space it occupies, and recording its licence in
+`images/content/README.md`.
+
+**Webfonts must sit next to the CSS that declares them.** `css/fonts/` and
+`lib/bootstrap-icons/fonts/` look like duplication and are not: both are referenced by a relative
+`url()`, and moving them to a shared folder would silently break every icon and every font weight.
 
 ### Design Tokens (ALWAYS Use)
 
@@ -234,10 +319,24 @@ See [`docs/guides/checklists/new-css-file.md`](../../docs/guides/checklists/new-
 
 An MSBuild target bundles CSS during `dotnet publish`:
 
-1. Concatenates all CSS files into single `app.css`
-2. Prepends Google Fonts import
-3. Deletes individual CSS files
-4. Adds cache busting: `app.css?v=TIMESTAMP`
+1. Concatenates all CSS files into a single `app.css`, starting with `poppins.css` so the font faces
+   are declared before anything uses them
+2. **Minifies it** with NUglify, which takes it from ~332KB to ~221KB, or 57KB to 34KB on the wire
+   once the host has gzipped it
+3. Deletes the individual CSS files and every pre-compressed `.css.br`/`.css.gz` (the webfonts under
+   `css/fonts/` and everything in `lib/` are left alone)
+4. Adds cache busting: `app.css?v=TIMESTAMP`, and the same stamp to the `js/` files
+
+Minification uses a **real CSS parser, never a regex**. A regex approach breaks quietly on `calc()`
+operator spacing and on `data:` URIs, and a damaged stylesheet is a damaged site. Any minifier error
+fails the build rather than writing the result. Only comments and whitespace are removed: the published
+file has an identical count of rules, media queries, custom properties and URLs to the source.
+
+`wwwroot/css/app.min.css` is unrelated to this: it is gitignored and, if present locally, is a stale
+leftover that nothing references. The build writes `app.css`, minified in place.
+
+Vendor CSS in `lib/` is deliberately **not** bundled: `bootstrap-icons.min.css` finds its webfont
+through a relative `url()`, and concatenating it to a different directory depth would break every icon.
 
 Verify with:
 ```bash
