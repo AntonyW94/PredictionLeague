@@ -24,12 +24,17 @@ jobs:
       - name: Build solution
         run: dotnet build ThePredictions.sln --no-restore --configuration Release /p:TreatWarningsAsErrors=true
 
-      - name: Run tests with coverage
+      # Category!=Integration keeps the container-backed suite out of this step: it needs a SQL Server
+      # to start before anything runs, and it owns no assembly for the 100% threshold to measure.
+      # ThePredictions.Infrastructure.Tests.Integration has a test that fails if a class in it is
+      # missing the trait, so nothing can quietly fall out of both jobs.
+      - name: Run unit tests with coverage
         run: >
           dotnet test ThePredictions.sln
           --no-build
           --configuration Release
           --verbosity normal
+          --filter "Category!=Integration"
           /p:CollectCoverage=true
           /p:CoverletOutputFormat=cobertura
           '/p:Exclude="[ThePredictions.Tests.*]*%2c[xunit.*]*%2c[FluentAssertions]*"'
@@ -38,10 +43,35 @@ jobs:
           /p:Threshold=100
           '/p:ThresholdType="line%2cbranch"'
 
+  integration-tests:
+    runs-on: ubuntu-latest
+    # ubuntu-latest ships a running Docker daemon, which is all Testcontainers needs. The suite builds
+    # its own schema by running the committed DbUp migrations, so no database has to be provisioned
+    # here and no connection secret is involved.
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      # Pulled up front so a slow ~1.5GB pull is a visible step rather than time charged to the first
+      # test, and so a bad tag fails here with an obvious message.
+      - name: Pull SQL Server image
+        run: docker pull mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
+
+      - name: Run integration tests
+        run: >
+          dotnet test tests/Integration/ThePredictions.Infrastructure.Tests.Integration/ThePredictions.Infrastructure.Tests.Integration.csproj
+          --configuration Release
+          --verbosity normal
+
   # Failures only: CI runs on every push, and a green run is already visible on the PR.
   notify:
     if: always()
-    needs: [build-and-test]
+    needs: [build-and-test, integration-tests]
     uses: ./.github/workflows/notify-slack.yml
     with:
       status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}

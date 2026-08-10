@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- No coverlet.msbuild: this project owns no assembly of its own, so there is nothing for the
+         100% threshold to measure. It runs the real SQL against a throwaway SQL Server instead.
+         Note the classes it covers are [ExcludeFromCodeCoverage] and stay that way - the gate
+         measures each unit test project's own run, which cannot include a container-backed suite. -->
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" Version="3.0.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0" />
+    <PackageReference Include="FluentAssertions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <!-- Throwaway SQL Server per run. Not SQLite: the queries under test use RANK() OVER,
+         CROSS APPLY, MERGE and CAST(... AS bit), so a SQLite suite would pass while proving
+         nothing about production behaviour. -->
+    <PackageReference Include="Testcontainers.MsSql" Version="4.13.0" />
+    <!-- Deletes every row between tests, keeping the migrated schema. -->
+    <PackageReference Include="Respawn" Version="7.0.0" />
+    <!-- Builds the schema by running the committed migrations, so the suite also proves they
+         apply from empty. Matched to the version ThePredictions.DatabaseTools uses. -->
+    <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
+    <!-- Pinned to the version ThePredictions.Infrastructure references, so the tests talk to the
+         database through the same driver the application does. -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The committed DbUp migration set, embedded from its own folder rather than copied, so the
+         schema these tests run against is the one that ships. LogicalName is set explicitly because
+         DbUp discovers scripts by resource name and applies them in that order. -->
+    <EmbeddedResource Include="..\..\..\tools\ThePredictions.DatabaseTools\Migrations\*.sql">
+      <LogicalName>Migrations.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ThePredictions.Infrastructure\ThePredictions.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- Lets the migration test compare the DbUp journal against the scripts committed on disk. -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryRoot</_Parameter1>
+      <_Parameter2>$(MSBuildThisFileDirectory)..\..\..\</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

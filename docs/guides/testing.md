@@ -220,6 +220,69 @@ when that project has actually reached 100%**, in the same PR - never as a big-b
 would leave CI red for weeks and destroy the signal the gate exists to give. Update the rule in the
 root `CLAUDE.md` as each project locks, so the documented rule always matches what CI enforces.
 
+## Integration Tests Against Real SQL Server
+
+`tests/Integration/ThePredictions.Infrastructure.Tests.Integration` runs the application's SQL against a
+throwaway SQL Server. It exists because three kinds of rule are **structurally invisible** to the unit
+suite, however high its coverage goes: rules expressed in a SQL predicate, the aggregate diffing inside
+repositories, and predicates duplicated across two call sites. Handler unit tests mock
+`IApplicationReadDbConnection`, so no SQL ever runs, and `SchemaCheck` proves only that a result set
+*can materialise* - never that a query returns the right rows. See
+[`docs/todo/architecture/test-suite/high-risk-integration-targets.md`](../todo/architecture/test-suite/high-risk-integration-targets.md)
+for the worst-first list.
+
+### How the harness works
+
+| Piece | What it does |
+|-------|--------------|
+| **Testcontainers** | Starts one SQL Server container per test run (`Testcontainers.MsSql`, image pinned). |
+| **DbUp** | Builds the schema by running the committed migrations from `tools/ThePredictions.DatabaseTools/Migrations/`, embedded by glob from their own folder. |
+| **Respawn** | Deletes every row between tests and leaves the schema alone, so each test arranges from empty. |
+
+**Not SQLite**, and that is not a detail. The queries under test use `RANK() OVER`, `CROSS APPLY`,
+`MERGE`, `GETUTCDATE()` and `CAST(... AS bit)`; SQLite either rejects those or evaluates them
+differently, so a SQLite suite would go green while proving nothing. It also cannot reproduce the
+`int`/`bigint` distinction behind the July 2026 leaderboard outage.
+
+Building the schema from the migrations rather than a schema script kept beside the tests has a second
+payoff: every run is now continuous proof that the migration set **applies cleanly from empty**, which
+nothing else checks. The three real databases were baselined from a schema that already existed, so
+`0001_Baseline.sql` has only ever run there as a no-op.
+
+### Running them
+
+Needs a **running Docker daemon with Linux containers** (on Docker Desktop for Windows, that means the
+Linux engine, not Windows containers). The first run pulls ~1.5GB.
+
+```bash
+dotnet test tests\Integration\ThePredictions.Infrastructure.Tests.Integration
+```
+
+### Conventions specific to this project
+
+- **Every test class carries `[Trait("Category", "Integration")]`.** CI runs the unit suite with
+  `--filter "Category!=Integration"` and this project in its own job, so an untraited class would be run
+  by neither. `IntegrationTraitConventionTests` fails the build if one is missing.
+- **Derive from `DatabaseTestBase`**, which wipes the database before each test and hands over the same
+  seams the application is wired with.
+- **Arrange with `TestDataSeeder`, assert with raw SQL.** The seeder writes columns directly rather than
+  going through a repository, so a test never depends on the write path it is about to assert on - and it
+  can arrange states the domain forbids (an unconfirmed fixture, a postponed match), which is exactly
+  what these predicates have to cope with.
+- **Never assume an identity value.** Respawn does not reseed identities, so every seeder method returns
+  the id the database generated.
+
+### It does not affect the 100% gate
+
+This project references `coverlet.collector` but **not** `coverlet.msbuild`: it owns no assembly of its
+own, so there is nothing for the threshold to measure - the same shape as
+`ThePredictions.Composition.Tests.Unit` and `ThePredictions.Conventions.Tests.Unit`.
+
+The types it covers - `RoundRepository` and the query handlers - **stay `[ExcludeFromCodeCoverage]`**, and
+that is correct rather than a compromise. The gate measures each unit test project's own run, which can
+never include a container-backed suite, so removing the attribute would simply turn the gate red.
+`NoExcludedType_ShouldAlreadyHaveAUnitTestFile` is scoped to `tests/Unit` for exactly this reason.
+
 ## Composition / Container Validation
 
 A MediatR handler that depends on a service the host never registers is **invisible to `dotnet build` and to handler unit tests** (those construct the handler with mocks). The gap only surfaces at app startup, via the Development host's `ValidateOnBuild`, i.e. on deploy.
@@ -273,6 +336,12 @@ tests/
     │   └── Data/                  → Read/write connection behaviour (no database required)
     └── ThePredictions.API.Tests.Unit/
         └── Middleware/            → Exception-to-status mapping (see ADR-0016)
+tests/
+└── Integration/
+    └── ThePredictions.Infrastructure.Tests.Integration/
+        ├── Harness/               → Container, migrations, Respawn reset, seeding
+        ├── Repositories/          → Repository SQL against real SQL Server
+        └── Schema/                → The migrations applying cleanly from empty
 ```
 
 ### Test Naming
