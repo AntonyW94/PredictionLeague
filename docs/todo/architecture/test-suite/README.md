@@ -1,4 +1,4 @@
-# ThePredictions Test Suite Plan
+﻿# ThePredictions Test Suite Plan
 
 ## Status
 
@@ -27,6 +27,12 @@ Not Started | **In Progress** | Complete
 > roadmap item 1 (machine-enforced conventions).
 
 This document outlines the comprehensive testing strategy for the ThePredictions application, including CI/CD integration with GitHub Actions.
+
+> **See also [`high-risk-integration-targets.md`](high-risk-integration-targets.md)** - the specific code
+> the integration tier should cover first, from the August 2026 coverage audit. The unit suite reached
+> 100% on all eight projects, which makes it easy to assume the risky code is covered. It is not: rules
+> expressed in SQL, aggregate diffing in repositories, and predicates duplicated across two call sites
+> are all structurally invisible to unit tests. That file names them, worst first.
 
 ## Table of Contents
 
