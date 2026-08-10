@@ -44,6 +44,11 @@
         <!-- Documentation that lives beside the assets it describes, so it is found when someone is
              looking at those files - but it is not part of the site and must not be served. -->
         <Content Update="wwwroot\**\*.md" CopyToPublishDirectory="Never" />
+
+        <!-- A stale, gitignored local artefact from an old workflow. CI never sees it, but a local
+             publish would ship 52KB of dead CSS - and now that the build genuinely minifies app.css,
+             a file called app.min.css sitting next to it is actively misleading. -->
+        <Content Update="wwwroot/css/app.min.css" CopyToPublishDirectory="Never" />
     </ItemGroup>
 
 </Project>

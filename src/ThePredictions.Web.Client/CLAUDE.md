@@ -321,12 +321,19 @@ An MSBuild target bundles CSS during `dotnet publish`:
 
 1. Concatenates all CSS files into a single `app.css`, starting with `poppins.css` so the font faces
    are declared before anything uses them
-2. Deletes the individual CSS files (the webfonts under `css/fonts/` and everything in `lib/` are left
-   alone)
-3. Adds cache busting: `app.css?v=TIMESTAMP`, and the same stamp to the `js/` files
+2. **Minifies it** with NUglify, which takes it from ~332KB to ~221KB, or 57KB to 34KB on the wire
+   once the host has gzipped it
+3. Deletes the individual CSS files and every pre-compressed `.css.br`/`.css.gz` (the webfonts under
+   `css/fonts/` and everything in `lib/` are left alone)
+4. Adds cache busting: `app.css?v=TIMESTAMP`, and the same stamp to the `js/` files
 
-It **concatenates, it does not minify** - there is no minifier in the build. `wwwroot/css/app.min.css`
-is gitignored and, if present, is a stale local leftover that nothing references.
+Minification uses a **real CSS parser, never a regex**. A regex approach breaks quietly on `calc()`
+operator spacing and on `data:` URIs, and a damaged stylesheet is a damaged site. Any minifier error
+fails the build rather than writing the result. Only comments and whitespace are removed: the published
+file has an identical count of rules, media queries, custom properties and URLs to the source.
+
+`wwwroot/css/app.min.css` is unrelated to this: it is gitignored and, if present locally, is a stale
+leftover that nothing references. The build writes `app.css`, minified in place.
 
 Vendor CSS in `lib/` is deliberately **not** bundled: `bootstrap-icons.min.css` finds its webfont
 through a relative `url()`, and concatenating it to a different directory depth would break every icon.
