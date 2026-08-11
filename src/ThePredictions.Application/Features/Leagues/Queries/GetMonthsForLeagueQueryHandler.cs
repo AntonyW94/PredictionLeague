@@ -1,77 +1,48 @@
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
-using ThePredictions.Domain.Common.Enumerations;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// The months a league's leaderboard can be filtered by, in the order the season runs them.
+/// </summary>
+/// <remarks>
+/// The sibling of <see cref="GetStagesForLeagueQueryHandler"/>: same rows, same progress counts, different grouping.
+/// One read now serves both.
+/// </remarks>
 public class GetMonthsForLeagueQueryHandler(
-    IApplicationReadDbConnection dbConnection,
+    ILeagueSeasonRoundsQuery seasonRoundsQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetMonthsForLeagueQuery, IEnumerable<MonthDto>>
 {
     public async Task<IEnumerable<MonthDto>> Handle(GetMonthsForLeagueQuery request, CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
-        const string sql = @"
-            WITH SeasonInfo AS (
-                SELECT
-                    MONTH(MIN(r.[StartDateUtc])) AS [StartMonth]
-                FROM [Rounds] r
-                JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
-                WHERE l.[Id] = @LeagueId
-            ),
+        var rounds = await seasonRoundsQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
-            MonthlyAggregates AS (
-                SELECT 
-                    MONTH(r.[StartDateUtc]) AS [Month],
+        if (rounds.Count == 0)
+            return [];
 
-                    SUM(CASE 
-                        WHEN r.[Status] <> @CompletedStatus THEN 1 
-                        ELSE 0 
-                    END) AS [RoundsRemaining],
+        var seasonStartMonth = rounds.Min(round => round.StartDateUtc).Month;
 
-                    SUM(CASE 
-                        WHEN r.[Status] = @CompletedStatus THEN 1 
-                        ELSE 0 
-                    END) AS [RoundsCompleted],
+        var months = rounds
+            .GroupBy(round => round.StartDateUtc.Month)
+            .Select(month => new
+            {
+                Month = month.Key,
+                Progress = RoundProgress.Of(month.Select(round => round.Status))
+            })
+            .Where(month => month.Progress.HasVisibleRound)
+            .ToList();
 
-                    SUM(CASE 
-                        WHEN r.[Status] <> @DraftStatus THEN 1 
-                        ELSE 0 
-                    END) AS [NonDraftCount]
-
-                FROM [Rounds] r
-                JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
-                WHERE l.[Id] = @LeagueId
-                GROUP BY MONTH(r.[StartDateUtc])
-            )
-
-           SELECT
-                ma.[Month],
-                ma.[RoundsRemaining],
-                ma.[RoundsCompleted]
-            FROM
-                [MonthlyAggregates] ma,
-                [SeasonInfo] si
-            WHERE 
-                ma.[NonDraftCount] > 0
-            ORDER BY
-                CASE
-                    WHEN ma.[Month] >= si.[StartMonth] THEN 1
-                    ELSE 2
-                END,
-                ma.[Month]";
-
-        var months = await dbConnection.QueryAsync<MonthRow>(sql, cancellationToken, new { request.LeagueId, DraftStatus = nameof(RoundStatus.Draft), CompletedStatus = nameof(RoundStatus.Completed) });
-       
-        return months.Select(m => new MonthDto(m.Month, CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m.Month), m.RoundsRemaining, m.RoundsCompleted));
+        return SeasonMonthOrder.Apply(months, month => month.Month, seasonStartMonth)
+            .Select(month => new MonthDto(
+                month.Month,
+                MonthName.Of(month.Month)!,
+                month.Progress.RoundsRemaining,
+                month.Progress.RoundsCompleted))
+            .ToList();
     }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private sealed record MonthRow(int Month, int RoundsRemaining, int RoundsCompleted);
 }

@@ -1,11 +1,18 @@
 using Microsoft.Extensions.Caching.Memory;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using DomainEmailSettings = ThePredictions.Domain.Models.EmailSettings;
 
 namespace ThePredictions.Infrastructure.Services;
 
-public class CachedEmailSettingsProvider(IApplicationReadDbConnection dbConnection, IMemoryCache cache)
+/// <summary>
+/// Whether the site is sending email, cached briefly so that a switch flipped in the admin screens takes effect
+/// quickly without every send checking the database.
+/// </summary>
+/// <remarks>
+/// The caching is genuinely an Infrastructure concern and stays here. The statement it used to wrap has moved to
+/// <see cref="IEmailSettingsQuery"/>, which was the last SQL in this project.
+/// </remarks>
+public class CachedEmailSettingsProvider(IEmailSettingsQuery settingsQuery, IMemoryCache cache)
     : IEmailSettingsProvider
 {
     private const string CacheKey = "email-settings-enabled";
@@ -16,15 +23,7 @@ public class CachedEmailSettingsProvider(IApplicationReadDbConnection dbConnecti
         if (cache.TryGetValue(CacheKey, out bool enabled))
             return enabled;
 
-        const string sql = @"
-            SELECT TOP 1
-                es.[EmailsEnabled]
-            FROM
-                [EmailSettings] es
-            ORDER BY
-                es.[Id];";
-
-        var stored = await dbConnection.QuerySingleOrDefaultAsync<bool?>(sql, cancellationToken);
+        var stored = await settingsQuery.GetEmailsEnabledAsync(cancellationToken);
 
         // No row seeded yet falls back to the built-in default (emails on), matching production.
         enabled = stored ?? DomainEmailSettings.DefaultEmailsEnabled;

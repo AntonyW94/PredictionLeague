@@ -14,6 +14,7 @@ using ThePredictions.Persistence.SqlServer.Identity;
 using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Persistence.SqlServer.Data.Resilience;
 using ThePredictions.Persistence.SqlServer.Queries.Boosts;
+using ThePredictions.Persistence.SqlServer.Queries;
 using ThePredictions.Persistence.SqlServer.Queries.Dashboard;
 using ThePredictions.Persistence.SqlServer.Queries.Leagues;
 using ThePredictions.Persistence.SqlServer.Queries.Rounds;
@@ -82,6 +83,8 @@ public static class DependencyInjection
         services.AddScoped<IMyLeaguesQuery, MyLeaguesQuery>();
         services.AddScoped<ILeagueMembershipQuery, LeagueMembershipQuery>();
         services.AddScoped<ILeagueDashboardQuery, LeagueDashboardQuery>();
+        services.AddScoped<ILeagueSeasonRoundsQuery, LeagueSeasonRoundsQuery>();
+        services.AddScoped<IEmailSettingsQuery, EmailSettingsQuery>();
         services.AddScoped<ILeagueRecordsQuery, LeagueRecordsQuery>();
         services.AddScoped<ISeasonRecapQuery, SeasonRecapQuery>();
     }

@@ -732,6 +732,23 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         });
     }
 
+    public async Task<int> AddEmailSettingsAsync(bool emailsEnabled)
+    {
+        const string sql = @"
+            INSERT INTO [EmailSettings]
+            (
+                [EmailsEnabled]
+            )
+            VALUES
+            (
+                @EmailsEnabled
+            );
+
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new { EmailsEnabled = emailsEnabled });
+    }
+
     public async Task DeleteMatchAsync(int matchId)
     {
         // No guard at all - the point is to show what the schema does on its own.

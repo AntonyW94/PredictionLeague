@@ -159,6 +159,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leagues/season recap** ✅ | Four ranks in two statements, one of them a running total recomputed round by round across the league. Collapsed the wins rule shared with the records tile. |
 | 2 | **Dashboard/My Leagues** ✅ | The largest read on the site and the one with ADR-0015 behind it. Twelve rules out; every rank still a keyed cache lookup. Leaderboards are done. |
 | 2 | **Leagues/dashboard + membership guard** ✅ | Completed the `SeasonCompletion` collapse, and moved the guard eighteen handlers depend on out of Infrastructure - the last SQL there bar one file. |
+| 2 | **Leagues/pickers + email settings** ✅ | Two sibling statements collapsed into one read. **Infrastructure now contains no SQL at all.** |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -365,6 +366,44 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
+
+### Two statements that were the same statement
+
+The month picker and the stage picker each read the league's season rounds and each computed the same three things -
+rounds remaining, rounds completed, and whether the period is worth offering at all - as near-identical
+`SUM(CASE WHEN ...)` columns. They differed only in what they grouped by: the calendar month, or the tournament stage.
+
+One read (`ILeagueSeasonRoundsQuery`) now serves both, the counting is `Domain.Services.RoundProgress`, and each
+handler keeps its own grouping and ordering. This is the first slice where two handlers' SQL turned out to be one
+query rather than two.
+
+Two rules came out of it worth naming:
+
+- `SeasonMonthOrder` - a season starting in August runs August to December and then January to May, so a picker
+  listing its months in calendar order would be useless. It was an `ORDER BY CASE WHEN Month >= StartMonth` over a
+  cross-joined CTE whose only purpose was to find the season's first month. Note it works because the wrapped months
+  are in the *next* calendar year, which is what makes `MIN(StartDateUtc)` land in August - a first draft of the test
+  got this wrong and was corrected rather than the code.
+- `RoundProgress` - and its quirk, preserved: a draft round counts as "still to come". So a month offered because it
+  holds one published round reports its unpublished rounds as remaining. That was `SUM(CASE WHEN Status <> @Completed)`
+  and is now stated with a test.
+
+The stage picker also held the **fifth** copy of the stage display name and another copy of the collation-dependent
+`LIKE '%Group%'`. Both now go through `TournamentStageName` and `TournamentStageClassifier`.
+
+### `CultureInfo.CurrentCulture` - the same localisation bug, in C# this time
+
+The month picker named its months with `CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(...)`, so the name
+depended on the locale of whatever machine served the request. Exactly the fault found twice in SQL as
+`DATENAME(MONTH, ...)`, and worth recording as its own finding: moving a rule out of SQL is not the same as making it
+deterministic. Now `MonthName.Of`, invariant, consistent with the rest of the site.
+
+### Infrastructure holds no SQL
+
+`CachedEmailSettingsProvider` was the last file, and the caching it does is genuinely an Infrastructure concern - so
+the provider stays there and its statement moved to `IEmailSettingsQuery`. Its conformance tests pin the distinction
+that matters: an absent settings row must read as `null` rather than `false`, because the two look alike to a careless
+adapter and mean opposite things. Reporting `false` would silently stop every email the site sends.
 
 ### The guard in front of eighteen queries was excluded from coverage
 
