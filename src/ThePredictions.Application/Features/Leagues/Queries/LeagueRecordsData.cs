@@ -10,12 +10,14 @@ namespace ThePredictions.Application.Features.Leagues.Queries;
 /// judgement; here the rows simply arrive.
 /// </summary>
 /// <remarks>
-/// <see cref="RoundScores"/> is <b>not</b> filtered by league membership while <see cref="ExactScores"/> is,
-/// which is faithful to the old statement rather than tidy. Five of its ten blocks read
-/// <c>LeagueRoundResults</c> with no membership check and two joined <c>LeagueMembers</c>, so today a player who
-/// has been removed from a league can still hold its highest-round record but cannot hold its most-exact-scores
-/// record. Making those agree changes what the tile shows, so it is recorded as a question for the owner rather
-/// than folded into a refactor - see the plan document.
+/// <see cref="RoundScores"/> and <see cref="Winnings"/> arrive unfiltered by league membership;
+/// <see cref="ExactScores"/> arrives already scoped to the league's approved members. That asymmetry is
+/// deliberate and is <b>not</b> the population rule: <c>RoundResults</c> is league-agnostic, so reading every
+/// player's whole season in order to discard most of it would be wasteful, while <c>LeagueRoundResults</c> and
+/// <c>Winnings</c> are already per-league and need no narrowing.
+///
+/// Who may hold a record is decided once, in the handler, and narrowing at the source can only remove rows that
+/// filter would remove anyway. An adapter is free to narrow the other two as well; it is free not to.
 /// </remarks>
 [ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 public sealed record LeagueRecordsData(

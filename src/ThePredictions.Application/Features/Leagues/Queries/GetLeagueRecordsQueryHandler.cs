@@ -14,7 +14,22 @@ namespace ThePredictions.Application.Features.Leagues.Queries;
 /// <c>SELECT TOP 1 ... ORDER BY</c> that picked a winner, plus two <c>RANK() OVER</c> windows for the wins
 /// counts. Every one of those choices was a rule, and four of them had no tie-break at all - so which of two joint
 /// record-holders got named was the query plan's decision and could change between page loads.
+///
+/// Who may hold a record is now one rule rather than ten: an approved member of the league. The old blocks
+/// disagreed - five read <c>LeagueRoundResults</c> with no membership check, two required <c>Approved</c> - which
+/// meant a player outside the league could in principle hold the highest-round record while being ineligible for
+/// the most-exact-scores one, and could not appear on any leaderboard that would corroborate it.
 /// </summary>
+/// <remarks>
+/// The filter changes nothing today and is not meant to: <c>Approved</c> is a terminal state (nothing transitions
+/// out of it) and the results write path only writes for approved members, so a score against a non-member is
+/// unreachable. It is here so that the day a player can leave or be removed, the tile follows the same population
+/// as every leaderboard on the site without anyone having to remember these ten records exist.
+///
+/// An adapter may still narrow at the source - the exact-score read does, because <c>RoundResults</c> is
+/// league-agnostic and reading every player's season to discard most of it would be wasteful. Narrowing can only
+/// remove rows this filter would remove anyway, so it is an optimisation rather than a second copy of the rule.
+/// </remarks>
 public class GetLeagueRecordsQueryHandler(
     ILeagueRecordsQuery recordsQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueRecordsQuery, LeagueRecordsDto>
@@ -28,15 +43,22 @@ public class GetLeagueRecordsQueryHandler(
         if (data is null)
             throw new EntityNotFoundException("League", request.LeagueId);
 
-        var topRound = HighestRound(data.RoundScores);
-        var lowestRound = LowestRound(data.RoundScores);
-        var mostExact = MostExactInARound(data.ExactScores);
-        var champion = Champion(data.ApprovedMembers, data.RoundScores);
-        var topEarner = TopEarner(data.Winnings);
-        var mostRoundsWon = MostRoundsWon(data.RoundScores);
-        var mostMonthsWon = MostMonthsWon(data.RoundScores);
-        var biggestPrize = BiggestPrize(data.Winnings);
-        var topGameweek = HighestScoringRound(data.RoundScores);
+        // Every record belongs to an approved member of the league - stated once here rather than ten times.
+        var approvedUserIds = data.ApprovedMembers.Select(member => member.UserId).ToHashSet();
+
+        var roundScores = data.RoundScores.Where(row => approvedUserIds.Contains(row.UserId)).ToList();
+        var exactScores = data.ExactScores.Where(row => approvedUserIds.Contains(row.UserId)).ToList();
+        var winnings = data.Winnings.Where(row => approvedUserIds.Contains(row.UserId)).ToList();
+
+        var topRound = HighestRound(roundScores);
+        var lowestRound = LowestRound(roundScores);
+        var mostExact = MostExactInARound(exactScores);
+        var champion = Champion(data.ApprovedMembers, roundScores);
+        var topEarner = TopEarner(winnings);
+        var mostRoundsWon = MostRoundsWon(roundScores);
+        var mostMonthsWon = MostMonthsWon(roundScores);
+        var biggestPrize = BiggestPrize(winnings);
+        var topGameweek = HighestScoringRound(roundScores);
 
         return new LeagueRecordsDto
         {
@@ -66,7 +88,7 @@ public class GetLeagueRecordsQueryHandler(
             MostMonthsWonPlayerName = NameOf(mostMonthsWon?.FirstName, mostMonthsWon?.LastName),
             MostMonthsWonCount = mostMonthsWon?.WinCount ?? 0,
 
-            TotalExactScores = data.ExactScores.Sum(row => row.ExactScoreCount),
+            TotalExactScores = exactScores.Sum(row => row.ExactScoreCount),
 
             BiggestPrizePlayerName = NameOf(biggestPrize?.FirstName, biggestPrize?.LastName),
             BiggestPrizeAmount = biggestPrize?.Amount ?? 0,
