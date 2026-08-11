@@ -1,165 +1,103 @@
-using ThePredictions.Domain.Common.Exceptions;
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common.Exceptions;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetLeagueDashboardQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetLeagueDashboardQuery, LeagueDashboardDto>
+/// <summary>
+/// A league's dashboard: its header, its rounds, and its members.
+/// </summary>
+/// <remarks>
+/// The one query that answers "no such league" rather than "not allowed", and it matters: a stranger who is told
+/// they are forbidden has learned that the league exists, so both cases return the same 404. That rule was already
+/// in C# but its membership check was a fourth copy of the same <c>COUNT(*)</c> - it now goes through
+/// <see cref="ILeagueMembershipService"/> like every other league query, while keeping its own answer to a failure.
+/// </remarks>
+public class GetLeagueDashboardQueryHandler(
+    ILeagueDashboardQuery dashboardQuery,
+    ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueDashboardQuery, LeagueDashboardDto>
 {
     public async Task<LeagueDashboardDto> Handle(GetLeagueDashboardQuery request, CancellationToken cancellationToken)
     {
-        if (!request.IsAdmin)
-        {
-            const string authSql = @"
-                SELECT COUNT(1) FROM [LeagueMembers] 
-                WHERE [LeagueId] = @LeagueId AND [UserId] = @UserId AND [Status] = @ApprovedStatus;";
+        await EnsureVisibleAsync(request, cancellationToken);
 
-            var isMember = await dbConnection.QuerySingleOrDefaultAsync<bool>(authSql, cancellationToken, new
-            {
-                request.LeagueId,
-                request.UserId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved)
-            });
+        var data = await dashboardQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
-            // Deliberately "not found" rather than "not allowed": a non-member must not be able to
-            // learn that a league exists by the status code they get back, so both cases answer 404
-            // with the same message. This is not a mistaken use of EntityNotFoundException - the
-            // league may well exist.
-            if (!isMember)
-                throw new EntityNotFoundException("League", request.LeagueId);
-        }
-        
-        const string leagueSql = @"
-            SELECT
-                l.[Name],
-                c.[Type] AS CompetitionType,
-                s.[StartDateUtc],
-                l.[EntryDeadlineUtc],
-                (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus) AS MemberCount,
-                (l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus) + ISNULL(l.[PrizeFundOverride], 0)) AS TotalPrizeFund,
-                l.[IsFree],
-                CAST(CASE
-                    WHEN (SELECT COUNT(*) FROM [Rounds] r WHERE r.[SeasonId] = s.[Id] AND r.[Status] = @CompletedStatus) >= s.[NumberOfRounds]
-                    THEN 1
-                    ELSE 0
-                END AS bit) AS IsFinished
-            FROM
-                [Leagues] l
-            JOIN
-                [Seasons] s ON l.[SeasonId] = s.[Id]
-            JOIN
-                [Competitions] c ON s.[CompetitionId] = c.[Id]
-            WHERE
-                l.[Id] = @LeagueId";
-
-        var leagueInfo = await dbConnection.QuerySingleOrDefaultAsync<(string Name, int CompetitionType, DateTime StartDateUtc, DateTime? EntryDeadlineUtc, int MemberCount, decimal TotalPrizeFund, bool IsFree, bool IsFinished)>(
-            leagueSql, cancellationToken, new
-            {
-                request.LeagueId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                CompletedStatus = nameof(RoundStatus.Completed)
-            });
-        if (leagueInfo == default)
+        if (data is null)
             throw new EntityNotFoundException("League", request.LeagueId);
 
-        const string roundsSql = @"
-            SELECT
-                r.[Id],
-                r.[SeasonId],
-                r.[RoundNumber],
-                r.[ApiRoundName],
-                r.[StartDateUtc],
-                r.[DeadlineUtc],
-                r.[Status],
-                (SELECT COUNT(*) FROM [Matches] m WHERE m.[RoundId] = r.[Id]) as MatchCount
-            FROM
-                [Rounds] r
-            JOIN
-                [Leagues] l ON r.[SeasonId] = l.[SeasonId]
-            WHERE
-                l.[Id] = @LeagueId
-            ORDER BY
-                r.[RoundNumber] DESC;";
-
-        var parameters = new
-        {
-            request.LeagueId
-        };
-        var rounds = await dbConnection.QueryAsync<RoundQueryResult>(roundsSql, cancellationToken, parameters);
-
-        const string membersSql = @"
-            SELECT
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS FullName,
-                lm.[Status],
-                lm.[JoinedAtUtc]
-            FROM
-                [LeagueMembers] lm
-            JOIN
-                [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            WHERE
-                lm.[LeagueId] = @LeagueId
-                AND lm.[Status] IN (@ApprovedStatus, @PendingStatus)
-            ORDER BY
-                u.[FirstName],
-                u.[LastName]";
-
-        var members = await dbConnection.QueryAsync<LeagueDashboardMemberQueryResult>(
-            membersSql, cancellationToken, new
-            {
-                request.LeagueId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                PendingStatus = nameof(LeagueMemberStatus.Pending)
-            });
+        var header = data.Header;
 
         return new LeagueDashboardDto
         {
-            LeagueName = leagueInfo.Name,
-            CompetitionType = (CompetitionType)leagueInfo.CompetitionType,
-            SeasonStartDateUtc = leagueInfo.StartDateUtc,
-            EntryDeadlineUtc = leagueInfo.EntryDeadlineUtc,
-            MemberCount = leagueInfo.MemberCount,
-            TotalPrizeFund = leagueInfo.TotalPrizeFund,
-            IsFinished = leagueInfo.IsFinished,
-            IsFree = leagueInfo.IsFree,
-            Members = members
-                .Select(m => new LeagueDashboardMemberDto(
-                    m.FullName,
-                    m.Status,
-                    m.JoinedAtUtc))
-                .ToList(),
-            ViewableRounds = rounds
-                .Select(r => new RoundDto(
-                    r.Id,
-                    r.SeasonId,
-                    r.RoundNumber,
-                    r.ApiRoundName,
-                    r.StartDateUtc,
-                    r.DeadlineUtc,
-                    r.Status,
-                    r.MatchCount))
-                .ToList()
+            LeagueName = header.Name,
+            CompetitionType = header.CompetitionType,
+            SeasonStartDateUtc = header.SeasonStartDateUtc,
+            EntryDeadlineUtc = header.EntryDeadlineUtc,
+            MemberCount = header.MemberCount,
+            TotalPrizeFund = PrizeFund.Total(header.Price, header.MemberCount, header.PrizeFundOverride),
+            IsFinished = SeasonCompletion.IsFinished(header.CompletedRoundCount, header.NumberOfRounds),
+            IsFree = header.IsFree,
+            Members = MembersOn(data.Members),
+            ViewableRounds = RoundsOn(data.Rounds)
         };
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record RoundQueryResult(
-        int Id,
-        int SeasonId,
-        int RoundNumber,
-        string? ApiRoundName,
-        DateTime StartDateUtc,
-        DateTime DeadlineUtc,
-        RoundStatus Status,
-        int MatchCount);
+    /// <summary>
+    /// Whether the caller may see this league at all.
+    /// </summary>
+    /// <remarks>
+    /// A site administrator always may. Anyone else must be an approved member, and if they are not the answer is
+    /// deliberately "no such league" rather than "not allowed" - the two cases are indistinguishable from outside, so
+    /// a stranger cannot map out which leagues exist by reading status codes. This is not a mistaken use of
+    /// <c>EntityNotFoundException</c>: the league may well exist.
+    /// </remarks>
+    private async Task EnsureVisibleAsync(GetLeagueDashboardQuery request, CancellationToken cancellationToken)
+    {
+        if (request.IsAdmin)
+            return;
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record LeagueDashboardMemberQueryResult(
-        string FullName,
-        string Status,
-        DateTime JoinedAtUtc);
+        var isMember = await membershipService.IsApprovedMemberAsync(request.LeagueId, request.UserId, cancellationToken);
+
+        if (!isMember)
+            throw new EntityNotFoundException("League", request.LeagueId);
+    }
+
+    /// <summary>
+    /// The members shown, newest joiners last and alphabetical by name.
+    /// </summary>
+    /// <remarks>
+    /// Approved members and pending requests both appear, because the administrator approves people from here. A
+    /// rejected request does not - that person was turned away and listing them would invite the question a second
+    /// time.
+    /// </remarks>
+    private static List<LeagueDashboardMemberDto> MembersOn(IReadOnlyList<LeagueDashboardMemberRow> members) =>
+        members
+            .Where(member => member.Status is LeagueMemberStatus.Approved or LeagueMemberStatus.Pending)
+            .OrderBy(member => member.FirstName, StringComparer.InvariantCultureIgnoreCase)
+            .ThenBy(member => member.LastName, StringComparer.InvariantCultureIgnoreCase)
+            .Select(member => new LeagueDashboardMemberDto(
+                PlayerDisplayName.Format(member.FirstName, member.LastName),
+                member.Status.ToString(),
+                member.JoinedAtUtc))
+            .ToList();
+
+    /// <summary>The season's rounds, newest first, which is the order the dashboard reads them in.</summary>
+    private static List<RoundDto> RoundsOn(IReadOnlyList<LeagueDashboardRoundRow> rounds) =>
+        rounds
+            .OrderByDescending(round => round.RoundNumber)
+            .Select(round => new RoundDto(
+                round.RoundId,
+                round.SeasonId,
+                round.RoundNumber,
+                round.ApiRoundName,
+                round.StartDateUtc,
+                round.DeadlineUtc,
+                round.Status,
+                round.MatchCount))
+            .ToList();
 }

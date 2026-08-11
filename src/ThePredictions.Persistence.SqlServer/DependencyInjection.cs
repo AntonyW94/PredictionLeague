@@ -8,6 +8,7 @@ using ThePredictions.Application.Features.Dashboard.Queries;
 using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Domain.Models;
 using ThePredictions.Persistence.SqlServer.Identity;
 using ThePredictions.Persistence.SqlServer.Data;
@@ -79,6 +80,8 @@ public static class DependencyInjection
         services.AddScoped<ILeagueRoundResultsQuery, LeagueRoundResultsQuery>();
         services.AddScoped<IDashboardLeaderboardsQuery, DashboardLeaderboardsQuery>();
         services.AddScoped<IMyLeaguesQuery, MyLeaguesQuery>();
+        services.AddScoped<ILeagueMembershipQuery, LeagueMembershipQuery>();
+        services.AddScoped<ILeagueDashboardQuery, LeagueDashboardQuery>();
         services.AddScoped<ILeagueRecordsQuery, LeagueRecordsQuery>();
         services.AddScoped<ISeasonRecapQuery, SeasonRecapQuery>();
     }

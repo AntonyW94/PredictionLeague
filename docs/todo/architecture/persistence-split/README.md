@@ -158,6 +158,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leagues/records tile** ✅ | The largest statement in the application: ten `OUTER APPLY` blocks choosing ten record holders, four of them with no tie-break at all. |
 | 2 | **Leagues/season recap** ✅ | Four ranks in two statements, one of them a running total recomputed round by round across the league. Collapsed the wins rule shared with the records tile. |
 | 2 | **Dashboard/My Leagues** ✅ | The largest read on the site and the one with ADR-0015 behind it. Twelve rules out; every rank still a keyed cache lookup. Leaderboards are done. |
+| 2 | **Leagues/dashboard + membership guard** ✅ | Completed the `SeasonCompletion` collapse, and moved the guard eighteen handlers depend on out of Infrastructure - the last SQL there bar one file. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -364,6 +365,30 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
+
+### The guard in front of eighteen queries was excluded from coverage
+
+`LeagueMembershipService` lived in Infrastructure holding two `COUNT(*)` statements, marked
+`[ExcludeFromCodeCoverage(Justification = "Repository composition over SQL: no branching logic of its own.")]`.
+The justification was wrong on its own terms - the composition **was** the logic. Reading whether someone is a member
+is a fact; deciding that a non-member gets an exception, and which one, is a rule, and eighteen handlers depend on it.
+
+Split: the two reads are `ILeagueMembershipQuery` in Persistence, the two `Ensure*` decisions are C# in Application
+with tests. Two consequences worth recording:
+
+- Infrastructure is now down to **one** file containing SQL (`CachedEmailSettingsProvider`).
+- `GetLeagueDashboardQueryHandler` had a **fourth** copy of the same membership `COUNT(*)`, written inline because it
+  needed a different answer to a failure. It now shares the read while keeping its own rule - which is the shape to
+  aim for whenever a caller "cannot use the shared thing because it throws the wrong exception".
+
+### A security rule that only reads correctly with its comment
+
+The league dashboard answers `EntityNotFoundException` for a non-member rather than "not allowed", so a stranger
+cannot discover which leagues exist by reading status codes. It looks like a mistake - the league does exist - and
+the original SQL-era handler had a paragraph of comment explaining that it was not.
+
+It is now a named method with that paragraph attached and a test asserting the 404, mutation-verified: changing it to
+an `UnauthorizedAccessException`, which is what a reader "tidying up" would do, compiles cleanly and fails.
 
 ### A rule that spans the read and the write side
 
