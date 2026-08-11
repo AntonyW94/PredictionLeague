@@ -261,7 +261,12 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         });
     }
 
-    public async Task AddPredictionAsync(int matchId, string userId, int homeScore = 2, int awayScore = 1)
+    public async Task AddPredictionAsync(
+        int matchId,
+        string userId,
+        int homeScore = 2,
+        int awayScore = 1,
+        PredictionOutcome outcome = PredictionOutcome.Pending)
     {
         const string sql = @"
             INSERT INTO [UserPredictions]
@@ -289,7 +294,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
             UserId = userId,
             PredictedHomeScore = homeScore,
             PredictedAwayScore = awayScore,
-            Outcome = (int)PredictionOutcome.Pending,
+            Outcome = (int)outcome,
             CreatedAtUtc = DateTime.UtcNow
         });
     }

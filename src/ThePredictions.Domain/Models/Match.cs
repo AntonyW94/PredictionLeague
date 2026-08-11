@@ -160,6 +160,19 @@ public class Match
         return CustomLockTimeUtc ?? roundDeadline;
     }
 
+    /// <summary>
+    /// Whether this fixture has been called off, and so drops out of the round's fixture list rather than
+    /// showing as an unpredicted or unscored column.
+    /// </summary>
+    /// <remarks>
+    /// Two queries wrote this as <c>m.[Status] IN (@Scheduled, @InProgress, @Completed)</c> - a list of every
+    /// other status, which is the same question asked backwards. It is stated the right way round here on
+    /// purpose: a status added later joins the fixture list and is visible, rather than being silently dropped
+    /// by a whitelist that predates it. A fixture appearing when it should not is a bug someone reports; a
+    /// fixture quietly missing from a results grid is one nobody notices.
+    /// </remarks>
+    public bool IsPostponed => Status == MatchStatus.Postponed;
+
     public bool IsPredictionLocked(DateTime utcNow, DateTime roundDeadline)
     {
         return utcNow >= GetEffectiveDeadline(roundDeadline);
