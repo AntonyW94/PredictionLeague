@@ -557,6 +557,31 @@ public class MatchTests
 
     #endregion
 
+    #region IsPostponed
+
+    [Theory]
+    [InlineData(MatchStatus.Scheduled, false)]
+    [InlineData(MatchStatus.InProgress, false)]
+    [InlineData(MatchStatus.Completed, false)]
+    [InlineData(MatchStatus.Postponed, true)]
+    public void IsPostponed_ShouldReflectTheStatus(MatchStatus status, bool expected)
+    {
+        // Arrange - the three false cases are the whitelist two queries spelled out as
+        // "Status IN (@Scheduled, @InProgress, @Completed)".
+        var match = new Match(id: 1, roundId: 1, homeTeamId: 1, awayTeamId: 2,
+            matchDateTimeUtc: ValidMatchTime, customLockTimeUtc: null,
+            status: status, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, matchNumber: null, placeholderHomeName: null, placeholderAwayName: null, apiRoundName: null);
+
+        // Act
+        var result = match.IsPostponed;
+
+        // Assert
+        result.Should().Be(expected);
+    }
+
+    #endregion
+
     #region GetEffectiveDeadline
 
     [Fact]

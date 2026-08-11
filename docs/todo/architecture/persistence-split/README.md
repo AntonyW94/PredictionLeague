@@ -153,6 +153,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leaderboards/monthly** ✅ | Second adopter. `LeaderboardMemberRow` generalised and now shared; the month's pre-round rule kept separate from the overall table's on purpose. |
 | 2 | **Leaderboards/exact-scores** ✅ | Third adopter, and the first with no rank-change arrow: four rules, no snapshot condition. Season-scoped counts pinned by conformance test. |
 | 2 | **Leaderboards/stage** ✅ | Richest yet: seven rules from one statement, two ranks, and the stage classification. Pre-round position is computed here, not cached. |
+| 2 | **Leaderboards/round grid** ✅ | The prediction secrecy rule, and the dense grid the old `CROSS JOIN` manufactured. First rule moved that is about fairness rather than arithmetic. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -253,6 +254,34 @@ exist yet.
 
 Doing the extraction now was still right, and for the reason originally given: every integration test phase
 2 writes would otherwise need rewriting afterwards. The shape now exists, with one real suite proving it.
+
+### Two visibility rules that are not one rule
+
+`BoostUsageVisibility` (moved with the boost work) and `PredictionVisibility` (moved with the round grid) read
+almost identically:
+
+```
+AND (ubu.[UserId] = @CurrentUserId OR r.[DeadlineUtc] <= GETUTCDATE())          -- boosts
+WHEN COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > GETUTCDATE() AND ...    -- predictions
+```
+
+They answer different questions. A boost is played for a **round**, so the round's deadline governs it. A
+prediction belongs to a **fixture**, and a custom lock time can bring that fixture's deadline forward or push it
+back - so a league's grid can be half revealed while the round is still open, which the round's deadline alone
+cannot express. Sharing them would have been a one-line change that quietly leaked predictions for every
+early-kick-off fixture, or hid them for every late one.
+
+The lock comparison itself is **not** duplicated: both go through `Match.IsPredictionLocked`, so the inclusive
+boundary (a fixture whose deadline is exactly now has locked) is decided in one place for predicting and for
+revealing alike. That is the shape to aim for - share the mechanism, keep the questions apart.
+
+### `Status IN (@Scheduled, @InProgress, @Completed)`, stated the right way round
+
+Two queries listed every status except `Postponed` rather than naming the one they meant. `Match.IsPostponed`
+now says it directly, and the round grid uses it. The behaviours differ if a status is ever added: a whitelist
+silently drops the new value, the negation lets it through. Deliberately the second - a fixture appearing when
+it should not is reported, a fixture quietly missing from a results grid is not. One copy remains, in
+`GetMatchesForRoundQueryHandler`, and moves with the Dashboard area.
 
 ### The stage classification, and a live collation dependency
 

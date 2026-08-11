@@ -47,7 +47,12 @@ public interface ITestDataSeeder
         MatchStatus status = MatchStatus.Scheduled,
         int? matchNumber = null);
 
-    Task AddPredictionAsync(int matchId, string userId, int homeScore = 2, int awayScore = 1);
+    Task AddPredictionAsync(
+        int matchId,
+        string userId,
+        int homeScore = 2,
+        int awayScore = 1,
+        PredictionOutcome outcome = PredictionOutcome.Pending);
 
     Task<int> AddLeagueAsync(int seasonId, string administratorUserId, string name = "Integration League");
 

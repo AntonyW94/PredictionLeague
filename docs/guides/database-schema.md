@@ -687,7 +687,7 @@ User score predictions for matches.
 | PredictedHomeScore | int | NO | | Predicted home team score |
 | PredictedAwayScore | int | NO | | Predicted away team score |
 | PointsAwarded | int | YES | | Points earned (null if not scored) |
-| Outcome | int | NO | 0 | 0=NotScored, 1=Exact, 2=Correct, 3=Incorrect |
+| Outcome | int | NO | 0 | 0=Pending, 1=Incorrect, 2=CorrectResult, 3=ExactScore |
 | CreatedAtUtc | datetime2 | NO | GETUTCDATE() | First prediction time |
 | UpdatedAtUtc | datetime2 | YES | | Last update time |
 

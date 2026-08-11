@@ -1,136 +1,144 @@
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
-using System.Diagnostics.CodeAnalysis;
+using ThePredictions.Domain.Models;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// The league dashboard's round grid: every member down the side, every fixture across the top, and each
+/// member's position for the round.
+///
+/// The one leaderboard whose rules are about secrecy rather than arithmetic. Alongside the tie policy and the
+/// display name it carried the rule that decides whether a player sees an opponent's prediction, which is the
+/// difference between a prediction game and a copying game.
+/// </summary>
 public class GetLeagueDashboardRoundResultsQueryHandler(
-    IApplicationReadDbConnection dbConnection,
-    ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueDashboardRoundResultsQuery, IEnumerable<PredictionResultDto>>
+    ILeagueRoundResultsQuery resultsQuery,
+    ILeagueMembershipService membershipService,
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<GetLeagueDashboardRoundResultsQuery, IEnumerable<PredictionResultDto>>
 {
-    public async Task<IEnumerable<PredictionResultDto>> Handle(GetLeagueDashboardRoundResultsQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<PredictionResultDto>> Handle(
+        GetLeagueDashboardRoundResultsQuery request,
+        CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
-        const string sql = @"WITH RoundRankings AS (
-                                SELECT 
-                                    lm.[UserId],
-                                    COALESCE(lrr.[BoostedPoints], 0) AS [TotalPoints],
-                                    RANK() OVER (ORDER BY COALESCE(lrr.[BoostedPoints], 0) DESC) AS [Rank]
-                                FROM 
-                                    [LeagueMembers] lm
-                                LEFT JOIN 
-                                    [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = @LeagueId AND lrr.[RoundId] = @RoundId
-                                WHERE 
-                                    lm.[LeagueId] = @LeagueId 
-                                    AND lm.[Status] = @Approved
-                            )
+        var data = await resultsQuery.ExecuteAsync(request.LeagueId, request.RoundId, cancellationToken);
 
-                            SELECT
-                                lm.[UserId],
-                                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
-                                
-                                m.[Id] AS [MatchId],
-                                
-                                up.[PredictedHomeScore],
-                                up.[PredictedAwayScore],
-                                ISNULL(up.[Outcome], 0) AS [Outcome],
-                                
-                                CAST(CASE
-                                    WHEN COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > GETUTCDATE() AND lm.[UserId] != @CurrentUserId THEN 1
-                                    ELSE 0
-                                END AS bit) AS [IsHidden],
+        if (data == null)
+            return [];
 
-                                rr.[Rank],
-                                rr.[TotalPoints],
-                                bd.[Code] AS AppliedBoostCode,
-                                bd.[ImageUrl] AS AppliedBoostImageUrl
+        var fixtures = data.Round.Matches
+            .Where(match => !match.IsPostponed)
+            .OrderBy(match => match.MatchDateTimeUtc)
+            .ToList();
 
-                            FROM [LeagueMembers] lm
-                            JOIN [AspNetUsers] u ON lm.[UserId] = u.[Id]
-                            JOIN [RoundRankings] rr ON rr.[UserId] = lm.[UserId]
-                            JOIN [Rounds] r ON r.[Id] = @RoundId
-                            CROSS JOIN [Matches] m
-                            LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = lm.[UserId]
-                            LEFT JOIN [UserBoostUsages] ubu ON ubu.[UserId] = lm.[UserId] 
-                                                            AND ubu.[RoundId] = @RoundId 
-                                                            AND ubu.[LeagueId] = @LeagueId
-                            LEFT JOIN [BoostDefinitions] bd ON bd.[Id] = ubu.[BoostDefinitionId]
-                            WHERE 
-                                lm.[LeagueId] = @LeagueId 
-                                AND lm.[Status] = @Approved
-                                AND m.[RoundId] = @RoundId
-                                AND m.[Status] IN (@Scheduled, @InProgress, @Completed)
-                            ORDER BY 
-                                rr.[Rank], 
-                                PlayerName, 
-                                m.[MatchDateTimeUtc];";
+        var utcNow = dateTimeProvider.UtcNow;
 
-        var parameters = new
-        {
-            request.LeagueId,
-            request.RoundId,
-            request.CurrentUserId,
-            Approved = nameof(LeagueMemberStatus.Approved),
-            Scheduled = nameof(MatchStatus.Scheduled),
-            InProgress = nameof(MatchStatus.InProgress),
-            Completed = nameof(MatchStatus.Completed)
-        };
+        var pointsByUserId = data.Points.ToDictionary(row => row.UserId, row => row.BoostedPoints);
+        var boostByUserId = BoostsByUserId(data.BoostUsages);
+        var predictionsByUserId = data.Predictions
+            .GroupBy(row => row.UserId)
+            .ToDictionary(group => group.Key, group => group.ToDictionary(row => row.MatchId));
 
-        var queryResult = await dbConnection.QueryAsync<PredictionQueryResult>(sql, cancellationToken, parameters);
+        var ranked = Ranking.ByDescending(
+            data.Members,
+            member => PointsFor(pointsByUserId, member.UserId),
+            member => PlayerDisplayName.FormatFull(member.FirstName, member.LastName));
 
-        var groupedResults = queryResult
-             .GroupBy(r => new { r.UserId, r.PlayerName, r.Rank, r.TotalPoints })
-             .Select(g =>
-             {
-                 var boostCode = g.Select(x => x.AppliedBoostCode).FirstOrDefault(x => !string.IsNullOrEmpty(x));
-                 var boostImage = g.Select(x => x.AppliedBoostImageUrl).FirstOrDefault(x => !string.IsNullOrEmpty(x));
-
-                 var predictions = g.Select(p =>
-                 {
-                     var scoreDto = new PredictionScoreDto(
-                         p.MatchId,
-                         p.PredictedHomeScore,
-                         p.PredictedAwayScore,
-                         p.Outcome,
-                         p.IsHidden
-                     );
-
-                     return scoreDto;
-                 }).ToList();
-
-                 return new PredictionResultDto
-                 {
-                     UserId = g.Key.UserId,
-                     PlayerName = g.Key.PlayerName,
-                     TotalPoints = g.Key.TotalPoints,
-                     Rank = g.Key.Rank,
-                     HasPredicted = g.Any(p => p.PredictedHomeScore.HasValue),
-                     Predictions = predictions,
-                     AppliedBoostCode = boostCode,
-                     AppliedBoostImageUrl = boostImage
-                 };
-             });
-
-        return groupedResults;
+        return ranked
+            .Select(entry => new PredictionResultDto
+            {
+                UserId = entry.Item.UserId,
+                PlayerName = PlayerDisplayName.Format(entry.Item.FirstName, entry.Item.LastName),
+                HasPredicted = HasAnyPrediction(predictionsByUserId, entry.Item.UserId),
+                TotalPoints = PointsFor(pointsByUserId, entry.Item.UserId),
+                Rank = entry.Rank,
+                Predictions = CellsFor(entry.Item.UserId, fixtures, predictionsByUserId, data.Round, request.CurrentUserId, utcNow),
+                AppliedBoostCode = boostByUserId.GetValueOrDefault(entry.Item.UserId)?.Code,
+                AppliedBoostImageUrl = boostByUserId.GetValueOrDefault(entry.Item.UserId)?.ImageUrl
+            })
+            .ToList();
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PredictionQueryResult(
-        string UserId,
-        string PlayerName,
-        int MatchId,
-        int? PredictedHomeScore,
-        int? PredictedAwayScore,
-        PredictionOutcome Outcome,
-        bool IsHidden,
-        long Rank,
-        int TotalPoints,
-        string? AppliedBoostCode,
-        string? AppliedBoostImageUrl
-    );
+    /// <summary>
+    /// One cell per fixture for one member, whether or not they predicted it.
+    /// </summary>
+    /// <remarks>
+    /// The grid is dense on purpose: a member who predicted three of ten fixtures still gets ten cells, so the
+    /// columns line up across the rows. The old query manufactured those cells with a <c>CROSS JOIN</c> between
+    /// members and fixtures and then papered over the missing predictions with <c>ISNULL(up.[Outcome], 0)</c>.
+    /// A member with no predictions at all is the case to watch - joining rather than filling would drop their
+    /// row from the grid entirely rather than showing them as having predicted nothing.
+    /// </remarks>
+    private static List<PredictionScoreDto> CellsFor(
+        string userId,
+        IReadOnlyList<Match> fixtures,
+        IReadOnlyDictionary<string, Dictionary<int, MemberPredictionRow>> predictionsByUserId,
+        Round round,
+        string currentUserId,
+        DateTime utcNow)
+    {
+        var cells = new List<PredictionScoreDto>(fixtures.Count);
+
+        foreach (var fixture in fixtures)
+        {
+            var isVisible = PredictionVisibility.IsVisibleTo(fixture, userId, currentUserId, utcNow, round.DeadlineUtc);
+
+            var prediction = FindPrediction(predictionsByUserId, userId, fixture.Id);
+
+            cells.Add(new PredictionScoreDto(
+                fixture.Id,
+                prediction?.PredictedHomeScore,
+                prediction?.PredictedAwayScore,
+                prediction?.Outcome ?? PredictionOutcome.Pending,
+                !isVisible));
+        }
+
+        return cells;
+    }
+
+    private static MemberPredictionRow? FindPrediction(
+        IReadOnlyDictionary<string, Dictionary<int, MemberPredictionRow>> predictionsByUserId,
+        string userId,
+        int matchId)
+    {
+        if (!predictionsByUserId.TryGetValue(userId, out var byMatchId))
+            return null;
+
+        return byMatchId.GetValueOrDefault(matchId);
+    }
+
+    private static bool HasAnyPrediction(
+        IReadOnlyDictionary<string, Dictionary<int, MemberPredictionRow>> predictionsByUserId,
+        string userId)
+    {
+        if (!predictionsByUserId.TryGetValue(userId, out var byMatchId))
+            return false;
+
+        return byMatchId.Values.Any(prediction => prediction.PredictedHomeScore.HasValue);
+    }
+
+    /// <summary>
+    /// The boost a member played this round. Nothing in the schema stops there being two, so the earliest by
+    /// code wins - a stated rule rather than the old query's first non-empty row, which was whatever order the
+    /// join happened to produce.
+    /// </summary>
+    private static Dictionary<string, MemberBoostUsageRow> BoostsByUserId(IReadOnlyList<MemberBoostUsageRow> usages) =>
+        usages
+            .GroupBy(usage => usage.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.OrderBy(usage => usage.Code, StringComparer.Ordinal).First());
+
+    /// <summary>
+    /// A member with no result row for the round scores zero rather than dropping off the grid, which is what
+    /// the old <c>COALESCE(lrr.[BoostedPoints], 0)</c> was for.
+    /// </summary>
+    private static int PointsFor(IReadOnlyDictionary<string, int> pointsByUserId, string userId) =>
+        pointsByUserId.TryGetValue(userId, out var points) ? points : 0;
 }
