@@ -1,146 +1,124 @@
-﻿using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Payouts;
-using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Services;
 using ThePredictions.Domain.Services.Prizes;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-public class GetLeaguePayoutsQueryHandler(IApplicationReadDbConnection dbConnection, IFieldEncryptionService fieldEncryptionService)
+/// <summary>
+/// A league's payout screen: who is owed what, who has been paid, and the bank details to pay them with.
+/// </summary>
+public class GetLeaguePayoutsQueryHandler(
+    ILeaguePayoutsQuery payoutsQuery,
+    IFieldEncryptionService fieldEncryptionService)
     : IRequestHandler<GetLeaguePayoutsQuery, LeaguePayoutsDto>
 {
     public async Task<LeaguePayoutsDto> Handle(GetLeaguePayoutsQuery request, CancellationToken cancellationToken)
     {
-        const string leagueSql = @"
-            SELECT
-                l.[AdministratorUserId],
-                CAST(CASE WHEN EXISTS (SELECT 1 FROM [Rounds] r WHERE r.[SeasonId] = l.[SeasonId])
-                          AND NOT EXISTS (SELECT 1 FROM [Rounds] r2 WHERE r2.[SeasonId] = l.[SeasonId] AND r2.[Status] <> @CompletedStatus)
-                     THEN 1 ELSE 0 END AS BIT) AS SeasonComplete
-            FROM
-                [Leagues] l
-            WHERE
-                l.[Id] = @LeagueId;";
+        var data = await payoutsQuery.ExecuteAsync(request.LeagueId, request.RequestingUserId, cancellationToken);
 
-        var league = await dbConnection.QuerySingleOrDefaultAsync<LeagueRow>(
-            leagueSql,
-            cancellationToken,
-            new { request.LeagueId, CompletedStatus = nameof(RoundStatus.Completed) });
-
-        if (league is null)
+        if (data is null)
             throw new KeyNotFoundException($"League with ID {request.LeagueId} not found.");
 
-        if (league.AdministratorUserId != request.RequestingUserId)
+        // Only the administrator pays anybody, so only the administrator sees who is owed what - or their bank details.
+        // Its own message rather than the shared membership service's, because this screen names what it is refusing.
+        if (!data.IsAdministrator)
             throw new UnauthorizedAccessException("Only the league administrator can view payouts.");
 
-        const string winningsSql = @"
-            SELECT
-                w.[UserId],
-                u.[FirstName] + ' ' + u.[LastName] AS UserName,
-                lps.[PrizeType],
-                w.[Amount]
-            FROM
-                [Winnings] w
-            INNER JOIN
-                [LeaguePrizeSettings] lps ON lps.[Id] = w.[LeaguePrizeSettingId]
-            INNER JOIN
-                [AspNetUsers] u ON u.[Id] = w.[UserId]
-            WHERE
-                lps.[LeagueId] = @LeagueId;";
+        var storedByUser = data.StoredPayouts.ToDictionary(payout => payout.UserId);
+        var bankDetailsByUser = data.BankDetails.ToDictionary(details => details.UserId);
 
-        var winningRows = (await dbConnection.QueryAsync<WinningRow>(winningsSql, cancellationToken, new { request.LeagueId })).ToList();
-
-        const string payoutsSql = @"
-            SELECT
-                [UserId],
-                [TotalAmount],
-                [PaidAtUtc]
-            FROM
-                [LeaguePayouts]
-            WHERE
-                [LeagueId] = @LeagueId;";
-
-        var storedByUser = (await dbConnection.QueryAsync<StoredPayoutRow>(payoutsSql, cancellationToken, new { request.LeagueId }))
-            .ToDictionary(p => p.UserId);
-
-        var winnerUserIds = winningRows.Select(w => w.UserId).Distinct().ToArray();
-
-        var detailsByUser = new Dictionary<string, PayoutDetailRow>();
-        if (winnerUserIds.Length > 0)
-        {
-            const string detailsSql = @"
-                SELECT
-                    [UserId],
-                    [AccountName],
-                    [SortCode],
-                    [AccountNumber]
-                FROM
-                    [UserPayoutDetails]
-                WHERE
-                    [UserId] IN @UserIds;";
-
-            detailsByUser = (await dbConnection.QueryAsync<PayoutDetailRow>(detailsSql, cancellationToken, new { UserIds = winnerUserIds }))
-                .ToDictionary(d => d.UserId);
-        }
-
-        var winners = winningRows
-            .GroupBy(w => new { w.UserId, w.UserName })
-            .Select(group =>
-            {
-                var liveTotal = group.Sum(x => x.Amount);
-
-                var breakdown = group
-                    .GroupBy(x => x.PrizeType)
-                    .Select(typeGroup => new PayoutBreakdownDto(PrizeCategoryRegistry.Definition(typeGroup.Key).DisplayName, typeGroup.Sum(x => x.Amount)))
-                    .OrderBy(b => b.PrizeType)
-                    .ToList();
-
-                var stored = storedByUser.GetValueOrDefault(group.Key.UserId);
-                var isPaid = stored?.PaidAtUtc is not null;
-                var hasDiscrepancy = isPaid && stored!.TotalAmount != liveTotal;
-
-                var details = detailsByUser.GetValueOrDefault(group.Key.UserId);
-                var accountName = fieldEncryptionService.Decrypt(details?.AccountName);
-                var sortCode = fieldEncryptionService.Decrypt(details?.SortCode);
-                var accountNumber = fieldEncryptionService.Decrypt(details?.AccountNumber);
-                var hasSharedDetails = accountName is not null && sortCode is not null && accountNumber is not null;
-
-                return new LeaguePayoutWinnerDto(
-                    group.Key.UserId,
-                    group.Key.UserName,
-                    liveTotal,
-                    breakdown,
-                    isPaid,
-                    stored?.PaidAtUtc,
-                    hasDiscrepancy,
-                    hasSharedDetails,
-                    accountName,
-                    sortCode,
-                    accountNumber);
-            })
-            .OrderByDescending(w => w.TotalAmount)
-            .ThenBy(w => w.UserName)
+        var winners = data.Winnings
+            .GroupBy(winning => winning.UserId)
+            .Select(group => ToWinner(group.Key, group.ToList(), storedByUser, bankDetailsByUser))
+            .OrderByDescending(winner => winner.TotalAmount)
+            .ThenBy(winner => winner.UserName, StringComparer.InvariantCultureIgnoreCase)
             .ToList();
 
-        var paidTotal = winners.Where(w => w.IsPaid).Sum(w => storedByUser[w.UserId].TotalAmount);
-        var outstandingTotal = winners.Where(w => !w.IsPaid).Sum(w => w.TotalAmount);
-
-        return new LeaguePayoutsDto(league.SeasonComplete, outstandingTotal, paidTotal, winners);
+        return new LeaguePayoutsDto(
+            SeasonCompletion.IsEveryRoundComplete(data.SeasonRoundCount, data.CompletedRoundCount),
+            OutstandingTotal(winners),
+            PaidTotal(winners, storedByUser),
+            winners);
     }
 
-    // internal so a test can supply rows for the shaping above; InternalsVisibleTo already exposes
-    // this assembly to ThePredictions.Application.Tests.Unit.
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal sealed record LeagueRow(string AdministratorUserId, bool SeasonComplete);
+    private LeaguePayoutWinnerDto ToWinner(
+        string userId,
+        IReadOnlyList<PayoutWinningRow> winnings,
+        IReadOnlyDictionary<string, StoredPayoutRow> storedByUser,
+        IReadOnlyDictionary<string, PayoutBankDetailsRow> bankDetailsByUser)
+    {
+        var liveTotal = winnings.Sum(winning => winning.Amount);
 
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal sealed record WinningRow(string UserId, string UserName, PrizeType PrizeType, decimal Amount);
+        var stored = storedByUser.GetValueOrDefault(userId);
+        var isPaid = stored?.PaidAtUtc is not null;
 
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal sealed record StoredPayoutRow(string UserId, decimal TotalAmount, DateTime? PaidAtUtc);
+        var details = bankDetailsByUser.GetValueOrDefault(userId);
+        var accountName = fieldEncryptionService.Decrypt(details?.EncryptedAccountName);
+        var sortCode = fieldEncryptionService.Decrypt(details?.EncryptedSortCode);
+        var accountNumber = fieldEncryptionService.Decrypt(details?.EncryptedAccountNumber);
 
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal sealed record PayoutDetailRow(string UserId, string? AccountName, string? SortCode, string? AccountNumber);
+        return new LeaguePayoutWinnerDto(
+            userId,
+            PlayerDisplayName.FormatFull(winnings[0].FirstName, winnings[0].LastName),
+            liveTotal,
+            BreakdownOf(winnings),
+            isPaid,
+            stored?.PaidAtUtc,
+            HasDiscrepancy(isPaid, stored, liveTotal),
+            BankDetails.AreComplete(accountName, sortCode, accountNumber),
+            accountName,
+            sortCode,
+            accountNumber);
+    }
+
+    /// <summary>
+    /// What a winner is owed, split by the kind of prize it came from.
+    /// </summary>
+    private static List<PayoutBreakdownDto> BreakdownOf(IEnumerable<PayoutWinningRow> winnings) =>
+        winnings
+            .GroupBy(winning => winning.PrizeType)
+            .Select(group => new PayoutBreakdownDto(
+                PrizeCategoryRegistry.Definition(group.Key).DisplayName,
+                group.Sum(winning => winning.Amount)))
+            .OrderBy(breakdown => breakdown.PrizeType, StringComparer.InvariantCultureIgnoreCase)
+            .ToList();
+
+    /// <summary>
+    /// Whether what was paid no longer matches what is owed - which happens when a round is re-processed and prizes move
+    /// after somebody has already been paid.
+    /// </summary>
+    /// <remarks>
+    /// Only meaningful once a payment has been recorded: an unpaid winner whose total has changed is simply owed the new
+    /// figure, and flagging that would put a warning on every screen mid-season.
+    /// </remarks>
+    private static bool HasDiscrepancy(bool isPaid, StoredPayoutRow? stored, decimal liveTotal)
+    {
+        if (!isPaid)
+            return false;
+
+        return stored!.TotalAmount != liveTotal;
+    }
+
+    /// <summary>
+    /// What is still owed: the live totals of everyone unpaid.
+    /// </summary>
+    private static decimal OutstandingTotal(IEnumerable<LeaguePayoutWinnerDto> winners) =>
+        winners.Where(winner => !winner.IsPaid).Sum(winner => winner.TotalAmount);
+
+    /// <summary>
+    /// What has been paid out - the <b>recorded</b> amounts, not the current ones.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately different from <see cref="OutstandingTotal"/>, which uses live totals. Money that has left the
+    /// administrator's account is a historical fact, so re-pricing a prize afterwards must not change what the screen says
+    /// was paid. That difference is what makes a discrepancy visible rather than silently absorbed.
+    /// </remarks>
+    private static decimal PaidTotal(
+        IEnumerable<LeaguePayoutWinnerDto> winners,
+        IReadOnlyDictionary<string, StoredPayoutRow> storedByUser) =>
+        winners
+            .Where(winner => winner.IsPaid)
+            .Sum(winner => storedByUser[winner.UserId].TotalAmount);
 }

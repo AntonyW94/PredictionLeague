@@ -163,6 +163,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leagues/detail + rounds** ✅ | A third pair of statements collapsed into one read, and three sentinel values pulled out of SQL into named C#. |
 | 2 | **Leagues/members + payment details** ✅ | The rule guarding a league's bank account had no tests, because the handler carried the boilerplate coverage exclusion. |
 | 2 | **Leagues/prizes + create page** ✅ | A flattened left join split in two, which retired a row type where every prize column was nullable. |
+| 2 | **Leagues/payouts** ✅ | Two definitions of "season finished" found side by side, and tests that no longer count the handler's SQL statements. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -369,6 +370,43 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
+
+### Two definitions of "is the season over"
+
+The dashboards ask it one way and the payouts screen asks it another:
+
+```sql
+COUNT(completed rounds) >= s.[NumberOfRounds]                     -- the dashboards
+EXISTS (any round) AND NOT EXISTS (any round that is not complete) -- the payouts screen
+```
+
+**They can disagree.** A season declaring 38 rounds but holding 40, of which 38 are complete, is finished by the first
+and unfinished by the second. Both now live in `SeasonCompletion` as `IsFinished` and `IsEveryRoundComplete`, side by
+side, with a test named `TheTwoDefinitionsCanDisagree` that pins the divergence as a documented fact rather than a
+surprise waiting to be found.
+
+Not merged, because merging them changes what one of the two screens says and which is right is a product question.
+**Open question for the owner:** should these be one definition, and if so which?
+
+The payouts version also has a half worth keeping: *and at least one round exists*. Without it an empty season reports
+itself finished and the screen offers to pay out a season that has not started. Mutation-verified.
+
+### Money already sent is a historical fact
+
+The payouts screen totals what is outstanding from **live** prize amounts and what has been paid from the **recorded**
+ones. That asymmetry is deliberate: re-pricing a prize after somebody has been paid must not rewrite what the screen says
+left the administrator's account - it must show up as a discrepancy instead. Making both use live totals compiles cleanly
+and fails the test that pins it.
+
+### Tests that counted SQL statements
+
+`GetLeaguePayoutsQueryHandler` was the one query handler that already had tests, and they worked by mocking
+`IApplicationReadDbConnection` and telling its four reads apart by their generic argument. That passes, but it couples the
+tests to how many statements the handler runs and in what shape - so the tests had to change whenever the SQL did, which
+is the opposite of what a test is for. Same coverage now, arranged through the port.
+
+Worth noting alongside the coverage-exclusion finding: both are ways the old shape made tests either impossible or
+misleading.
 
 ### A nullable column the result type said was not
 
