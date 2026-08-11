@@ -62,7 +62,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         });
     }
 
-    public async Task<int> AddSeasonAsync(int competitionId, string name = "2026/27", int numberOfRounds = 38)
+    public async Task<int> AddSeasonAsync(int competitionId, string name = "2026/27", int numberOfRounds = 38, bool isActive = true)
     {
         const string sql = @"
             INSERT INTO [Seasons]
@@ -88,7 +88,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         return await ExecuteScalarAsync<int>(sql, new
         {
             Name = name,
-            IsActive = true,
+            IsActive = isActive,
             NumberOfRounds = numberOfRounds,
             StartDateUtc = DateTime.UtcNow.AddMonths(-1),
             EndDateUtc = DateTime.UtcNow.AddMonths(9),

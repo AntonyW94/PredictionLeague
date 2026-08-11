@@ -167,6 +167,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leagues/winnings** ✅ | **Leagues is done.** A month name formatted with the machine's locale and then parsed back to sort by it, and a latent crash on the round list. |
 | 2 | **Dashboard/league discovery** ✅ | A rule enforced only by SQL's three-valued logic, and an entry code that no longer travels to non-members. |
 | 2 | **Dashboard/pending membership** ✅ | Two views of one thing, and a third latent crash of the same shape as the first two. |
+| 2 | **Dashboard/active rounds** ✅ | **Dashboard is done.** A domain rule that disagreed with its own SQL twin, and with its own sibling. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -373,6 +374,40 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
+
+### A domain rule that disagreed with its SQL twin - and with its own sibling
+
+The dashboard worked out when a round's last match locks as a `COALESCE` over a correlated `MAX`:
+
+```sql
+COALESCE((SELECT MAX(lm.[CustomLockTimeUtc]) FROM [Matches] lm
+          WHERE lm.[RoundId] = r.[Id]
+            AND lm.[Status] <> @PostponedStatus
+            AND lm.[CustomLockTimeUtc] > r.[DeadlineUtc]), r.[DeadlineUtc])
+```
+
+`Round.GetLatestPredictionDeadline()` already answered that question in the domain - **over every match, postponed ones
+included**. So for a round holding a postponed match with a late custom lock, the two disagree: the SQL says the round has
+closed, the entity says it is still open.
+
+Worse, the entity disagrees with itself. Its sibling `GetNextPredictionDeadline` filters by `Match.IsOpenForPrediction`, which
+requires the status to be `Scheduled` - so one method counts postponed matches and the neighbouring one does not.
+
+The read path now uses `PredictionWindow.LatestDeadline` over the non-postponed matches, preserving what the dashboard did.
+The entity method is untouched because it has other callers. **Open question for the owner:** should
+`Round.GetLatestPredictionDeadline` exclude postponed matches, so that it agrees with both its sibling and the dashboard?
+
+This is the first case of a duplicated rule where the SQL copy was the **more** correct one. Every previous instance had the
+C# version right and the SQL version drifting.
+
+### A flag that must not be computed from the rows beside it
+
+`HasConfirmedMatch` decides whether a round is worth showing, and the old `EXISTS` looked at every match - including postponed
+ones. The matches returned alongside it exclude postponed ones, so deriving the flag from those rows would silently drop a
+round whose only confirmed fixture had been called off.
+
+It is answered in the adapter for exactly that reason, with a conformance test for the case. Worth noting as a shape: when a
+port returns both a filtered collection and a flag about the unfiltered one, the flag has to stay with the source.
 
 ### The same nullable-deadline crash, a third time
 
