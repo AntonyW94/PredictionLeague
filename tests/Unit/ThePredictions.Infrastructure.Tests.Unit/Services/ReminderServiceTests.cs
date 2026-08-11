@@ -34,12 +34,9 @@ public class ReminderServiceTests
     [Fact]
     public async Task ShouldSendReminderAsync_ShouldBeFalse_WhenNoFixtureIsStillOpen()
     {
-        // No next lock, so there is no milestone to measure against. Postponed rather than Completed
-        // deliberately: Round.GetNextPredictionDeadline skips only postponed fixtures, whereas
-        // Match.IsOpenForPrediction requires Scheduled. The two rules disagree about a Completed fixture
-        // whose lock is still ahead - see the note in the persistence-split plan. Practically unreachable
-        // (a match is not completed before it has kicked off, which is after its lock) but the asymmetry is
-        // real, and this test stays on the case both rules agree about.
+        // No next lock, so there is no milestone to measure against. Any non-Scheduled status does this
+        // now: GetNextPredictionDeadline and IsOpenForPrediction were aligned on one definition of "still
+        // open", so they no longer disagree about a completed fixture whose lock is somehow ahead.
         var round = Round(matches: [Fixture(1, status: MatchStatus.Postponed)]);
 
         (await _service.ShouldSendReminderAsync(round, DeadlineUtc.AddDays(-1), CancellationToken.None))

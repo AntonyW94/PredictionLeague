@@ -257,17 +257,19 @@ Doing the extraction now was still right, and for the reason originally given: e
 marked completed or in progress whose lock is still ahead: the first would count it towards the next
 deadline, the second would not count it as predictable.
 
-It is practically unreachable - a match is not completed before it has kicked off, which is after its lock -
-and it predates this work. It surfaced because a reminder-service test used a completed fixture to mean
-"nothing open" and the milestone schedule disagreed. Two consequences, both handled:
+**Resolved 2026-08-10.** The state means something has gone wrong upstream and cannot legitimately occur - a
+match does not start before its own prediction lock - so on the owner's instruction the rule now assumes it
+away rather than defending against it. `GetNextPredictionDeadline` is defined as *the earliest effective
+deadline among the fixtures still open for prediction*, which makes it and `IsOpenForPrediction` share one
+definition of "still open".
 
-- The chase email now derives its deadline from the fixtures it is actually chasing, rather than calling
-  `GetNextPredictionDeadline` separately. Same answer for every reachable case, one status filter instead of
-  two, and it removed an unreachable null fallback that the coverage gate had flagged.
-- `ShouldSendReminderAsync` still uses `GetNextPredictionDeadline`, so the asymmetry remains there.
-  **Whether the two should be reconciled is a behaviour question, not a refactor** - it would change when
-  reminders fire for a round containing a completed-but-unlocked fixture - so it is left alone and recorded
-  here.
+That turned out to remove code rather than add it. The chase email had grown a local `Min` over its open
+fixtures purely to sidestep the disagreement; with the domain method answering exactly that question, the
+email calls it again and the local duplication is gone. Both the milestone schedule and the email now read
+the same value, so they cannot disagree about the deadline they are counting down to.
+
+Deliberately **not** guarded here: if the broken state is ever worth detecting, the place is the job that
+sets match statuses, not a read path.
 
 ### Two more compiler-branch traps
 
