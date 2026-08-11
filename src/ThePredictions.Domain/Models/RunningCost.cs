@@ -21,11 +21,21 @@ public class RunningCost
     public DateTime CreatedAtUtc { get; private set; }
 
     /// <summary>Annual equivalent of the cost (one-off amounts are returned as-is; the calculator applies horizon logic).</summary>
-    public decimal AnnualisedAmount => Frequency switch
+    public decimal AnnualisedAmount => Annualise(Amount, Frequency);
+
+    /// <summary>
+    /// The same rule for an amount and a frequency held on their own, for the read paths that never build a cost.
+    /// </summary>
+    /// <remarks>
+    /// The price recommendation used to reach this by constructing a <see cref="RunningCost"/> per row with an id of zero, a
+    /// name of "cost" and two epoch dates, purely to read the property back off it. Fabricating an entity to borrow one line
+    /// of arithmetic invents state that was never in the database.
+    /// </remarks>
+    public static decimal Annualise(decimal amount, CostFrequency frequency) => frequency switch
     {
-        CostFrequency.Monthly => Amount * 12,
-        CostFrequency.Annual => Amount,
-        _ => Amount
+        CostFrequency.Monthly => amount * 12,
+        CostFrequency.Annual => amount,
+        _ => amount
     };
 
     [ExcludeFromCodeCoverage(Justification = "Parameterless constructor for Dapper hydration: no logic to test.")]

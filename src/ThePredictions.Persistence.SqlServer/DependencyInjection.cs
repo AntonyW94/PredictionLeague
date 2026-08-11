@@ -36,6 +36,7 @@ using ThePredictions.Persistence.SqlServer.Queries.Boosts;
 using ThePredictions.Persistence.SqlServer.Queries;
 using ThePredictions.Persistence.SqlServer.Queries.Dashboard;
 using ThePredictions.Persistence.SqlServer.Queries.Leagues;
+using ThePredictions.Persistence.SqlServer.Queries.Pricing;
 using ThePredictions.Persistence.SqlServer.Queries.Rounds;
 using ThePredictions.Persistence.SqlServer.Queries.SeasonPasses;
 using ThePredictions.Persistence.SqlServer.Repositories;
@@ -135,6 +136,8 @@ public static class DependencyInjection
         services.AddScoped<ISeasonsQuery, SeasonsQuery>();
         services.AddScoped<IAdminUsersQuery, AdminUsersQuery>();
         services.AddScoped<ISeasonPassPagesQuery, SeasonPassPagesQuery>();
+        services.AddScoped<ISeasonPassHoldersQuery, SeasonPassHoldersQuery>();
+        services.AddScoped<ISeasonPricingQuery, SeasonPricingQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository

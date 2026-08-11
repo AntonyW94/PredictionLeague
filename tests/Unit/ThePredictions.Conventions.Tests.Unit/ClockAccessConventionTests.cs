@@ -32,8 +32,7 @@ public class ClockAccessConventionTests
 
         // Straightforward to convert to IDateTimeProvider - these are the remaining burn-down targets.
         "src/ThePredictions.Application/Features/Admin/Rounds/Commands/UpdateScoresForNextRoundCommandHandler.cs",
-        "src/ThePredictions.Application/Features/External/Tasks/Commands/CleanupExpiredDataCommandHandler.cs",
-        "src/ThePredictions.Application/Services/SeasonPriceRecommendationService.cs"
+        "src/ThePredictions.Application/Features/External/Tasks/Commands/CleanupExpiredDataCommandHandler.cs"
     ];
 
     /// <summary>
