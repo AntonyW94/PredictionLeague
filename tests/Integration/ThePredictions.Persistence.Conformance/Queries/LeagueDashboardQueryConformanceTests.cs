@@ -10,7 +10,7 @@ namespace ThePredictions.Persistence.Conformance.Queries;
 ///
 /// The members come back whatever their status, because which of them the dashboard lists is a rule - and the one it
 /// leaves out is a person who was turned away, so an adapter filtering "helpfully" would settle a decision about
-/// somebody's visibility on its own.
+/// somebody's visibility on its own. The rounds are a separate port, shared with the dashboard's round picker.
 /// </summary>
 public abstract class LeagueDashboardQueryConformanceTests
 {
@@ -147,40 +147,6 @@ public abstract class LeagueDashboardQueryConformanceTests
 
         // Assert
         data!.Members.Should().HaveCount(1);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_ShouldReturnEveryRoundOfTheSeasonWithItsFixtureCount()
-    {
-        // Arrange
-        var world = await ArrangeAsync();
-        var roundId = await Seed.AddRoundAsync(world.SeasonId, 1, DateTime.UtcNow.AddDays(-1), RoundStatus.Completed);
-        await Seed.AddMatchAsync(roundId, world.HomeTeamId, world.AwayTeamId);
-        await Seed.AddMatchAsync(roundId, world.HomeTeamId, world.AwayTeamId);
-        await Seed.AddRoundAsync(world.SeasonId, 2, DateTime.UtcNow.AddDays(7));
-
-        // Act
-        var data = await Query.ExecuteAsync(world.LeagueId, CancellationToken.None);
-
-        // Assert
-        data!.Rounds.Should().HaveCount(2);
-        data.Rounds.Single(round => round.RoundId == roundId).MatchCount.Should().Be(2);
-        data.Rounds.Single(round => round.RoundId == roundId).Status.Should().Be(RoundStatus.Completed);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_ShouldReturnNoRounds_FromAnotherSeason()
-    {
-        // Arrange
-        var world = await ArrangeAsync();
-        var otherSeasonId = await Seed.AddSeasonAsync(world.CompetitionId, "2027/28");
-        await Seed.AddRoundAsync(otherSeasonId, 1, DateTime.UtcNow.AddDays(-1));
-
-        // Act
-        var data = await Query.ExecuteAsync(world.LeagueId, CancellationToken.None);
-
-        // Assert
-        data!.Rounds.Should().BeEmpty();
     }
 
     private async Task<DashboardWorld> ArrangeAsync()

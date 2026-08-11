@@ -4,14 +4,15 @@ using ThePredictions.Domain.Common.Enumerations;
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
 /// <summary>
-/// One round of the league's season, with how many fixtures it holds.
+/// One round of a league's season, with how many fixtures it holds.
 /// </summary>
 /// <remarks>
-/// Unordered. The dashboard shows the newest round first, which is a presentation rule and belongs with the handler
-/// rather than in an <c>ORDER BY</c> nobody can test.
+/// Unordered and unfiltered, and shared by the two handlers that list a league's rounds. They want different rounds
+/// from the same set - the dashboard lists all of them, the round picker only those a player may look at - so
+/// filtering here would settle one of those rules on the other's behalf.
 /// </remarks>
 [ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
-public sealed record LeagueDashboardRoundRow(
+public sealed record LeagueRoundRow(
     int RoundId,
     int SeasonId,
     int RoundNumber,

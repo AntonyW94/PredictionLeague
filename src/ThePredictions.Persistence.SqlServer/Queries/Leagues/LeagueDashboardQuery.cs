@@ -8,9 +8,9 @@ namespace ThePredictions.Persistence.SqlServer.Queries.Leagues;
 /// <summary>
 /// The SQL Server reads behind <see cref="ILeagueDashboardQuery"/>.
 ///
-/// Three reads, none of which filters members by status, orders anything, names anybody or works out a pot. The
-/// membership check the handler used to make for itself has gone entirely - it belongs to
-/// <c>ILeagueMembershipQuery</c>, which every other league query already used.
+/// Two reads, neither of which filters members by status, orders anything, names anybody or works out a pot. The
+/// rounds come from <c>ILeagueRoundsQuery</c>, shared with the dashboard's round picker, and the membership check the
+/// handler used to make for itself belongs to <c>ILeagueMembershipQuery</c>.
 /// </summary>
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public sealed class LeagueDashboardQuery(IApplicationReadDbConnection dbConnection) : ILeagueDashboardQuery
@@ -22,12 +22,9 @@ public sealed class LeagueDashboardQuery(IApplicationReadDbConnection dbConnecti
         if (header == null)
             return null;
 
-        var roundsTask = GetRoundsAsync(leagueId, cancellationToken);
-        var membersTask = GetMembersAsync(leagueId, cancellationToken);
+        var members = await GetMembersAsync(leagueId, cancellationToken);
 
-        await Task.WhenAll(roundsTask, membersTask);
-
-        return new LeagueDashboardData(header, roundsTask.Result, membersTask.Result);
+        return new LeagueDashboardData(header, members);
     }
 
     private async Task<LeagueDashboardHeaderRow?> GetHeaderAsync(int leagueId, CancellationToken cancellationToken)
@@ -77,36 +74,6 @@ public sealed class LeagueDashboardQuery(IApplicationReadDbConnection dbConnecti
                 ApprovedStatus = nameof(LeagueMemberStatus.Approved),
                 CompletedStatus = nameof(RoundStatus.Completed)
             });
-    }
-
-    private async Task<IReadOnlyList<LeagueDashboardRoundRow>> GetRoundsAsync(int leagueId, CancellationToken cancellationToken)
-    {
-        const string sql = @"
-            SELECT
-                r.[Id] AS [RoundId],
-                r.[SeasonId],
-                r.[RoundNumber],
-                r.[ApiRoundName],
-                r.[StartDateUtc],
-                r.[DeadlineUtc],
-                r.[Status],
-                (
-                    SELECT
-                        COUNT(*)
-                    FROM
-                        [Matches] m
-                    WHERE
-                        m.[RoundId] = r.[Id]
-                ) AS [MatchCount]
-            FROM
-                [Rounds] r
-            INNER JOIN
-                [Leagues] l ON l.[SeasonId] = r.[SeasonId]
-            WHERE
-                l.[Id] = @LeagueId;";
-
-        return (await dbConnection.QueryAsync<LeagueDashboardRoundRow>(
-            sql, cancellationToken, new { LeagueId = leagueId })).ToList();
     }
 
     private async Task<IReadOnlyList<LeagueDashboardMemberRow>> GetMembersAsync(int leagueId, CancellationToken cancellationToken)

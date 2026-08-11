@@ -19,6 +19,7 @@ namespace ThePredictions.Application.Features.Leagues.Queries;
 /// </remarks>
 public class GetLeagueDashboardQueryHandler(
     ILeagueDashboardQuery dashboardQuery,
+    ILeagueRoundsQuery roundsQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueDashboardQuery, LeagueDashboardDto>
 {
     public async Task<LeagueDashboardDto> Handle(GetLeagueDashboardQuery request, CancellationToken cancellationToken)
@@ -29,6 +30,8 @@ public class GetLeagueDashboardQueryHandler(
 
         if (data is null)
             throw new EntityNotFoundException("League", request.LeagueId);
+
+        var rounds = await roundsQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
         var header = data.Header;
 
@@ -43,7 +46,7 @@ public class GetLeagueDashboardQueryHandler(
             IsFinished = SeasonCompletion.IsFinished(header.CompletedRoundCount, header.NumberOfRounds),
             IsFree = header.IsFree,
             Members = MembersOn(data.Members),
-            ViewableRounds = RoundsOn(data.Rounds)
+            ViewableRounds = RoundsOn(rounds)
         };
     }
 
@@ -86,8 +89,16 @@ public class GetLeagueDashboardQueryHandler(
                 member.JoinedAtUtc))
             .ToList();
 
-    /// <summary>The season's rounds, newest first, which is the order the dashboard reads them in.</summary>
-    private static List<RoundDto> RoundsOn(IReadOnlyList<LeagueDashboardRoundRow> rounds) =>
+    /// <summary>
+    /// Every round of the season, newest first.
+    /// </summary>
+    /// <remarks>
+    /// All of them, whatever their status - this is the administrator's view of the league. The dashboard's round
+    /// picker fills the same <c>ViewableRounds</c> field from the same rows but keeps only the published and completed
+    /// ones, so the two answers to "viewable" differ. Recorded in the plan document as a question rather than
+    /// reconciled here.
+    /// </remarks>
+    private static List<RoundDto> RoundsOn(IReadOnlyList<LeagueRoundRow> rounds) =>
         rounds
             .OrderByDescending(round => round.RoundNumber)
             .Select(round => new RoundDto(

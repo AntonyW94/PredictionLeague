@@ -1,69 +1,52 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// The rounds a member can pick from on a league's dashboard, newest first.
+/// </summary>
 public class GetLeagueRoundsForDashboardQueryHandler(
-    IApplicationReadDbConnection dbConnection,
+    ILeagueRoundsQuery roundsQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueRoundsForDashboardQuery, IEnumerable<RoundDto>>
 {
-    public async Task<IEnumerable<RoundDto>> Handle(GetLeagueRoundsForDashboardQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<RoundDto>> Handle(
+        GetLeagueRoundsForDashboardQuery request,
+        CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
-        const string sql = @"
-            SELECT
-                r.[Id],
-                r.[SeasonId],
-                r.[RoundNumber],
-                r.[ApiRoundName],
-                r.[StartDateUtc],
-                r.[DeadlineUtc],
-                r.[Status],
-                (SELECT COUNT(*) FROM [Matches] m WHERE m.[RoundId] = r.[Id]) as MatchCount
-            FROM
-                [Rounds] r
-            JOIN
-                [Leagues] l ON r.SeasonId = l.SeasonId
-            WHERE
-                l.[Id] = @LeagueId
-                AND r.[Status] IN (@PublishedStatus, @CompletedStatus)
-            ORDER BY
-                r.[RoundNumber] DESC;";
+        var rounds = await roundsQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
-        var parameters = new
-        {
-            request.LeagueId,
-            PublishedStatus = nameof(RoundStatus.Published),
-            CompletedStatus = nameof(RoundStatus.Completed)
-        };
-
-        var rounds = await dbConnection.QueryAsync<RoundQueryResult>(sql, cancellationToken, parameters);
-
-        return rounds.Select(r => new RoundDto(
-            r.Id,
-            r.SeasonId,
-            r.RoundNumber,
-            r.ApiRoundName,
-            r.StartDateUtc,
-            r.DeadlineUtc,
-            r.Status,
-            r.MatchCount));
+        return rounds
+            .Where(IsPickable)
+            .OrderByDescending(round => round.RoundNumber)
+            .Select(round => new RoundDto(
+                round.RoundId,
+                round.SeasonId,
+                round.RoundNumber,
+                round.ApiRoundName,
+                round.StartDateUtc,
+                round.DeadlineUtc,
+                round.Status,
+                round.MatchCount))
+            .ToList();
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record RoundQueryResult(
-        int Id,
-        int SeasonId,
-        int RoundNumber,
-        string? ApiRoundName,
-        DateTime StartDateUtc,
-        DateTime DeadlineUtc,
-        RoundStatus Status,
-        int MatchCount);
+    /// <summary>
+    /// Whether a member can pick this round: published, or finished.
+    /// </summary>
+    /// <remarks>
+    /// A draft is not yet something players can see, which is consistent with the rest of the site. A round
+    /// <b>in progress</b> is excluded too, which is less obviously right - it is the round most likely to be worth
+    /// looking at - and this preserves the old <c>r.[Status] IN (@PublishedStatus, @CompletedStatus)</c> exactly rather
+    /// than quietly widening it. Recorded in the plan document as a question for the owner.
+    ///
+    /// Deliberately not shared with the league dashboard, which lists every round including drafts and fills the same
+    /// <c>ViewableRounds</c> field from the same rows. Two callers, one read, two different answers to "viewable".
+    /// </remarks>
+    private static bool IsPickable(LeagueRoundRow round) =>
+        round.Status is RoundStatus.Published or RoundStatus.Completed;
 }
