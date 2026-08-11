@@ -167,8 +167,9 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leagues/winnings** ✅ | **Leagues is done.** A month name formatted with the machine's locale and then parsed back to sort by it, and a latent crash on the round list. |
 | 2 | **Dashboard/league discovery** ✅ | A rule enforced only by SQL's three-valued logic, and an entry code that no longer travels to non-members. |
 | 2 | **Dashboard/pending membership** ✅ | Two views of one thing, and a third latent crash of the same shape as the first two. |
-| 2 | **Dashboard/active rounds** ✅ | **Dashboard is done.** A domain rule that disagreed with its own SQL twin, and with its own sibling. |
+| 2 | **Dashboard/active rounds** ✅ | A domain rule that disagreed with its own SQL twin, and with its own sibling. Marked "Dashboard is done" here, wrongly - `GetMatchesForRoundQueryHandler` still held SQL, and moved with Admin/Rounds below. |
 | 2 | **Badges** ✅ | **Badges is done.** Six statements to three reads, two gap-and-island streak queries to one `foreach`, and two screens that disagreed about the same player's position now reading one set of standings. |
+| 2 | **Admin/Rounds + round fixtures** ✅ | A CTE written twice and selected never, and the near-twin fixture statement that was still outstanding from Dashboard. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -835,8 +836,9 @@ revealing alike. That is the shape to aim for - share the mechanism, keep the qu
 Two queries listed every status except `Postponed` rather than naming the one they meant. `Match.IsPostponed`
 now says it directly, and the round grid uses it. The behaviours differ if a status is ever added: a whitelist
 silently drops the new value, the negation lets it through. Deliberately the second - a fixture appearing when
-it should not is reported, a fixture quietly missing from a results grid is not. One copy remains, in
-`GetMatchesForRoundQueryHandler`, and moves with the Dashboard area.
+it should not is reported, a fixture quietly missing from a results grid is not. **Both copies are now gone**: the
+second, in `GetMatchesForRoundQueryHandler`, moved with Admin/Rounds, and `Match.IsPostponedStatus` is the row-level
+form so the entity and the reads share one definition.
 
 ### The stage classification, and a live collation dependency
 
@@ -1019,6 +1021,39 @@ The badges page counts **awards** ("won 3 times"); the leaderboard counts **dist
 Both were `COUNT` in SQL, in different statements, and the difference was invisible. This is why the ports return
 awards ungrouped: a read that grouped could serve one screen or the other, never both, and whichever it served the
 other would quietly have been given the wrong number.
+
+### A CTE written twice and selected never
+
+Both administrator round statements opened with an `ActiveMemberCount` CTE: a `COUNT(DISTINCT lm.[UserId])` over the
+season's approved league members, joined onto every round - and then selected in neither. One cross-joined its single
+row onto the whole round list, the other left-joined it by season. Two copies of a join whose only effect was cost.
+
+It is worth asking how this survives. A `SELECT` list is not checked against what a statement computes, so an unused
+CTE is not a warning in any tool the build runs; and because the statements were inside handlers carrying the coverage
+exclusion, no test ever named what they returned. The port makes the question unavoidable: an interface has to say what
+comes back, and there was nowhere to put a number nobody wanted.
+
+### "Dashboard is done" was wrong, and the plan said so
+
+The Dashboard row above was ticked after the active-rounds PR, but `GetMatchesForRoundQueryHandler` was still holding
+SQL - and this document had already recorded exactly that, in the note about `Status IN (@Scheduled, @InProgress,
+@Completed)`: "One copy remains, in `GetMatchesForRoundQueryHandler`, and moves with the Dashboard area." The area
+count is the check that catches this; a per-area tick is a claim, and this one was made from the wrong list.
+
+It lands here rather than being deferred back, because it turned out to be the same read as the administrator's round
+editor. Same twenty columns, same two left joins to `[Teams]`, same DTO - and three differences between the copies:
+
+- One left out called-off fixtures, one did not. **Intended**, and the only real difference: a player cannot predict a
+  postponed fixture, while the administrator's editor is the screen where one is put back.
+- One ordered by kick-off, one did not order at all. So the editor's fixture list was in whatever order a join
+  produced, and adding a fixture could reshuffle the page. Both now sort by kick-off and then home team, because a
+  Saturday afternoon is mostly simultaneous kick-offs and without a tie-break the order is not stable.
+- One declared the joined team columns as never-null; the other, correctly, as nullable. A tournament fixture with
+  placeholder teams makes all ten of them null, and Dapper honours a non-nullable declaration by putting the null in
+  anyway. The two copies of one read disagreed about the shape of the data, and one of them was simply wrong.
+
+The administrator's copy also never selected `CustomLockTimeUtc`, so the per-fixture lock time could not be shown on
+the screen that exists to set it. It is in the shared read now.
 
 ### Rules found duplicated so far
 

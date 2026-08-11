@@ -580,6 +580,18 @@ public class MatchTests
         result.Should().Be(expected);
     }
 
+    [Theory]
+    [InlineData(MatchStatus.Scheduled, false)]
+    [InlineData(MatchStatus.InProgress, false)]
+    [InlineData(MatchStatus.Completed, false)]
+    [InlineData(MatchStatus.Postponed, true)]
+    public void IsPostponedStatus_ShouldAnswerTheSameQuestionForAStatusOnItsOwn(MatchStatus status, bool expected)
+    {
+        // The read paths hold rows rather than fixtures, and both forms have to agree - there is one definition of
+        // "called off" or there are two.
+        Match.IsPostponedStatus(status).Should().Be(expected);
+    }
+
     #endregion
 
     #region GetEffectiveDeadline

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Admin.Rounds.Queries;
 using ThePredictions.Application.Features.Badges.Queries;
 using ThePredictions.Application.Features.Boosts.Queries;
 using ThePredictions.Application.Features.Dashboard.Queries;
@@ -14,6 +15,7 @@ using ThePredictions.Domain.Models;
 using ThePredictions.Persistence.SqlServer.Identity;
 using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Persistence.SqlServer.Data.Resilience;
+using ThePredictions.Persistence.SqlServer.Queries.Admin.Rounds;
 using ThePredictions.Persistence.SqlServer.Queries.Badges;
 using ThePredictions.Persistence.SqlServer.Queries.Boosts;
 using ThePredictions.Persistence.SqlServer.Queries;
@@ -103,6 +105,9 @@ public static class DependencyInjection
         services.AddScoped<ISeasonRecapQuery, SeasonRecapQuery>();
         services.AddScoped<IBadgeStateQuery, BadgeStateQuery>();
         services.AddScoped<IBadgeLeaderboardQuery, BadgeLeaderboardQuery>();
+        services.AddScoped<IRoundMatchesQuery, RoundMatchesQuery>();
+        services.AddScoped<IAdminSeasonRoundsQuery, AdminSeasonRoundsQuery>();
+        services.AddScoped<IAdminRoundQuery, AdminRoundQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository
