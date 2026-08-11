@@ -284,7 +284,15 @@ internal record BadgeGroup(
     BadgeScope Scope,
     IReadOnlyList<BadgeTier> Tiers);
 
-internal record EarnedBadge(string BadgeKey, int Count, DateTime LastAwardedUtc, string? Detail);
+/// <summary>
+/// A badge this player holds: how many times they have won it, and the last time they did.
+/// </summary>
+/// <remarks>
+/// The caption stored against each award is not here. It was read as the alphabetically greatest caption of the group,
+/// which for round wins meant "Gameweek 5" beat "Gameweek 12", and no screen has ever shown it. Rather than invent a
+/// rule for choosing between captions nobody reads, the read stopped fetching them; the write side still records them.
+/// </remarks>
+internal record EarnedBadge(string BadgeKey, int Count, DateTime LastAwardedUtc);
 
 internal sealed record EverPresentProgress(int RoundsPredicted, int RoundsTotal, bool Missed);
 

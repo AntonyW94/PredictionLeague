@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Badges.Queries;
 using ThePredictions.Application.Features.Boosts.Queries;
 using ThePredictions.Application.Features.Dashboard.Queries;
 using ThePredictions.Application.Features.Leagues.Queries;
@@ -13,6 +14,7 @@ using ThePredictions.Domain.Models;
 using ThePredictions.Persistence.SqlServer.Identity;
 using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Persistence.SqlServer.Data.Resilience;
+using ThePredictions.Persistence.SqlServer.Queries.Badges;
 using ThePredictions.Persistence.SqlServer.Queries.Boosts;
 using ThePredictions.Persistence.SqlServer.Queries;
 using ThePredictions.Persistence.SqlServer.Queries.Dashboard;
@@ -99,6 +101,8 @@ public static class DependencyInjection
         services.AddScoped<IEmailSettingsQuery, EmailSettingsQuery>();
         services.AddScoped<ILeagueRecordsQuery, LeagueRecordsQuery>();
         services.AddScoped<ISeasonRecapQuery, SeasonRecapQuery>();
+        services.AddScoped<IBadgeStateQuery, BadgeStateQuery>();
+        services.AddScoped<IBadgeLeaderboardQuery, BadgeLeaderboardQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository

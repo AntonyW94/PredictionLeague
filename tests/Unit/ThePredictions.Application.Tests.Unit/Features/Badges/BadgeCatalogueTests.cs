@@ -24,7 +24,7 @@ public class BadgeCatalogueTests
         new(earned ?? new Dictionary<string, EarnedBadge>(), metrics ?? Metrics());
 
     private static Dictionary<string, EarnedBadge> Earned(params (string Key, DateTime AwardedUtc)[] badges) =>
-        badges.ToDictionary(b => b.Key, b => new EarnedBadge(b.Key, 1, b.AwardedUtc, null));
+        badges.ToDictionary(b => b.Key, b => new EarnedBadge(b.Key, 1, b.AwardedUtc));
 
     private static BadgeDto Group(BadgeUserState state, string groupKey) =>
         BadgeCatalogue.BuildPage(state, NowUtc)
@@ -231,7 +231,7 @@ public class BadgeCatalogueTests
         var awardedUtc = NowUtc.AddDays(-2);
         var earned = new Dictionary<string, EarnedBadge>
         {
-            [BadgeKeys.Founder] = new(BadgeKeys.Founder, 3, awardedUtc, null)
+            [BadgeKeys.Founder] = new(BadgeKeys.Founder, 3, awardedUtc)
         };
 
         var dto = Group(State(earned), BadgeKeys.Founder);
