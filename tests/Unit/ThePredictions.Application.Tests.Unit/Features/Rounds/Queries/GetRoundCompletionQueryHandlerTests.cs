@@ -1,67 +1,44 @@
-using ThePredictions.Domain.Common.Exceptions;
 using FluentAssertions;
 using NSubstitute;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Application.Services;
-using ThePredictions.Domain.Common;
+using ThePredictions.Contracts.Rounds;
+using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common.Exceptions;
+using ThePredictions.Domain.Models;
+using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
-using static ThePredictions.Application.Features.Rounds.Queries.GetRoundCompletionQueryHandler;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Rounds.Queries;
 
 /// <summary>
-/// The "who still needs to predict?" view. Two audiences share it: a site admin looking across every
-/// league in the season, and a league member looking at their own league - where only the owner or an
-/// admin may go on to send a reminder. The ordering is deliberate: the people worth chasing first.
+/// Round completion: who is up to date and who is missing what.
+///
+/// These tests used to stub the predictable-fixture count, because the handler asked the database for it
+/// through a SQL predicate. Now they supply fixtures and let the handler decide, so the rule
+/// (<c>Match.IsOpenForPrediction</c>) is exercised here rather than mocked away - which is the point of the
+/// persistence split: what was a stubbed number is now real behaviour under test.
 /// </summary>
 public class GetRoundCompletionQueryHandlerTests
 {
-    private const int RoundId = 43;
-    private const int LeagueId = 10;
+    private const int RoundId = 7;
+    private const int LeagueId = 42;
+    private const string ViewerId = "user-x";
 
-    private static readonly DateTime NowUtc = new(2026, 7, 6, 10, 0, 0, DateTimeKind.Utc);
-    private static readonly DateTime DeadlineUtc = new(2026, 7, 6, 18, 30, 0, DateTimeKind.Utc);
+    private static readonly DateTime NowUtc = new(2026, 8, 10, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime DeadlineUtc = NowUtc.AddDays(2);
 
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
+    private readonly IRoundCompletionQuery _completionQuery = Substitute.For<IRoundCompletionQuery>();
     private readonly ILeagueMembershipService _membershipService = Substitute.For<ILeagueMembershipService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly GetRoundCompletionQueryHandler _handler;
 
     public GetRoundCompletionQueryHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(NowUtc);
-        _handler = new GetRoundCompletionQueryHandler(_dbConnection, _membershipService, _dateTimeProvider);
+        _handler = new GetRoundCompletionQueryHandler(
+            _completionQuery, _membershipService, new TestDateTimeProvider(NowUtc));
     }
 
-    private void GivenRound(string roundName = "Gameweek 5") =>
-        _dbConnection.QuerySingleOrDefaultAsync<RoundInfoRow>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(new RoundInfoRow(roundName, DeadlineUtc));
-
-    private void GivenPredictableMatchCount(int count) =>
-        _dbConnection.QuerySingleOrDefaultAsync<int>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(count);
-
-    private void GivenParticipants(params ParticipantRow[] participants) =>
-        _dbConnection.QueryAsync<ParticipantRow>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(participants);
-
-    private void GivenMissingFixtures(params MissingFixtureRow[] fixtures) =>
-        _dbConnection.QueryAsync<MissingFixtureRow>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(fixtures);
-
-    private static ParticipantRow Participant(string userId, string name, int predictedCount, DateTime? lastRemindedUtc = null) =>
-        new(userId, name, $"{userId}@example.com", predictedCount, lastRemindedUtc);
-
-    private static MissingFixtureRow MissingFixture(string userId, int matchId, int? matchNumber) =>
-        new(userId, matchId, matchNumber, $"Home {matchId}", $"Away {matchId}");
-
-    private Task<Contracts.Rounds.RoundCompletionDto> HandleAsync(int? leagueId = LeagueId, bool isSiteAdmin = true) =>
-        _handler.Handle(new GetRoundCompletionQuery(RoundId, leagueId, "user-x", isSiteAdmin), CancellationToken.None);
+    #region Authorisation
 
     [Fact]
     public async Task Handle_ShouldThrowUnauthorised_WhenGlobalViewRequestedByNonAdmin()
@@ -74,10 +51,10 @@ public class GetRoundCompletionQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldEnforceMembership_WhenLeagueViewRequestedByNonMember()
     {
-        _membershipService.EnsureApprovedMemberAsync(LeagueId, "user-x", Arg.Any<CancellationToken>())
+        _membershipService.EnsureApprovedMemberAsync(LeagueId, ViewerId, Arg.Any<CancellationToken>())
             .Returns(Task.FromException(new UnauthorizedAccessException()));
 
-        var act = () => HandleAsync(isSiteAdmin: false);
+        var act = () => HandleAsync();
 
         await act.Should().ThrowAsync<UnauthorizedAccessException>();
     }
@@ -85,9 +62,9 @@ public class GetRoundCompletionQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldAllowRemindersAndSkipMembershipChecks_WhenAnAdminViewsEveryLeague()
     {
-        GivenRound();
+        Given();
 
-        var result = await HandleAsync(leagueId: null);
+        var result = await HandleAsync(leagueId: null, isSiteAdmin: true);
 
         result.CanSendReminders.Should().BeTrue();
         await _membershipService.DidNotReceiveWithAnyArgs()
@@ -97,68 +74,100 @@ public class GetRoundCompletionQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldAllowReminders_WhenTheViewerOwnsTheLeague()
     {
-        GivenRound();
-        _membershipService.IsLeagueAdministratorAsync(LeagueId, "user-x", Arg.Any<CancellationToken>()).Returns(true);
+        Given();
+        _membershipService.IsLeagueAdministratorAsync(LeagueId, ViewerId, Arg.Any<CancellationToken>()).Returns(true);
 
-        var result = await HandleAsync(isSiteAdmin: false);
-
-        result.CanSendReminders.Should().BeTrue();
+        (await HandleAsync(isSiteAdmin: false)).CanSendReminders.Should().BeTrue();
     }
 
     [Fact]
     public async Task Handle_ShouldRefuseReminders_WhenTheViewerIsAnOrdinaryMember()
     {
-        // An approved member may see who is missing; only the owner or an admin may chase them.
-        GivenRound();
-        _membershipService.IsLeagueAdministratorAsync(LeagueId, "user-x", Arg.Any<CancellationToken>()).Returns(false);
+        Given();
+        _membershipService.IsLeagueAdministratorAsync(LeagueId, ViewerId, Arg.Any<CancellationToken>()).Returns(false);
 
-        var result = await HandleAsync(isSiteAdmin: false);
-
-        result.CanSendReminders.Should().BeFalse();
+        (await HandleAsync(isSiteAdmin: false)).CanSendReminders.Should().BeFalse();
     }
 
     [Fact]
     public async Task Handle_ShouldNotCheckLeagueOwnership_WhenTheViewerIsASiteAdmin()
     {
-        GivenRound();
+        Given();
 
-        var result = await HandleAsync();
-
-        result.CanSendReminders.Should().BeTrue();
+        (await HandleAsync(isSiteAdmin: true)).CanSendReminders.Should().BeTrue();
         await _membershipService.DidNotReceiveWithAnyArgs()
             .IsLeagueAdministratorAsync(default, default!, CancellationToken.None);
     }
 
-    // The middleware turns this into the 404 the controller used to return itself, so the outward
-    // behaviour is unchanged - but the handler now refuses rather than handing back a null for the
-    // caller to remember to check.
+    #endregion
+
+    #region The round itself
+
     [Fact]
     public async Task Handle_ShouldThrowEntityNotFound_WhenTheRoundDoesNotExist()
     {
+        _completionQuery.ExecuteAsync(RoundId, LeagueId, Arg.Any<CancellationToken>())
+            .Returns((RoundCompletionData?)null);
+
         var act = () => HandleAsync();
 
-        await act.Should().ThrowAsync<EntityNotFoundException>().WithMessage($"Round (ID: {RoundId}) was not found.");
-        await _dbConnection.DidNotReceiveWithAnyArgs().QueryAsync<ParticipantRow>(default!, CancellationToken.None);
+        await act.Should().ThrowAsync<EntityNotFoundException>();
     }
 
     [Fact]
     public async Task Handle_ShouldReportTheRoundNameAndDeadline()
     {
-        GivenRound("Semi-finals");
+        Given(displayName: "Gameweek 5");
 
         var result = await HandleAsync();
 
-        result.RoundId.Should().Be(RoundId);
-        result.RoundName.Should().Be("Semi-finals");
+        result.RoundName.Should().Be("Gameweek 5");
         result.DeadlineUtc.Should().Be(DeadlineUtc);
+        result.RoundId.Should().Be(RoundId);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldFallBackToTheRoundNumber_WhenTheRoundHasNoDisplayName()
+    {
+        // The naming rule is Round.GetDisplayNameOrDefault, previously a CASE expression in the SQL.
+        Given(displayName: "   ");
+
+        (await HandleAsync()).RoundName.Should().Be($"Round {RoundId}");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldPassTheRoundAndLeagueToThePort()
+    {
+        Given();
+
+        await HandleAsync();
+
+        await _completionQuery.Received(1).ExecuteAsync(RoundId, LeagueId, Arg.Any<CancellationToken>());
+    }
+
+    #endregion
+
+    #region What still counts as predictable
+
+    [Fact]
+    public async Task Handle_ShouldCountOnlyFixturesStillOpen_WhenSomeHaveLockedOrKickedOff()
+    {
+        // The rule runs here now: only the first of these four can still be predicted.
+        Given(fixtures:
+        [
+            Fixture(1),
+            Fixture(2, customLock: NowUtc.AddHours(-1)),
+            Fixture(3, status: MatchStatus.InProgress),
+            Fixture(4, homeTeamId: null)
+        ]);
+
+        (await HandleAsync()).PredictableMatchCount.Should().Be(1);
     }
 
     [Fact]
     public async Task Handle_ShouldReportTheDeadlineAsPassed_WhenNothingIsStillPredictable()
     {
-        // Every fixture has locked, so there is nothing left for anyone to enter.
-        GivenRound();
-        GivenPredictableMatchCount(0);
+        Given(fixtures: [Fixture(1, status: MatchStatus.Completed)]);
 
         var result = await HandleAsync();
 
@@ -169,138 +178,207 @@ public class GetRoundCompletionQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldReportTheDeadlineAsOpen_WhileFixturesRemainPredictable()
     {
-        GivenRound();
-        GivenPredictableMatchCount(6);
+        Given(fixtures: [Fixture(1)]);
+
+        (await HandleAsync()).DeadlinePassed.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldTreatAFixtureWithALaterCustomLockAsOpen_EvenAfterTheRoundDeadline()
+    {
+        // A combined round: its final locks later than the deadline that closed the semi-finals.
+        Given(deadlineUtc: NowUtc.AddHours(-24), fixtures: [Fixture(1, customLock: NowUtc.AddHours(6))]);
 
         var result = await HandleAsync();
 
-        result.DeadlinePassed.Should().BeFalse();
-        result.PredictableMatchCount.Should().Be(6);
+        result.PredictableMatchCount.Should().Be(1);
+        result.DeadlinePassed.Should().BeFalse("the round is still open even though its deadline has gone.");
     }
+
+    #endregion
+
+    #region Players
 
     [Fact]
     public async Task Handle_ShouldListEachPlayerWithTheirFixturesStillOutstanding()
     {
-        GivenRound();
-        GivenPredictableMatchCount(3);
-        GivenParticipants(Participant("u1", "Alice A", predictedCount: 1, lastRemindedUtc: NowUtc.AddHours(-2)));
-        GivenMissingFixtures(MissingFixture("u1", 501, 2), MissingFixture("u1", 502, 3));
+        Given(
+            fixtures: [Fixture(1), Fixture(2)],
+            participants: [Participant("u1", "Ada", "Lovelace")],
+            predictions: [new RoundPredictionRow("u1", 1)]);
 
-        var result = await HandleAsync();
+        var player = (await HandleAsync()).Players.Single();
 
-        var player = result.Players.Should().ContainSingle().Subject;
-        player.UserId.Should().Be("u1");
-        player.PlayerName.Should().Be("Alice A");
+        player.PlayerName.Should().Be("Ada L");
         player.Email.Should().Be("u1@example.com");
         player.PredictedCount.Should().Be(1);
-        player.LastRemindedUtc.Should().Be(NowUtc.AddHours(-2));
-        player.MissingFixtures.Select(f => f.MatchId).Should().Equal(501, 502);
+        player.MissingFixtures.Select(f => f.MatchId).Should().Equal(2);
     }
 
     [Fact]
     public async Task Handle_ShouldListOutstandingFixturesInMatchOrder()
     {
-        // The list mirrors the prediction screen, so it has to follow the fixture numbering rather
-        // than whatever order the rows arrived in.
-        GivenRound();
-        GivenParticipants(Participant("u1", "Alice A", predictedCount: 0));
-        GivenMissingFixtures(
-            MissingFixture("u1", 503, 3),
-            MissingFixture("u1", 501, 1),
-            MissingFixture("u1", 502, 2));
+        Given(
+            fixtures: [Fixture(3, matchNumber: 3), Fixture(1, matchNumber: 1), Fixture(2, matchNumber: 2)],
+            participants: [Participant("u1", "Ada", "Lovelace")]);
 
-        var result = await HandleAsync();
-
-        result.Players.Single().MissingFixtures.Select(f => f.MatchId).Should().Equal(501, 502, 503);
+        (await HandleAsync()).Players.Single()
+            .MissingFixtures.Select(f => f.MatchNumber).Should().Equal(1, 2, 3);
     }
 
     [Fact]
     public async Task Handle_ShouldGiveEachPlayerOnlyTheirOwnOutstandingFixtures()
     {
-        GivenRound();
-        GivenParticipants(
-            Participant("u1", "Alice A", predictedCount: 0),
-            Participant("u2", "Bob B", predictedCount: 0));
-        GivenMissingFixtures(MissingFixture("u1", 501, 1), MissingFixture("u2", 502, 2));
+        Given(
+            fixtures: [Fixture(1), Fixture(2)],
+            participants: [Participant("u1", "Ada", "Lovelace"), Participant("u2", "Grace", "Hopper")],
+            predictions: [new RoundPredictionRow("u1", 1), new RoundPredictionRow("u2", 2)]);
 
-        var result = await HandleAsync();
+        var players = (await HandleAsync()).Players;
 
-        result.Players.Single(p => p.UserId == "u1").MissingFixtures.Single().MatchId.Should().Be(501);
-        result.Players.Single(p => p.UserId == "u2").MissingFixtures.Single().MatchId.Should().Be(502);
+        players.Single(p => p.UserId == "u1").MissingFixtures.Select(f => f.MatchId).Should().Equal(2);
+        players.Single(p => p.UserId == "u2").MissingFixtures.Select(f => f.MatchId).Should().Equal(1);
     }
 
     [Fact]
     public async Task Handle_ShouldLeaveAPlayerWhoIsUpToDateWithNothingOutstanding()
     {
-        GivenRound();
-        GivenParticipants(Participant("u1", "Alice A", predictedCount: 3));
+        Given(
+            fixtures: [Fixture(1)],
+            participants: [Participant("u1", "Ada", "Lovelace")],
+            predictions: [new RoundPredictionRow("u1", 1)]);
 
-        var result = await HandleAsync();
+        var player = (await HandleAsync()).Players.Single();
 
-        var player = result.Players.Should().ContainSingle().Subject;
         player.MissingFixtures.Should().BeEmpty();
+        player.PredictedCount.Should().Be(1);
         player.IsPartial.Should().BeFalse();
         player.HasEnteredNothing.Should().BeFalse();
     }
 
     [Fact]
+    public async Task Handle_ShouldIgnoreAPredictionForAFixtureNoLongerPredictable()
+    {
+        // A prediction against a locked fixture must not inflate the predicted count, or a player who has
+        // done nothing about the open fixtures would look half-finished.
+        Given(
+            fixtures: [Fixture(1), Fixture(2, status: MatchStatus.Completed)],
+            participants: [Participant("u1", "Ada", "Lovelace")],
+            predictions: [new RoundPredictionRow("u1", 2)]);
+
+        var player = (await HandleAsync()).Players.Single();
+
+        player.PredictedCount.Should().Be(0);
+        player.HasEnteredNothing.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Handle_ShouldPutTheHalfFinishedPlayersFirstThenThoseWhoHaveEnteredNothing()
     {
-        // Someone mid-way through is the most likely to finish if nudged, so they lead; players who
-        // are already done need no chasing and sink to the bottom.
-        GivenRound();
-        GivenParticipants(
-            Participant("done", "Zoe Z", predictedCount: 2),
-            Participant("nothing", "Bob B", predictedCount: 0),
-            Participant("partial", "Yan Y", predictedCount: 1));
-        GivenMissingFixtures(MissingFixture("nothing", 501, 1), MissingFixture("partial", 502, 2));
+        Given(
+            fixtures: [Fixture(1), Fixture(2)],
+            participants:
+            [
+                Participant("done", "Zoe", "Zeta"),
+                Participant("nothing", "Yan", "Yates"),
+                Participant("partial", "Xu", "Xiang")
+            ],
+            predictions:
+            [
+                new RoundPredictionRow("done", 1), new RoundPredictionRow("done", 2),
+                new RoundPredictionRow("partial", 1)
+            ]);
 
-        var result = await HandleAsync();
-
-        result.Players.Select(p => p.UserId).Should().Equal("partial", "nothing", "done");
+        (await HandleAsync()).Players.Select(p => p.UserId).Should().Equal("partial", "nothing", "done");
     }
 
     [Fact]
     public async Task Handle_ShouldOrderPlayersByNameWithinTheSameStanding()
     {
-        GivenRound();
-        GivenParticipants(
-            Participant("u3", "Carla C", predictedCount: 0),
-            Participant("u1", "Alice A", predictedCount: 0),
-            Participant("u2", "Bob B", predictedCount: 0));
-        GivenMissingFixtures(
-            MissingFixture("u1", 501, 1),
-            MissingFixture("u2", 501, 1),
-            MissingFixture("u3", 501, 1));
+        Given(
+            fixtures: [Fixture(1)],
+            participants:
+            [
+                Participant("u2", "Grace", "Hopper"),
+                Participant("u1", "Ada", "Lovelace")
+            ]);
 
-        var result = await HandleAsync();
-
-        result.Players.Select(p => p.PlayerName).Should().Equal("Alice A", "Bob B", "Carla C");
+        (await HandleAsync()).Players.Select(p => p.PlayerName).Should().Equal("Ada L", "Grace H");
     }
 
     [Fact]
-    public async Task Handle_ShouldScopeEveryQueryToTheRoundAndItsDeadline()
+    public async Task Handle_ShouldCarryTheLastReminderTimestamp_WhenOneExists()
     {
-        // The predictable-fixture predicate depends on the round deadline and the current time, so
-        // both have to reach the SQL alongside the round and league being asked about.
-        GivenRound();
+        var lastReminded = NowUtc.AddHours(-3);
+        Given(participants: [Participant("u1", "Ada", "Lovelace", lastReminded)]);
 
-        await HandleAsync();
-
-        await _dbConnection.Received(1).QueryAsync<ParticipantRow>(
-            Arg.Any<string>(),
-            Arg.Any<CancellationToken>(),
-            Arg.Is<object>(p => HasParameters(p)));
+        (await HandleAsync()).Players.Single().LastRemindedUtc.Should().Be(lastReminded);
     }
 
-    private static bool HasParameters(object parameters)
+    [Fact]
+    public async Task Handle_ShouldFallBackToEmptyTeamNames_WhenAFixtureHasNone()
     {
-        var type = parameters.GetType();
-        return (int)type.GetProperty("RoundId")!.GetValue(parameters)! == RoundId
-               && (int?)type.GetProperty("LeagueId")!.GetValue(parameters)! == LeagueId
-               && (DateTime)type.GetProperty("NowUtc")!.GetValue(parameters)! == NowUtc
-               && (DateTime)type.GetProperty("RoundDeadlineUtc")!.GetValue(parameters)! == DeadlineUtc
-               && (string)type.GetProperty("ApprovedStatus")!.GetValue(parameters)! == "Approved"
-               && (string)type.GetProperty("ScheduledStatus")!.GetValue(parameters)! == "Scheduled";
+        // A knockout tie can be confirmed without the join yielding names in the same read; the page shows
+        // blanks rather than failing.
+        Given(fixtures: [Fixture(1)], teamNames: new Dictionary<int, RoundFixtureTeams>());
+
+        var fixture = (await HandleAsync()).Players.Single().MissingFixtures.Single();
+
+        fixture.HomeTeam.Should().BeEmpty();
+        fixture.AwayTeam.Should().BeEmpty();
     }
+
+    #endregion
+
+    #region Helpers
+
+    private void Given(
+        string displayName = "Gameweek 5",
+        DateTime? deadlineUtc = null,
+        IReadOnlyList<Match>? fixtures = null,
+        IReadOnlyList<RoundParticipantRow>? participants = null,
+        IReadOnlyList<RoundPredictionRow>? predictions = null,
+        IReadOnlyDictionary<int, RoundFixtureTeams>? teamNames = null)
+    {
+        var matches = fixtures ?? [Fixture(1)];
+        var deadline = deadlineUtc ?? DeadlineUtc;
+
+        var round = new Round(
+            id: RoundId, seasonId: 1, roundNumber: RoundId, displayName: displayName,
+            startDateUtc: deadline.AddDays(-1), deadlineUtc: deadline, status: RoundStatus.Published,
+            apiRoundName: null, lastReminderSentUtc: null, matches: matches, resultsDigestSentUtc: null);
+
+        var names = teamNames ?? matches.ToDictionary(
+            m => m.Id, m => new RoundFixtureTeams($"Home {m.Id}", $"Away {m.Id}"));
+
+        var data = new RoundCompletionData(
+            round,
+            names,
+            participants ?? [Participant("u1", "Ada", "Lovelace")],
+            predictions ?? []);
+
+        _completionQuery.ExecuteAsync(RoundId, Arg.Any<int?>(), Arg.Any<CancellationToken>()).Returns(data);
+    }
+
+    private static Match Fixture(
+        int id,
+        DateTime? customLock = null,
+        MatchStatus status = MatchStatus.Scheduled,
+        int? homeTeamId = 1,
+        int? matchNumber = null) =>
+        new(
+            id: id, roundId: RoundId, homeTeamId: homeTeamId, awayTeamId: 2,
+            matchDateTimeUtc: NowUtc.AddDays(3), customLockTimeUtc: customLock, status: status,
+            actualHomeTeamScore: null, actualAwayTeamScore: null, externalId: null,
+            matchNumber: matchNumber ?? id, placeholderHomeName: null, placeholderAwayName: null,
+            apiRoundName: null);
+
+    private static RoundParticipantRow Participant(
+        string userId, string firstName, string lastName, DateTime? lastRemindedUtc = null) =>
+        new(userId, firstName, lastName, $"{userId}@example.com", lastRemindedUtc);
+
+    private Task<RoundCompletionDto> HandleAsync(int? leagueId = LeagueId, bool isSiteAdmin = true) =>
+        _handler.Handle(new GetRoundCompletionQuery(RoundId, leagueId, ViewerId, isSiteAdmin), CancellationToken.None);
+
+    #endregion
 }

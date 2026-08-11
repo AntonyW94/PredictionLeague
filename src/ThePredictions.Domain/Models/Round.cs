@@ -161,6 +161,18 @@ public class Round
     /// locked. Reminder scheduling keys its milestones off this so a combined round gets a fresh reminder
     /// wave before its later batch locks, rather than only before the round deadline.
     /// </summary>
+    /// <summary>
+    /// The round's name for display: its <see cref="DisplayName"/> when set, otherwise "Round N".
+    /// </summary>
+    /// <remarks>
+    /// Written out in SQL as
+    /// <c>CASE WHEN LEN(LTRIM(RTRIM(DisplayName))) > 0 THEN DisplayName ELSE 'Round ' + RoundNumber END</c>
+    /// in both GetRoundCompletionQueryHandler and ReminderService - the second rule those two files
+    /// duplicated, alongside the predictable-fixture predicate.
+    /// </remarks>
+    public string GetDisplayNameOrDefault() =>
+        string.IsNullOrWhiteSpace(DisplayName) ? $"Round {RoundNumber}" : DisplayName;
+
     public DateTime? GetNextPredictionDeadline(DateTime utcNow)
     {
         DateTime? next = null;

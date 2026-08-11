@@ -4,6 +4,7 @@ using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Infrastructure.Services;
+using ThePredictions.Persistence.SqlServer.Queries.Rounds;
 using ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
@@ -22,11 +23,12 @@ namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Queries;
 /// <c>Scheduled</c>, and <c>COALESCE(CustomLockTimeUtc, round deadline) &gt; now</c> so a per-match lock
 /// overrides the round deadline in both directions.
 ///
-/// Sharing one SQL constant between the two would be better than two copies, and is still worth doing -
-/// but it is not a substitute for this test. The fragments are not textually identical today (one takes
-/// the deadline as a parameter and filters on <c>@RoundId</c>, the other reads <c>r.[DeadlineUtc]</c> and
-/// joins on <c>r.[Id]</c>), so sharing means reconciling that first, and a shared constant is itself
-/// something a later change can quietly undo. The test survives either way.
+/// <b>Half collapsed as of August 2026.</b> The round-completion side no longer has a SQL predicate at all -
+/// it asks <c>Match.IsOpenForPrediction</c>, the domain rule both copies were only ever mirroring. So this
+/// test now compares C# against the SQL copy that remains in <c>ReminderService</c>, which makes it more
+/// valuable than when it compared two SQL strings: it is the thing that proves the move preserved behaviour.
+/// It stops being a cross-language comparison when the reminder side moves too, and becomes a plain check
+/// that both callers of one rule agree.
 /// </summary>
 [Trait(IntegrationTrait.Name, IntegrationTrait.Value)]
 public class PredictableMatchPredicateTests(SqlServerDatabaseFixture fixture) : DatabaseTestBase(fixture)
@@ -167,7 +169,7 @@ public class PredictableMatchPredicateTests(SqlServerDatabaseFixture fixture) : 
             .Returns(true);
 
         var handler = new GetRoundCompletionQueryHandler(
-            ReadDbConnection, membershipService, new TestDateTimeProvider(NowUtc));
+            new RoundCompletionQuery(ReadDbConnection), membershipService, new TestDateTimeProvider(NowUtc));
 
         return await handler.Handle(
             new GetRoundCompletionQuery(world.RoundId, world.LeagueId, world.UserId, IsSiteAdmin: false),
