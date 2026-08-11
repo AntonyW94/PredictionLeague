@@ -145,6 +145,16 @@ public interface ITestDataSeeder
     Task AddUserPayoutDetailsAsync(string userId, string? accountName, string? sortCode, string? accountNumber);
 
     /// <summary>
+    /// A player's participation in a season. Every kind of participation has a row - purchased, trial or free - so this is
+    /// what the "have they bought in yet" checks read.
+    /// </summary>
+    Task<int> AddSeasonPassAsync(
+        string userId,
+        int seasonId,
+        SeasonPassTier tier = SeasonPassTier.Standard,
+        SeasonPassSource source = SeasonPassSource.Purchased);
+
+    /// <summary>
     /// Deletes a match with no guard at all. Not seeding, but the same category: a direct statement that
     /// bypasses the code under test. It exists so a conformance test can demonstrate that the adapter's
     /// schema cascades the delete to predictions, which is the reason the repository needs its guard.

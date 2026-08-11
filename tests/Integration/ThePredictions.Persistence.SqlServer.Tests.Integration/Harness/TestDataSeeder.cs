@@ -819,6 +819,49 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         });
     }
 
+    public async Task<int> AddSeasonPassAsync(
+        string userId,
+        int seasonId,
+        SeasonPassTier tier = SeasonPassTier.Standard,
+        SeasonPassSource source = SeasonPassSource.Purchased)
+    {
+        // Tier and Source are stored as enum names, unlike LeaguePrizeSettings.PrizeType which stores the number.
+        const string sql = @"
+            INSERT INTO [SeasonPasses]
+            (
+                [UserId],
+                [SeasonId],
+                [Tier],
+                [Source],
+                [AmountPaid],
+                [SmsFeePaid],
+                [CreatedAtUtc]
+            )
+            VALUES
+            (
+                @UserId,
+                @SeasonId,
+                @Tier,
+                @Source,
+                @AmountPaid,
+                @SmsFeePaid,
+                @CreatedAtUtc
+            );
+
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new
+        {
+            UserId = userId,
+            SeasonId = seasonId,
+            Tier = tier.ToString(),
+            Source = source.ToString(),
+            AmountPaid = 0m,
+            SmsFeePaid = 0m,
+            CreatedAtUtc = DateTime.UtcNow
+        });
+    }
+
     public async Task DeleteMatchAsync(int matchId)
     {
         // No guard at all - the point is to show what the schema does on its own.

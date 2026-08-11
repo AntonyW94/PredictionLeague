@@ -1,69 +1,61 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Leagues;
-using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Dashboard.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetAvailableLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
-    : IRequestHandler<GetAvailableLeaguesQuery, IEnumerable<AvailableLeagueDto>>
+/// <summary>
+/// The leagues a player is being offered: still open, not one they are already in, and in a season they hold a pass for.
+/// </summary>
+public class GetAvailableLeaguesQueryHandler(
+    IJoinableLeaguesQuery joinableLeaguesQuery,
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<GetAvailableLeaguesQuery, IEnumerable<AvailableLeagueDto>>
 {
-    public async Task<IEnumerable<AvailableLeagueDto>> Handle(GetAvailableLeaguesQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<AvailableLeagueDto>> Handle(
+        GetAvailableLeaguesQuery request,
+        CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                l.[Id],
-                l.[Name],
-                s.[Name] AS SeasonName,
-                l.[Price],
-                l.[EntryDeadlineUtc],
-                (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) AS MemberCount,
-                (l.[Price] * (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) + ISNULL(l.[PrizeFundOverride], 0)) AS EstPot,
-                CAST(CASE WHEN l.[EntryCode] IS NOT NULL THEN 1 ELSE 0 END AS bit) AS IsPrivate
-            FROM
-                [Leagues] l
-            JOIN
-                [Seasons] s ON l.[SeasonId] = s.[Id]
-            WHERE
-                (l.[EntryCode] IS NULL OR l.[IsListed] = 1)            -- public leagues, plus private leagues the admin has chosen to list
-                AND l.[EntryDeadlineUtc] > GETUTCDATE()
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM [LeagueMembers] lm
-                    WHERE lm.[LeagueId] = l.[Id] AND lm.[UserId] = @UserId
-                )
-                AND EXISTS (                                            -- acquire-first: only show leagues for seasons the user holds a pass for
-                    SELECT 1
-                    FROM [SeasonPasses] sp
-                    WHERE sp.[UserId] = @UserId AND sp.[SeasonId] = l.[SeasonId]
-                )
-            ORDER BY
-                s.[StartDateUtc] DESC, 
-                l.[Name];";
+        var leagues = await joinableLeaguesQuery.ExecuteAsync(request.UserId, cancellationToken);
 
-        var leagues = await dbConnection.QueryAsync<AvailableLeagueQueryResult>(sql, cancellationToken, new { request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+        var utcNow = dateTimeProvider.UtcNow;
 
-        return leagues.Select(l => new AvailableLeagueDto(
-            l.Id,
-            l.Name,
-            l.SeasonName,
-            l.Price,
-            l.EntryDeadlineUtc,
-            l.MemberCount,
-            l.EstPot,
-            l.IsPrivate));
+        return leagues
+            .Where(league => IsOnOffer(league, utcNow))
+            .OrderByDescending(league => league.SeasonStartDateUtc)
+            .ThenBy(league => league.Name, StringComparer.InvariantCultureIgnoreCase)
+            .Select(league => new AvailableLeagueDto(
+                league.LeagueId,
+                league.Name,
+                league.SeasonName,
+                league.Price,
+                league.EntryDeadlineUtc!.Value,
+                league.MemberCount,
+                PrizeFund.Total(league.Price, league.MemberCount, league.PrizeFundOverride),
+                league.HasEntryCode))
+            .ToList();
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record AvailableLeagueQueryResult(
-        int Id,
-        string Name,
-        string SeasonName,
-        decimal Price,
-        DateTime EntryDeadlineUtc,
-        int MemberCount,
-        decimal EstPot,
-        bool IsPrivate);
+    /// <summary>
+    /// Whether a league should appear in the list.
+    /// </summary>
+    /// <remarks>
+    /// Three things have to hold. It must be findable - a public league always is, and a private one only if its
+    /// administrator has chosen to list it, because the point of a private league is that you have to be told about it. It
+    /// must still be open. And the player must already hold a pass for its season: passes are bought first and leagues
+    /// joined afterwards, so offering a league they cannot enter would be an invitation to a dead end.
+    ///
+    /// The deadline is safe to read as non-null in the projection above only because this rule has already rejected a
+    /// league without one - which is what <c>LeagueEntry.IsOpen</c> exists to make explicit.
+    /// </remarks>
+    private static bool IsOnOffer(JoinableLeagueRow league, DateTime utcNow)
+    {
+        if (league.HasEntryCode && !league.IsListed)
+            return false;
+
+        if (!LeagueEntry.IsOpen(league.EntryDeadlineUtc, utcNow))
+            return false;
+
+        return league.HasSeasonPass;
+    }
 }

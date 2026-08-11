@@ -165,6 +165,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leagues/prizes + create page** ✅ | A flattened left join split in two, which retired a row type where every prize column was nullable. |
 | 2 | **Leagues/payouts** ✅ | Two definitions of "season finished" found side by side, and tests that no longer count the handler's SQL statements. |
 | 2 | **Leagues/winnings** ✅ | **Leagues is done.** A month name formatted with the machine's locale and then parsed back to sort by it, and a latent crash on the round list. |
+| 2 | **Dashboard/league discovery** ✅ | A rule enforced only by SQL's three-valued logic, and an entry code that no longer travels to non-members. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -371,6 +372,53 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
+
+### A rule enforced only by SQL's three-valued logic
+
+Both league-discovery queries filtered with `l.[EntryDeadlineUtc] > GETUTCDATE()`, which did two things. The comparison is
+the obvious one. The other is that `NULL > anything` is **unknown** in SQL, so a league with no entry deadline was silently
+never offered to anybody - a rule nobody wrote down, enforced by the absence of a value.
+
+It is now `LeagueEntry.IsOpen`, which says it in a sentence and can be read by somebody who does not think in SQL nulls.
+Mutation-verified in both the Domain rule and both handlers.
+
+Worth generalising: a `WHERE` clause on a nullable column is always two rules - the comparison, and the exclusion of nulls.
+The second one is invisible and is the one that gets lost in a rewrite.
+
+### A secret that no longer travels
+
+The available-leagues list selected `EntryCode` in order to compute `IsPrivate` from it, and these are by definition
+leagues the reader is **not** a member of. The code is the one thing that lets somebody into a private league.
+
+`JoinableLeagueRow` carries `HasEntryCode` and has no field for the code at all, so the mistake is now unavailable rather
+than merely avoided. Not a live leak - the old handler mapped the flag and dropped the code - but the shape allowed it and
+now does not.
+
+### Two queries asking "could you join this?" differently
+
+The available-leagues list and the "you have private leagues available" hint share one read and filter it differently:
+
+| | Available list | Private-league hint |
+|---|---|---|
+| Private league not listed by its admin | hidden | **counted** |
+| Player holds no pass for the season | hidden | **counted** |
+
+The first difference is deliberate and right: an unlisted private league should not appear in a browsable list, but somebody
+who has been handed a code should be prompted to type it.
+
+The second looks like an oversight. The hint can appear for a league the player cannot enter without buying a pass first,
+which is the "invitation to a dead end" the available list carefully avoids. Preserved, with a test naming it.
+**Open question for the owner:** should the private-league prompt require a season pass, like the list does?
+
+### A test-helper trap, twice
+
+Two helpers in this work defaulted a nullable parameter with `?? someDefault`, which makes passing `null` indistinguishable
+from passing nothing - so the "no value" case silently tested the default instead. Found in the winnings tests by a mutation
+that should have failed and did not, then again here.
+
+The fix that reads best is to leave the helper's default alone and say the special case at the call site:
+`League(...) with { EntryDeadlineUtc = null }`. Worth knowing before writing the next helper: if a test's name mentions a
+null, check the helper cannot swallow it.
 
 ### A value formatted, then parsed back to sort by it
 
