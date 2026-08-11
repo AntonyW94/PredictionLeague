@@ -37,7 +37,7 @@ public sealed class OverallLeaderboardQuery(IApplicationReadDbConnection dbConne
                 u.[Id] AS [UserId],
                 u.[FirstName],
                 u.[LastName],
-                stats.[SnapshotOverallRank]
+                stats.[SnapshotOverallRank] AS [SnapshotRank]
             FROM
                 [LeagueMembers] lm
             INNER JOIN

@@ -1,112 +1,78 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// One calendar month's leaderboard for a league.
+///
+/// The same five rules as the overall table left the SQL - tie policy, total, display name, order of joint
+/// positions, and when the pre-round position shows - but the last of those is a different rule here, and
+/// deliberately kept separate rather than shared with the overall table. See
+/// <see cref="ShouldShowPreRoundPosition"/>.
+/// </summary>
 public class GetMonthlyLeaderboardQueryHandler(
-    IApplicationReadDbConnection dbConnection,
+    IMonthlyLeaderboardQuery leaderboardQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetMonthlyLeaderboardQuery, IEnumerable<LeaderboardEntryDto>>
 {
-    public async Task<IEnumerable<LeaderboardEntryDto>> Handle(GetMonthlyLeaderboardQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<LeaderboardEntryDto>> Handle(
+        GetMonthlyLeaderboardQuery request,
+        CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
-        const string sql = @"
-            WITH MonthlyRounds AS (
-                SELECT 
-                    [Id]
-                FROM 
-                    [Rounds]
-                WHERE
-                    MONTH ([StartDateUtc]) = @Month
-                    AND [SeasonId] = (SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId)
-            )
 
-            SELECT
-                RANK() OVER (ORDER BY COALESCE(SUM(lrr.[BoostedPoints]), 0) DESC) AS [Rank],
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                COALESCE(SUM(lrr.[BoostedPoints]), 0) AS [TotalPoints],
-                u.[Id] AS [UserId],
+        var data = await leaderboardQuery.ExecuteAsync(request.LeagueId, request.Month, cancellationToken);
 
-                CASE
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM [Rounds] r
-                        WHERE r.[Id] IN (SELECT [Id] FROM [MonthlyRounds])
-                        AND r.[Status] = @InProgressStatus
-                    )
-                    AND (
-                        SELECT COUNT(*)
-                        FROM [Rounds] r2
-                        WHERE r2.[Id] IN (SELECT [Id] FROM [MonthlyRounds])
-                        AND r2.[Status] IN (@InProgressStatus, @CompletedStatus)
-                    ) > 1
-                    THEN stats.[SnapshotMonthRank]
-                    ELSE NULL
-                END AS [SnapshotRank],
+        var totalsByUser = data.RoundPoints
+            .GroupBy(points => points.UserId)
+            .ToDictionary(group => group.Key, group => group.Sum(points => points.BoostedPoints));
 
-                CAST(CASE WHEN EXISTS (
-                    SELECT 1
-                    FROM [Rounds] r
-                    JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
-                    WHERE l.[Id] = @LeagueId AND r.[Status] = @InProgressStatus
-                ) THEN 1 ELSE 0 END AS bit) AS [IsRoundInProgress]
-            FROM 
-                [LeagueMembers] lm
-            JOIN 
-                [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            LEFT JOIN 
-	            [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = @LeagueId AND lrr.[RoundId] IN (SELECT [Id] FROM [MonthlyRounds])
-            LEFT JOIN 
-                [LeagueMemberStats] stats ON lm.[LeagueId] = stats.[LeagueId] AND lm.[UserId] = stats.[UserId]
-            WHERE 
-                lm.[LeagueId] = @LeagueId
-                AND lm.[Status] = @ApprovedStatus
-            GROUP BY
-                u.[FirstName],
-                u.[LastName],
-                u.[Id],
-                stats.[SnapshotMonthRank]
-            ORDER BY
-                [Rank] ASC,
-                [PlayerName] ASC;";
+        var showPreRoundPosition = ShouldShowPreRoundPosition(data.MonthRoundStatuses);
 
-        var entries = await dbConnection.QueryAsync<MonthlyLeaderboardQueryResult>(
-            sql,
-            cancellationToken,
-            new
+        var ranked = Ranking.ByDescending(
+            data.Members,
+            member => TotalFor(totalsByUser, member.UserId),
+            member => PlayerDisplayName.FormatFull(member.FirstName, member.LastName));
+
+        return ranked
+            .Select(entry => new LeaderboardEntryDto
             {
-                request.LeagueId,
-                request.Month,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                InProgressStatus = nameof(RoundStatus.InProgress),
-                CompletedStatus = nameof(RoundStatus.Completed)
-            }
-        );
-
-        return entries.Select(e => new LeaderboardEntryDto
-        {
-            Rank = e.Rank,
-            PlayerName = e.PlayerName,
-            TotalPoints = e.TotalPoints,
-            UserId = e.UserId,
-            SnapshotRank = e.SnapshotRank,
-            IsRoundInProgress = e.IsRoundInProgress
-        });
+                Rank = entry.Rank,
+                PlayerName = PlayerDisplayName.Format(entry.Item.FirstName, entry.Item.LastName),
+                TotalPoints = TotalFor(totalsByUser, entry.Item.UserId),
+                UserId = entry.Item.UserId,
+                SnapshotRank = showPreRoundPosition ? entry.Item.SnapshotRank : null,
+                IsRoundInProgress = data.HasRoundInProgress
+            })
+            .ToList();
     }
 
-    // SnapshotRank is [LeagueMemberStats].[SnapshotMonthRank], an int column, so it must be int? here
-    // even though LeaderboardEntryDto exposes it as long? - Dapper's constructor match is exact per column.
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record MonthlyLeaderboardQueryResult(
-        long Rank,
-        string PlayerName,
-        int? TotalPoints,
-        string UserId,
-        int? SnapshotRank,
-        bool IsRoundInProgress);
+    /// <summary>
+    /// Whether a month's pre-round position is worth showing: a round in the month must be under way, and more
+    /// than one of the month's rounds must have started.
+    /// </summary>
+    /// <remarks>
+    /// Both conditions matter. Without the first there is no live round for the arrow to describe. Without the
+    /// second the arrow would appear during a month's opening round, where the "position before this round" is
+    /// the position before the month began - which is no position at all.
+    ///
+    /// Deliberately <b>not</b> shared with the overall table, whose rule is the simpler "any round in the season
+    /// has been completed". They look similar and are not the same question, and collapsing them would silently
+    /// start showing an arrow on a month's first round.
+    /// </remarks>
+    private static bool ShouldShowPreRoundPosition(IReadOnlyList<RoundStatus> monthRoundStatuses)
+    {
+        var anyUnderWay = monthRoundStatuses.Any(status => status == RoundStatus.InProgress);
+
+        var startedCount = monthRoundStatuses
+            .Count(status => status is RoundStatus.InProgress or RoundStatus.Completed);
+
+        return anyUnderWay && startedCount > 1;
+    }
+
+    private static int TotalFor(IReadOnlyDictionary<string, int> totalsByUser, string userId) =>
+        totalsByUser.TryGetValue(userId, out var total) ? total : 0;
 }
