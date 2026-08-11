@@ -166,6 +166,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leagues/payouts** ✅ | Two definitions of "season finished" found side by side, and tests that no longer count the handler's SQL statements. |
 | 2 | **Leagues/winnings** ✅ | **Leagues is done.** A month name formatted with the machine's locale and then parsed back to sort by it, and a latent crash on the round list. |
 | 2 | **Dashboard/league discovery** ✅ | A rule enforced only by SQL's three-valued logic, and an entry code that no longer travels to non-members. |
+| 2 | **Dashboard/pending membership** ✅ | Two views of one thing, and a third latent crash of the same shape as the first two. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -372,6 +373,52 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
+
+### The same nullable-deadline crash, a third time
+
+`GetPendingRequestsQueryHandler` read `l.[EntryDeadlineUtc]` into a non-nullable `DateTime`, and unlike the prize page it had
+**no deadline filter** to accidentally exclude nulls - so a request to a league without a deadline would have failed to
+materialise and taken the player's whole dashboard down.
+
+Third instance of one shape: a nullable column read into a non-nullable field, safe or unsafe depending entirely on whether
+some unrelated `WHERE` clause happened to filter nulls out. The three sites behaved differently for reasons nobody chose:
+
+| Site | Deadline filter | If a league had no deadline |
+|---|---|---|
+| League settings | none | `ISNULL` sentinel - guarded |
+| Prize page | none | would have crashed |
+| Pending requests | none | would have crashed |
+| Available leagues | `> GETUTCDATE()` | filtered out, so never reached |
+
+**Worth doing as a sweep rather than one at a time:** every remaining `SELECT` of a nullable column into a non-nullable
+result field. The pattern is mechanical to find and the failure is always a 500 on a page that renders fine today.
+
+### An unreachable sentinel, removed rather than covered
+
+The admin pending-members handler got the same 1900 sentinel as its siblings - and the coverage gate showed it was never
+executed. It could not be: the rule that decides which leagues are still taking entries already rejects a league without a
+deadline, so the null branch is unreachable. Deleted, with a comment saying why the value is safe to read directly, per the
+"remove unreachable code rather than excluding it" rule in CLAUDE.md.
+
+A useful side effect of the 100% gate: it distinguishes a defensive default that is needed from one that is decoration.
+
+### Two views of one thing, and a one-tick difference
+
+The applicant's view of a request and the administrator's view of the same request are separate reads and stay separate -
+they answer different questions from different sides. But sharing the concept exposed a difference:
+
+- League discovery uses `EntryDeadlineUtc > GETUTCDATE()` - at the deadline itself, a league is no longer joinable.
+- The administrator's pending-members view used `>=` - at that same instant, they still see it.
+
+One tick apart, almost certainly incidental. Preserved, both pinned by tests naming the boundary, and recorded here.
+**Open question for the owner:** should the administrator's view use the same boundary as the player's?
+
+### The dismissal rule
+
+A rejected request keeps showing on the applicant's dashboard until they dismiss the notice, then stops - which was
+`(Status = @Rejected AND IsAlertDismissed = 0)` inside an `OR`. The dismissal only ever applied to rejections; a pending
+request cannot be dismissed because the player is still waiting for an answer. Both halves now stated and tested,
+mutation-verified.
 
 ### A rule enforced only by SQL's three-valued logic
 
