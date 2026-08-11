@@ -887,6 +887,90 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         await ExecuteAsync(sql, new { UserId = userId, BadgeKey = badgeKey, AwardedUtc = awardedUtc, RoundId = roundId });
     }
 
+    public async Task<int> AddPricingSettingsAsync(decimal bufferRate, decimal minimumFloor)
+    {
+        const string sql = @"
+            INSERT INTO [PricingSettings]
+            (
+                [BufferRate],
+                [MinimumFloor]
+            )
+            VALUES
+            (
+                @BufferRate,
+                @MinimumFloor
+            );
+
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new { BufferRate = bufferRate, MinimumFloor = minimumFloor });
+    }
+
+    public async Task<int> AddRunningCostAsync(
+        string name,
+        decimal amount,
+        string frequency,
+        DateTime startDateUtc,
+        DateTime? endDateUtc,
+        string? notes)
+    {
+        const string sql = @"
+            INSERT INTO [RunningCosts]
+            (
+                [Name],
+                [Amount],
+                [Frequency],
+                [StartDateUtc],
+                [EndDateUtc],
+                [Notes],
+                [CreatedAtUtc]
+            )
+            VALUES
+            (
+                @Name,
+                @Amount,
+                @Frequency,
+                @StartDateUtc,
+                @EndDateUtc,
+                @Notes,
+                @CreatedAtUtc
+            );
+
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new
+        {
+            Name = name,
+            Amount = amount,
+            Frequency = frequency,
+            StartDateUtc = startDateUtc,
+            EndDateUtc = endDateUtc,
+            Notes = notes,
+            CreatedAtUtc = DateTime.UtcNow
+        });
+    }
+
+    public async Task<int> AddServiceFeeAsync(string provider, decimal percentFee, decimal fixedFee)
+    {
+        const string sql = @"
+            INSERT INTO [ServiceFees]
+            (
+                [Provider],
+                [PercentFee],
+                [FixedFee]
+            )
+            VALUES
+            (
+                @Provider,
+                @PercentFee,
+                @FixedFee
+            );
+
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new { Provider = provider, PercentFee = percentFee, FixedFee = fixedFee });
+    }
+
     public async Task DeleteMatchAsync(int matchId)
     {
         // No guard at all - the point is to show what the schema does on its own.

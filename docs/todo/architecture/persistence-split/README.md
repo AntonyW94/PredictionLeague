@@ -170,6 +170,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/active rounds** ✅ | A domain rule that disagreed with its own SQL twin, and with its own sibling. Marked "Dashboard is done" here, wrongly - `GetMatchesForRoundQueryHandler` still held SQL, and moved with Admin/Rounds below. |
 | 2 | **Badges** ✅ | **Badges is done.** Six statements to three reads, two gap-and-island streak queries to one `foreach`, and two screens that disagreed about the same player's position now reading one set of standings. |
 | 2 | **Admin/Rounds + round fixtures** ✅ | A CTE written twice and selected never, and the near-twin fixture statement that was still outstanding from Dashboard. |
+| 2 | **Admin reference data** ✅ | Nine handlers, seven ports, one statement deleted as a duplicate of a port that already existed - and a nullable column two of three reads denied. |
 | 2 | **Admin/Rounds/results digest** ✅ | Six tables and two CTEs into four reads. A top-scorer tie-break that disagreed with every leaderboard, and the one read on the site that skipped the round-naming rule. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
@@ -1100,6 +1101,36 @@ The conformance seeder wrote `DisplayName = "Round {n}"` into every round it cre
 unnamed round the naming rule exists for. Fixing that meant giving `AddRoundAsync` a `displayName` parameter - and the
 first attempt defaulted it to null, which failed 153 tests at once because the column is `NOT NULL`. The lesson is the
 seeder's: it stands in for the write path, so its defaults have to be states the schema actually permits.
+
+### The same column, three reads, two of them wrong
+
+`Teams.LogoUrl` is nullable - a team added by hand before its badge has been found has none. Three reads select it:
+the administrator's team list and the single-team screen declared it `string`, and the season-pass page declared it
+`string?`. Dapper honours a non-nullable declaration by writing the null in regardless, so two screens held a null in a
+field whose type said it could not. Fixing the row type made the compiler point straight at `TeamDto`, which had the
+same lie, and then at the one line in the edit form that assumed a value. That is the whole argument for doing this
+work: the type system can find these, but only once the shape is stated where it can see it.
+
+### A port that already existed, and a handler that did not know
+
+The administrator's email-settings screen carried its own copy of `SELECT TOP 1 es.[EmailsEnabled] ... ORDER BY es.[Id]`
+- the identical statement to `IEmailSettingsQuery`, which was extracted earlier for the provider that caches this answer
+for every outgoing email. No new port for this one: the handler now reads through the existing one and the statement is
+simply gone. Nine handlers went into this batch and eight needed a port; the ninth needed a search first.
+
+### "The earliest row wins" is a rule
+
+`PricingSettings` and `EmailSettings` are single-row tables by convention rather than by constraint, and both reads
+opened with `TOP 1 ... ORDER BY [Id]`. That is a decision about what to do if a second row ever appears, and it was
+invisible inside a statement. The pricing row's id now comes back so the handler can make it out loud, with a test that
+hands it two rows out of order.
+
+### Three reads asking which teams are in a season
+
+Nothing records which teams play in a season - it is worked out from the fixtures. The administrator's screen asked with
+an `INNER JOIN ... SELECT DISTINCT` and the season-pass page with an `EXISTS`, which is the same question in two shapes.
+The `EXISTS` form is the one kept, because it cannot produce a duplicate in the first place: the other's `DISTINCT` was
+repairing its own join rather than stating a rule about teams.
 
 ### Rules found duplicated so far
 

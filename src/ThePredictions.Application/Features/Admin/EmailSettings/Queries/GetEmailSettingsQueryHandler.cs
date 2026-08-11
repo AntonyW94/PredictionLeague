@@ -1,36 +1,25 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.EmailSettings;
 using DomainEmailSettings = ThePredictions.Domain.Models.EmailSettings;
 
 namespace ThePredictions.Application.Features.Admin.EmailSettings.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetEmailSettingsQueryHandler(IApplicationReadDbConnection dbConnection)
+/// <summary>
+/// The master email switch as the administrator's screen shows it.
+/// </summary>
+/// <remarks>
+/// Reads through <see cref="IEmailSettingsQuery"/>, which already existed for the provider that caches this answer for
+/// every outgoing email. This handler had its own copy of the identical statement.
+/// </remarks>
+public class GetEmailSettingsQueryHandler(IEmailSettingsQuery emailSettingsQuery)
     : IRequestHandler<GetEmailSettingsQuery, EmailSettingsDto>
 {
     public async Task<EmailSettingsDto> Handle(GetEmailSettingsQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT TOP 1
-                es.[EmailsEnabled]
-            FROM
-                [EmailSettings] es
-            ORDER BY
-                es.[Id];";
+        var emailsEnabled = await emailSettingsQuery.GetEmailsEnabledAsync(cancellationToken);
 
-        var settings = await dbConnection.QuerySingleOrDefaultAsync<EmailSettingsQueryResult>(sql, cancellationToken);
-
-        // Fall back to the built-in default if no row has been seeded yet (emails on).
-        if (settings is not null)
-            return new EmailSettingsDto(settings.EmailsEnabled);
-
-        var defaults = DomainEmailSettings.CreateDefault();
-        return new EmailSettingsDto(defaults.EmailsEnabled);
+        // No row saved yet means emails are on, which is the same rule the sending path applies.
+        return new EmailSettingsDto(emailsEnabled ?? DomainEmailSettings.CreateDefault().EmailsEnabled);
     }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record EmailSettingsQueryResult(
-        bool EmailsEnabled);
 }

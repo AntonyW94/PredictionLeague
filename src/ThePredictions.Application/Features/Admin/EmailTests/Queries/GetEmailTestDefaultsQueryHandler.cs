@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.EmailTests;
 
@@ -9,7 +8,7 @@ namespace ThePredictions.Application.Features.Admin.EmailTests.Queries;
 
 public class GetEmailTestDefaultsQueryHandler(
     IEmailTemplateCatalog catalog,
-    IApplicationReadDbConnection readDb,
+    IEmailTestUserQuery emailTestUserQuery,
     IEmailTestDefaultsResolver resolver,
     IOptions<SiteSettings> siteSettings)
     : IRequestHandler<GetEmailTestDefaultsQuery, EmailTestDefaultsDto>
@@ -21,20 +20,10 @@ public class GetEmailTestDefaultsQueryHandler(
         if (template is null)
             return new EmailTestDefaultsDto(new Dictionary<string, string>());
 
-        // SELECT column order must match the EmailTestUserData constructor (FirstName, LastName, Email).
-        var user = await readDb.QuerySingleOrDefaultAsync<EmailTestUserData>(
-            @"
-                SELECT
-                    u.[FirstName],
-                    u.[LastName],
-                    u.[Email]
-                FROM
-                    [AspNetUsers] u
-                WHERE
-                    u.[Id] = @UserId",
-            cancellationToken,
-            new { UserId = request.DataUserId })
-            ?? new EmailTestUserData(string.Empty, string.Empty, string.Empty);
+        // An account that is not there still has to render a preview, so the merge fields come back empty rather than
+        // the request failing.
+        var user = await emailTestUserQuery.ExecuteAsync(request.DataUserId, cancellationToken)
+                   ?? new EmailTestUserData(string.Empty, string.Empty, string.Empty);
 
         var baseUrl = siteSettings.Value.ResolvedBaseUrl;
 

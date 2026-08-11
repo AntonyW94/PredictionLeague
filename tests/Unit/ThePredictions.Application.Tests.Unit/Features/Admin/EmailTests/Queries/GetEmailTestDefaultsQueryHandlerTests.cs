@@ -2,7 +2,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using ThePredictions.Application.Configuration;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Admin.EmailTests.Queries;
 using ThePredictions.Application.Services;
 using Xunit;
@@ -12,14 +11,14 @@ namespace ThePredictions.Application.Tests.Unit.Features.Admin.EmailTests.Querie
 public class GetEmailTestDefaultsQueryHandlerTests
 {
     private readonly IEmailTemplateCatalog _catalog = Substitute.For<IEmailTemplateCatalog>();
-    private readonly IApplicationReadDbConnection _readDb = Substitute.For<IApplicationReadDbConnection>();
+    private readonly IEmailTestUserQuery _emailTestUserQuery = Substitute.For<IEmailTestUserQuery>();
     private readonly IEmailTestDefaultsResolver _resolver = Substitute.For<IEmailTestDefaultsResolver>();
     private readonly GetEmailTestDefaultsQueryHandler _handler;
 
     public GetEmailTestDefaultsQueryHandlerTests()
     {
         var siteSettings = Options.Create(new SiteSettings { BaseUrl = "https://test.local" });
-        _handler = new GetEmailTestDefaultsQueryHandler(_catalog, _readDb, _resolver, siteSettings);
+        _handler = new GetEmailTestDefaultsQueryHandler(_catalog, _emailTestUserQuery, _resolver, siteSettings);
     }
 
     [Fact]
@@ -40,8 +39,7 @@ public class GetEmailTestDefaultsQueryHandlerTests
         _catalog.GetTemplatesAsync(CancellationToken.None).Returns(new List<EmailTemplateInfo> { template });
 
         var user = new EmailTestUserData("Antony", "Willson", "antony@example.com");
-        _readDb.QuerySingleOrDefaultAsync<EmailTestUserData>(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(user);
+        _emailTestUserQuery.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(user);
 
         _resolver.Resolve(Arg.Any<IReadOnlyList<string>>(), Arg.Any<EmailTestUserData>(), "https://test.local")
             .Returns(new Dictionary<string, string> { ["FIRST_NAME"] = "Antony" });
@@ -58,8 +56,7 @@ public class GetEmailTestDefaultsQueryHandlerTests
         var template = new EmailTemplateInfo(5, "League Join Approved", "You're in", true, ["FIRST_NAME"]);
         _catalog.GetTemplatesAsync(CancellationToken.None).Returns(new List<EmailTemplateInfo> { template });
 
-        _readDb.QuerySingleOrDefaultAsync<EmailTestUserData>(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns((EmailTestUserData?)null);
+        _emailTestUserQuery.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((EmailTestUserData?)null);
 
         _resolver.Resolve(Arg.Any<IReadOnlyList<string>>(), Arg.Any<EmailTestUserData>(), Arg.Any<string>())
             .Returns(new Dictionary<string, string>());

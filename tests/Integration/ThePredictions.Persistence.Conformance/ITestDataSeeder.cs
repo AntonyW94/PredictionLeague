@@ -175,6 +175,21 @@ public interface ITestDataSeeder
     /// </remarks>
     Task AddUserBadgeAsync(string userId, string badgeKey, DateTime awardedUtc, int? roundId = null);
 
+    /// <summary>The pricing calculator's settings. A single-row table by convention, not by constraint.</summary>
+    Task<int> AddPricingSettingsAsync(decimal bufferRate, decimal minimumFloor);
+
+    /// <summary>One recurring cost of running the site. A null end date means it is still being paid.</summary>
+    Task<int> AddRunningCostAsync(
+        string name,
+        decimal amount,
+        string frequency,
+        DateTime startDateUtc,
+        DateTime? endDateUtc,
+        string? notes);
+
+    /// <summary>What one payment or messaging provider charges.</summary>
+    Task<int> AddServiceFeeAsync(string provider, decimal percentFee, decimal fixedFee);
+
     /// <summary>
     /// Deletes a match with no guard at all. Not seeding, but the same category: a direct statement that
     /// bypasses the code under test. It exists so a conformance test can demonstrate that the adapter's
