@@ -151,6 +151,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Rounds/reminders** ✅ | `ReminderService` onto the same port and the same domain rule. Predictable-fixture duplication **fully collapsed**; three rules, one definition each. |
 | 2 | **Leaderboards/overall** ✅ | First adopter of `Ranking`. Five rules out of one query; `SnapshotOverallRank` stays a cached read per ADR-0015. |
 | 2 | **Leaderboards/monthly** ✅ | Second adopter. `LeaderboardMemberRow` generalised and now shared; the month's pre-round rule kept separate from the overall table's on purpose. |
+| 2 | **Leaderboards/exact-scores** ✅ | Third adopter, and the first with no rank-change arrow: four rules, no snapshot condition. Season-scoped counts pinned by conformance test. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 

@@ -62,6 +62,12 @@ public interface ITestDataSeeder
     Task AddLeagueRoundResultAsync(int leagueId, int roundId, string userId, int basePoints, int boostedPoints, string appliedBoostCode);
 
     /// <summary>
+    /// A global per-user-per-round outcome tally. Distinct from <see cref="AddLeagueRoundResultAsync"/>: that one
+    /// is per league and carries points, this one is league-agnostic and carries outcome counts.
+    /// </summary>
+    Task AddRoundResultAsync(int roundId, string userId, int exactScoreCount, int correctResultCount = 0, int incorrectCount = 0);
+
+    /// <summary>
     /// Deletes a match with no guard at all. Not seeding, but the same category: a direct statement that
     /// bypasses the code under test. It exists so a conformance test can demonstrate that the adapter's
     /// schema cascades the delete to predictions, which is the reason the repository needs its guard.
