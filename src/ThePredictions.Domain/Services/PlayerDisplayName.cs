@@ -22,4 +22,12 @@ public static class PlayerDisplayName
 
         return last.Length == 0 ? first : $"{first} {last[..1]}".Trim();
     }
+
+    /// <summary>
+    /// The player's full name, "Ada Lovelace". Used for ordering rather than display: joint positions on a
+    /// leaderboard are broken alphabetically by full name, and the abbreviated form cannot do that job because
+    /// two players called Ada Lovelace and Ada Lamarr both render as "Ada L".
+    /// </summary>
+    public static string FormatFull(string? firstName, string? lastName) =>
+        $"{(firstName ?? string.Empty).Trim()} {(lastName ?? string.Empty).Trim()}".Trim();
 }

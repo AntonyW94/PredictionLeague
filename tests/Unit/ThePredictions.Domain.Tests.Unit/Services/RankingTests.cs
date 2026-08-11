@@ -17,14 +17,14 @@ namespace ThePredictions.Domain.Tests.Unit.Services;
 /// </summary>
 public class RankingTests
 {
-    private sealed record Player(string Name, int Points);
+    private sealed record Player(string FirstName, string LastName, int Points);
 
     [Fact]
     public void ByDescending_ShouldOrderHighestFirst()
     {
         var ranked = Rank(("Ada", 80), ("Grace", 100), ("Alan", 90));
 
-        ranked.Select(r => r.Item.Name).Should().Equal("Grace", "Alan", "Ada");
+        ranked.Select(r => r.Item.FirstName).Should().Equal("Grace", "Alan", "Ada");
         ranked.Select(r => r.Rank).Should().Equal(1, 2, 3);
     }
 
@@ -88,7 +88,7 @@ public class RankingTests
     [Fact]
     public void ByDescending_ShouldReturnEmpty_WhenThereAreNoPlayers()
     {
-        Ranking.ByDescending(Array.Empty<Player>(), p => p.Points).Should().BeEmpty();
+        Ranking.ByDescending(Array.Empty<Player>(), p => p.Points, p => p.FirstName).Should().BeEmpty();
     }
 
     [Fact]
@@ -97,24 +97,50 @@ public class RankingTests
         // The SQL wrapped these keys in COALESCE(..., 0), so a member with no result recorded scores zero and
         // appears last rather than vanishing. That coercion is the caller's, expressed in the selector - this
         // pins that zero is a real score and gets a position.
-        var players = new[] { new Player("Ada", 0), new Player("Grace", 10) };
+        var players = new[] { new Player("Ada", "Lovelace", 0), new Player("Grace", "Hopper", 10) };
 
-        var ranked = Ranking.ByDescending(players, p => p.Points);
+        var ranked = Ranking.ByDescending(players, p => p.Points, p => p.FirstName);
 
-        ranked.Select(r => r.Item.Name).Should().Equal("Grace", "Ada");
+        ranked.Select(r => r.Item.FirstName).Should().Equal("Grace", "Ada");
         ranked.Last().Rank.Should().Be(2);
     }
 
     [Fact]
-    public void ByDescending_ShouldKeepTiedPlayersInTheOrderSupplied_SoTheResultIsDeterministic()
+    public void ByDescending_ShouldOrderJointPositionsAlphabeticallyByFullName()
     {
-        // The rule does not decide who to print first within a tie - a screen that cares should order again
-        // by something meaningful. But the sort is stable, so the output is at least repeatable rather than
-        // arbitrary, which is more than the SQL guaranteed.
-        var ranked = Rank(("second-in", 90), ("first-in", 90));
+        var ranked = RankNamed(("Zoe", "Zeta", 90), ("Ada", "Lovelace", 90), ("Grace", "Hopper", 90));
 
-        ranked.Select(r => r.Item.Name).Should().Equal("second-in", "first-in");
-        ranked.Select(r => r.Rank).Should().Equal(1, 1);
+        ranked.Select(r => r.Item.FirstName).Should().Equal("Ada", "Grace", "Zoe");
+        ranked.Select(r => r.Rank).Should().Equal(1, 1, 1);
+    }
+
+    [Fact]
+    public void ByDescending_ShouldOrderJointPositionsBySurname_WhenFirstNamesMatch()
+    {
+        // The reason the tie-break is the full name and not the displayed "Ada L": both of these players
+        // render identically, so the abbreviated form cannot separate them.
+        var ranked = RankNamed(("Ada", "Lovelace", 90), ("Ada", "Lamarr", 90));
+
+        ranked.Select(r => r.Item.LastName).Should().Equal("Lamarr", "Lovelace");
+    }
+
+    [Fact]
+    public void ByDescending_ShouldNotLetTheAlphabeticalOrderChangeAnyPosition()
+    {
+        // Alphabetical order settles who prints first among equals. It must never promote anyone: the player
+        // on the higher score is first whatever their name.
+        var ranked = RankNamed(("Zoe", "Zeta", 100), ("Ada", "Lovelace", 90));
+
+        ranked.Select(r => r.Item.FirstName).Should().Equal("Zoe", "Ada");
+        ranked.Select(r => r.Rank).Should().Equal(1, 2);
+    }
+
+    [Fact]
+    public void ByDescending_ShouldIgnoreCaseWhenOrderingJointPositions()
+    {
+        var ranked = RankNamed(("zoe", "zeta", 90), ("Ada", "Lovelace", 90));
+
+        ranked.Select(r => r.Item.FirstName).Should().Equal("Ada", "zoe");
     }
 
     [Fact]
@@ -123,12 +149,20 @@ public class RankingTests
         // Prize funds and averages are decimals, so the rule is generic over the score type.
         var players = new[] { ("Ada", 1.5m), ("Grace", 2.5m), ("Alan", 1.5m) };
 
-        var ranked = Ranking.ByDescending(players, p => p.Item2);
+        var ranked = Ranking.ByDescending(players, p => p.Item2, p => p.Item1);
 
         ranked.Select(r => r.Item.Item1).Should().Equal("Grace", "Ada", "Alan");
         ranked.Select(r => r.Rank).Should().Equal(1, 2, 2);
     }
 
+    // Surnames default to a fixed value so score-only tests are unaffected by the tie-break; the tests that
+    // exercise ordering supply their own.
     private static IReadOnlyList<Ranked<Player>> Rank(params (string Name, int Points)[] players) =>
-        Ranking.ByDescending(players.Select(p => new Player(p.Name, p.Points)), p => p.Points);
+        RankNamed(players.Select(p => (p.Name, "Zzz", p.Points)).ToArray());
+
+    private static IReadOnlyList<Ranked<Player>> RankNamed(params (string First, string Last, int Points)[] players) =>
+        Ranking.ByDescending(
+            players.Select(p => new Player(p.First, p.Last, p.Points)),
+            p => p.Points,
+            p => PlayerDisplayName.FormatFull(p.FirstName, p.LastName));
 }

@@ -29,10 +29,14 @@ public static class Ranking
     /// Ranking is per list, so a leaderboard split by round, month or league groups first and ranks each
     /// group - which is what <c>PARTITION BY</c> did in the SQL.
     ///
-    /// The order of items *within* a tie is the caller's business, not this rule's. Two players on the same
-    /// score hold the same position, and nothing here decides which of them to print first; the sort is
-    /// stable, so they come back in the order supplied. A screen that cares should order the result again by
-    /// something meaningful, such as the player's name.
+    /// Players sharing a position come back in alphabetical order of full name. That is deliberately part of
+    /// the rule rather than left to each screen: it applies everywhere, so putting it here means no
+    /// leaderboard can forget it and none can disagree. It is the <b>full</b> name and not the displayed
+    /// "Ada L", because two players called Ada Lovelace and Ada Lamarr share a display name and so could not
+    /// be ordered by it - which is precisely the case a tie-break exists to settle.
+    ///
+    /// Note the tie-break affects order only, never the position awarded. Ranks are compared on score alone,
+    /// so alphabetical order cannot promote anyone.
     ///
     /// A score of "no result" is the caller's to define too - the SQL wrapped these keys in
     /// <c>COALESCE(..., 0)</c>, meaning a member with nothing recorded scores zero and is ranked last rather
@@ -40,10 +44,16 @@ public static class Ranking
     /// </remarks>
     public static IReadOnlyList<Ranked<T>> ByDescending<T, TKey>(
         IEnumerable<T> items,
-        Func<T, TKey> scoreSelector)
+        Func<T, TKey> scoreSelector,
+        Func<T, string> fullNameSelector)
         where TKey : IComparable<TKey>
     {
-        var ordered = items.OrderByDescending(scoreSelector).ToList();
+        // InvariantCultureIgnoreCase rather than the ordinal comparer used for fixed internal codes: these
+        // are human names, and an accented name sorting after "Z" would read as a bug.
+        var ordered = items
+            .OrderByDescending(scoreSelector)
+            .ThenBy(fullNameSelector, StringComparer.InvariantCultureIgnoreCase)
+            .ToList();
 
         var ranked = new List<Ranked<T>>(ordered.Count);
 

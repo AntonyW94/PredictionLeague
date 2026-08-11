@@ -44,4 +44,33 @@ public class PlayerDisplayNameTests
     {
         PlayerDisplayName.Format(first, last).Should().Be(expected);
     }
+
+    #region FormatFull
+
+    [Fact]
+    public void FormatFull_ShouldJoinBothNames_WhenBothArePresent()
+    {
+        PlayerDisplayName.FormatFull("Ada", "Lovelace").Should().Be("Ada Lovelace");
+    }
+
+    [Fact]
+    public void FormatFull_ShouldTrimBothParts()
+    {
+        PlayerDisplayName.FormatFull("  Ada  ", "  Lovelace  ").Should().Be("Ada Lovelace");
+    }
+
+    [Theory]
+    [InlineData("Ada", "", "Ada")]
+    [InlineData("Ada", null, "Ada")]
+    [InlineData(null, "Lovelace", "Lovelace")]
+    [InlineData(null, null, "")]
+    [InlineData("", "", "")]
+    public void FormatFull_ShouldNotLeaveAStraySpace_WhenAPartIsMissing(string? first, string? last, string expected)
+    {
+        // Used for ordering joint leaderboard positions, so a leading or trailing space would sort a player
+        // into the wrong place rather than merely looking untidy.
+        PlayerDisplayName.FormatFull(first, last).Should().Be(expected);
+    }
+
+    #endregion
 }
