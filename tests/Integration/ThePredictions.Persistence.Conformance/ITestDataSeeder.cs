@@ -133,6 +133,18 @@ public interface ITestDataSeeder
     Task<int> AddEmailSettingsAsync(bool emailsEnabled);
 
     /// <summary>
+    /// A recorded payout to one winner of a league. <paramref name="paidAtUtc"/> null means recorded but not yet paid,
+    /// which the payouts screen has to tell apart from paid.
+    /// </summary>
+    Task AddLeaguePayoutAsync(int leagueId, string userId, decimal totalAmount, DateTime? paidAtUtc);
+
+    /// <summary>
+    /// A player's bank details for receiving prize money. The values stand in for ciphertext - the seeder writes them as
+    /// given, because what matters to a conformance test is which rows come back rather than what they decrypt to.
+    /// </summary>
+    Task AddUserPayoutDetailsAsync(string userId, string? accountName, string? sortCode, string? accountNumber);
+
+    /// <summary>
     /// Deletes a match with no guard at all. Not seeding, but the same category: a direct statement that
     /// bypasses the code under test. It exists so a conformance test can demonstrate that the adapter's
     /// schema cascades the delete to predictions, which is the reason the repository needs its guard.

@@ -749,6 +749,76 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         return await ExecuteScalarAsync<int>(sql, new { EmailsEnabled = emailsEnabled });
     }
 
+    public async Task AddLeaguePayoutAsync(int leagueId, string userId, decimal totalAmount, DateTime? paidAtUtc)
+    {
+        const string sql = @"
+            INSERT INTO [LeaguePayouts]
+            (
+                [LeagueId],
+                [UserId],
+                [TotalAmount],
+                [PaidAtUtc],
+                [CreatedAtUtc],
+                [UpdatedAtUtc]
+            )
+            VALUES
+            (
+                @LeagueId,
+                @UserId,
+                @TotalAmount,
+                @PaidAtUtc,
+                @CreatedAtUtc,
+                @UpdatedAtUtc
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            LeagueId = leagueId,
+            UserId = userId,
+            TotalAmount = totalAmount,
+            PaidAtUtc = paidAtUtc,
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        });
+    }
+
+    public async Task AddUserPayoutDetailsAsync(
+        string userId,
+        string? accountName,
+        string? sortCode,
+        string? accountNumber)
+    {
+        const string sql = @"
+            INSERT INTO [UserPayoutDetails]
+            (
+                [UserId],
+                [AccountName],
+                [SortCode],
+                [AccountNumber],
+                [CreatedAtUtc],
+                [UpdatedAtUtc]
+            )
+            VALUES
+            (
+                @UserId,
+                @AccountName,
+                @SortCode,
+                @AccountNumber,
+                @CreatedAtUtc,
+                @UpdatedAtUtc
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            UserId = userId,
+            AccountName = accountName,
+            SortCode = sortCode,
+            AccountNumber = accountNumber,
+            CreatedAtUtc = DateTime.UtcNow,
+            UpdatedAtUtc = DateTime.UtcNow
+        });
+    }
+
     public async Task DeleteMatchAsync(int matchId)
     {
         // No guard at all - the point is to show what the schema does on its own.

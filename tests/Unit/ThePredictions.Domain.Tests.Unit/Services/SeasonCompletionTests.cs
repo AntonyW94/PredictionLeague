@@ -35,4 +35,32 @@ public class SeasonCompletionTests
     {
         SeasonCompletion.IsFinished(completedRoundCount: 0, numberOfRounds: 38).Should().BeFalse();
     }
+
+    [Fact]
+    public void IsEveryRoundComplete_ShouldReturnTrue_WhenEveryRoundThatExistsIsComplete()
+    {
+        SeasonCompletion.IsEveryRoundComplete(roundCount: 3, completedRoundCount: 3).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsEveryRoundComplete_ShouldReturnFalse_WhileARoundRemains()
+    {
+        SeasonCompletion.IsEveryRoundComplete(roundCount: 3, completedRoundCount: 2).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsEveryRoundComplete_ShouldReturnFalse_ForASeasonWithNoRoundsAtAll()
+    {
+        // Without this the payouts screen would offer to pay out a season that has not started.
+        SeasonCompletion.IsEveryRoundComplete(roundCount: 0, completedRoundCount: 0).Should().BeFalse();
+    }
+
+    [Fact]
+    public void TheTwoDefinitionsCanDisagree()
+    {
+        // A season declaring 38 rounds but holding 40, of which 38 are complete. The dashboards call that finished and
+        // the payouts screen does not. Pinned so that the divergence is a documented fact rather than a surprise.
+        SeasonCompletion.IsFinished(completedRoundCount: 38, numberOfRounds: 38).Should().BeTrue();
+        SeasonCompletion.IsEveryRoundComplete(roundCount: 40, completedRoundCount: 38).Should().BeFalse();
+    }
 }

@@ -1,6 +1,7 @@
 using MediatR;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
@@ -33,7 +34,7 @@ public class GetLeaguePaymentInfoQueryHandler(
 
         return new LeaguePaymentInfoDto(
             league.LeagueName,
-            HasBankDetails(accountName, sortCode, accountNumber),
+            BankDetails.AreComplete(accountName, sortCode, accountNumber),
             accountName,
             sortCode,
             accountNumber,
@@ -72,21 +73,6 @@ public class GetLeaguePaymentInfoQueryHandler(
             return false;
 
         return string.Equals(leagueEntryCode, suppliedEntryCode, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    /// Whether there are bank details to show at all - all three parts, or none. A partly filled-in account is no use to
-    /// somebody trying to pay, so it counts as not set up.
-    /// </summary>
-    private static bool HasBankDetails(string? accountName, string? sortCode, string? accountNumber)
-    {
-        if (accountName is null)
-            return false;
-
-        if (sortCode is null)
-            return false;
-
-        return accountNumber is not null;
     }
 
     /// <summary>

@@ -1,280 +1,429 @@
 using FluentAssertions;
 using NSubstitute;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Payouts;
 using ThePredictions.Domain.Common.Enumerations;
 using Xunit;
-using static ThePredictions.Application.Features.Leagues.Queries.GetLeaguePayoutsQueryHandler;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Leagues.Queries;
 
 /// <summary>
-/// The league administrator's end-of-season payout list: who is owed what, whether they have been paid,
-/// and the bank details to pay them with. Three things here are worth more than "a SQL string plus a
-/// mapping" - it is the only place that refuses a non-administrator, the only place that decrypts a
-/// player's bank details, and the only place that notices a payout was recorded for an amount that no
-/// longer matches what the player is actually owed.
+/// A league's payout screen: who is owed what, who has been paid, and the bank details to pay them with.
+///
+/// These tests used to mock the database connection and tell its four reads apart by their generic argument, so they were
+/// coupled to how many statements the handler ran. They now arrange the port's answer instead - the same coverage, without
+/// the coupling.
 /// </summary>
 public class GetLeaguePayoutsQueryHandlerTests
 {
-    private const int LeagueId = 10;
-    private const string AdminUserId = "admin-user";
+    private const int LeagueId = 42;
+    private const string AdminId = "user-admin";
 
-    private static readonly DateTime PaidAt = new(2026, 6, 1, 9, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime PaidAt = new(2026, 8, 1, 12, 0, 0, DateTimeKind.Utc);
 
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
+    private readonly ILeaguePayoutsQuery _payoutsQuery = Substitute.For<ILeaguePayoutsQuery>();
     private readonly IFieldEncryptionService _fieldEncryptionService = Substitute.For<IFieldEncryptionService>();
     private readonly GetLeaguePayoutsQueryHandler _handler;
 
     public GetLeaguePayoutsQueryHandlerTests()
     {
-        // The encryption service is exercised in its own tests; here it stands in as a pass-through so
-        // these tests assert what the handler does with the decrypted values.
+        // The encryption service is not under test here; it hands back whatever it was given.
         _fieldEncryptionService.Decrypt(Arg.Any<string?>()).Returns(call => call.Arg<string?>());
-        _handler = new GetLeaguePayoutsQueryHandler(_dbConnection, _fieldEncryptionService);
 
-        GivenLeague();
+        _handler = new GetLeaguePayoutsQueryHandler(_payoutsQuery, _fieldEncryptionService);
     }
 
-    private void GivenLeague(string administratorUserId = AdminUserId, bool seasonComplete = true) =>
-        _dbConnection.QuerySingleOrDefaultAsync<LeagueRow>(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(new LeagueRow(administratorUserId, seasonComplete));
-
-    private void GivenNoLeague() =>
-        _dbConnection.QuerySingleOrDefaultAsync<LeagueRow>(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns((LeagueRow?)null);
-
-    private void GivenWinnings(params WinningRow[] rows) =>
-        _dbConnection.QueryAsync<WinningRow>(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>()).Returns(rows);
-
-    private void GivenStoredPayouts(params StoredPayoutRow[] rows) =>
-        _dbConnection.QueryAsync<StoredPayoutRow>(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>()).Returns(rows);
-
-    private void GivenPayoutDetails(params PayoutDetailRow[] rows) =>
-        _dbConnection.QueryAsync<PayoutDetailRow>(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>()).Returns(rows);
-
-    private static WinningRow Winning(string userId, string userName, decimal amount, PrizeType prizeType = PrizeType.Overall) =>
-        new(userId, userName, prizeType, amount);
-
-    private Task<LeaguePayoutsDto> HandleAsync(string requestingUserId = AdminUserId) =>
-        _handler.Handle(new GetLeaguePayoutsQuery(LeagueId, requestingUserId), CancellationToken.None);
-
-    // ---------- who may look ----------
+    #region Who may see the payouts
 
     [Fact]
     public async Task Handle_ShouldThrowNotFound_WhenTheLeagueDoesNotExist()
     {
-        GivenNoLeague();
+        // Arrange
+        _payoutsQuery
+            .ExecuteAsync(LeagueId, AdminId, Arg.Any<CancellationToken>())
+            .Returns((LeaguePayoutsData?)null);
 
-        await FluentActions.Awaiting(() => HandleAsync()).Should().ThrowAsync<KeyNotFoundException>();
+        // Act
+        var act = async () => await HandleAsync();
+
+        // Assert
+        await act.Should().ThrowAsync<KeyNotFoundException>();
     }
 
-    // Bank details sit behind this check, so it is the difference between an admin tool and a leak.
     [Fact]
     public async Task Handle_ShouldRefuseAnyoneButTheLeagueAdministrator()
     {
-        var act = () => HandleAsync(requestingUserId: "someone-else");
+        // Arrange
+        Given(isAdministrator: false, winnings: [Winning(AdminId, "Ada", "Lovelace", PrizeType.Overall, 50m)]);
 
-        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        // Act
+        var act = async () => await HandleAsync();
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("Only the league administrator can view payouts.");
     }
 
     [Fact]
-    public async Task Handle_ShouldNotReadAnyWinnings_WhenTheCallerIsRefused()
+    public async Task Handle_ShouldNotDecryptAnyBankDetails_WhenTheCallerIsRefused()
     {
-        await FluentActions.Awaiting(() => HandleAsync(requestingUserId: "someone-else")).Should().ThrowAsync<UnauthorizedAccessException>();
+        // Arrange
+        Given(
+            isAdministrator: false,
+            winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m)],
+            bankDetails: [Details("u1", "A Lovelace", "00-00-00", "12345678")]);
 
-        await _dbConnection.DidNotReceiveWithAnyArgs().QueryAsync<WinningRow>(default!, CancellationToken.None, default);
+        // Act
+        var act = async () => await HandleAsync();
+
+        // Assert - nobody else's account details are unlocked, let alone returned.
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        _fieldEncryptionService.DidNotReceiveWithAnyArgs().Decrypt(default);
     }
 
-    // ---------- totals per winner ----------
+    #endregion
+
+    #region What each winner is owed
 
     [Fact]
     public async Task Handle_ShouldTotalEveryPrizeAWinnerHasTaken()
     {
-        GivenWinnings(
-            Winning("user-1", "Ada L", 20m, PrizeType.Overall),
-            Winning("user-1", "Ada L", 5m, PrizeType.Round));
+        // Arrange
+        Given(winnings:
+        [
+            Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m),
+            Winning("u1", "Ada", "Lovelace", PrizeType.Monthly, 20m),
+            Winning("u1", "Ada", "Lovelace", PrizeType.Round, 5m)
+        ]);
 
+        // Act
         var winner = (await HandleAsync()).Winners.Single();
 
-        winner.TotalAmount.Should().Be(25m);
+        // Assert
+        winner.TotalAmount.Should().Be(75m);
     }
 
     [Fact]
     public async Task Handle_ShouldBreakTheTotalDownByPrizeCategory()
     {
-        GivenWinnings(
-            Winning("user-1", "Ada L", 20m, PrizeType.Overall),
-            Winning("user-1", "Ada L", 3m, PrizeType.Round),
-            Winning("user-1", "Ada L", 2m, PrizeType.Round));
+        // Arrange
+        Given(winnings:
+        [
+            Winning("u1", "Ada", "Lovelace", PrizeType.Round, 5m),
+            Winning("u1", "Ada", "Lovelace", PrizeType.Round, 5m),
+            Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m)
+        ]);
 
-        var breakdown = (await HandleAsync()).Winners.Single().Breakdown;
+        // Act
+        var winner = (await HandleAsync()).Winners.Single();
 
-        breakdown.Should().HaveCount(2);
-        breakdown.Sum(b => b.Amount).Should().Be(25m);
-        breakdown.Should().ContainSingle(b => b.Amount == 5m, "the two round prizes are added together");
+        // Assert - one line per kind of prize, with that kind's prizes added together.
+        winner.Breakdown.Should().HaveCount(2);
+        winner.Breakdown.Sum(line => line.Amount).Should().Be(60m);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldShowTheWinnersFullName()
+    {
+        // Arrange
+        Given(winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m)]);
+
+        // Act
+        var winner = (await HandleAsync()).Winners.Single();
+
+        // Assert - not the abbreviated "Ada L" used elsewhere: an administrator paying real money has to match the name
+        // on a bank account.
+        winner.UserName.Should().Be("Ada Lovelace");
     }
 
     [Fact]
     public async Task Handle_ShouldOrderWinnersByAmountThenName()
     {
-        GivenWinnings(
-            Winning("user-1", "Zoe W", 10m),
-            Winning("user-2", "Ada L", 30m),
-            Winning("user-3", "Grace H", 10m));
+        // Arrange
+        Given(winnings:
+        [
+            Winning("u1", "Grace", "Hopper", PrizeType.Overall, 50m),
+            Winning("u2", "Ada", "Lovelace", PrizeType.Overall, 50m),
+            Winning("u3", "Alan", "Turing", PrizeType.Overall, 100m)
+        ]);
 
-        (await HandleAsync()).Winners.Select(w => w.UserName).Should().Equal("Ada L", "Grace H", "Zoe W");
-    }
+        // Act
+        var winners = (await HandleAsync()).Winners;
 
-    // ---------- paid, unpaid, and the discrepancy flag ----------
-
-    [Fact]
-    public async Task Handle_ShouldReportAWinnerAsUnpaid_WhenNoPayoutHasBeenRecorded()
-    {
-        GivenWinnings(Winning("user-1", "Ada L", 25m));
-
-        var winner = (await HandleAsync()).Winners.Single();
-
-        winner.IsPaid.Should().BeFalse();
-        winner.PaidAtUtc.Should().BeNull();
-    }
-
-    // A payout row can exist before it is settled, so it is the date that decides, not the row.
-    [Fact]
-    public async Task Handle_ShouldReportAWinnerAsUnpaid_WhenThePayoutRowHasNoPaidDate()
-    {
-        GivenWinnings(Winning("user-1", "Ada L", 25m));
-        GivenStoredPayouts(new StoredPayoutRow("user-1", 25m, PaidAtUtc: null));
-
-        (await HandleAsync()).Winners.Single().IsPaid.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReportAWinnerAsPaid_WhenThePayoutHasADate()
-    {
-        GivenWinnings(Winning("user-1", "Ada L", 25m));
-        GivenStoredPayouts(new StoredPayoutRow("user-1", 25m, PaidAt));
-
-        var winner = (await HandleAsync()).Winners.Single();
-
-        winner.IsPaid.Should().BeTrue();
-        winner.PaidAtUtc.Should().Be(PaidAt);
-        winner.HasDiscrepancy.Should().BeFalse();
-    }
-
-    // The money check: a prize settled after the payout was recorded leaves the admin having paid the
-    // wrong amount, and nothing else in the app would notice.
-    [Fact]
-    public async Task Handle_ShouldFlagADiscrepancy_WhenThePaidAmountNoLongerMatchesWhatIsOwed()
-    {
-        GivenWinnings(Winning("user-1", "Ada L", 30m));
-        GivenStoredPayouts(new StoredPayoutRow("user-1", 25m, PaidAt));
-
-        (await HandleAsync()).Winners.Single().HasDiscrepancy.Should().BeTrue();
-    }
-
-    // An unpaid winner cannot be out by the wrong amount, because nothing has been paid.
-    [Fact]
-    public async Task Handle_ShouldNotFlagADiscrepancy_WhenTheWinnerHasNotBeenPaid()
-    {
-        GivenWinnings(Winning("user-1", "Ada L", 30m));
-        GivenStoredPayouts(new StoredPayoutRow("user-1", 25m, PaidAtUtc: null));
-
-        (await HandleAsync()).Winners.Single().HasDiscrepancy.Should().BeFalse();
-    }
-
-    // ---------- league totals ----------
-
-    [Fact]
-    public async Task Handle_ShouldSplitTheTotalsBetweenPaidAndOutstanding()
-    {
-        GivenWinnings(Winning("user-1", "Ada L", 30m), Winning("user-2", "Grace H", 20m));
-        GivenStoredPayouts(new StoredPayoutRow("user-1", 30m, PaidAt));
-
-        var result = await HandleAsync();
-
-        result.PaidTotal.Should().Be(30m);
-        result.OutstandingTotal.Should().Be(20m);
-    }
-
-    // The paid total is what was actually handed over, not what is now owed - otherwise a discrepancy
-    // would silently correct itself in the summary.
-    [Fact]
-    public async Task Handle_ShouldCountTheAmountActuallyPaid_WhenThereIsADiscrepancy()
-    {
-        GivenWinnings(Winning("user-1", "Ada L", 30m));
-        GivenStoredPayouts(new StoredPayoutRow("user-1", 25m, PaidAt));
-
-        (await HandleAsync()).PaidTotal.Should().Be(25m);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReportWhetherTheSeasonIsComplete()
-    {
-        GivenLeague(seasonComplete: false);
-        GivenWinnings(Winning("user-1", "Ada L", 10m));
-
-        (await HandleAsync()).SeasonComplete.Should().BeFalse();
+        // Assert
+        winners.Select(winner => winner.UserName).Should().Equal("Alan Turing", "Ada Lovelace", "Grace Hopper");
     }
 
     [Fact]
     public async Task Handle_ShouldReturnNoWinners_WhenNothingHasBeenWon()
     {
-        GivenWinnings();
+        // Arrange
+        Given();
 
-        var result = await HandleAsync();
+        // Act
+        var payouts = await HandleAsync();
 
-        result.Winners.Should().BeEmpty();
-        result.PaidTotal.Should().Be(0m);
-        result.OutstandingTotal.Should().Be(0m);
+        // Assert
+        payouts.Winners.Should().BeEmpty();
+        payouts.OutstandingTotal.Should().Be(0m);
+        payouts.PaidTotal.Should().Be(0m);
+    }
+
+    #endregion
+
+    #region Paid, unpaid and discrepancies
+
+    [Fact]
+    public async Task Handle_ShouldReportAWinnerAsUnpaid_WhenNoPayoutHasBeenRecorded()
+    {
+        // Arrange
+        Given(winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m)]);
+
+        // Act
+        var winner = (await HandleAsync()).Winners.Single();
+
+        // Assert
+        winner.IsPaid.Should().BeFalse();
+        winner.PaidAtUtc.Should().BeNull();
     }
 
     [Fact]
-    public async Task Handle_ShouldNotLookUpBankDetails_WhenThereAreNoWinners()
+    public async Task Handle_ShouldReportAWinnerAsUnpaid_WhenThePayoutRowHasNoPaidDate()
     {
-        GivenWinnings();
+        // Arrange - a recorded intention to pay is not a payment.
+        Given(
+            winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m)],
+            storedPayouts: [Stored("u1", 50m, paidAtUtc: null)]);
 
-        await HandleAsync();
+        // Act
+        var winner = (await HandleAsync()).Winners.Single();
 
-        await _dbConnection.DidNotReceiveWithAnyArgs().QueryAsync<PayoutDetailRow>(default!, CancellationToken.None, default);
+        // Assert
+        winner.IsPaid.Should().BeFalse();
     }
 
-    // ---------- bank details ----------
+    [Fact]
+    public async Task Handle_ShouldReportAWinnerAsPaid_WhenThePayoutHasADate()
+    {
+        // Arrange
+        Given(
+            winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m)],
+            storedPayouts: [Stored("u1", 50m, PaidAt)]);
+
+        // Act
+        var winner = (await HandleAsync()).Winners.Single();
+
+        // Assert
+        winner.IsPaid.Should().BeTrue();
+        winner.PaidAtUtc.Should().Be(PaidAt);
+        winner.HasDiscrepancy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldFlagADiscrepancy_WhenThePaidAmountNoLongerMatchesWhatIsOwed()
+    {
+        // Arrange - a round was re-processed and the prize moved after the payment.
+        Given(
+            winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 75m)],
+            storedPayouts: [Stored("u1", 50m, PaidAt)]);
+
+        // Act
+        var winner = (await HandleAsync()).Winners.Single();
+
+        // Assert
+        winner.HasDiscrepancy.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotFlagADiscrepancy_WhenTheWinnerHasNotBeenPaid()
+    {
+        // Arrange
+        Given(
+            winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 75m)],
+            storedPayouts: [Stored("u1", 50m, paidAtUtc: null)]);
+
+        // Act
+        var winner = (await HandleAsync()).Winners.Single();
+
+        // Assert - they are simply owed the new figure; flagging it would warn on every screen mid-season.
+        winner.HasDiscrepancy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSplitTheTotalsBetweenPaidAndOutstanding()
+    {
+        // Arrange
+        Given(
+            winnings:
+            [
+                Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m),
+                Winning("u2", "Grace", "Hopper", PrizeType.Overall, 30m)
+            ],
+            storedPayouts: [Stored("u1", 50m, PaidAt)]);
+
+        // Act
+        var payouts = await HandleAsync();
+
+        // Assert
+        payouts.PaidTotal.Should().Be(50m);
+        payouts.OutstandingTotal.Should().Be(30m);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldCountTheAmountActuallyPaid_WhenThereIsADiscrepancy()
+    {
+        // Arrange - owed 75 now, but 50 was what left the administrator's account.
+        Given(
+            winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 75m)],
+            storedPayouts: [Stored("u1", 50m, PaidAt)]);
+
+        // Act
+        var payouts = await HandleAsync();
+
+        // Assert - money already sent is a historical fact, so re-pricing a prize must not change it.
+        payouts.PaidTotal.Should().Be(50m);
+    }
+
+    #endregion
+
+    #region Whether the season is over
+
+    [Fact]
+    public async Task Handle_ShouldReportTheSeasonComplete_WhenEveryRoundHasFinished()
+    {
+        // Arrange
+        Given(seasonRoundCount: 3, completedRoundCount: 3);
+
+        // Act
+        var payouts = await HandleAsync();
+
+        // Assert
+        payouts.SeasonComplete.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReportTheSeasonIncomplete_WhileARoundRemains()
+    {
+        // Arrange
+        Given(seasonRoundCount: 3, completedRoundCount: 2);
+
+        // Act
+        var payouts = await HandleAsync();
+
+        // Assert
+        payouts.SeasonComplete.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReportTheSeasonIncomplete_WhenItHasNoRoundsAtAll()
+    {
+        // Arrange
+        Given(seasonRoundCount: 0, completedRoundCount: 0);
+
+        // Act
+        var payouts = await HandleAsync();
+
+        // Assert - otherwise the screen would offer to pay out a season that has not started.
+        payouts.SeasonComplete.Should().BeFalse();
+    }
+
+    #endregion
+
+    #region The winners' bank details
 
     [Fact]
     public async Task Handle_ShouldReturnTheDecryptedBankDetails_WhenTheWinnerHasSharedThem()
     {
-        GivenWinnings(Winning("user-1", "Ada L", 25m));
-        GivenPayoutDetails(new PayoutDetailRow("user-1", "A Lovelace", "00-11-22", "12345678"));
+        // Arrange
+        Given(
+            winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m)],
+            bankDetails: [Details("u1", "A Lovelace", "00-00-00", "12345678")]);
 
+        // Act
         var winner = (await HandleAsync()).Winners.Single();
 
+        // Assert
         winner.HasSharedDetails.Should().BeTrue();
         winner.AccountName.Should().Be("A Lovelace");
-        winner.SortCode.Should().Be("00-11-22");
+        winner.SortCode.Should().Be("00-00-00");
         winner.AccountNumber.Should().Be("12345678");
     }
 
     [Fact]
     public async Task Handle_ShouldReportNoSharedDetails_WhenTheWinnerHasNotGivenAny()
     {
-        GivenWinnings(Winning("user-1", "Ada L", 25m));
+        // Arrange
+        Given(winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m)]);
 
+        // Act
         var winner = (await HandleAsync()).Winners.Single();
 
+        // Assert
         winner.HasSharedDetails.Should().BeFalse();
         winner.AccountName.Should().BeNull();
     }
 
-    // A partly-filled record cannot be paid into, so it does not count as shared.
-    [Fact]
-    public async Task Handle_ShouldReportNoSharedDetails_WhenAnyPartIsMissing()
+    [Theory]
+    [InlineData(null, "00-00-00", "12345678")]
+    [InlineData("A Lovelace", null, "12345678")]
+    [InlineData("A Lovelace", "00-00-00", null)]
+    public async Task Handle_ShouldReportNoSharedDetails_WhenAnyPartIsMissing(
+        string? accountName,
+        string? sortCode,
+        string? accountNumber)
     {
-        GivenWinnings(Winning("user-1", "Ada L", 25m));
-        GivenPayoutDetails(new PayoutDetailRow("user-1", "A Lovelace", "00-11-22", AccountNumber: null));
+        // Arrange
+        Given(
+            winnings: [Winning("u1", "Ada", "Lovelace", PrizeType.Overall, 50m)],
+            bankDetails: [Details("u1", accountName, sortCode, accountNumber)]);
 
-        (await HandleAsync()).Winners.Single().HasSharedDetails.Should().BeFalse();
+        // Act
+        var winner = (await HandleAsync()).Winners.Single();
+
+        // Assert - showing two of the three would invite somebody to guess the rest.
+        winner.HasSharedDetails.Should().BeFalse();
     }
+
+    #endregion
+
+    private void Given(
+        bool isAdministrator = true,
+        int seasonRoundCount = 3,
+        int completedRoundCount = 3,
+        IReadOnlyList<PayoutWinningRow>? winnings = null,
+        IReadOnlyList<StoredPayoutRow>? storedPayouts = null,
+        IReadOnlyList<PayoutBankDetailsRow>? bankDetails = null)
+    {
+        _payoutsQuery
+            .ExecuteAsync(LeagueId, AdminId, Arg.Any<CancellationToken>())
+            .Returns(new LeaguePayoutsData(
+                isAdministrator,
+                seasonRoundCount,
+                completedRoundCount,
+                winnings ?? [],
+                storedPayouts ?? [],
+                bankDetails ?? []));
+    }
+
+    private async Task<LeaguePayoutsDto> HandleAsync() =>
+        await _handler.Handle(new GetLeaguePayoutsQuery(LeagueId, AdminId), CancellationToken.None);
+
+    private static PayoutWinningRow Winning(
+        string userId,
+        string firstName,
+        string lastName,
+        PrizeType prizeType,
+        decimal amount) =>
+        new(userId, firstName, lastName, prizeType, amount);
+
+    private static StoredPayoutRow Stored(string userId, decimal totalAmount, DateTime? paidAtUtc) =>
+        new(userId, totalAmount, paidAtUtc);
+
+    private static PayoutBankDetailsRow Details(
+        string userId,
+        string? accountName,
+        string? sortCode,
+        string? accountNumber) =>
+        new(userId, accountName, sortCode, accountNumber);
 }
