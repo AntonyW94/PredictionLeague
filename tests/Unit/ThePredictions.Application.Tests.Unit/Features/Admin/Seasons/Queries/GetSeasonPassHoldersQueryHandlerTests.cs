@@ -1,320 +1,301 @@
-using ThePredictions.Domain.Common.Exceptions;
 using FluentAssertions;
 using NSubstitute;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Admin.Seasons.Queries;
 using ThePredictions.Contracts.Admin.Seasons;
 using ThePredictions.Contracts.Common;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Common.Exceptions;
 using Xunit;
-using static ThePredictions.Application.Features.Admin.Seasons.Queries.GetSeasonPassHoldersQueryHandler;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Admin.Seasons.Queries;
 
+/// <summary>
+/// One page of a season's pass holders.
+///
+/// The filtering, sorting and paging themselves stay in the read - choosing which rows to return is fetching, and a page
+/// cannot be taken without sorting first - so what these tests are about is the handler's own job: keeping a page number in
+/// range, snapping the page size, and handing the same filters to both reads so the count and the rows cannot disagree.
+/// The wildcard escaping the handler used to do went the other way, into the adapter, because it is LIKE syntax.
+/// </summary>
 public class GetSeasonPassHoldersQueryHandlerTests
 {
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
+    private const int SeasonId = 7;
+
+    private static readonly DateTime AcquiredAt = new(2026, 8, 1, 12, 0, 0, DateTimeKind.Utc);
+
+    private readonly ISeasonPassHoldersQuery _query = Substitute.For<ISeasonPassHoldersQuery>();
     private readonly GetSeasonPassHoldersQueryHandler _handler;
 
     public GetSeasonPassHoldersQueryHandlerTests()
     {
-        _handler = new GetSeasonPassHoldersQueryHandler(_dbConnection);
+        _handler = new GetSeasonPassHoldersQueryHandler(_query);
     }
 
     [Fact]
-    public async Task Handle_ShouldThrowEntityNotFound_WhenSeasonDoesNotExist()
+    public async Task Handle_ShouldReportNotFound_WhenThereIsNoSuchSeason()
     {
-        var act = () => _handler.Handle(Query(), CancellationToken.None);
+        // Arrange
+        _query.GetSummaryAsync(Arg.Any<SeasonPassHoldersCriteria>(), Arg.Any<CancellationToken>())
+            .Returns((SeasonPassHoldersSummary?)null);
 
+        // Act
+        var act = () => HandleAsync();
+
+        // Assert
         await act.Should().ThrowAsync<EntityNotFoundException>();
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnEmptyPage_WhenNothingMatches()
+    public async Task Handle_ShouldReturnAnEmptyPage_WhenNothingMatchesTheFilters()
     {
-        GivenSummary(matchingCount: 0, totalCollected: 0);
+        // Arrange
+        GivenSummary(matchingCount: 0, totalCollected: 0m);
 
-        var result = await _handler.Handle(Query(page: 3), CancellationToken.None);
+        // Act
+        var page = await HandleAsync();
 
-        result.Should().NotBeNull();
-        result.SeasonName.Should().Be("World Cup 2026");
-        result.TotalCollected.Should().Be(0);
-        result.Holders.Items.Should().BeEmpty();
-        result.Holders.Page.Should().Be(1);
-        result.Holders.TotalCount.Should().Be(0);
+        // Assert
+        page.SeasonName.Should().Be("World Cup 2026");
+        page.TotalCollected.Should().Be(0m);
+        page.Holders.Items.Should().BeEmpty();
+        page.Holders.TotalCount.Should().Be(0);
     }
 
     [Fact]
-    public async Task Handle_ShouldNotReadTheRows_WhenNothingMatches()
+    public async Task Handle_ShouldNotReadAnyRows_WhenNothingMatchesTheFilters()
     {
-        GivenSummary(matchingCount: 0, totalCollected: 0);
+        // Arrange
+        GivenSummary(matchingCount: 0, totalCollected: 0m);
 
-        await _handler.Handle(Query(), CancellationToken.None);
+        // Act
+        await HandleAsync();
 
-        PageCallParameters().Should().BeNull();
+        // Assert - no point asking for page one of nothing.
+        await _query.DidNotReceiveWithAnyArgs().GetPageAsync(default!, default!, CancellationToken.None);
     }
 
     [Fact]
-    public async Task Handle_ShouldReturnTheMatchingCountAndTotal_WhenHoldersMatch()
+    public async Task Handle_ShouldReportTheTotalsFromTheSummaryRatherThanThePage()
     {
-        GivenSummary(matchingCount: 33, totalCollected: 412.50m);
+        // The totals are for everybody the filters match, not for the twenty-five on screen.
+        GivenSummary(matchingCount: 40, totalCollected: 412.50m);
+        GivenPage(Holder("u1"));
 
-        var result = await _handler.Handle(Query(), CancellationToken.None);
+        // Act
+        var page = await HandleAsync();
 
-        result.TotalCollected.Should().Be(412.50m);
-        result.Holders.TotalCount.Should().Be(33);
+        // Assert
+        page.TotalCollected.Should().Be(412.50m);
+        page.Holders.TotalCount.Should().Be(40);
     }
 
     [Fact]
-    public async Task Handle_ShouldMapEveryFieldOntoTheHolder_WhenRowsAreReturned()
+    public async Task Handle_ShouldReportEveryFieldOfEachHolder()
     {
-        var acquired = new DateTime(2026, 7, 21, 8, 30, 0, DateTimeKind.Utc);
-        GivenSummary(matchingCount: 1, totalCollected: 15m, Row(
-            userId: "user-9",
-            fullName: "Jane Doe",
-            email: "jane@example.com",
-            tier: SeasonPassTier.Standard,
-            source: SeasonPassSource.Trial,
-            amountPaid: 11m,
-            smsFeePaid: 4m,
-            createdAtUtc: acquired));
+        // Arrange
+        GivenSummary(matchingCount: 1, totalCollected: 12m);
+        GivenPage(new SeasonPassHolderRow("u1", "Ada Lovelace", "ada@example.com",
+            SeasonPassTier.Premium, SeasonPassSource.Purchased, 10m, 2m, AcquiredAt));
 
-        var result = await _handler.Handle(Query(), CancellationToken.None);
+        // Act
+        var holder = (await HandleAsync()).Holders.Items.Single();
 
-        result.Holders.Items.Should().ContainSingle().Which.Should().BeEquivalentTo(
-            new SeasonPassHolderDto("user-9", "Jane Doe", "jane@example.com", SeasonPassTier.Standard, SeasonPassSource.Trial, 11m, 4m, acquired));
+        // Assert
+        holder.UserId.Should().Be("u1");
+        holder.FullName.Should().Be("Ada Lovelace");
+        holder.Email.Should().Be("ada@example.com");
+        holder.Tier.Should().Be(SeasonPassTier.Premium);
+        holder.Source.Should().Be(SeasonPassSource.Purchased);
+        holder.AmountPaid.Should().Be(10m);
+        holder.SmsFeePaid.Should().Be(2m);
+        holder.AcquiredAtUtc.Should().Be(AcquiredAt);
     }
 
     [Theory]
     [InlineData(0, PageSizes.Default)]
     [InlineData(7, PageSizes.Default)]
+    [InlineData(50, 50)]
     [InlineData(1000, PageSizes.Default)]
-    [InlineData(5, 5)]
-    [InlineData(100, 100)]
-    public async Task Handle_ShouldSnapPageSizeToAnAllowedValue_WhenGivenAnySize(int requested, int expected)
+    public async Task Handle_ShouldSnapThePageSizeToAnAllowedValue(int requested, int expected)
     {
-        GivenSummary(matchingCount: 500, totalCollected: 0);
+        // Arrange
+        GivenSummary(matchingCount: 200, totalCollected: 0m);
+        GivenPage();
 
-        var result = await _handler.Handle(Query(pageSize: requested), CancellationToken.None);
+        // Act
+        var page = await HandleAsync(pageSize: requested);
 
-        result.Holders.PageSize.Should().Be(expected);
-        PageParameter("Take").Should().Be(expected);
+        // Assert
+        page.Holders.PageSize.Should().Be(expected);
+        await _query.Received(1).GetPageAsync(
+            Arg.Any<SeasonPassHoldersCriteria>(),
+            Arg.Is<SeasonPassHoldersPaging>(paging => paging.Take == expected),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_ShouldClampPageToTheLastPage_WhenRequestedPageIsBeyondTheEnd()
+    public async Task Handle_ShouldClampThePageToTheLastOne_WhenAskedForOneBeyondTheEnd()
     {
-        GivenSummary(matchingCount: 12, totalCollected: 0);
+        // Tightening a filter should land on the last page of the smaller result set, not on an empty one.
+        GivenSummary(matchingCount: 30, totalCollected: 0m);
+        GivenPage();
 
-        var result = await _handler.Handle(Query(page: 99, pageSize: 5), CancellationToken.None);
+        // Act
+        var page = await HandleAsync(page: 9, pageSize: PageSizes.Default);
 
-        result.Holders.Page.Should().Be(3);
-        PageParameter("Skip").Should().Be(10);
+        // Assert - thirty holders at twenty-five a page is two pages.
+        page.Holders.Page.Should().Be(2);
+        await _query.Received(1).GetPageAsync(
+            Arg.Any<SeasonPassHoldersCriteria>(),
+            Arg.Is<SeasonPassHoldersPaging>(paging => paging.Skip == PageSizes.Default),
+            Arg.Any<CancellationToken>());
     }
 
     [Theory]
     [InlineData(0)]
-    [InlineData(-4)]
-    public async Task Handle_ShouldClampPageToOne_WhenRequestedPageIsNotPositive(int requestedPage)
+    [InlineData(-3)]
+    public async Task Handle_ShouldClampThePageToOne_WhenAskedForOneBeforeTheStart(int requestedPage)
     {
-        GivenSummary(matchingCount: 12, totalCollected: 0);
+        // Arrange
+        GivenSummary(matchingCount: 30, totalCollected: 0m);
+        GivenPage();
 
-        var result = await _handler.Handle(Query(page: requestedPage, pageSize: 5), CancellationToken.None);
+        // Act
+        var page = await HandleAsync(page: requestedPage);
 
-        result.Holders.Page.Should().Be(1);
-        PageParameter("Skip").Should().Be(0);
+        // Assert
+        page.Holders.Page.Should().Be(1);
+        await _query.Received(1).GetPageAsync(
+            Arg.Any<SeasonPassHoldersCriteria>(),
+            Arg.Is<SeasonPassHoldersPaging>(paging => paging.Skip == 0),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_ShouldSkipTheEarlierPages_WhenAskedForAMiddlePage()
+    public async Task Handle_ShouldSkipTheEarlierPages_WhenAskedForOneInTheMiddle()
     {
-        GivenSummary(matchingCount: 60, totalCollected: 0);
+        // Arrange
+        GivenSummary(matchingCount: 200, totalCollected: 0m);
+        GivenPage();
 
-        await _handler.Handle(Query(page: 3, pageSize: 25), CancellationToken.None);
+        // Act
+        await HandleAsync(page: 3, pageSize: 50);
 
-        PageParameter("Skip").Should().Be(50);
+        // Assert
+        await _query.Received(1).GetPageAsync(
+            Arg.Any<SeasonPassHoldersCriteria>(),
+            Arg.Is<SeasonPassHoldersPaging>(paging => paging.Skip == 100 && paging.Take == 50),
+            Arg.Any<CancellationToken>());
     }
 
     [Theory]
     [InlineData(SeasonPassHolderSortField.Name)]
     [InlineData(SeasonPassHolderSortField.AcquiredAt)]
     [InlineData(SeasonPassHolderSortField.TotalPaid)]
-    public async Task Handle_ShouldPassTheSortColumnByName_WhenSorting(SeasonPassHolderSortField sortField)
+    public async Task Handle_ShouldPassTheSortFieldThrough(SeasonPassHolderSortField sortField)
     {
-        GivenSummary(matchingCount: 5, totalCollected: 0);
+        // Arrange
+        GivenSummary(matchingCount: 1, totalCollected: 0m);
+        GivenPage();
 
-        await _handler.Handle(Query(sortField: sortField), CancellationToken.None);
+        // Act
+        await HandleAsync(sortField: sortField);
 
-        PageParameter("SortField").Should().Be(sortField.ToString());
+        // Assert
+        await _query.Received(1).GetPageAsync(
+            Arg.Any<SeasonPassHoldersCriteria>(),
+            Arg.Is<SeasonPassHoldersPaging>(paging => paging.SortField == sortField),
+            Arg.Any<CancellationToken>());
     }
 
     [Theory]
-    [InlineData(SortDirection.Ascending, false)]
-    [InlineData(SortDirection.Descending, true)]
-    public async Task Handle_ShouldTranslateTheSortDirection_WhenSorting(SortDirection direction, bool expectedDescending)
+    [InlineData(SortDirection.Ascending)]
+    [InlineData(SortDirection.Descending)]
+    public async Task Handle_ShouldPassTheSortDirectionThrough(SortDirection direction)
     {
-        GivenSummary(matchingCount: 5, totalCollected: 0);
+        // Arrange
+        GivenSummary(matchingCount: 1, totalCollected: 0m);
+        GivenPage();
 
-        await _handler.Handle(Query(sortDirection: direction), CancellationToken.None);
+        // Act
+        await HandleAsync(sortDirection: direction);
 
-        PageParameter("SortDescending").Should().Be(expectedDescending);
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task Handle_ShouldNotFilterByName_WhenTheNameFilterIsBlank(string? nameFilter)
-    {
-        // The season has to exist for the handler to get as far as reading rows.
-        GivenSummary(matchingCount: 0, totalCollected: 0);
-
-        await _handler.Handle(Query(nameFilter: nameFilter), CancellationToken.None);
-
-        SummaryParameter("NameFilter").Should().BeNull();
+        // Assert
+        await _query.Received(1).GetPageAsync(
+            Arg.Any<SeasonPassHoldersCriteria>(),
+            Arg.Is<SeasonPassHoldersPaging>(paging => paging.SortDirection == direction),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_ShouldTrimTheNameFilter_WhenItHasSurroundingSpace()
+    public async Task Handle_ShouldPassTheFiltersThroughUntouched()
     {
-        // The season has to exist for the handler to get as far as reading rows.
-        GivenSummary(matchingCount: 0, totalCollected: 0);
+        // Including the name exactly as typed. What needs escaping depends on how the adapter searches, so the adapter
+        // does it - the handler passing a half-escaped string would be guessing on its behalf.
+        GivenSummary(matchingCount: 1, totalCollected: 0m);
+        GivenPage();
 
-        await _handler.Handle(Query(nameFilter: "  Smith  "), CancellationToken.None);
+        // Act
+        await HandleAsync(
+            nameFilter: "  100% Ada  ",
+            acquiredFromUtc: AcquiredAt,
+            acquiredBeforeUtc: AcquiredAt.AddDays(1),
+            minimumPaid: 5m,
+            maximumPaid: 50m);
 
-        SummaryParameter("NameFilter").Should().Be("Smith");
-    }
-
-    [Theory]
-    [InlineData("50%", "50[%]")]
-    [InlineData("a_b", "a[_]b")]
-    [InlineData("[wat]", "[[]wat]")]
-    [InlineData("100%_[x]", "100[%][_][[]x]")]
-    public async Task Handle_ShouldEscapeLikeWildcards_WhenTheNameFilterContainsThem(string nameFilter, string expected)
-    {
-        // The season has to exist for the handler to get as far as reading rows.
-        GivenSummary(matchingCount: 0, totalCollected: 0);
-
-        await _handler.Handle(Query(nameFilter: nameFilter), CancellationToken.None);
-
-        SummaryParameter("NameFilter").Should().Be(expected);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldUseTheDateBoundsExactlyAsGiven_WhenFilteringOnDate()
-    {
-        // Deliberately not midnight: the caller has already worked out where its day starts, so the
-        // handler must not round these to a UTC day and undo that.
-        var from = new DateTime(2026, 8, 3, 23, 0, 0, DateTimeKind.Utc);
-        var before = new DateTime(2026, 8, 4, 23, 0, 0, DateTimeKind.Utc);
-
-        // The season has to exist for the handler to get as far as reading rows.
-        GivenSummary(matchingCount: 0, totalCollected: 0);
-
-        await _handler.Handle(Query(acquiredFromUtc: from, acquiredBeforeUtc: before), CancellationToken.None);
-
-        SummaryParameter("AcquiredFromUtc").Should().Be(from);
-        SummaryParameter("AcquiredBeforeUtc").Should().Be(before);
+        // Assert
+        await _query.Received(1).GetSummaryAsync(
+            Arg.Is<SeasonPassHoldersCriteria>(criteria =>
+                criteria.SeasonId == SeasonId
+                && criteria.NameFilter == "  100% Ada  "
+                && criteria.AcquiredFromUtc == AcquiredAt
+                && criteria.AcquiredBeforeUtc == AcquiredAt.AddDays(1)
+                && criteria.MinimumPaid == 5m
+                && criteria.MaximumPaid == 50m),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_ShouldNotFilterByDate_WhenNoDatesAreGiven()
+    public async Task Handle_ShouldApplyTheSameFiltersToTheTotalsAndToTheRows()
     {
-        // The season has to exist for the handler to get as far as reading rows.
-        GivenSummary(matchingCount: 0, totalCollected: 0);
+        // If the two disagreed, the page would show a count that its own rows contradict.
+        GivenSummary(matchingCount: 1, totalCollected: 0m);
+        GivenPage();
 
-        await _handler.Handle(Query(), CancellationToken.None);
+        // Act
+        await HandleAsync(nameFilter: "Ada", minimumPaid: 5m);
 
-        SummaryParameter("AcquiredFromUtc").Should().BeNull();
-        SummaryParameter("AcquiredBeforeUtc").Should().BeNull();
+        // Assert
+        var expected = new SeasonPassHoldersCriteria(SeasonId, "Ada", null, null, 5m, null);
+
+        await _query.Received(1).GetSummaryAsync(expected, Arg.Any<CancellationToken>());
+        await _query.Received(1).GetPageAsync(expected, Arg.Any<SeasonPassHoldersPaging>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task Handle_ShouldPassThePriceRangeThrough_WhenFilteringOnPrice()
-    {
-        // The season has to exist for the handler to get as far as reading rows.
-        GivenSummary(matchingCount: 0, totalCollected: 0);
+    private void GivenSummary(int matchingCount, decimal totalCollected) =>
+        _query.GetSummaryAsync(Arg.Any<SeasonPassHoldersCriteria>(), Arg.Any<CancellationToken>())
+            .Returns(new SeasonPassHoldersSummary("World Cup 2026", matchingCount, totalCollected));
 
-        await _handler.Handle(Query(minimumPaid: 5m, maximumPaid: 20.50m), CancellationToken.None);
+    private void GivenPage(params SeasonPassHolderRow[] holders) =>
+        _query.GetPageAsync(Arg.Any<SeasonPassHoldersCriteria>(), Arg.Any<SeasonPassHoldersPaging>(), Arg.Any<CancellationToken>())
+            .Returns(holders);
 
-        SummaryParameter("MinimumPaid").Should().Be(5m);
-        SummaryParameter("MaximumPaid").Should().Be(20.50m);
-    }
+    private static SeasonPassHolderRow Holder(string userId) =>
+        new(userId, "Ada Lovelace", "ada@example.com", SeasonPassTier.Standard, SeasonPassSource.Purchased, 10m, 0m, AcquiredAt);
 
-    [Fact]
-    public async Task Handle_ShouldApplyTheSameFilters_ToBothTheSummaryAndTheRows()
-    {
-        GivenSummary(matchingCount: 5, totalCollected: 0);
-        var from = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        await _handler.Handle(Query(nameFilter: "Smith", acquiredFromUtc: from, minimumPaid: 5m), CancellationToken.None);
-
-        foreach (var parameterName in new[] { "SeasonId", "NameFilter", "AcquiredFromUtc", "AcquiredBeforeUtc", "MinimumPaid", "MaximumPaid" })
-        {
-            PageParameter(parameterName).Should().Be(SummaryParameter(parameterName), $"{parameterName} must match");
-        }
-    }
-
-    private static GetSeasonPassHoldersQuery Query(
-        int seasonId = 7,
+    private Task<SeasonPassHoldersPageDto> HandleAsync(
         int page = 1,
         int pageSize = PageSizes.Default,
-        SeasonPassHolderSortField sortField = SeasonPassHolderSortField.AcquiredAt,
-        SortDirection sortDirection = SortDirection.Ascending,
         string? nameFilter = null,
         DateTime? acquiredFromUtc = null,
         DateTime? acquiredBeforeUtc = null,
         decimal? minimumPaid = null,
-        decimal? maximumPaid = null) =>
-        new(seasonId, page, pageSize, sortField, sortDirection, nameFilter, acquiredFromUtc, acquiredBeforeUtc, minimumPaid, maximumPaid);
-
-    private void GivenSummary(int matchingCount, decimal totalCollected, params SeasonPassHolderQueryResult[] rows)
-    {
-        _dbConnection
-            .QuerySingleOrDefaultAsync<SeasonPassHoldersSummaryQueryResult>(
-                Arg.Any<string>(),
-                Arg.Any<CancellationToken>(),
-                Arg.Any<object?>())
-            .Returns(new SeasonPassHoldersSummaryQueryResult("World Cup 2026", matchingCount, totalCollected));
-
-        _dbConnection
-            .QueryAsync<SeasonPassHolderQueryResult>(
-                Arg.Any<string>(),
-                Arg.Any<CancellationToken>(),
-                Arg.Any<object?>())
-            .Returns(rows);
-    }
-
-    private static SeasonPassHolderQueryResult Row(
-        string userId = "user-1",
-        string fullName = "Antony Willson",
-        string email = "antony@thepredictions.co.uk",
-        SeasonPassTier tier = SeasonPassTier.Premium,
-        SeasonPassSource source = SeasonPassSource.Purchased,
-        decimal amountPaid = 12m,
-        decimal smsFeePaid = 3m,
-        DateTime? createdAtUtc = null) =>
-        new(userId, fullName, email, tier, source, amountPaid, smsFeePaid,
-            createdAtUtc ?? new DateTime(2026, 8, 4, 17, 42, 33, DateTimeKind.Utc));
-
-    /// <summary>
-    /// The SQL parameters are anonymous objects, so the assertions read them back by name off the
-    /// recorded call rather than by declaring a type the handler deliberately keeps to itself.
-    /// </summary>
-    private object? SummaryParameter(string name) => ParameterValue(SummaryCallParameters(), name);
-
-    private object? PageParameter(string name) => ParameterValue(PageCallParameters(), name);
-
-    private object? SummaryCallParameters() => ParametersOfCallTo(nameof(IApplicationReadDbConnection.QuerySingleOrDefaultAsync));
-
-    private object? PageCallParameters() => ParametersOfCallTo(nameof(IApplicationReadDbConnection.QueryAsync));
-
-    private object? ParametersOfCallTo(string methodName) => _dbConnection
-        .ReceivedCalls()
-        .Where(call => call.GetMethodInfo().Name == methodName)
-        .Select(call => call.GetArguments()[2])
-        .FirstOrDefault();
-
-    private static object? ParameterValue(object? parameters, string name) =>
-        parameters?.GetType().GetProperty(name)?.GetValue(parameters);
+        decimal? maximumPaid = null,
+        SeasonPassHolderSortField sortField = SeasonPassHolderSortField.Name,
+        SortDirection sortDirection = SortDirection.Ascending) =>
+        _handler.Handle(
+            new GetSeasonPassHoldersQuery(
+                SeasonId, page, pageSize, sortField, sortDirection, nameFilter,
+                acquiredFromUtc, acquiredBeforeUtc, minimumPaid, maximumPaid),
+            CancellationToken.None);
 }

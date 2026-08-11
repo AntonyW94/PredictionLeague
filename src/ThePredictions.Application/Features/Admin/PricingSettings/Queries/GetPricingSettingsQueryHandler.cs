@@ -12,9 +12,7 @@ public class GetPricingSettingsQueryHandler(IPricingSettingsQuery pricingSetting
     {
         var rows = await pricingSettingsQuery.ExecuteAsync(cancellationToken);
 
-        // The earliest row is the live one. This is a single-row table by convention rather than by constraint, so which
-        // row wins if a second ever appears is a decision - it was TOP 1 ORDER BY [Id] in SQL.
-        var settings = rows.MinBy(row => row.Id);
+        var settings = LivePricingSettings.From(rows);
 
         if (settings is null)
         {

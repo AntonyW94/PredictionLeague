@@ -170,6 +170,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/active rounds** ✅ | A domain rule that disagreed with its own SQL twin, and with its own sibling. Marked "Dashboard is done" here, wrongly - `GetMatchesForRoundQueryHandler` still held SQL, and moved with Admin/Rounds below. |
 | 2 | **Badges** ✅ | **Badges is done.** Six statements to three reads, two gap-and-island streak queries to one `foreach`, and two screens that disagreed about the same player's position now reading one set of standings. |
 | 2 | **Admin/Rounds + round fixtures** ✅ | A CTE written twice and selected never, and the near-twin fixture statement that was still outstanding from Dashboard. |
+| 2 | **Season pass admin + pricing** ✅ | The one read where filtering and paging stay in the adapter, a rule that moved the *other* way, and a service whose three of five reads were already ports. |
 | 2 | **SeasonPasses** ✅ | Four screens, four statements, one set of conditions - two of the screens turned out to be exact complements. Three `GETUTCDATE()` calls gone. |
 | 2 | **Admin/Users** ✅ | Eleven correlated subqueries, three of them with an unstated definition of "spend", and a list flattened into a string by the database and split back apart in C#. |
 | 2 | **Admin/Seasons** ✅ | The same twenty-column statement written twice, and a team count whose definition disagrees with the other read of the same idea. |
@@ -1197,6 +1198,37 @@ about the same deadline. Each handler now reads `IDateTimeProvider.UtcNow` once 
 This also picked up `Domain.Services.LeagueEntry.IsOpen` as its fourth caller, which is where "a league with no deadline is
 not open" is stated. The old statements got that right only because SQL drops a null from a comparison - correct by
 accident rather than by decision, and the kind of thing a rewrite in a different dialect would quietly change.
+
+### A rule that moved into the adapter, not out of it
+
+The pass-holders screen filters, sorts and pages in the database, and that stays: choosing which rows to return is fetching,
+and a page cannot be taken without sorting first. But the handler was escaping the name filter's `%`, `_` and `[` before
+handing it over - and those are `LIKE` wildcards. What needs escaping is a fact about how this adapter searches, not about
+what an administrator meant, so it belongs on the other side of the boundary. The handler now passes the text as typed.
+
+First case in this work of a rule moving **into** the adapter. Worth remembering that the boundary has two directions: the
+question is not "is this SQL" but "does this knowledge belong to the database or to the business".
+
+### A service whose reads were already ports
+
+`SeasonPriceRecommendationService` made five reads. Three of them - the pricing settings, the payment provider's fee and the
+running costs - were the same reads the administrator's own screens make, and those ports had been created two PRs earlier.
+The pricing settings read was a third copy of `TOP 1 ORDER BY [Id]`, so "the earliest row is the live one" is now
+`LivePricingSettings.From` with one definition and two callers.
+
+Also here: the service reached the domain's annualisation rule by **constructing a `RunningCost` per row** with an id of
+zero, a name of "cost" and two epoch dates, purely to read one property back off it. Fabricating an entity to borrow a line
+of arithmetic invents state that was never in the database - the same mistake a draft of the active-rounds port made with
+`Round`. `RunningCost.Annualise` is now the static form.
+
+### The convention tests earned their keep twice in one PR
+
+Removing the inline `DateTime.UtcNow` from the price recommendation made `ClockAccessConventionTests` fail - not because the
+code was wrong, but because the file was still on its allowlist of permitted call sites, and the test asserts the allowlist
+contains no file that has already been converted. An allowlist that fails when it becomes stale is worth copying.
+
+The second failure was a false positive of a useful kind: the new adapter's own documentation mentioned
+`DateTime.UtcNow` while explaining what had been removed, and the check is a text match. Reworded.
 
 ### Rules found duplicated so far
 
