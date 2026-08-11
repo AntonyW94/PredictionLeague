@@ -40,13 +40,19 @@ public interface ITestDataSeeder
     /// marked complete with no completion date is a state the database allows and the active-round rule has to cope
     /// with, so a test has to be able to arrange it.
     /// </summary>
+    /// <remarks>
+    /// <paramref name="displayName"/> is what the round is called - "Gameweek 12" for a league round, "Quarter Finals" for
+    /// a tournament stage. The column does not allow null, so the default is a name rather than nothing; pass an empty
+    /// string to arrange the blank a read has to cope with, because naming such a round by its number is a rule.
+    /// </remarks>
     Task<int> AddRoundAsync(
         int seasonId,
         int roundNumber,
         DateTime deadlineUtc,
         RoundStatus status = RoundStatus.Published,
         DateTime? startDateUtc = null,
-        DateTime? completedDateUtc = null);
+        DateTime? completedDateUtc = null,
+        string? displayName = null);
 
     Task<int> AddMatchAsync(
         int roundId,

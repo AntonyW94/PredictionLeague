@@ -28,4 +28,38 @@ public class LeaderboardSnapshotTests
     {
         LeaderboardSnapshot.RankToShow(cachedRank: null, hasCompletedRound: true).Should().BeNull();
     }
+
+    [Fact]
+    public void PlacesGained_ShouldBePositive_WhenTheyHaveClimbed()
+    {
+        // Fifth before the round, third after it: two places gained.
+        LeaderboardSnapshot.PlacesGained(snapshotRank: 5, currentRank: 3).Should().Be(2);
+    }
+
+    [Fact]
+    public void PlacesGained_ShouldBeNegative_WhenTheyHaveDropped()
+    {
+        LeaderboardSnapshot.PlacesGained(snapshotRank: 3, currentRank: 5).Should().Be(-2);
+    }
+
+    [Fact]
+    public void PlacesGained_ShouldBeZero_WhenTheyHeldTheirPlace()
+    {
+        // Zero and null mean different things to a player: this one is "you held your place".
+        LeaderboardSnapshot.PlacesGained(snapshotRank: 3, currentRank: 3).Should().Be(0);
+    }
+
+    [Fact]
+    public void PlacesGained_ShouldBeNothing_WhenThereIsNoEarlierPosition()
+    {
+        // A player who has only just joined has nothing to have moved from, and an arrow pointing sideways would be a
+        // claim we cannot make.
+        LeaderboardSnapshot.PlacesGained(snapshotRank: null, currentRank: 3).Should().BeNull();
+    }
+
+    [Fact]
+    public void PlacesGained_ShouldBeNothing_WhenThereIsNoCurrentPosition()
+    {
+        LeaderboardSnapshot.PlacesGained(snapshotRank: 3, currentRank: null).Should().BeNull();
+    }
 }

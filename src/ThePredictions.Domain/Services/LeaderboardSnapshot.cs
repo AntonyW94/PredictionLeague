@@ -19,4 +19,22 @@ public static class LeaderboardSnapshot
 {
     public static int? RankToShow(int? cachedRank, bool hasCompletedRound) =>
         hasCompletedRound ? cachedRank : null;
+
+    /// <summary>
+    /// How many places a player has moved up since the snapshot was taken: positive for a climb, negative for a
+    /// drop, and nothing at all unless both positions are known.
+    /// </summary>
+    /// <remarks>
+    /// The subtraction is the easy half. The rule is that a missing position on either side means no movement to
+    /// report rather than a movement of zero, because those read differently to a player: zero is "you held your
+    /// place", nothing is "we cannot say". The round digest email turns this into an arrow, and an arrow pointing
+    /// sideways for a player who has only just joined would be a claim we cannot make.
+    /// </remarks>
+    public static int? PlacesGained(int? snapshotRank, int? currentRank)
+    {
+        if (snapshotRank is not { } from || currentRank is not { } to)
+            return null;
+
+        return from - to;
+    }
 }
