@@ -152,6 +152,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leaderboards/overall** ✅ | First adopter of `Ranking`. Five rules out of one query; `SnapshotOverallRank` stays a cached read per ADR-0015. |
 | 2 | **Leaderboards/monthly** ✅ | Second adopter. `LeaderboardMemberRow` generalised and now shared; the month's pre-round rule kept separate from the overall table's on purpose. |
 | 2 | **Leaderboards/exact-scores** ✅ | Third adopter, and the first with no rank-change arrow: four rules, no snapshot condition. Season-scoped counts pinned by conformance test. |
+| 2 | **Leaderboards/stage** ✅ | Richest yet: seven rules from one statement, two ranks, and the stage classification. Pre-round position is computed here, not cached. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -252,6 +253,24 @@ exist yet.
 
 Doing the extraction now was still right, and for the reason originally given: every integration test phase
 2 writes would otherwise need rewriting afterwards. The shape now exists, with one real suite proving it.
+
+### The stage classification, and a live collation dependency
+
+`CASE WHEN trm.[Stages] LIKE '%Group%'` appears in **nine places across six files**, and produces **three
+different spellings** of the same stage name between them: `'Group Stage'`, `'Group stage'` (lowercase s, in
+`BadgeEvaluationRepository`) and `"GroupStage"` (no space, via `nameof`).
+
+That is worse than untidy. `LeagueStatsRepository` compares its spelling against a stored `ActiveStageName`, so
+the variants agree **only because the collation is case-insensitive** (`SQL_Latin1_General_CP1_CI_AS`). On a
+case-sensitive collation, or a different engine, badge evaluation and the stats recompute would silently stop
+matching rounds to stages. This is the concrete instance of the collation argument that motivated naming the
+adapter after the engine rather than the dialect.
+
+`Domain.Services.TournamentStageClassifier` is now the classification, adopted by the stage leaderboard.
+**Eight copies remain**, and two of them are in repositories on the write path (`LeagueStatsRepository` is the
+ADR-0015 recompute), so those wait for the write-side decision. The *display* spelling is a separate question
+and is still written out at each site; worth settling when those move, because changing it alters an equality
+comparison rather than only a label.
 
 ### An asymmetry found in the domain, not introduced by this work
 
