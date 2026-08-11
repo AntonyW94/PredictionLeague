@@ -34,6 +34,18 @@ public static class PrizeCategoryRegistry
         Definitions.FirstOrDefault(d => d.Category == category)
         ?? throw new ArgumentOutOfRangeException(nameof(category), category, "No prize category definition is registered for this type.");
 
+    /// <summary>
+    /// Whether a prize is settled at the end of the season rather than as the season runs.
+    /// </summary>
+    /// <remarks>
+    /// The winnings page groups prizes into four buckets - rounds, months, tournament stages, and everything else - and
+    /// stated that last one as <c>PrizeType != Round &amp;&amp; PrizeType != Monthly &amp;&amp; PrizeType != Stages</c>
+    /// three times over. Written as a negation it also silently absorbs any prize type added later, which is the right
+    /// default for a bucket called "everything else" but only if that is deliberate.
+    /// </remarks>
+    public static bool IsEndOfSeason(PrizeType category) =>
+        category is not (PrizeType.Round or PrizeType.Monthly or PrizeType.Stages);
+
     public static bool IsAvailable(PrizeType category, bool isTournament)
     {
         var availability = Definition(category).AvailableFor;

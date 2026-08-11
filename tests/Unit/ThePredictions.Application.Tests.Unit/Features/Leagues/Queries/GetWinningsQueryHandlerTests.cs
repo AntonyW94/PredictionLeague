@@ -1,398 +1,563 @@
 using FluentAssertions;
 using NSubstitute;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
-using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
-using static ThePredictions.Application.Features.Leagues.Queries.GetWinningsQueryHandler;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Leagues.Queries;
 
 /// <summary>
-/// The league's prize table. Reading it back is not a mapping: the handler pads every unwon round and
-/// unwon month with a placeholder at the configured amount, so a player sees the whole season rather
-/// than only the parts already decided, and it aggregates each member's winnings by prize type for the
-/// leaderboard. Both of those are shaping rules that live only here, and the month padding has to cross
-/// a calendar year because a season runs August to May.
+/// A league's winnings page: every prize on offer, who has won each, and what each member has taken.
+///
+/// The page pads its lists with the prizes nobody has won yet, so most of these tests are about what appears when nothing
+/// has happened - which is the state a league spends most of its season in.
 /// </summary>
 public class GetWinningsQueryHandlerTests
 {
-    private const int LeagueId = 10;
-    private const string CurrentUserId = "user-x";
+    private const int LeagueId = 42;
+    private const string UserId = "user-me";
 
-    private static readonly DateTime NowUtc = new(2026, 8, 9, 12, 0, 0, DateTimeKind.Utc);
-    private static readonly DateTime PassedDeadline = new(2026, 8, 1, 12, 0, 0, DateTimeKind.Utc);
-    private static readonly DateTime FutureDeadline = new(2026, 9, 1, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime Now = new(2027, 6, 1, 12, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime SeasonStart = new(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime SeasonEnd = new(2027, 5, 31, 0, 0, 0, DateTimeKind.Utc);
 
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
+    private readonly IWinningsQuery _winningsQuery = Substitute.For<IWinningsQuery>();
     private readonly ILeagueMembershipService _membershipService = Substitute.For<ILeagueMembershipService>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
     private readonly GetWinningsQueryHandler _handler;
 
     public GetWinningsQueryHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(NowUtc);
-        _handler = new GetWinningsQueryHandler(_dbConnection, _membershipService, _dateTimeProvider);
+        _handler = new GetWinningsQueryHandler(_winningsQuery, _membershipService, new TestDateTimeProvider(Now));
     }
 
-    // ---------- arrange helpers ----------
-
-    private void GivenLeague(
-        DateTime? entryDeadlineUtc = null,
-        int entryCount = 4,
-        decimal entryCost = 10m,
-        int totalRoundsInSeason = 3,
-        DateTime? seasonStartUtc = null,
-        DateTime? seasonEndUtc = null)
-    {
-        _dbConnection.QuerySingleOrDefaultAsync<LeagueData>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(new LeagueData
-            {
-                EntryDeadlineUtc = entryDeadlineUtc ?? PassedDeadline,
-                EntryCost = entryCost,
-                EntryCount = entryCount,
-                TotalRoundsInSeason = totalRoundsInSeason,
-                SeasonStartDateUtc = seasonStartUtc ?? new DateTime(2025, 8, 1, 0, 0, 0, DateTimeKind.Utc),
-                SeasonEndDateUtc = seasonEndUtc ?? new DateTime(2026, 5, 1, 0, 0, 0, DateTimeKind.Utc)
-            });
-    }
-
-    private void GivenNoLeague() =>
-        _dbConnection.QuerySingleOrDefaultAsync<LeagueData>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns((LeagueData?)null);
-
-    private void GivenPrizeSettings(params PrizeSettingQueryResult[] settings) =>
-        _dbConnection.QueryAsync<PrizeSettingQueryResult>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(settings);
-
-    private void GivenWinnings(params WinningsQueryResult[] winnings) =>
-        _dbConnection.QueryAsync<WinningsQueryResult>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(winnings);
-
-    private void GivenMembers(params LeagueMemberQueryResult[] members) =>
-        _dbConnection.QueryAsync<LeagueMemberQueryResult>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(members);
-
-    private static PrizeSettingQueryResult Setting(int id, PrizeType type, string name, decimal amount, string? stage = null) =>
-        new(id, type, name, amount, stage);
-
-    private static WinningsQueryResult Winner(
-        int settingId, PrizeType type, string name, decimal amount, string userId, int? roundNumber = null, int? month = null) =>
-        new(amount, settingId, type, name, roundNumber, month, userId);
-
-    private Task<WinningsDto> HandleAsync() =>
-        _handler.Handle(new GetWinningsQuery(LeagueId, CurrentUserId), CancellationToken.None);
-
-    // ---------- membership and missing league ----------
+    #region Whether there is anything to show
 
     [Fact]
     public async Task Handle_ShouldEnforceMembership_BeforeReadingAnything()
     {
-        _membershipService.EnsureApprovedMemberAsync(LeagueId, CurrentUserId, Arg.Any<CancellationToken>())
+        // Arrange
+        _membershipService
+            .EnsureApprovedMemberAsync(LeagueId, UserId, Arg.Any<CancellationToken>())
             .Returns(Task.FromException(new UnauthorizedAccessException()));
 
-        var act = HandleAsync;
+        // Act
+        var act = async () => await HandleAsync();
 
+        // Assert
         await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        await _winningsQuery.DidNotReceiveWithAnyArgs().ExecuteAsync(default, CancellationToken.None);
     }
 
     [Fact]
     public async Task Handle_ShouldReturnAnEmptyResult_WhenTheLeagueDoesNotExist()
     {
-        GivenNoLeague();
+        // Arrange
+        _winningsQuery.ExecuteAsync(LeagueId, Arg.Any<CancellationToken>()).Returns((WinningsData?)null);
 
-        var result = await HandleAsync();
+        // Act
+        var winnings = await HandleAsync();
 
-        result.WinningsCalculated.Should().BeFalse();
-        result.RoundPrizes.Should().BeEmpty();
-        result.Leaderboard.Entries.Should().BeEmpty();
+        // Assert - not an exception: this page is reachable for a league that has just been deleted.
+        winnings.WinningsCalculated.Should().BeFalse();
+        winnings.EntryCount.Should().Be(0);
     }
 
-    // ---------- the "not yet calculated" gate ----------
-
-    // Before the entry deadline the entrant count can still change, so the prize pot is provisional and
-    // no prize is attributed to anyone yet.
     [Fact]
     public async Task Handle_ShouldReportWinningsAsNotCalculated_WhenTheEntryDeadlineHasNotPassed()
     {
-        GivenLeague(entryDeadlineUtc: FutureDeadline, entryCount: 5, entryCost: 20m);
-        GivenPrizeSettings(Setting(1, PrizeType.Round, "Round", 5m));
+        // Arrange
+        Given(
+            Header(entryDeadlineUtc: Now.AddDays(1), entryCount: 10, entryCost: 5m),
+            settings: [Setting(1, PrizeType.Round, 5m)]);
 
-        var result = await HandleAsync();
+        // Act
+        var winnings = await HandleAsync();
 
-        result.WinningsCalculated.Should().BeFalse();
-        result.EntryCount.Should().Be(5);
-        result.EntryCost.Should().Be(20m);
-        result.TotalPrizePot.Should().Be(100m);
-        result.RoundPrizes.Should().BeEmpty();
+        // Assert - who is competing is still changing, so the pot is all there is to show.
+        winnings.WinningsCalculated.Should().BeFalse();
+        winnings.TotalPrizePot.Should().Be(50m);
+        winnings.RoundPrizes.Should().BeEmpty();
     }
 
     [Fact]
     public async Task Handle_ShouldReportWinningsAsNotCalculated_WhenTheLeagueHasNoPrizeSettings()
     {
-        GivenLeague(entryCount: 3, entryCost: 10m);
-        GivenPrizeSettings();
+        // Arrange
+        Given(Header(entryDeadlineUtc: Now.AddDays(-1)));
 
-        var result = await HandleAsync();
+        // Act
+        var winnings = await HandleAsync();
 
-        result.WinningsCalculated.Should().BeFalse();
-        result.TotalPrizePot.Should().Be(30m);
+        // Assert - nothing to win.
+        winnings.WinningsCalculated.Should().BeFalse();
     }
 
     [Fact]
     public async Task Handle_ShouldReportWinningsAsCalculated_OnceTheDeadlineHasPassedAndPrizesExist()
     {
-        GivenLeague();
-        GivenPrizeSettings(Setting(1, PrizeType.Round, "Round", 5m));
+        // Arrange
+        Given(
+            Header(entryDeadlineUtc: Now.AddDays(-1)),
+            settings: [Setting(1, PrizeType.Round, 5m)]);
 
-        var result = await HandleAsync();
+        // Act
+        var winnings = await HandleAsync();
 
-        result.WinningsCalculated.Should().BeTrue();
+        // Assert
+        winnings.WinningsCalculated.Should().BeTrue();
     }
 
-    // ---------- round prizes ----------
+    [Fact]
+    public async Task Handle_ShouldTreatALeagueWithNoDeadlineAsClosed()
+    {
+        // Arrange - the column allows null, and the old comparison against a non-nullable field would have failed to
+        // materialise rather than reaching this decision.
+        Given(
+            Header(entryDeadlineUtc: null),
+            settings: [Setting(1, PrizeType.Round, 5m)]);
 
-    // The padding rule: every round in the season appears, whether or not it has been won, so the table
-    // shows the full season rather than only the rounds already decided.
+        // Act
+        var winnings = await HandleAsync();
+
+        // Assert
+        winnings.WinningsCalculated.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldWorkOutThePotFromTheEntriesAlone()
+    {
+        // Arrange - a league with an administrator top-up as well as entry fees.
+        Given(Header(entryCount: 10, entryCost: 5m, prizeFundOverride: 100m));
+
+        // Act
+        var winnings = await HandleAsync();
+
+        // Assert - preserved: this is the one page that leaves the top-up out of the pot. Flagged in the plan document.
+        winnings.TotalPrizePot.Should().Be(50m);
+    }
+
+    #endregion
+
+    #region Round prizes
+
     [Fact]
     public async Task Handle_ShouldPadEveryUnwonRound_WithTheConfiguredAmount()
     {
-        GivenLeague(totalRoundsInSeason: 3);
-        GivenPrizeSettings(Setting(1, PrizeType.Round, "Round", 5m));
-        GivenWinnings(Winner(1, PrizeType.Round, "Ada L", 7m, "user-1", roundNumber: 2));
+        // Arrange
+        Given(
+            Header(totalRoundsInSeason: 3),
+            settings: [Setting(1, PrizeType.Round, 5m)]);
 
-        var result = await HandleAsync();
+        // Act
+        var winnings = await HandleAsync();
 
-        result.RoundPrizes.Should().HaveCount(3);
-        result.RoundPrizes.Select(p => p.Name).Should().Equal("1", "2", "3");
-
-        var unwon = result.RoundPrizes.Where(p => p.Winner == null).ToList();
-        unwon.Should().HaveCount(2);
-        unwon.Should().OnlyContain(p => p.Amount == 5m && p.UserId == null);
+        // Assert - a league mid-season is mostly unwon prizes, and the page shows every round.
+        winnings.RoundPrizes.Should().HaveCount(3);
+        winnings.RoundPrizes.Should().OnlyContain(prize => prize.Amount == 5m && prize.Winner == null);
     }
 
-    // The won round keeps the amount actually paid, which can differ from the configured amount when a
-    // prize was shared or rolled over.
     [Fact]
     public async Task Handle_ShouldKeepTheAmountActuallyPaid_ForAWonRound()
     {
-        GivenLeague(totalRoundsInSeason: 2);
-        GivenPrizeSettings(Setting(1, PrizeType.Round, "Round", 5m));
-        GivenWinnings(Winner(1, PrizeType.Round, "Ada L", 7.5m, "user-1", roundNumber: 1));
+        // Arrange - the prize was 5, but 2.50 was paid because it was shared.
+        Given(
+            Header(totalRoundsInSeason: 2),
+            settings: [Setting(1, PrizeType.Round, 5m)],
+            winnings: [Won(1, PrizeType.Round, 2.50m, "Ada", "Lovelace", roundNumber: 1)]);
 
-        var result = await HandleAsync();
+        // Act
+        var prizes = (await HandleAsync()).RoundPrizes;
 
-        var won = result.RoundPrizes.Single(p => p.Name == "1");
-        won.Amount.Should().Be(7.5m);
-        won.Winner.Should().Be("Ada L");
-        won.UserId.Should().Be("user-1");
+        // Assert
+        prizes.Single(prize => prize.Name == "1").Amount.Should().Be(2.50m);
+        prizes.Single(prize => prize.Name == "1").Winner.Should().Be("Ada L");
+        prizes.Single(prize => prize.Name == "2").Amount.Should().Be(5m);
     }
 
     [Fact]
     public async Task Handle_ShouldOrderRoundPrizesNumerically_NotAsText()
     {
-        GivenLeague(totalRoundsInSeason: 12);
-        GivenPrizeSettings(Setting(1, PrizeType.Round, "Round", 5m));
-        GivenWinnings(Winner(1, PrizeType.Round, "Ada L", 5m, "user-1", roundNumber: 10));
+        // Arrange
+        Given(
+            Header(totalRoundsInSeason: 12),
+            settings: [Setting(1, PrizeType.Round, 5m)]);
 
-        var result = await HandleAsync();
+        // Act
+        var prizes = (await HandleAsync()).RoundPrizes;
 
-        // Text ordering would put "10" between "1" and "2".
-        result.RoundPrizes.Select(p => int.Parse(p.Name)).Should().BeInAscendingOrder();
-        result.RoundPrizes.Select(p => p.Name).Should().Equal(
-            "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12");
+        // Assert - round 2 before round 10, which sorting the names as strings would get wrong.
+        prizes.Select(prize => prize.Name).Should().Equal("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12");
     }
 
     [Fact]
     public async Task Handle_ShouldLeaveRoundPrizesEmpty_WhenTheLeagueHasNoRoundPrize()
     {
-        GivenLeague(totalRoundsInSeason: 3);
-        GivenPrizeSettings(Setting(1, PrizeType.Overall, "Champion", 50m));
+        // Arrange
+        Given(
+            Header(totalRoundsInSeason: 10),
+            settings: [Setting(1, PrizeType.Overall, 100m)]);
 
-        var result = await HandleAsync();
+        // Act
+        var winnings = await HandleAsync();
 
-        result.RoundPrizes.Should().BeEmpty();
+        // Assert - no round prize configured means no rounds listed, rather than ten rows worth nothing.
+        winnings.RoundPrizes.Should().BeEmpty();
     }
 
-    // ---------- monthly prizes ----------
+    #endregion
 
-    // A season runs August to May, so the months wrap into the next calendar year. Ordering them by
-    // month number alone would put January before August; the handler shifts the earlier months into
-    // the following year first.
+    #region Monthly prizes
+
     [Fact]
     public async Task Handle_ShouldOrderMonthlyPrizesAcrossTheYearBoundary()
     {
-        GivenLeague(
-            seasonStartUtc: new DateTime(2025, 8, 1, 0, 0, 0, DateTimeKind.Utc),
-            seasonEndUtc: new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
-        GivenPrizeSettings(Setting(1, PrizeType.Monthly, "Monthly", 15m));
+        // Arrange - an August-to-May season.
+        Given(
+            Header(),
+            settings: [Setting(1, PrizeType.Monthly, 20m)]);
 
-        var result = await HandleAsync();
+        // Act
+        var prizes = (await HandleAsync()).MonthlyPrizes;
 
-        result.MonthlyPrizes.Select(p => p.Name).Should().Equal(
-            "August", "September", "October", "November", "December", "January");
+        // Assert - the season's order, so January follows December rather than opening the list.
+        prizes.Select(prize => prize.Name).Should().Equal(
+            "August", "September", "October", "November", "December",
+            "January", "February", "March", "April", "May");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNameMonthsInEnglish()
+    {
+        // Arrange - the old code formatted these with the machine's locale and then parsed the name back to sort by it.
+        Given(
+            Header(),
+            settings: [Setting(1, PrizeType.Monthly, 20m)]);
+
+        // Act
+        var prizes = (await HandleAsync()).MonthlyPrizes;
+
+        // Assert
+        prizes.First().Name.Should().Be("August");
     }
 
     [Fact]
     public async Task Handle_ShouldPadEveryUnwonMonth_WithTheConfiguredAmount()
     {
-        GivenLeague(
-            seasonStartUtc: new DateTime(2025, 8, 1, 0, 0, 0, DateTimeKind.Utc),
-            seasonEndUtc: new DateTime(2025, 10, 1, 0, 0, 0, DateTimeKind.Utc));
-        GivenPrizeSettings(Setting(1, PrizeType.Monthly, "Monthly", 15m));
-        GivenWinnings(Winner(1, PrizeType.Monthly, "Ada L", 20m, "user-1", month: 9));
+        // Arrange
+        Given(
+            Header(),
+            settings: [Setting(1, PrizeType.Monthly, 20m)],
+            winnings: [Won(1, PrizeType.Monthly, 20m, "Ada", "Lovelace", month: 9)]);
 
-        var result = await HandleAsync();
+        // Act
+        var prizes = (await HandleAsync()).MonthlyPrizes;
 
-        result.MonthlyPrizes.Select(p => p.Name).Should().Equal("August", "September", "October");
-        result.MonthlyPrizes.Single(p => p.Name == "September").Winner.Should().Be("Ada L");
-        result.MonthlyPrizes.Where(p => p.Winner == null).Should().OnlyContain(p => p.Amount == 15m);
+        // Assert
+        prizes.Single(prize => prize.Name == "September").Winner.Should().Be("Ada L");
+        prizes.Where(prize => prize.Winner == null).Should().OnlyContain(prize => prize.Amount == 20m);
+        prizes.Should().HaveCount(10);
     }
 
     [Fact]
     public async Task Handle_ShouldLeaveMonthlyPrizesEmpty_WhenTheLeagueHasNoMonthlyPrize()
     {
-        GivenLeague();
-        GivenPrizeSettings(Setting(1, PrizeType.Round, "Round", 5m));
+        // Arrange
+        Given(Header(), settings: [Setting(1, PrizeType.Overall, 100m)]);
 
-        var result = await HandleAsync();
+        // Act
+        var winnings = await HandleAsync();
 
-        result.MonthlyPrizes.Should().BeEmpty();
+        // Assert
+        winnings.MonthlyPrizes.Should().BeEmpty();
     }
 
-    // ---------- stage prizes ----------
+    [Fact]
+    public async Task Handle_ShouldOfferEachMonthOnce_ForASeasonLongerThanAYear()
+    {
+        // Arrange - not reachable with a real season, and the old code would have listed the repeat twice.
+        Given(
+            Header(seasonEndDateUtc: SeasonStart.AddMonths(13)),
+            settings: [Setting(1, PrizeType.Monthly, 20m)]);
+
+        // Act
+        var prizes = (await HandleAsync()).MonthlyPrizes;
+
+        // Assert
+        prizes.Select(prize => prize.Name).Should().OnlyHaveUniqueItems();
+    }
+
+    #endregion
+
+    #region Stage and end-of-season prizes
 
     [Fact]
     public async Task Handle_ShouldListAStagePrizeAsUnwon_WhenNobodyHasWonIt()
     {
-        GivenLeague();
-        GivenPrizeSettings(Setting(1, PrizeType.Stages, "Group Stage", 25m, stage: "GroupStage"));
+        // Arrange
+        Given(
+            Header(),
+            settings: [Setting(1, PrizeType.Stages, 40m, name: "Group Stage", stage: "Group Stage")]);
 
-        var result = await HandleAsync();
+        // Act
+        var prize = (await HandleAsync()).StagePrizes.Single();
 
-        result.StagePrizes.Should().HaveCount(1);
-        result.StagePrizes[0].Name.Should().Be("Group Stage");
-        result.StagePrizes[0].Amount.Should().Be(25m);
-        result.StagePrizes[0].Winner.Should().BeNull();
+        // Assert
+        prize.Name.Should().Be("Group Stage");
+        prize.Amount.Should().Be(40m);
+        prize.Winner.Should().BeNull();
     }
 
-    // A shared stage prize produces one row per winner rather than one row for the prize.
     [Fact]
     public async Task Handle_ShouldListOneRowPerWinner_WhenAStagePrizeIsShared()
     {
-        GivenLeague();
-        GivenPrizeSettings(Setting(1, PrizeType.Stages, "Group Stage", 25m, stage: "GroupStage"));
-        GivenWinnings(
-            Winner(1, PrizeType.Stages, "Ada L", 12.5m, "user-1"),
-            Winner(1, PrizeType.Stages, "Grace H", 12.5m, "user-2"));
+        // Arrange
+        Given(
+            Header(),
+            settings: [Setting(1, PrizeType.Stages, 40m, name: "Group Stage", stage: "Group Stage")],
+            winnings:
+            [
+                Won(1, PrizeType.Stages, 20m, "Ada", "Lovelace"),
+                Won(1, PrizeType.Stages, 20m, "Grace", "Hopper")
+            ]);
 
-        var result = await HandleAsync();
+        // Act
+        var prizes = (await HandleAsync()).StagePrizes;
 
-        result.StagePrizes.Should().HaveCount(2);
-        result.StagePrizes.Select(p => p.Winner).Should().BeEquivalentTo("Ada L", "Grace H");
-        result.StagePrizes.Should().OnlyContain(p => p.Amount == 12.5m);
+        // Assert - a shared prize is split, so each winner gets their own line with their own amount.
+        prizes.Should().HaveCount(2);
+        prizes.Select(prize => prize.Winner).Should().BeEquivalentTo(["Ada L", "Grace H"]);
+        prizes.Should().OnlyContain(prize => prize.Amount == 20m);
     }
-
-    // ---------- end-of-season prizes ----------
 
     [Fact]
     public async Task Handle_ShouldCollectEveryPrizeThatIsNotRoundMonthlyOrStage()
     {
-        GivenLeague();
-        GivenPrizeSettings(
-            Setting(1, PrizeType.Round, "Round", 5m),
-            Setting(2, PrizeType.Monthly, "Monthly", 15m),
-            Setting(3, PrizeType.Stages, "Group Stage", 25m, stage: "GroupStage"),
-            Setting(4, PrizeType.Overall, "Champion", 100m),
-            Setting(5, PrizeType.MostExactScores, "Most Exact Scores", 40m));
+        // Arrange
+        Given(
+            Header(),
+            settings:
+            [
+                Setting(1, PrizeType.Round, 5m),
+                Setting(2, PrizeType.Monthly, 20m),
+                Setting(3, PrizeType.Stages, 40m, stage: "Group Stage"),
+                Setting(4, PrizeType.Overall, 100m, name: "1st Place"),
+                Setting(5, PrizeType.MostExactScores, 30m, name: "Most Exact Scores")
+            ]);
 
-        var result = await HandleAsync();
+        // Act
+        var prizes = (await HandleAsync()).EndOfSeasonPrizes;
 
-        result.EndOfSeasonPrizes.Select(p => p.Name)
-            .Should().BeEquivalentTo("Champion", "Most Exact Scores");
+        // Assert
+        prizes.Select(prize => prize.Name).Should().BeEquivalentTo(["1st Place", "Most Exact Scores"]);
     }
 
     [Fact]
     public async Task Handle_ShouldAttributeAnEndOfSeasonPrize_ToItsWinner()
     {
-        GivenLeague();
-        GivenPrizeSettings(Setting(4, PrizeType.Overall, "Champion", 100m));
-        GivenWinnings(Winner(4, PrizeType.Overall, "Ada L", 100m, "user-1"));
+        // Arrange
+        Given(
+            Header(),
+            settings: [Setting(4, PrizeType.Overall, 100m, name: "1st Place")],
+            winnings: [Won(4, PrizeType.Overall, 100m, "Ada", "Lovelace")]);
 
-        var result = await HandleAsync();
+        // Act
+        var prize = (await HandleAsync()).EndOfSeasonPrizes.Single();
 
-        result.EndOfSeasonPrizes.Should().HaveCount(1);
-        result.EndOfSeasonPrizes[0].Winner.Should().Be("Ada L");
-        result.EndOfSeasonPrizes[0].UserId.Should().Be("user-1");
+        // Assert
+        prize.Winner.Should().Be("Ada L");
+        prize.Amount.Should().Be(100m);
     }
 
-    // ---------- leaderboard aggregation ----------
+    #endregion
+
+    [Fact]
+    public async Task Handle_ShouldSkipARoundPrizeRecordedWithoutARound()
+    {
+        // Arrange - a state that should not exist. The old code named the line with an empty string and then took the whole
+        // page down parsing it back to sort by it.
+        Given(
+            Header(totalRoundsInSeason: 2),
+            settings: [Setting(1, PrizeType.Round, 5m)],
+            winnings: [Won(1, PrizeType.Round, 5m, "Ada", "Lovelace", roundNumber: null)]);
+
+        // Act
+        var prizes = (await HandleAsync()).RoundPrizes;
+
+        // Assert - both rounds still listed as unwon; a missing line beats a page that will not load.
+        prizes.Should().HaveCount(2);
+        prizes.Should().OnlyContain(prize => prize.Winner == null);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotPutARoundWinInTheMonthlyList()
+    {
+        // Arrange - both kinds of prize on offer, and a round win recorded.
+        Given(
+            Header(),
+            settings: [Setting(1, PrizeType.Monthly, 20m), Setting(2, PrizeType.Round, 5m)],
+            winnings: [Won(2, PrizeType.Round, 5m, "Ada", "Lovelace", roundNumber: 1)]);
+
+        // Act
+        var winnings = await HandleAsync();
+
+        // Assert - every month still unwon, and the round win in its own list.
+        winnings.MonthlyPrizes.Should().OnlyContain(prize => prize.Winner == null);
+        winnings.RoundPrizes.Should().Contain(prize => prize.Winner == "Ada L");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldSkipAMonthlyPrizeRecordedWithoutAMonth()
+    {
+        // Arrange
+        Given(
+            Header(),
+            settings: [Setting(1, PrizeType.Monthly, 20m)],
+            winnings: [Won(1, PrizeType.Monthly, 20m, "Ada", "Lovelace", month: null)]);
+
+        // Act
+        var prizes = (await HandleAsync()).MonthlyPrizes;
+
+        // Assert
+        prizes.Should().OnlyContain(prize => prize.Winner == null);
+    }
+
+    #region The winnings leaderboard
 
     [Fact]
     public async Task Handle_ShouldSplitEachMembersWinningsByPrizeType()
     {
-        GivenLeague();
-        GivenPrizeSettings(Setting(1, PrizeType.Round, "Round", 5m));
-        GivenMembers(new LeagueMemberQueryResult("Ada L", "user-1"));
-        GivenWinnings(
-            Winner(1, PrizeType.Round, "Ada L", 5m, "user-1", roundNumber: 1),
-            Winner(2, PrizeType.Monthly, "Ada L", 15m, "user-1", month: 9),
-            Winner(3, PrizeType.Stages, "Ada L", 25m, "user-1"),
-            Winner(4, PrizeType.Overall, "Ada L", 100m, "user-1"));
+        // Arrange
+        Given(
+            Header(),
+            settings: [Setting(1, PrizeType.Round, 5m)],
+            winnings:
+            [
+                Won(1, PrizeType.Round, 5m, "Ada", "Lovelace", roundNumber: 1),
+                Won(2, PrizeType.Monthly, 20m, "Ada", "Lovelace", month: 9),
+                Won(3, PrizeType.Stages, 40m, "Ada", "Lovelace"),
+                Won(4, PrizeType.Overall, 100m, "Ada", "Lovelace"),
+                Won(5, PrizeType.MostExactScores, 30m, "Ada", "Lovelace")
+            ],
+            members: [Member("u1", "Ada", "Lovelace")]);
 
-        var result = await HandleAsync();
+        // Act
+        var entry = (await HandleAsync()).Leaderboard.Entries.Single();
 
-        var entry = result.Leaderboard.Entries.Single();
+        // Assert - the last two are both "end of season", which is everything that is not a round, month or stage.
         entry.RoundWinnings.Should().Be(5m);
-        entry.MonthlyWinnings.Should().Be(15m);
-        entry.StageWinnings.Should().Be(25m);
-        entry.EndOfSeasonWinnings.Should().Be(100m);
-        entry.TotalWinnings.Should().Be(145m);
+        entry.MonthlyWinnings.Should().Be(20m);
+        entry.StageWinnings.Should().Be(40m);
+        entry.EndOfSeasonWinnings.Should().Be(130m);
+        entry.TotalWinnings.Should().Be(195m);
     }
 
-    // Every approved member appears, including those who have won nothing, so the table doubles as the
-    // league's member list.
     [Fact]
     public async Task Handle_ShouldIncludeAMemberWhoHasWonNothing()
     {
-        GivenLeague();
-        GivenPrizeSettings(Setting(1, PrizeType.Round, "Round", 5m));
-        GivenMembers(
-            new LeagueMemberQueryResult("Ada L", "user-1"),
-            new LeagueMemberQueryResult("Grace H", "user-2"));
-        GivenWinnings(Winner(1, PrizeType.Round, "Ada L", 5m, "user-1", roundNumber: 1));
+        // Arrange
+        Given(
+            Header(),
+            settings: [Setting(1, PrizeType.Round, 5m)],
+            members: [Member("u1", "Ada", "Lovelace")]);
 
-        var result = await HandleAsync();
+        // Act
+        var entry = (await HandleAsync()).Leaderboard.Entries.Single();
 
-        result.Leaderboard.Entries.Should().HaveCount(2);
-        result.Leaderboard.Entries.Single(e => e.UserId == "user-2").TotalWinnings.Should().Be(0m);
+        // Assert - the table is the league, not a list of winners.
+        entry.PlayerName.Should().Be("Ada L");
+        entry.TotalWinnings.Should().Be(0m);
     }
 
     [Fact]
     public async Task Handle_ShouldOrderTheLeaderboardByTotalWinningsThenName()
     {
-        GivenLeague();
-        GivenPrizeSettings(Setting(1, PrizeType.Round, "Round", 5m));
-        GivenMembers(
-            new LeagueMemberQueryResult("Zoe W", "user-3"),
-            new LeagueMemberQueryResult("Ada L", "user-1"),
-            new LeagueMemberQueryResult("Grace H", "user-2"));
-        GivenWinnings(
-            Winner(1, PrizeType.Round, "Ada L", 5m, "user-1", roundNumber: 1),
-            Winner(1, PrizeType.Round, "Grace H", 20m, "user-2", roundNumber: 2));
+        // Arrange
+        Given(
+            Header(),
+            settings: [Setting(1, PrizeType.Round, 5m)],
+            winnings:
+            [
+                Won(1, PrizeType.Round, 50m, "Grace", "Hopper", roundNumber: 1, userId: "u2"),
+                Won(1, PrizeType.Round, 50m, "Ada", "Lovelace", roundNumber: 2, userId: "u1"),
+                Won(1, PrizeType.Round, 100m, "Alan", "Turing", roundNumber: 3, userId: "u3")
+            ],
+            members:
+            [
+                Member("u1", "Ada", "Lovelace"),
+                Member("u2", "Grace", "Hopper"),
+                Member("u3", "Alan", "Turing")
+            ]);
 
-        var result = await HandleAsync();
+        // Act
+        var entries = (await HandleAsync()).Leaderboard.Entries;
 
-        // Grace 20, Ada 5, then the two on nothing alphabetically - Zoe last.
-        result.Leaderboard.Entries.Select(e => e.PlayerName)
-            .Should().Equal("Grace H", "Ada L", "Zoe W");
+        // Assert
+        entries.Select(entry => entry.PlayerName).Should().Equal("Alan T", "Ada L", "Grace H");
     }
+
+    #endregion
+
+    private void Given(
+        WinningsHeaderRow? header = null,
+        IReadOnlyList<WinningsPrizeSettingRow>? settings = null,
+        IReadOnlyList<WinningsRow>? winnings = null,
+        IReadOnlyList<LeaderboardParticipantRow>? members = null)
+    {
+        _winningsQuery
+            .ExecuteAsync(LeagueId, Arg.Any<CancellationToken>())
+            .Returns(new WinningsData(header ?? Header(), settings ?? [], winnings ?? [], members ?? []));
+    }
+
+    private async Task<WinningsDto> HandleAsync() =>
+        await _handler.Handle(new GetWinningsQuery(LeagueId, UserId), CancellationToken.None);
+
+    /// <summary>
+    /// A league whose entry deadline has passed by default - which for most of these tests is the interesting state,
+    /// because it is the one where prizes have been worked out.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="entryDeadlineUtc"/> passes straight through, so <c>null</c> means a league with no deadline at all
+    /// rather than the default. An earlier version of this helper defaulted a null to the season start, which quietly made
+    /// the "no deadline" test a "past deadline" test - the mutation check caught it.
+    /// </remarks>
+    private static WinningsHeaderRow Header(
+        DateTime? entryDeadlineUtc = null,
+        decimal entryCost = 10m,
+        int entryCount = 5,
+        decimal? prizeFundOverride = null,
+        DateTime? seasonEndDateUtc = null,
+        int totalRoundsInSeason = 38) =>
+        new(
+            entryDeadlineUtc,
+            entryCost,
+            entryCount,
+            prizeFundOverride,
+            SeasonStart,
+            seasonEndDateUtc ?? SeasonEnd,
+            totalRoundsInSeason);
+
+    private static WinningsPrizeSettingRow Setting(
+        int id,
+        PrizeType prizeType,
+        decimal amount,
+        string? name = null,
+        string? stage = null) =>
+        new(id, prizeType, name ?? prizeType.ToString(), amount, stage);
+
+    private static WinningsRow Won(
+        int settingId,
+        PrizeType prizeType,
+        decimal amount,
+        string firstName,
+        string lastName,
+        int? roundNumber = null,
+        int? month = null,
+        string userId = "u1") =>
+        new(amount, settingId, prizeType, firstName, lastName, roundNumber, month, userId);
+
+    private static LeaderboardParticipantRow Member(string userId, string firstName, string lastName) =>
+        new(userId, firstName, lastName);
 }

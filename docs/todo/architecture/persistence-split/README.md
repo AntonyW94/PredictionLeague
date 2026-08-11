@@ -164,6 +164,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leagues/members + payment details** ✅ | The rule guarding a league's bank account had no tests, because the handler carried the boilerplate coverage exclusion. |
 | 2 | **Leagues/prizes + create page** ✅ | A flattened left join split in two, which retired a row type where every prize column was nullable. |
 | 2 | **Leagues/payouts** ✅ | Two definitions of "season finished" found side by side, and tests that no longer count the handler's SQL statements. |
+| 2 | **Leagues/winnings** ✅ | **Leagues is done.** A month name formatted with the machine's locale and then parsed back to sort by it, and a latent crash on the round list. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -370,6 +371,46 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
+
+### A value formatted, then parsed back to sort by it
+
+The winnings page named each monthly prize with `CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(...)` and then
+ordered the list with:
+
+```csharp
+DateTime.ParseExact(p.Name, "MMMM", CultureInfo.CurrentCulture).Month
+```
+
+A round trip out of a number, into a localised string, and back again - which fails outright if the culture that formatted
+it is not the culture parsing it, and which no test could have caught on an English machine. The numbers are now carried to
+the last step and only turned into names there, so there is nothing to parse back. Third instance of the
+`CurrentCulture` family of findings, and the first where the round trip made it a correctness risk rather than only a
+cosmetic one.
+
+The same shape appeared in the round list: `Name = winner.RoundNumber.ToString()` and then
+`OrderBy(p => int.Parse(p.Name))`. A round prize recorded **without** a round number produced an empty name and took the
+whole page down on the sort. Both lists now carry their number through, and a win missing the period it belongs to is
+skipped with a test naming it - a prize absent from a list is a far better failure than a page that will not load.
+
+### A test whose name was a lie, caught by the mutation check
+
+While mutating `AreWinningsWorkedOut` to treat a league with no entry deadline as still open, the test called
+`Handle_ShouldTreatALeagueWithNoDeadlineAsClosed` **passed anyway**. Its helper defaulted a null deadline to the season
+start, so the test had quietly been checking a *past* deadline all along.
+
+Worth recording as a method note rather than a finding about the code: the mutation check is not only for verifying that a
+moved rule is wired in - it also finds tests that pass for the wrong reason. A test that survives a mutation of the exact
+behaviour it names is either wrong or misnamed.
+
+### The one page whose prize pot ignores the top-up
+
+The winnings page works its pot out as `EntryCount * EntryCost`. The other three sites go through `PrizeFund.Total`, which
+adds the administrator's `PrizeFundOverride`. So a league with a funded top-up shows a smaller pot here than on its own
+dashboard.
+
+Preserved, with the top-up returned by the port and unused so the difference is visible in the handler rather than hidden
+in a `SELECT` that omitted the column - the same treatment as the member counts. **Open question for the owner:** should
+this page include the top-up like the others?
 
 ### Two definitions of "is the season over"
 
