@@ -1,95 +1,58 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leaderboards;
-using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// A league's overall leaderboard.
+///
+/// The SQL that used to be here carried five rules: the tie policy (<c>RANK() OVER</c>), the total
+/// (<c>COALESCE(SUM(...), 0)</c>), the display name, the order of joint positions, and when a pre-round
+/// position is worth showing. All five are now C# and none of them depends on which database answered.
+///
+/// The pre-round position itself is still read from the cache maintained on the write path under ADR-0015 -
+/// only the decision to show it moved.
+/// </summary>
 public class GetOverallLeaderboardQueryHandler(
-    IApplicationReadDbConnection dbConnection,
+    IOverallLeaderboardQuery leaderboardQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetOverallLeaderboardQuery, IEnumerable<LeaderboardEntryDto>>
 {
-    public async Task<IEnumerable<LeaderboardEntryDto>> Handle(GetOverallLeaderboardQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<LeaderboardEntryDto>> Handle(
+        GetOverallLeaderboardQuery request,
+        CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
-        const string sql = @"
-            SELECT
-                RANK() OVER (ORDER BY COALESCE(SUM(lrr.[BoostedPoints]), 0) DESC) AS [Rank],
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
-                COALESCE(SUM(lrr.[BoostedPoints]), 0) AS [TotalPoints],
-                u.[Id] AS [UserId],
-                CASE WHEN EXISTS (
-                    SELECT 1
-                    FROM [Rounds] r
-                    JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
-                    WHERE l.[Id] = @LeagueId AND r.[Status] = @CompletedStatus
-                ) THEN stats.[SnapshotOverallRank] ELSE NULL END AS [SnapshotRank],
-                CAST(CASE WHEN EXISTS (
-                    SELECT 1
-                    FROM [Rounds] r
-                    JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
-                    WHERE l.[Id] = @LeagueId AND r.[Status] = @InProgressStatus
-                ) THEN 1 ELSE 0 END AS bit) AS [IsRoundInProgress]
-            
-            FROM 
-	            [LeagueMembers] lm
-            
-            JOIN 
-	            [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            LEFT JOIN 
-	            [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = @LeagueId
-            LEFT JOIN 
-                [LeagueMemberStats] stats ON lm.[LeagueId] = stats.[LeagueId] AND lm.[UserId] = stats.[UserId]
-           
-            WHERE 
-	            lm.[LeagueId] = @LeagueId
-                AND lm.[Status] = @ApprovedStatus
+        var data = await leaderboardQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
-            GROUP BY 
-	            u.[FirstName], 
-                u.[LastName], 
-                u.[Id],
-                stats.[SnapshotOverallRank]
+        var totalsByUser = data.RoundPoints
+            .GroupBy(points => points.UserId)
+            .ToDictionary(group => group.Key, group => group.Sum(points => points.BoostedPoints));
 
-            ORDER BY 
-	            [Rank], 
-                [PlayerName];";
+        // A member with no results scores zero and takes a position, rather than being left off the table -
+        // which is what the COALESCE in the old SQL meant.
+        var ranked = Ranking.ByDescending(
+            data.Members,
+            member => TotalFor(totalsByUser, member.UserId),
+            member => PlayerDisplayName.FormatFull(member.FirstName, member.LastName));
 
-        var entries = await dbConnection.QueryAsync<OverallLeaderboardQueryResult>(
-            sql,
-            cancellationToken,
-            new
+        return ranked
+            .Select(entry => new LeaderboardEntryDto
             {
-                request.LeagueId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                InProgressStatus = nameof(RoundStatus.InProgress),
-                CompletedStatus = nameof(RoundStatus.Completed)
-            }
-        );
-
-        return entries.Select(e => new LeaderboardEntryDto
-        {
-            Rank = e.Rank,
-            PlayerName = e.PlayerName,
-            TotalPoints = e.TotalPoints,
-            UserId = e.UserId,
-            SnapshotRank = e.SnapshotRank,
-            IsRoundInProgress = e.IsRoundInProgress
-        });
+                Rank = entry.Rank,
+                PlayerName = PlayerDisplayName.Format(entry.Item.FirstName, entry.Item.LastName),
+                TotalPoints = TotalFor(totalsByUser, entry.Item.UserId),
+                UserId = entry.Item.UserId,
+                // A pre-round position only means something once a round has been completed; before that there
+                // is nothing to have moved from, so the arrow is hidden rather than shown against zero.
+                SnapshotRank = data.HasCompletedRound ? entry.Item.SnapshotOverallRank : null,
+                IsRoundInProgress = data.HasRoundInProgress
+            })
+            .ToList();
     }
 
-    // SnapshotRank is [LeagueMemberStats].[SnapshotOverallRank], an int column, so it must be int? here
-    // even though LeaderboardEntryDto exposes it as long? - Dapper's constructor match is exact per column.
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record OverallLeaderboardQueryResult(
-        long Rank,
-        string PlayerName,
-        int? TotalPoints,
-        string UserId,
-        int? SnapshotRank,
-        bool IsRoundInProgress);
+    private static int TotalFor(IReadOnlyDictionary<string, int> totalsByUser, string userId) =>
+        totalsByUser.TryGetValue(userId, out var total) ? total : 0;
 }

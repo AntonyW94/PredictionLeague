@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Boosts.Queries;
+using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Models;
@@ -11,6 +12,7 @@ using ThePredictions.Persistence.SqlServer.Identity;
 using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Persistence.SqlServer.Data.Resilience;
 using ThePredictions.Persistence.SqlServer.Queries.Boosts;
+using ThePredictions.Persistence.SqlServer.Queries.Leagues;
 using ThePredictions.Persistence.SqlServer.Queries.Rounds;
 using ThePredictions.Persistence.SqlServer.Repositories;
 
@@ -68,6 +70,7 @@ public static class DependencyInjection
         services.AddScoped<ILeagueBoostUsageQuery, LeagueBoostUsageQuery>();
         services.AddScoped<IRoundCompletionQuery, RoundCompletionQuery>();
         services.AddScoped<IEarlierRoundStatusesQuery, EarlierRoundStatusesQuery>();
+        services.AddScoped<IOverallLeaderboardQuery, OverallLeaderboardQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository

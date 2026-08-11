@@ -149,6 +149,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Boosts/usage-summary** ✅ | `ILeagueBoostUsageQuery` (one composite reply, 7 reads), three rules moved to C#, handler measured. |
 | 2 | **Rounds/completion** ✅ | `IRoundCompletionQuery`; three SQL statements and a shared predicate replaced by `Match.IsOpenForPrediction`. SQL copy 1 of 2 gone. |
 | 2 | **Rounds/reminders** ✅ | `ReminderService` onto the same port and the same domain rule. Predictable-fixture duplication **fully collapsed**; three rules, one definition each. |
+| 2 | **Leaderboards/overall** ✅ | First adopter of `Ranking`. Five rules out of one query; `SnapshotOverallRank` stays a cached read per ADR-0015. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -367,7 +368,7 @@ collapses each to one.
 | Round display name (`CASE WHEN LEN(LTRIM(RTRIM(DisplayName))) > 0 ...`) | The same two files | **Fully collapsed 2026-08-10** to `Round.GetDisplayNameOrDefault`. The second rule those two files duplicated. |
 | Round outcome counts | `RoundRepository.UpdateRoundResultsAsync` MERGE + `GetActiveRoundsQueryHandler.cs:195` | Found 2026-08-10, **untested in either copy**. `RoundResults.ExactScoreCount` is stored and read by badges, digests, leaderboards, records and season recap, so the SQL is canonical and the C# is a live shadow of it. Collapses in phase "Rounds". |
 | Boost secrecy | SQL only, but reads `GETUTCDATE()` instead of `IDateTimeProvider` | Integration tested 2026-08-10; becomes a clock-injected C# filter in phase "Boosts" |
-| Player display name (`FirstName + ' ' + LEFT(LastName, 1)`) | **17 files** | `Domain.Services.PlayerDisplayName` added 2026-08-10 with the Boosts batch, which adopted it. **16 SQL copies remain** - each area adopts it as the split reaches it. The C# version also drops the trailing space the SQL produced for an empty surname. |
+| Player display name (`FirstName + ' ' + LEFT(LastName, 1)`) | **17 files originally, 14 left** | `Domain.Services.PlayerDisplayName` added 2026-08-10 with the Boosts batch, which adopted it. **16 SQL copies remain** - each area adopts it as the split reaches it. The C# version also drops the trailing space the SQL produced for an empty surname. |
 
 ## Open question, not yet decided
 
