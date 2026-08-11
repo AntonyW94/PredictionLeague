@@ -1,149 +1,197 @@
 using FluentAssertions;
 using NSubstitute;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Dashboard.Queries;
 using ThePredictions.Contracts.Dashboard;
-using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
-using static ThePredictions.Application.Features.Dashboard.Queries.GetActiveRoundsQueryHandler;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Dashboard.Queries;
 
 /// <summary>
-/// The dashboard's active-rounds tiles. The rule that matters here is secrecy: each match shows how the
-/// league as a whole has predicted, and that split must stay hidden until the match itself has locked.
-/// Revealing it early would let a player see the crowd's answer while they can still change their own,
-/// so the counts are zeroed rather than merely hidden by the UI - a client that ignored the flag would
-/// still learn nothing. In a combined round the earlier matches reveal at the round deadline while the
-/// later ones stay hidden until their own custom lock time, so the decision is per match, not per round.
+/// The rounds on a player's dashboard.
+///
+/// Most of these tests are about the prediction split - the home/draw/away breakdown of everybody's predictions - which must
+/// not be visible while a match can still be predicted, or players could simply copy the crowd. In a combined round that
+/// decision is per match rather than per round.
 /// </summary>
 public class GetActiveRoundsQueryHandlerTests
 {
-    private const string UserId = "user-1";
-    private const int RoundId = 5;
+    private const string UserId = "user-me";
 
-    private static readonly DateTime NowUtc = new(2026, 8, 9, 12, 0, 0, DateTimeKind.Utc);
-    private static readonly DateTime PastDeadline = new(2026, 8, 9, 11, 0, 0, DateTimeKind.Utc);
-    private static readonly DateTime FutureDeadline = new(2026, 8, 9, 18, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime Now = new(2026, 8, 11, 12, 0, 0, DateTimeKind.Utc);
 
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
-    private readonly IDateTimeProvider _dateTimeProvider = Substitute.For<IDateTimeProvider>();
+    private readonly IActiveRoundsQuery _activeRoundsQuery = Substitute.For<IActiveRoundsQuery>();
     private readonly GetActiveRoundsQueryHandler _handler;
 
     public GetActiveRoundsQueryHandlerTests()
     {
-        _dateTimeProvider.UtcNow.Returns(NowUtc);
-        _handler = new GetActiveRoundsQueryHandler(_dbConnection, _dateTimeProvider);
+        _handler = new GetActiveRoundsQueryHandler(_activeRoundsQuery, new TestDateTimeProvider(Now));
     }
 
-    // ---------- arrange helpers ----------
-
-    private void GivenRounds(params ActiveRoundQueryResult[] rounds) =>
-        _dbConnection.QueryAsync<ActiveRoundQueryResult>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(rounds);
-
-    private void GivenMatches(params ActiveRoundMatchQueryResult[] matches) =>
-        _dbConnection.QueryAsync<ActiveRoundMatchQueryResult>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(matches);
-
-    private static ActiveRoundQueryResult Round(
-        int id = RoundId,
-        DateTime? deadlineUtc = null,
-        DateTime? latestPredictionDeadlineUtc = null,
-        bool hasUserPredicted = true,
-        RoundStatus status = RoundStatus.InProgress,
-        CompetitionType competitionType = CompetitionType.League) =>
-        new(id,
-            "2026/27",
-            RoundNumber: 3,
-            DeadlineUtc: deadlineUtc ?? FutureDeadline,
-            Status: status.ToString(),
-            HasUserPredicted: hasUserPredicted,
-            RoundDisplayName: null,
-            CompetitionType: (int)competitionType,
-            LatestPredictionDeadlineUtc: latestPredictionDeadlineUtc ?? deadlineUtc ?? FutureDeadline);
-
-    private static ActiveRoundMatchQueryResult Match(
-        int roundId = RoundId,
-        DateTime? customLockTimeUtc = null,
-        PredictionOutcome? outcome = null,
-        int homeCount = 7,
-        int drawCount = 2,
-        int awayCount = 1,
-        MatchStatus status = MatchStatus.Scheduled) =>
-        new(roundId,
-            HomeTeamLogoUrl: "https://example.test/home.png",
-            AwayTeamLogoUrl: "https://example.test/away.png",
-            PredictedHomeScore: 2,
-            PredictedAwayScore: 1,
-            Outcome: outcome,
-            Status: status.ToString(),
-            ActualHomeScore: null,
-            ActualAwayScore: null,
-            MatchDateTimeUtc: new DateTime(2026, 8, 9, 19, 0, 0, DateTimeKind.Utc),
-            MatchNumber: 1,
-            AreTeamsConfirmed: true,
-            PlaceholderHomeName: null,
-            PlaceholderAwayName: null,
-            HomeCount: homeCount,
-            DrawCount: drawCount,
-            AwayCount: awayCount,
-            CustomLockTimeUtc: customLockTimeUtc);
-
-    private async Task<List<ActiveRoundDto>> HandleAsync() =>
-        (await _handler.Handle(new GetActiveRoundsQuery(UserId), CancellationToken.None)).ToList();
-
-    // ---------- which rounds count as active ----------
+    #region Which rounds appear
 
     [Fact]
     public async Task Handle_ShouldReturnNothing_WhenThereAreNoActiveRounds()
     {
-        GivenRounds();
+        // Arrange
+        Given();
 
-        (await HandleAsync()).Should().BeEmpty();
+        // Act
+        var rounds = await HandleAsync();
+
+        // Assert
+        rounds.Should().BeEmpty();
     }
 
     [Fact]
     public async Task Handle_ShouldIncludeARoundStillOpenForPredictions()
     {
-        GivenRounds(Round(latestPredictionDeadlineUtc: FutureDeadline, hasUserPredicted: false));
-        GivenMatches(Match());
+        // Arrange
+        Given(rounds: [Round(1, deadlineUtc: Now.AddHours(1))], matches: [Match(1)]);
 
-        (await HandleAsync()).Should().HaveCount(1);
+        // Act
+        var rounds = await HandleAsync();
+
+        // Assert
+        rounds.Should().HaveCount(1);
     }
 
-    // A closed round stays on the dashboard only if the player took part in it - that is what makes it
-    // "theirs" to review.
     [Fact]
     public async Task Handle_ShouldIncludeAClosedRound_WhenThePlayerPredictedInIt()
     {
-        GivenRounds(Round(latestPredictionDeadlineUtc: PastDeadline, hasUserPredicted: true));
-        GivenMatches(Match());
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(-1), hasUserPredicted: true)],
+            matches: [Match(1)]);
 
-        (await HandleAsync()).Should().HaveCount(1);
+        // Act
+        var rounds = await HandleAsync();
+
+        // Assert - a player who predicted wants to see how it went.
+        rounds.Should().HaveCount(1);
     }
 
     [Fact]
     public async Task Handle_ShouldDropAClosedRound_WhenThePlayerDidNotPredictInIt()
     {
-        GivenRounds(Round(latestPredictionDeadlineUtc: PastDeadline, hasUserPredicted: false));
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(-1), hasUserPredicted: false)],
+            matches: [Match(1)]);
 
-        (await HandleAsync()).Should().BeEmpty();
+        // Act
+        var rounds = await HandleAsync();
+
+        // Assert - there is nothing they can do about it and nothing of theirs to look at.
+        rounds.Should().BeEmpty();
     }
 
-    // ---------- the prediction-split secrecy rule ----------
+    [Fact]
+    public async Task Handle_ShouldDropARoundWithNoConfirmedTeams()
+    {
+        // Arrange - a round of placeholders, which a tournament has before its group stage resolves.
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(1), hasConfirmedMatch: false)],
+            matches: [Match(1, areTeamsConfirmed: false)]);
+
+        // Act
+        var rounds = await HandleAsync();
+
+        // Assert - nothing a player can act on yet.
+        rounds.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldKeepARoundOpen_WhenALaterMatchLocksAfterTheRoundDeadline()
+    {
+        // Arrange - a combined round: the round deadline has passed, but one match locks tomorrow.
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(-1), hasUserPredicted: false)],
+            matches:
+            [
+                Match(1),
+                Match(1, customLockTimeUtc: Now.AddDays(1))
+            ]);
+
+        // Act
+        var rounds = await HandleAsync();
+
+        // Assert - still predictable, so still on the dashboard even though the player has predicted nothing.
+        rounds.Should().HaveCount(1);
+        rounds.Single().LatestPredictionDeadlineUtc.Should().Be(Now.AddDays(1));
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReportTheRoundDeadlineAsTheLatest_WhenNoMatchLocksLater()
+    {
+        // Arrange
+        var deadline = Now.AddHours(1);
+        Given(
+            rounds: [Round(1, deadlineUtc: deadline)],
+            matches: [Match(1), Match(1, customLockTimeUtc: deadline.AddHours(-2))]);
+
+        // Act
+        var round = (await HandleAsync()).Single();
+
+        // Assert - an earlier custom lock does not shorten the round; it only locks that one match sooner.
+        round.LatestPredictionDeadlineUtc.Should().Be(deadline);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldPutARoundInProgressFirst()
+    {
+        // Arrange - the in-progress round has the later deadline, so only the status rule can lift it.
+        Given(
+            rounds:
+            [
+                Round(1, deadlineUtc: Now.AddHours(1), status: RoundStatus.Published),
+                Round(2, deadlineUtc: Now.AddHours(2), status: RoundStatus.InProgress)
+            ],
+            matches: [Match(1), Match(2)]);
+
+        // Act
+        var rounds = await HandleAsync();
+
+        // Assert
+        rounds.Select(round => round.Id).Should().Equal(2, 1);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThenOrderByDeadline()
+    {
+        // Arrange
+        Given(
+            rounds:
+            [
+                Round(1, deadlineUtc: Now.AddHours(2)),
+                Round(2, deadlineUtc: Now.AddHours(1))
+            ],
+            matches: [Match(1), Match(2)]);
+
+        // Act
+        var rounds = await HandleAsync();
+
+        // Assert - soonest first, because that is what a player needs to act on.
+        rounds.Select(round => round.Id).Should().Equal(2, 1);
+    }
+
+    #endregion
+
+    #region The prediction split
 
     [Fact]
     public async Task Handle_ShouldHideThePredictionSplit_WhileTheMatchIsStillOpen()
     {
-        GivenRounds(Round(deadlineUtc: FutureDeadline));
-        GivenMatches(Match(homeCount: 7, drawCount: 2, awayCount: 1));
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(1))],
+            matches: [Match(1, homeCount: 5, drawCount: 3, awayCount: 2)]);
 
+        // Act
         var match = (await HandleAsync()).Single().Matches.Single();
 
+        // Assert - zeroed rather than merely flagged, so the numbers never reach a browser that could read them anyway.
         match.IsPredictionRevealed.Should().BeFalse();
         match.HomeCount.Should().Be(0);
         match.DrawCount.Should().Be(0);
@@ -153,27 +201,48 @@ public class GetActiveRoundsQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldRevealThePredictionSplit_OnceTheRoundDeadlineHasPassed()
     {
-        GivenRounds(Round(deadlineUtc: PastDeadline));
-        GivenMatches(Match(homeCount: 7, drawCount: 2, awayCount: 1));
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(-1), hasUserPredicted: true)],
+            matches: [Match(1, homeCount: 5, drawCount: 3, awayCount: 2)]);
 
+        // Act
         var match = (await HandleAsync()).Single().Matches.Single();
 
+        // Assert
         match.IsPredictionRevealed.Should().BeTrue();
-        match.HomeCount.Should().Be(7);
-        match.DrawCount.Should().Be(2);
-        match.AwayCount.Should().Be(1);
+        match.HomeCount.Should().Be(5);
+        match.DrawCount.Should().Be(3);
+        match.AwayCount.Should().Be(2);
     }
 
-    // A per-match lock overrides the round deadline in both directions. This is the combined-round case:
-    // the round deadline has passed, but this match locks later and must stay hidden.
+    [Fact]
+    public async Task Handle_ShouldRevealTheSplit_AtTheDeadlineItself()
+    {
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now, hasUserPredicted: true)],
+            matches: [Match(1, homeCount: 5)]);
+
+        // Act
+        var match = (await HandleAsync()).Single().Matches.Single();
+
+        // Assert - the boundary is inclusive, the same way a prediction is locked at its deadline rather than a tick after.
+        match.IsPredictionRevealed.Should().BeTrue();
+    }
+
     [Fact]
     public async Task Handle_ShouldKeepTheSplitHidden_WhenTheMatchLocksAfterThePassedRoundDeadline()
     {
-        GivenRounds(Round(deadlineUtc: PastDeadline));
-        GivenMatches(Match(customLockTimeUtc: FutureDeadline, homeCount: 7));
+        // Arrange - the round deadline has gone, but this match has its own later lock.
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(-1), hasUserPredicted: true)],
+            matches: [Match(1, customLockTimeUtc: Now.AddHours(1), homeCount: 5)]);
 
+        // Act
         var match = (await HandleAsync()).Single().Matches.Single();
 
+        // Assert
         match.IsPredictionRevealed.Should().BeFalse();
         match.HomeCount.Should().Be(0);
     }
@@ -181,139 +250,289 @@ public class GetActiveRoundsQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldRevealTheSplit_WhenTheMatchLockedBeforeTheStillFutureRoundDeadline()
     {
-        GivenRounds(Round(deadlineUtc: FutureDeadline));
-        GivenMatches(Match(customLockTimeUtc: PastDeadline, homeCount: 7));
+        // Arrange - an early kick-off inside a round that is otherwise still open.
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(2))],
+            matches: [Match(1, customLockTimeUtc: Now.AddHours(-1), homeCount: 5)]);
 
+        // Act
         var match = (await HandleAsync()).Single().Matches.Single();
 
+        // Assert
         match.IsPredictionRevealed.Should().BeTrue();
-        match.HomeCount.Should().Be(7);
+        match.HomeCount.Should().Be(5);
     }
 
-    // Within one round the decision is taken per match, so a combined round can show one revealed and
-    // one hidden match at the same moment.
     [Fact]
     public async Task Handle_ShouldDecideTheSplitPerMatch_WithinTheSameRound()
     {
-        GivenRounds(Round(deadlineUtc: PastDeadline));
-        GivenMatches(
-            Match(homeCount: 7),
-            Match(customLockTimeUtc: FutureDeadline, homeCount: 5));
+        // Arrange - one match locked, one still open, in a single round.
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(2))],
+            matches:
+            [
+                Match(1, customLockTimeUtc: Now.AddHours(-1), homeCount: 5, kickOffUtc: Now.AddHours(-1)),
+                Match(1, customLockTimeUtc: Now.AddHours(3), homeCount: 7, kickOffUtc: Now.AddHours(3))
+            ]);
 
+        // Act
         var matches = (await HandleAsync()).Single().Matches.ToList();
 
-        matches.Should().HaveCount(2);
-        matches.Count(m => m.IsPredictionRevealed).Should().Be(1);
-        matches.Single(m => m.IsPredictionRevealed).HomeCount.Should().Be(7);
-        matches.Single(m => !m.IsPredictionRevealed).HomeCount.Should().Be(0);
+        // Assert - this is why the rule asks about the match and not the round.
+        matches[0].IsPredictionRevealed.Should().BeTrue();
+        matches[0].HomeCount.Should().Be(5);
+        matches[1].IsPredictionRevealed.Should().BeFalse();
+        matches[1].HomeCount.Should().Be(0);
     }
 
-    // ---------- outcome summary ----------
+    #endregion
+
+    #region The outcome summary
 
     [Fact]
     public async Task Handle_ShouldSummariseOutcomes_OnceTheDeadlineHasPassedForAPlayerWhoPredicted()
     {
-        GivenRounds(Round(deadlineUtc: PastDeadline, hasUserPredicted: true));
-        GivenMatches(
-            Match(outcome: PredictionOutcome.ExactScore),
-            Match(outcome: PredictionOutcome.ExactScore),
-            Match(outcome: PredictionOutcome.CorrectResult),
-            Match(outcome: PredictionOutcome.Incorrect));
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(-1), hasUserPredicted: true)],
+            matches:
+            [
+                Match(1, outcome: PredictionOutcome.ExactScore),
+                Match(1, outcome: PredictionOutcome.CorrectResult),
+                Match(1, outcome: PredictionOutcome.Incorrect),
+                Match(1, outcome: PredictionOutcome.Incorrect),
+                Match(1, outcome: PredictionOutcome.Pending)
+            ]);
 
+        // Act
         var summary = (await HandleAsync()).Single().OutcomeSummary;
 
+        // Assert - a match still to be scored counts towards nothing.
         summary.Should().NotBeNull();
-        summary!.ExactScoreCount.Should().Be(2);
+        summary!.ExactScoreCount.Should().Be(1);
         summary.CorrectResultCount.Should().Be(1);
-        summary.IncorrectCount.Should().Be(1);
+        summary.IncorrectCount.Should().Be(2);
     }
 
-    // Before the deadline there is nothing to summarise - scoring has not happened yet.
     [Fact]
     public async Task Handle_ShouldNotSummariseOutcomes_WhileTheRoundIsStillOpen()
     {
-        GivenRounds(Round(deadlineUtc: FutureDeadline, hasUserPredicted: true));
-        GivenMatches(Match(outcome: PredictionOutcome.ExactScore));
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(1), hasUserPredicted: true)],
+            matches: [Match(1, outcome: PredictionOutcome.ExactScore)]);
 
-        (await HandleAsync()).Single().OutcomeSummary.Should().BeNull();
+        // Act
+        var round = (await HandleAsync()).Single();
+
+        // Assert - the scoring is provisional until the round closes.
+        round.OutcomeSummary.Should().BeNull();
     }
 
     [Fact]
     public async Task Handle_ShouldNotSummariseOutcomes_ForAPlayerWhoDidNotPredict()
     {
-        GivenRounds(Round(
-            deadlineUtc: PastDeadline,
-            latestPredictionDeadlineUtc: FutureDeadline,
-            hasUserPredicted: false));
-        GivenMatches(Match(outcome: PredictionOutcome.ExactScore));
+        // Arrange - the round is still open, so it appears, but this player has predicted nothing in it.
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(1), hasUserPredicted: false)],
+            matches: [Match(1, outcome: PredictionOutcome.ExactScore)]);
 
-        (await HandleAsync()).Single().OutcomeSummary.Should().BeNull();
+        // Act
+        var round = (await HandleAsync()).Single();
+
+        // Assert - a summary of no predictions is three zeroes pretending to be a result.
+        round.OutcomeSummary.Should().BeNull();
     }
 
-    // ---------- round shaping ----------
+    #endregion
+
+    #region The matches themselves
 
     [Fact]
     public async Task Handle_ShouldReturnNoMatches_WhenTheRoundHasNone()
     {
-        GivenRounds(Round(deadlineUtc: PastDeadline, hasUserPredicted: true));
-        GivenMatches(Match(roundId: 999));
+        // Arrange - possible while the fixtures are still being loaded.
+        Given(rounds: [Round(1, deadlineUtc: Now.AddHours(1))]);
 
+        // Act
         var round = (await HandleAsync()).Single();
 
+        // Assert
         round.Matches.Should().BeEmpty();
-        round.OutcomeSummary.Should().BeNull();
     }
 
     [Fact]
     public async Task Handle_ShouldGroupMatchesOntoTheirOwnRound()
     {
-        GivenRounds(
-            Round(id: 1, deadlineUtc: FutureDeadline),
-            Round(id: 2, deadlineUtc: FutureDeadline));
-        GivenMatches(
-            Match(roundId: 1),
-            Match(roundId: 2),
-            Match(roundId: 2));
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(1)), Round(2, deadlineUtc: Now.AddHours(2))],
+            matches: [Match(1), Match(2), Match(2)]);
 
+        // Act
         var rounds = (await HandleAsync()).ToList();
 
-        rounds.Single(r => r.Id == 1).Matches.Should().HaveCount(1);
-        rounds.Single(r => r.Id == 2).Matches.Should().HaveCount(2);
+        // Assert
+        rounds.Single(round => round.Id == 1).Matches.Should().HaveCount(1);
+        rounds.Single(round => round.Id == 2).Matches.Should().HaveCount(2);
     }
+
+    [Fact]
+    public async Task Handle_ShouldOrderMatchesByKickOffThenHomeTeam()
+    {
+        // Arrange - two matches kicking off together, and one earlier.
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(5))],
+            matches:
+            [
+                Match(1, kickOffUtc: Now.AddHours(3), homeTeamShortName: "WOL"),
+                Match(1, kickOffUtc: Now.AddHours(3), homeTeamShortName: "ARS"),
+                Match(1, kickOffUtc: Now.AddHours(1), homeTeamShortName: "MUN")
+            ]);
+
+        // Act
+        var matches = (await HandleAsync()).Single().Matches.ToList();
+
+        // Assert - the home team breaks a tie so a simultaneous pair reads the same way every time.
+        matches.Select(match => match.MatchDateTimeUtc).Should().Equal(
+            Now.AddHours(1), Now.AddHours(3), Now.AddHours(3));
+    }
+
+    [Fact]
+    public async Task Handle_ShouldCarryTheMatchDetailsThrough()
+    {
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(1))],
+            matches:
+            [
+                Match(1, status: MatchStatus.InProgress, areTeamsConfirmed: false, matchNumber: 7)
+            ]);
+
+        // Act
+        var match = (await HandleAsync()).Single().Matches.Single();
+
+        // Assert
+        match.Status.Should().Be(MatchStatus.InProgress);
+        match.AreTeamsConfirmed.Should().BeFalse();
+        match.MatchNumber.Should().Be(7);
+    }
+
+    #endregion
+
+    #region The round itself
 
     [Fact]
     public async Task Handle_ShouldFlagATournamentRound()
     {
-        GivenRounds(Round(competitionType: CompetitionType.Tournament));
-        GivenMatches(Match());
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(1), competitionType: CompetitionType.Tournament)],
+            matches: [Match(1)]);
 
-        (await HandleAsync()).Single().IsTournament.Should().BeTrue();
+        // Act
+        var round = (await HandleAsync()).Single();
+
+        // Assert
+        round.IsTournament.Should().BeTrue();
     }
 
     [Fact]
     public async Task Handle_ShouldNotFlagALeagueRoundAsATournament()
     {
-        GivenRounds(Round(competitionType: CompetitionType.League));
-        GivenMatches(Match());
+        // Arrange
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(1), competitionType: CompetitionType.League)],
+            matches: [Match(1)]);
 
-        (await HandleAsync()).Single().IsTournament.Should().BeFalse();
+        // Act
+        var round = (await HandleAsync()).Single();
+
+        // Assert
+        round.IsTournament.Should().BeFalse();
     }
 
     [Fact]
-    public async Task Handle_ShouldCarryTheRoundStatusThrough()
+    public async Task Handle_ShouldCarryTheRoundDetailsThrough()
     {
-        GivenRounds(Round(status: RoundStatus.Completed, deadlineUtc: PastDeadline));
-        GivenMatches(Match());
+        // Arrange
+        var deadline = Now.AddHours(1);
+        Given(
+            rounds: [Round(1, deadlineUtc: deadline, status: RoundStatus.InProgress)],
+            matches: [Match(1)]);
 
-        (await HandleAsync()).Single().Status.Should().Be(RoundStatus.Completed);
+        // Act
+        var round = (await HandleAsync()).Single();
+
+        // Assert
+        round.Status.Should().Be(RoundStatus.InProgress);
+        round.SeasonName.Should().Be("2026/27");
+        round.RoundNumber.Should().Be(1);
+        round.DeadlineUtc.Should().Be(deadline);
     }
 
-    [Fact]
-    public async Task Handle_ShouldCarryTheMatchStatusThrough()
-    {
-        GivenRounds(Round());
-        GivenMatches(Match(status: MatchStatus.InProgress));
+    #endregion
 
-        (await HandleAsync()).Single().Matches.Single().Status.Should().Be(MatchStatus.InProgress);
+    private void Given(
+        IReadOnlyList<ActiveRoundCandidateRow>? rounds = null,
+        IReadOnlyList<ActiveRoundMatchRow>? matches = null)
+    {
+        _activeRoundsQuery
+            .ExecuteAsync(UserId, Arg.Any<CancellationToken>())
+            .Returns(new ActiveRoundsData(rounds ?? [], matches ?? []));
     }
+
+    private async Task<IEnumerable<ActiveRoundDto>> HandleAsync() =>
+        await _handler.Handle(new GetActiveRoundsQuery(UserId), CancellationToken.None);
+
+    private static ActiveRoundCandidateRow Round(
+        int roundId,
+        DateTime deadlineUtc,
+        RoundStatus status = RoundStatus.Published,
+        CompetitionType competitionType = CompetitionType.League,
+        bool hasUserPredicted = false,
+        bool hasConfirmedMatch = true) =>
+        new(
+            roundId,
+            "2026/27",
+            roundId,
+            null,
+            deadlineUtc,
+            status,
+            competitionType,
+            hasUserPredicted,
+            hasConfirmedMatch);
+
+    private static ActiveRoundMatchRow Match(
+        int roundId,
+        DateTime? customLockTimeUtc = null,
+        DateTime? kickOffUtc = null,
+        string? homeTeamShortName = null,
+        PredictionOutcome? outcome = null,
+        MatchStatus status = MatchStatus.Scheduled,
+        bool areTeamsConfirmed = true,
+        int? matchNumber = null,
+        int homeCount = 0,
+        int drawCount = 0,
+        int awayCount = 0) =>
+        new(
+            roundId,
+            null,
+            null,
+            homeTeamShortName ?? "ARS",
+            null,
+            null,
+            outcome,
+            status,
+            null,
+            null,
+            kickOffUtc ?? Now.AddHours(2),
+            matchNumber,
+            areTeamsConfirmed,
+            null,
+            null,
+            homeCount,
+            drawCount,
+            awayCount,
+            customLockTimeUtc);
 }

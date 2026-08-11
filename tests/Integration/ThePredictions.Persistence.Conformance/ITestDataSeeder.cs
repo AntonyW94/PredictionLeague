@@ -25,7 +25,11 @@ public interface ITestDataSeeder
 
     Task<int> AddCompetitionAsync(string code = "TEST");
 
-    Task<int> AddSeasonAsync(int competitionId, string name = "2026/27", int numberOfRounds = 38);
+    /// <summary>
+    /// A season. <paramref name="isActive"/> is what several reads scope on, so a test has to be able to arrange a season that
+    /// has been retired.
+    /// </summary>
+    Task<int> AddSeasonAsync(int competitionId, string name = "2026/27", int numberOfRounds = 38, bool isActive = true);
 
     Task<int> AddTeamAsync(string name, string abbreviation);
 

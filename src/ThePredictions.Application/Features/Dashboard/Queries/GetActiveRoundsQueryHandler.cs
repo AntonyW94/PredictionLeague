@@ -1,251 +1,155 @@
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Dashboard;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
-using System.Diagnostics.CodeAnalysis;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Dashboard.Queries;
 
-public class GetActiveRoundsQueryHandler(IApplicationReadDbConnection dbConnection, IDateTimeProvider dateTimeProvider)
-    : IRequestHandler<GetActiveRoundsQuery, IEnumerable<ActiveRoundDto>>
+/// <summary>
+/// The rounds on a player's dashboard: what they can still predict, and what they have just predicted.
+/// </summary>
+public class GetActiveRoundsQueryHandler(
+    IActiveRoundsQuery activeRoundsQuery,
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<GetActiveRoundsQuery, IEnumerable<ActiveRoundDto>>
 {
-    public async Task<IEnumerable<ActiveRoundDto>> Handle(GetActiveRoundsQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<ActiveRoundDto>> Handle(
+        GetActiveRoundsQuery request,
+        CancellationToken cancellationToken)
     {
-        // Read the clock once: the "is this round still active" filter below and the per-match reveal
-        // decision further down must agree, which two separate UtcNow reads cannot guarantee.
+        // Read the clock once. Whether a round is still active and whether each match's prediction split may be shown are
+        // decided against the same instant, which two separate reads could not guarantee.
         var utcNow = dateTimeProvider.UtcNow;
 
-        // Query 1: Get active rounds (upcoming + in-progress)
-        const string roundsSql = @"
-            SELECT
-                r.[Id],
-                s.[Name] AS SeasonName,
-                r.[RoundNumber],
-                r.[DeadlineUtc],
-                r.[Status],
-                CAST(CASE
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM [UserPredictions] up
-                        JOIN [Matches] m ON up.MatchId = m.Id
-                        WHERE m.RoundId = r.Id AND up.UserId = @UserId
-                    ) THEN 1
-                    ELSE 0
-                END AS bit) AS HasUserPredicted,
-                r.[DisplayName] AS RoundDisplayName,
-                c.[Type] AS CompetitionType,
-                COALESCE(
-                    (
-                        SELECT
-                            MAX(lm.[CustomLockTimeUtc])
-                        FROM
-                            [Matches] lm
-                        WHERE
-                            lm.[RoundId] = r.[Id]
-                            AND lm.[Status] <> @PostponedStatus
-                            AND lm.[CustomLockTimeUtc] > r.[DeadlineUtc]
-                    ),
-                    r.[DeadlineUtc]) AS LatestPredictionDeadlineUtc
-            FROM
-                [Rounds] r
-            JOIN
-                [Seasons] s ON r.[SeasonId] = s.[Id]
-            JOIN
-                [Competitions] c ON s.[CompetitionId] = c.[Id]
-            WHERE
-                r.[Status] NOT IN (@DraftStatus, @CompletedStatus)
-                AND s.[IsActive] = 1
-                AND EXISTS (
-                    SELECT 1
-                    FROM [Matches] m
-                    WHERE m.[RoundId] = r.[Id]
-                        AND m.[HomeTeamId] IS NOT NULL
-                        AND m.[AwayTeamId] IS NOT NULL
-                )
-                AND r.[SeasonId] IN (
-                    SELECT l.[SeasonId]
-                    FROM [Leagues] l
-                    JOIN [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
-                    WHERE lm.[UserId] = @UserId AND lm.[Status] = @ApprovedStatus
-                )
-            ORDER BY
-                CASE WHEN r.[Status] = @InProgressStatus THEN 0 ELSE 1 END,
-                r.[DeadlineUtc] ASC";
+        var data = await activeRoundsQuery.ExecuteAsync(request.UserId, cancellationToken);
 
-        var parameters = new
-        {
-            request.UserId,
-            DraftStatus = nameof(RoundStatus.Draft),
-            CompletedStatus = nameof(RoundStatus.Completed),
-            InProgressStatus = nameof(RoundStatus.InProgress),
-            ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-            PostponedStatus = nameof(MatchStatus.Postponed)
-        };
+        var matchesByRound = data.Matches
+            .GroupBy(match => match.RoundId)
+            .ToDictionary(group => group.Key, group => group.ToList());
 
-        var rounds = (await dbConnection.QueryAsync<ActiveRoundQueryResult>(
-            roundsSql,
-            cancellationToken,
-            parameters))
-            .Where(r => r.LatestPredictionDeadlineUtc > utcNow || r.HasUserPredicted)
+        return data.Rounds
+            .Select(round => new ActiveRound(round, MatchesOf(matchesByRound, round.RoundId)))
+            .Where(round => IsWorthShowing(round, utcNow))
+            .OrderBy(round => round.Candidate.Status == RoundStatus.InProgress ? 0 : 1)
+            .ThenBy(round => round.Candidate.DeadlineUtc)
+            .Select(round => ToDto(round, utcNow))
             .ToList();
-
-        if (!rounds.Any())
-            return Enumerable.Empty<ActiveRoundDto>();
-
-        // Query 2: Get matches with predictions and outcomes for all active rounds
-        var roundIds = rounds.Select(r => r.Id).ToArray();
-
-        const string matchesSql = @"
-            SELECT
-                m.[RoundId],
-                ht.[LogoUrl] AS HomeTeamLogoUrl,
-                at.[LogoUrl] AS AwayTeamLogoUrl,
-                up.[PredictedHomeScore],
-                up.[PredictedAwayScore],
-                up.[Outcome],
-                m.[Status],
-                m.[ActualHomeTeamScore] AS ActualHomeScore,
-                m.[ActualAwayTeamScore] AS ActualAwayScore,
-                m.[MatchDateTimeUtc],
-                m.[MatchNumber],
-                CAST(CASE
-                    WHEN m.[HomeTeamId] IS NOT NULL AND m.[AwayTeamId] IS NOT NULL THEN 1
-                    ELSE 0
-                END AS bit) AS AreTeamsConfirmed,
-                m.[PlaceholderHomeName],
-                m.[PlaceholderAwayName],
-                (
-                    SELECT COUNT(*)
-                    FROM [UserPredictions] hp
-                    WHERE hp.[MatchId] = m.[Id]
-                        AND hp.[PredictedHomeScore] > hp.[PredictedAwayScore]
-                ) AS HomeCount,
-                (
-                    SELECT COUNT(*)
-                    FROM [UserPredictions] dp
-                    WHERE dp.[MatchId] = m.[Id]
-                        AND dp.[PredictedHomeScore] = dp.[PredictedAwayScore]
-                ) AS DrawCount,
-                (
-                    SELECT COUNT(*)
-                    FROM [UserPredictions] ap
-                    WHERE ap.[MatchId] = m.[Id]
-                        AND ap.[PredictedHomeScore] < ap.[PredictedAwayScore]
-                ) AS AwayCount,
-                m.[CustomLockTimeUtc]
-            FROM [Matches] m
-            LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
-            LEFT JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
-            LEFT JOIN [UserPredictions] up ON up.[MatchId] = m.[Id] AND up.[UserId] = @UserId
-            WHERE m.[RoundId] IN @RoundIds
-                AND m.[Status] <> @PostponedStatus
-            ORDER BY m.[RoundId], m.[MatchDateTimeUtc] ASC, ht.[ShortName] ASC";
-
-        var matches = await dbConnection.QueryAsync<ActiveRoundMatchQueryResult>(
-            matchesSql,
-            cancellationToken,
-            new { request.UserId, RoundIds = roundIds, PostponedStatus = nameof(MatchStatus.Postponed) });
-
-        // Group matches by RoundId for efficient lookup
-        var matchesByRound = matches
-            .GroupBy(m => m.RoundId)
-            .ToDictionary(g => g.Key, g => g.ToList());
-
-        // Map to DTOs
-        return rounds.Select(r =>
-        {
-            var status = Enum.Parse<RoundStatus>(r.Status);
-
-            var activeRoundMatchDtos = matchesByRound.TryGetValue(r.Id, out var roundMatches)
-                ? roundMatches.Select(m =>
-                {
-                    // The prediction split is only revealed once this match itself has locked; before then we
-                    // zero the counts so the aggregate never leaks predictions that are still open. In a
-                    // combined round the earlier matches reveal at the round deadline while the later ones
-                    // stay hidden until their own custom lock time.
-                    var revealSplit = (m.CustomLockTimeUtc ?? r.DeadlineUtc) <= utcNow;
-
-                    return new ActiveRoundMatchDto(m.HomeTeamLogoUrl,
-                        m.AwayTeamLogoUrl,
-                        m.PredictedHomeScore,
-                        m.PredictedAwayScore,
-                        m.Outcome,
-                        Enum.Parse<MatchStatus>(m.Status),
-                        m.ActualHomeScore,
-                        m.ActualAwayScore,
-                        m.MatchDateTimeUtc,
-                        m.MatchNumber,
-                        m.AreTeamsConfirmed,
-                        m.PlaceholderHomeName,
-                        m.PlaceholderAwayName,
-                        revealSplit,
-                        revealSplit ? m.HomeCount : 0,
-                        revealSplit ? m.DrawCount : 0,
-                        revealSplit ? m.AwayCount : 0,
-                        m.CustomLockTimeUtc);
-                })
-                : Enumerable.Empty<ActiveRoundMatchDto>();
-
-            // Calculate outcome summary for rounds past their deadline
-            OutcomeSummaryDto? outcomeSummary = null;
-            if (r.DeadlineUtc <= utcNow && r.HasUserPredicted && roundMatches != null)
-            {
-                outcomeSummary = new OutcomeSummaryDto(
-                    ExactScoreCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.ExactScore),
-                    CorrectResultCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.CorrectResult),
-                    IncorrectCount: roundMatches.Count(m => m.Outcome == PredictionOutcome.Incorrect));
-            }
-
-            return new ActiveRoundDto(
-                r.Id,
-                r.SeasonName,
-                r.RoundNumber,
-                r.RoundDisplayName,
-                r.CompetitionType == (int)CompetitionType.Tournament,
-                r.DeadlineUtc,
-                r.LatestPredictionDeadlineUtc,
-                r.HasUserPredicted,
-                status,
-                activeRoundMatchDtos,
-                outcomeSummary);
-        });
     }
 
-    // internal so a test can supply rows for the reveal rule and outcome summary above;
-    // InternalsVisibleTo already exposes this assembly to ThePredictions.Application.Tests.Unit.
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal record ActiveRoundQueryResult(
-        int Id,
-        string SeasonName,
-        int RoundNumber,
-        DateTime DeadlineUtc,
-        string Status,
-        bool HasUserPredicted,
-        string? RoundDisplayName,
-        int CompetitionType,
-        DateTime LatestPredictionDeadlineUtc);
+    /// <summary>
+    /// Whether a round belongs on the dashboard.
+    /// </summary>
+    /// <remarks>
+    /// It must have a match with both teams known - a round of placeholders is nothing a player can act on - and either still
+    /// be open, or already hold their predictions. The second half is why a round stays on the tile after its deadline: a
+    /// player who has predicted wants to see how it went, and a player who has not has nothing to gain from being shown it.
+    /// </remarks>
+    private static bool IsWorthShowing(ActiveRound round, DateTime utcNow)
+    {
+        if (!round.Candidate.HasConfirmedMatch)
+            return false;
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal record ActiveRoundMatchQueryResult(
-        int RoundId,
-        string? HomeTeamLogoUrl,
-        string? AwayTeamLogoUrl,
-        int? PredictedHomeScore,
-        int? PredictedAwayScore,
-        PredictionOutcome? Outcome,
-        string Status,
-        int? ActualHomeScore,
-        int? ActualAwayScore,
-        DateTime MatchDateTimeUtc,
-        int? MatchNumber,
-        bool AreTeamsConfirmed,
-        string? PlaceholderHomeName,
-        string? PlaceholderAwayName,
-        int HomeCount,
-        int DrawCount,
-        int AwayCount,
-        DateTime? CustomLockTimeUtc);
+        if (LatestDeadlineOf(round) > utcNow)
+            return true;
+
+        return round.Candidate.HasUserPredicted;
+    }
+
+    /// <summary>
+    /// The last moment anything in this round can be predicted, over its matches that have not been postponed.
+    /// </summary>
+    private static DateTime LatestDeadlineOf(ActiveRound round) =>
+        PredictionWindow.LatestDeadline(
+            round.Candidate.DeadlineUtc,
+            round.Matches.Select(match => match.CustomLockTimeUtc));
+
+    private static ActiveRoundDto ToDto(ActiveRound round, DateTime utcNow)
+    {
+        var candidate = round.Candidate;
+
+        return new ActiveRoundDto(
+            candidate.RoundId,
+            candidate.SeasonName,
+            candidate.RoundNumber,
+            candidate.RoundDisplayName,
+            candidate.CompetitionType == CompetitionType.Tournament,
+            candidate.DeadlineUtc,
+            LatestDeadlineOf(round),
+            candidate.HasUserPredicted,
+            candidate.Status,
+            round.Matches.Select(match => ToMatchDto(match, candidate.DeadlineUtc, utcNow)).ToList(),
+            OutcomeSummaryOf(round, utcNow));
+    }
+
+    /// <summary>
+    /// One match, with the prediction split shown only once that match itself has locked.
+    /// </summary>
+    /// <remarks>
+    /// The counts are zeroed rather than merely hidden, so the numbers never travel to a browser that could read them anyway.
+    /// In a combined round the earlier matches reveal at the round deadline while the later ones stay hidden until their own
+    /// lock time, which is why this asks about the match rather than the round.
+    /// </remarks>
+    private static ActiveRoundMatchDto ToMatchDto(ActiveRoundMatchRow match, DateTime roundDeadlineUtc, DateTime utcNow)
+    {
+        var revealSplit = PredictionWindow.HasLocked(match.CustomLockTimeUtc, roundDeadlineUtc, utcNow);
+
+        return new ActiveRoundMatchDto(
+            match.HomeTeamLogoUrl,
+            match.AwayTeamLogoUrl,
+            match.PredictedHomeScore,
+            match.PredictedAwayScore,
+            match.Outcome,
+            match.Status,
+            match.ActualHomeScore,
+            match.ActualAwayScore,
+            match.MatchDateTimeUtc,
+            match.MatchNumber,
+            match.AreTeamsConfirmed,
+            match.PlaceholderHomeName,
+            match.PlaceholderAwayName,
+            revealSplit,
+            revealSplit ? match.HomeCount : 0,
+            revealSplit ? match.DrawCount : 0,
+            revealSplit ? match.AwayCount : 0,
+            match.CustomLockTimeUtc);
+    }
+
+    /// <summary>
+    /// How the player's round went, once it has started and if they took part.
+    /// </summary>
+    /// <remarks>
+    /// Nothing before the round deadline, because until then the scoring is provisional and mostly empty. Nothing for a player
+    /// who did not predict, because a summary of no predictions is three zeroes pretending to be a result.
+    /// </remarks>
+    private static OutcomeSummaryDto? OutcomeSummaryOf(ActiveRound round, DateTime utcNow)
+    {
+        if (round.Candidate.DeadlineUtc > utcNow)
+            return null;
+
+        if (!round.Candidate.HasUserPredicted)
+            return null;
+
+        return new OutcomeSummaryDto(
+            ExactScoreCount: round.Matches.Count(match => match.Outcome == PredictionOutcome.ExactScore),
+            CorrectResultCount: round.Matches.Count(match => match.Outcome == PredictionOutcome.CorrectResult),
+            IncorrectCount: round.Matches.Count(match => match.Outcome == PredictionOutcome.Incorrect));
+    }
+
+    /// <summary>
+    /// A round's matches, in kick-off order and then by home team so a simultaneous pair reads the same way every time.
+    /// </summary>
+    private static List<ActiveRoundMatchRow> MatchesOf(
+        IReadOnlyDictionary<int, List<ActiveRoundMatchRow>> matchesByRound,
+        int roundId)
+    {
+        var matches = matchesByRound.GetValueOrDefault(roundId) ?? [];
+
+        return matches
+            .OrderBy(match => match.MatchDateTimeUtc)
+            .ThenBy(match => match.HomeTeamShortName, StringComparer.InvariantCultureIgnoreCase)
+            .ToList();
+    }
+
+    /// <summary>One round and its matches, once they have been brought together.</summary>
+    private sealed record ActiveRound(ActiveRoundCandidateRow Candidate, List<ActiveRoundMatchRow> Matches);
 }
