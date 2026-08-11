@@ -1,77 +1,41 @@
-using ThePredictions.Domain.Common.Exceptions;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
-using ThePredictions.Domain.Common.Enumerations;
-using System.Diagnostics.CodeAnalysis;
+using ThePredictions.Domain.Common.Exceptions;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// The administrator's member-management page for a league.
+/// </summary>
 public class FetchLeagueMembersQueryHandler(
-    IApplicationReadDbConnection dbConnection,
+    ILeagueMembersQuery membersQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<FetchLeagueMembersQuery, LeagueMembersPageDto>
 {
-    public async Task<LeagueMembersPageDto> Handle(FetchLeagueMembersQuery request, CancellationToken cancellationToken)
+    public async Task<LeagueMembersPageDto> Handle(
+        FetchLeagueMembersQuery request,
+        CancellationToken cancellationToken)
     {
         await membershipService.EnsureLeagueAdministratorAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
-        const string sql = @"
-            SELECT
-                l.[Name] AS LeagueName,
-                lm.[UserId],
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS FullName,
-                lm.[JoinedAtUtc],
-                lm.[Status]
-            FROM 
-                [Leagues] l
-            JOIN 
-                [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
-            JOIN 
-                [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            WHERE 
-                l.[Id] = @LeagueId
-            ORDER BY 
-                FullName;";
-        
-        var queryResult = await dbConnection.QueryAsync<MemberQueryResult>(
-            sql,
-            cancellationToken,
-            new { request.LeagueId, request.CurrentUserId, Pending = nameof(LeagueMemberStatus.Pending) }
-        );
-        
-        var members = queryResult.ToList();
-        if (members.Any())
-        {
-            return new LeagueMembersPageDto
-            {
-                LeagueName = members.First().LeagueName,
-                Members = members.Select(m => new LeagueMemberDto
-                (
-                    m.UserId,
-                    m.FullName,
-                    m.JoinedAtUtc,
-                    m.Status
-                )).ToList()
-            };
-        }
+        var data = await membersQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
-        const string leagueNameSql = "SELECT [Name] FROM [Leagues] WHERE [Id] = @LeagueId;";
-        var leagueName = await dbConnection.QuerySingleOrDefaultAsync<string>(leagueNameSql, cancellationToken, new { request.LeagueId });
-
-        if (leagueName == null)
+        if (data is null)
             throw new EntityNotFoundException("League", request.LeagueId);
 
-        return new LeagueMembersPageDto { LeagueName = leagueName };
+        return new LeagueMembersPageDto
+        {
+            LeagueName = data.LeagueName,
+            Members = data.Members
+                .OrderBy(member => member.FirstName, StringComparer.InvariantCultureIgnoreCase)
+                .ThenBy(member => member.LastName, StringComparer.InvariantCultureIgnoreCase)
+                .Select(member => new LeagueMemberDto(
+                    member.UserId,
+                    PlayerDisplayName.Format(member.FirstName, member.LastName),
+                    member.JoinedAtUtc,
+                    member.Status))
+                .ToList()
+        };
     }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record MemberQueryResult(
-        string LeagueName,
-        string UserId,
-        string FullName,
-        DateTime JoinedAtUtc,
-        LeagueMemberStatus Status
-    );
 }
