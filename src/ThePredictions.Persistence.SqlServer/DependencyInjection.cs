@@ -14,8 +14,10 @@ using ThePredictions.Persistence.SqlServer.Queries.Admin.EmailTests;
 using ThePredictions.Persistence.SqlServer.Queries.Admin.Seasons;
 using ThePredictions.Persistence.SqlServer.Queries.Admin.Settings;
 using ThePredictions.Persistence.SqlServer.Queries.Admin.Teams;
+using ThePredictions.Persistence.SqlServer.Queries.Admin.Users;
 using ThePredictions.Application.Features.Admin.Rounds.Queries;
 using ThePredictions.Application.Features.Admin.Seasons.Queries;
+using ThePredictions.Application.Features.Admin.Users.Queries;
 using ThePredictions.Application.Features.Badges.Queries;
 using ThePredictions.Application.Features.Boosts.Queries;
 using ThePredictions.Application.Features.Dashboard.Queries;
@@ -129,6 +131,7 @@ public static class DependencyInjection
         services.AddScoped<IServiceFeesQuery, ServiceFeesQuery>();
         services.AddScoped<IEmailTestUserQuery, EmailTestUserQuery>();
         services.AddScoped<ISeasonsQuery, SeasonsQuery>();
+        services.AddScoped<IAdminUsersQuery, AdminUsersQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository

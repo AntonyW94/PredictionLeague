@@ -170,6 +170,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/active rounds** ✅ | A domain rule that disagreed with its own SQL twin, and with its own sibling. Marked "Dashboard is done" here, wrongly - `GetMatchesForRoundQueryHandler` still held SQL, and moved with Admin/Rounds below. |
 | 2 | **Badges** ✅ | **Badges is done.** Six statements to three reads, two gap-and-island streak queries to one `foreach`, and two screens that disagreed about the same player's position now reading one set of standings. |
 | 2 | **Admin/Rounds + round fixtures** ✅ | A CTE written twice and selected never, and the near-twin fixture statement that was still outstanding from Dashboard. |
+| 2 | **Admin/Users** ✅ | Eleven correlated subqueries, three of them with an unstated definition of "spend", and a list flattened into a string by the database and split back apart in C#. |
 | 2 | **Admin/Seasons** ✅ | The same twenty-column statement written twice, and a team count whose definition disagrees with the other read of the same idea. |
 | 2 | **Admin reference data** ✅ | Nine handlers, seven ports, one statement deleted as a duplicate of a port that already existed - and a nullable column two of three reads denied. |
 | 2 | **Admin/Rounds/results digest** ✅ | Six tables and two CTEs into four reads. A top-scorer tie-break that disagreed with every leaderboard, and the one read on the site that skipped the round-naming rule. |
@@ -1150,6 +1151,31 @@ Each round-state count was its own correlated subquery ending `AND r.[Status] = 
 string rather than parameterised from the enum like everywhere else in the codebase. A renamed status would not have
 failed - it would have started returning zero, on an administrator's screen, quietly. The statuses now arrive typed and
 the counting is four `Count` calls in one method.
+
+### Definitions of "spend" that lived in a WHERE clause
+
+The administrator's user list carries two money columns, and both had their definition buried inside a correlated
+subquery. Season-pass spend was `WHERE sp.[Source] = @PurchasedSource` - a trial or a pass handed out by an
+administrator counts as holding a pass but is not money anybody spent. League-entry spend was three conditions:
+`lm.[Status] = @ApprovedStatus AND l.[IsFree] = 0 AND l.[Price] > 0` - a request never accepted was never paid for, and
+the last two are two ways of saying the same thing that the data does not guarantee agree.
+
+Nothing anywhere said any of this. The figures are the ones the site's own revenue gets judged by.
+
+The mutation check earned its place on the third condition: dropping `Price > 0` survived, because a zero-priced league
+adds nothing to a sum either way. It is only observable on a *negative* price - not a state the application creates, but
+one the column allows, and a bad row must not reduce what somebody has spent. That is now a test rather than an
+unexplained condition.
+
+### A list flattened by the database and reassembled in C#
+
+`STRING_AGG(ul.[LoginProvider], ',')` in the read, `SocialProviders?.Split(',')` in the handler. The database built a
+comma-separated string and the handler took it back apart, which works right up until a provider name contains a comma.
+It is a row per provider now, and the `GROUP BY` over seven columns that the aggregate forced went with it.
+
+The same shape as the month name formatted by `DATENAME` and then parsed back to sort by it, found in the Leagues phase.
+Two instances is a pattern: a set-based language makes it easy to collapse a collection into a scalar, and the collapse
+is always undone somewhere.
 
 ### Rules found duplicated so far
 
