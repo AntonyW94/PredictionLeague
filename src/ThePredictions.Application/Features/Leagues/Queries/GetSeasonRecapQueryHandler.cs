@@ -1,247 +1,186 @@
-using ThePredictions.Domain.Common.Exceptions;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Domain.Common.Enumerations;
-using System.Diagnostics.CodeAnalysis;
+using ThePredictions.Domain.Common.Exceptions;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// One player's season in one league: where they finished, their best and worst rounds, what they won, and the
+/// highest position they ever held.
+///
+/// Four <c>RANK() OVER</c> windows in two statements. Two of them - rounds won and months won - are the same rule
+/// the records tile asks from the other side, and are now <c>Wins.ByPeriod</c> for both. The fourth is the
+/// interesting one: a running total recomputed round by round across the whole league, so the player can be told
+/// they were second at some point in November even though they finished ninth.
+/// </summary>
 public class GetSeasonRecapQueryHandler(
-    IApplicationReadDbConnection dbConnection,
+    ISeasonRecapQuery recapQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetSeasonRecapQuery, SeasonRecapDto>
 {
     public async Task<SeasonRecapDto> Handle(GetSeasonRecapQuery request, CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.UserId, cancellationToken);
 
-        // Query 1: All flat stats + leaderboard-based round/month wins
-        const string statsSql = @"
-            DECLARE @SeasonId int = (SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId);
+        var data = await recapQuery.ExecuteAsync(request.LeagueId, request.UserId, cancellationToken);
 
-            SELECT
-                l.[IsFree],
-                l.[Price] AS LeaguePrice,
-
-                ISNULL(winnings.[TotalWinnings], 0) AS TotalWinnings,
-                ISNULL(winnings.[TotalWinnings], 0) - l.[Price] AS ProfitLoss,
-
-                ISNULL(ranking.[FinalPosition], 0) AS FinalPosition,
-                ISNULL(member_count.[TotalMembers], 0) AS TotalMembers,
-
-                ISNULL(performance.[AveragePointsPerRound], 0) AS AveragePointsPerRound,
-                ISNULL(performance.[BestRoundPoints], 0) AS BestRoundPoints,
-                performance.[BestRoundNumber] AS BestRoundNumber,
-                ISNULL(performance.[WorstRoundPoints], 0) AS WorstRoundPoints,
-                performance.[WorstRoundNumber] AS WorstRoundNumber,
-                ISNULL(performance.[TotalExactScores], 0) AS TotalExactScores,
-
-                ISNULL(round_wins.[RoundsWon], 0) AS RoundsWon,
-                ISNULL(month_wins.[MonthsWon], 0) AS MonthsWon
-            FROM
-                [Leagues] l
-
-                OUTER APPLY (
-                    SELECT
-                        ISNULL(SUM(w.[Amount]), 0) AS TotalWinnings
-                    FROM [Winnings] w
-                    INNER JOIN [LeaguePrizeSettings] lps ON lps.[Id] = w.[LeaguePrizeSettingId]
-                    WHERE lps.[LeagueId] = l.[Id] AND w.[UserId] = @UserId
-                ) winnings
-
-                OUTER APPLY (
-                    SELECT COUNT(*) AS TotalMembers
-                    FROM [LeagueMembers]
-                    WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus
-                ) member_count
-
-                OUTER APPLY (
-                    SELECT [FinalPosition]
-                    FROM (
-                        SELECT
-                            lm.[UserId],
-                            CAST(RANK() OVER (ORDER BY ISNULL(SUM(lrr.[BoostedPoints]), 0) DESC) AS INT) AS FinalPosition
-                        FROM [LeagueMembers] lm
-                        LEFT JOIN [LeagueRoundResults] lrr ON lrr.[UserId] = lm.[UserId] AND lrr.[LeagueId] = lm.[LeagueId]
-                        WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus
-                        GROUP BY lm.[UserId]
-                    ) AS r
-                    WHERE r.[UserId] = @UserId
-                ) ranking
-
-                OUTER APPLY (
-                    SELECT
-                        AVG(CAST(lrr.[BoostedPoints] AS DECIMAL(10, 2))) AS AveragePointsPerRound,
-                        MAX(lrr.[BoostedPoints]) AS BestRoundPoints,
-                        (
-                            SELECT TOP 1 r.[RoundNumber]
-                            FROM [LeagueRoundResults] inner_lrr
-                            INNER JOIN [Rounds] r ON r.[Id] = inner_lrr.[RoundId]
-                            WHERE inner_lrr.[LeagueId] = l.[Id] AND inner_lrr.[UserId] = @UserId
-                            ORDER BY inner_lrr.[BoostedPoints] DESC, r.[RoundNumber] ASC
-                        ) AS BestRoundNumber,
-                        MIN(lrr.[BoostedPoints]) AS WorstRoundPoints,
-                        (
-                            SELECT TOP 1 r.[RoundNumber]
-                            FROM [LeagueRoundResults] inner_lrr
-                            INNER JOIN [Rounds] r ON r.[Id] = inner_lrr.[RoundId]
-                            WHERE inner_lrr.[LeagueId] = l.[Id] AND inner_lrr.[UserId] = @UserId
-                            ORDER BY inner_lrr.[BoostedPoints] ASC, r.[RoundNumber] ASC
-                        ) AS WorstRoundNumber,
-                        (
-                            SELECT ISNULL(SUM(rr.[ExactScoreCount]), 0)
-                            FROM [RoundResults] rr
-                            INNER JOIN [Rounds] r ON r.[Id] = rr.[RoundId]
-                            WHERE r.[SeasonId] = @SeasonId AND rr.[UserId] = @UserId
-                        ) AS TotalExactScores
-                    FROM [LeagueRoundResults] lrr
-                    WHERE lrr.[LeagueId] = l.[Id] AND lrr.[UserId] = @UserId
-                ) performance
-
-                OUTER APPLY (
-                    SELECT COUNT(*) AS RoundsWon
-                    FROM (
-                        SELECT lrr.[UserId], lrr.[BoostedPoints],
-                            RANK() OVER (PARTITION BY lrr.[RoundId] ORDER BY lrr.[BoostedPoints] DESC) AS Rnk
-                        FROM [LeagueRoundResults] lrr
-                        INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
-                        WHERE lrr.[LeagueId] = l.[Id] AND r.[Status] = @CompletedStatus
-                    ) ranked
-                    WHERE ranked.[UserId] = @UserId AND ranked.[Rnk] = 1 AND ranked.[BoostedPoints] > 0
-                ) round_wins
-
-                OUTER APPLY (
-                    SELECT COUNT(*) AS MonthsWon
-                    FROM (
-                        SELECT
-                            lrr.[UserId],
-                            SUM(lrr.[BoostedPoints]) AS MonthPoints,
-                            RANK() OVER (
-                                PARTITION BY MONTH(r.[StartDateUtc]), YEAR(r.[StartDateUtc])
-                                ORDER BY SUM(lrr.[BoostedPoints]) DESC
-                            ) AS Rnk
-                        FROM [LeagueRoundResults] lrr
-                        INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
-                        WHERE lrr.[LeagueId] = l.[Id] AND r.[Status] = @CompletedStatus
-                        GROUP BY MONTH(r.[StartDateUtc]), YEAR(r.[StartDateUtc]), lrr.[UserId]
-                    ) ranked_months
-                    WHERE ranked_months.[UserId] = @UserId AND ranked_months.[Rnk] = 1 AND ranked_months.[MonthPoints] > 0
-                ) month_wins
-            WHERE
-                l.[Id] = @LeagueId;";
-
-        var stats = await dbConnection.QuerySingleOrDefaultAsync<SeasonRecapQueryResult>(
-            statsSql,
-            cancellationToken,
-            new
-            {
-                request.LeagueId,
-                request.UserId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                CompletedStatus = nameof(RoundStatus.Completed)
-            });
-
-        if (stats == null)
+        if (data is null)
             throw new EntityNotFoundException("League", request.LeagueId);
 
-        // Query 2: Highest position held during the season (cumulative rank trajectory)
-        const string positionSql = @"
-            DECLARE @SeasonId int = (SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId);
+        // Only approved members count, as everywhere else on the site.
+        var approvedUserIds = data.ApprovedMembers.Select(member => member.UserId).ToHashSet();
 
-            WITH CumulativePoints AS (
-                SELECT
-                    ar.[RoundNumber],
-                    am.[UserId],
-                    SUM(ISNULL(lrr.[BoostedPoints], 0)) OVER (
-                        PARTITION BY am.[UserId]
-                        ORDER BY ar.[RoundNumber]
-                        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-                    ) AS Total
-                FROM (
-                    SELECT [Id], [RoundNumber]
-                    FROM [Rounds]
-                    WHERE [SeasonId] = @SeasonId AND [Status] = @CompletedStatus
-                ) ar
-                CROSS JOIN (
-                    SELECT [UserId]
-                    FROM [LeagueMembers]
-                    WHERE [LeagueId] = @LeagueId AND [Status] = @ApprovedStatus
-                ) am
-                LEFT JOIN [LeagueRoundResults] lrr
-                    ON lrr.[RoundId] = ar.[Id]
-                    AND lrr.[UserId] = am.[UserId]
-                    AND lrr.[LeagueId] = @LeagueId
-            ),
-            RanksPerRound AS (
-                SELECT
-                    [RoundNumber],
-                    [UserId],
-                    [Total],
-                    CAST(RANK() OVER (PARTITION BY [RoundNumber] ORDER BY [Total] DESC) AS INT) AS Rnk
-                FROM CumulativePoints
-            ),
-            UserBest AS (
-                SELECT MIN(Rnk) AS BestRank
-                FROM RanksPerRound
-                WHERE [UserId] = @UserId AND [Total] > 0
-            )
-            SELECT
-                ISNULL(ub.BestRank, 0) AS HighestPosition,
-                ISNULL((SELECT COUNT(*) FROM RanksPerRound WHERE [UserId] = @UserId AND Rnk = ub.BestRank), 0) AS RoundsAtHighestPosition
-            FROM UserBest ub;";
+        var roundsById = data.SeasonRounds.ToDictionary(round => round.RoundId);
 
-        var position = await dbConnection.QuerySingleOrDefaultAsync<PositionResult>(
-            positionSql,
-            cancellationToken,
-            new
-            {
-                request.LeagueId,
-                request.UserId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                CompletedStatus = nameof(RoundStatus.Completed)
-            });
+        var scored = data.RoundScores
+            .Where(score => approvedUserIds.Contains(score.UserId) && roundsById.ContainsKey(score.RoundId))
+            .Select(score => new ScoredRound(score.UserId, roundsById[score.RoundId], score.BoostedPoints))
+            .ToList();
+
+        var myScores = scored.Where(score => score.UserId == request.UserId).ToList();
+
+        var completed = scored.Where(score => score.Round.Status == RoundStatus.Completed).ToList();
+
+        var bestRound = LeagueRecords.Highest(myScores, score => score.Points, score => score.Round.RoundNumber, NoName);
+        var worstRound = LeagueRecords.Lowest(myScores, score => score.Points, score => score.Round.RoundNumber, NoName);
+
+        var totalWinnings = data.WinningAmounts.Sum();
+
+        var trajectory = Trajectory(data, scored, request.UserId);
 
         return new SeasonRecapDto
         {
-            IsFree = stats.IsFree,
-            LeaguePrice = stats.LeaguePrice,
-            FinalPosition = stats.FinalPosition,
-            TotalMembers = stats.TotalMembers,
-            TotalWinnings = stats.TotalWinnings,
-            ProfitLoss = stats.ProfitLoss,
-            AveragePointsPerRound = stats.AveragePointsPerRound,
-            BestRoundPoints = stats.BestRoundPoints,
-            BestRoundNumber = stats.BestRoundNumber,
-            WorstRoundPoints = stats.WorstRoundPoints,
-            WorstRoundNumber = stats.WorstRoundNumber,
-            TotalExactScores = stats.TotalExactScores,
-            RoundsWon = stats.RoundsWon,
-            MonthsWon = stats.MonthsWon,
-            HighestPosition = position?.HighestPosition ?? 0,
-            RoundsAtHighestPosition = position?.RoundsAtHighestPosition ?? 0
+            IsFree = data.IsFree,
+            LeaguePrice = data.LeaguePrice,
+
+            FinalPosition = FinalPosition(data, scored, request.UserId),
+            TotalMembers = data.ApprovedMembers.Count,
+            TotalWinnings = totalWinnings,
+            ProfitLoss = totalWinnings - data.LeaguePrice,
+
+            AveragePointsPerRound = AveragePoints(myScores),
+            BestRoundPoints = bestRound?.Points ?? 0,
+            BestRoundNumber = bestRound?.Round.RoundNumber,
+            WorstRoundPoints = worstRound?.Points ?? 0,
+            WorstRoundNumber = worstRound?.Round.RoundNumber,
+            TotalExactScores = data.ExactScoreCounts.Sum(),
+
+            RoundsWon = CountWins(completed, score => score.Round.RoundId, request.UserId),
+            MonthsWon = CountWins(completed, score => MonthOf(score.Round), request.UserId),
+
+            HighestPosition = trajectory.HighestPosition,
+            RoundsAtHighestPosition = trajectory.RoundsAtHighestPosition
         };
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record SeasonRecapQueryResult(
-        bool IsFree,
-        decimal LeaguePrice,
-        decimal TotalWinnings,
-        decimal ProfitLoss,
-        int FinalPosition,
-        int TotalMembers,
-        decimal AveragePointsPerRound,
-        int BestRoundPoints,
-        int? BestRoundNumber,
-        int WorstRoundPoints,
-        int? WorstRoundNumber,
-        int TotalExactScores,
-        int RoundsWon,
-        int MonthsWon
-    );
+    /// <summary>
+    /// Where the player finished on total points, joint positions sharing a number as they do everywhere else.
+    /// Zero when the player holds no position at all, which is what the old <c>ISNULL(..., 0)</c> said.
+    /// </summary>
+    private static int FinalPosition(SeasonRecapData data, IReadOnlyList<ScoredRound> scored, string userId)
+    {
+        var totals = TotalsByUserId(scored);
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PositionResult(int HighestPosition, int RoundsAtHighestPosition);
+        var ranked = Ranking.ByDescending(
+            data.ApprovedMembers,
+            member => totals.GetValueOrDefault(member.UserId),
+            member => PlayerDisplayName.FormatFull(member.FirstName, member.LastName));
+
+        return ranked.FirstOrDefault(entry => entry.Item.UserId == userId)?.Rank ?? 0;
+    }
+
+    /// <summary>
+    /// The player's average round score, over the rounds they have a result for rather than over the season.
+    /// </summary>
+    /// <remarks>
+    /// No status filter, matching the old block: a round in progress that has already been scored counts. Nor is
+    /// there a zero for a round they have no result in - the average is of rounds played, so missing a round does
+    /// not drag it down.
+    /// </remarks>
+    private static decimal AveragePoints(IReadOnlyList<ScoredRound> myScores)
+    {
+        if (myScores.Count == 0)
+            return 0;
+
+        return myScores.Average(score => (decimal)score.Points);
+    }
+
+    private static int CountWins<TPeriod>(
+        IReadOnlyList<ScoredRound> completed,
+        Func<ScoredRound, TPeriod> periodSelector,
+        string userId)
+        where TPeriod : notnull =>
+        Wins.ByPeriod(completed, periodSelector, score => score.UserId, score => score.Points)
+            .Count(winnerId => winnerId == userId);
+
+    /// <summary>
+    /// The highest position the player ever held, and how many rounds they held it for.
+    /// </summary>
+    /// <remarks>
+    /// Walks the season's completed rounds in order, adding each round's points to every member's running total and
+    /// ranking the league as it stood. Rounds where nobody scored still count as a step, which is why the port
+    /// returns the rounds themselves rather than only the rows with points in them.
+    ///
+    /// The <c>Total &gt; 0</c> guard is what stops the answer being "first, after round one" for a player who had
+    /// not scored yet - before anyone scores, everyone is joint first.
+    /// </remarks>
+    private static (int HighestPosition, int RoundsAtHighestPosition) Trajectory(
+        SeasonRecapData data,
+        IReadOnlyList<ScoredRound> scored,
+        string userId)
+    {
+        var scoresByRound = scored.ToLookup(score => score.Round.RoundId);
+
+        var runningTotals = data.ApprovedMembers.ToDictionary(member => member.UserId, _ => 0);
+
+        var positions = new List<(int Rank, int Total)>();
+
+        foreach (var round in data.SeasonRounds
+                     .Where(round => round.Status == RoundStatus.Completed)
+                     .OrderBy(round => round.RoundNumber))
+        {
+            foreach (var score in scoresByRound[round.RoundId])
+                runningTotals[score.UserId] += score.Points;
+
+            var myTotal = runningTotals.GetValueOrDefault(userId);
+
+            // The number of members strictly ahead, plus one - which is what RANK() gave, ties included.
+            var rank = 1 + runningTotals.Values.Count(total => total > myTotal);
+
+            positions.Add((rank, myTotal));
+        }
+
+        var qualifying = positions.Where(position => position.Total > 0).ToList();
+
+        if (qualifying.Count == 0)
+            return (0, 0);
+
+        var highest = qualifying.Min(position => position.Rank);
+
+        // Counted over every round, including any before the player had scored. That asymmetry is the old
+        // statement's: the guard above was applied when finding the best position but not when counting how long it
+        // was held, so a round where the whole league was on nothing can be counted as a round spent in first.
+        // Preserved deliberately rather than quietly corrected - see the plan document.
+        var roundsAtHighest = positions.Count(position => position.Rank == highest);
+
+        return (highest, roundsAtHighest);
+    }
+
+    private static Dictionary<string, int> TotalsByUserId(IReadOnlyList<ScoredRound> scored) =>
+        scored
+            .GroupBy(score => score.UserId)
+            .ToDictionary(group => group.Key, group => group.Sum(score => score.Points));
+
+    private static (int Year, int Month) MonthOf(SeasonRecapRoundRow round) =>
+        (round.StartDateUtc.Year, round.StartDateUtc.Month);
+
+    /// <summary>
+    /// The recap's records are one player's own, so there is never a second holder to order against - unlike the
+    /// league records tile, where the name is the final tie-break.
+    /// </summary>
+    private static string NoName(ScoredRound score) => string.Empty;
+
+    private sealed record ScoredRound(string UserId, SeasonRecapRoundRow Round, int Points);
 }

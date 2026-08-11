@@ -163,66 +163,57 @@ public class GetLeagueRecordsQueryHandler(
     }
 
     /// <summary>
-    /// Who has won the most rounds. A round is won by whoever scored most in it, joint winners each counting a
-    /// win, and a round nobody scored in is won by nobody.
+    /// Who has won the most rounds. Which rounds were won is <c>Wins.ByPeriod</c>; this counts them per player and
+    /// picks the leader.
     /// </summary>
-    /// <remarks>
-    /// The old block ranked with <c>RANK() OVER (PARTITION BY [RoundId] ...)</c> and kept
-    /// <c>Rnk = 1 AND BoostedPoints > 0</c>. Both halves matter: <c>RANK</c> rather than <c>ROW_NUMBER</c> is what
-    /// lets a shared win count for both players, and the points test stops a round that has been created but not
-    /// yet scored handing everyone in the league a win.
-    /// </remarks>
     private static PlayerCount? MostRoundsWon(IReadOnlyList<LeagueRecordRoundScoreRow> scores) =>
-        MostWins(scores
-            .Where(row => row.RoundStatus == RoundStatus.Completed)
-            .GroupBy(row => row.RoundId)
-            .SelectMany(round => WinnersOf(round.Select(Entry).ToList())));
+        MostWins(
+            scores,
+            Wins.ByPeriod(
+                Completed(scores),
+                row => row.RoundId,
+                row => row.UserId,
+                row => row.BoostedPoints));
 
     /// <summary>
-    /// Who has won the most months. A month is won on the total of its completed rounds, and a round belongs to
-    /// the calendar month it started in.
+    /// Who has won the most months. A round belongs to the calendar month it started in, and a month is won on the
+    /// total of its rounds rather than by winning its best one.
     /// </summary>
     private static PlayerCount? MostMonthsWon(IReadOnlyList<LeagueRecordRoundScoreRow> scores) =>
-        MostWins(scores
-            .Where(row => row.RoundStatus == RoundStatus.Completed)
-            .GroupBy(row => new { row.RoundStartDateUtc.Year, row.RoundStartDateUtc.Month })
-            .SelectMany(month => WinnersOf(month
-                .GroupBy(row => row.UserId)
-                .Select(player => new ScoreEntry(
-                    player.Key,
-                    player.First().FirstName,
-                    player.First().LastName,
-                    player.Sum(row => row.BoostedPoints)))
-                .ToList())));
+        MostWins(
+            scores,
+            Wins.ByPeriod(
+                Completed(scores),
+                row => (row.RoundStartDateUtc.Year, row.RoundStartDateUtc.Month),
+                row => row.UserId,
+                row => row.BoostedPoints));
+
+    private static IReadOnlyList<LeagueRecordRoundScoreRow> Completed(
+        IReadOnlyList<LeagueRecordRoundScoreRow> scores) =>
+        scores.Where(row => row.RoundStatus == RoundStatus.Completed).ToList();
 
     /// <summary>
-    /// The winners of one round or one month: everyone tied on the best score, provided that score beat nothing.
+    /// The player with the most wins, named from whichever of their score rows came first - any of them carries
+    /// their name.
     /// </summary>
-    private static IReadOnlyList<ScoreEntry> WinnersOf(IReadOnlyList<ScoreEntry> contenders)
+    private static PlayerCount? MostWins(
+        IReadOnlyList<LeagueRecordRoundScoreRow> scores,
+        IReadOnlyList<string> winnerIds)
     {
-        var best = contenders.Max(contender => contender.Points);
+        var namesByUserId = scores
+            .GroupBy(row => row.UserId)
+            .ToDictionary(group => group.Key, group => group.First());
 
-        if (best <= 0)
-            return [];
-
-        return contenders.Where(contender => contender.Points == best).ToList();
-    }
-
-    private static PlayerCount? MostWins(IEnumerable<ScoreEntry> wins)
-    {
-        var counts = wins
-            .GroupBy(win => win.UserId)
+        var counts = winnerIds
+            .GroupBy(userId => userId)
             .Select(group => new PlayerCount(
-                group.First().FirstName,
-                group.First().LastName,
+                namesByUserId[group.Key].FirstName,
+                namesByUserId[group.Key].LastName,
                 group.Count()))
             .ToList();
 
         return LeagueRecords.Highest(counts, count => count.WinCount, _ => 0, FullName);
     }
-
-    private static ScoreEntry Entry(LeagueRecordRoundScoreRow row) =>
-        new(row.UserId, row.FirstName, row.LastName, row.BoostedPoints);
 
     /// <summary>
     /// The largest single prize paid. Ties go to whichever was awarded first, which is the one piece of
@@ -262,9 +253,6 @@ public class GetLeagueRecordsQueryHandler(
 
     private static string FullName(PlayerCount count) =>
         PlayerDisplayName.FormatFull(count.FirstName, count.LastName);
-
-    /// <summary>One contender's score in one round or one month, ready to be compared with its peers.</summary>
-    private sealed record ScoreEntry(string UserId, string FirstName, string LastName, int Points);
 
     private sealed record PlayerTotal(string FirstName, string LastName, int Points);
 
