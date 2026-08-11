@@ -16,10 +16,9 @@ namespace ThePredictions.Infrastructure.Services;
 /// <list type="bullet">
 /// <item>which fixtures a player can still act on - now <c>Match.IsOpenForPrediction</c>, the rule the SQL
 /// predicate said in its own comment that it mirrored;</item>
-/// <item>the next deadline to count down to - the milestone schedule already used
-/// <c>Round.GetNextPredictionDeadline</c> for this while the SQL recomputed the same thing beside it. The
-/// chase email now derives it from the fixtures it is chasing, which is the same answer for every reachable
-/// case and avoids a second status filter (see the note where it is computed);</item>
+/// <item>the next deadline to count down to - now <c>Round.GetNextPredictionDeadline</c> for both the
+/// milestone schedule and the email, where the SQL used to recompute it beside a C# call doing the same
+/// thing;</item>
 /// <item>the round's display name - now <c>Round.GetDisplayNameOrDefault</c>.</item>
 /// </list>
 /// </summary>
@@ -114,15 +113,11 @@ public class ReminderService(
 
         var roundName = data.Round.GetDisplayNameOrDefault();
 
-        // The deadline shown in the email is the earliest lock among the fixtures being chased, which for a
-        // normal round is simply the round deadline and for a combined round is that round's later batch.
-        //
-        // Taken from the open fixtures rather than from Round.GetNextPredictionDeadline, which answers a
-        // subtly different question: it skips only postponed fixtures, where IsOpenForPrediction requires
-        // Scheduled. The two disagree about a fixture marked completed while its lock is still ahead -
-        // practically unreachable, but it also left this expression with an unreachable null fallback. Using
-        // the same set the chase is based on removes both the dead branch and the disagreement.
-        var deadlineUtc = openFixtures.Min(match => match.GetEffectiveDeadline(data.Round.DeadlineUtc));
+        // The deadline shown in the email is the earliest lock among the fixtures being chased, which is
+        // exactly what GetNextPredictionDeadline now answers - and the same value the milestone schedule
+        // above measures against, so the email and the send decision cannot disagree. Non-null because at
+        // least one fixture is open, which is the same condition the method tests.
+        var deadlineUtc = data.Round.GetNextPredictionDeadline(nowUtc)!.Value;
 
         return data.Participants
             .Where(participant => Predicted(predictedByUser, participant.UserId) < openFixtureIds.Count)

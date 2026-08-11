@@ -1187,5 +1187,26 @@ public class RoundTests
         result.Should().Be(ExpectedBatchLock);
     }
 
+    [Fact]
+    public void GetNextPredictionDeadline_ShouldIgnoreAFixtureThatHasKickedOff_EvenIfItsLockIsSomehowAhead()
+    {
+        // A match cannot legitimately be in progress before its own prediction lock, so this state means
+        // something has gone wrong upstream. The rule assumes it away rather than defending against it, which
+        // is what lets this method and Match.IsOpenForPrediction share one definition of "still open".
+        var round = CreateBatchRound(
+            BatchMatch(1, "Final", FinalKickoff, customLockTimeUtc: ExpectedBatchLock, status: MatchStatus.InProgress));
+
+        round.GetNextPredictionDeadline(BatchRoundDeadline.AddDays(-1)).Should().BeNull();
+    }
+
+    [Fact]
+    public void GetNextPredictionDeadline_ShouldIgnoreACompletedFixture_EvenIfItsLockIsSomehowAhead()
+    {
+        var round = CreateBatchRound(
+            BatchMatch(1, "Final", FinalKickoff, customLockTimeUtc: ExpectedBatchLock, status: MatchStatus.Completed));
+
+        round.GetNextPredictionDeadline(BatchRoundDeadline.AddDays(-1)).Should().BeNull();
+    }
+
     #endregion
 }

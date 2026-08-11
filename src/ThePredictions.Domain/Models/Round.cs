@@ -173,25 +173,29 @@ public class Round
     public string GetDisplayNameOrDefault() =>
         string.IsNullOrWhiteSpace(DisplayName) ? $"Round {RoundNumber}" : DisplayName;
 
+    /// <summary>
+    /// The earliest moment at which a fixture in this round will stop accepting predictions, or null when
+    /// none are still open. For an ordinary round that is the round deadline; for a combined round whose
+    /// later batch has its own lock, it is whichever comes first among the batches still open.
+    /// </summary>
+    /// <remarks>
+    /// Defined as "the earliest effective deadline among the fixtures still open for prediction", so it and
+    /// <see cref="Match.IsOpenForPrediction"/> answer the same question about which fixtures matter. They
+    /// used to disagree: this method skipped only postponed and unconfirmed fixtures, while
+    /// IsOpenForPrediction also requires the status to be Scheduled. The two therefore differed for a
+    /// fixture marked completed or in progress whose lock was still ahead - a state that means something has
+    /// gone wrong upstream and cannot legitimately occur, since a match does not start before its own
+    /// prediction lock. Aligned on that basis (August 2026): the invariant is assumed rather than defended
+    /// here, and if it is ever worth detecting, the place to do it is the job that sets match statuses.
+    /// </remarks>
     public DateTime? GetNextPredictionDeadline(DateTime utcNow)
     {
-        DateTime? next = null;
+        var openDeadlines = _matches
+            .Where(match => match.IsOpenForPrediction(utcNow, DeadlineUtc))
+            .Select(match => match.GetEffectiveDeadline(DeadlineUtc))
+            .ToList();
 
-        foreach (var match in _matches)
-        {
-            if (!match.AreTeamsConfirmed || match.Status == MatchStatus.Postponed)
-                continue;
-
-            var effectiveDeadline = match.GetEffectiveDeadline(DeadlineUtc);
-
-            if (effectiveDeadline <= utcNow)
-                continue;
-
-            if (next == null || effectiveDeadline < next.Value)
-                next = effectiveDeadline;
-        }
-
-        return next;
+        return openDeadlines.Count == 0 ? null : openDeadlines.Min();
     }
 
     /// <summary>
