@@ -519,6 +519,39 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         });
     }
 
+    public async Task AddRoundResultAsync(
+        int roundId, string userId, int exactScoreCount, int correctResultCount = 0, int incorrectCount = 0)
+    {
+        // TotalPoints is a vestigial NOT NULL column that migration 0005 dropped from the schema's intent but
+        // which still exists with a DEFAULT of 0; nothing reads it (see 0005_DropRoundResultsTotalPoints.sql).
+        const string sql = @"
+            INSERT INTO [RoundResults]
+            (
+                [RoundId],
+                [UserId],
+                [ExactScoreCount],
+                [CorrectResultCount],
+                [IncorrectCount]
+            )
+            VALUES
+            (
+                @RoundId,
+                @UserId,
+                @ExactScoreCount,
+                @CorrectResultCount,
+                @IncorrectCount
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            RoundId = roundId,
+            UserId = userId,
+            ExactScoreCount = exactScoreCount,
+            CorrectResultCount = correctResultCount,
+            IncorrectCount = incorrectCount
+        });
+    }
+
     public async Task DeleteMatchAsync(int matchId)
     {
         // No guard at all - the point is to show what the schema does on its own.

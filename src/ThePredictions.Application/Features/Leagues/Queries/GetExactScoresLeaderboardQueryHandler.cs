@@ -1,72 +1,54 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leaderboards;
-using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// A league's exact-scores leaderboard - who has predicted the most scorelines exactly.
+///
+/// Four rules left the SQL: the tie policy, the total, the display name, and the order of joint positions. There
+/// is no rank-change arrow on this table, so unlike the overall and monthly leaderboards there is no
+/// pre-round-position rule to go with them.
+/// </summary>
 public class GetExactScoresLeaderboardQueryHandler(
-    IApplicationReadDbConnection connection,
+    IExactScoresLeaderboardQuery leaderboardQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetExactScoresLeaderboardQuery, ExactScoresLeaderboardDto>
 {
-    public async Task<ExactScoresLeaderboardDto> Handle(GetExactScoresLeaderboardQuery request, CancellationToken cancellationToken)
+    public async Task<ExactScoresLeaderboardDto> Handle(
+        GetExactScoresLeaderboardQuery request,
+        CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
-        const string entriesSql = @"
-            DECLARE @SeasonId int = (SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId);
 
-            SELECT
-                RANK() OVER (ORDER BY ISNULL(exact_scores.[Total], 0) DESC) AS [Rank],
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS [PlayerName],
-                ISNULL(exact_scores.[Total], 0) AS [ExactScoresCount],
-                u.[Id] AS [UserId]
-            FROM
-                [LeagueMembers] lm
-            INNER JOIN
-                [AspNetUsers] u ON u.[Id] = lm.[UserId]
-            OUTER APPLY (
-                SELECT
-                    SUM(rr.[ExactScoreCount]) AS [Total]
-                FROM
-                    [RoundResults] rr
-                INNER JOIN
-                    [Rounds] r ON r.[Id] = rr.[RoundId]
-                WHERE
-                    rr.[UserId] = lm.[UserId]
-                    AND r.[SeasonId] = @SeasonId
-            ) exact_scores
-            WHERE
-                lm.[LeagueId] = @LeagueId
-                AND lm.[Status] = @ApprovedStatus
-            ORDER BY
-                [ExactScoresCount] DESC,
-                [PlayerName]";
+        var data = await leaderboardQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
-        var leaderboardEntries = await connection.QueryAsync<ExactScoresLeaderboardQueryResult>(entriesSql, cancellationToken, new { request.LeagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
+        var totalsByUser = data.ExactScores
+            .GroupBy(row => row.UserId)
+            .ToDictionary(group => group.Key, group => group.Sum(row => row.ExactScoreCount));
 
-        var leaderboard = new ExactScoresLeaderboardDto
+        // A member who has never predicted a scoreline exactly counts zero and appears at the bottom, rather
+        // than being left off - which is what the ISNULL in the old SQL meant.
+        var ranked = Ranking.ByDescending(
+            data.Members,
+            member => TotalFor(totalsByUser, member.UserId),
+            member => PlayerDisplayName.FormatFull(member.FirstName, member.LastName));
+
+        return new ExactScoresLeaderboardDto
         {
-            Entries = leaderboardEntries
-                .Select(e => new ExactScoresLeaderboardEntryDto
+            Entries = ranked
+                .Select(entry => new ExactScoresLeaderboardEntryDto
                 {
-                    Rank = e.Rank,
-                    PlayerName = e.PlayerName,
-                    ExactScoresCount = e.ExactScoresCount,
-                    UserId = e.UserId
+                    Rank = entry.Rank,
+                    PlayerName = PlayerDisplayName.Format(entry.Item.FirstName, entry.Item.LastName),
+                    ExactScoresCount = TotalFor(totalsByUser, entry.Item.UserId),
+                    UserId = entry.Item.UserId
                 })
                 .ToList()
         };
-
-        return leaderboard;
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record ExactScoresLeaderboardQueryResult(
-        long Rank,
-        string PlayerName,
-        int ExactScoresCount,
-        string UserId);
+    private static int TotalFor(IReadOnlyDictionary<string, int> totalsByUser, string userId) =>
+        totalsByUser.TryGetValue(userId, out var total) ? total : 0;
 }
