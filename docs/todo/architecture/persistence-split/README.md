@@ -148,6 +148,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Boosts/catalogue** ✅ | `IBoostCatalogueQuery` extracted, ordering moved to C#, handler measured for the first time. Pattern established. |
 | 2 | **Boosts/usage-summary** ✅ | `ILeagueBoostUsageQuery` (one composite reply, 7 reads), three rules moved to C#, handler measured. |
 | 2 | **Rounds/completion** ✅ | `IRoundCompletionQuery`; three SQL statements and a shared predicate replaced by `Match.IsOpenForPrediction`. SQL copy 1 of 2 gone. |
+| 2 | **Rounds/reminders** ✅ | `ReminderService` onto the same port and the same domain rule. Predictable-fixture duplication **fully collapsed**; three rules, one definition each. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -249,6 +250,36 @@ exist yet.
 Doing the extraction now was still right, and for the reason originally given: every integration test phase
 2 writes would otherwise need rewriting afterwards. The shape now exists, with one real suite proving it.
 
+### An asymmetry found in the domain, not introduced by this work
+
+`Round.GetNextPredictionDeadline` skips a fixture only when it is **postponed** or has unconfirmed teams.
+`Match.IsOpenForPrediction` requires the status to be **Scheduled**. So the two disagree about a fixture
+marked completed or in progress whose lock is still ahead: the first would count it towards the next
+deadline, the second would not count it as predictable.
+
+It is practically unreachable - a match is not completed before it has kicked off, which is after its lock -
+and it predates this work. It surfaced because a reminder-service test used a completed fixture to mean
+"nothing open" and the milestone schedule disagreed. Two consequences, both handled:
+
+- The chase email now derives its deadline from the fixtures it is actually chasing, rather than calling
+  `GetNextPredictionDeadline` separately. Same answer for every reachable case, one status filter instead of
+  two, and it removed an unreachable null fallback that the coverage gate had flagged.
+- `ShouldSendReminderAsync` still uses `GetNextPredictionDeadline`, so the asymmetry remains there.
+  **Whether the two should be reconciled is a behaviour question, not a refactor** - it would change when
+  reminders fire for a round containing a completed-but-unlocked fixture - so it is left alone and recorded
+  here.
+
+### Two more compiler-branch traps
+
+Both found by the 100% gate, both the same shape as the property pattern in the Boosts batch: the branches
+the compiler emits do not correspond to logical outcomes.
+
+- `lastSent == null || lastSent < targetTime` compares a `DateTime?` against a `DateTime`, and the nullable
+  lifting adds a fourth branch with no outcome behind it. Split into statements.
+- `GetNextPredictionDeadline(nowUtc) ?? round.DeadlineUtc` had an unreachable fallback, which the code's own
+  comment admitted ("non-null because at least one fixture is open"). Per `testing.md` an unreachable branch
+  is removed rather than excluded, which is what the change above does.
+
 ### Moving a rule out of SQL creates a new failure mode
 
 This is the thing to watch for the rest of phase 2. While a rule is a SQL predicate it cannot fail to be
@@ -330,8 +361,8 @@ collapses each to one.
 
 | Rule | Copies | Status |
 |------|--------|--------|
-| Predictable fixture | `GetRoundCompletionQueryHandler.PredictableMatchPredicate` + `ReminderService.GetUsersMissingPredictionsAsync` | **Half collapsed 2026-08-10.** The rule was never absent from C#: `Match.AreTeamsConfirmed` and `Match.IsPredictionLocked` both existed and were tested, and both SQL copies said in their comments that they mirrored the latter. Only the three-way composition was missing, so each call site rewrote the whole thing in T-SQL. `Match.IsOpenForPrediction` is now that composition; round completion uses it and its SQL copy is gone. `ReminderService` is next. |
-| Round display name (`CASE WHEN LEN(LTRIM(RTRIM(DisplayName))) > 0 ...`) | The same two files | `Round.GetDisplayNameOrDefault` added 2026-08-10; round completion adopted it, `ReminderService` copy remains. The second rule those two files duplicated. |
+| Predictable fixture | `GetRoundCompletionQueryHandler.PredictableMatchPredicate` + `ReminderService.GetUsersMissingPredictionsAsync` | **Fully collapsed 2026-08-10.** The rule was never absent from C#: `Match.AreTeamsConfirmed` and `Match.IsPredictionLocked` both existed and were tested, and both SQL copies said in their comments that they mirrored the latter. Only the three-way composition was missing, so each call site rewrote the whole thing in T-SQL. `Match.IsOpenForPrediction` is now that composition, and both call sites read through one `IRoundCompletionQuery`. |
+| Round display name (`CASE WHEN LEN(LTRIM(RTRIM(DisplayName))) > 0 ...`) | The same two files | **Fully collapsed 2026-08-10** to `Round.GetDisplayNameOrDefault`. The second rule those two files duplicated. |
 | Round outcome counts | `RoundRepository.UpdateRoundResultsAsync` MERGE + `GetActiveRoundsQueryHandler.cs:195` | Found 2026-08-10, **untested in either copy**. `RoundResults.ExactScoreCount` is stored and read by badges, digests, leaderboards, records and season recap, so the SQL is canonical and the C# is a live shadow of it. Collapses in phase "Rounds". |
 | Boost secrecy | SQL only, but reads `GETUTCDATE()` instead of `IDateTimeProvider` | Integration tested 2026-08-10; becomes a clock-injected C# filter in phase "Boosts" |
 | Player display name (`FirstName + ' ' + LEFT(LastName, 1)`) | **17 files** | `Domain.Services.PlayerDisplayName` added 2026-08-10 with the Boosts batch, which adopted it. **16 SQL copies remain** - each area adopts it as the split reaches it. The C# version also drops the trailing space the SQL produced for an empty surname. |

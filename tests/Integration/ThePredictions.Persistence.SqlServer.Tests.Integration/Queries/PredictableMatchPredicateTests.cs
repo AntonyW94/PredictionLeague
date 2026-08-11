@@ -23,12 +23,16 @@ namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Queries;
 /// <c>Scheduled</c>, and <c>COALESCE(CustomLockTimeUtc, round deadline) &gt; now</c> so a per-match lock
 /// overrides the round deadline in both directions.
 ///
-/// <b>Half collapsed as of August 2026.</b> The round-completion side no longer has a SQL predicate at all -
-/// it asks <c>Match.IsOpenForPrediction</c>, the domain rule both copies were only ever mirroring. So this
-/// test now compares C# against the SQL copy that remains in <c>ReminderService</c>, which makes it more
-/// valuable than when it compared two SQL strings: it is the thing that proves the move preserved behaviour.
-/// It stops being a cross-language comparison when the reminder side moves too, and becomes a plain check
-/// that both callers of one rule agree.
+/// <b>Fully collapsed as of August 2026.</b> Neither call site has a SQL predicate any more: both ask
+/// <c>Match.IsOpenForPrediction</c>, the domain rule the two copies were only ever mirroring, and both read
+/// through the same <c>IRoundCompletionQuery</c>. So there is no longer any divergence for this test to
+/// detect, and the rule's own edge cases are covered far better by <c>MatchOpenForPredictionTests</c>, which
+/// can pin an exact instant without a container.
+///
+/// It is kept because it now proves something different and still worth proving: that the real SQL feeds both
+/// consumers the facts the rule needs. Delete the predicate's <c>Status</c> clause or its team-confirmation
+/// join from the adapter and these cases fail, even though the rule itself is untouched. That is the failure
+/// mode the split introduced - a correct rule fed the wrong data - and this is what catches it.
 /// </summary>
 [Trait(IntegrationTrait.Name, IntegrationTrait.Value)]
 public class PredictableMatchPredicateTests(SqlServerDatabaseFixture fixture) : DatabaseTestBase(fixture)
@@ -176,7 +180,8 @@ public class PredictableMatchPredicateTests(SqlServerDatabaseFixture fixture) : 
             CancellationToken.None);
     }
 
-    private ReminderService ReminderService() => new(ReadDbConnection);
+    private ReminderService ReminderService() =>
+        new(new RoundCompletionQuery(ReadDbConnection), new EarlierRoundStatusesQuery(ReadDbConnection));
 
     private sealed record PredicateWorld(int LeagueId, int RoundId, int MatchId, string UserId);
 
