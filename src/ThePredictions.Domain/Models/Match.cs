@@ -171,7 +171,13 @@ public class Match
     /// by a whitelist that predates it. A fixture appearing when it should not is a bug someone reports; a
     /// fixture quietly missing from a results grid is one nobody notices.
     /// </remarks>
-    public bool IsPostponed => Status == MatchStatus.Postponed;
+    public bool IsPostponed => IsPostponedStatus(Status);
+
+    /// <summary>
+    /// The same question about a status on its own, for the read paths that hold rows rather than entities. Both forms
+    /// exist so there is still only one definition of "called off" once the last statement asking it has gone.
+    /// </summary>
+    public static bool IsPostponedStatus(MatchStatus status) => status == MatchStatus.Postponed;
 
     public bool IsPredictionLocked(DateTime utcNow, DateTime roundDeadline)
     {
