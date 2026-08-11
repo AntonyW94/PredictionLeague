@@ -90,6 +90,7 @@ public static class DependencyInjection
         services.AddScoped<ILeaguePaymentInfoQuery, LeaguePaymentInfoQuery>();
         services.AddScoped<ILeaguePrizesPageQuery, LeaguePrizesPageQuery>();
         services.AddScoped<ILeaguePayoutsQuery, LeaguePayoutsQuery>();
+        services.AddScoped<IWinningsQuery, WinningsQuery>();
         services.AddScoped<ISeasonLookupQuery, SeasonLookupQuery>();
         services.AddScoped<IEmailSettingsQuery, EmailSettingsQuery>();
         services.AddScoped<ILeagueRecordsQuery, LeagueRecordsQuery>();

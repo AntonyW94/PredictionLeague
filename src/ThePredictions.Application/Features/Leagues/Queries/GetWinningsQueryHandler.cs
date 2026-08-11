@@ -1,16 +1,22 @@
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
+using ThePredictions.Domain.Services;
+using ThePredictions.Domain.Services.Prizes;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
+/// <summary>
+/// A league's winnings page: every prize on offer, who has won each one, and what each member has taken in total.
+/// </summary>
+/// <remarks>
+/// Almost all of this was already C#. What moved is the four reads behind it - and with them the two places that
+/// formatted a month name using the machine's locale and then <b>parsed it back</b> to sort by it.
+/// </remarks>
 public class GetWinningsQueryHandler(
-    IApplicationReadDbConnection dbConnection,
+    IWinningsQuery winningsQuery,
     ILeagueMembershipService membershipService,
     IDateTimeProvider dateTimeProvider) : IRequestHandler<GetWinningsQuery, WinningsDto>
 {
@@ -18,318 +24,286 @@ public class GetWinningsQueryHandler(
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
-        var leagueData = await GetLeagueDataAsync(request.LeagueId, cancellationToken);
-        if (leagueData == null)
+        var data = await winningsQuery.ExecuteAsync(request.LeagueId, cancellationToken);
+
+        if (data == null)
             return new WinningsDto();
 
-        if (leagueData.EntryDeadlineUtc > dateTimeProvider.UtcNow || !leagueData.PrizeSettings.Any())
+        var header = data.Header;
+
+        if (!AreWinningsWorkedOut(header, data.PrizeSettings, dateTimeProvider.UtcNow))
         {
             return new WinningsDto
             {
                 WinningsCalculated = false,
-                EntryCount = leagueData.EntryCount,
-                EntryCost = leagueData.EntryCost,
-                TotalPrizePot = leagueData.EntryCount * leagueData.EntryCost
+                EntryCount = header.EntryCount,
+                EntryCost = header.EntryCost,
+                TotalPrizePot = TotalPrizePot(header)
             };
         }
 
-        var winningsDto = new WinningsDto
+        return new WinningsDto
         {
             WinningsCalculated = true,
-            EntryCount = leagueData.EntryCount,
-            EntryCost = leagueData.EntryCost,
-            TotalPrizePot = leagueData.EntryCount * leagueData.EntryCost
+            EntryCount = header.EntryCount,
+            EntryCost = header.EntryCost,
+            TotalPrizePot = TotalPrizePot(header),
+            RoundPrizes = RoundPrizes(data),
+            MonthlyPrizes = MonthlyPrizes(data),
+            StagePrizes = StagePrizes(data),
+            EndOfSeasonPrizes = EndOfSeasonPrizes(data),
+            Leaderboard = new WinningsLeaderboardDto { Entries = Leaderboard(data) }
         };
-
-        ProcessRoundPrizes(winningsDto, leagueData);
-        ProcessMonthlyPrizes(winningsDto, leagueData);
-        ProcessStagePrizes(winningsDto, leagueData);
-        ProcessEndOfSeasonPrizes(winningsDto, leagueData);
-        ProcessLeaderboard(winningsDto, leagueData);
-
-        return winningsDto;
     }
 
-    private static void ProcessRoundPrizes(WinningsDto dto, LeagueData data)
+    /// <summary>
+    /// Whether there is anything to show yet: entries must have closed, and the league must actually be offering prizes.
+    /// </summary>
+    /// <remarks>
+    /// A league whose entry deadline has not passed shows its pot and nothing else, because who is competing is still
+    /// changing. A league with no prizes configured shows the same, because there is nothing to win.
+    ///
+    /// A league with no deadline at all counts as closed. The old comparison was <c>EntryDeadlineUtc &gt; now</c> against a
+    /// non-nullable field, so a null would have failed to materialise rather than reaching this decision.
+    /// </remarks>
+    private static bool AreWinningsWorkedOut(
+        WinningsHeaderRow header,
+        IReadOnlyList<WinningsPrizeSettingRow> prizeSettings,
+        DateTime utcNow)
     {
-        var roundPrizeSetting = data.PrizeSettings.FirstOrDefault(p => p.PrizeType == PrizeType.Round);
-        if (roundPrizeSetting == null) 
-            return;
-       
-        var wonRoundPrizes = data.Winnings
-            .Where(w => w.PrizeType == PrizeType.Round)
-            .Select(winner => new PrizeDto
-            {
-                Name = winner.RoundNumber.ToString()!,
-                Amount = winner.Amount,
-                Winner = winner.WinnerName,
-                UserId = winner.UserId
-            });
-      
-        dto.RoundPrizes.AddRange(wonRoundPrizes);
+        if (header.EntryDeadlineUtc is { } deadline && deadline > utcNow)
+            return false;
 
-        var wonRoundNumbers = data.Winnings.Where(w => w.PrizeType == PrizeType.Round).Select(w => w.RoundNumber).Distinct();
-        var remainingRounds = Enumerable.Range(1, data.TotalRoundsInSeason).Where(r => !wonRoundNumbers.Contains(r));
-
-        foreach (var roundNum in remainingRounds)
-        {
-            dto.RoundPrizes.Add(new PrizeDto
-            {
-                Name = roundNum.ToString(),
-                Amount = roundPrizeSetting.Amount,
-                Winner = null,
-                UserId = null
-            });
-        }
-        dto.RoundPrizes = dto.RoundPrizes.OrderBy(p => int.Parse(p.Name)).ToList();
+        return prizeSettings.Count > 0;
     }
 
-    private static void ProcessMonthlyPrizes(WinningsDto dto, LeagueData data)
+    /// <summary>
+    /// The pot: every entry fee, and <b>not</b> the administrator's top-up.
+    /// </summary>
+    /// <remarks>
+    /// Every other page adds <c>PrizeFundOverride</c> through <c>PrizeFund.Total</c>. This one never has, so it is
+    /// preserved rather than quietly corrected - see the plan document. The header carries the top-up so the difference is
+    /// visible here rather than only in the SQL that used to omit it.
+    /// </remarks>
+    private static decimal TotalPrizePot(WinningsHeaderRow header) =>
+        header.EntryCount * header.EntryCost;
+
+    /// <summary>
+    /// One line per round of the season: the winner where there is one, and the prize still on offer where there is not.
+    /// </summary>
+    /// <remarks>
+    /// The round numbers are carried through and only turned into text at the end. The old code named each line with
+    /// <c>winner.RoundNumber.ToString()</c> and then sorted the list with <c>int.Parse(p.Name)</c> - so a round prize
+    /// recorded without a round number produced an empty name and took the whole page down on the sort.
+    ///
+    /// Such a win is skipped now rather than crashing the page. It should not exist - a round prize is won in a round - but
+    /// a prize missing from a list is a far better failure than a page that will not load.
+    /// </remarks>
+    private static List<PrizeDto> RoundPrizes(WinningsData data)
     {
-        var monthlyPrizeSetting = data.PrizeSettings.FirstOrDefault(p => p.PrizeType == PrizeType.Monthly);
-        if (monthlyPrizeSetting == null)
-            return;
+        var setting = data.PrizeSettings.FirstOrDefault(prize => prize.PrizeType == PrizeType.Round);
 
-        var seasonMonths = GetSeasonMonths(data.SeasonStartDateUtc, data.SeasonEndDateUtc);
+        if (setting == null)
+            return [];
 
-        var wonMonthlyPrizes = data.Winnings
-            .Where(w => w.PrizeType == PrizeType.Monthly)
-            .Select(winner => new PrizeDto
+        var won = data.Winnings
+            .Where(winning => winning.PrizeType == PrizeType.Round && winning.RoundNumber.HasValue)
+            .ToList();
+
+        var wonRoundNumbers = won.Select(winning => winning.RoundNumber!.Value).ToHashSet();
+
+        var claimed = won.Select(winning => new NumberedPrize(
+            winning.RoundNumber!.Value,
+            winning.Amount,
+            NameOf(winning),
+            winning.UserId));
+
+        var unclaimed = Enumerable.Range(1, data.Header.TotalRoundsInSeason)
+            .Where(roundNumber => !wonRoundNumbers.Contains(roundNumber))
+            .Select(roundNumber => new NumberedPrize(roundNumber, setting.Amount, null, null));
+
+        return claimed.Concat(unclaimed)
+            .OrderBy(prize => prize.Number)
+            .Select(prize => new PrizeDto
             {
-                Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(winner.Month!.Value),
-                Amount = winner.Amount,
-                Winner = winner.WinnerName,
-                UserId = winner.UserId
-            });
-
-        dto.MonthlyPrizes.AddRange(wonMonthlyPrizes);
-
-        var wonMonths = data.Winnings.Where(w => w.PrizeType == PrizeType.Monthly).Select(w => w.Month).Distinct();
-        var remainingMonths = seasonMonths.Where(m => !wonMonths.Contains(m));
-
-        foreach (var monthNum in remainingMonths)
-        {
-            dto.MonthlyPrizes.Add(new PrizeDto
-            {
-                Name = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(monthNum),
-                Amount = monthlyPrizeSetting.Amount,
-                Winner = null,
-                UserId = null
-            });
-        }
-
-        dto.MonthlyPrizes = dto.MonthlyPrizes.OrderBy(p => {
-            var monthNumber = DateTime.ParseExact(p.Name, "MMMM", CultureInfo.CurrentCulture).Month;
-            var year = monthNumber < data.SeasonStartDateUtc.Month ? data.SeasonStartDateUtc.Year + 1 : data.SeasonStartDateUtc.Year;
-            return new DateTime(year, monthNumber, 1);
-        }).ToList();
-    }
-    
-    private static void ProcessStagePrizes(WinningsDto dto, LeagueData data)
-    {
-        var stageSettings = data.PrizeSettings
-            .Where(p => p.PrizeType == PrizeType.Stages)
-            .OrderBy(p => p.Stage)
-            .ThenByDescending(p => p.Amount);
-
-        foreach (var setting in stageSettings)
-        {
-            var winners = data.Winnings
-                .Where(w => w.LeaguePrizeSettingId == setting.Id)
-                .ToList();
-
-            if (winners.Any())
-            {
-                foreach (var winner in winners)
-                {
-                    dto.StagePrizes.Add(new PrizeDto
-                    {
-                        Name = setting.Name,
-                        Amount = winner.Amount,
-                        Winner = winner.WinnerName,
-                        UserId = winner.UserId
-                    });
-                }
-            }
-            else
-            {
-                dto.StagePrizes.Add(new PrizeDto
-                {
-                    Name = setting.Name,
-                    Amount = setting.Amount,
-                    Winner = null,
-                    UserId = null
-                });
-            }
-        }
-    }
-
-    private static void ProcessEndOfSeasonPrizes(WinningsDto dto, LeagueData data)
-    {
-        var specialPrizeSettings = data.PrizeSettings.Where(p => p.PrizeType != PrizeType.Round && p.PrizeType != PrizeType.Monthly && p.PrizeType != PrizeType.Stages);
-
-        foreach (var setting in specialPrizeSettings.OrderBy(p => p.PrizeType).ThenByDescending(p => p.Amount))
-        {
-            var winners = data.Winnings
-                .Where(w => w.LeaguePrizeSettingId == setting.Id)
-                .ToList();
-
-            if (winners.Any())
-            {
-                foreach (var winner in winners)
-                {
-                    dto.EndOfSeasonPrizes.Add(new PrizeDto
-                    {
-                        Name = setting.Name,
-                        Amount = winner.Amount,
-                        Winner = winner.WinnerName,
-                        UserId = winner.UserId
-                    });
-                }
-            }
-            else
-            {
-                dto.EndOfSeasonPrizes.Add(new PrizeDto
-                {
-                    Name = setting.Name,
-                    Amount = setting.Amount,
-                    Winner = null,
-                    UserId = null
-                });
-            }
-        }
-    }
-
-    private static void ProcessLeaderboard(WinningsDto dto, LeagueData data)
-    {
-        dto.Leaderboard.Entries = data.LeagueMembers
-            .Select(member =>
-            {
-                var memberWinnings = data.Winnings.Where(w => w.UserId == member.UserId).ToList();
-                return new WinningsLeaderboardEntryDto
-                {
-                    PlayerName = member.PlayerName,
-                    RoundWinnings = memberWinnings.Where(p => p.PrizeType == PrizeType.Round).Sum(p => p.Amount),
-                    MonthlyWinnings = memberWinnings.Where(p => p.PrizeType == PrizeType.Monthly).Sum(p => p.Amount),
-                    StageWinnings = memberWinnings.Where(p => p.PrizeType == PrizeType.Stages).Sum(p => p.Amount),
-                    EndOfSeasonWinnings = memberWinnings.Where(p => p.PrizeType != PrizeType.Round && p.PrizeType != PrizeType.Monthly && p.PrizeType != PrizeType.Stages).Sum(p => p.Amount),
-                    TotalWinnings = memberWinnings.Sum(p => p.Amount),
-                    UserId = member.UserId
-                };
+                Name = prize.Number.ToString(),
+                Amount = prize.Amount,
+                Winner = prize.Winner,
+                UserId = prize.UserId
             })
-            .OrderByDescending(e => e.TotalWinnings)
-            .ThenBy(e => e.PlayerName)
             .ToList();
     }
 
-    private async Task<LeagueData?> GetLeagueDataAsync(int leagueId, CancellationToken token)
+    /// <summary>
+    /// One line per month of the season, in the order the season runs them.
+    /// </summary>
+    /// <remarks>
+    /// The month numbers are carried all the way to the last step and only turned into names there. The old code formatted
+    /// the name first and then sorted by <c>DateTime.ParseExact(name, "MMMM", CurrentCulture)</c> - a round trip through a
+    /// localised string, which fails outright if the culture formatting it is not the culture parsing it.
+    /// </remarks>
+    private static List<PrizeDto> MonthlyPrizes(WinningsData data)
     {
-        const string leagueDataSql = @"
-            SELECT 
-                l.[EntryDeadlineUtc],
-                l.[Price] AS [EntryCost],
-                s.[StartDateUtc] AS SeasonStartDateUtc,
-                s.[EndDateUtc] AS SeasonEndDateUtc,
-                s.[NumberOfRounds] AS TotalRoundsInSeason,
-                (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus) AS EntryCount
-            FROM 
-                [Leagues] l
-            JOIN 
-                [Seasons] s ON l.[SeasonId] = s.[Id]
-            WHERE 
-                l.[Id] = @leagueId;";
+        var setting = data.PrizeSettings.FirstOrDefault(prize => prize.PrizeType == PrizeType.Monthly);
 
-        var leagueData = await dbConnection.QuerySingleOrDefaultAsync<LeagueData>(leagueDataSql, token, new { leagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) });
-        if (leagueData == null) 
-            return null;
+        if (setting == null)
+            return [];
 
-        const string prizeSettingsSql = @"
-            SELECT
-                [Id],
-                [PrizeType],
-                [PrizeDescription] AS [Name],
-                [PrizeAmount] AS [Amount],
-                [Stage]
-            FROM
-                [LeaguePrizeSettings]
-            WHERE
-                [LeagueId] = @leagueId;";
+        var won = data.Winnings
+            .Where(winning => winning.PrizeType == PrizeType.Monthly && winning.Month.HasValue)
+            .ToList();
 
-        leagueData.PrizeSettings = (await dbConnection.QueryAsync<PrizeSettingQueryResult>(prizeSettingsSql, token, new { leagueId })).ToList();
+        var wonMonths = won.Select(winning => winning.Month!.Value).ToHashSet();
 
-        const string winningsSql = @"
-            SELECT 
-                w.[Amount],
-                w.[LeaguePrizeSettingId],
-                lps.[PrizeType],
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS WinnerName,
-                w.[RoundNumber],
-                w.[Month],
-                w.[UserId]
-                
-            FROM 
-                [Winnings] w
-            JOIN 
-                [LeaguePrizeSettings] lps ON w.[LeaguePrizeSettingId] = lps.[Id]
-            JOIN 
-                [AspNetUsers] u ON w.[UserId] = u.[Id]
-            WHERE 
-                lps.[LeagueId] = @leagueId;";
+        var claimed = won.Select(winning => new NumberedPrize(
+            winning.Month!.Value,
+            winning.Amount,
+            NameOf(winning),
+            winning.UserId));
 
-        leagueData.Winnings = (await dbConnection.QueryAsync<WinningsQueryResult>(winningsSql, token, new { leagueId })).ToList();
+        var unclaimed = SeasonMonths(data.Header)
+            .Where(month => !wonMonths.Contains(month))
+            .Select(month => new NumberedPrize(month, setting.Amount, null, null));
 
-        const string membersSql = @"
-            SELECT
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                u.[Id] AS UserId
-            FROM 
-                [LeagueMembers] lm
-            JOIN 
-                [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            WHERE 
-                lm.[LeagueId] = @leagueId
-                AND lm.[Status] = @ApprovedStatus";
+        var all = claimed.Concat(unclaimed).ToList();
 
-        leagueData.LeagueMembers = (await dbConnection.QueryAsync<LeagueMemberQueryResult>(membersSql, token, new { leagueId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) })).ToList();
-
-        return leagueData;
+        return SeasonMonthOrder.Apply(all, prize => prize.Number, data.Header.SeasonStartDateUtc.Month)
+            .Select(prize => new PrizeDto
+            {
+                Name = MonthName.Of(prize.Number)!,
+                Amount = prize.Amount,
+                Winner = prize.Winner,
+                UserId = prize.UserId
+            })
+            .ToList();
     }
 
-    private static IEnumerable<int> GetSeasonMonths(DateTime startDateUtc, DateTime endDateUtc)
+    /// <summary>
+    /// Every month the season touches, once each.
+    /// </summary>
+    /// <remarks>
+    /// Distinct because a season spanning more than a year would otherwise offer the same month twice. Not reachable with
+    /// a real season, and the old code would have listed the duplicate.
+    /// </remarks>
+    private static IEnumerable<int> SeasonMonths(WinningsHeaderRow header)
     {
-        for (var dt = startDateUtc; dt <= endDateUtc; dt = dt.AddMonths(1))
+        var months = new List<int>();
+
+        for (var month = header.SeasonStartDateUtc; month <= header.SeasonEndDateUtc; month = month.AddMonths(1))
+            months.Add(month.Month);
+
+        return months.Distinct();
+    }
+
+    /// <summary>
+    /// The tournament stage prizes, by stage and then biggest first.
+    /// </summary>
+    private static List<PrizeDto> StagePrizes(WinningsData data) =>
+        PrizesFor(
+            data,
+            data.PrizeSettings
+                .Where(prize => prize.PrizeType == PrizeType.Stages)
+                .OrderBy(prize => prize.Stage, StringComparer.InvariantCultureIgnoreCase)
+                .ThenByDescending(prize => prize.Amount));
+
+    /// <summary>
+    /// The prizes settled at the end of the season, by kind and then biggest first.
+    /// </summary>
+    private static List<PrizeDto> EndOfSeasonPrizes(WinningsData data) =>
+        PrizesFor(
+            data,
+            data.PrizeSettings
+                .Where(prize => PrizeCategoryRegistry.IsEndOfSeason(prize.PrizeType))
+                .OrderBy(prize => prize.PrizeType)
+                .ThenByDescending(prize => prize.Amount));
+
+    /// <summary>
+    /// Turns prize settings into lines: one per winner, or one showing what is still on offer.
+    /// </summary>
+    /// <remarks>
+    /// One prize can have several winners - a shared prize is split between them - which is why a claimed prize expands to
+    /// a line each rather than one line with a list of names.
+    /// </remarks>
+    private static List<PrizeDto> PrizesFor(WinningsData data, IEnumerable<WinningsPrizeSettingRow> settings)
+    {
+        var prizes = new List<PrizeDto>();
+
+        foreach (var setting in settings)
         {
-            yield return dt.Month;
+            var winners = data.Winnings
+                .Where(winning => winning.LeaguePrizeSettingId == setting.Id)
+                .ToList();
+
+            if (winners.Count == 0)
+            {
+                prizes.Add(new PrizeDto
+                {
+                    Name = setting.Name!,
+                    Amount = setting.Amount,
+                    Winner = null,
+                    UserId = null
+                });
+
+                continue;
+            }
+
+            prizes.AddRange(winners.Select(winner => new PrizeDto
+            {
+                Name = setting.Name!,
+                Amount = winner.Amount,
+                Winner = NameOf(winner),
+                UserId = winner.UserId
+            }));
         }
+
+        return prizes;
     }
 
-    // internal so a test can supply rows for the prize shaping above; InternalsVisibleTo already
-    // exposes this assembly to ThePredictions.Application.Tests.Unit.
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal class LeagueData
+    /// <summary>
+    /// What each member has won, split by the kind of prize, biggest total first.
+    /// </summary>
+    /// <remarks>
+    /// Every approved member appears, including those who have won nothing - the table is the league, not a list of
+    /// winners.
+    /// </remarks>
+    private static List<WinningsLeaderboardEntryDto> Leaderboard(WinningsData data)
     {
-        public DateTime EntryDeadlineUtc { get; set; }
-        public decimal EntryCost { get; set; }
-        public int EntryCount { get; set; }
-        public DateTime SeasonStartDateUtc { get; set; }
-        public DateTime SeasonEndDateUtc { get; set; }
-        public int TotalRoundsInSeason { get; set; }
-        public List<PrizeSettingQueryResult> PrizeSettings { get; set; } = new();
-        public List<WinningsQueryResult> Winnings { get; set; } = new();
-        public List<LeagueMemberQueryResult> LeagueMembers { get; set; } = new();
+        var winningsByUser = data.Winnings
+            .GroupBy(winning => winning.UserId)
+            .ToDictionary(group => group.Key, group => group.ToList());
+
+        return data.Members
+            .Select(member =>
+            {
+                var won = winningsByUser.GetValueOrDefault(member.UserId) ?? [];
+
+                return new WinningsLeaderboardEntryDto
+                {
+                    PlayerName = PlayerDisplayName.Format(member.FirstName, member.LastName),
+                    RoundWinnings = TotalOf(won, PrizeType.Round),
+                    MonthlyWinnings = TotalOf(won, PrizeType.Monthly),
+                    StageWinnings = TotalOf(won, PrizeType.Stages),
+                    EndOfSeasonWinnings = won
+                        .Where(winning => PrizeCategoryRegistry.IsEndOfSeason(winning.PrizeType))
+                        .Sum(winning => winning.Amount),
+                    TotalWinnings = won.Sum(winning => winning.Amount),
+                    UserId = member.UserId
+                };
+            })
+            .OrderByDescending(entry => entry.TotalWinnings)
+            .ThenBy(entry => entry.PlayerName, StringComparer.InvariantCultureIgnoreCase)
+            .ToList();
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal record PrizeSettingQueryResult(int Id, PrizeType PrizeType, string Name, decimal Amount, string? Stage);
+    private static decimal TotalOf(IEnumerable<WinningsRow> winnings, PrizeType prizeType) =>
+        winnings.Where(winning => winning.PrizeType == prizeType).Sum(winning => winning.Amount);
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal record WinningsQueryResult(decimal Amount, int LeaguePrizeSettingId, PrizeType PrizeType, string WinnerName, int? RoundNumber, int? Month, string UserId);
+    private static string NameOf(WinningsRow winning) =>
+        PlayerDisplayName.Format(winning.FirstName, winning.LastName);
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal record LeagueMemberQueryResult(string PlayerName, string UserId);
+    /// <summary>
+    /// One prize for a numbered period - a round or a month - before that number becomes a name. Keeping the number until
+    /// the last step is what removes the old code's round trip through a formatted string.
+    /// </summary>
+    private sealed record NumberedPrize(int Number, decimal Amount, string? Winner, string? UserId);
 }
