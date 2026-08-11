@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
 using NSubstitute;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Services;
 using ThePredictions.Infrastructure.Services;
 using Xunit;
 
@@ -14,14 +14,13 @@ namespace ThePredictions.Infrastructure.Tests.Unit.Services;
 /// </summary>
 public class CachedEmailSettingsProviderTests
 {
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
+    private readonly IEmailSettingsQuery _settingsQuery = Substitute.For<IEmailSettingsQuery>();
     private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
 
-    private CachedEmailSettingsProvider BuildProvider() => new(_dbConnection, _cache);
+    private CachedEmailSettingsProvider BuildProvider() => new(_settingsQuery, _cache);
 
     private void GivenStoredSetting(bool? enabled) =>
-        _dbConnection.QuerySingleOrDefaultAsync<bool?>(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(enabled);
+        _settingsQuery.GetEmailsEnabledAsync(Arg.Any<CancellationToken>()).Returns(enabled);
 
     [Fact]
     public async Task AreEmailsEnabledAsync_ShouldReturnTheStoredSetting_WhenEmailsAreOn()
@@ -63,6 +62,6 @@ public class CachedEmailSettingsProviderTests
         var second = await provider.AreEmailsEnabledAsync(CancellationToken.None);
 
         second.Should().BeFalse();
-        await _dbConnection.Received(1).QuerySingleOrDefaultAsync<bool?>(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await _settingsQuery.Received(1).GetEmailsEnabledAsync(Arg.Any<CancellationToken>());
     }
 }

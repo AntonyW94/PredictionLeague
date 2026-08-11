@@ -127,6 +127,12 @@ public interface ITestDataSeeder
         int? preRoundExactScoresRank = null);
 
     /// <summary>
+    /// The single-row master email switch. No row is seeded in production, and its absence is meaningful - so a test
+    /// has to be able to arrange both "absent" and "present and off", which look the same to a careless adapter.
+    /// </summary>
+    Task<int> AddEmailSettingsAsync(bool emailsEnabled);
+
+    /// <summary>
     /// Deletes a match with no guard at all. Not seeding, but the same category: a direct statement that
     /// bypasses the code under test. It exists so a conformance test can demonstrate that the adapter's
     /// schema cascades the delete to predictions, which is the reason the repository needs its guard.
