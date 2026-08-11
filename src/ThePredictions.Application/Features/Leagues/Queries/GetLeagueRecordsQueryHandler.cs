@@ -1,293 +1,254 @@
-using ThePredictions.Domain.Common.Exceptions;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Domain.Common.Enumerations;
-using System.Diagnostics.CodeAnalysis;
+using ThePredictions.Domain.Common.Exceptions;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// A league's records tile - its highest round, its worst round, its champion, its top earner and six more.
+///
+/// The largest single statement in the application: ten <c>OUTER APPLY</c> blocks, each one a
+/// <c>SELECT TOP 1 ... ORDER BY</c> that picked a winner, plus two <c>RANK() OVER</c> windows for the wins
+/// counts. Every one of those choices was a rule, and four of them had no tie-break at all - so which of two joint
+/// record-holders got named was the query plan's decision and could change between page loads.
+/// </summary>
 public class GetLeagueRecordsQueryHandler(
-    IApplicationReadDbConnection dbConnection,
+    ILeagueRecordsQuery recordsQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetLeagueRecordsQuery, LeagueRecordsDto>
 {
     public async Task<LeagueRecordsDto> Handle(GetLeagueRecordsQuery request, CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.UserId, cancellationToken);
 
-        // Runs under READ UNCOMMITTED for the same reason as GetMyLeaguesQueryHandler: this read-only
-        // "records" tile spans high-contention tables (LeagueRoundResults / RoundResults / Winnings) and
-        // was blocking for seconds behind the results/stats write path, because the database has no
-        // READ_COMMITTED_SNAPSHOT and it cannot be enabled on this managed instance. The query itself is
-        // fast (tens of ms); the lock wait was the cost. Dirty reads here are cosmetic and self-correct,
-        // and the isolation level is reset at the end of the batch so it cannot leak to other reads.
-        const string sql = @"
-            SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+        var data = await recordsQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
-            DECLARE @SeasonId int = (SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId);
-
-            SELECT
-                l.[IsFree],
-
-                top_round.[PlayerName] AS TopRoundPlayerName,
-                ISNULL(top_round.[Points], 0) AS TopRoundPoints,
-                top_round.[RoundNumber] AS TopRoundNumber,
-
-                low_round.[PlayerName] AS LowestRoundPlayerName,
-                ISNULL(low_round.[Points], 0) AS LowestRoundPoints,
-                low_round.[RoundNumber] AS LowestRoundNumber,
-
-                most_exact.[PlayerName] AS MostExactInRoundPlayerName,
-                ISNULL(most_exact.[ExactCount], 0) AS MostExactInRoundCount,
-                most_exact.[RoundNumber] AS MostExactInRoundNumber,
-
-                champion.[PlayerName] AS ChampionName,
-                ISNULL(champion.[Points], 0) AS ChampionPoints,
-
-                top_earner.[PlayerName] AS TopEarnerName,
-                ISNULL(top_earner.[Amount], 0) AS TopEarnerAmount,
-
-                most_rounds.[PlayerName] AS MostRoundsWonPlayerName,
-                ISNULL(most_rounds.[WinCount], 0) AS MostRoundsWonCount,
-
-                most_months.[PlayerName] AS MostMonthsWonPlayerName,
-                ISNULL(most_months.[WinCount], 0) AS MostMonthsWonCount,
-
-                ISNULL(total_exact.[Total], 0) AS TotalExactScores,
-
-                biggest_prize.[PlayerName] AS BiggestPrizePlayerName,
-                ISNULL(biggest_prize.[Amount], 0) AS BiggestPrizeAmount,
-                biggest_prize.[Description] AS BiggestPrizeDescription,
-
-                top_gameweek.[RoundNumber] AS HighestGameweekRoundNumber,
-                ISNULL(top_gameweek.[TotalPoints], 0) AS HighestGameweekPoints
-            FROM
-                [Leagues] l
-
-                OUTER APPLY (
-                    SELECT TOP 1
-                        u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                        lrr.[BoostedPoints] AS Points,
-                        r.[RoundNumber]
-                    FROM [LeagueRoundResults] lrr
-                    INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
-                    INNER JOIN [AspNetUsers] u ON u.[Id] = lrr.[UserId]
-                    WHERE lrr.[LeagueId] = l.[Id]
-                    ORDER BY lrr.[BoostedPoints] DESC, r.[RoundNumber] ASC
-                ) top_round
-
-                OUTER APPLY (
-                    SELECT TOP 1
-                        u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                        lrr.[BoostedPoints] AS Points,
-                        r.[RoundNumber]
-                    FROM [LeagueRoundResults] lrr
-                    INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
-                    INNER JOIN [AspNetUsers] u ON u.[Id] = lrr.[UserId]
-                    WHERE lrr.[LeagueId] = l.[Id]
-                        AND EXISTS (
-                            SELECT 1
-                            FROM [UserPredictions] up
-                            INNER JOIN [Matches] m ON m.[Id] = up.[MatchId]
-                            WHERE m.[RoundId] = lrr.[RoundId] AND up.[UserId] = lrr.[UserId]
-                        )
-                    ORDER BY lrr.[BoostedPoints] ASC, r.[RoundNumber] ASC
-                ) low_round
-
-                OUTER APPLY (
-                    SELECT TOP 1
-                        u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                        rr.[ExactScoreCount] AS ExactCount,
-                        r.[RoundNumber]
-                    FROM [RoundResults] rr
-                    INNER JOIN [Rounds] r ON r.[Id] = rr.[RoundId]
-                    INNER JOIN [AspNetUsers] u ON u.[Id] = rr.[UserId]
-                    INNER JOIN [LeagueMembers] lm ON lm.[UserId] = rr.[UserId] AND lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus
-                    WHERE r.[SeasonId] = @SeasonId
-                    ORDER BY rr.[ExactScoreCount] DESC, r.[RoundNumber] ASC
-                ) most_exact
-
-                OUTER APPLY (
-                    SELECT TOP 1
-                        u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                        ISNULL(SUM(lrr.[BoostedPoints]), 0) AS Points
-                    FROM [LeagueMembers] lm
-                    INNER JOIN [AspNetUsers] u ON u.[Id] = lm.[UserId]
-                    LEFT JOIN [LeagueRoundResults] lrr ON lrr.[UserId] = lm.[UserId] AND lrr.[LeagueId] = lm.[LeagueId]
-                    WHERE lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus
-                    GROUP BY lm.[UserId], u.[FirstName], u.[LastName]
-                    ORDER BY Points DESC
-                ) champion
-
-                OUTER APPLY (
-                    SELECT TOP 1
-                        u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                        SUM(w.[Amount]) AS Amount
-                    FROM [Winnings] w
-                    INNER JOIN [LeaguePrizeSettings] lps ON lps.[Id] = w.[LeaguePrizeSettingId]
-                    INNER JOIN [AspNetUsers] u ON u.[Id] = w.[UserId]
-                    WHERE lps.[LeagueId] = l.[Id]
-                    GROUP BY w.[UserId], u.[FirstName], u.[LastName]
-                    ORDER BY Amount DESC
-                ) top_earner
-
-                OUTER APPLY (
-                    SELECT TOP 1
-                        u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                        COUNT(*) AS WinCount
-                    FROM (
-                        SELECT lrr.[UserId],
-                            RANK() OVER (PARTITION BY lrr.[RoundId] ORDER BY lrr.[BoostedPoints] DESC) AS Rnk,
-                            lrr.[BoostedPoints]
-                        FROM [LeagueRoundResults] lrr
-                        INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
-                        WHERE lrr.[LeagueId] = l.[Id] AND r.[Status] = @CompletedStatus
-                    ) ranked
-                    INNER JOIN [AspNetUsers] u ON u.[Id] = ranked.[UserId]
-                    WHERE ranked.[Rnk] = 1 AND ranked.[BoostedPoints] > 0
-                    GROUP BY ranked.[UserId], u.[FirstName], u.[LastName]
-                    ORDER BY WinCount DESC
-                ) most_rounds
-
-                OUTER APPLY (
-                    SELECT TOP 1
-                        u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                        COUNT(*) AS WinCount
-                    FROM (
-                        SELECT lrr.[UserId],
-                            SUM(lrr.[BoostedPoints]) AS MonthPoints,
-                            RANK() OVER (PARTITION BY MONTH(r.[StartDateUtc]), YEAR(r.[StartDateUtc]) ORDER BY SUM(lrr.[BoostedPoints]) DESC) AS Rnk
-                        FROM [LeagueRoundResults] lrr
-                        INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
-                        WHERE lrr.[LeagueId] = l.[Id] AND r.[Status] = @CompletedStatus
-                        GROUP BY MONTH(r.[StartDateUtc]), YEAR(r.[StartDateUtc]), lrr.[UserId]
-                    ) ranked_months
-                    INNER JOIN [AspNetUsers] u ON u.[Id] = ranked_months.[UserId]
-                    WHERE ranked_months.[Rnk] = 1 AND ranked_months.[MonthPoints] > 0
-                    GROUP BY ranked_months.[UserId], u.[FirstName], u.[LastName]
-                    ORDER BY WinCount DESC
-                ) most_months
-
-                OUTER APPLY (
-                    SELECT SUM(rr.[ExactScoreCount]) AS Total
-                    FROM [RoundResults] rr
-                    INNER JOIN [Rounds] r ON r.[Id] = rr.[RoundId]
-                    INNER JOIN [LeagueMembers] lm ON lm.[UserId] = rr.[UserId] AND lm.[LeagueId] = l.[Id] AND lm.[Status] = @ApprovedStatus
-                    WHERE r.[SeasonId] = @SeasonId
-                ) total_exact
-
-                OUTER APPLY (
-                    SELECT TOP 1
-                        u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                        w.[Amount],
-                        CASE
-                            WHEN lps.[PrizeDescription] IS NOT NULL AND lps.[PrizeDescription] <> '' THEN lps.[PrizeDescription]
-                            WHEN lps.[PrizeType] = @RoundPrizeType THEN 'Round ' + CAST(w.[RoundNumber] AS NVARCHAR(10))
-                            WHEN lps.[PrizeType] = @MonthlyPrizeType THEN DATENAME(MONTH, DATEFROMPARTS(2000, w.[Month], 1))
-                            ELSE NULL
-                        END AS [Description]
-                    FROM [Winnings] w
-                    INNER JOIN [LeaguePrizeSettings] lps ON lps.[Id] = w.[LeaguePrizeSettingId]
-                    INNER JOIN [AspNetUsers] u ON u.[Id] = w.[UserId]
-                    WHERE lps.[LeagueId] = l.[Id]
-                    ORDER BY w.[Amount] DESC, w.[AwardedDateUtc] ASC
-                ) biggest_prize
-
-                OUTER APPLY (
-                    SELECT TOP 1
-                        r.[RoundNumber],
-                        SUM(lrr.[BoostedPoints]) AS TotalPoints
-                    FROM [LeagueRoundResults] lrr
-                    INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
-                    WHERE lrr.[LeagueId] = l.[Id]
-                    GROUP BY r.[Id], r.[RoundNumber]
-                    ORDER BY TotalPoints DESC, r.[RoundNumber] ASC
-                ) top_gameweek
-            WHERE
-                l.[Id] = @LeagueId;
-
-            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;";
-
-        var result = await dbConnection.QuerySingleOrDefaultAsync<LeagueRecordsQueryResult>(
-            sql,
-            cancellationToken,
-            new
-            {
-                request.LeagueId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                CompletedStatus = nameof(RoundStatus.Completed),
-                RoundPrizeType = PrizeType.Round,
-                MonthlyPrizeType = PrizeType.Monthly
-            });
-
-        if (result is null)
+        if (data is null)
             throw new EntityNotFoundException("League", request.LeagueId);
 
+        var topRound = HighestRound(data.RoundScores);
+        var lowestRound = LowestRound(data.RoundScores);
+        var mostExact = MostExactInARound(data.ExactScores);
+        var champion = Champion(data.ApprovedMembers, data.RoundScores);
+        var topEarner = TopEarner(data.Winnings);
+        var mostRoundsWon = MostRoundsWon(data.RoundScores);
+        var mostMonthsWon = MostMonthsWon(data.RoundScores);
+        var biggestPrize = BiggestPrize(data.Winnings);
+        var topGameweek = HighestScoringRound(data.RoundScores);
+
         return new LeagueRecordsDto
-            {
-                IsFree = result.IsFree,
-                TopRoundPlayerName = result.TopRoundPlayerName,
-                TopRoundPoints = result.TopRoundPoints,
-                TopRoundNumber = result.TopRoundNumber,
-                LowestRoundPlayerName = result.LowestRoundPlayerName,
-                LowestRoundPoints = result.LowestRoundPoints,
-                LowestRoundNumber = result.LowestRoundNumber,
-                MostExactInRoundPlayerName = result.MostExactInRoundPlayerName,
-                MostExactInRoundCount = result.MostExactInRoundCount,
-                MostExactInRoundNumber = result.MostExactInRoundNumber,
-                ChampionName = result.ChampionName,
-                ChampionPoints = result.ChampionPoints,
-                TopEarnerName = result.TopEarnerName,
-                TopEarnerAmount = result.TopEarnerAmount,
-                MostRoundsWonPlayerName = result.MostRoundsWonPlayerName,
-                MostRoundsWonCount = result.MostRoundsWonCount,
-                MostMonthsWonPlayerName = result.MostMonthsWonPlayerName,
-                MostMonthsWonCount = result.MostMonthsWonCount,
-                TotalExactScores = result.TotalExactScores,
-                BiggestPrizePlayerName = result.BiggestPrizePlayerName,
-                BiggestPrizeAmount = result.BiggestPrizeAmount,
-                BiggestPrizeDescription = result.BiggestPrizeDescription,
-                HighestGameweekRoundNumber = result.HighestGameweekRoundNumber,
-                HighestGameweekPoints = result.HighestGameweekPoints
-            };
+        {
+            IsFree = data.IsFree,
+
+            TopRoundPlayerName = NameOf(topRound?.FirstName, topRound?.LastName),
+            TopRoundPoints = topRound?.BoostedPoints ?? 0,
+            TopRoundNumber = topRound?.RoundNumber,
+
+            LowestRoundPlayerName = NameOf(lowestRound?.FirstName, lowestRound?.LastName),
+            LowestRoundPoints = lowestRound?.BoostedPoints ?? 0,
+            LowestRoundNumber = lowestRound?.RoundNumber,
+
+            MostExactInRoundPlayerName = NameOf(mostExact?.FirstName, mostExact?.LastName),
+            MostExactInRoundCount = mostExact?.ExactScoreCount ?? 0,
+            MostExactInRoundNumber = mostExact?.RoundNumber,
+
+            ChampionName = NameOf(champion?.FirstName, champion?.LastName),
+            ChampionPoints = champion?.Points ?? 0,
+
+            TopEarnerName = NameOf(topEarner?.FirstName, topEarner?.LastName),
+            TopEarnerAmount = topEarner?.Amount ?? 0,
+
+            MostRoundsWonPlayerName = NameOf(mostRoundsWon?.FirstName, mostRoundsWon?.LastName),
+            MostRoundsWonCount = mostRoundsWon?.WinCount ?? 0,
+
+            MostMonthsWonPlayerName = NameOf(mostMonthsWon?.FirstName, mostMonthsWon?.LastName),
+            MostMonthsWonCount = mostMonthsWon?.WinCount ?? 0,
+
+            TotalExactScores = data.ExactScores.Sum(row => row.ExactScoreCount),
+
+            BiggestPrizePlayerName = NameOf(biggestPrize?.FirstName, biggestPrize?.LastName),
+            BiggestPrizeAmount = biggestPrize?.Amount ?? 0,
+            BiggestPrizeDescription = biggestPrize is null
+                ? null
+                : PrizeDescription.For(
+                    biggestPrize.PrizeDescription,
+                    biggestPrize.PrizeType,
+                    biggestPrize.RoundNumber,
+                    biggestPrize.Month),
+
+            HighestGameweekRoundNumber = topGameweek?.RoundNumber,
+            HighestGameweekPoints = topGameweek?.Points ?? 0
+        };
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record LeagueRecordsQueryResult(
-        bool IsFree,
+    /// <summary>The best single round anyone has had, earliest round first if two match.</summary>
+    private static LeagueRecordRoundScoreRow? HighestRound(IReadOnlyList<LeagueRecordRoundScoreRow> scores) =>
+        LeagueRecords.Highest(scores, row => row.BoostedPoints, row => row.RoundNumber, FullName);
 
-        string? TopRoundPlayerName,
-        int TopRoundPoints,
-        int? TopRoundNumber,
+    /// <summary>
+    /// The worst single round anyone has had - but only counting rounds they actually entered.
+    /// </summary>
+    /// <remarks>
+    /// The old block's <c>EXISTS</c> over <c>UserPredictions</c>. Without it the record would belong to whoever
+    /// joined most recently, holding a nil score for rounds that closed before they arrived, which is a record
+    /// about administration rather than about football.
+    /// </remarks>
+    private static LeagueRecordRoundScoreRow? LowestRound(IReadOnlyList<LeagueRecordRoundScoreRow> scores) =>
+        LeagueRecords.Lowest(
+            scores.Where(row => row.HasAnyPrediction).ToList(),
+            row => row.BoostedPoints,
+            row => row.RoundNumber,
+            FullName);
 
-        string? LowestRoundPlayerName,
-        int LowestRoundPoints,
-        int? LowestRoundNumber,
+    private static LeagueRecordExactScoreRow? MostExactInARound(IReadOnlyList<LeagueRecordExactScoreRow> scores) =>
+        LeagueRecords.Highest(scores, row => row.ExactScoreCount, row => row.RoundNumber, FullName);
 
-        string? MostExactInRoundPlayerName,
-        int MostExactInRoundCount,
-        int? MostExactInRoundNumber,
+    /// <summary>
+    /// The league's leader on total points. Every approved member is a candidate, including one who has never
+    /// scored - which is what the old block's <c>LEFT JOIN</c> and <c>ISNULL(SUM(...), 0)</c> meant.
+    /// </summary>
+    private static PlayerTotal? Champion(
+        IReadOnlyList<LeaderboardParticipantRow> members,
+        IReadOnlyList<LeagueRecordRoundScoreRow> scores)
+    {
+        var pointsByUserId = scores
+            .GroupBy(row => row.UserId)
+            .ToDictionary(group => group.Key, group => group.Sum(row => row.BoostedPoints));
 
-        string? ChampionName,
-        int ChampionPoints,
+        var totals = members
+            .Select(member => new PlayerTotal(
+                member.FirstName,
+                member.LastName,
+                pointsByUserId.TryGetValue(member.UserId, out var points) ? points : 0))
+            .ToList();
 
-        string? TopEarnerName,
-        decimal TopEarnerAmount,
+        return LeagueRecords.Highest(totals, total => total.Points, _ => 0, FullName);
+    }
 
-        string? MostRoundsWonPlayerName,
-        int MostRoundsWonCount,
+    private static PlayerAmount? TopEarner(IReadOnlyList<LeagueRecordWinningRow> winnings)
+    {
+        var totals = winnings
+            .GroupBy(row => row.UserId)
+            .Select(group => new PlayerAmount(
+                group.First().FirstName,
+                group.First().LastName,
+                group.Sum(row => row.Amount)))
+            .ToList();
 
-        string? MostMonthsWonPlayerName,
-        int MostMonthsWonCount,
+        return LeagueRecords.Highest(totals, total => total.Amount, _ => 0, FullName);
+    }
 
-        int TotalExactScores,
+    /// <summary>
+    /// Who has won the most rounds. A round is won by whoever scored most in it, joint winners each counting a
+    /// win, and a round nobody scored in is won by nobody.
+    /// </summary>
+    /// <remarks>
+    /// The old block ranked with <c>RANK() OVER (PARTITION BY [RoundId] ...)</c> and kept
+    /// <c>Rnk = 1 AND BoostedPoints > 0</c>. Both halves matter: <c>RANK</c> rather than <c>ROW_NUMBER</c> is what
+    /// lets a shared win count for both players, and the points test stops a round that has been created but not
+    /// yet scored handing everyone in the league a win.
+    /// </remarks>
+    private static PlayerCount? MostRoundsWon(IReadOnlyList<LeagueRecordRoundScoreRow> scores) =>
+        MostWins(scores
+            .Where(row => row.RoundStatus == RoundStatus.Completed)
+            .GroupBy(row => row.RoundId)
+            .SelectMany(round => WinnersOf(round.Select(Entry).ToList())));
 
-        string? BiggestPrizePlayerName,
-        decimal BiggestPrizeAmount,
-        string? BiggestPrizeDescription,
+    /// <summary>
+    /// Who has won the most months. A month is won on the total of its completed rounds, and a round belongs to
+    /// the calendar month it started in.
+    /// </summary>
+    private static PlayerCount? MostMonthsWon(IReadOnlyList<LeagueRecordRoundScoreRow> scores) =>
+        MostWins(scores
+            .Where(row => row.RoundStatus == RoundStatus.Completed)
+            .GroupBy(row => new { row.RoundStartDateUtc.Year, row.RoundStartDateUtc.Month })
+            .SelectMany(month => WinnersOf(month
+                .GroupBy(row => row.UserId)
+                .Select(player => new ScoreEntry(
+                    player.Key,
+                    player.First().FirstName,
+                    player.First().LastName,
+                    player.Sum(row => row.BoostedPoints)))
+                .ToList())));
 
-        int? HighestGameweekRoundNumber,
-        int HighestGameweekPoints);
+    /// <summary>
+    /// The winners of one round or one month: everyone tied on the best score, provided that score beat nothing.
+    /// </summary>
+    private static IReadOnlyList<ScoreEntry> WinnersOf(IReadOnlyList<ScoreEntry> contenders)
+    {
+        var best = contenders.Max(contender => contender.Points);
+
+        if (best <= 0)
+            return [];
+
+        return contenders.Where(contender => contender.Points == best).ToList();
+    }
+
+    private static PlayerCount? MostWins(IEnumerable<ScoreEntry> wins)
+    {
+        var counts = wins
+            .GroupBy(win => win.UserId)
+            .Select(group => new PlayerCount(
+                group.First().FirstName,
+                group.First().LastName,
+                group.Count()))
+            .ToList();
+
+        return LeagueRecords.Highest(counts, count => count.WinCount, _ => 0, FullName);
+    }
+
+    private static ScoreEntry Entry(LeagueRecordRoundScoreRow row) =>
+        new(row.UserId, row.FirstName, row.LastName, row.BoostedPoints);
+
+    /// <summary>
+    /// The largest single prize paid. Ties go to whichever was awarded first, which is the one piece of
+    /// tie-breaking the old statement did outside of round numbers.
+    /// </summary>
+    private static LeagueRecordWinningRow? BiggestPrize(IReadOnlyList<LeagueRecordWinningRow> winnings) =>
+        LeagueRecords.Highest(winnings, row => row.Amount, row => row.AwardedDateUtc, FullName);
+
+    /// <summary>The round in which the league as a whole scored most, earliest first if two match.</summary>
+    private static RoundTotal? HighestScoringRound(IReadOnlyList<LeagueRecordRoundScoreRow> scores)
+    {
+        var totals = scores
+            .GroupBy(row => new { row.RoundId, row.RoundNumber })
+            .Select(group => new RoundTotal(group.Key.RoundNumber, group.Sum(row => row.BoostedPoints)))
+            .ToList();
+
+        return LeagueRecords.Highest(totals, total => total.Points, total => total.RoundNumber, _ => string.Empty);
+    }
+
+    private static string? NameOf(string? firstName, string? lastName) =>
+        firstName is null || lastName is null ? null : PlayerDisplayName.Format(firstName, lastName);
+
+    private static string FullName(LeagueRecordRoundScoreRow row) =>
+        PlayerDisplayName.FormatFull(row.FirstName, row.LastName);
+
+    private static string FullName(LeagueRecordExactScoreRow row) =>
+        PlayerDisplayName.FormatFull(row.FirstName, row.LastName);
+
+    private static string FullName(LeagueRecordWinningRow row) =>
+        PlayerDisplayName.FormatFull(row.FirstName, row.LastName);
+
+    private static string FullName(PlayerTotal total) =>
+        PlayerDisplayName.FormatFull(total.FirstName, total.LastName);
+
+    private static string FullName(PlayerAmount total) =>
+        PlayerDisplayName.FormatFull(total.FirstName, total.LastName);
+
+    private static string FullName(PlayerCount count) =>
+        PlayerDisplayName.FormatFull(count.FirstName, count.LastName);
+
+    /// <summary>One contender's score in one round or one month, ready to be compared with its peers.</summary>
+    private sealed record ScoreEntry(string UserId, string FirstName, string LastName, int Points);
+
+    private sealed record PlayerTotal(string FirstName, string LastName, int Points);
+
+    private sealed record PlayerAmount(string FirstName, string LastName, decimal Amount);
+
+    private sealed record PlayerCount(string FirstName, string LastName, int WinCount);
+
+    private sealed record RoundTotal(int RoundNumber, int Points);
 }

@@ -465,7 +465,7 @@ Prize configuration per league.
 |--------|------|----------|---------|-------------|
 | Id | int | NO | IDENTITY | Primary key |
 | LeagueId | int | NO | | FK to Leagues |
-| PrizeType | nvarchar(20) | NO | | Overall, Monthly, Round, MostExactScores |
+| PrizeType | nvarchar(20) | NO | | The `PrizeType` enum's **numeric** value as text (`0`=Overall, `1`=Monthly, `2`=Round, `3`=MostExactScores, `4`=Stages) - the write path passes the enum and Dapper sends its underlying int |
 | Rank | int | NO | | Prize position (1st, 2nd, 3rd, etc.) |
 | PrizeAmount | money | NO | | Prize amount |
 | PrizeDescription | nvarchar(255) | YES | | Display text (e.g., "1st Place") |

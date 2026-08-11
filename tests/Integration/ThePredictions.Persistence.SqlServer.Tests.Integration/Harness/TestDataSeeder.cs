@@ -587,6 +587,84 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         });
     }
 
+    public async Task<int> AddLeaguePrizeSettingAsync(
+        int leagueId,
+        PrizeType prizeType,
+        decimal prizeAmount,
+        int rank = 1,
+        string? prizeDescription = null)
+    {
+        // [PrizeType] is nvarchar but holds the enum's numeric value, because the write path passes the enum and
+        // Dapper sends its underlying int. Reproduced deliberately - see ITestDataSeeder.
+        const string sql = @"
+            INSERT INTO [LeaguePrizeSettings]
+            (
+                [LeagueId],
+                [PrizeType],
+                [Rank],
+                [PrizeAmount],
+                [PrizeDescription]
+            )
+            VALUES
+            (
+                @LeagueId,
+                @PrizeType,
+                @Rank,
+                @PrizeAmount,
+                @PrizeDescription
+            );
+
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new
+        {
+            LeagueId = leagueId,
+            PrizeType = (int)prizeType,
+            Rank = rank,
+            PrizeAmount = prizeAmount,
+            PrizeDescription = prizeDescription
+        });
+    }
+
+    public async Task AddWinningAsync(
+        string userId,
+        int leaguePrizeSettingId,
+        decimal amount,
+        DateTime? awardedDateUtc = null,
+        int? roundNumber = null,
+        int? month = null)
+    {
+        const string sql = @"
+            INSERT INTO [Winnings]
+            (
+                [UserId],
+                [LeaguePrizeSettingId],
+                [Amount],
+                [RoundNumber],
+                [Month],
+                [AwardedDateUtc]
+            )
+            VALUES
+            (
+                @UserId,
+                @LeaguePrizeSettingId,
+                @Amount,
+                @RoundNumber,
+                @Month,
+                @AwardedDateUtc
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            UserId = userId,
+            LeaguePrizeSettingId = leaguePrizeSettingId,
+            Amount = amount,
+            RoundNumber = roundNumber,
+            Month = month,
+            AwardedDateUtc = awardedDateUtc ?? DateTime.UtcNow
+        });
+    }
+
     public async Task DeleteMatchAsync(int matchId)
     {
         // No guard at all - the point is to show what the schema does on its own.

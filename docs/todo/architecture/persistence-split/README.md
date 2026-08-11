@@ -155,6 +155,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leaderboards/stage** ✅ | Richest yet: seven rules from one statement, two ranks, and the stage classification. Pre-round position is computed here, not cached. |
 | 2 | **Leaderboards/round grid** ✅ | The prediction secrecy rule, and the dense grid the old `CROSS JOIN` manufactured. First rule moved that is about fairness rather than arithmetic. |
 | 2 | **Dashboard/leaderboards tile** ✅ | Seven rules from one windowed CTE. Found a rule already stated twice inside the handler - a SQL `ORDER BY` re-sorted by an identical LINQ chain. |
+| 2 | **Leagues/records tile** ✅ | The largest statement in the application: ten `OUTER APPLY` blocks choosing ten record holders, four of them with no tie-break at all. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -255,6 +256,53 @@ exist yet.
 
 Doing the extraction now was still right, and for the reason originally given: every integration test phase
 2 writes would otherwise need rewriting afterwards. The shape now exists, with one real suite proving it.
+
+### Non-determinism as a rule that was never written down
+
+Four of the records tile's ten `SELECT TOP 1` blocks ordered by score alone. With two players tied, which one the
+page named was the query plan's choice - stable in practice, not guaranteed, and free to change when statistics or
+an index changed. Nothing in the codebase said which should win, so there was nothing to be wrong about.
+
+`LeagueRecords.Highest` / `.Lowest` now take three keys: the score, a tie-break that means something (the earliest
+round to reach a total, the earliest prize awarded), and the full name as a final deterministic fallback. Same
+policy as `Ranking`, so a joint record holder and a joint leaderboard position are broken the same way.
+
+Worth separating from the duplication findings: this is not a rule stated twice, it is a rule never stated. It only
+becomes visible when the choice has to be written in a language that cannot shrug.
+
+### Two more places the database was deciding presentation
+
+Both found in the records tile:
+
+- `DATENAME(MONTH, DATEFROMPARTS(2000, w.[Month], 1))` labelled a monthly prize, so the month's language came from
+  the SQL Server login's configured language. Two identical databases could label the same prize "March" and
+  "marzo". Now `PrizeDescription.For`, pinned to the invariant culture - and it returns no label rather than
+  throwing on a month outside 1-12, which `DATEFROMPARTS` did, taking the whole tile down with it.
+- The empty-wording check was `PrizeDescription <> ''`. SQL Server ignores trailing spaces when comparing strings,
+  so `'   '` counted as empty there. `IsNullOrWhiteSpace` is the faithful translation; `IsNullOrEmpty` would have
+  been a silent behaviour change. A test pins the three-space case.
+
+### `LeaguePrizeSettings.PrizeType` holds numbers, not names
+
+Declared `nvarchar(20)` and documented as holding `Overall`, `Monthly`, `Round`..., it actually holds `"0"` to
+`"4"`: the write path passes the enum and Dapper sends its underlying int. The old comparison
+`lps.[PrizeType] = @RoundPrizeType` therefore compared text to an integer and worked only because SQL Server
+silently converted the column - had the column held the names it was documented as holding, the tile would have
+failed outright with a conversion error.
+
+The adapter now maps it to the `PrizeType` enum, so the next adapter has to produce a real enum member and cannot
+inherit the accident. `docs/guides/database-schema.md` corrected. Three more comparisons of this shape remain in
+`WinningsRepository` on the write side.
+
+### An inconsistency preserved rather than fixed: who can hold a record
+
+The tile's ten blocks disagree about membership. Five read `LeagueRoundResults` with no membership check; two join
+`LeagueMembers` and require `Approved`. So today **a player removed from a league can still hold its
+highest-round record, but cannot hold its most-exact-scores record**.
+
+Preserved exactly, because making them agree changes what the tile shows and that is a product decision, not a
+refactor. `LeagueRecordsData` says so in its own remarks so the next reader does not "tidy" it by accident.
+**Open question for the owner:** should a former member keep their records?
 
 ### A rule duplicated between SQL and C# in the same file
 
