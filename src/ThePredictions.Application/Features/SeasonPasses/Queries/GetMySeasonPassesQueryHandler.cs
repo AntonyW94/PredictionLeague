@@ -1,59 +1,31 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.SeasonPasses;
-using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.SeasonPasses.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetMySeasonPassesQueryHandler(IApplicationReadDbConnection dbConnection)
+/// <summary>The passes this player holds, newest first.</summary>
+public class GetMySeasonPassesQueryHandler(ISeasonPassPagesQuery seasonPassPagesQuery)
     : IRequestHandler<GetMySeasonPassesQuery, IEnumerable<MySeasonPassDto>>
 {
     public async Task<IEnumerable<MySeasonPassDto>> Handle(GetMySeasonPassesQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                sp.[SeasonId],
-                s.[Name] AS SeasonName,
-                c.[LogoUrl] AS CompetitionLogoUrl,
-                sp.[Tier],
-                sp.[Source],
-                sp.[AmountPaid],
-                CAST(CASE WHEN sp.[Tier] = @PremiumTier THEN 1 ELSE 0 END AS BIT) AS HasSmsReminders,
-                sp.[CreatedAtUtc]
-            FROM
-                [SeasonPasses] sp
-            JOIN
-                [Seasons] s ON s.[Id] = sp.[SeasonId]
-            JOIN
-                [Competitions] c ON c.[Id] = s.[CompetitionId]
-            WHERE
-                sp.[UserId] = @UserId
-            ORDER BY
-                sp.[CreatedAtUtc] DESC;";
+        var data = await seasonPassPagesQuery.ExecuteAsync(request.UserId, cancellationToken);
 
-        var passes = await dbConnection.QueryAsync<MySeasonPassQueryResult>(sql, cancellationToken, new { request.UserId, PremiumTier = nameof(SeasonPassTier.Premium) });
+        var seasonsById = data.Seasons.ToDictionary(season => season.Id);
 
-        return passes.Select(p => new MySeasonPassDto(
-            p.SeasonId,
-            p.SeasonName,
-            p.CompetitionLogoUrl,
-            p.Tier,
-            p.Source,
-            p.AmountPaid,
-            p.HasSmsReminders,
-            p.CreatedAtUtc));
+        return data.HeldPasses
+            .OrderByDescending(pass => pass.CreatedAtUtc)
+            .Select(pass => ToDto(pass, seasonsById[pass.SeasonId]))
+            .ToList();
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record MySeasonPassQueryResult(
-        int SeasonId,
-        string SeasonName,
-        string? CompetitionLogoUrl,
-        string Tier,
-        string Source,
-        decimal AmountPaid,
-        bool HasSmsReminders,
-        DateTime CreatedAtUtc);
+    private static MySeasonPassDto ToDto(HeldSeasonPassRow pass, SeasonPassSeasonRow season) =>
+        new(pass.SeasonId,
+            season.Name,
+            season.CompetitionLogoUrl,
+            pass.Tier,
+            pass.Source,
+            pass.AmountPaid,
+            SeasonPassAvailability.HasSmsReminders(pass),
+            pass.CreatedAtUtc);
 }

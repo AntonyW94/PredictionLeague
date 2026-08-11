@@ -1,69 +1,41 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.SeasonPasses;
+using ThePredictions.Domain.Common;
 
 namespace ThePredictions.Application.Features.SeasonPasses.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetPastSeasonPassesQueryHandler(IApplicationReadDbConnection dbConnection)
-    : IRequestHandler<GetPastSeasonPassesQuery, IEnumerable<PastSeasonPassDto>>
+/// <summary>The seasons this player missed: ones that ran without them, and can no longer be joined.</summary>
+public class GetPastSeasonPassesQueryHandler(
+    ISeasonPassPagesQuery seasonPassPagesQuery,
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<GetPastSeasonPassesQuery, IEnumerable<PastSeasonPassDto>>
 {
     public async Task<IEnumerable<PastSeasonPassDto>> Handle(GetPastSeasonPassesQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                s.[Id] AS SeasonId,
-                s.[Name] AS SeasonName,
-                c.[LogoUrl] AS CompetitionLogoUrl,
-                (
-                    -- Pass holders, not league members - see GetSeasonPassOptionsQueryHandler.
-                    SELECT COUNT(*)
-                    FROM [SeasonPasses] sp2
-                    WHERE sp2.[SeasonId] = s.[Id]
-                ) AS PlayerCount
-            FROM
-                [Seasons] s
-            JOIN
-                [Competitions] c ON c.[Id] = s.[CompetitionId]
-            WHERE
-                s.[IsActive] = 1
-                AND NOT EXISTS (                                        -- not already held
-                    SELECT 1
-                    FROM [SeasonPasses] sp
-                    WHERE sp.[UserId] = @UserId
-                        AND sp.[SeasonId] = s.[Id]
-                )
-                AND EXISTS (                                            -- the season actually ran (had leagues)
-                    SELECT 1
-                    FROM [Leagues] l
-                    WHERE l.[SeasonId] = s.[Id]
-                )
-                AND NOT EXISTS (                                        -- entry has closed everywhere - you can no longer join
-                    SELECT 1
-                    FROM [Leagues] l
-                    WHERE l.[SeasonId] = s.[Id]
-                        AND l.[EntryDeadlineUtc] > GETUTCDATE()
-                )
-            ORDER BY
-                s.[StartDateUtc] DESC;";
+        var utcNow = dateTimeProvider.UtcNow;
 
-        var passes = await dbConnection.QueryAsync<PastSeasonPassQueryResult>(
-            sql,
-            cancellationToken,
-            new { request.UserId });
+        var data = await seasonPassPagesQuery.ExecuteAsync(request.UserId, cancellationToken);
 
-        return passes.Select(p => new PastSeasonPassDto(
-            p.SeasonId,
-            p.SeasonName,
-            p.CompetitionLogoUrl,
-            p.PlayerCount));
+        return SeasonPassAvailability.NewestFirst(data.Seasons)
+            .Where(season => WasMissed(data, season, utcNow))
+            .Select(season => new PastSeasonPassDto(
+                season.Id,
+                season.Name,
+                season.CompetitionLogoUrl,
+                SeasonPassAvailability.PlayerCount(data, season.Id)))
+            .ToList();
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PastSeasonPassQueryResult(
-        int SeasonId,
-        string SeasonName,
-        string? CompetitionLogoUrl,
-        int PlayerCount);
+    /// <summary>
+    /// Whether this season is one they missed.
+    /// </summary>
+    /// <remarks>
+    /// The complement of the available-passes rule, and until both were written out that was not visible: same season, same
+    /// "not already held", and then entry closed everywhere rather than open somewhere. The extra condition is that the
+    /// season had leagues at all - a season set up and never used was not missed, it never happened.
+    /// </remarks>
+    private static bool WasMissed(SeasonPassPagesData data, SeasonPassSeasonRow season, DateTime utcNow) =>
+        season.IsActive
+        && !SeasonPassAvailability.AlreadyHeld(data, season.Id)
+        && SeasonPassAvailability.HasAnyLeague(data, season.Id)
+        && !SeasonPassAvailability.IsEntryOpen(data, season.Id, utcNow);
 }
