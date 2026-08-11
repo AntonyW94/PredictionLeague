@@ -679,7 +679,7 @@
         NavigationManager.NavigateTo($"/leagues/{leagueId}/dashboard");
     }
 
-    private RenderFragment RenderRankBox(string title, int? rank, int? previousRank, int? memberCount, bool showNotStarted, bool arrowVisible, DateTime? roundStart) =>
+    private RenderFragment RenderRankBox(string? title, int? rank, int? previousRank, int? memberCount, bool showNotStarted, bool arrowVisible, DateTime? roundStart) =>
         @<div class="glass-panel secondary-rank-box w-100">
             <small class="text-uppercase text-white fw-bold d-block mb-1 text-xs">@title</small>
             @if (showNotStarted)

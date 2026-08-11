@@ -26,4 +26,4 @@ public sealed record DashboardLeagueRow(
     int NumberOfRounds,
     int CompletedRoundCount,
     bool HasRoundInProgress,
-    bool IsArchivedByUser);
+    bool IsArchivedByUser) : ILeagueTile;

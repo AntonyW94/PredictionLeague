@@ -1,4 +1,3 @@
-using System.Globalization;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Domain.Services;
@@ -28,20 +27,8 @@ public static class PrizeDescription
             return $"Round {roundNumber}";
 
         if (prizeType == PrizeType.Monthly)
-            return MonthName(month);
+            return MonthName.Of(month);
 
         return null;
-    }
-
-    /// <summary>
-    /// A month number as its English name. <c>DATEFROMPARTS</c> would have thrown on a month outside 1-12,
-    /// failing the whole tile; an unlabelled prize is the better answer to data that should not exist.
-    /// </summary>
-    private static string? MonthName(int? month)
-    {
-        if (month is null or < 1 or > 12)
-            return null;
-
-        return CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(month.Value);
     }
 }

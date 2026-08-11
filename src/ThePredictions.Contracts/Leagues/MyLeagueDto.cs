@@ -12,8 +12,10 @@ public record MyLeagueDto(
     DateTime? SeasonStartDateUtc,
     DateTime? EntryDeadlineUtc,
 
-    string CurrentRound,
-    string CurrentMonth,
+    // Null when the league's season has no round worth showing - which the old query already returned as NULL
+    // into these non-nullable properties. Declared honestly now rather than relying on that going unnoticed.
+    string? CurrentRound,
+    string? CurrentMonth,
     DateTime? RoundStartDateUtc,
     int? MemberCount,
 
@@ -24,7 +26,7 @@ public record MyLeagueDto(
     int? PreRoundOverallRank,
     int? PreRoundMonthRank,
     int? StableRoundRank,
-    string RoundStatus,
+    string? RoundStatus,
     int InProgressCount,
     int CompletedCount,
 

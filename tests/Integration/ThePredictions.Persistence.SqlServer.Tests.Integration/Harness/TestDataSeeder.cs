@@ -183,7 +183,8 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         int roundNumber,
         DateTime deadlineUtc,
         RoundStatus status = RoundStatus.Published,
-        DateTime? startDateUtc = null)
+        DateTime? startDateUtc = null,
+        DateTime? completedDateUtc = null)
     {
         const string sql = @"
             INSERT INTO [Rounds]
@@ -193,7 +194,8 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
                 [DisplayName],
                 [Status],
                 [StartDateUtc],
-                [DeadlineUtc]
+                [DeadlineUtc],
+                [CompletedDateUtc]
             )
             VALUES
             (
@@ -202,7 +204,8 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
                 @DisplayName,
                 @Status,
                 @StartDateUtc,
-                @DeadlineUtc
+                @DeadlineUtc,
+                @CompletedDateUtc
             );
             SELECT CAST(SCOPE_IDENTITY() AS int);";
 
@@ -213,7 +216,8 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
             DisplayName = $"Round {roundNumber}",
             Status = status.ToString(),
             StartDateUtc = startDateUtc ?? deadlineUtc.AddDays(-1),
-            DeadlineUtc = deadlineUtc
+            DeadlineUtc = deadlineUtc,
+            CompletedDateUtc = completedDateUtc
         });
     }
 
@@ -662,6 +666,69 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
             RoundNumber = roundNumber,
             Month = month,
             AwardedDateUtc = awardedDateUtc ?? DateTime.UtcNow
+        });
+    }
+
+    public async Task AddLeagueMemberStatsAsync(
+        int leagueId,
+        string userId,
+        int? overallRank = null,
+        int? monthRank = null,
+        int? liveRoundRank = null,
+        int? snapshotOverallRank = null,
+        int? snapshotMonthRank = null,
+        int? stableRoundRank = null,
+        int? stageRank = null,
+        int? preRoundStageRank = null,
+        int? exactScoresRank = null,
+        int? preRoundExactScoresRank = null)
+    {
+        const string sql = @"
+            INSERT INTO [LeagueMemberStats]
+            (
+                [LeagueId],
+                [UserId],
+                [OverallRank],
+                [MonthRank],
+                [LiveRoundRank],
+                [SnapshotOverallRank],
+                [SnapshotMonthRank],
+                [StableRoundRank],
+                [StageRank],
+                [PreRoundStageRank],
+                [ExactScoresRank],
+                [PreRoundExactScoresRank]
+            )
+            VALUES
+            (
+                @LeagueId,
+                @UserId,
+                @OverallRank,
+                @MonthRank,
+                @LiveRoundRank,
+                @SnapshotOverallRank,
+                @SnapshotMonthRank,
+                @StableRoundRank,
+                @StageRank,
+                @PreRoundStageRank,
+                @ExactScoresRank,
+                @PreRoundExactScoresRank
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            LeagueId = leagueId,
+            UserId = userId,
+            OverallRank = overallRank,
+            MonthRank = monthRank,
+            LiveRoundRank = liveRoundRank,
+            SnapshotOverallRank = snapshotOverallRank,
+            SnapshotMonthRank = snapshotMonthRank,
+            StableRoundRank = stableRoundRank,
+            StageRank = stageRank,
+            PreRoundStageRank = preRoundStageRank,
+            ExactScoresRank = exactScoresRank,
+            PreRoundExactScoresRank = preRoundExactScoresRank
         });
     }
 

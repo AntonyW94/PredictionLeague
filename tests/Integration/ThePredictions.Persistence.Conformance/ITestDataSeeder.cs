@@ -31,12 +31,18 @@ public interface ITestDataSeeder
 
     Task<string> AddUserAsync(string firstName, string lastName);
 
+    /// <summary>
+    /// A round. <paramref name="completedDateUtc"/> is separate from <paramref name="status"/> on purpose: a round
+    /// marked complete with no completion date is a state the database allows and the active-round rule has to cope
+    /// with, so a test has to be able to arrange it.
+    /// </summary>
     Task<int> AddRoundAsync(
         int seasonId,
         int roundNumber,
         DateTime deadlineUtc,
         RoundStatus status = RoundStatus.Published,
-        DateTime? startDateUtc = null);
+        DateTime? startDateUtc = null,
+        DateTime? completedDateUtc = null);
 
     Task<int> AddMatchAsync(
         int roundId,
@@ -101,6 +107,24 @@ public interface ITestDataSeeder
         DateTime? awardedDateUtc = null,
         int? roundNumber = null,
         int? month = null);
+
+    /// <summary>
+    /// A row in the cached ranking table the My Leagues tile reads. Every rank defaults to null, which is what the
+    /// tile treats as "no such position" - so a test states only the ranks it is about.
+    /// </summary>
+    Task AddLeagueMemberStatsAsync(
+        int leagueId,
+        string userId,
+        int? overallRank = null,
+        int? monthRank = null,
+        int? liveRoundRank = null,
+        int? snapshotOverallRank = null,
+        int? snapshotMonthRank = null,
+        int? stableRoundRank = null,
+        int? stageRank = null,
+        int? preRoundStageRank = null,
+        int? exactScoresRank = null,
+        int? preRoundExactScoresRank = null);
 
     /// <summary>
     /// Deletes a match with no guard at all. Not seeding, but the same category: a direct statement that
