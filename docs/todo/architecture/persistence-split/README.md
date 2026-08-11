@@ -162,6 +162,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leagues/pickers + email settings** ✅ | Two sibling statements collapsed into one read. **Infrastructure now contains no SQL at all.** |
 | 2 | **Leagues/detail + rounds** ✅ | A third pair of statements collapsed into one read, and three sentinel values pulled out of SQL into named C#. |
 | 2 | **Leagues/members + payment details** ✅ | The rule guarding a league's bank account had no tests, because the handler carried the boilerplate coverage exclusion. |
+| 2 | **Leagues/prizes + create page** ✅ | A flattened left join split in two, which retired a row type where every prize column was nullable. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -368,6 +369,37 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
+
+### A nullable column the result type said was not
+
+`GetLeaguePrizesPageQueryHandler` selected `l.[EntryDeadlineUtc]` into a non-nullable `DateTime`. The column allows null,
+so a league without an entry deadline would have failed to materialise and taken the prize page down with a 500.
+
+**Latent rather than live**, and worth being precise about: the create and update commands both take a non-nullable
+deadline and the validators require one, so nothing in the application writes null - dev confirms it, none of its six
+leagues has one. The page is now honest about the column anyway and shows the same "never" sentinel the league settings
+page already uses. Mutation-verified: trusting the value with a `!` compiles and fails four tests.
+
+Note the asymmetry it exposes: the settings page defended against a null with `ISNULL` while this page did not. Two pages
+reading the same column, one guarded, one not, both fine today - which is what makes it the kind of thing worth a test
+rather than a comment.
+
+### A third unfiltered member count
+
+The prize page counts memberships with no status filter, so its prize-pot preview includes pending and rejected requests.
+That is the same divergence as the league settings page, and now the same treatment: the port returns both counts, the
+handler uses the total to preserve today's figure, and a test names it. **The open question covers both pages** - if the
+count should be approved-only, it is two one-line changes.
+
+### A flattened join that made every column nullable
+
+The prize page's statement left-joined the prize settings onto the league, so a league with four prizes came back as four
+copies of its own details and a league with none came back as one row of nulls. Every prize column was therefore declared
+nullable, and every read of one needed a `!` to promise the compiler otherwise.
+
+Two reads instead: a header and a list. `LeaguePrizeSettingRow` has nothing nullable except the stage, which only a stage
+prize has. Worth noting as a shape rather than a bug - `!` on a column that is only nullable because of how it was
+fetched is a smell that points at the fetch.
 
 ### A coverage exclusion that was simply untrue
 

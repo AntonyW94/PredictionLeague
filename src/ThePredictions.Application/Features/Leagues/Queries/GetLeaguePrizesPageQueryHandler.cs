@@ -1,85 +1,48 @@
-using ThePredictions.Domain.Common.Exceptions;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
-using ThePredictions.Domain.Common.Enumerations;
-using System.Diagnostics.CodeAnalysis;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// A league's prize page: what the pot is worth and how it is divided up.
+/// </summary>
 public class GetLeaguePrizesPageQueryHandler(
-    IApplicationReadDbConnection dbConnection,
+    ILeaguePrizesPageQuery prizesQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetLeaguePrizesPageQuery, LeaguePrizesPageDto>
 {
-    public async Task<LeaguePrizesPageDto> Handle(GetLeaguePrizesPageQuery request, CancellationToken cancellationToken)
+    /// <summary>
+    /// What a league with no entry deadline reports instead of one - the same sentinel the league settings page uses,
+    /// for the same reason: the contract's property is not nullable. See <see cref="GetLeagueByIdQueryHandler"/>.
+    /// </summary>
+    private static readonly DateTime NoEntryDeadline = new(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+    public async Task<LeaguePrizesPageDto> Handle(
+        GetLeaguePrizesPageQuery request,
+        CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
-        const string sql = @"
-            SELECT
-                l.[Name] AS LeagueName,
-                l.[EntryDeadlineUtc],
-                l.[Price],
-                (SELECT COUNT(*) FROM [LeagueMembers] lm WHERE lm.LeagueId = l.Id) AS MemberCount,
-                s.[NumberOfRounds],
-                s.[StartDateUtc] AS SeasonStartDateUtc,
-                s.[EndDateUtc] AS SeasonEndDateUtc,
-                ps.[PrizeType],
-                ps.[Rank],
-                ps.[PrizeAmount],
-                ps.[Stage]
-            FROM 
-                [Leagues] l
-            JOIN 
-                [Seasons] s ON l.SeasonId = s.Id
-            LEFT JOIN
-                [LeaguePrizeSettings] ps ON l.Id = ps.LeagueId
-            WHERE 
-                l.Id = @LeagueId;";
+        var data = await prizesQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
-        var queryResult = await dbConnection.QueryAsync<PrizesQueryResult>(sql, cancellationToken, new { request.LeagueId });
-
-        var results = queryResult.ToList();
-        if (!results.Any())
+        if (data is null)
             throw new EntityNotFoundException("League", request.LeagueId);
-        
-        var firstRow = results.First();
-        var pageDto = new LeaguePrizesPageDto
+
+        var header = data.Header;
+
+        return new LeaguePrizesPageDto
         {
-            LeagueName = firstRow.LeagueName,
-            EntryDeadlineUtc = firstRow.EntryDeadlineUtc,
-            Price = firstRow.Price,
-            MemberCount = firstRow.MemberCount,
-            NumberOfRounds = firstRow.NumberOfRounds,
-            SeasonStartDateUtc = firstRow.SeasonStartDateUtc,
-            SeasonEndDateUtc = firstRow.SeasonEndDateUtc,
-            PrizeSettings = results
-                .Where(r => r.PrizeType != null)
-                .Select(r => new PrizeSettingDto(
-                    Enum.Parse<PrizeType>(r.PrizeType!),
-                    r.Rank!.Value,
-                    r.PrizeAmount!.Value,
-                    r.Stage
-                )).ToList()
+            LeagueName = header.LeagueName,
+            EntryDeadlineUtc = header.EntryDeadlineUtc ?? NoEntryDeadline,
+            Price = header.Price,
+            MemberCount = header.TotalMembershipCount,
+            NumberOfRounds = header.NumberOfRounds,
+            SeasonStartDateUtc = header.SeasonStartDateUtc,
+            SeasonEndDateUtc = header.SeasonEndDateUtc,
+            PrizeSettings = data.PrizeSettings
+                .Select(prize => new PrizeSettingDto(prize.PrizeType, prize.Rank, prize.PrizeAmount, prize.Stage))
+                .ToList()
         };
-
-        return pageDto;
     }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PrizesQueryResult(
-        string LeagueName,
-        DateTime EntryDeadlineUtc,
-        decimal Price,
-        int MemberCount,
-        int NumberOfRounds,
-        DateTime SeasonStartDateUtc,
-        DateTime SeasonEndDateUtc,
-        string? PrizeType,
-        int? Rank,
-        decimal? PrizeAmount,
-        string? Stage
-    );
 }
