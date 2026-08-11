@@ -1,30 +1,32 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
+using ThePredictions.Domain.Common;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Dashboard.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class CheckForAvailablePrivateLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
-    : IRequestHandler<CheckForAvailablePrivateLeaguesQuery, bool>
+/// <summary>
+/// Whether there is any private league the player could join, which is what decides if the dashboard offers them somewhere
+/// to type an entry code.
+/// </summary>
+/// <remarks>
+/// Deliberately a looser question than <see cref="GetAvailableLeaguesQueryHandler"/> asks, and the difference is worth
+/// knowing: this counts a private league whether or not its administrator has listed it, because somebody who has been
+/// given a code should be able to use it. It also does <b>not</b> require a season pass, so the prompt can appear for a
+/// league the player could not yet enter. Both were true of the old statement and both are preserved - the second is
+/// recorded in the plan document, because it looks more like an oversight than a decision.
+/// </remarks>
+public class CheckForAvailablePrivateLeaguesQueryHandler(
+    IJoinableLeaguesQuery joinableLeaguesQuery,
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<CheckForAvailablePrivateLeaguesQuery, bool>
 {
-    public async Task<bool> Handle(CheckForAvailablePrivateLeaguesQuery request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(
+        CheckForAvailablePrivateLeaguesQuery request,
+        CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT CASE WHEN EXISTS (
-                SELECT 1 
-                FROM [Leagues] l
-                WHERE l.[EntryCode] IS NOT NULL 
-                AND l.[EntryDeadlineUtc] > GETUTCDATE()                    
-                AND NOT EXISTS (                                        
-                    SELECT 1 
-                    FROM [LeagueMembers] lm 
-                    WHERE lm.[LeagueId] = l.[Id] AND lm.[UserId] = @UserId
-                )
-            )
-            THEN CAST(1 AS BIT)
-            ELSE CAST(0 AS BIT) END";
+        var leagues = await joinableLeaguesQuery.ExecuteAsync(request.UserId, cancellationToken);
 
-        return await dbConnection.QuerySingleOrDefaultAsync<bool>(sql, cancellationToken, new { request.UserId });
+        var utcNow = dateTimeProvider.UtcNow;
+
+        return leagues.Any(league => league.HasEntryCode && LeagueEntry.IsOpen(league.EntryDeadlineUtc, utcNow));
     }
 }
