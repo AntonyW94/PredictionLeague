@@ -170,6 +170,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/active rounds** ✅ | A domain rule that disagreed with its own SQL twin, and with its own sibling. Marked "Dashboard is done" here, wrongly - `GetMatchesForRoundQueryHandler` still held SQL, and moved with Admin/Rounds below. |
 | 2 | **Badges** ✅ | **Badges is done.** Six statements to three reads, two gap-and-island streak queries to one `foreach`, and two screens that disagreed about the same player's position now reading one set of standings. |
 | 2 | **Admin/Rounds + round fixtures** ✅ | A CTE written twice and selected never, and the near-twin fixture statement that was still outstanding from Dashboard. |
+| 2 | **SeasonPasses** ✅ | Four screens, four statements, one set of conditions - two of the screens turned out to be exact complements. Three `GETUTCDATE()` calls gone. |
 | 2 | **Admin/Users** ✅ | Eleven correlated subqueries, three of them with an unstated definition of "spend", and a list flattened into a string by the database and split back apart in C#. |
 | 2 | **Admin/Seasons** ✅ | The same twenty-column statement written twice, and a team count whose definition disagrees with the other read of the same idea. |
 | 2 | **Admin reference data** ✅ | Nine handlers, seven ports, one statement deleted as a duplicate of a port that already existed - and a nullable column two of three reads denied. |
@@ -1176,6 +1177,26 @@ It is a row per provider now, and the `GROUP BY` over seven columns that the agg
 The same shape as the month name formatted by `DATENAME` and then parsed back to sort by it, found in the Leagues phase.
 Two instances is a pattern: a set-based language makes it easy to collapse a collection into a scalar, and the collapse
 is always undone somewhere.
+
+### Two pages that were the same condition, negated
+
+The available-passes page offered a season when it was active, not already held, and had a league whose entry deadline was
+still ahead. The past-passes page listed a season when it was active, not already held, had leagues at all, and had **no**
+league whose deadline was still ahead. Four conditions each, three shared, and the fourth the negation of the other's -
+which is to say the two pages are complements by construction and nothing anywhere said so. A change to one would have
+silently opened or closed a gap in the other.
+
+Written out as `IsOnOffer` and `WasMissed` next to each other, the relationship is the first thing you see.
+
+### The database's clock, three more times
+
+`GETUTCDATE()` appeared in three of the four season-pass statements, so whether entry was still open depended on the
+database's clock rather than the injected one - and two pages rendered in the same request could disagree with each other
+about the same deadline. Each handler now reads `IDateTimeProvider.UtcNow` once and passes that instant to every decision.
+
+This also picked up `Domain.Services.LeagueEntry.IsOpen` as its fourth caller, which is where "a league with no deadline is
+not open" is stated. The old statements got that right only because SQL drops a null from a comparison - correct by
+accident rather than by decision, and the kind of thing a rewrite in a different dialect would quietly change.
 
 ### Rules found duplicated so far
 
