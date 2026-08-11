@@ -170,6 +170,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/active rounds** ✅ | A domain rule that disagreed with its own SQL twin, and with its own sibling. Marked "Dashboard is done" here, wrongly - `GetMatchesForRoundQueryHandler` still held SQL, and moved with Admin/Rounds below. |
 | 2 | **Badges** ✅ | **Badges is done.** Six statements to three reads, two gap-and-island streak queries to one `foreach`, and two screens that disagreed about the same player's position now reading one set of standings. |
 | 2 | **Admin/Rounds + round fixtures** ✅ | A CTE written twice and selected never, and the near-twin fixture statement that was still outstanding from Dashboard. |
+| 2 | **Admin/Seasons** ✅ | The same twenty-column statement written twice, and a team count whose definition disagrees with the other read of the same idea. |
 | 2 | **Admin reference data** ✅ | Nine handlers, seven ports, one statement deleted as a duplicate of a port that already existed - and a nullable column two of three reads denied. |
 | 2 | **Admin/Rounds/results digest** ✅ | Six tables and two CTEs into four reads. A top-scorer tie-break that disagreed with every leaderboard, and the one read on the site that skipped the round-naming rule. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
@@ -1131,6 +1132,24 @@ Nothing records which teams play in a season - it is worked out from the fixture
 an `INNER JOIN ... SELECT DISTINCT` and the season-pass page with an `EXISTS`, which is the same question in two shapes.
 The `EXISTS` form is the one kept, because it cannot produce a duplicate in the first place: the other's `DISTINCT` was
 repairing its own join rather than stating a rule about teams.
+
+### Two ways to count the teams in a season, and both are right
+
+Nothing records which teams are in a season - it is inferred from the fixtures - and the codebase infers it twice, with
+different answers. The administrator's season list counts the teams in the season's **first** round, via a nested
+`UNION` inside a correlated `COUNT`. The season-pass page counts teams appearing **anywhere** in the season, via an
+`EXISTS`. For a league those agree, because every team plays every round. For a knockout they do not: the first round
+holds the entrants, later rounds hold survivors.
+
+Neither is wrong - they answer different questions - but nothing said so, and the difference was buried in two
+subqueries nobody would read side by side. Both are now named C# methods with the distinction written down.
+
+### A status compared against a text literal, four times over
+
+Each round-state count was its own correlated subquery ending `AND r.[Status] = 'Draft'`, with the state written in as a
+string rather than parameterised from the enum like everywhere else in the codebase. A renamed status would not have
+failed - it would have started returning zero, on an administrator's screen, quietly. The statuses now arrive typed and
+the counting is four `Count` calls in one method.
 
 ### Rules found duplicated so far
 
