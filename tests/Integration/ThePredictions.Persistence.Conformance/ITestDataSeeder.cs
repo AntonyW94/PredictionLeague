@@ -79,6 +79,30 @@ public interface ITestDataSeeder
     Task AddRoundResultAsync(int roundId, string userId, int exactScoreCount, int correctResultCount = 0, int incorrectCount = 0);
 
     /// <summary>
+    /// A prize slot on a league - what it is for, and what it pays.
+    /// </summary>
+    /// <remarks>
+    /// The <paramref name="prizeType"/> is stored the way the write path stores it, which for SQL Server means
+    /// the enum's numeric value in a text column. A seeder that wrote the friendly name instead would make the
+    /// conformance test agree with an adapter nothing in production could produce.
+    /// </remarks>
+    Task<int> AddLeaguePrizeSettingAsync(
+        int leagueId,
+        PrizeType prizeType,
+        decimal prizeAmount,
+        int rank = 1,
+        string? prizeDescription = null);
+
+    /// <summary>A prize actually paid out to a player.</summary>
+    Task AddWinningAsync(
+        string userId,
+        int leaguePrizeSettingId,
+        decimal amount,
+        DateTime? awardedDateUtc = null,
+        int? roundNumber = null,
+        int? month = null);
+
+    /// <summary>
     /// Deletes a match with no guard at all. Not seeding, but the same category: a direct statement that
     /// bypasses the code under test. It exists so a conformance test can demonstrate that the adapter's
     /// schema cascades the delete to predictions, which is the reason the repository needs its guard.

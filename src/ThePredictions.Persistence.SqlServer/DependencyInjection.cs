@@ -78,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IStageLeaderboardQuery, StageLeaderboardQuery>();
         services.AddScoped<ILeagueRoundResultsQuery, LeagueRoundResultsQuery>();
         services.AddScoped<IDashboardLeaderboardsQuery, DashboardLeaderboardsQuery>();
+        services.AddScoped<ILeagueRecordsQuery, LeagueRecordsQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository
