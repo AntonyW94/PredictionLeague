@@ -1,48 +1,36 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Seasons;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Domain.Common.Constants;
+using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetCreateLeaguePageDataQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetCreateLeaguePageDataQuery, CreateLeaguePageData>
+/// <summary>
+/// What the create-a-league page needs: the seasons a league may be created in, and the scoring it starts with.
+/// </summary>
+public class GetCreateLeaguePageDataQueryHandler(ISeasonLookupQuery seasonLookupQuery)
+    : IRequestHandler<GetCreateLeaguePageDataQuery, CreateLeaguePageData>
 {
-    public async Task<CreateLeaguePageData> Handle(GetCreateLeaguePageDataQuery request, CancellationToken cancellationToken)
+    public async Task<CreateLeaguePageData> Handle(
+        GetCreateLeaguePageDataQuery request,
+        CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                s.[Id],
-                s.[Name],
-                s.[StartDateUtc],
-                CAST(CASE WHEN c.[Type] = 1 THEN 1 ELSE 0 END AS bit) AS IsTournament
-            FROM [Seasons] s
-            JOIN [Competitions] c ON s.[CompetitionId] = c.[Id]
-            WHERE s.[IsActive] = 1
-            ORDER BY s.[StartDateUtc] DESC;";
-
-        var seasons = await dbConnection.QueryAsync<SeasonLookupQueryResult>(sql, cancellationToken);
+        var seasons = await seasonLookupQuery.ExecuteAsync(cancellationToken);
 
         return new CreateLeaguePageData
         {
             Seasons = seasons
-                .Select(s => new SeasonLookupDto(
-                    s.Id,
-                    s.Name,
-                    s.StartDateUtc,
-                    s.IsTournament))
+                .Where(season => season.IsActive)
+                .OrderByDescending(season => season.StartDateUtc)
+                .Select(season => new SeasonLookupDto(
+                    season.Id,
+                    season.Name,
+                    season.StartDateUtc,
+                    season.CompetitionType == CompetitionType.Tournament))
                 .ToList(),
             DefaultPointsForExactScore = PublicLeagueSettings.PointsForExactScore,
             DefaultPointsForCorrectResult = PublicLeagueSettings.PointsForCorrectResult
         };
     }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record SeasonLookupQueryResult(
-        int Id,
-        string Name,
-        DateTime StartDateUtc,
-        bool IsTournament);
 }
