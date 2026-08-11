@@ -1,138 +1,76 @@
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.Users;
 using ThePredictions.Domain.Common.Enumerations;
-using System.Diagnostics.CodeAnalysis;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Admin.Users.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetAllUsersQueryHandler(IApplicationReadDbConnection dbConnection)
+/// <summary>
+/// The administrator's list of every account, with what each one has joined, held and spent.
+/// </summary>
+public class GetAllUsersQueryHandler(IAdminUsersQuery adminUsersQuery)
     : IRequestHandler<GetAllUsersQuery, IEnumerable<UserDto>>
 {
     public async Task<IEnumerable<UserDto>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                u.[Id],
-                u.[FirstName] + ' ' + u.[LastName] AS FullName,
-                u.[Email],
-                u.[PhoneNumber],
-                u.[EmailConfirmed],
-                CAST(CASE WHEN u.[PasswordHash] IS NOT NULL THEN 1 ELSE 0 END AS BIT) AS HasLocalPassword,
-                CAST(CASE WHEN EXISTS (SELECT 1 FROM [AspNetUserRoles] ur WHERE ur.[UserId] = u.[Id] AND ur.[RoleId] = (SELECT r.[Id] FROM [AspNetRoles] r WHERE r.[Name] = @AdminRoleName)) THEN 1 ELSE 0 END AS bit) AS IsAdmin,
-                STRING_AGG(ul.[LoginProvider], ',') AS SocialProviders,
-                CAST(CASE WHEN EXISTS (SELECT 1 FROM [SeasonPasses] sp WHERE sp.[UserId] = u.[Id]) THEN 1 ELSE 0 END AS bit) AS HasSeasonPass,
-                (
-                    SELECT
-                        COUNT(1)
-                    FROM
-                        [Leagues] l
-                    WHERE
-                        l.[AdministratorUserId] = u.[Id]
-                ) AS LeaguesCreated,
-                (
-                    SELECT
-                        COUNT(1)
-                    FROM
-                        [LeagueMembers] lm
-                    WHERE
-                        lm.[UserId] = u.[Id]
-                        AND lm.[Status] = @ApprovedStatus
-                ) AS LeaguesJoinedApproved,
-                (
-                    SELECT
-                        COUNT(1)
-                    FROM
-                        [LeagueMembers] lm
-                    WHERE
-                        lm.[UserId] = u.[Id]
-                        AND lm.[Status] = @PendingStatus
-                ) AS LeaguesJoinedPending,
-                (
-                    SELECT
-                        COALESCE(SUM(w.[Amount]), 0)
-                    FROM
-                        [Winnings] w
-                    WHERE
-                        w.[UserId] = u.[Id]
-                ) AS TotalWinnings,
-                (
-                    SELECT
-                        COALESCE(SUM(sp.[AmountPaid] + sp.[SmsFeePaid]), 0)
-                    FROM
-                        [SeasonPasses] sp
-                    WHERE
-                        sp.[UserId] = u.[Id]
-                        AND sp.[Source] = @PurchasedSource
-                ) AS SeasonPassSpend,
-                (
-                    SELECT
-                        COALESCE(SUM(l.[Price]), 0)
-                    FROM
-                        [LeagueMembers] lm
-                    INNER JOIN
-                        [Leagues] l ON l.[Id] = lm.[LeagueId]
-                    WHERE
-                        lm.[UserId] = u.[Id]
-                        AND lm.[Status] = @ApprovedStatus
-                        AND l.[IsFree] = 0
-                        AND l.[Price] > 0
-                ) AS LeagueEntrySpend
-            FROM
-                [AspNetUsers] u
-            LEFT JOIN
-                [AspNetUserLogins] ul ON u.[Id] = ul.[UserId]
-            GROUP BY
-                u.[Id], u.[FirstName], u.[LastName], u.[Email], u.[PhoneNumber], u.[PasswordHash], u.[EmailConfirmed]
-            ORDER BY
-                FullName;";
+        var data = await adminUsersQuery.ExecuteAsync(cancellationToken);
 
-        var parameters = new
-        {
-            AdminRoleName = nameof(ApplicationUserRole.Administrator),
-            ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-            PendingStatus = nameof(LeagueMemberStatus.Pending),
-            PurchasedSource = nameof(SeasonPassSource.Purchased)
-        };
-
-        var queryResult = await dbConnection.QueryAsync<UserQueryResult>(sql, cancellationToken, parameters);
-
-        return queryResult.Select(u => new UserDto(
-            u.Id,
-            u.FullName,
-            u.Email,
-            u.PhoneNumber,
-            u.IsAdmin,
-            u.HasLocalPassword,
-            u.SocialProviders?.Split(',').ToList() ?? new List<string>(),
-            u.EmailConfirmed,
-            u.HasSeasonPass,
-            u.LeaguesCreated,
-            u.LeaguesJoinedApproved,
-            u.LeaguesJoinedPending,
-            u.TotalWinnings,
-            u.SeasonPassSpend,
-            u.LeagueEntrySpend
-        ));
+        return data.Users
+            .Select(user => ToDto(user, data))
+            .OrderBy(user => user.FullName, StringComparer.InvariantCultureIgnoreCase)
+            .ToList();
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record UserQueryResult(
-        string Id,
-        string FullName,
-        string Email,
-        string? PhoneNumber,
-        bool EmailConfirmed,
-        bool HasLocalPassword,
-        bool IsAdmin,
-        string? SocialProviders,
-        bool HasSeasonPass,
-        int LeaguesCreated,
-        int LeaguesJoinedApproved,
-        int LeaguesJoinedPending,
-        decimal TotalWinnings,
-        decimal SeasonPassSpend,
-        decimal LeagueEntrySpend
-    );
+    private static UserDto ToDto(AdminUserRow user, AdminUsersData data)
+    {
+        var leagues = data.Leagues.Where(league => league.UserId == user.Id).ToList();
+        var passes = data.SeasonPasses.Where(pass => pass.UserId == user.Id).ToList();
+
+        return new UserDto(
+            user.Id,
+            // The full name, not the abbreviated one players see: this screen is for telling accounts apart.
+            PlayerDisplayName.FormatFull(user.FirstName, user.LastName),
+            user.Email,
+            user.PhoneNumber,
+            user.IsAdmin,
+            user.HasPassword,
+            data.LoginProviders
+                .Where(provider => provider.UserId == user.Id)
+                .Select(provider => provider.LoginProvider)
+                .ToList(),
+            user.EmailConfirmed,
+            passes.Count > 0,
+            leagues.Count(league => league.IsAdministrator),
+            leagues.Count(league => league.Status == LeagueMemberStatus.Approved),
+            leagues.Count(league => league.Status == LeagueMemberStatus.Pending),
+            data.Winnings.Where(winning => winning.UserId == user.Id).Sum(winning => winning.Amount),
+            SeasonPassSpend(passes),
+            LeagueEntrySpend(leagues));
+    }
+
+    /// <summary>
+    /// What this account has paid for season passes.
+    /// </summary>
+    /// <remarks>
+    /// Purchased passes only. A trial or a pass handed out by an administrator is still a pass - it counts towards "has a
+    /// season pass" - but it is not money anybody spent, and counting it would overstate what the site has taken.
+    /// </remarks>
+    private static decimal SeasonPassSpend(IEnumerable<UserSeasonPassRow> passes) =>
+        passes
+            .Where(pass => pass.Source == SeasonPassSource.Purchased)
+            .Sum(pass => pass.AmountPaid + pass.SmsFeePaid);
+
+    /// <summary>
+    /// What this account has paid to enter leagues.
+    /// </summary>
+    /// <remarks>
+    /// Three conditions, all of which were inside a subquery's <c>WHERE</c> clause. The membership has to have been
+    /// approved, because a request that was never accepted was never paid for. The league has to be a paid one, and its
+    /// price has to be above zero - two ways of saying the same thing that the data does not guarantee agree, so both are
+    /// kept.
+    /// </remarks>
+    private static decimal LeagueEntrySpend(IEnumerable<UserLeagueRow> leagues) =>
+        leagues
+            .Where(league => league.Status == LeagueMemberStatus.Approved && !league.IsFree && league.Price > 0)
+            .Sum(league => league.Price);
 }
