@@ -165,6 +165,30 @@ public class Match
         return utcNow >= GetEffectiveDeadline(roundDeadline);
     }
 
+    /// <summary>
+    /// Whether a player can still enter or change a prediction for this fixture: teams confirmed, still
+    /// scheduled rather than kicked off, finished or postponed, and not yet locked.
+    /// </summary>
+    /// <remarks>
+    /// This composition is the rule that two SQL predicates spent a year mirroring by comment - once in
+    /// <c>GetRoundCompletionQueryHandler.PredictableMatchPredicate</c> and once inside
+    /// <c>ReminderService.GetUsersMissingPredictionsAsync</c>, each carrying a note telling the reader to
+    /// change both together. The pieces were already here (<see cref="AreTeamsConfirmed"/>,
+    /// <see cref="IsPredictionLocked"/>); only the three-way composition was missing, so both call sites
+    /// rewrote it in T-SQL instead. Getting it wrong means a player chased for predictions they cannot make,
+    /// or not chased for ones they can.
+    /// </remarks>
+    public bool IsOpenForPrediction(DateTime utcNow, DateTime roundDeadline)
+    {
+        if (!AreTeamsConfirmed)
+            return false;
+
+        if (Status != MatchStatus.Scheduled)
+            return false;
+
+        return !IsPredictionLocked(utcNow, roundDeadline);
+    }
+
     public void AssignTeams(int homeTeamId, int awayTeamId)
     {
         Guard.Against.Expression(h => h == awayTeamId, homeTeamId, "A team cannot play against itself.");
