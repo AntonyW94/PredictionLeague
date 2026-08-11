@@ -159,10 +159,14 @@ public class GetSeasonRecapQueryHandler(
 
         var highest = qualifying.Min(position => position.Rank);
 
-        // Counted over every round, including any before the player had scored. That asymmetry is the old
-        // statement's: the guard above was applied when finding the best position but not when counting how long it
-        // was held, so a round where the whole league was on nothing can be counted as a round spent in first.
-        // Preserved deliberately rather than quietly corrected - see the plan document.
+        // Counted over every round, including any before the player had scored - so a completed round in which the
+        // whole league was on nothing counts towards a position the player reached properly elsewhere. That is the
+        // owner's decision (2026-08-11), not an inherited accident: a completed round happened, and whoever was top
+        // of the league during it was top of the league.
+        //
+        // Note the guard above still applies to finding the position, and deliberately so. Without it a player who
+        // was only ever joint first during a scoreless round would be told their highest position was first, which
+        // would be true of every member of the league.
         var roundsAtHighest = positions.Count(position => position.Rank == highest);
 
         return (highest, roundsAtHighest);
