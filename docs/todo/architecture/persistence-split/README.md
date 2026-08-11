@@ -156,6 +156,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leaderboards/round grid** ✅ | The prediction secrecy rule, and the dense grid the old `CROSS JOIN` manufactured. First rule moved that is about fairness rather than arithmetic. |
 | 2 | **Dashboard/leaderboards tile** ✅ | Seven rules from one windowed CTE. Found a rule already stated twice inside the handler - a SQL `ORDER BY` re-sorted by an identical LINQ chain. |
 | 2 | **Leagues/records tile** ✅ | The largest statement in the application: ten `OUTER APPLY` blocks choosing ten record holders, four of them with no tie-break at all. |
+| 2 | **Leagues/season recap** ✅ | Four ranks in two statements, one of them a running total recomputed round by round across the league. Collapsed the wins rule shared with the records tile. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -257,6 +258,36 @@ exist yet.
 Doing the extraction now was still right, and for the reason originally given: every integration test phase
 2 writes would otherwise need rewriting afterwards. The shape now exists, with one real suite proving it.
 
+### A guard applied to one half of an answer but not the other
+
+The season recap tells a player the highest position they ever held and how many rounds they held it for. Both come
+from the same ranked trajectory, and the old statement guarded them differently:
+
+```sql
+FROM RanksPerRound WHERE [UserId] = @UserId AND [Total] > 0          -- finding the best position
+(SELECT COUNT(*) FROM RanksPerRound WHERE [UserId] = @UserId AND Rnk = ub.BestRank)   -- counting the rounds
+```
+
+The `Total > 0` guard exists because before anyone has scored, everyone is joint first - so without it a player is
+told they were top of the league after round one, having predicted nothing. It is applied when finding the best
+position and **not** when counting how long it was held. So a completed round in which the entire league scored
+nothing can be counted as a round spent in first place.
+
+Reachable but rare: it needs a completed round where every member scored zero. **Preserved exactly**, pinned by a
+test named for the oddity, and flagged here rather than quietly corrected - the numbers on a live page would change.
+**Open question for the owner:** should the count use the same guard as the position?
+
+### Two similar-looking worst-round rules, deliberately kept apart
+
+The records tile's lowest-round record excludes rounds the player never entered. The recap's worst round does not -
+and both are faithful to their old SQL.
+
+They are different questions. The tile's is a league record, a hall of shame, and letting an unplayed round win it
+makes it a record about administration rather than about football. The recap's is a personal statistic in a page
+that already tells the player what they missed, so a nil round they skipped genuinely was their worst. Same shape,
+different question - the third instance of that pattern after the two visibility rules and the three snapshot
+conditions.
+
 ### Non-determinism as a rule that was never written down
 
 Four of the records tile's ten `SELECT TOP 1` blocks ordered by score alone. With two players tied, which one the
@@ -339,6 +370,13 @@ duplicated across *languages* within one method, and that copy is the harder one
 SQL finds the rule stated correctly and stops looking.
 
 ### Rules now shared rather than restated
+
+`Wins.ByPeriod` - who won each round, and each calendar month - was **four** `RANK() OVER (PARTITION BY ...)`
+windows across two handlers. The records tile asked who had won the most; the recap asked how many one player had
+won. The same rule answering two questions, so it is stated once and each caller counts what it needs. Two parts of
+it were easy to lose and are now pinned by tests: joint winners both win (`RANK`, not `ROW_NUMBER`), and a period
+nobody scored in is won by nobody.
+
 
 Two moved this round, both because the conditions turned out identical rather than merely similar:
 
