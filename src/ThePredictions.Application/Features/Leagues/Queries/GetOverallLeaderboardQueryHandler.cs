@@ -47,7 +47,7 @@ public class GetOverallLeaderboardQueryHandler(
                 UserId = entry.Item.UserId,
                 // A pre-round position only means something once a round has been completed; before that there
                 // is nothing to have moved from, so the arrow is hidden rather than shown against zero.
-                SnapshotRank = data.HasCompletedRound ? entry.Item.SnapshotOverallRank : null,
+                SnapshotRank = data.HasCompletedRound ? entry.Item.SnapshotRank : null,
                 IsRoundInProgress = data.HasRoundInProgress
             })
             .ToList();

@@ -120,7 +120,7 @@ public class GetOverallLeaderboardQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldShowThePreRoundPosition_OnceARoundHasBeenCompleted()
     {
-        Given(members: [Member("u1", "Ada", "Lovelace", snapshotOverallRank: 3)], hasCompletedRound: true);
+        Given(members: [Member("u1", "Ada", "Lovelace", snapshotRank: 3)], hasCompletedRound: true);
 
         (await HandleAsync()).Single().SnapshotRank.Should().Be(3);
     }
@@ -129,7 +129,7 @@ public class GetOverallLeaderboardQueryHandlerTests
     public async Task Handle_ShouldHideThePreRoundPosition_BeforeAnyRoundHasBeenCompleted()
     {
         // Nothing to have moved from yet, so the arrow is hidden rather than drawn against a meaningless value.
-        Given(members: [Member("u1", "Ada", "Lovelace", snapshotOverallRank: 3)], hasCompletedRound: false);
+        Given(members: [Member("u1", "Ada", "Lovelace", snapshotRank: 3)], hasCompletedRound: false);
 
         (await HandleAsync()).Single().SnapshotRank.Should().BeNull();
     }
@@ -137,7 +137,7 @@ public class GetOverallLeaderboardQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldReportNoPreRoundPosition_WhenTheCacheHasNoneForThatMember()
     {
-        Given(members: [Member("u1", "Ada", "Lovelace", snapshotOverallRank: null)], hasCompletedRound: true);
+        Given(members: [Member("u1", "Ada", "Lovelace", snapshotRank: null)], hasCompletedRound: true);
 
         (await HandleAsync()).Single().SnapshotRank.Should().BeNull();
     }
@@ -182,8 +182,8 @@ public class GetOverallLeaderboardQueryHandlerTests
                 hasRoundInProgress));
 
     private static LeaderboardMemberRow Member(
-        string userId, string firstName, string lastName, int? snapshotOverallRank = null) =>
-        new(userId, firstName, lastName, snapshotOverallRank);
+        string userId, string firstName, string lastName, int? snapshotRank = null) =>
+        new(userId, firstName, lastName, snapshotRank);
 
     private static MemberRoundPointsRow Points(string userId, int boostedPoints) => new(userId, boostedPoints);
 
