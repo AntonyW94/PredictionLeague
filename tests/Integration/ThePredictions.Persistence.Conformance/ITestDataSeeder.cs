@@ -159,6 +159,17 @@ public interface ITestDataSeeder
         SeasonPassSource source = SeasonPassSource.Purchased);
 
     /// <summary>
+    /// A badge a player has earned, and when. One row per award: a repeatable badge earned three times is three rows,
+    /// which is what the badges page counts and what the leaderboard has to collapse to one.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="roundId"/> is what makes a second award of the same badge possible. The write path's idempotency
+    /// key is the badge plus the round and season it was scoped to, so two awards of one badge with no scope at all are
+    /// the same award - a test that wants a badge won twice has to say which rounds it was won in.
+    /// </remarks>
+    Task AddUserBadgeAsync(string userId, string badgeKey, DateTime awardedUtc, int? roundId = null);
+
+    /// <summary>
     /// Deletes a match with no guard at all. Not seeding, but the same category: a direct statement that
     /// bypasses the code under test. It exists so a conformance test can demonstrate that the adapter's
     /// schema cascades the delete to predictions, which is the reason the repository needs its guard.

@@ -862,6 +862,30 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         });
     }
 
+    public async Task AddUserBadgeAsync(string userId, string badgeKey, DateTime awardedUtc, int? roundId = null)
+    {
+        // A null [RoundId] is how a lifetime badge is stored, and the unique index over (UserId, BadgeKey, RoundId,
+        // SeasonId) treats nulls as equal - so a second award of the same badge needs a round to be scoped to. Nothing
+        // on the read side looks at the column; it is the write path's idempotency key. See ITestDataSeeder.
+        const string sql = @"
+            INSERT INTO [UserBadges]
+            (
+                [UserId],
+                [BadgeKey],
+                [AwardedUtc],
+                [RoundId]
+            )
+            VALUES
+            (
+                @UserId,
+                @BadgeKey,
+                @AwardedUtc,
+                @RoundId
+            );";
+
+        await ExecuteAsync(sql, new { UserId = userId, BadgeKey = badgeKey, AwardedUtc = awardedUtc, RoundId = roundId });
+    }
+
     public async Task DeleteMatchAsync(int matchId)
     {
         // No guard at all - the point is to show what the schema does on its own.

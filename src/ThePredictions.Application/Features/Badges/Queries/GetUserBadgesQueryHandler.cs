@@ -1,22 +1,22 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Badges;
 using ThePredictions.Domain.Common;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Badges.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetUserBadgesQueryHandler(IApplicationReadDbConnection dbConnection, IDateTimeProvider dateTimeProvider)
+/// <summary>The badges page: what this player holds, and how close they are to the rest.</summary>
+public class GetUserBadgesQueryHandler(IBadgeStateQuery badgeStateQuery, IDateTimeProvider dateTimeProvider)
     : IRequestHandler<GetUserBadgesQuery, UserBadgesDto>
 {
     public async Task<UserBadgesDto> Handle(GetUserBadgesQuery request, CancellationToken cancellationToken)
     {
-        var state = await BadgeStateQueries.LoadAsync(dbConnection, request.UserId, cancellationToken);
+        var data = await badgeStateQuery.ExecuteAsync(request.UserId, cancellationToken);
 
-        const string nameSql = "SELECT [FirstName] + ' ' + LEFT([LastName], 1) FROM [AspNetUsers] WHERE [Id] = @UserId;";
-        var ownerName = await dbConnection.QuerySingleOrDefaultAsync<string>(nameSql, cancellationToken, new { request.UserId }) ?? string.Empty;
+        // The page can be looked at for someone else, so it is titled with whose badges these are - shown the way
+        // players are shown to each other everywhere, as a first name and a last initial.
+        var ownerName = PlayerDisplayName.Format(data.OwnerFirstName, data.OwnerLastName);
 
-        return BadgeCatalogue.BuildPage(state, dateTimeProvider.UtcNow) with { OwnerName = ownerName };
+        return BadgeCatalogue.BuildPage(BadgeState.From(data), dateTimeProvider.UtcNow) with { OwnerName = ownerName };
     }
 }

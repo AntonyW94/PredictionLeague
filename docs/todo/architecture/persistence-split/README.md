@@ -168,6 +168,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/league discovery** ✅ | A rule enforced only by SQL's three-valued logic, and an entry code that no longer travels to non-members. |
 | 2 | **Dashboard/pending membership** ✅ | Two views of one thing, and a third latent crash of the same shape as the first two. |
 | 2 | **Dashboard/active rounds** ✅ | **Dashboard is done.** A domain rule that disagreed with its own SQL twin, and with its own sibling. |
+| 2 | **Badges** ✅ | **Badges is done.** Six statements to three reads, two gap-and-island streak queries to one `foreach`, and two screens that disagreed about the same player's position now reading one set of standings. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -970,6 +971,55 @@ Feature areas for phases 2..N, roughly worst-first by rule density: Boosts, Roun
 Leagues, Dashboard, Badges, Admin/Rounds, Admin/Seasons, Predictions, Authentication, Account,
 Payouts, External/Tasks.
 
+### The badges area: four SQL statements that were all one question
+
+Badges was the densest rule concentration in the codebase, because none of badge progress is stored - it is
+recomputed on every read, so every metric had to be expressed as a statement. Six statements served one screen,
+including two **gap-and-island** queries with four chained CTEs and a pair of subtracted
+`ROW_NUMBER() OVER (PARTITION BY ...)` windows apiece. That technique is how a set-based language expresses "a
+run of consecutive rows", and reading one of them tells you nothing whatever about what a streak is. Both are now
+`Domain.Services.Badges.Streak`, twelve lines with a `foreach`, and the current-run rule turns out to be the same
+loop without the running maximum.
+
+The read that replaces all six returns rounds. One row per round of every season, with what the player did in it,
+and no filtering at all - because the badges disagree about which rounds they care about, and a read that picked
+one set would silently break the others. A streak counts rounds **anybody** was scored in, so a round the player
+sat out breaks the run rather than being skipped; ever-present counts rounds that **finished**. Eighty-three rounds
+exist, so this is a smaller read than any one of the statements it replaces.
+
+### The same player, two positions, on two screens
+
+The badges leaderboard and the dashboard tile both answered "where do I stand?", each with its own SQL, and they
+disagreed. The page ordered by badge count and award date and then **numbered its rows one by one**, so players who
+were genuinely level were shown different positions decided alphabetically - which
+`Domain.Services.Ranking` explicitly forbids ("the tie-break affects order only, never the position awarded"). The
+tile computed `COUNT(*) + 1 WHERE ahead of me`, which does let level players share. Measured on dev: nine players
+hold no badges at all and five hold eighteen apiece with the same award date, so the two screens disagreed about
+most of the table.
+
+Both now read one `BadgeStandings`, ranked by `Ranking.ByDescending` over a comparable `BadgeTally` - the count,
+then the date **reversed**, since reaching a tally sooner is worth more. Folding the tie-break into the score is
+what lets it award positions rather than only sort rows.
+
+The tile's statement had a second defect the rewrite removes. Its `Me` CTE was filtered by the same
+"has a first name" rule as the table, so for an account that never finished signing up `Me` was empty, the
+`CROSS JOIN` produced nothing, and `COUNT(*) + 1` returned **1** - the tile told a nameless account it was in first
+place. It now shows no position at all, because such an account is not on the table.
+
+### A column read for years and shown to nobody
+
+`MAX([Detail])` per badge picked the alphabetically greatest caption of a group, which for round wins meant
+"Gameweek 5" beat "Gameweek 12". Tracing it before porting it: `EarnedBadge.Detail` is set by the read, asserted by
+one test, and read by no screen and no DTO. Rather than invent a rule for choosing between captions nobody sees,
+the read stopped fetching them. The write side still records them, so nothing is lost if a screen ever wants one.
+
+### Two ways of counting the same rows, in one feature
+
+The badges page counts **awards** ("won 3 times"); the leaderboard counts **distinct badges** ("24 of 31 collected").
+Both were `COUNT` in SQL, in different statements, and the difference was invisible. This is why the ports return
+awards ungrouped: a read that grouped could serve one screen or the other, never both, and whichever it served the
+other would quietly have been given the wrong number.
+
 ### Rules found duplicated so far
 
 Each of these is one rule with two implementations and nothing linking them. The split is what
@@ -981,7 +1031,9 @@ collapses each to one.
 | Round display name (`CASE WHEN LEN(LTRIM(RTRIM(DisplayName))) > 0 ...`) | The same two files | **Fully collapsed 2026-08-10** to `Round.GetDisplayNameOrDefault`. The second rule those two files duplicated. |
 | Round outcome counts | `RoundRepository.UpdateRoundResultsAsync` MERGE + `GetActiveRoundsQueryHandler.cs:195` | Found 2026-08-10, **untested in either copy**. `RoundResults.ExactScoreCount` is stored and read by badges, digests, leaderboards, records and season recap, so the SQL is canonical and the C# is a live shadow of it. Collapses in phase "Rounds". |
 | Boost secrecy | SQL only, but reads `GETUTCDATE()` instead of `IDateTimeProvider` | Integration tested 2026-08-10; becomes a clock-injected C# filter in phase "Boosts" |
-| Player display name (`FirstName + ' ' + LEFT(LastName, 1)`) | **17 files originally, 14 left** | `Domain.Services.PlayerDisplayName` added 2026-08-10 with the Boosts batch, which adopted it. **16 SQL copies remain** - each area adopts it as the split reaches it. The C# version also drops the trailing space the SQL produced for an empty surname. |
+| Player display name (`FirstName + ' ' + LEFT(LastName, 1)`) | **17 files originally, 2 left** | `Domain.Services.PlayerDisplayName` added 2026-08-10 with the Boosts batch, which adopted it. As of the Badges batch **two SQL copies remain**, in `PrizeEvaluationInputsReader` and `GetRoundDigestQueryHandler`, both in areas still to come. The C# version also drops the trailing space the SQL produced for an empty surname. |
+| Where a player stands on the badges table | `GetBadgeLeaderboardQueryHandler` (C#, row-numbered) + `GetBadgesTileQueryHandler` (SQL, `COUNT(*) + 1`) | **Fully collapsed with the Badges batch.** The two disagreed on real data - joint players shared a position on the tile and did not on the page - and one of them also awarded first place to accounts that were not on the table. Both now read `BadgeStandings`. |
+| Longest run of rounds with an exact score | Two gap-and-island SQL statements, one lifetime and one per season | **Fully collapsed** to `Domain.Services.Badges.Streak`. The two differed only in scope, which four CTEs of window functions made impossible to see. |
 
 ## Open question, not yet decided
 
