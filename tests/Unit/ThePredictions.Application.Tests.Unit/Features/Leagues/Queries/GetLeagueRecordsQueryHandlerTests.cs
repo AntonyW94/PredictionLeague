@@ -592,6 +592,121 @@ public class GetLeagueRecordsQueryHandlerTests
 
     #endregion
 
+    #region Only approved members hold records
+
+    [Fact]
+    public async Task Handle_ShouldNotLetSomeoneOutsideTheLeagueHoldARoundRecord()
+    {
+        // Arrange - a score exists for someone who is not an approved member.
+        Given(
+            members: [Member("u1", "Ada", "Lovelace")],
+            roundScores:
+            [
+                Score("u1", "Ada", "Lovelace", round: 1, points: 12),
+                Score("u9", "Grace", "Hopper", round: 2, points: 99)
+            ]);
+
+        // Act
+        var records = await HandleAsync();
+
+        // Assert - the best and worst rounds both come from the league.
+        records.TopRoundPlayerName.Should().Be("Ada L");
+        records.TopRoundPoints.Should().Be(12);
+        records.LowestRoundPlayerName.Should().Be("Ada L");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotCountSomeoneOutsideTheLeagueTowardsTheHighestScoringRound()
+    {
+        // Arrange
+        Given(
+            members: [Member("u1", "Ada", "Lovelace")],
+            roundScores:
+            [
+                Score("u1", "Ada", "Lovelace", round: 1, points: 12, roundId: 1),
+                Score("u9", "Grace", "Hopper", round: 1, points: 99, roundId: 1)
+            ]);
+
+        // Act
+        var records = await HandleAsync();
+
+        // Assert - a round's total is the league's total.
+        records.HighestGameweekPoints.Should().Be(12);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotLetSomeoneOutsideTheLeagueWinItsRounds()
+    {
+        // Arrange - the outsider outscores the member in both rounds.
+        Given(
+            members: [Member("u1", "Ada", "Lovelace")],
+            roundScores:
+            [
+                Score("u1", "Ada", "Lovelace", round: 1, points: 12, roundId: 1),
+                Score("u9", "Grace", "Hopper", round: 1, points: 99, roundId: 1),
+                Score("u1", "Ada", "Lovelace", round: 2, points: 12, roundId: 2),
+                Score("u9", "Grace", "Hopper", round: 2, points: 99, roundId: 2)
+            ]);
+
+        // Act
+        var records = await HandleAsync();
+
+        // Assert - and the months they add up to.
+        records.MostRoundsWonPlayerName.Should().Be("Ada L");
+        records.MostRoundsWonCount.Should().Be(2);
+        records.MostMonthsWonPlayerName.Should().Be("Ada L");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotCountExactScoresFromOutsideTheLeague()
+    {
+        // Arrange
+        Given(
+            members: [Member("u1", "Ada", "Lovelace")],
+            exactScores:
+            [
+                Exact("u1", "Ada", "Lovelace", round: 1, count: 2),
+                Exact("u9", "Grace", "Hopper", round: 1, count: 9)
+            ]);
+
+        // Act
+        var records = await HandleAsync();
+
+        // Assert - both the record and the season total.
+        records.MostExactInRoundPlayerName.Should().Be("Ada L");
+        records.MostExactInRoundCount.Should().Be(2);
+        records.TotalExactScores.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotCountPrizesWonFromOutsideTheLeague()
+    {
+        // Arrange
+        Given(
+            members: [Member("u1", "Ada", "Lovelace")],
+            winnings:
+            [
+                Winning("u1", "Ada", "Lovelace", 10m),
+                Winning("u9", "Grace", "Hopper", 500m)
+            ]);
+
+        // Act
+        var records = await HandleAsync();
+
+        // Assert
+        records.TopEarnerName.Should().Be("Ada L");
+        records.TopEarnerAmount.Should().Be(10m);
+        records.BiggestPrizePlayerName.Should().Be("Ada L");
+        records.BiggestPrizeAmount.Should().Be(10m);
+    }
+
+    #endregion
+
+    /// <summary>
+    /// Arranges the port's answer. When <paramref name="members"/> is left out, everyone who appears in the rows is
+    /// taken to be an approved member - which is the only state the application can currently produce. A test about
+    /// the population rule passes the list explicitly and leaves someone out of it.
+    /// </summary>
     private void Given(
         bool isFree = false,
         IReadOnlyList<LeaderboardParticipantRow>? members = null,
@@ -599,10 +714,31 @@ public class GetLeagueRecordsQueryHandlerTests
         IReadOnlyList<LeagueRecordExactScoreRow>? exactScores = null,
         IReadOnlyList<LeagueRecordWinningRow>? winnings = null)
     {
+        roundScores ??= [];
+        exactScores ??= [];
+        winnings ??= [];
+
+        members ??= EveryoneIn(roundScores, exactScores, winnings);
+
         _recordsQuery
             .ExecuteAsync(LeagueId, Arg.Any<CancellationToken>())
-            .Returns(new LeagueRecordsData(
-                isFree, members ?? [], roundScores ?? [], exactScores ?? [], winnings ?? []));
+            .Returns(new LeagueRecordsData(isFree, members, roundScores, exactScores, winnings));
+    }
+
+    private static List<LeaderboardParticipantRow> EveryoneIn(
+        IReadOnlyList<LeagueRecordRoundScoreRow> roundScores,
+        IReadOnlyList<LeagueRecordExactScoreRow> exactScores,
+        IReadOnlyList<LeagueRecordWinningRow> winnings)
+    {
+        var everyone = roundScores
+            .Select(row => (row.UserId, row.FirstName, row.LastName))
+            .Concat(exactScores.Select(row => (row.UserId, row.FirstName, row.LastName)))
+            .Concat(winnings.Select(row => (row.UserId, row.FirstName, row.LastName)));
+
+        return everyone
+            .DistinctBy(person => person.UserId)
+            .Select(person => new LeaderboardParticipantRow(person.UserId, person.FirstName, person.LastName))
+            .ToList();
     }
 
     private async Task<LeagueRecordsDto> HandleAsync() =>

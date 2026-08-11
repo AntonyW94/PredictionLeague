@@ -294,15 +294,38 @@ The adapter now maps it to the `PrizeType` enum, so the next adapter has to prod
 inherit the accident. `docs/guides/database-schema.md` corrected. Three more comparisons of this shape remain in
 `WinningsRepository` on the write side.
 
-### An inconsistency preserved rather than fixed: who can hold a record
+### Who can hold a record: an inconsistency found, then settled
 
-The tile's ten blocks disagree about membership. Five read `LeagueRoundResults` with no membership check; two join
-`LeagueMembers` and require `Approved`. So today **a player removed from a league can still hold its
-highest-round record, but cannot hold its most-exact-scores record**.
+The records tile's ten blocks disagreed about membership. Five read `LeagueRoundResults` with no membership check;
+two joined `LeagueMembers` and required `Approved`. So a player outside the league could in principle hold its
+highest-round record while being ineligible for its most-exact-scores record - and their points would appear on no
+leaderboard that could corroborate the claim.
 
-Preserved exactly, because making them agree changes what the tile shows and that is a product decision, not a
-refactor. `LeagueRecordsData` says so in its own remarks so the next reader does not "tidy" it by accident.
-**Open question for the owner:** should a former member keep their records?
+**Settled: all ten draw from the league's approved members**, decided once in the handler rather than ten times in
+SQL. The owner chose this on 2026-08-11 after the finding was raised.
+
+Three things made the direction clear:
+
+1. **It changes nothing today, and cannot.** `Approved` is a terminal state - `LeagueMember.Approve()` and
+   `Reject()` both require `Pending`, and only a pending request can be cancelled - and the `LeagueRoundResults`
+   MERGE writes only for approved members. Dev confirms it: 1,616 result rows, none against a non-approved
+   membership, and no rejected memberships at all. The filter is future-proofing, not a fix.
+2. **The two filters were never the same rule.** The exact-score blocks filter because `RoundResults` is
+   *league-agnostic*: without it a stranger's exact scores would show as the league's record. That filter is
+   load-bearing. The `LeagueRoundResults` blocks have no filter because they never needed one. So "add it
+   everywhere" costs nothing, while "remove it everywhere" would have broken the exact-score records outright.
+   The first framing of this finding got that backwards.
+3. **Consistency beyond the tile.** Every other read on the site shows approved members only, and the champion was
+   already computed from them - so the tile could have named one player champion while crediting another with
+   winning more rounds.
+
+The adapter may still narrow at the source, and the exact-score read does, because reading every player's whole
+season to discard most of it would be wasteful. Narrowing can only remove rows the handler's filter would remove
+anyway, so it is an optimisation rather than a second copy of the rule - stated in
+`LeagueRecordsData`'s remarks so the distinction survives the next reader.
+
+If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
+test to reverse - deliberately, rather than by inheriting an accident.
 
 ### A rule duplicated between SQL and C# in the same file
 

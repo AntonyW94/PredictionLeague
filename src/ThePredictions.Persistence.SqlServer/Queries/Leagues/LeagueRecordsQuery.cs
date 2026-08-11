@@ -93,9 +93,9 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
     private async Task<IReadOnlyList<LeagueRecordRoundScoreRow>> GetRoundScoresAsync(
         int leagueId, CancellationToken cancellationToken)
     {
-        // Not filtered by league membership, which is faithful to the old statement rather than tidy - see the
-        // remarks on LeagueRecordsData. HasAnyPrediction answers the EXISTS the lowest-round block used; whether
-        // that fact excludes a row is the handler's rule.
+        // Not filtered by league membership, because it does not need to be: the table is already per-league and
+        // the handler decides who may hold a record. HasAnyPrediction answers the EXISTS the lowest-round block
+        // used; whether that fact excludes a row is the handler's rule.
         var sql = $@"
             {ReadUncommitted}
 
@@ -137,8 +137,9 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
     private async Task<IReadOnlyList<LeagueRecordExactScoreRow>> GetExactScoresAsync(
         int leagueId, int seasonId, CancellationToken cancellationToken)
     {
-        // RoundResults is league-agnostic, so this one IS scoped to approved members - as both of the old
-        // exact-score blocks were.
+        // RoundResults is league-agnostic, so this one narrows to approved members at the source: reading every
+        // player's whole season to discard most of it would be wasteful. It is an optimisation, not the rule - the
+        // handler filters the same way regardless, so narrowing here can only remove rows it would remove anyway.
         var sql = $@"
             {ReadUncommitted}
 
