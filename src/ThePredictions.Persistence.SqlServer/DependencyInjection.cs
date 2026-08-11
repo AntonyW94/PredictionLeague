@@ -3,6 +3,16 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Admin.Competitions.Queries;
+using ThePredictions.Application.Features.Admin.EmailTests.Queries;
+using ThePredictions.Application.Features.Admin.PricingSettings.Queries;
+using ThePredictions.Application.Features.Admin.RunningCosts.Queries;
+using ThePredictions.Application.Features.Admin.ServiceFees.Queries;
+using ThePredictions.Application.Features.Admin.Teams.Queries;
+using ThePredictions.Persistence.SqlServer.Queries.Admin.Competitions;
+using ThePredictions.Persistence.SqlServer.Queries.Admin.EmailTests;
+using ThePredictions.Persistence.SqlServer.Queries.Admin.Settings;
+using ThePredictions.Persistence.SqlServer.Queries.Admin.Teams;
 using ThePredictions.Application.Features.Admin.Rounds.Queries;
 using ThePredictions.Application.Features.Badges.Queries;
 using ThePredictions.Application.Features.Boosts.Queries;
@@ -109,6 +119,13 @@ public static class DependencyInjection
         services.AddScoped<IAdminSeasonRoundsQuery, AdminSeasonRoundsQuery>();
         services.AddScoped<IAdminRoundQuery, AdminRoundQuery>();
         services.AddScoped<IRoundDigestQuery, RoundDigestQuery>();
+        services.AddScoped<ICompetitionsQuery, CompetitionsQuery>();
+        services.AddScoped<ITeamsQuery, TeamsQuery>();
+        services.AddScoped<ISeasonTeamsQuery, SeasonTeamsQuery>();
+        services.AddScoped<IPricingSettingsQuery, PricingSettingsQuery>();
+        services.AddScoped<IRunningCostsQuery, RunningCostsQuery>();
+        services.AddScoped<IServiceFeesQuery, ServiceFeesQuery>();
+        services.AddScoped<IEmailTestUserQuery, EmailTestUserQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository

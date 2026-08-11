@@ -1,37 +1,20 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Admin.ServiceFees;
 
 namespace ThePredictions.Application.Features.Admin.ServiceFees.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetServiceFeesQueryHandler(IApplicationReadDbConnection dbConnection)
+/// <summary>What each payment provider charges.</summary>
+public class GetServiceFeesQueryHandler(IServiceFeesQuery serviceFeesQuery)
     : IRequestHandler<GetServiceFeesQuery, IEnumerable<ServiceFeeDto>>
 {
     public async Task<IEnumerable<ServiceFeeDto>> Handle(GetServiceFeesQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                sf.[Provider],
-                sf.[PercentFee],
-                sf.[FixedFee]
-            FROM
-                [ServiceFees] sf
-            ORDER BY
-                sf.[Provider];";
+        var fees = await serviceFeesQuery.ExecuteAsync(cancellationToken);
 
-        var fees = await dbConnection.QueryAsync<ServiceFeeQueryResult>(sql, cancellationToken);
-
-        return fees.Select(f => new ServiceFeeDto(
-            f.Provider,
-            f.PercentFee,
-            f.FixedFee));
+        // Alphabetical by provider, with an explicit comparer rather than the database's collation.
+        return fees
+            .OrderBy(fee => fee.Provider, StringComparer.InvariantCultureIgnoreCase)
+            .Select(fee => new ServiceFeeDto(fee.Provider, fee.PercentFee, fee.FixedFee))
+            .ToList();
     }
-
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record ServiceFeeQueryResult(
-        string Provider,
-        decimal PercentFee,
-        decimal FixedFee);
 }

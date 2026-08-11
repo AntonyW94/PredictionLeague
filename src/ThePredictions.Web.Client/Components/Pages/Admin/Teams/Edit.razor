@@ -74,7 +74,7 @@
             {
                 Name = team.Name,
                 ShortName = team.ShortName,
-                LogoUrl = team.LogoUrl,
+                LogoUrl = team.LogoUrl ?? string.Empty,
                 Abbreviation = team.Abbreviation,
                 ApiTeamId = team.ApiTeamId    
             };
