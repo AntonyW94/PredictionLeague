@@ -23,12 +23,13 @@ public class GetLeagueDashboardQueryHandlerTests
     private static readonly DateTime SeasonStart = new(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
 
     private readonly ILeagueDashboardQuery _dashboardQuery = Substitute.For<ILeagueDashboardQuery>();
+    private readonly ILeagueRoundsQuery _roundsQuery = Substitute.For<ILeagueRoundsQuery>();
     private readonly ILeagueMembershipService _membershipService = Substitute.For<ILeagueMembershipService>();
     private readonly GetLeagueDashboardQueryHandler _handler;
 
     public GetLeagueDashboardQueryHandlerTests()
     {
-        _handler = new GetLeagueDashboardQueryHandler(_dashboardQuery, _membershipService);
+        _handler = new GetLeagueDashboardQueryHandler(_dashboardQuery, _roundsQuery, _membershipService);
     }
 
     #region Who may see the league
@@ -254,6 +255,20 @@ public class GetLeagueDashboardQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldListEveryRound_IncludingDrafts()
+    {
+        // Arrange
+        Given(rounds: [Round(1, status: RoundStatus.Draft), Round(2, status: RoundStatus.Completed)]);
+
+        // Act
+        var dashboard = await HandleAsync(isAdmin: true);
+
+        // Assert - this is the administrator's view of the league. The dashboard's round picker fills the same field
+        // from the same rows but keeps only published and completed ones.
+        dashboard.ViewableRounds.Should().HaveCount(2);
+    }
+
+    [Fact]
     public async Task Handle_ShouldCarryEachRoundsDetails()
     {
         // Arrange
@@ -286,12 +301,14 @@ public class GetLeagueDashboardQueryHandlerTests
 
     private void Given(
         LeagueDashboardHeaderRow? header = null,
-        IReadOnlyList<LeagueDashboardRoundRow>? rounds = null,
+        IReadOnlyList<LeagueRoundRow>? rounds = null,
         IReadOnlyList<LeagueDashboardMemberRow>? members = null)
     {
         _dashboardQuery
             .ExecuteAsync(LeagueId, Arg.Any<CancellationToken>())
-            .Returns(new LeagueDashboardData(header ?? Header(), rounds ?? [], members ?? []));
+            .Returns(new LeagueDashboardData(header ?? Header(), members ?? []));
+
+        _roundsQuery.ExecuteAsync(LeagueId, Arg.Any<CancellationToken>()).Returns(rounds ?? []);
     }
 
     private async Task<LeagueDashboardDto> HandleAsync(bool isAdmin = false) =>
@@ -325,7 +342,7 @@ public class GetLeagueDashboardQueryHandlerTests
         DateTime? joinedAtUtc = null) =>
         new(firstName, lastName, status, joinedAtUtc ?? SeasonStart);
 
-    private static LeagueDashboardRoundRow Round(
+    private static LeagueRoundRow Round(
         int roundNumber,
         int matchCount = 0,
         RoundStatus status = RoundStatus.Published) =>

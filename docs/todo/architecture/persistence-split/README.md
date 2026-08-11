@@ -160,6 +160,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/My Leagues** ✅ | The largest read on the site and the one with ADR-0015 behind it. Twelve rules out; every rank still a keyed cache lookup. Leaderboards are done. |
 | 2 | **Leagues/dashboard + membership guard** ✅ | Completed the `SeasonCompletion` collapse, and moved the guard eighteen handlers depend on out of Infrastructure - the last SQL there bar one file. |
 | 2 | **Leagues/pickers + email settings** ✅ | Two sibling statements collapsed into one read. **Infrastructure now contains no SQL at all.** |
+| 2 | **Leagues/detail + rounds** ✅ | A third pair of statements collapsed into one read, and three sentinel values pulled out of SQL into named C#. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -366,6 +367,43 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
+
+### Sentinel values that only the SQL knew about
+
+`GetLeagueByIdQueryHandler` answered three questions with values the database does not hold:
+
+```sql
+ISNULL(l.[EntryCode], 'Public')                              -- a public league has no code
+ISNULL(l.[EntryDeadlineUtc], '1900-01-01')                   -- a league with no deadline
+CAST(CASE WHEN c.[Type] = 1 THEN 1 ELSE 0 END AS bit)        -- is it a tournament
+```
+
+All three are presentation, and the second is the one worth pausing on: a date in 1900 standing for "never", chosen
+because `LeagueDto.EntryDeadlineUtc` is not nullable. It is now a named constant with an explanation attached rather
+than a literal buried in a `SELECT`, and a test asserts it. **Open question for the owner:** should the contract be
+nullable, so "no deadline" stops being a date? That would ripple into the pages that format it, which is why it was not
+done here.
+
+### A member count that counts the wrong members
+
+The same handler reported `COUNT(lm.[UserId])` over an unfiltered join - so a league with five members and two pending
+requests reports seven. Every other member count on the site counts approved members only.
+
+The port now returns **both** counts and the handler uses the total, preserving today's number. Returning both is the
+point: the difference is visible in one place, a test names it, and switching is a one-line change. **Open question for
+the owner:** should this count approved members only, like everywhere else?
+
+### Two callers, one read, two answers to "viewable"
+
+The league dashboard and the dashboard's round picker each listed a league's rounds with the same eight columns and the
+same correlated fixture count. One read (`ILeagueRoundsQuery`) now serves both. What they do not share is the filter:
+
+- the dashboard lists **every** round, drafts included, and calls the result `ViewableRounds`;
+- the picker keeps `Status IN (@Published, @Completed)` - and so drops a round **in progress**, which is arguably the
+  one most worth looking at.
+
+Both preserved exactly, both now tested. **Open question for the owner:** should a round in play be pickable on the
+league dashboard?
 
 ### Two statements that were the same statement
 
