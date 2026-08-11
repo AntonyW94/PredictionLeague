@@ -78,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IStageLeaderboardQuery, StageLeaderboardQuery>();
         services.AddScoped<ILeagueRoundResultsQuery, LeagueRoundResultsQuery>();
         services.AddScoped<IDashboardLeaderboardsQuery, DashboardLeaderboardsQuery>();
+        services.AddScoped<IMyLeaguesQuery, MyLeaguesQuery>();
         services.AddScoped<ILeagueRecordsQuery, LeagueRecordsQuery>();
         services.AddScoped<ISeasonRecapQuery, SeasonRecapQuery>();
     }

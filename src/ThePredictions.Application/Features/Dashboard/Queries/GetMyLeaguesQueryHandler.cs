@@ -1,279 +1,214 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Dashboard.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetMyLeaguesQueryHandler(IApplicationReadDbConnection dbConnection)
-    : IRequestHandler<GetMyLeaguesQuery, IEnumerable<MyLeagueDto>>
+/// <summary>
+/// The My Leagues tile: one card per league the player belongs to, showing where they stand, which round is on, and
+/// what the pot is worth.
+///
+/// The largest read on the site, and the one with a performance history - it grew until SQL Server spent longer
+/// planning it than running it (ADR-0015). Every rank here is still read from the <c>LeagueMemberStats</c> cache and
+/// none is recomputed; what moved is the dozen rules that were wrapped around them.
+/// </summary>
+public class GetMyLeaguesQueryHandler(
+    IMyLeaguesQuery myLeaguesQuery,
+    IDateTimeProvider dateTimeProvider) : IRequestHandler<GetMyLeaguesQuery, IEnumerable<MyLeagueDto>>
 {
     public async Task<IEnumerable<MyLeagueDto>> Handle(GetMyLeaguesQuery request, CancellationToken cancellationToken)
     {
-        // Every per-member rank on this tile is read from the [LeagueMemberStats] cache, maintained by
-        // LeagueStatsRepository on the write path. It used to be computed here instead, with one
-        // RANK() OVER pass per tile over every member of every league the user is in. That was correct
-        // but the query grew to the point where SQL Server spent ~400ms planning it, several times what
-        // it spent running it, and the plan was being invalidated roughly once a minute by the
-        // score-update job - so most dashboard loads during a live round paid the full compile. What is
-        // left here is cheap league-level metadata: the active round, the stage name, member counts and
-        // the prize pot.
-        //
-        // The cache columns and this SELECT are a contract. If you change what a rank means, change it
-        // in LeagueStatsRepository.RecomputeAsync - not here - or the two will silently disagree.
-        //
-        // Runs under READ UNCOMMITTED. This is a high-frequency read that was blocking for several
-        // seconds behind the results/stats write path, because the database does not have
-        // READ_COMMITTED_SNAPSHOT enabled and it cannot be turned on for this managed instance. The tile
-        // is a live view that auto-refreshes, so a transient dirty read self-corrects on the next poll,
-        // whereas the multi-second lock wait was user-visible. The isolation level is reset at the end
-        // of the batch so it cannot leak to other reads that reuse the pooled connection.
-        const string sql = @"
-        SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+        var data = await myLeaguesQuery.ExecuteAsync(request.UserId, cancellationToken);
 
-        WITH MyLeagues AS (
-            SELECT
-                l.[Id] AS LeagueId,
-                l.[Name] AS LeagueName,
-                l.[Price],
-		        l.[PrizeFundOverride],
-                l.[IsFree],
-                s.[Id] AS SeasonId,
-                s.[Name] AS SeasonName,
-                c.[Type] AS CompetitionType,
-                s.[StartDateUtc] AS SeasonStartDateUtc,
-                l.[EntryDeadlineUtc],
-                s.[NumberOfRounds],
-                lm.[UserId],
-                lm.[Status],
-                lm.[IsArchivedByUser]
-            FROM [LeagueMembers] lm
-            JOIN [Leagues] l ON lm.[LeagueId] = l.[Id]
-            JOIN [Seasons] s ON l.[SeasonId] = s.[Id]
-            JOIN [Competitions] c ON s.[CompetitionId] = c.[Id]
-            WHERE lm.[UserId] = @UserId AND lm.[Status] = @ApprovedStatus
-        ),
+        var utcNow = dateTimeProvider.UtcNow;
 
-        ActiveRounds AS (
-            SELECT
-                r.[SeasonId],
-                r.[Id] AS RoundId,
-                r.[RoundNumber],
-                r.[StartDateUtc],
-                r.[Status],
-                (SELECT COUNT(*) FROM [Matches] WHERE [RoundId] = r.[Id] AND [Status] = @InProgressStatus) AS InProgressCount,
-                (SELECT COUNT(*) FROM [Matches] WHERE [RoundId] = r.[Id] AND [Status] = @CompletedStatus) AS CompletedCount,
-                ROW_NUMBER() OVER (
-                    PARTITION BY r.[SeasonId]
-                        ORDER BY
-                           CASE
-                            WHEN r.[Status] = @InProgressStatus THEN 0
-                            WHEN r.[Status] = @CompletedStatus AND r.[CompletedDateUtc] > DATEADD(HOUR, -48, GETUTCDATE()) THEN 1
-                            WHEN r.[Status] = @PublishedStatus THEN 2
-                            ELSE 3
-                        END ASC,
-                        r.[RoundNumber] ASC
-                ) as [PriorityRank]
-            FROM [Rounds] r
-            WHERE
-                r.[Status] <> @DraftStatus
-                AND r.[SeasonId] IN (SELECT DISTINCT [SeasonId] FROM [MyLeagues])
-        ),
+        var roundsBySeason = data.SeasonRounds.ToLookup(round => round.SeasonId);
+        var scoresByLeague = data.RoundScores.ToLookup(score => score.LeagueId);
+        var statsByLeague = data.Stats.ToDictionary(stats => stats.LeagueId);
 
-        RoundStages AS (
-            SELECT
-                r.[Id] AS RoundId,
-                r.[SeasonId],
-                CASE WHEN trm.[Stages] LIKE '%Group%' THEN 'Group Stage' ELSE 'Knockout Stage' END AS StageName
-            FROM [Rounds] r
-            JOIN [TournamentRoundMappings] trm ON trm.[SeasonId] = r.[SeasonId] AND trm.[RoundNumber] = r.[RoundNumber]
-            WHERE r.[SeasonId] IN (SELECT DISTINCT [SeasonId] FROM [MyLeagues])
-        ),
-
-        LeagueContext AS (
-            SELECT
-                l.[Id] AS LeagueId,
-                (SELECT COUNT(*) FROM [LeagueMembers] WHERE [LeagueId] = l.[Id] AND [Status] = @ApprovedStatus) AS MemberCount,
-                (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w JOIN [LeaguePrizeSettings] s ON w.[LeaguePrizeSettingId] = s.[Id] WHERE s.[LeagueId] = l.[Id]) AS TotalPaidOut,
-                (SELECT ISNULL(SUM([Amount]), 0) FROM [Winnings] w JOIN [LeaguePrizeSettings] s ON w.[LeaguePrizeSettingId] = s.[Id] WHERE s.[LeagueId] = l.[Id] AND [UserId] = @UserId) AS UserWinnings,
-                (SELECT COUNT(*) FROM (
-                    SELECT lrr.[UserId], lrr.[BoostedPoints],
-                        RANK() OVER (PARTITION BY lrr.[RoundId] ORDER BY lrr.[BoostedPoints] DESC) AS Rnk
-                    FROM [LeagueRoundResults] lrr
-                    INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
-                    WHERE lrr.[LeagueId] = l.[Id] AND r.[Status] = @CompletedStatus
-                ) rw WHERE rw.[UserId] = @UserId AND rw.[Rnk] = 1 AND rw.[BoostedPoints] > 0) AS UserRoundsWon,
-                (SELECT COUNT(*) FROM (
-                    SELECT lrr.[UserId], SUM(lrr.[BoostedPoints]) AS MonthPoints,
-                        RANK() OVER (PARTITION BY MONTH(r.[StartDateUtc]), YEAR(r.[StartDateUtc]) ORDER BY SUM(lrr.[BoostedPoints]) DESC) AS Rnk
-                    FROM [LeagueRoundResults] lrr
-                    INNER JOIN [Rounds] r ON r.[Id] = lrr.[RoundId]
-                    WHERE lrr.[LeagueId] = l.[Id] AND r.[Status] = @CompletedStatus
-                    GROUP BY MONTH(r.[StartDateUtc]), YEAR(r.[StartDateUtc]), lrr.[UserId]
-                ) mw WHERE mw.[UserId] = @UserId AND mw.[Rnk] = 1 AND mw.[MonthPoints] > 0) AS UserMonthsWon
-            FROM [Leagues] l
-            WHERE l.[Id] IN (SELECT [LeagueId] FROM [MyLeagues])
-        )
-
-        SELECT
-            l.[LeagueId] AS Id,
-            l.[LeagueName] AS Name,
-            l.[SeasonName],
-            l.[CompetitionType],
-            l.[SeasonStartDateUtc],
-            l.[EntryDeadlineUtc],
-
-            CASE WHEN ar.[RoundId] IS NOT NULL THEN 'Round ' + CAST(ar.[RoundNumber] AS VARCHAR(10)) ELSE NULL END AS CurrentRound,
-            CASE
-                WHEN ar.[RoundId] IS NULL THEN NULL
-                WHEN l.[CompetitionType] = 1 THEN 'Exact Scores'
-                ELSE DATENAME(MONTH, ar.[StartDateUtc])
-            END AS CurrentMonth,
-            ar.[StartDateUtc] AS RoundStartDateUtc,
-            ISNULL(lc.[MemberCount], 0) AS MemberCount,
-
-            stats.[OverallRank] AS Rank,
-            -- The Month slot is relabelled 'Exact Scores' for a tournament and ranks by exact-score
-            -- count instead of points. The cache stores both metrics under their own names; this is
-            -- the one place the swap happens, so a tournament can never show a points rank here.
-            CASE WHEN l.[CompetitionType] = 1 THEN stats.[ExactScoresRank] ELSE stats.[MonthRank] END AS MonthRank,
-            CASE
-                WHEN ar.[Status] = @PublishedStatus THEN 1
-                ELSE stats.[LiveRoundRank]
-            END AS RoundRank,
-
-            stats.[SnapshotOverallRank] AS PreRoundOverallRank,
-            CASE WHEN l.[CompetitionType] = 1 THEN stats.[PreRoundExactScoresRank] ELSE stats.[SnapshotMonthRank] END AS PreRoundMonthRank,
-            CASE
-                WHEN ar.[Status] = @PublishedStatus THEN 1
-                ELSE stats.[StableRoundRank]
-            END AS StableRoundRank,
-
-            ar.[Status] AS RoundStatus,
-            ISNULL(ar.[InProgressCount], 0) AS InProgressCount,
-            ISNULL(ar.[CompletedCount], 0) AS CompletedCount,
-
-            lc.[UserWinnings] AS PrizeMoneyWon,
-            (l.[Price] * lc.[MemberCount] + ISNULL(l.[PrizeFundOverride], 0) - lc.[TotalPaidOut]) AS PrizeMoneyRemaining,
-            (l.[Price] * lc.[MemberCount] + ISNULL(l.[PrizeFundOverride], 0)) AS TotalPrizeFund,
-            l.[Price] AS EntryFee,
-            l.[IsFree],
-
-            ISNULL(lc.[UserRoundsWon], 0) AS RoundsWon,
-            ISNULL(lc.[UserMonthsWon], 0) AS MonthsWon,
-
-            CAST(CASE
-                WHEN (SELECT COUNT(*) FROM [Rounds] r2 WHERE r2.[SeasonId] = l.[SeasonId] AND r2.[Status] = @CompletedStatus) >= l.[NumberOfRounds]
-                THEN 1
-                ELSE 0
-            END AS bit) AS IsFinished,
-            l.[IsArchivedByUser],
-
-            rs.[StageName],
-            stats.[StageRank],
-            stats.[PreRoundStageRank]
-
-        FROM [MyLeagues] l
-        LEFT JOIN [LeagueMemberStats] stats ON l.[LeagueId] = stats.[LeagueId] AND l.[UserId] = stats.[UserId]
-        LEFT JOIN [ActiveRounds] ar ON l.[SeasonId] = ar.[SeasonId] AND ar.[PriorityRank] = 1
-        LEFT JOIN [RoundStages] rs ON rs.[RoundId] = ar.[RoundId]
-        LEFT JOIN [LeagueContext] lc ON l.[LeagueId] = lc.[LeagueId]
-
-        ORDER BY
-            CASE WHEN ar.[Status] = @InProgressStatus THEN 0 ELSE 1 END ASC,
-            l.[SeasonStartDateUtc] ASC,
-            l.[Price] DESC,
-            l.[LeagueName];
-
-        SET TRANSACTION ISOLATION LEVEL READ COMMITTED;";
-
-        var leagues = await dbConnection.QueryAsync<MyLeagueQueryResult>(
-            sql,
-            cancellationToken,
-            new
+        var tiles = data.Leagues
+            .Select(league =>
             {
-                request.UserId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                DraftStatus = nameof(RoundStatus.Draft),
-                PublishedStatus = nameof(RoundStatus.Published),
-                InProgressStatus = nameof(RoundStatus.InProgress),
-                CompletedStatus = nameof(RoundStatus.Completed)
-            });
+                var seasonRounds = roundsBySeason[league.SeasonId].ToList();
 
-        return leagues.Select(l => new MyLeagueDto(
-            l.Id,
-            l.Name,
-            l.SeasonName,
-            l.CompetitionType,
-            l.SeasonStartDateUtc,
-            l.EntryDeadlineUtc,
-            l.CurrentRound,
-            l.CurrentMonth,
-            l.RoundStartDateUtc,
-            l.MemberCount,
-            l.Rank,
-            l.MonthRank,
-            l.RoundRank,
-            l.PreRoundOverallRank,
-            l.PreRoundMonthRank,
-            l.StableRoundRank,
-            l.RoundStatus,
-            l.InProgressCount,
-            l.CompletedCount,
-            l.PrizeMoneyWon,
-            l.PrizeMoneyRemaining,
-            l.TotalPrizeFund,
-            l.EntryFee,
-            l.IsFree,
-            l.RoundsWon,
-            l.MonthsWon,
-            l.IsFinished,
-            l.IsArchivedByUser,
-            l.StageName,
-            l.StageRank,
-            l.PreRoundStageRank));
+                var activeRound = ActiveRound.Of(
+                    seasonRounds,
+                    utcNow,
+                    round => round.Status,
+                    round => round.CompletedDateUtc,
+                    round => round.RoundNumber);
+
+                return new LeagueTile(
+                    league,
+                    activeRound,
+                    statsByLeague.GetValueOrDefault(league.LeagueId),
+                    seasonRounds);
+            })
+            .ToList();
+
+        return LeagueTileOrder.Apply(tiles)
+            .Select(tile => ToDto(tile, scoresByLeague[tile.League.LeagueId], request.UserId))
+            .ToList();
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record MyLeagueQueryResult(
-        int Id,
-        string Name,
-        string SeasonName,
-        CompetitionType CompetitionType,
-        DateTime? SeasonStartDateUtc,
-        DateTime? EntryDeadlineUtc,
+    private static MyLeagueDto ToDto(
+        LeagueTile tile,
+        IEnumerable<MyLeagueRoundScoreRow> leagueScores,
+        string userId)
+    {
+        var league = tile.League;
+        var round = tile.ActiveRound;
+        var stats = tile.Stats;
 
-        string CurrentRound,
-        string CurrentMonth,
-        DateTime? RoundStartDateUtc,
-        int? MemberCount,
+        var isTournament = league.CompetitionType == CompetitionType.Tournament;
 
-        int? Rank,
-        int? MonthRank,
-        int? RoundRank,
+        var totalPrizeFund = PrizeFund.Total(league.Price, league.MemberCount, league.PrizeFundOverride);
 
-        int? PreRoundOverallRank,
-        int? PreRoundMonthRank,
-        int? StableRoundRank,
-        string RoundStatus,
-        int InProgressCount,
-        int CompletedCount,
+        var completedScores = CompletedScores(tile, leagueScores);
 
-        decimal PrizeMoneyWon,
-        decimal PrizeMoneyRemaining,
-        decimal TotalPrizeFund,
-        decimal EntryFee,
-        bool IsFree,
+        return new MyLeagueDto(
+            league.LeagueId,
+            league.LeagueName,
+            league.SeasonName,
+            league.CompetitionType,
+            league.SeasonStartDateUtc,
+            league.EntryDeadlineUtc,
+            CurrentRoundLabel(round),
+            CurrentMonthLabel(round, isTournament),
+            round?.StartDateUtc,
+            league.MemberCount,
+            stats?.OverallRank,
+            MonthSlotRank(stats, isTournament),
+            RoundRank(round, stats?.LiveRoundRank),
+            stats?.SnapshotOverallRank,
+            PreRoundMonthSlotRank(stats, isTournament),
+            RoundRank(round, stats?.StableRoundRank),
+            round?.Status.ToString(),
+            round?.InProgressMatchCount ?? 0,
+            round?.CompletedMatchCount ?? 0,
+            league.UserWinnings,
+            PrizeFund.Remaining(totalPrizeFund, league.TotalPaidOut),
+            totalPrizeFund,
+            league.Price,
+            league.IsFree,
+            CountWins(completedScores, score => score.Round.RoundId, userId),
+            CountWins(completedScores, score => MonthOf(score.Round), userId),
+            SeasonCompletion.IsFinished(league.CompletedRoundCount, league.NumberOfRounds),
+            league.IsArchivedByUser,
+            StageNameOf(round),
+            stats?.StageRank,
+            stats?.PreRoundStageRank);
+    }
 
-        int RoundsWon,
-        int MonthsWon,
+    /// <summary>
+    /// The round's label. Always "Round N", even where the round has been given a name of its own.
+    /// </summary>
+    /// <remarks>
+    /// Preserved from the old <c>'Round ' + CAST(ar.[RoundNumber] AS VARCHAR(10))</c> rather than switched to
+    /// <c>Round.GetDisplayNameOrDefault</c>, which every other part of the site uses and which would show "Semi
+    /// Finals" here instead. Changing it would change what a live tile says, so it is a question for the owner
+    /// rather than a refactor - see the plan document.
+    /// </remarks>
+    private static string? CurrentRoundLabel(MyLeagueRoundRow? round) =>
+        round is null ? null : $"Round {round.RoundNumber}";
 
-        bool IsFinished,
-        bool IsArchivedByUser,
+    /// <summary>
+    /// What the tile's second slot is called: nothing before a season starts, the month the round began in for a
+    /// league, and "Exact Scores" for a tournament, which ranks on exact scores rather than by month.
+    /// </summary>
+    private static string? CurrentMonthLabel(MyLeagueRoundRow? round, bool isTournament)
+    {
+        if (round is null)
+            return null;
 
-        string? StageName,
-        int? StageRank,
-        int? PreRoundStageRank);
+        if (isTournament)
+            return "Exact Scores";
+
+        return MonthName.Of(round.StartDateUtc.Month);
+    }
+
+    /// <summary>
+    /// The rank shown in that second slot, taken from whichever cached column the competition uses. The cache holds
+    /// both metrics under their own names, and this is the only place the swap happens - so a tournament can never
+    /// show a points rank where it promises exact scores.
+    /// </summary>
+    private static int? MonthSlotRank(MyLeagueStatsRow? stats, bool isTournament) =>
+        isTournament ? stats?.ExactScoresRank : stats?.MonthRank;
+
+    private static int? PreRoundMonthSlotRank(MyLeagueStatsRow? stats, bool isTournament) =>
+        isTournament ? stats?.PreRoundExactScoresRank : stats?.SnapshotMonthRank;
+
+    /// <summary>
+    /// A round's rank. Before a round starts nobody has scored in it, so everyone is joint first rather than
+    /// unranked - which is what the old <c>CASE WHEN ar.[Status] = @PublishedStatus THEN 1</c> said, and it applies
+    /// to the live rank and the stable rank alike.
+    /// </summary>
+    private static int? RoundRank(MyLeagueRoundRow? round, int? cachedRank) =>
+        round?.Status == RoundStatus.Published ? 1 : cachedRank;
+
+    /// <summary>
+    /// The stage the active round belongs to, or nothing when the season has no stage mapping for it.
+    /// </summary>
+    /// <remarks>
+    /// A round with no mapping row shows no stage at all, which is not the same as a mapped round that is not a
+    /// group round - that one is a knockout. The old query got this from a <c>LEFT JOIN</c> returning null, with the
+    /// classification itself as <c>CASE WHEN trm.[Stages] LIKE '%Group%'</c>. The classification is now
+    /// <c>TournamentStageClassifier</c> and the wording <c>TournamentStageName</c>.
+    /// </remarks>
+    private static string? StageNameOf(MyLeagueRoundRow? round)
+    {
+        if (round?.Stages is null)
+            return null;
+
+        return TournamentStageName.For(TournamentStageClassifier.ClassifyFrom(round.Stages));
+    }
+
+    private static int CountWins<TPeriod>(
+        IReadOnlyList<ScoredRound> completedScores,
+        Func<ScoredRound, TPeriod> periodSelector,
+        string userId)
+        where TPeriod : notnull =>
+        Wins.ByPeriod(completedScores, periodSelector, score => score.UserId, score => score.Points)
+            .Count(winnerId => winnerId == userId);
+
+    /// <summary>
+    /// Every member's scores in the league's completed rounds, paired with the round they came from - the raw
+    /// material for the rounds-won and months-won counts.
+    /// </summary>
+    private static IReadOnlyList<ScoredRound> CompletedScores(
+        LeagueTile tile,
+        IEnumerable<MyLeagueRoundScoreRow> leagueScores)
+    {
+        var completedRoundsById = tile.SeasonRounds
+            .Where(round => round.Status == RoundStatus.Completed)
+            .ToDictionary(round => round.RoundId);
+
+        return leagueScores
+            .Where(score => completedRoundsById.ContainsKey(score.RoundId))
+            .Select(score => new ScoredRound(score.UserId, completedRoundsById[score.RoundId], score.BoostedPoints))
+            .ToList();
+    }
+
+    private static (int Year, int Month) MonthOf(MyLeagueRoundRow round) =>
+        (round.StartDateUtc.Year, round.StartDateUtc.Month);
+
+    private sealed record ScoredRound(string UserId, MyLeagueRoundRow Round, int Points);
+
+    /// <summary>One league's card, once its active round and cached ranks have been found.</summary>
+    private sealed record LeagueTile(
+        MyLeagueRow League,
+        MyLeagueRoundRow? ActiveRound,
+        MyLeagueStatsRow? Stats,
+        IReadOnlyList<MyLeagueRoundRow> SeasonRounds) : ILeagueTile
+    {
+        public bool HasRoundInProgress => ActiveRound?.Status == RoundStatus.InProgress;
+
+        public DateTime SeasonStartDateUtc => League.SeasonStartDateUtc;
+
+        public decimal Price => League.Price;
+
+        public string LeagueName => League.LeagueName;
+    }
 }

@@ -157,6 +157,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/leaderboards tile** ✅ | Seven rules from one windowed CTE. Found a rule already stated twice inside the handler - a SQL `ORDER BY` re-sorted by an identical LINQ chain. |
 | 2 | **Leagues/records tile** ✅ | The largest statement in the application: ten `OUTER APPLY` blocks choosing ten record holders, four of them with no tie-break at all. |
 | 2 | **Leagues/season recap** ✅ | Four ranks in two statements, one of them a running total recomputed round by round across the league. Collapsed the wins rule shared with the records tile. |
+| 2 | **Dashboard/My Leagues** ✅ | The largest read on the site and the one with ADR-0015 behind it. Twelve rules out; every rank still a keyed cache lookup. Leaderboards are done. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -364,6 +365,46 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
 
+### A rule that spans the read and the write side
+
+Which round a league's tile is about - a round in play, else one finished within forty-eight hours, else the next
+published one, lowest number first, never a draft - is now `Domain.Services.ActiveRound`. It was a
+`ROW_NUMBER() OVER (PARTITION BY ... ORDER BY CASE ... END)` over `GETUTCDATE()`.
+
+`LeagueStatsRepository` resolves the same active round on the write path, to decide which round its cached ranks
+belong to. The schema documentation says so outright: the ranks are "relative to the league's active round ...
+resolved by the same priority order the query uses". **If the two ever pick different rounds, the tile shows one
+round's number above another round's positions** - a bug that reads as bad data rather than bad code.
+
+That copy is on the write side and so out of scope by the owner's decision, which means this is the first moved rule
+whose duplicate cannot be collapsed yet. The mitigation is that it is now one named, tested rule with a stated
+obligation rather than two lists of `CASE` arms that happen to match: the repository adopts it when the write side
+moves. Worth doing first when that work starts.
+
+### The tile-ordering rule had three copies, in two languages
+
+Recorded earlier as a single-file oddity; the count turned out to be worse. `GetLeaderboardsQueryHandler` stated it
+as a SQL `ORDER BY` **and** as an identical LINQ chain over the same rows, and `GetMyLeaguesQueryHandler` had a third
+copy in its own `ORDER BY`. Now `LeagueTileOrder.Apply`, over an `ILeagueTile` both row types implement. The
+leaderboards tile's eighteen existing tests pass against it unchanged.
+
+### Rules shared this round rather than restated
+
+- `PrizeFund.Total` / `.Remaining` - the pot is entry fees plus the administrator's top-up, written out in SQL in
+  two places. One copy remains in `GetAvailableLeaguesQueryHandler`, which moves with the rest of Dashboard.
+- `MonthName.Of` - `DATENAME(MONTH, ...)` in two queries, so the month's language came from the database login.
+  `PrizeDescription` adopted it here.
+- `TournamentStageName.For` - the display spelling, paired with `TournamentStageClassifier` so classifying a round
+  and naming its stage cannot drift. Fourth site adopting the classifier; the remaining copies are write-path.
+
+### A nullable comparison that cost a branch, again
+
+`completedDateUtc > utcNow - window` on a `DateTime?` compiles to a lifted comparison carrying its own null branch -
+unreachable behind an earlier null guard, and so uncoverable. The coverage gate caught it, as it did for
+`lastSent == null || lastSent < targetTime` earlier in this work. The fix is the same both times: unwrap with
+`is not { } value` and compare the non-nullable. Third instance of this trap; worth knowing before writing the
+guard, not after.
+
 ### A rule duplicated between SQL and C# in the same file
 
 `GetLeaderboardsQueryHandler` ordered its leagues with a four-clause `ORDER BY` (round in progress first, then
@@ -439,6 +480,15 @@ adapter after the engine rather than the dialect.
 ADR-0015 recompute), so those wait for the write-side decision. The *display* spelling is a separate question
 and is still written out at each site; worth settling when those move, because changing it alters an equality
 comparison rather than only a label.
+
+### A label that disagrees with the rest of the site
+
+The My Leagues tile labels its round `'Round ' + CAST(ar.[RoundNumber] AS VARCHAR(10))`, ignoring the round's
+`DisplayName`. Everywhere else uses `Round.GetDisplayNameOrDefault()`, which prefers the name an admin gave it - so a
+round called "Semi Finals" appears as "Round 12" on the dashboard and as "Semi Finals" everywhere else.
+
+Preserved exactly, because switching it changes what a live tile says. **Open question for the owner:** should the
+tile use the round's name where it has one?
 
 ### An asymmetry found in the domain, not introduced by this work
 
