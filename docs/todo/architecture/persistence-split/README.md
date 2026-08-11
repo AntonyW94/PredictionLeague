@@ -161,6 +161,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leagues/dashboard + membership guard** ✅ | Completed the `SeasonCompletion` collapse, and moved the guard eighteen handlers depend on out of Infrastructure - the last SQL there bar one file. |
 | 2 | **Leagues/pickers + email settings** ✅ | Two sibling statements collapsed into one read. **Infrastructure now contains no SQL at all.** |
 | 2 | **Leagues/detail + rounds** ✅ | A third pair of statements collapsed into one read, and three sentinel values pulled out of SQL into named C#. |
+| 2 | **Leagues/members + payment details** ✅ | The rule guarding a league's bank account had no tests, because the handler carried the boilerplate coverage exclusion. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -367,6 +368,36 @@ anyway, so it is an optimisation rather than a second copy of the rule - stated 
 
 If a leave-or-remove feature ever arrives and the product wants records to be historical, this is one line and one
 test to reverse - deliberately, rather than by inheriting an accident.
+
+### A coverage exclusion that was simply untrue
+
+`GetLeaguePaymentInfoQueryHandler` carried the same justification as every other query handler - "the body is a SQL
+string plus a mapping" - and it was not. Underneath the statement sat the rule that decides **who may read a league's
+bank account**: the administrator, anyone with a membership row, or a prospective joiner holding the entry code. It had
+no tests at all.
+
+It has twelve now, and two of them exist because of what the mutation check found:
+
+- A blank entry code supplied by the caller must never match a league that has none. Remove the blank check and
+  `string.Equals(null, null)` is true, so **a public league's bank details become readable by anybody**. That is one
+  deleted line away, and it compiles.
+- The details are decrypted *after* the check, not before. Moving the check three lines later still returns a 401 for a
+  stranger, but the plaintext exists in memory first - and a later refactor that returned early would leak it. Pinned by
+  a test asserting the decryption service is never called for a refused caller.
+
+The lesson for the register: a boilerplate exclusion applied by pattern rather than by reading the code is worse than no
+exclusion, because it looks considered. Worth a sweep of the remaining ones for the same mistake.
+
+### Membership with no status filter, twice, meaning two different things
+
+`HasMembership` on the payment query is `EXISTS` with no status check, so **any** membership row counts - approved,
+pending or rejected. The pending case is load-bearing and clearly deliberate: you ask to join, then you need the bank
+details in order to pay. Whether it should also cover someone who was **turned away** is the open part. Preserved, with
+a conformance test naming all three statuses. **Open question for the owner:** should a rejected applicant still see the
+bank details?
+
+Contrast the member-management page, which lists memberships of every status on purpose, because rejecting is what that
+page is for. Two unfiltered membership reads, two different reasons, neither shareable with the other.
 
 ### Sentinel values that only the SQL knew about
 

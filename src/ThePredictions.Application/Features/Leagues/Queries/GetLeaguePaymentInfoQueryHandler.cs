@@ -1,87 +1,103 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetLeaguePaymentInfoQueryHandler(IApplicationReadDbConnection dbConnection, IFieldEncryptionService fieldEncryptionService)
+/// <summary>
+/// A league's bank details, for a member who needs to pay their entry fee.
+/// </summary>
+/// <remarks>
+/// The rule below decides who may read a league's bank account, and until now it had no tests: the handler was excluded
+/// from coverage because it "was a SQL string plus a mapping", which was never true of this one.
+/// </remarks>
+public class GetLeaguePaymentInfoQueryHandler(
+    ILeaguePaymentInfoQuery paymentInfoQuery,
+    IFieldEncryptionService fieldEncryptionService)
     : IRequestHandler<GetLeaguePaymentInfoQuery, LeaguePaymentInfoDto>
 {
-    public async Task<LeaguePaymentInfoDto> Handle(GetLeaguePaymentInfoQuery request, CancellationToken cancellationToken)
+    public async Task<LeaguePaymentInfoDto> Handle(
+        GetLeaguePaymentInfoQuery request,
+        CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                l.[Name] AS LeagueName,
-                l.[Price] AS Amount,
-                l.[EntryCode] AS EntryCode,
-                l.[BankAccountName] AS EncryptedAccountName,
-                l.[BankSortCode] AS EncryptedSortCode,
-                l.[BankAccountNumber] AS EncryptedAccountNumber,
-                l.[PaymentReferenceTemplate] AS PaymentReferenceTemplate,
-                CAST(CASE WHEN l.[AdministratorUserId] = @UserId THEN 1 ELSE 0 END AS BIT) AS IsAdmin,
-                CAST(CASE WHEN EXISTS (
-                    SELECT 1
-                    FROM [LeagueMembers] lm
-                    WHERE lm.[LeagueId] = l.[Id]
-                        AND lm.[UserId] = @UserId
-                ) THEN 1 ELSE 0 END AS BIT) AS IsMember,
-                u.[FirstName] AS RequestingFirstName,
-                u.[LastName] AS RequestingLastName
-            FROM
-                [Leagues] l
-            CROSS JOIN
-                (SELECT [FirstName], [LastName] FROM [AspNetUsers] WHERE [Id] = @UserId) u
-            WHERE
-                l.[Id] = @LeagueId;";
+        var league = await paymentInfoQuery.ExecuteAsync(request.LeagueId, request.RequestingUserId, cancellationToken);
 
-        var row = await dbConnection.QuerySingleOrDefaultAsync<PaymentInfoRow>(
-            sql,
-            cancellationToken,
-            new { request.LeagueId, UserId = request.RequestingUserId });
-
-        if (row is null)
+        if (league is null)
             throw new KeyNotFoundException($"League with ID {request.LeagueId} not found.");
 
-        // A prospective joiner holding the matching entry code is authorised alongside admins/members.
-        var hasValidEntryCode = !string.IsNullOrWhiteSpace(request.EntryCode)
-            && string.Equals(row.EntryCode, request.EntryCode, StringComparison.OrdinalIgnoreCase);
+        EnsureMayViewPaymentDetails(league, request.EntryCode);
 
-        if (!row.IsAdmin && !row.IsMember && !hasValidEntryCode)
-            throw new UnauthorizedAccessException("Only the league administrator or its members can view payment details.");
-
-        var accountName = fieldEncryptionService.Decrypt(row.EncryptedAccountName);
-        var sortCode = fieldEncryptionService.Decrypt(row.EncryptedSortCode);
-        var accountNumber = fieldEncryptionService.Decrypt(row.EncryptedAccountNumber);
-
-        var hasBankDetails = accountName is not null && sortCode is not null && accountNumber is not null;
-
-        var reference = !string.IsNullOrWhiteSpace(row.PaymentReferenceTemplate)
-            ? row.PaymentReferenceTemplate
-            : $"{row.RequestingFirstName} {row.RequestingLastName}".Trim();
+        var accountName = fieldEncryptionService.Decrypt(league.EncryptedAccountName);
+        var sortCode = fieldEncryptionService.Decrypt(league.EncryptedSortCode);
+        var accountNumber = fieldEncryptionService.Decrypt(league.EncryptedAccountNumber);
 
         return new LeaguePaymentInfoDto(
-            row.LeagueName,
-            hasBankDetails,
+            league.LeagueName,
+            HasBankDetails(accountName, sortCode, accountNumber),
             accountName,
             sortCode,
             accountNumber,
-            row.Amount,
-            reference);
+            league.Price,
+            PaymentReference(league));
     }
 
-    private sealed record PaymentInfoRow(
-        string LeagueName,
-        decimal Amount,
-        string? EntryCode,
-        string? EncryptedAccountName,
-        string? EncryptedSortCode,
-        string? EncryptedAccountNumber,
-        string? PaymentReferenceTemplate,
-        bool IsAdmin,
-        bool IsMember,
-        string? RequestingFirstName,
-        string? RequestingLastName);
+    /// <summary>
+    /// Who may see a league's bank details: the administrator, anyone with a membership row, and a prospective joiner
+    /// holding the right entry code.
+    /// </summary>
+    /// <remarks>
+    /// "Anyone with a membership row" means any status, including pending - which is the point, because someone who has
+    /// asked to join needs the details in order to pay. It also covers somebody who was turned away, which is the part
+    /// worth a decision; preserved from the old <c>EXISTS</c>, which had no status filter, and recorded in the plan
+    /// document.
+    ///
+    /// The entry code arm exists so a private league's joining page can show payment details before the request has been
+    /// approved. It is compared case-insensitively, as it was, and a blank code supplied by the caller never matches -
+    /// otherwise a league with no code at all would be readable by anybody.
+    /// </remarks>
+    private static void EnsureMayViewPaymentDetails(LeaguePaymentInfoRow league, string? suppliedEntryCode)
+    {
+        if (league.IsAdministrator || league.HasMembership)
+            return;
+
+        if (MatchesEntryCode(league.EntryCode, suppliedEntryCode))
+            return;
+
+        throw new UnauthorizedAccessException("Only the league administrator or its members can view payment details.");
+    }
+
+    private static bool MatchesEntryCode(string? leagueEntryCode, string? suppliedEntryCode)
+    {
+        if (string.IsNullOrWhiteSpace(suppliedEntryCode))
+            return false;
+
+        return string.Equals(leagueEntryCode, suppliedEntryCode, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Whether there are bank details to show at all - all three parts, or none. A partly filled-in account is no use to
+    /// somebody trying to pay, so it counts as not set up.
+    /// </summary>
+    private static bool HasBankDetails(string? accountName, string? sortCode, string? accountNumber)
+    {
+        if (accountName is null)
+            return false;
+
+        if (sortCode is null)
+            return false;
+
+        return accountNumber is not null;
+    }
+
+    /// <summary>
+    /// What the payer should put as their bank reference: whatever the administrator set for the league, or failing that
+    /// the payer's own name, so a reference is never empty.
+    /// </summary>
+    private static string PaymentReference(LeaguePaymentInfoRow league)
+    {
+        if (!string.IsNullOrWhiteSpace(league.PaymentReferenceTemplate))
+            return league.PaymentReferenceTemplate;
+
+        return $"{league.RequestingFirstName} {league.RequestingLastName}".Trim();
+    }
 }
