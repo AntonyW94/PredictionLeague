@@ -519,6 +519,36 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         });
     }
 
+    public async Task AddTournamentRoundMappingAsync(int seasonId, int roundNumber, string stages)
+    {
+        const string sql = @"
+            INSERT INTO [TournamentRoundMappings]
+            (
+                [SeasonId],
+                [RoundNumber],
+                [DisplayName],
+                [Stages],
+                [ExpectedMatchCount]
+            )
+            VALUES
+            (
+                @SeasonId,
+                @RoundNumber,
+                @DisplayName,
+                @Stages,
+                @ExpectedMatchCount
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            SeasonId = seasonId,
+            RoundNumber = roundNumber,
+            DisplayName = stages,
+            Stages = stages,
+            ExpectedMatchCount = 0
+        });
+    }
+
     public async Task AddRoundResultAsync(
         int roundId, string userId, int exactScoreCount, int correctResultCount = 0, int incorrectCount = 0)
     {

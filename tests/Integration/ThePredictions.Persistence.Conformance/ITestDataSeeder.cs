@@ -62,6 +62,12 @@ public interface ITestDataSeeder
     Task AddLeagueRoundResultAsync(int leagueId, int roundId, string userId, int basePoints, int boostedPoints, string appliedBoostCode);
 
     /// <summary>
+    /// Maps a round number in a season to a tournament stage. The <paramref name="stages"/> text is what the
+    /// group-or-knockout classification reads; a round with no mapping at all classifies as knockout.
+    /// </summary>
+    Task AddTournamentRoundMappingAsync(int seasonId, int roundNumber, string stages);
+
+    /// <summary>
     /// A global per-user-per-round outcome tally. Distinct from <see cref="AddLeagueRoundResultAsync"/>: that one
     /// is per league and carries points, this one is league-agnostic and carries outcome counts.
     /// </summary>

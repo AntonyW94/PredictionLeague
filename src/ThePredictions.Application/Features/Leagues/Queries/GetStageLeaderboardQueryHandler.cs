@@ -1,116 +1,103 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
+/// <summary>
+/// A tournament stage's leaderboard - the group stage or the knockout stage of a league's season.
+///
+/// The richest of the leaderboards, and the one that most repays moving. Seven rules were in that single
+/// statement, including two ranks and a classification whose behaviour depended on the database collation.
+///
+/// The pre-round position here is <b>computed</b>, unlike the overall and monthly tables which read a cached
+/// column. It is the position a member held over the stage's rounds excluding the one in progress - which is why
+/// the old SQL had a second <c>RANK() OVER</c> nested inside a <c>CASE</c>.
+/// </summary>
 public class GetStageLeaderboardQueryHandler(
-    IApplicationReadDbConnection dbConnection,
+    IStageLeaderboardQuery leaderboardQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetStageLeaderboardQuery, IEnumerable<LeaderboardEntryDto>>
 {
-    public async Task<IEnumerable<LeaderboardEntryDto>> Handle(GetStageLeaderboardQuery request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<LeaderboardEntryDto>> Handle(
+        GetStageLeaderboardQuery request,
+        CancellationToken cancellationToken)
     {
         await membershipService.EnsureApprovedMemberAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
-        const string sql = @"
-            WITH StageRounds AS (
-                SELECT
-                    r.[Id],
-                    r.[Status]
-                FROM
-                    [Rounds] r
-                JOIN [TournamentRoundMappings] trm ON trm.[SeasonId] = r.[SeasonId] AND trm.[RoundNumber] = r.[RoundNumber]
-                WHERE
-                    r.[SeasonId] = (SELECT [SeasonId] FROM [Leagues] WHERE [Id] = @LeagueId)
-                    AND CASE WHEN trm.[Stages] LIKE '%Group%' THEN @GroupStage ELSE @KnockoutStage END = @Stage
-            )
+        var data = await leaderboardQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
-            SELECT
-                RANK() OVER (ORDER BY COALESCE(SUM(lrr.[BoostedPoints]), 0) DESC) AS [Rank],
-                u.[FirstName] + ' ' + LEFT(u.[LastName], 1) AS PlayerName,
-                COALESCE(SUM(lrr.[BoostedPoints]), 0) AS [TotalPoints],
-                u.[Id] AS [UserId],
+        var stageRounds = data.SeasonRounds
+            .Where(round => TournamentStageClassifier.ClassifyFrom(round.Stages) == request.Stage)
+            .ToList();
 
-                CASE
-                    WHEN EXISTS (
-                        SELECT 1
-                        FROM [StageRounds]
-                        WHERE [Status] = @InProgressStatus
-                    )
-                    AND (
-                        SELECT COUNT(*)
-                        FROM [StageRounds]
-                        WHERE [Status] IN (@InProgressStatus, @CompletedStatus)
-                    ) > 1
-                    THEN RANK() OVER (
-                        ORDER BY COALESCE(SUM(CASE WHEN sr.[Status] = @InProgressStatus THEN 0 ELSE lrr.[BoostedPoints] END), 0) DESC
-                    )
-                    ELSE NULL
-                END AS [SnapshotRank],
+        var stageRoundIds = stageRounds.Select(round => round.RoundId).ToHashSet();
 
-                CAST(CASE WHEN EXISTS (
-                    SELECT 1
-                    FROM [Rounds] r
-                    JOIN [Leagues] l ON r.[SeasonId] = l.[SeasonId]
-                    WHERE l.[Id] = @LeagueId AND r.[Status] = @InProgressStatus
-                ) THEN 1 ELSE 0 END AS bit) AS [IsRoundInProgress]
-            FROM
-                [LeagueMembers] lm
-            JOIN
-                [AspNetUsers] u ON lm.[UserId] = u.[Id]
-            LEFT JOIN
-                [LeagueRoundResults] lrr ON lm.[UserId] = lrr.[UserId] AND lrr.[LeagueId] = @LeagueId AND lrr.[RoundId] IN (SELECT [Id] FROM [StageRounds])
-            LEFT JOIN
-                [StageRounds] sr ON lrr.[RoundId] = sr.[Id]
-            WHERE
-                lm.[LeagueId] = @LeagueId
-                AND lm.[Status] = @ApprovedStatus
-            GROUP BY
-                u.[FirstName],
-                u.[LastName],
-                u.[Id]
-            ORDER BY
-                [Rank] ASC,
-                [PlayerName] ASC;";
+        // The rounds already finished within this stage. Points from the round in progress are excluded from the
+        // pre-round position, because that position is what a member held before the current round began.
+        var settledRoundIds = stageRounds
+            .Where(round => round.Status != RoundStatus.InProgress)
+            .Select(round => round.RoundId)
+            .ToHashSet();
 
-        var entries = await dbConnection.QueryAsync<StageLeaderboardQueryResult>(
-            sql,
-            cancellationToken,
-            new
+        var totals = TotalsFor(data.RoundPoints, stageRoundIds);
+        var preRoundTotals = TotalsFor(data.RoundPoints, settledRoundIds);
+
+        var showPreRoundPosition = ShouldShowPreRoundPosition(stageRounds);
+
+        var preRoundPositions = Ranking.ByDescending(
+                data.Members,
+                member => TotalFor(preRoundTotals, member.UserId),
+                member => PlayerDisplayName.FormatFull(member.FirstName, member.LastName))
+            .ToDictionary(entry => entry.Item.UserId, entry => entry.Rank);
+
+        var ranked = Ranking.ByDescending(
+            data.Members,
+            member => TotalFor(totals, member.UserId),
+            member => PlayerDisplayName.FormatFull(member.FirstName, member.LastName));
+
+        return ranked
+            .Select(entry => new LeaderboardEntryDto
             {
-                request.LeagueId,
-                Stage = request.Stage.ToString(),
-                GroupStage = nameof(TournamentStageGroup.GroupStage),
-                KnockoutStage = nameof(TournamentStageGroup.KnockoutStage),
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                InProgressStatus = nameof(RoundStatus.InProgress),
-                CompletedStatus = nameof(RoundStatus.Completed)
-            }
-        );
-
-        return entries.Select(e => new LeaderboardEntryDto
-        {
-            Rank = e.Rank,
-            PlayerName = e.PlayerName,
-            TotalPoints = e.TotalPoints,
-            UserId = e.UserId,
-            SnapshotRank = e.SnapshotRank,
-            IsRoundInProgress = e.IsRoundInProgress
-        });
+                Rank = entry.Rank,
+                PlayerName = PlayerDisplayName.Format(entry.Item.FirstName, entry.Item.LastName),
+                TotalPoints = TotalFor(totals, entry.Item.UserId),
+                UserId = entry.Item.UserId,
+                SnapshotRank = showPreRoundPosition ? preRoundPositions[entry.Item.UserId] : null,
+                IsRoundInProgress = data.HasRoundInProgress
+            })
+            .ToList();
     }
 
-    // SnapshotRank is a RANK() window function here, not a stats column, so it arrives as a bigint and
-    // stays long? - unlike the overall and monthly leaderboards, which read int snapshot columns.
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record StageLeaderboardQueryResult(
-        long Rank,
-        string PlayerName,
-        int? TotalPoints,
-        string UserId,
-        long? SnapshotRank,
-        bool IsRoundInProgress);
+    /// <summary>
+    /// Whether the stage's pre-round position is worth showing: a round in the stage must be under way, and more
+    /// than one of the stage's rounds must have started.
+    /// </summary>
+    /// <remarks>
+    /// The same shape as the monthly leaderboard's rule but scoped to the stage's rounds rather than the month's,
+    /// and kept separate for the same reason the monthly one is kept separate from the overall table's: the three
+    /// look alike written as SQL and answer different questions. Without the second condition the arrow would
+    /// appear during a stage's opening round, where the position before it is no position at all.
+    /// </remarks>
+    private static bool ShouldShowPreRoundPosition(IReadOnlyList<SeasonRoundStageRow> stageRounds)
+    {
+        var anyUnderWay = stageRounds.Any(round => round.Status == RoundStatus.InProgress);
+
+        var startedCount = stageRounds
+            .Count(round => round.Status is RoundStatus.InProgress or RoundStatus.Completed);
+
+        return anyUnderWay && startedCount > 1;
+    }
+
+    private static Dictionary<string, int> TotalsFor(
+        IReadOnlyList<MemberRoundPointsByRoundRow> points,
+        IReadOnlySet<int> roundIds) =>
+        points
+            .Where(row => roundIds.Contains(row.RoundId))
+            .GroupBy(row => row.UserId)
+            .ToDictionary(group => group.Key, group => group.Sum(row => row.BoostedPoints));
+
+    private static int TotalFor(IReadOnlyDictionary<string, int> totals, string userId) =>
+        totals.TryGetValue(userId, out var total) ? total : 0;
 }
