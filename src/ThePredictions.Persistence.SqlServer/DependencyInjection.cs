@@ -67,6 +67,7 @@ public static class DependencyInjection
         services.AddScoped<IBoostCatalogueQuery, BoostCatalogueQuery>();
         services.AddScoped<ILeagueBoostUsageQuery, LeagueBoostUsageQuery>();
         services.AddScoped<IRoundCompletionQuery, RoundCompletionQuery>();
+        services.AddScoped<IEarlierRoundStatusesQuery, EarlierRoundStatusesQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository

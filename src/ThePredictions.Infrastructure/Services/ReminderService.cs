@@ -1,5 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.Users;
 using ThePredictions.Domain.Common.Enumerations;
@@ -7,8 +6,26 @@ using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Infrastructure.Services;
 
-[ExcludeFromCodeCoverage(Justification = "Orchestrates repository reads and the email client; the formatting rules it calls are tested separately.")]
-public class ReminderService(IApplicationReadDbConnection dbConnection) : IReminderService
+/// <summary>
+/// Decides when a prediction reminder is due and who should get one.
+///
+/// No longer carries SQL, and therefore no longer carries <c>[ExcludeFromCodeCoverage]</c>. Its two reads
+/// went to the persistence adapter, and with them went three rules this class had written out in T-SQL
+/// despite the domain already owning all three:
+///
+/// <list type="bullet">
+/// <item>which fixtures a player can still act on - now <c>Match.IsOpenForPrediction</c>, the rule the SQL
+/// predicate said in its own comment that it mirrored;</item>
+/// <item>the next deadline to count down to - the milestone schedule already used
+/// <c>Round.GetNextPredictionDeadline</c> for this while the SQL recomputed the same thing beside it. The
+/// chase email now derives it from the fixtures it is chasing, which is the same answer for every reachable
+/// case and avoids a second status filter (see the note where it is computed);</item>
+/// <item>the round's display name - now <c>Round.GetDisplayNameOrDefault</c>.</item>
+/// </list>
+/// </summary>
+public class ReminderService(
+    IRoundCompletionQuery completionQuery,
+    IEarlierRoundStatusesQuery earlierRoundStatusesQuery) : IReminderService
 {
     public async Task<bool> ShouldSendReminderAsync(Round round, DateTime nowUtc, CancellationToken cancellationToken)
     {
@@ -46,8 +63,13 @@ public class ReminderService(IApplicationReadDbConnection dbConnection) : IRemin
 
         foreach (var targetTime in milestones.OrderByDescending(m => m))
         {
-            if (nowUtc >= targetTime)
-                return lastSent == null || lastSent < targetTime;
+            if (nowUtc < targetTime)
+                continue;
+
+            if (lastSent == null)
+                return true;
+
+            return lastSent.Value < targetTime;
         }
 
         return false;
@@ -55,97 +77,60 @@ public class ReminderService(IApplicationReadDbConnection dbConnection) : IRemin
 
     private async Task<bool> PreviousRoundsCompletedAsync(Round round, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT COUNT(1)
-            FROM [Rounds] r
-            WHERE r.[SeasonId] = @SeasonId
-                AND r.[RoundNumber] < @RoundNumber
-                AND r.[Status] <> @CompletedStatus;";
+        var earlierStatuses = await earlierRoundStatusesQuery.ExecuteAsync(
+            round.SeasonId, round.RoundNumber, cancellationToken);
 
-        var incompletePreviousRounds = await dbConnection.QuerySingleOrDefaultAsync<int>(
-            sql,
-            cancellationToken,
-            new
-            {
-                round.SeasonId,
-                round.RoundNumber,
-                CompletedStatus = nameof(RoundStatus.Completed)
-            });
-
-        return incompletePreviousRounds == 0;
+        return earlierStatuses.All(status => status == RoundStatus.Completed);
     }
 
-    public async Task<List<ChaseUserDto>> GetUsersMissingPredictionsAsync(int roundId, DateTime nowUtc, CancellationToken cancellationToken)
+    public async Task<List<ChaseUserDto>> GetUsersMissingPredictionsAsync(
+        int roundId, DateTime nowUtc, CancellationToken cancellationToken)
     {
-        // Chase any approved member who is still missing a prediction for at least one match they
-        // can act on - a fixture with confirmed teams that is still scheduled (not in progress,
-        // completed or postponed) and has not yet locked. "Locked" mirrors Domain
-        // Match.IsPredictionLocked: the match locks at its own CustomLockTimeUtc when set, otherwise at
-        // the round deadline, so a match with no custom lock still drops out once the round deadline
-        // passes. Tournament rounds reveal their fixtures over time (a knockout round is published once
-        // its first tie has confirmed teams), so a member who predicts the only confirmed match today
-        // should be reminded again at the next milestone once further ties are confirmed. We only
-        // count matches still open for prediction, so a member is never nagged about a fixture they
-        // can no longer change. Kept in lockstep with the identical predicate in
-        // GetRoundCompletionQueryHandler.PredictableMatchPredicate - change both together.
-        const string sql = @"
-            SELECT DISTINCT
-                u.[Email],
-                u.[FirstName],
-                CASE
-                    WHEN LEN(LTRIM(RTRIM(r.[DisplayName]))) > 0 THEN r.[DisplayName]
-                    ELSE 'Round ' + CONVERT(NVARCHAR(MAX), r.[RoundNumber])
-                END AS RoundName,
-                CASE
-                    WHEN r.[DeadlineUtc] > @NowUtc THEN r.[DeadlineUtc]
-                    ELSE COALESCE(
-                        (
-                            SELECT MIN(nm.[CustomLockTimeUtc])
-                            FROM [Matches] nm
-                            WHERE nm.[RoundId] = r.[Id]
-                                AND nm.[HomeTeamId] IS NOT NULL
-                                AND nm.[AwayTeamId] IS NOT NULL
-                                AND nm.[Status] <> @PostponedStatus
-                                AND nm.[CustomLockTimeUtc] > @NowUtc
-                        ),
-                        r.[DeadlineUtc])
-                END AS DeadlineUtc,
-                u.[Id] AS UserId
-            FROM
-                [AspNetUsers] u
-            JOIN
-                [LeagueMembers] lm ON u.[Id] = lm.[UserId]
-            JOIN
-                [Leagues] l ON lm.[LeagueId] = l.[Id]
-            JOIN
-                [Rounds] r ON l.[SeasonId] = r.[SeasonId]
-            WHERE
-                r.[Id] = @RoundId
-                AND lm.[Status] = @ApprovedStatus
-                AND EXISTS (
-                    SELECT 1
-                    FROM [Matches] m
-                    WHERE m.[RoundId] = r.[Id]
-                        AND m.[HomeTeamId] IS NOT NULL
-                        AND m.[AwayTeamId] IS NOT NULL
-                        AND m.[Status] = @ScheduledStatus
-                        AND COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > @NowUtc
-                        AND NOT EXISTS (
-                            SELECT 1 FROM [UserPredictions] up
-                            WHERE up.[MatchId] = m.[Id] AND up.[UserId] = u.[Id]
-                        )
-              );";
+        // Every approved member across every league in the round's season - the same facts the admin
+        // round-completion view reads, which is why they share one port. Passing no league id is what makes
+        // it season-wide.
+        var data = await completionQuery.ExecuteAsync(roundId, leagueId: null, cancellationToken);
+        if (data == null)
+            return [];
 
-        return (await dbConnection.QueryAsync<ChaseUserDto>(
-            sql,
-            cancellationToken,
-            new
-            {
-                RoundId = roundId,
-                NowUtc = nowUtc,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved),
-                ScheduledStatus = nameof(MatchStatus.Scheduled),
-                PostponedStatus = nameof(MatchStatus.Postponed)
-            })).ToList();
+        // Chase a member who is still missing a prediction for at least one fixture they can act on, so
+        // nobody is nagged about a fixture they can no longer change. Tournament rounds reveal their
+        // fixtures over time - a knockout round is published once its first tie has confirmed teams - so a
+        // member who predicted the only confirmed match today should be chased again once more ties are
+        // confirmed. That falls out of asking the question fresh each run.
+        var openFixtures = data.Round.Matches
+            .Where(match => match.IsOpenForPrediction(nowUtc, data.Round.DeadlineUtc))
+            .ToList();
+
+        if (openFixtures.Count == 0)
+            return [];
+
+        var openFixtureIds = openFixtures.Select(match => match.Id).ToHashSet();
+
+        var predictedByUser = data.Predictions
+            .Where(prediction => openFixtureIds.Contains(prediction.MatchId))
+            .GroupBy(prediction => prediction.UserId)
+            .ToDictionary(group => group.Key, group => group.Count());
+
+        var roundName = data.Round.GetDisplayNameOrDefault();
+
+        // The deadline shown in the email is the earliest lock among the fixtures being chased, which for a
+        // normal round is simply the round deadline and for a combined round is that round's later batch.
+        //
+        // Taken from the open fixtures rather than from Round.GetNextPredictionDeadline, which answers a
+        // subtly different question: it skips only postponed fixtures, where IsOpenForPrediction requires
+        // Scheduled. The two disagree about a fixture marked completed while its lock is still ahead -
+        // practically unreachable, but it also left this expression with an unreachable null fallback. Using
+        // the same set the chase is based on removes both the dead branch and the disagreement.
+        var deadlineUtc = openFixtures.Min(match => match.GetEffectiveDeadline(data.Round.DeadlineUtc));
+
+        return data.Participants
+            .Where(participant => Predicted(predictedByUser, participant.UserId) < openFixtureIds.Count)
+            .Select(participant => new ChaseUserDto(
+                participant.Email, participant.FirstName, roundName, deadlineUtc, participant.UserId))
+            .ToList();
     }
+
+    private static int Predicted(IReadOnlyDictionary<string, int> predictedByUser, string userId) =>
+        predictedByUser.TryGetValue(userId, out var count) ? count : 0;
 }
