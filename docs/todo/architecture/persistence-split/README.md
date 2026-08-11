@@ -258,7 +258,7 @@ exist yet.
 Doing the extraction now was still right, and for the reason originally given: every integration test phase
 2 writes would otherwise need rewriting afterwards. The shape now exists, with one real suite proving it.
 
-### A guard applied to one half of an answer but not the other
+### A guard applied to one half of an answer but not the other - and kept that way
 
 The season recap tells a player the highest position they ever held and how many rounds they held it for. Both come
 from the same ranked trajectory, and the old statement guarded them differently:
@@ -268,14 +268,20 @@ FROM RanksPerRound WHERE [UserId] = @UserId AND [Total] > 0          -- finding 
 (SELECT COUNT(*) FROM RanksPerRound WHERE [UserId] = @UserId AND Rnk = ub.BestRank)   -- counting the rounds
 ```
 
-The `Total > 0` guard exists because before anyone has scored, everyone is joint first - so without it a player is
-told they were top of the league after round one, having predicted nothing. It is applied when finding the best
-position and **not** when counting how long it was held. So a completed round in which the entire league scored
-nothing can be counted as a round spent in first place.
+The `Total > 0` guard exists because before anyone has scored, everyone is joint first. Applied to the position but
+not to the count, it means a completed round in which the entire league scored nothing can be counted as a round
+spent in first place.
 
-Reachable but rare: it needs a completed round where every member scored zero. **Preserved exactly**, pinned by a
-test named for the oddity, and flagged here rather than quietly corrected - the numbers on a live page would change.
-**Open question for the owner:** should the count use the same guard as the position?
+**Settled by the owner on 2026-08-11: keep it exactly as it is.** A completed round happened, and whoever was top
+of the league during it was top of the league, so it counts towards a position the player also reached properly.
+The asymmetry is intentional, not inherited.
+
+The guard still applies to *finding* the position, and that half matters just as much: without it, a player who was
+only ever joint first during a scoreless round would be told their highest position was first - and so would every
+other member of the league. Generous counting of a position legitimately reached is a different thing from
+inventing the position.
+
+Both halves are now pinned by tests named for the behaviour rather than for the anomaly.
 
 ### Two similar-looking worst-round rules, deliberately kept apart
 

@@ -508,7 +508,7 @@ public class GetSeasonRecapQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldCountRoundsAtTheHighestPosition_IncludingAnyBeforeThePlayerScored()
+    public async Task Handle_ShouldCountAScorelessRoundAsARoundSpentAtTheHighestPosition()
     {
         // Arrange - nobody scores in round 1 (joint first on nothing), then I lead outright in round 2.
         Given(
@@ -523,9 +523,8 @@ public class GetSeasonRecapQueryHandlerTests
         // Act
         var recap = await HandleAsync();
 
-        // Assert - the old statement applied its "had scored" guard when finding the best position but not when
-        // counting how long it was held, so the scoreless round counts here. Pinned deliberately: this preserves
-        // today's numbers, and is flagged in the plan document as worth a decision.
+        // Assert - a completed round happened and I was top of the league during it, so it counts towards a
+        // position I also reached properly. The owner's decision, and what the old statement already did.
         recap.HighestPosition.Should().Be(1);
         recap.RoundsAtHighestPosition.Should().Be(2);
     }
