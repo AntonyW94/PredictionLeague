@@ -154,6 +154,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Leaderboards/exact-scores** ✅ | Third adopter, and the first with no rank-change arrow: four rules, no snapshot condition. Season-scoped counts pinned by conformance test. |
 | 2 | **Leaderboards/stage** ✅ | Richest yet: seven rules from one statement, two ranks, and the stage classification. Pre-round position is computed here, not cached. |
 | 2 | **Leaderboards/round grid** ✅ | The prediction secrecy rule, and the dense grid the old `CROSS JOIN` manufactured. First rule moved that is about fairness rather than arithmetic. |
+| 2 | **Dashboard/leaderboards tile** ✅ | Seven rules from one windowed CTE. Found a rule already stated twice inside the handler - a SQL `ORDER BY` re-sorted by an identical LINQ chain. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -254,6 +255,29 @@ exist yet.
 
 Doing the extraction now was still right, and for the reason originally given: every integration test phase
 2 writes would otherwise need rewriting afterwards. The shape now exists, with one real suite proving it.
+
+### A rule duplicated between SQL and C# in the same file
+
+`GetLeaderboardsQueryHandler` ordered its leagues with a four-clause `ORDER BY` (round in progress first, then
+season start, then stake descending, then name) and then re-sorted the same rows with an identical LINQ chain a
+few lines later. Only the C# copy decided anything; the SQL half survived because it looked like it had to
+agree with its twin.
+
+Worth naming as its own failure mode. The registers below track rules duplicated across files, but a rule can be
+duplicated across *languages* within one method, and that copy is the harder one to see - a reader who checks the
+SQL finds the rule stated correctly and stops looking.
+
+### Rules now shared rather than restated
+
+Two moved this round, both because the conditions turned out identical rather than merely similar:
+
+- `SeasonCompletion.IsFinished` - `COUNT(completed rounds) >= NumberOfRounds`, written three times in SQL. The
+  `>=` rather than `=` is the part worth stating once: a season carrying more completed rounds than it declares
+  is finished, not broken. Two copies remain (`GetMyLeagues`, `GetLeagueDashboard`).
+- `LeaderboardSnapshot.RankToShow` - whether a cached pre-round position is worth showing. The league's own
+  overall table and the dashboard's tile asked this identically, so the overall handler adopted it here. The
+  monthly and stage leaderboards deliberately do **not**: they need more than one of their rounds started, which
+  is a different question wearing the same clothes.
 
 ### Two visibility rules that are not one rule
 
