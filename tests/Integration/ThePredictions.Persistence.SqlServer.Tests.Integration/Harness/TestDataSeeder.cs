@@ -184,7 +184,8 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         DateTime deadlineUtc,
         RoundStatus status = RoundStatus.Published,
         DateTime? startDateUtc = null,
-        DateTime? completedDateUtc = null)
+        DateTime? completedDateUtc = null,
+        string? displayName = null)
     {
         const string sql = @"
             INSERT INTO [Rounds]
@@ -213,7 +214,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         {
             SeasonId = seasonId,
             RoundNumber = roundNumber,
-            DisplayName = $"Round {roundNumber}",
+            DisplayName = displayName ?? $"Round {roundNumber}",
             Status = status.ToString(),
             StartDateUtc = startDateUtc ?? deadlineUtc.AddDays(-1),
             DeadlineUtc = deadlineUtc,

@@ -170,6 +170,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/active rounds** ✅ | A domain rule that disagreed with its own SQL twin, and with its own sibling. Marked "Dashboard is done" here, wrongly - `GetMatchesForRoundQueryHandler` still held SQL, and moved with Admin/Rounds below. |
 | 2 | **Badges** ✅ | **Badges is done.** Six statements to three reads, two gap-and-island streak queries to one `foreach`, and two screens that disagreed about the same player's position now reading one set of standings. |
 | 2 | **Admin/Rounds + round fixtures** ✅ | A CTE written twice and selected never, and the near-twin fixture statement that was still outstanding from Dashboard. |
+| 2 | **Admin/Rounds/results digest** ✅ | Six tables and two CTEs into four reads. A top-scorer tie-break that disagreed with every leaderboard, and the one read on the site that skipped the round-naming rule. |
 | 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
 | Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
 
@@ -1055,6 +1056,51 @@ editor. Same twenty columns, same two left joins to `[Teams]`, same DTO - and th
 The administrator's copy also never selected `CustomLockTimeUtc`, so the per-fixture lock time could not be shown on
 the screen that exists to set it. It is in the shared read now.
 
+### A tie-break that disagreed with every leaderboard on the site
+
+The round-results email names each league's top scorer, chosen by
+`ROW_NUMBER() OVER (PARTITION BY LeagueId ORDER BY BoostedPoints DESC, u.[FirstName])`. Two problems in one clause.
+The tie-break is on **first name only**, which cannot separate two players who share one - so which of them the email
+named came down to whatever order the rows happened to arrive in. And it is a different tie-break from the one
+`Domain.Services.Ranking` applies everywhere else, which is the full name, precisely because two players can share a
+first name and a display name both. The league's own table and the email about it could therefore put different players
+at the top of the same round.
+
+It now goes through `Ranking.ByDescending` like everything else. Joint winners still yield one name, because the email
+has one line for it - but it is the same name the league's table shows.
+
+### The read that skipped a rule every other screen applied
+
+`Round.GetDisplayNameOrDefault` has existed since the Rounds phase, and the digest read ignored it twice: once for the
+round being reported on and once for the round it points forward to, both selected raw and dropped straight into an
+email merge field. Checked on dev before claiming a bug: all 83 rounds carry a name, none blank, so this was a **gap
+rather than a live fault** - the kind that surfaces as one blank email months after the read was written, on the first
+round somebody creates without naming it.
+
+Worth recording as a pattern: a rule collapsed into C# is not finished being collapsed. Each new read is another chance
+to not use it, and nothing fails when it doesn't. `Round.DisplayNameOrDefault` is now the static form for the read paths
+that hold columns rather than an entity, alongside `Match.IsPostponedStatus` from the previous PR - the same shape twice
+in two days, which suggests the entity-only form is the thing that invites the copy.
+
+### An email that could have gone to someone who never played
+
+The digest's recipient list was an `EXISTS` on the player's predictions for the round, buried in the `WHERE` clause of a
+six-table join. Everybody in a round is scored, including the players who forgot to predict - so without that clause the
+email tells someone they got nothing right in a round they never entered. It is now `HasTakenPart`, one line with a name,
+and a test that says what it is for.
+
+Two more conditions were doing the same kind of work as inner joins: a recipient needs at least one league in the
+season, and at least one league whose points for the round have actually been worked out. The second is the state a
+league sits in between a round finishing and the points being computed, where a row of zeroes would read as a bad round
+rather than an unfinished calculation.
+
+### A test fixture that made a rule untestable
+
+The conformance seeder wrote `DisplayName = "Round {n}"` into every round it created, so no test could arrange the
+unnamed round the naming rule exists for. Fixing that meant giving `AddRoundAsync` a `displayName` parameter - and the
+first attempt defaulted it to null, which failed 153 tests at once because the column is `NOT NULL`. The lesson is the
+seeder's: it stands in for the write path, so its defaults have to be states the schema actually permits.
+
 ### Rules found duplicated so far
 
 Each of these is one rule with two implementations and nothing linking them. The split is what
@@ -1068,6 +1114,8 @@ collapses each to one.
 | Boost secrecy | SQL only, but reads `GETUTCDATE()` instead of `IDateTimeProvider` | Integration tested 2026-08-10; becomes a clock-injected C# filter in phase "Boosts" |
 | Player display name (`FirstName + ' ' + LEFT(LastName, 1)`) | **17 files originally, 2 left** | `Domain.Services.PlayerDisplayName` added 2026-08-10 with the Boosts batch, which adopted it. As of the Badges batch **two SQL copies remain**, in `PrizeEvaluationInputsReader` and `GetRoundDigestQueryHandler`, both in areas still to come. The C# version also drops the trailing space the SQL produced for an empty surname. |
 | Where a player stands on the badges table | `GetBadgeLeaderboardQueryHandler` (C#, row-numbered) + `GetBadgesTileQueryHandler` (SQL, `COUNT(*) + 1`) | **Fully collapsed with the Badges batch.** The two disagreed on real data - joint players shared a position on the tile and did not on the page - and one of them also awarded first place to accounts that were not on the table. Both now read `BadgeStandings`. |
+| Top scorer of a round in a league | `GetRoundDigestQueryHandler` SQL (`ORDER BY BoostedPoints DESC, FirstName`) vs `Ranking` everywhere else | **Collapsed with the digest batch.** The SQL tie-break could not separate two players sharing a first name, and disagreed with the full-name tie-break every other leaderboard uses, so a league's table and the email about it could name different winners. |
+| Round display name (`Round.GetDisplayNameOrDefault`) | Two more reads found ignoring it | **Both fixed with the digest batch**, and `Round.DisplayNameOrDefault` added as the static form so a read holding columns has no excuse. Verified on dev that no round is currently unnamed, so this was a gap rather than a live fault. |
 | Longest run of rounds with an exact score | Two gap-and-island SQL statements, one lifetime and one per season | **Fully collapsed** to `Domain.Services.Badges.Streak`. The two differed only in scope, which four CTEs of window functions made impossible to see. |
 
 ## Open question, not yet decided

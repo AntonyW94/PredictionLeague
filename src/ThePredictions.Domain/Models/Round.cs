@@ -170,8 +170,19 @@ public class Round
     /// in both GetRoundCompletionQueryHandler and ReminderService - the second rule those two files
     /// duplicated, alongside the predictable-fixture predicate.
     /// </remarks>
-    public string GetDisplayNameOrDefault() =>
-        string.IsNullOrWhiteSpace(DisplayName) ? $"Round {RoundNumber}" : DisplayName;
+    public string GetDisplayNameOrDefault() => DisplayNameOrDefault(DisplayName, RoundNumber);
+
+    /// <summary>
+    /// The same rule for a round held as columns rather than as an entity, so the read paths that never build one
+    /// still name a round the way the rest of the site does.
+    /// </summary>
+    /// <remarks>
+    /// Two email reads selected <c>DisplayName</c> raw and put it straight into a merge field, skipping this guard while
+    /// every other screen applied it. No round in the database is currently unnamed, so that was a gap rather than a live
+    /// fault - but it is the sort that surfaces as one blank email long after the read was written.
+    /// </remarks>
+    public static string DisplayNameOrDefault(string? displayName, int roundNumber) =>
+        string.IsNullOrWhiteSpace(displayName) ? $"Round {roundNumber}" : displayName;
 
     /// <summary>
     /// The earliest moment at which a fixture in this round will stop accepting predictions, or null when

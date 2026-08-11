@@ -26,6 +26,24 @@ public class RoundDisplayNameTests
         Round(displayName, roundNumber: 12).GetDisplayNameOrDefault().Should().Be("Round 12");
     }
 
+    [Fact]
+    public void DisplayNameOrDefault_ShouldUseTheDisplayName_WhenOneIsSet()
+    {
+        ThePredictions.Domain.Models.Round.DisplayNameOrDefault("Quarter Finals", roundNumber: 7)
+            .Should().Be("Quarter Finals");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void DisplayNameOrDefault_ShouldFallBackToTheRoundNumber_WhenThereIsNoDisplayName(string? displayName)
+    {
+        // The form the read paths use, which hold a round as columns and never build one. Null is included because the
+        // column allows it and the entity's own property does not, so only this form can be handed one.
+        ThePredictions.Domain.Models.Round.DisplayNameOrDefault(displayName, roundNumber: 12).Should().Be("Round 12");
+    }
+
     private static Round Round(string displayName, int roundNumber) =>
         new(
             id: 1, seasonId: 1, roundNumber: roundNumber, displayName: displayName,

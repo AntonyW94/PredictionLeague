@@ -108,6 +108,7 @@ public static class DependencyInjection
         services.AddScoped<IRoundMatchesQuery, RoundMatchesQuery>();
         services.AddScoped<IAdminSeasonRoundsQuery, AdminSeasonRoundsQuery>();
         services.AddScoped<IAdminRoundQuery, AdminRoundQuery>();
+        services.AddScoped<IRoundDigestQuery, RoundDigestQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository
