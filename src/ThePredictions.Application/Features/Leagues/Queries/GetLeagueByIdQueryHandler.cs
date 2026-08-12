@@ -32,7 +32,7 @@ public class GetLeagueByIdQueryHandler(
             league.Id,
             league.Name,
             league.SeasonName,
-            league.TotalMembershipCount,
+            league.ApprovedMemberCount,
             league.Price,
             league.EntryCode ?? PublicEntryCode,
             league.EntryDeadlineUtc,

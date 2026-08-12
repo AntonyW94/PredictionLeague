@@ -180,7 +180,7 @@ public class GetMyLeaguesQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldLabelTheRoundByItsNumber_EvenWhenItHasAName()
+    public async Task Handle_ShouldLabelTheRoundByItsName_WhereItHasOne()
     {
         // Arrange
         Given(
@@ -190,8 +190,24 @@ public class GetMyLeaguesQueryHandlerTests
         // Act
         var tile = (await HandleAsync()).Single();
 
-        // Assert - preserved from the old SQL, which ignored DisplayName. Flagged in the plan as a question.
-        tile.CurrentRound.Should().Be("Round 1");
+        // Assert - the same name the rest of the site shows. This tile ignored it and always said "Round N", so a round
+        // called "Semi Finals" read as "Round 1" here and as "Semi Finals" everywhere else.
+        tile.CurrentRound.Should().Be("Semi Finals");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldLabelTheRoundByItsNumber_WhenNobodyHasNamedIt()
+    {
+        // Arrange - the fallback, which is what an ordinary league round has.
+        Given(
+            leagues: [League()],
+            rounds: [Round(7, RoundStatus.InProgress, displayName: string.Empty)]);
+
+        // Act
+        var tile = (await HandleAsync()).Single();
+
+        // Assert
+        tile.CurrentRound.Should().Be("Round 7");
     }
 
     #endregion

@@ -172,7 +172,7 @@ public class GetLeagueByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldCountEveryMembershipIncludingRequests()
+    public async Task Handle_ShouldCountOnlyApprovedMembers()
     {
         // Arrange - eight memberships in total, of which five are approved.
         Given(Row(totalMembershipCount: 8, approvedMemberCount: 5));
@@ -180,9 +180,9 @@ public class GetLeagueByIdQueryHandlerTests
         // Act
         var league = await HandleAsync();
 
-        // Assert - preserved from the old COUNT over an unfiltered join, and the odd one out: every other member count
-        // on the site counts approved members only. Flagged in the plan document as a question for the owner.
-        league.MemberCount.Should().Be(8);
+        // Assert - the same population every other member count on the site uses. This page counted every membership
+        // row, so a league with five members and three outstanding or rejected requests reported eight.
+        league.MemberCount.Should().Be(5);
     }
 
     private void Given(LeagueDetailRow row)
