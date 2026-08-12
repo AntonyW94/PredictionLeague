@@ -11,4 +11,5 @@ public record AvailableLeagueDto(
     DateTime EntryDeadlineUtc,
     int MemberCount,
     decimal EstPot,
-    bool IsPrivate = false);
+    bool IsPrivate = false,
+    bool RequiresSeasonPass = false);

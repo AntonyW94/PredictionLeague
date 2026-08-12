@@ -259,7 +259,7 @@ public class DashboardStateServiceTests
     [Fact]
     public async Task JoinPublicLeagueAsync_ShouldRefreshEverythingAffected_OnSuccess()
     {
-        _leagueService.JoinPublicLeagueAsync(5).Returns((true, (string?)null));
+        _leagueService.JoinPublicLeagueAsync(5).Returns((true, (string?)null, false));
 
         await _service.JoinPublicLeagueAsync(5);
 
@@ -273,11 +273,25 @@ public class DashboardStateServiceTests
     [Fact]
     public async Task JoinPublicLeagueAsync_ShouldSurfaceTheReason_WhenTheJoinIsRefused()
     {
-        _leagueService.JoinPublicLeagueAsync(5).Returns((false, "That league is full."));
+        _leagueService.JoinPublicLeagueAsync(5).Returns((false, "That league is full.", false));
 
         await _service.JoinPublicLeagueAsync(5);
 
         _service.AvailableLeaguesErrorMessage.Should().Be("That league is full.");
+        await _leagueService.DidNotReceive().GetMyLeaguesAsync();
+    }
+
+    [Fact]
+    public async Task JoinPublicLeagueAsync_ShouldSayWhatToDoNext_WhenASeasonPassIsWhatIsMissing()
+    {
+        // Not a mistake the player made: leagues are now shown whether or not they have bought into the season, so this
+        // is the first point at which the pass comes up and it has to read as an instruction rather than a refusal.
+        _leagueService.JoinPublicLeagueAsync(5)
+            .Returns((false, "A Season Pass is required for this season.", true));
+
+        await _service.JoinPublicLeagueAsync(5);
+
+        _service.AvailableLeaguesErrorMessage.Should().Be(DashboardStateService.NeedsSeasonPassMessage);
         await _leagueService.DidNotReceive().GetMyLeaguesAsync();
     }
 
