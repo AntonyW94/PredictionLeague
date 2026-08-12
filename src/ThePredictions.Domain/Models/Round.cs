@@ -131,12 +131,25 @@ public class Round
     /// combined round (for example World Cup semi-finals plus the final and third-place playoff) stay open
     /// for the later matches after the round deadline that locked the earlier ones has passed.
     /// </summary>
+    /// <remarks>
+    /// A postponed fixture does not hold the round open. It cannot be predicted, so a late custom lock on one
+    /// would keep the round accepting predictions for matches that have all locked.
+    ///
+    /// This used to count every match, which disagreed with two other answers to the same question: its own
+    /// sibling <see cref="GetNextPredictionDeadline"/>, which filters on <see cref="Match.IsOpenForPrediction"/>,
+    /// and the dashboard read, whose SQL had <c>Status &lt;&gt; @Postponed</c> inside its <c>MAX</c>. Only a
+    /// fixture carrying both a custom lock later than the round deadline and the postponed status could tell the
+    /// three apart, which in practice means a tournament fixture called off after its lock was set.
+    /// </remarks>
     public DateTime GetLatestPredictionDeadline()
     {
         var latest = DeadlineUtc;
 
         foreach (var match in _matches)
         {
+            if (match.IsPostponed)
+                continue;
+
             var effectiveDeadline = match.GetEffectiveDeadline(DeadlineUtc);
 
             if (effectiveDeadline > latest)

@@ -55,6 +55,33 @@ public class PredictionDomainServiceTests
             lastReminderSentUtc: null,
             matches: new List<Match> { CreateConfirmedMatch(1, 1) });
 
+    /// <summary>A fixture that has been called off, and whose lock time has not yet passed.</summary>
+    private Match CreatePostponedMatch(int id, int roundId) =>
+        new(id: id, roundId: roundId, homeTeamId: 1, awayTeamId: 2,
+            matchDateTimeUtc: _dateTimeProvider.UtcNow.AddDays(5),
+            customLockTimeUtc: _dateTimeProvider.UtcNow.AddDays(4),
+            status: MatchStatus.Postponed, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, matchNumber: null, placeholderHomeName: null, placeholderAwayName: null, apiRoundName: null);
+
+    #region SubmitPredictions - a fixture that has been called off
+
+    [Fact]
+    public void SubmitPredictions_ShouldNotAcceptAPredictionForAPostponedMatch()
+    {
+        // The filter was "teams confirmed and not yet locked", which left out "still scheduled" - so a called-off fixture
+        // whose lock time had not passed could still take a prediction. The prediction page does not offer postponed
+        // fixtures, but the endpoint takes match ids from the caller.
+        var round = CreateRoundWithFutureDeadline([CreateConfirmedMatch(1, 1), CreatePostponedMatch(2, 1)]);
+
+        // Act
+        var predictions = _sut.SubmitPredictions(round, "user-1", [(1, 2, 1), (2, 3, 0)]);
+
+        // Assert
+        predictions.Select(prediction => prediction.MatchId).Should().Equal(1);
+    }
+
+    #endregion
+
     #region SubmitPredictions — Happy Path
 
     [Fact]

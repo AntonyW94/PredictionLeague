@@ -985,6 +985,57 @@ public class RoundTests
     }
 
     [Fact]
+    public void GetLatestPredictionDeadline_ShouldIgnoreAPostponedMatchesLaterCustomLock()
+    {
+        // A called-off fixture cannot be predicted, so it must not hold the round open. This is the only shape where the
+        // three answers to "when does this round close" could differ: a fixture carrying both a custom lock later than the
+        // round deadline and the postponed status.
+        var deadline = new DateTime(2026, 7, 14, 18, 30, 0, DateTimeKind.Utc);
+        var round = CreateRoundWithPostponedLateLock(deadline, postponedLockUtc: deadline.AddDays(5));
+
+        // Act
+        var result = round.GetLatestPredictionDeadline();
+
+        // Assert
+        result.Should().Be(deadline);
+    }
+
+    [Fact]
+    public void IsClosedForPredictions_ShouldReturnTrue_WhenOnlyAPostponedMatchWouldStillBeOpen()
+    {
+        // Arrange - the consequence of the above: the round is finished with players, so the reminder job stops chasing it
+        // and nothing more can be submitted against it.
+        var deadline = _dateTimeProvider.UtcNow.AddHours(-1);
+        var round = CreateRoundWithPostponedLateLock(deadline, postponedLockUtc: _dateTimeProvider.UtcNow.AddDays(5));
+
+        // Act
+        var result = round.IsClosedForPredictions(_dateTimeProvider.UtcNow);
+
+        // Assert
+        result.Should().BeTrue();
+    }
+
+    /// <summary>A round whose only late-locking fixture has been called off.</summary>
+    private static Round CreateRoundWithPostponedLateLock(DateTime deadlineUtc, DateTime postponedLockUtc)
+    {
+        var scheduled = CreateMatchWithCustomLock(1, deadlineUtc.AddHours(1), null);
+
+        var postponed = new Match(
+            id: 2, roundId: 1, homeTeamId: 1, awayTeamId: 2,
+            matchDateTimeUtc: postponedLockUtc.AddHours(1),
+            customLockTimeUtc: postponedLockUtc,
+            status: MatchStatus.Postponed, actualHomeTeamScore: null, actualAwayTeamScore: null,
+            externalId: null, matchNumber: null, placeholderHomeName: null, placeholderAwayName: null,
+            apiRoundName: null);
+
+        return new Round(
+            id: 1, seasonId: 1, roundNumber: 1, displayName: "Finals",
+            startDateUtc: deadlineUtc.AddHours(2), deadlineUtc: deadlineUtc,
+            status: RoundStatus.Published, apiRoundName: null, lastReminderSentUtc: null,
+            matches: [scheduled, postponed]);
+    }
+
+    [Fact]
     public void IsClosedForPredictions_ShouldReturnTrue_WhenLatestDeadlineHasPassed()
     {
         // Arrange

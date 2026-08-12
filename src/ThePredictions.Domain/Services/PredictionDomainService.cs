@@ -22,11 +22,14 @@ public class PredictionDomainService(IDateTimeProvider dateTimeProvider)
 
         var matchesById = round.Matches.ToDictionary(m => m.Id);
 
+        // IsOpenForPrediction, not the two halves of it: teams confirmed and not yet locked was the filter here, which
+        // left out "still scheduled" - so a fixture that had been called off could take a prediction as long as its lock
+        // time had not passed. Unreachable through the prediction page, which does not show postponed fixtures, but the
+        // endpoint takes match ids from the caller.
         var predictions = predictedScores
             .Where(p =>
                 matchesById.TryGetValue(p.MatchId, out var match) &&
-                match.AreTeamsConfirmed &&
-                !match.IsPredictionLocked(utcNow, round.DeadlineUtc))
+                match.IsOpenForPrediction(utcNow, round.DeadlineUtc))
             .Select(p => UserPrediction.Create(
                 userId,
                 p.MatchId,
