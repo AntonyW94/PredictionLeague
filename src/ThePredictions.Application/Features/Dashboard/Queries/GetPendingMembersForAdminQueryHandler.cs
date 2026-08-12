@@ -65,19 +65,14 @@ public class GetPendingMembersForAdminQueryHandler(
     /// Whether a league is still taking entries, and so still worth an administrator's attention.
     /// </summary>
     /// <remarks>
-    /// Deliberately <b>not</b> <c>LeagueEntry.IsOpen</c>, which the league-discovery queries use. That one is strictly
-    /// greater than: a league whose deadline is exactly now is no longer joinable. This one was written
-    /// <c>EntryDeadlineUtc &gt;= GETUTCDATE()</c>, so at that same instant the administrator still sees it.
+    /// The same boundary as the player's, which is what <c>LeagueEntry.IsOpen</c> states: a league whose deadline is exactly
+    /// now is closed. This read was written <c>EntryDeadlineUtc &gt;= GETUTCDATE()</c>, so for one tick an administrator saw a
+    /// league nobody could still join. Aligned deliberately - the difference was incidental, and two answers to "still open"
+    /// is one more than the question has.
     ///
-    /// One tick apart, and almost certainly incidental rather than intended - preserved rather than aligned, and recorded in
-    /// the plan document. A league with no deadline at all is excluded either way, which the old <c>&gt;=</c> did through
-    /// SQL's treatment of nulls and this does by saying so.
+    /// A league with no deadline at all is excluded either way, which the old <c>&gt;=</c> did through SQL's treatment of
+    /// nulls and this does by saying so.
     /// </remarks>
-    private static bool IsStillTakingEntries(AdministeredLeagueRow league, DateTime utcNow)
-    {
-        if (league.EntryDeadlineUtc is not { } deadline)
-            return false;
-
-        return deadline >= utcNow;
-    }
+    private static bool IsStillTakingEntries(AdministeredLeagueRow league, DateTime utcNow) =>
+        LeagueEntry.IsOpen(league.EntryDeadlineUtc, utcNow);
 }

@@ -11,15 +11,6 @@ namespace ThePredictions.Application.Features.Dashboard.Queries;
 public class GetPendingRequestsQueryHandler(IMyLeagueRequestsQuery requestsQuery)
     : IRequestHandler<GetPendingRequestsQuery, IEnumerable<LeagueRequestDto>>
 {
-    /// <summary>
-    /// Shown for a request whose league has no entry deadline set.
-    /// </summary>
-    /// <remarks>
-    /// The same sentinel the league settings and prize pages use, and for the same reason: the contract's property is not
-    /// nullable. What is different here is that this read has no deadline filter, so a league without one would previously
-    /// have failed to materialise rather than merely showing an odd date - see the plan document.
-    /// </remarks>
-    private static readonly DateTime NoEntryDeadline = new(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     public async Task<IEnumerable<LeagueRequestDto>> Handle(
         GetPendingRequestsQuery request,
@@ -36,7 +27,7 @@ public class GetPendingRequestsQueryHandler(IMyLeagueRequestsQuery requestsQuery
                 row.SeasonName,
                 row.Status,
                 row.JoinedAtUtc,
-                row.EntryDeadlineUtc ?? NoEntryDeadline,
+                row.EntryDeadlineUtc,
                 PlayerDisplayName.Format(row.AdminFirstName, row.AdminLastName),
                 row.MemberCount,
                 row.Price,

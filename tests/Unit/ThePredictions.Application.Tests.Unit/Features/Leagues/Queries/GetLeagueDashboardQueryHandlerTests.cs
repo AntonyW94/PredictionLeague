@@ -255,17 +255,30 @@ public class GetLeagueDashboardQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldListEveryRound_IncludingDrafts()
+    public async Task Handle_ShouldNotListARoundThatHasNotBeenPublished()
     {
-        // Arrange
+        // A draft is a round its administrator is still preparing, and no other screen shows one to players. This read
+        // used to return them, so an unpublished round appeared on every member's dashboard.
         Given(rounds: [Round(1, status: RoundStatus.Draft), Round(2, status: RoundStatus.Completed)]);
 
         // Act
         var dashboard = await HandleAsync(isAdmin: true);
 
-        // Assert - this is the administrator's view of the league. The dashboard's round picker fills the same field
-        // from the same rows but keeps only published and completed ones.
-        dashboard.ViewableRounds.Should().HaveCount(2);
+        // Assert
+        dashboard.ViewableRounds.Select(round => round.RoundNumber).Should().Equal(2);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldListTheRoundBeingPlayed()
+    {
+        // Arrange - in play and finished are both selectable; it is only the unpublished ones that are held back.
+        Given(rounds: [Round(1, status: RoundStatus.InProgress), Round(2, status: RoundStatus.Published)]);
+
+        // Act
+        var dashboard = await HandleAsync(isAdmin: true);
+
+        // Assert
+        dashboard.ViewableRounds.Select(round => round.RoundNumber).Should().Equal(2, 1);
     }
 
     [Fact]

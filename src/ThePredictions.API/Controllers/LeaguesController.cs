@@ -193,22 +193,6 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         return Ok(await mediator.Send(query, cancellationToken));
     }
 
-    [HttpGet("{leagueId:int}/rounds-for-dashboard")]
-    [SwaggerOperation(
-        Summary = "Get rounds for league dashboard",
-        Description = "Returns a summary of rounds for the league dashboard including completed, in-progress, and upcoming rounds with basic stats.")]
-    [SwaggerResponse(200, "Rounds retrieved successfully", typeof(IEnumerable<RoundDto>))]
-    [SwaggerResponse(401, "Not authenticated")]
-    [SwaggerResponse(403, "Not a member of this league")]
-    [SwaggerResponse(404, "League not found")]
-    public async Task<ActionResult<IEnumerable<RoundDto>>> GetLeagueRoundsForDashboardAsync(
-        [SwaggerParameter("League identifier")] int leagueId,
-        CancellationToken cancellationToken)
-    {
-        var query = new GetLeagueRoundsForDashboardQuery(leagueId, CurrentUserId);
-        return Ok(await mediator.Send(query, cancellationToken));
-    }
-
     [HttpGet("{leagueId:int}/dashboard-data")]
     [SwaggerOperation(
         Summary = "Get comprehensive league dashboard data",

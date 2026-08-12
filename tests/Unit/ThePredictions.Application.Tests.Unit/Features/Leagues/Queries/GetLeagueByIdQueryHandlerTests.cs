@@ -126,7 +126,7 @@ public class GetLeagueByIdQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldReportADateIn1900_WhenTheLeagueHasNoEntryDeadline()
+    public async Task Handle_ShouldReportNoEntryDeadline_WhenTheLeagueHasNotSetOne()
     {
         // Arrange
         Given(Row(entryDeadlineUtc: null));
@@ -134,9 +134,9 @@ public class GetLeagueByIdQueryHandlerTests
         // Act
         var league = await HandleAsync();
 
-        // Assert - a sentinel meaning "never", preserved from the old ISNULL(..., '1900-01-01') because the contract's
-        // property is not nullable and the pages that format it would need changing. Flagged in the plan document.
-        league.EntryDeadlineUtc.Should().Be(new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        // Assert - "no deadline" rather than the 1st of January 1900. The contract already allowed null; this handler was
+        // still overriding it with the sentinel the old ISNULL produced, so the page showed a date nobody set.
+        league.EntryDeadlineUtc.Should().BeNull();
     }
 
     [Theory]

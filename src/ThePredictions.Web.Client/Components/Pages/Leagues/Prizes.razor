@@ -24,7 +24,9 @@
         }
         else if (_pageData != null)
         {
-            var entriesOpen = DateTime.UtcNow < _pageData.EntryDeadlineUtc;
+            // A league with no entry deadline is treated as closed, the same answer the join and discovery
+            // screens give: entry closes at the deadline, and one that was never set never opens.
+            var entriesOpen = _pageData.EntryDeadlineUtc is { } entryDeadline && DateTime.UtcNow < entryDeadline;
 
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <button type="button" class="btn red-button d-flex align-items-center" @onclick="Back">
@@ -146,7 +148,16 @@
                     <div class="prize-info-grid">
                         <div class="prize-info-item">
                             <span class="prize-info-label">Entry Deadline</span>
-                            <span class="prize-info-value"><LocalTime UtcDate="@_pageData.EntryDeadlineUtc"/></span>
+                            <span class="prize-info-value">
+                                @if (_pageData.EntryDeadlineUtc is { } deadline)
+                                {
+                                    <LocalTime UtcDate="@deadline"/>
+                                }
+                                else
+                                {
+                                    <text>Not set</text>
+                                }
+                            </span>
                         </div>
                         <div class="prize-info-item">
                             <span class="prize-info-label">@(entriesOpen ? "Current Prize Fund" : "Final Prize Fund")</span>
