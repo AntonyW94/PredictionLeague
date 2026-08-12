@@ -26,6 +26,16 @@ internal static class RoundMatches
             .OrderBy(match => match.MatchDateTimeUtc)
             .ThenBy(match => match.HomeTeamName, StringComparer.InvariantCultureIgnoreCase);
 
+    /// <summary>
+    /// Whether both teams in a fixture are known yet - the row-level twin of <see cref="Match.AreTeamsConfirmed"/>.
+    /// </summary>
+    /// <remarks>
+    /// A knockout tie is scheduled before its teams are decided, and until then it carries two placeholder names instead. The
+    /// prediction page uses this to show a fixture that cannot be predicted yet.
+    /// </remarks>
+    public static bool AreTeamsConfirmed(RoundMatchRow match) =>
+        match.HomeTeamId.HasValue && match.AwayTeamId.HasValue;
+
     /// <summary>Whether a fixture has been called off, in the one place that decides it.</summary>
     /// <remarks>
     /// The row-level twin of <see cref="Match.IsPostponed"/>, for the read paths that hold rows rather than entities.
