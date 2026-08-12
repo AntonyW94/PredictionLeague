@@ -132,7 +132,8 @@
 
 @if (_showJoinModal)
 {
-    <JoinPrivateLeagueModal @key="_joinModalLeagueId" LeagueId="_joinModalLeagueId" OnClose="HideJoinModalAsync" />
+    <JoinPrivateLeagueModal @key="@($"{_joinModalLeagueId}-{_joinModalEntryCode}")" LeagueId="_joinModalLeagueId"
+                            EntryCode="_joinModalEntryCode" OnClose="HideJoinModalAsync" />
 }
 
 @code {
@@ -142,11 +143,21 @@
     private bool _showTwoItems;
     private bool _showJoinModal;
     private int? _joinModalLeagueId;
+    private string? _joinModalEntryCode;
 
     protected override async Task OnInitializedAsync()
     {
         DashboardState.OnStateChange += StateHasChanged;
         _showTwoItems = await BrowserService.IsTabletOrAbove();
+
+        // Back from buying a Season Pass: pick up the join they were refused and reopen it at the confirm step. Taken
+        // rather than read, so returning to the dashboard later does not reopen a join they have since abandoned.
+        if (DashboardState.TakePendingJoin() is { } pendingJoin)
+        {
+            _joinModalLeagueId = pendingJoin.LeagueId;
+            _joinModalEntryCode = pendingJoin.EntryCode;
+            _showJoinModal = true;
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -235,6 +246,7 @@
     private async Task ShowJoinModalAsync(int? leagueId)
     {
         _joinModalLeagueId = leagueId;
+        _joinModalEntryCode = null;
         _showJoinModal = true;
         await Task.Delay(50);
         await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "joinPrivateLeagueModal");

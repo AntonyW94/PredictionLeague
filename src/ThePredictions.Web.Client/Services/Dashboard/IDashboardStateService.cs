@@ -55,6 +55,20 @@ public interface IDashboardStateService
     Task RejectMemberAsync(int leagueId, string userId);
 
     Task JoinPublicLeagueAsync(int leagueId);
+
+    /// <summary>
+    /// The league somebody was heading for when they were told they needed a Season Pass, if there is one.
+    /// </summary>
+    PendingJoin? PendingJoin { get; }
+
+    /// <summary>Remembers where they were heading, so buying a pass can offer to take them back.</summary>
+    void RememberPendingJoin(PendingJoin pendingJoin);
+
+    /// <summary>
+    /// Returns what was remembered and forgets it, so the offer is made once. Coming back to the dashboard a second time
+    /// must not reopen a join they have since abandoned.
+    /// </summary>
+    PendingJoin? TakePendingJoin();
     Task CancelJoinRequestAsync(int leagueId);
     Task DismissAlertAsync(int leagueId);
     Task SetLeagueArchivedAsync(int leagueId, bool isArchived);
