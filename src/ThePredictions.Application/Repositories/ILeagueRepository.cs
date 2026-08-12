@@ -21,6 +21,19 @@ public interface ILeagueRepository
     Task<IEnumerable<int>> GetLeagueIdsForSeasonAsync(int seasonId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Every (league, player) pair that has a tally for this round, with the points the league pays for each kind of
+    /// result.
+    /// </summary>
+    /// <remarks>
+    /// Choosing the pairs is fetching: every league running the round's season, and only members it has approved. Turning
+    /// a pair into points is <c>Domain.Services.LeagueScoring</c>, which is why the counts and the league's settings come
+    /// back rather than a total.
+    /// </remarks>
+    Task<IEnumerable<LeagueRoundScoringInput>> GetLeagueRoundScoringInputsAsync(
+        int roundId,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Leagues whose entry deadline has passed, that have a prize scheme, but whose prizes have not
     /// yet been frozen into <see cref="LeaguePrizeSetting"/> rows.
     /// </summary>
@@ -31,7 +44,14 @@ public interface ILeagueRepository
     #region Update
 
     Task UpdateAsync(League league, CancellationToken cancellationToken);
-    Task UpdateLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken);
+    /// <summary>
+    /// Stores each player's points for a round in each of their leagues. Existing rows are updated and new ones added;
+    /// nothing is removed.
+    /// </summary>
+    Task UpdateLeagueRoundResultsAsync(
+        int roundId,
+        IEnumerable<LeagueRoundScore> scores,
+        CancellationToken cancellationToken);
     Task UpdateLeagueRoundBoostsAsync(IEnumerable<LeagueRoundBoostUpdate> updates, CancellationToken cancellationToken);
 
     /// <summary>

@@ -106,7 +106,6 @@ public class RecalculateSeasonStatsCommandHandlerTests
         Received.InOrder(() =>
         {
             _roundResultsService.RecalculateAsync(Arg.Is<Round>(round => round.Id == 1), Arg.Any<CancellationToken>());
-            _leagues.UpdateLeagueRoundResultsAsync(1, Arg.Any<CancellationToken>());
             _boostService.ApplyRoundBoostsAsync(1, Arg.Any<CancellationToken>());
         });
     }
