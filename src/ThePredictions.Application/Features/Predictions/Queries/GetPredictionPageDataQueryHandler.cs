@@ -1,222 +1,121 @@
 using MediatR;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Contracts.Dashboard;
 using ThePredictions.Contracts.Predictions;
 using ThePredictions.Domain.Common.Enumerations;
-using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Application.Features.Predictions.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetPredictionPageDataQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetPredictionPageDataQuery, PredictionPageDto?>
+/// <summary>
+/// The prediction form for one round: its fixtures, whatever the player has entered so far, and the leagues their entry
+/// counts towards.
+/// </summary>
+public class GetPredictionPageDataQueryHandler(
+    IRoundHeaderQuery roundHeaderQuery,
+    IRoundMatchesQuery roundMatchesQuery,
+    IUserRoundPredictionsQuery userRoundPredictionsQuery,
+    IPredictionLeaguesQuery predictionLeaguesQuery) : IRequestHandler<GetPredictionPageDataQuery, PredictionPageDto?>
 {
     public async Task<PredictionPageDto?> Handle(GetPredictionPageDataQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                r.[Id] AS RoundId,
-                r.[RoundNumber],
-                s.[Id] AS SeasonId,
-                s.[Name] AS SeasonName,
-                c.[Type] AS CompetitionType,
-                s.[NumberOfRounds],
-                r.[DeadlineUtc],
-                m.[Id] AS MatchId,
-                m.[MatchDateTimeUtc],
-                m.[MatchNumber],
-                m.[HomeTeamId],
-                ht.[Name] AS HomeTeamName,
-                ht.[ShortName] AS HomeTeamShortName,
-                ht.[Abbreviation] AS HomeTeamAbbreviation,
-                ht.[LogoUrl] AS HomeTeamLogoUrl,
-                m.[AwayTeamId],
-                at.[Name] AS AwayTeamName,
-                at.[ShortName] AS AwayTeamShortName,
-                at.[Abbreviation] AS AwayTeamAbbreviation,
-                at.[LogoUrl] AS AwayTeamLogoUrl,
-                m.[PlaceholderHomeName],
-                m.[PlaceholderAwayName],
-                m.[CustomLockTimeUtc],
-                up.[PredictedHomeScore],
-                up.[PredictedAwayScore],
-                r.[DisplayName] AS RoundDisplayName
-            FROM [Rounds] r
-            JOIN [Seasons] s ON r.[SeasonId] = s.[Id]
-            JOIN [Competitions] c ON s.[CompetitionId] = c.[Id]
-            LEFT JOIN [Matches] m ON r.[Id] = m.[RoundId]
-            LEFT JOIN [Teams] ht ON m.[HomeTeamId] = ht.[Id]
-            LEFT JOIN [Teams] at ON m.[AwayTeamId] = at.[Id]
-            LEFT JOIN [UserPredictions] up ON m.[Id] = up.[MatchId] AND up.[UserId] = @UserId
-            WHERE r.[Id] = @RoundId
-                AND (m.[Status] IS NULL OR m.[Status] <> @PostponedStatus)
-            ORDER BY m.[MatchDateTimeUtc], ht.[ShortName];";
+        var round = await roundHeaderQuery.ExecuteAsync(request.RoundId, cancellationToken);
 
-        var queryResult = await dbConnection.QueryAsync<PredictionPageQueryResult>(
-            sql,
-            cancellationToken,
-            new
-            {
-                request.UserId,
-                request.RoundId,
-                PostponedStatus = nameof(MatchStatus.Postponed)
-            }
-        );
-
-        var results = queryResult.ToList();
-        if (!results.Any())
+        if (round is null)
             return null;
 
-        var firstRow = results.First();
-        var isTournament = firstRow.CompetitionType == (int)CompetitionType.Tournament;
+        var matches = await roundMatchesQuery.ExecuteAsync(request.RoundId, cancellationToken);
+        var predictions = await userRoundPredictionsQuery.ExecuteAsync(request.UserId, request.RoundId, cancellationToken);
+        var leagues = await predictionLeaguesQuery.ExecuteAsync(request.UserId, round.SeasonId, cancellationToken);
 
-        const string leaguesSql = @"
-            SELECT
-                l.[Id] AS LeagueId,
-                l.[Name],
-                CAST
-                    (
-                        CASE WHEN EXISTS (
-                        SELECT 1
-                        FROM [LeagueBoostRules] lbr
-                        WHERE
-                            lbr.[LeagueId] = l.[Id]
-                            AND lbr.[IsEnabled] = 1
-                        ) THEN 1 ELSE 0 END AS BIT
-                    ) AS HasBoosts,
-                CAST
-                    (
-                        CASE WHEN EXISTS (
-                            SELECT 1
-                            FROM [LeagueBoostRules] lbr
-                            WHERE
-                                lbr.[LeagueId] = l.[Id]
-                                AND lbr.[IsEnabled] = 1
-                                AND lbr.[TotalUsesPerSeason] > 0
-                                AND NOT EXISTS (
-                                    SELECT 1
-                                    FROM [UserBoostUsages] ubu
-                                    WHERE ubu.[UserId] = @UserId
-                                        AND ubu.[LeagueId] = l.[Id]
-                                        AND ubu.[SeasonId] = @SeasonId
-                                        AND ubu.[BoostDefinitionId] = lbr.[BoostDefinitionId]
-                                )
-                        ) THEN 1 ELSE 0 END AS BIT
-                    ) AS HasUnusedBoostThisSeason
-            FROM
-                [Leagues] l
-            JOIN
-                [LeagueMembers] lm ON lm.[LeagueId] = l.[Id]
-            WHERE
-                l.[SeasonId] = @SeasonId
-                AND lm.[UserId] = @UserId
-                AND lm.[Status] = @ApprovedStatus
-            ORDER BY
-                l.[Name];";
-
-        var leagues = await dbConnection.QueryAsync<PredictionLeagueQueryResult>(
-            leaguesSql,
-            cancellationToken,
-            new { firstRow.SeasonId, request.UserId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) }
-        );
-
-        const string userBoostSql = @"
-            SELECT
-                ubu.[LeagueId],
-                bd.[Code] AS SelectedBoostCode
-            FROM [UserBoostUsages] ubu
-            JOIN [BoostDefinitions] bd ON bd.[Id] = ubu.[BoostDefinitionId]
-            WHERE
-                ubu.[UserId] = @UserId
-                AND ubu.[RoundId] = @RoundId;";
-
-        var boostUsages = await dbConnection.QueryAsync<UserBoostUsageResult>(
-            userBoostSql,
-            cancellationToken,
-            new { request.UserId, request.RoundId }
-        );
-
-        var boostDictionary = boostUsages.ToDictionary(x => x.LeagueId, x => x.SelectedBoostCode);
+        var predictionsByMatch = predictions.ToDictionary(prediction => prediction.MatchId);
 
         return new PredictionPageDto
         {
-            RoundId = firstRow.RoundId,
-            RoundNumber = firstRow.RoundNumber,
-            RoundDisplayName = firstRow.RoundDisplayName,
-            SeasonName = firstRow.SeasonName,
-            DeadlineUtc = firstRow.DeadlineUtc,
-            IsTournament = isTournament,
-            IsLastRoundOfSeason = firstRow.RoundNumber == firstRow.NumberOfRounds,
-            Matches = results
-                .Where(r => r.MatchId.HasValue)
-                .Select(r =>
-                {
-                    var teamsConfirmed = r.HomeTeamId.HasValue && r.AwayTeamId.HasValue;
-                    return new MatchPredictionDto
-                    {
-                        MatchId = r.MatchId!.Value,
-                        MatchDateTimeUtc = r.MatchDateTimeUtc!.Value,
-                        MatchNumber = r.MatchNumber,
-                        HomeTeamName = r.HomeTeamName,
-                        HomeTeamShortName = r.HomeTeamShortName,
-                        HomeTeamAbbreviation = r.HomeTeamAbbreviation,
-                        HomeTeamLogoUrl = r.HomeTeamLogoUrl,
-                        AwayTeamName = r.AwayTeamName,
-                        AwayTeamShortName = r.AwayTeamShortName,
-                        AwayTeamAbbreviation = r.AwayTeamAbbreviation,
-                        AwayTeamLogoUrl = r.AwayTeamLogoUrl,
-                        PlaceholderHomeName = r.PlaceholderHomeName,
-                        PlaceholderAwayName = r.PlaceholderAwayName,
-                        AreTeamsConfirmed = teamsConfirmed,
-                        CustomLockTimeUtc = r.CustomLockTimeUtc,
-                        PredictedHomeScore = r.PredictedHomeScore,
-                        PredictedAwayScore = r.PredictedAwayScore
-                    };
-                }).ToList(),
-            Leagues = leagues
-                .Select(l => new PredictionLeagueDto
-                {
-                    LeagueId = l.LeagueId,
-                    Name = l.Name,
-                    HasBoosts = l.HasBoosts,
-                    HasUnusedBoostThisSeason = l.HasUnusedBoostThisSeason,
-                    SelectedBoostCode = boostDictionary.GetValueOrDefault(l.LeagueId)
-                }).ToList()
+            RoundId = round.RoundId,
+            RoundNumber = round.RoundNumber,
+            RoundDisplayName = round.DisplayName,
+            SeasonName = round.SeasonName,
+            DeadlineUtc = round.DeadlineUtc,
+            IsTournament = round.CompetitionType == CompetitionType.Tournament,
+
+            // The last round of the season, which the page uses to say so rather than to change anything.
+            IsLastRoundOfSeason = round.RoundNumber == round.NumberOfRounds,
+
+            // A called-off fixture cannot be predicted, so it is not on the form.
+            Matches = RoundMatches.InKickOffOrder(matches.Where(match => !RoundMatches.IsPostponed(match)))
+                .Select(match => ToMatchDto(match, predictionsByMatch.GetValueOrDefault(match.Id)))
+                .ToList(),
+
+            Leagues = LeaguesFor(leagues, request.RoundId)
         };
     }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PredictionPageQueryResult(
-        int RoundId,
-        int RoundNumber,
-        int SeasonId,
-        string SeasonName,
-        int CompetitionType,
-        int NumberOfRounds,
-        DateTime DeadlineUtc,
-        int? MatchId,
-        DateTime? MatchDateTimeUtc,
-        int? MatchNumber,
-        int? HomeTeamId,
-        string? HomeTeamName,
-        string? HomeTeamShortName,
-        string? HomeTeamAbbreviation,
-        string? HomeTeamLogoUrl,
-        int? AwayTeamId,
-        string? AwayTeamName,
-        string? AwayTeamShortName,
-        string? AwayTeamAbbreviation,
-        string? AwayTeamLogoUrl,
-        string? PlaceholderHomeName,
-        string? PlaceholderAwayName,
-        DateTime? CustomLockTimeUtc,
-        int? PredictedHomeScore,
-        int? PredictedAwayScore,
-        string? RoundDisplayName
-    );
+    private static MatchPredictionDto ToMatchDto(RoundMatchRow match, UserRoundPredictionRow? prediction) =>
+        new()
+        {
+            MatchId = match.Id,
+            MatchDateTimeUtc = match.MatchDateTimeUtc,
+            MatchNumber = match.MatchNumber,
+            HomeTeamName = match.HomeTeamName,
+            HomeTeamShortName = match.HomeTeamShortName,
+            HomeTeamAbbreviation = match.HomeTeamAbbreviation,
+            HomeTeamLogoUrl = match.HomeTeamLogoUrl,
+            AwayTeamName = match.AwayTeamName,
+            AwayTeamShortName = match.AwayTeamShortName,
+            AwayTeamAbbreviation = match.AwayTeamAbbreviation,
+            AwayTeamLogoUrl = match.AwayTeamLogoUrl,
+            PlaceholderHomeName = match.PlaceholderHomeName,
+            PlaceholderAwayName = match.PlaceholderAwayName,
+            AreTeamsConfirmed = RoundMatches.AreTeamsConfirmed(match),
+            CustomLockTimeUtc = match.CustomLockTimeUtc,
+            PredictedHomeScore = prediction?.PredictedHomeScore,
+            PredictedAwayScore = prediction?.PredictedAwayScore
+        };
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record PredictionLeagueQueryResult(int LeagueId, string Name, bool HasBoosts, bool HasUnusedBoostThisSeason);
+    /// <summary>
+    /// The leagues this entry counts towards, and what the player can still do with a boost in each.
+    /// </summary>
+    private static List<PredictionLeagueDto> LeaguesFor(PredictionLeaguesData data, int roundId) =>
+        data.Leagues
+            .OrderBy(league => league.Name, StringComparer.InvariantCultureIgnoreCase)
+            .Select(league => new PredictionLeagueDto
+            {
+                LeagueId = league.LeagueId,
+                Name = league.Name,
+                HasBoosts = HasBoosts(data, league.LeagueId),
+                HasUnusedBoostThisSeason = HasUnusedBoostThisSeason(data, league.LeagueId),
+                SelectedBoostCode = SelectedBoostCode(data, league.LeagueId, roundId)
+            })
+            .ToList();
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record UserBoostUsageResult(int LeagueId, string SelectedBoostCode);
+    /// <summary>
+    /// Whether the league runs boosts at all, which is what decides if the page offers them.
+    /// </summary>
+    /// <remarks>
+    /// A league can have rules recorded and every one of them switched off, which is not the same as running boosts. Disabled
+    /// rules therefore have to arrive so this can tell the difference.
+    /// </remarks>
+    private static bool HasBoosts(PredictionLeaguesData data, int leagueId) =>
+        data.BoostRules.Any(rule => rule.LeagueId == leagueId && rule.IsEnabled);
+
+    /// <summary>
+    /// Whether the player still has a boost to spend in this league this season.
+    /// </summary>
+    /// <remarks>
+    /// A boost is available when its rule is switched on, allows at least one use in the season, and the player has not used
+    /// that particular boost yet. Per boost rather than per league: having spent the double-points boost says nothing about
+    /// whether the banker is still there. This was a <c>NOT EXISTS</c> nested inside an <c>EXISTS</c>.
+    /// </remarks>
+    private static bool HasUnusedBoostThisSeason(PredictionLeaguesData data, int leagueId) =>
+        data.BoostRules.Any(rule =>
+            rule.LeagueId == leagueId
+            && rule.IsEnabled
+            && rule.TotalUsesPerSeason > 0
+            && !data.BoostUsages.Any(usage => usage.LeagueId == leagueId && usage.BoostDefinitionId == rule.BoostDefinitionId));
+
+    /// <summary>The boost already picked for this round in this league, if there is one.</summary>
+    private static string? SelectedBoostCode(PredictionLeaguesData data, int leagueId, int roundId) =>
+        data.BoostUsages
+            .FirstOrDefault(usage => usage.LeagueId == leagueId && usage.RoundId == roundId)
+            ?.BoostCode;
 }

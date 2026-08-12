@@ -1,53 +1,84 @@
 using FluentAssertions;
 using NSubstitute;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Application.Features.Sharing.Models;
 using ThePredictions.Application.Features.Sharing.Queries;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Enumerations;
 using Xunit;
-using static ThePredictions.Application.Features.Sharing.Queries.GetRoundShareCardImageQueryHandler;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Sharing.Queries;
 
 /// <summary>
-/// Builds the shareable image of someone's predictions for a round. It only ever shows fixtures
-/// they actually predicted, and only reveals a real score once the match is genuinely under way -
-/// so the card cannot leak a result the recipient could not otherwise see.
+/// Builds the shareable image of someone's predictions for a round. It only ever shows fixtures they actually predicted, and
+/// only reveals a real score once the match is genuinely under way - so the card cannot leak a result the recipient could not
+/// otherwise see.
 /// </summary>
+/// <remarks>
+/// The fixtures and the predictions now arrive through the same two ports the prediction page uses, which is why the card and
+/// the form cannot disagree about which fixtures exist or what was entered.
+/// </remarks>
 public class GetRoundShareCardImageQueryHandlerTests
 {
     private const int RoundId = 100;
     private const string UserId = "user-1";
 
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
+    private static readonly DateTime KickOff = new(2026, 8, 1, 15, 0, 0, DateTimeKind.Utc);
+
+    private readonly IRoundHeaderQuery _roundHeaderQuery = Substitute.For<IRoundHeaderQuery>();
+    private readonly IRoundMatchesQuery _roundMatchesQuery = Substitute.For<IRoundMatchesQuery>();
+    private readonly IUserRoundPredictionsQuery _predictionsQuery = Substitute.For<IUserRoundPredictionsQuery>();
+    private readonly IShareCardPlayerQuery _playerQuery = Substitute.For<IShareCardPlayerQuery>();
     private readonly IShareCardRenderer _renderer = Substitute.For<IShareCardRenderer>();
 
     private readonly GetRoundShareCardImageQueryHandler _handler;
 
     public GetRoundShareCardImageQueryHandlerTests()
     {
-        _handler = new GetRoundShareCardImageQueryHandler(_dbConnection, _renderer);
+        _handler = new GetRoundShareCardImageQueryHandler(
+            _roundHeaderQuery, _roundMatchesQuery, _predictionsQuery, _playerQuery, _renderer);
+
         _renderer.RenderAsync(Arg.Any<ShareCardModel>(), Arg.Any<CancellationToken>()).Returns([1, 2, 3]);
     }
+
+    /// <summary>One fixture and what the player put against it, before the two are split across their ports.</summary>
+    private sealed record CardFixture(RoundMatchRow Match, UserRoundPredictionRow? Prediction);
 
     private void GivenRound(
         int roundNumber = 5,
         string? roundDisplayName = "Gameweek 5",
         CompetitionType competitionType = CompetitionType.League,
         string? playerFirstName = "Alice",
-        string? preferredTheme = "light") =>
-        _dbConnection.QuerySingleOrDefaultAsync<ShareCardRoundResult>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(new ShareCardRoundResult(roundNumber, roundDisplayName, "2026/27",
-                (int)competitionType, playerFirstName, preferredTheme));
+        string? preferredTheme = "light")
+    {
+        _roundHeaderQuery.ExecuteAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(new RoundHeaderRow(RoundId, roundNumber, roundDisplayName ?? string.Empty, KickOff.AddHours(-2),
+                SeasonId: 7, "2026/27", NumberOfRounds: 38, competitionType));
 
-    private void GivenMatches(params ShareCardMatchResult[] matches) =>
-        _dbConnection.QueryAsync<ShareCardMatchResult>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(matches);
+        _playerQuery.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new ShareCardPlayerRow(playerFirstName, preferredTheme));
+    }
 
-    private static ShareCardMatchResult MatchRow(
+    /// <summary>
+    /// Splits the fixtures across the two ports, giving each a kick-off an hour after the last so the order they are written
+    /// in is the order the card is meant to read in.
+    /// </summary>
+    private void GivenMatches(params CardFixture[] fixtures)
+    {
+        var matches = fixtures
+            .Select((fixture, index) => fixture.Match with { Id = index + 1, MatchDateTimeUtc = KickOff.AddHours(index) })
+            .ToList();
+
+        var predictions = fixtures
+            .Select((fixture, index) => fixture.Prediction is null ? null : fixture.Prediction with { MatchId = index + 1 })
+            .OfType<UserRoundPredictionRow>()
+            .ToList();
+
+        _roundMatchesQuery.ExecuteAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(matches);
+        _predictionsQuery.ExecuteAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(predictions);
+    }
+
+    private static CardFixture MatchRow(
         int? predictedHome = 2,
         int? predictedAway = 1,
         MatchStatus status = MatchStatus.Completed,
@@ -55,8 +86,28 @@ public class GetRoundShareCardImageQueryHandlerTests
         int? actualAway = 1,
         PredictionOutcome outcome = PredictionOutcome.ExactScore,
         string homeShortName = "Arsenal") =>
-        new(homeShortName, "ARS", "ars.png", "Chelsea", "CHE", "che.png",
-            predictedHome, predictedAway, outcome, status.ToString(), actualHome, actualAway);
+        new(
+            new RoundMatchRow(
+                Id: 0, KickOff, MatchNumber: null,
+                HomeTeamId: 10, HomeTeamName: homeShortName, HomeTeamShortName: homeShortName, HomeTeamAbbreviation: "ARS",
+                HomeTeamLogoUrl: "ars.png",
+                AwayTeamId: 20, AwayTeamName: "Chelsea", AwayTeamShortName: "Chelsea", AwayTeamAbbreviation: "CHE",
+                AwayTeamLogoUrl: "che.png",
+                actualHome, actualAway, status,
+                PlaceholderHomeName: null, PlaceholderAwayName: null, CustomLockTimeUtc: null),
+            new UserRoundPredictionRow(MatchId: 0, predictedHome, predictedAway, outcome));
+
+    /// <summary>A fixture whose teams are not known yet, which has nothing to draw.</summary>
+    private static CardFixture PlaceholderRow() =>
+        MatchRow() with
+        {
+            Match = MatchRow().Match with
+            {
+                HomeTeamId = null, HomeTeamName = null, HomeTeamShortName = null, HomeTeamAbbreviation = null,
+                AwayTeamId = null, AwayTeamName = null, AwayTeamShortName = null, AwayTeamAbbreviation = null,
+                PlaceholderHomeName = "Winner of QF1", PlaceholderAwayName = "Winner of QF2"
+            }
+        };
 
     private ShareCardModel CapturedModel() =>
         (ShareCardModel)_renderer.ReceivedCalls()
@@ -91,7 +142,7 @@ public class GetRoundShareCardImageQueryHandlerTests
     public async Task Handle_ShouldReturnNothing_WhenEveryFixtureWasLeftBlank()
     {
         GivenRound();
-        GivenMatches(MatchRow(predictedHome: null, predictedAway: null));
+        GivenMatches(MatchRow() with { Prediction = null });
 
         var result = await HandleAsync();
 
@@ -113,6 +164,51 @@ public class GetRoundShareCardImageQueryHandlerTests
         await HandleAsync();
 
         CapturedModel().Matches.Should().ContainSingle().Which.HomeTeamShortName.Should().Be("Spurs");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldLeaveOutAFixtureWhoseTeamsAreNotKnownYet()
+    {
+        // There is nothing to draw for "Winner of QF1" against "Winner of QF2", and the fixture cannot have been predicted
+        // in any meaningful way. The statement this replaces excluded these by joining the teams rather than saying so.
+        GivenRound();
+        GivenMatches(PlaceholderRow(), MatchRow(homeShortName: "Spurs"));
+
+        await HandleAsync();
+
+        CapturedModel().Matches.Should().ContainSingle().Which.HomeTeamShortName.Should().Be("Spurs");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldLeaveOutAFixtureThatWasCalledOff()
+    {
+        // A postponed fixture is not part of the round the player predicted.
+        GivenRound();
+        GivenMatches(
+            MatchRow(status: MatchStatus.Postponed, homeShortName: "Arsenal"),
+            MatchRow(homeShortName: "Spurs"));
+
+        await HandleAsync();
+
+        CapturedModel().Matches.Should().ContainSingle().Which.HomeTeamShortName.Should().Be("Spurs");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldStillDrawACard_WhenThereIsNoSuchPlayer()
+    {
+        // The round and the predictions exist, so there is a card to draw; it just has no name on it and falls back to the
+        // application's default theme rather than failing.
+        GivenRound();
+        GivenMatches(MatchRow());
+        _playerQuery.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((ShareCardPlayerRow?)null);
+
+        // Act
+        var result = await HandleAsync();
+
+        // Assert
+        result.Should().Equal(1, 2, 3);
+        CapturedModel().PlayerName.Should().BeNull();
+        CapturedModel().Theme.Should().Be(ShareCardTheme.Light);
     }
 
     [Fact]
@@ -286,7 +382,7 @@ public class GetRoundShareCardImageQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldKeepTheFixturesInTheOrderTheyWereRead()
     {
-        // The SQL orders by kick-off, and the card is meant to read in that order.
+        // Kick-off order, which the handler applies through the same rule the prediction page uses.
         GivenRound();
         GivenMatches(
             MatchRow(homeShortName: "Arsenal"),

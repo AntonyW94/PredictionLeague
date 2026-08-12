@@ -170,6 +170,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/active rounds** ✅ | A domain rule that disagreed with its own SQL twin, and with its own sibling. Marked "Dashboard is done" here, wrongly - `GetMatchesForRoundQueryHandler` still held SQL, and moved with Admin/Rounds below. |
 | 2 | **Badges** ✅ | **Badges is done.** Six statements to three reads, two gap-and-island streak queries to one `foreach`, and two screens that disagreed about the same player's position now reading one set of standings. |
 | 2 | **Admin/Rounds + round fixtures** ✅ | A CTE written twice and selected never, and the near-twin fixture statement that was still outstanding from Dashboard. |
+| 2 | **Predictions + share card** ✅ | Two screens onto the same two reads, and a round-naming rule that disagrees with the rest of the site on every league round. |
 | 2 | **Season pass admin + pricing** ✅ | The one read where filtering and paging stay in the adapter, a rule that moved the *other* way, and a service whose three of five reads were already ports. |
 | 2 | **SeasonPasses** ✅ | Four screens, four statements, one set of conditions - two of the screens turned out to be exact complements. Three `GETUTCDATE()` calls gone. |
 | 2 | **Admin/Users** ✅ | Eleven correlated subqueries, three of them with an unstated definition of "spend", and a list flattened into a string by the database and split back apart in C#. |
@@ -1229,6 +1230,42 @@ contains no file that has already been converted. An allowlist that fails when i
 
 The second failure was a false positive of a useful kind: the new adapter's own documentation mentioned
 `DateTime.UtcNow` while explaining what had been removed, and the check is a text match. Reworded.
+
+### Three ways to name a round, and they disagree on real data
+
+Naming a round turns out to be done three ways:
+
+1. `Round.GetDisplayNameOrDefault` - the stored name when there is one, otherwise "Round N". Used by the round-completion
+   view, the reminder job and the digest email.
+2. The share card and `Predictions.razor` - the stored name **only when the competition is a tournament**, otherwise
+   "Round N".
+3. `MyLeaguesTile.razor` - its own variant, already recorded as an open question.
+
+Every round in the database is named, and league rounds are named "Gameweek 5". So form 1 renders "Gameweek 5" and form 2
+renders "Round 5" **for the same round**: the share card and the prediction page header say "Round 5" while the digest email
+and the round-completion view say "Gameweek 5". Not a bug either side of - both are defensible - but nobody chose it.
+
+Left as it was and flagged, rather than unified: picking one changes wording on player-facing screens, which is the user's
+call. What this PR did do is stop the share card and the razor being two implementations of form 2 - the handler now owns it
+with the reasoning written down next to it.
+
+### The prediction page and the share card were reading the same round twice
+
+Both joined `[Rounds]`, `[Seasons]` and `[Competitions]` themselves and then reached the player's predictions through their
+own join - the page through a left join to keep unpredicted fixtures on the form, the card through an inner join to drop
+them. That difference is a rule about what each screen is for, and it was expressed as a join type.
+
+They now share `IRoundHeaderQuery` and `IUserRoundPredictionsQuery`, and the fixtures come from `IRoundMatchesQuery`, which
+already existed from the Admin/Rounds batch. Three ports, two screens, no SQL either side. The share card also gains the
+postponed and placeholder exclusions as named rules rather than as the shape of its joins.
+
+### A guard the compiler was already enforcing
+
+One mutation could not be made to compile: removing the "no prediction means no row on the card" guard breaks nullable
+analysis two statements later, where the outcome is read off the prediction. The invariant is held by the type system as
+well as by the tests, which is the strongest form this can take. Recorded because a mutation that cannot compile proves
+nothing on its own - it took a second edit, relaxing the later dereference too, before the mutation was real and the tests
+caught it.
 
 ### Rules found duplicated so far
 

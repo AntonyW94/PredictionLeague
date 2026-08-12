@@ -22,7 +22,9 @@ using ThePredictions.Application.Features.Badges.Queries;
 using ThePredictions.Application.Features.Boosts.Queries;
 using ThePredictions.Application.Features.Dashboard.Queries;
 using ThePredictions.Application.Features.Leagues.Queries;
+using ThePredictions.Application.Features.Predictions.Queries;
 using ThePredictions.Application.Features.Rounds.Queries;
+using ThePredictions.Application.Features.Sharing.Queries;
 using ThePredictions.Application.Features.SeasonPasses.Queries;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
@@ -37,7 +39,9 @@ using ThePredictions.Persistence.SqlServer.Queries;
 using ThePredictions.Persistence.SqlServer.Queries.Dashboard;
 using ThePredictions.Persistence.SqlServer.Queries.Leagues;
 using ThePredictions.Persistence.SqlServer.Queries.Pricing;
+using ThePredictions.Persistence.SqlServer.Queries.Predictions;
 using ThePredictions.Persistence.SqlServer.Queries.Rounds;
+using ThePredictions.Persistence.SqlServer.Queries.Sharing;
 using ThePredictions.Persistence.SqlServer.Queries.SeasonPasses;
 using ThePredictions.Persistence.SqlServer.Repositories;
 
@@ -138,6 +142,10 @@ public static class DependencyInjection
         services.AddScoped<ISeasonPassPagesQuery, SeasonPassPagesQuery>();
         services.AddScoped<ISeasonPassHoldersQuery, SeasonPassHoldersQuery>();
         services.AddScoped<ISeasonPricingQuery, SeasonPricingQuery>();
+        services.AddScoped<IRoundHeaderQuery, RoundHeaderQuery>();
+        services.AddScoped<IUserRoundPredictionsQuery, UserRoundPredictionsQuery>();
+        services.AddScoped<IPredictionLeaguesQuery, PredictionLeaguesQuery>();
+        services.AddScoped<IShareCardPlayerQuery, ShareCardPlayerQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository
