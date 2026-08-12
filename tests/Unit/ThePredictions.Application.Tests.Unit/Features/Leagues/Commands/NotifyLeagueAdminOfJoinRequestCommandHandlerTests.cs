@@ -1,17 +1,16 @@
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using ThePredictions.Application.Configuration;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Features.Leagues.Commands;
 using ThePredictions.Application.Services;
-using static ThePredictions.Application.Features.Leagues.Commands.NotifyLeagueAdminOfJoinRequestCommandHandler;
 using Xunit;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Leagues.Commands;
 
 public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
 {
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
+    private readonly ILeagueEmailRecipientQuery _dbConnection = Substitute.For<ILeagueEmailRecipientQuery>();
     private readonly IEmailService _emailService = Substitute.For<IEmailService>();
     private readonly IOptions<SiteSettings> _siteOptions = Options.Create(new SiteSettings { BaseUrl = "https://test.local" });
     private readonly NotifyLeagueAdminOfJoinRequestCommandHandler _handler;
@@ -35,10 +34,9 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
     {
         // Arrange
         var command = new NotifyLeagueAdminOfJoinRequestCommand("admin-user", "Test League", 1, "Jane", "Doe");
-        var adminDto = new LeagueAdminRow("admin@example.com", "Admin", "2025/26");
+        var adminDto = new LeagueEmailRecipientRow("admin@example.com", "Admin", "2025/26");
 
-        _dbConnection.QuerySingleOrDefaultAsync<LeagueAdminRow>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object>())
+        _dbConnection.ExecuteAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(adminDto);
 
         // Act
@@ -55,9 +53,8 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandlerTests
         // Arrange
         var command = new NotifyLeagueAdminOfJoinRequestCommand("admin-user", "Test League", 1, "Jane", "Doe");
 
-        _dbConnection.QuerySingleOrDefaultAsync<LeagueAdminRow>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object>())
-            .Returns((LeagueAdminRow?)null);
+        _dbConnection.ExecuteAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns((LeagueEmailRecipientRow?)null);
 
         // Act
         await _handler.Handle(command, CancellationToken.None);

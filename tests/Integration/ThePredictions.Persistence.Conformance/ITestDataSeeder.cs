@@ -70,7 +70,15 @@ public interface ITestDataSeeder
         int awayScore = 1,
         PredictionOutcome outcome = PredictionOutcome.Pending);
 
-    Task<int> AddLeagueAsync(int seasonId, string administratorUserId, string name = "Integration League");
+    /// <summary>
+    /// A league. <paramref name="hasPrizes"/> is what several reads scope on - a league that pays nothing will never send anybody
+    /// money - so a test has to be able to arrange one that does.
+    /// </summary>
+    Task<int> AddLeagueAsync(
+        int seasonId,
+        string administratorUserId,
+        string name = "Integration League",
+        bool hasPrizes = false);
 
     Task AddLeagueMemberAsync(int leagueId, string userId, LeagueMemberStatus status = LeagueMemberStatus.Approved);
 

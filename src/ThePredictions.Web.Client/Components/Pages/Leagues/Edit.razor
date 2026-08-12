@@ -232,7 +232,9 @@
             {
                 Name = league.Name,
                 Price = league.Price,
-                EntryDeadlineUtc = league.EntryDeadlineUtc,
+                // A league with no deadline recorded is not a state the editor can represent, so it opens showing the
+                // season's own start as a placeholder for the administrator to correct.
+                EntryDeadlineUtc = league.EntryDeadlineUtc ?? DateTime.UtcNow,
                 PointsForExactScore = league.PointsForExactScore,
                 PointsForCorrectResult = league.PointsForCorrectResult,
                 RequiresMemberApproval = league.RequiresMemberApproval,

@@ -1,35 +1,25 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Onboarding;
 
 namespace ThePredictions.Application.Features.Onboarding.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetOnboardingChecklistQueryHandler(IApplicationReadDbConnection dbConnection)
+/// <summary>The checklist that gets a new player started, and what they have already ticked off.</summary>
+public class GetOnboardingChecklistQueryHandler(IOnboardingStateQuery onboardingStateQuery)
     : IRequestHandler<GetOnboardingChecklistQuery, OnboardingChecklistDto>
 {
     public async Task<OnboardingChecklistDto> Handle(GetOnboardingChecklistQuery request, CancellationToken cancellationToken)
     {
-        const string stateSql = @"
-            SELECT
-                (SELECT COUNT(*) FROM [SeasonPasses] WHERE [UserId] = @UserId) AS PassCount,
-                (SELECT COUNT(*) FROM [LeagueMembers] WHERE [UserId] = @UserId) AS LeagueCount,
-                CAST(CASE WHEN EXISTS (
-                    SELECT 1 FROM [AspNetUsers]
-                    WHERE [Id] = @UserId AND [PhoneNumber] IS NOT NULL AND LEN(LTRIM(RTRIM([PhoneNumber]))) > 0
-                ) THEN 1 ELSE 0 END AS BIT) AS HasMobile,
-                CAST(CASE WHEN EXISTS (
-                    SELECT 1 FROM [UserPayoutDetails]
-                    WHERE [UserId] = @UserId
-                ) THEN 1 ELSE 0 END AS BIT) AS HasPayoutDetails;";
+        var row = await onboardingStateQuery.ExecuteAsync(request.UserId, cancellationToken);
+        var skippedKeys = await onboardingStateQuery.GetSkippedStepKeysAsync(request.UserId, cancellationToken);
 
-        var state = await dbConnection.QuerySingleOrDefaultAsync<OnboardingUserState>(stateSql, cancellationToken, new { request.UserId })
-                    ?? new OnboardingUserState(0, 0, false, false);
+        // A number made only of spaces is not a mobile number. The column allows one, and the step should not tick itself for
+        // somebody who saved a blank.
+        var state = new OnboardingUserState(
+            row.PassCount,
+            row.LeagueCount,
+            HasMobile: !string.IsNullOrWhiteSpace(row.PhoneNumber),
+            row.HasPayoutDetails);
 
-        const string skipsSql = "SELECT [StepKey] FROM [UserOnboardingSkips] WHERE [UserId] = @UserId;";
-        var skippedKeys = (await dbConnection.QueryAsync<string>(skipsSql, cancellationToken, new { request.UserId })).ToHashSet();
-
-        return OnboardingStepRegistry.Build(state, skippedKeys);
+        return OnboardingStepRegistry.Build(state, skippedKeys.ToHashSet());
     }
 }

@@ -304,7 +304,11 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         });
     }
 
-    public async Task<int> AddLeagueAsync(int seasonId, string administratorUserId, string name = "Integration League")
+    public async Task<int> AddLeagueAsync(
+        int seasonId,
+        string administratorUserId,
+        string name = "Integration League",
+        bool hasPrizes = false)
     {
         const string sql = @"
             INSERT INTO [Leagues]
@@ -344,7 +348,7 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
             AdministratorUserId = administratorUserId,
             Price = 0m,
             IsFree = true,
-            HasPrizes = false,
+            HasPrizes = hasPrizes,
             PointsForExactScore = 3,
             PointsForCorrectResult = 1,
             CreatedAtUtc = DateTime.UtcNow,

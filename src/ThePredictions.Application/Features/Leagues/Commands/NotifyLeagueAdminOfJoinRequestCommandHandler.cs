@@ -2,12 +2,12 @@ using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConnection dbConnection, IEmailService emailService, IOptions<BrevoSettings> brevoSettings, IOptions<SiteSettings> siteSettings) : IRequestHandler<NotifyLeagueAdminOfJoinRequestCommand>
+public class NotifyLeagueAdminOfJoinRequestCommandHandler(ILeagueEmailRecipientQuery emailRecipientQuery, IEmailService emailService, IOptions<BrevoSettings> brevoSettings, IOptions<SiteSettings> siteSettings) : IRequestHandler<NotifyLeagueAdminOfJoinRequestCommand>
 {
     private readonly BrevoSettings _brevoSettings = brevoSettings.Value;
     private readonly SiteSettings _siteSettings = siteSettings.Value;
@@ -17,24 +17,10 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConn
         if (_brevoSettings.Templates == null)
             return;
         
-        // Read only the admin (AspNetUsers) and the season (Seasons) - the league name is supplied by
-        // the caller, which already holds the aggregate. This deliberately avoids touching [Leagues],
-        // whose row the in-flight join transaction has locked; reading it here on a separate connection
-        // would block until that transaction commits (the request never gets that far) and time out.
-        const string sql = @"
-                SELECT
-                    u.[Email],
-                    u.[FirstName],
-                    s.[Name] AS SeasonName
-                FROM
-                    [AspNetUsers] u
-                CROSS JOIN
-                    [Seasons] s
-                WHERE
-                    u.[Id] = @AdministratorUserId
-                    AND s.[Id] = @SeasonId;";
-
-        var admin = await dbConnection.QuerySingleOrDefaultAsync<LeagueAdminRow>(sql, cancellationToken, new { request.AdministratorUserId, request.SeasonId });
+        // Only the administrator and the season are read - the league's name comes from the caller, which already holds it.
+        // That deliberately avoids touching [Leagues], whose row the in-flight join transaction has locked; reading it here on
+        // a separate connection would block until that transaction commits and then time out.
+        var admin = await emailRecipientQuery.ExecuteAsync(request.AdministratorUserId, request.SeasonId, cancellationToken);
         if (admin != null)
         {
             var templateId = _brevoSettings.Templates.JoinLeagueRequest;
@@ -55,9 +41,4 @@ public class NotifyLeagueAdminOfJoinRequestCommandHandler(IApplicationReadDbConn
         }
     }
 
-    // internal, not public: the Dto suffix is reserved for ThePredictions.Contracts, and keeping the
-    // row type inside the handler confines the positional SELECT-to-record coupling to this one file.
-    // InternalsVisibleTo already exposes this assembly to ThePredictions.Application.Tests.Unit.
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal record LeagueAdminRow(string Email, string FirstName, string SeasonName);
 }

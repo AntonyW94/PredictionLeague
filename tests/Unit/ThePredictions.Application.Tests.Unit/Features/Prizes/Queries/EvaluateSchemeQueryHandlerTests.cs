@@ -1,13 +1,11 @@
 using FluentAssertions;
 using NSubstitute;
 using ThePredictions.Application.Common.Prizes;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Prizes.Queries;
 using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Common.Exceptions;
 using Xunit;
-using static ThePredictions.Application.Features.Prizes.Queries.EvaluateSchemeQueryHandler;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Prizes.Queries;
 
@@ -22,25 +20,20 @@ public class EvaluateSchemeQueryHandlerTests
     private static readonly DateTime SeasonStart = new(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
     private static readonly DateTime SeasonEnd = new(2027, 5, 31, 0, 0, 0, DateTimeKind.Utc);
 
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
+    private readonly IPrizeSchemeSeasonQuery _seasonQuery = Substitute.For<IPrizeSchemeSeasonQuery>();
     private readonly IPrizeEvaluator _evaluator = Substitute.For<IPrizeEvaluator>();
 
     private readonly EvaluateSchemeQueryHandler _handler;
 
     public EvaluateSchemeQueryHandlerTests()
     {
-        _handler = new EvaluateSchemeQueryHandler(_dbConnection, _evaluator);
+        _handler = new EvaluateSchemeQueryHandler(_seasonQuery, _evaluator);
         _evaluator.Evaluate(Arg.Any<PrizeSchemeEvaluationRequest>()).Returns(new PrizeBreakdownDto { Pot = 100m });
     }
 
     private void GivenSeason(int numberOfRounds = 38, DateTime? startDateUtc = null, DateTime? endDateUtc = null) =>
-        _dbConnection.QuerySingleOrDefaultAsync<SeasonRow>(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(new SeasonRow
-            {
-                NumberOfRounds = numberOfRounds,
-                StartDateUtc = startDateUtc ?? SeasonStart,
-                EndDateUtc = endDateUtc ?? SeasonEnd
-            });
+        _seasonQuery.ExecuteAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(new PrizeSchemeSeasonRow(numberOfRounds, startDateUtc ?? SeasonStart, endDateUtc ?? SeasonEnd));
 
     private static PrizeSchemeRequest Scheme(params PrizeSchemeCategoryRequest[] categories) =>
         new() { Categories = categories.ToList() };

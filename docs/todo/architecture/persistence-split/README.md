@@ -170,6 +170,7 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Dashboard/active rounds** ✅ | A domain rule that disagreed with its own SQL twin, and with its own sibling. Marked "Dashboard is done" here, wrongly - `GetMatchesForRoundQueryHandler` still held SQL, and moved with Admin/Rounds below. |
 | 2 | **Badges** ✅ | **Badges is done.** Six statements to three reads, two gap-and-island streak queries to one `foreach`, and two screens that disagreed about the same player's position now reading one set of standings. |
 | 2 | **Admin/Rounds + round fixtures** ✅ | A CTE written twice and selected never, and the near-twin fixture statement that was still outstanding from Dashboard. |
+| 2 | **The small reads** ✅ | Ten files at once: homepage, onboarding, account, manage leagues, league bank details, prize scheme, and two notification handlers that had the same statement each. |
 | 2 | **Predictions + share card** ✅ | Two screens onto the same two reads, and a round-naming rule that disagrees with the rest of the site on every league round. |
 | 2 | **Season pass admin + pricing** ✅ | The one read where filtering and paging stay in the adapter, a rule that moved the *other* way, and a service whose three of five reads were already ports. |
 | 2 | **SeasonPasses** ✅ | Four screens, four statements, one set of conditions - two of the screens turned out to be exact complements. Three `GETUTCDATE()` calls gone. |
@@ -1266,6 +1267,28 @@ analysis two statements later, where the outcome is read off the prediction. The
 well as by the tests, which is the strongest form this can take. Recorded because a mutation that cannot compile proves
 nothing on its own - it took a second edit, relaxing the later dereference too, before the mutation was real and the tests
 caught it.
+
+### A nullable column and a contract that denied it, twice more
+
+`Leagues.EntryDeadlineUtc` allows null, and `LeagueDto.EntryDeadlineUtc` said it could not. Dapper throws rather than coerces
+there, so the manage-leagues screen would have failed outright on the first league saved without a deadline - it has just never
+happened. Making the contract honest cascaded into exactly one razor line, which now shows the editor a sensible placeholder.
+
+Same shape as `Teams.LogoUrl` two batches earlier. Both were found by writing the row type honestly and letting the compiler
+walk the consequences, which is the argument for doing the split at all.
+
+### The prize fund, found for the third time
+
+`SUM(Price * MemberCount + ISNULL(PrizeFundOverride, 0))` on the public homepage, which is `Domain.Services.PrizeFund.Total`
+written out in SQL. The service was created when the same formula was found in the My Leagues tile and the available-leagues
+list. Three copies, one of them on the least-watched page on the site.
+
+### Two notification handlers, one statement each
+
+"Your request to join was approved" and "somebody wants to join your league" both read a player and a season with an identical
+`CROSS JOIN` between two unrelated tables - a way to fetch four columns in one trip. Both now use `ILeagueEmailRecipientQuery`,
+and the comment explaining *why* the league itself is deliberately not read (its row may be locked by the in-flight join
+transaction) now lives in one place instead of being paraphrased twice.
 
 ### Rules found duplicated so far
 
