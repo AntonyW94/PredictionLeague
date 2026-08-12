@@ -55,8 +55,15 @@ Copy an existing file and keep these conventions:
 4. **Outlook lock:** wrap the card in the MSO ghost table
    (`<!--[if mso]><table width="600">…<![endif]-->`) since Outlook ignores `max-width`.
 5. **Header:** purple gradient `linear-gradient(135deg,#3D195B 0%,#2C0A3D 100%)`, with the single
-   `logo-header-dark.png` lockup (the dark-background variant, ~202x40). The wordmark is part of the
-   logo now, so there is **no** separate "The Predictions" text and the image takes `alt="The Predictions"`.
+   `brand/logo-lockup-dark-mode.png` lockup (the light-ink variant, drawn at 204x34). The wordmark is
+   part of the logo now, so there is **no** separate "The Predictions" text and the image takes
+   `alt="The Predictions"`.
+
+   **Email takes the PNG, never the WebP.** The site itself uses `logo-lockup-dark-mode.webp`, but
+   Outlook desktop for Windows renders through Word and cannot decode WebP at all - it would show a
+   broken image with no fallback. The PNG is the same artwork on the same 6:1 canvas, exported at
+   408x68 so it stays sharp on retina at its 204x34 display size. If the lockup is ever redrawn,
+   re-export the PNG alongside the WebP or these nine emails lose their logo again.
 6. **Hero (centred):** a pill + an `<h1>` in `#2C0A3D`, **centre-aligned** - put `align="center"` and
    `text-align:center` on the hero `<td>`. Every template opens with a centred hero for a consistent
    feel; the celebratory Prize Won email also adds a large emoji above the pill. Everything *below* the
