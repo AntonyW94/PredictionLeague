@@ -12,11 +12,6 @@ public class GetLeaguePrizesPageQueryHandler(
     ILeaguePrizesPageQuery prizesQuery,
     ILeagueMembershipService membershipService) : IRequestHandler<GetLeaguePrizesPageQuery, LeaguePrizesPageDto>
 {
-    /// <summary>
-    /// What a league with no entry deadline reports instead of one - the same sentinel the league settings page uses,
-    /// for the same reason: the contract's property is not nullable. See <see cref="GetLeagueByIdQueryHandler"/>.
-    /// </summary>
-    private static readonly DateTime NoEntryDeadline = new(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     public async Task<LeaguePrizesPageDto> Handle(
         GetLeaguePrizesPageQuery request,
@@ -34,7 +29,7 @@ public class GetLeaguePrizesPageQueryHandler(
         return new LeaguePrizesPageDto
         {
             LeagueName = header.LeagueName,
-            EntryDeadlineUtc = header.EntryDeadlineUtc ?? NoEntryDeadline,
+            EntryDeadlineUtc = header.EntryDeadlineUtc,
             Price = header.Price,
             MemberCount = header.TotalMembershipCount,
             NumberOfRounds = header.NumberOfRounds,

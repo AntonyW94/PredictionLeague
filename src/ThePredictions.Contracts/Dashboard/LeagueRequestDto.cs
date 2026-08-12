@@ -10,7 +10,7 @@ public record LeagueRequestDto(
     string SeasonName,
     LeagueMemberStatus Status,
     DateTime JoinedAtUtc,
-    DateTime EntryDeadlineUtc,
+    DateTime? EntryDeadlineUtc,
     string AdminName,
     int MemberCount,
     decimal EntryFee,

@@ -58,17 +58,17 @@ public class GetPendingMembersForAdminQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldCountALeagueAsOpen_AtTheDeadlineItself()
+    public async Task Handle_ShouldCountALeagueAsClosed_AtTheDeadlineItself()
     {
-        // Arrange
+        // The same instant a player can no longer join is the instant this closes too. It used to be inclusive here and
+        // exclusive there, so for one tick an administrator saw a league nobody could still enter.
         Given(leagues: [League(1, entryDeadlineUtc: Now)]);
 
         // Act
         var result = await HandleAsync();
 
-        // Assert - this rule is inclusive, while the league-discovery rule is not: at this exact instant the administrator
-        // still sees the league but a player can no longer join it. One tick apart, and flagged in the plan document.
-        result.IsAdminOfOpenLeague.Should().BeTrue();
+        // Assert
+        result.IsAdminOfOpenLeague.Should().BeFalse();
     }
 
     [Fact]

@@ -93,13 +93,14 @@ public class GetLeagueDashboardQueryHandler(
     /// Every round of the season, newest first.
     /// </summary>
     /// <remarks>
-    /// All of them, whatever their status - this is the administrator's view of the league. The dashboard's round
-    /// picker fills the same <c>ViewableRounds</c> field from the same rows but keeps only the published and completed
-    /// ones, so the two answers to "viewable" differ. Recorded in the plan document as a question rather than
-    /// reconciled here.
+    /// Every round a member may see, which is every round that has been published - in play and finished included, so the
+    /// round being played now can be selected. A <b>draft</b> is left out: it is a round still being prepared, and the rest
+    /// of the site does not show one to players. This read used to return drafts as well, which put a round its
+    /// administrator had not published yet on every member's dashboard.
     /// </remarks>
     private static List<RoundDto> RoundsOn(IReadOnlyList<LeagueRoundRow> rounds) =>
         rounds
+            .Where(round => round.Status is not RoundStatus.Draft)
             .OrderByDescending(round => round.RoundNumber)
             .Select(round => new RoundDto(
                 round.RoundId,

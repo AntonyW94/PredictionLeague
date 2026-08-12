@@ -76,7 +76,7 @@ public class GetLeaguePrizesPageQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldReportADateIn1900_WhenTheLeagueHasNoEntryDeadline()
+    public async Task Handle_ShouldReportNoEntryDeadline_WhenTheLeagueHasNotSetOne()
     {
         // Arrange - the column allows null even though the create and update commands both require a deadline, so this
         // is a state the database permits and the page must survive. The old result type declared it non-nullable and
@@ -86,8 +86,9 @@ public class GetLeaguePrizesPageQueryHandlerTests
         // Act
         var page = await HandleAsync();
 
-        // Assert - the same sentinel the league settings page already uses.
-        page.EntryDeadlineUtc.Should().Be(new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        // Assert - the page shows "Not set" rather than a date in 1900, and treats entry as closed, which is the same
+        // answer the join and discovery screens give for a league with no deadline.
+        page.EntryDeadlineUtc.Should().BeNull();
     }
 
     [Fact]

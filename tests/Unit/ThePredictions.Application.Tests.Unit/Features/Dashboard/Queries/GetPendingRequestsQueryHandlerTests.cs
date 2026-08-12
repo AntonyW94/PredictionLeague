@@ -170,7 +170,7 @@ public class GetPendingRequestsQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldReportADateIn1900_WhenTheLeagueHasNoEntryDeadline()
+    public async Task Handle_ShouldReportNoEntryDeadline_WhenTheLeagueHasNotSetOne()
     {
         // Arrange - this read has no deadline filter, so the old non-nullable result type would have failed to materialise
         // and taken the whole dashboard down.
@@ -180,7 +180,8 @@ public class GetPendingRequestsQueryHandlerTests
         var request = (await HandleAsync()).Single();
 
         // Assert
-        request.EntryDeadlineUtc.Should().Be(new DateTime(1900, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        // A date in 1900 could be formatted and sorted as though somebody had chosen it. The tile now says so instead.
+        request.EntryDeadlineUtc.Should().BeNull();
     }
 
     #endregion
