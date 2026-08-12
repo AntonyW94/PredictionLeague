@@ -7,7 +7,7 @@ for the full rationale.
 They live here, in the persistence adapter, because **the schema belongs to the adapter that speaks to
 it** - a future non-SQL-Server adapter brings its own set alongside. They moved here from
 `tools/ThePredictions.DatabaseTools/Migrations/` in August 2026 (see
-[the persistence split plan](../../../../docs/todo/architecture/persistence-split/README.md)), which
+[the persistence split plan](../../../../docs/decisions/0017-sql-belongs-to-the-persistence-adapter.md)), which
 required renaming the journal keys on every database - see the warning below for why.
 
 ## ⚠️ Never rename or move these files

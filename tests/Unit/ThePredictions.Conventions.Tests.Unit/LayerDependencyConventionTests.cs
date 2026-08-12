@@ -73,7 +73,7 @@ public class LayerDependencyConventionTests
     // the external-world adapters (Brevo, Stripe, the football API, SkiaSharp); a reference from there
     // into the SQL Server adapter would let a mail or payment concern reach a connection directly, and
     // swapping the database would stop being one call in the composition root. See
-    // docs/todo/architecture/persistence-split/README.md.
+    // docs/decisions/0017-sql-belongs-to-the-persistence-adapter.md.
     [Fact]
     public void Infrastructure_ShouldNotReferenceThePersistenceAdapter()
     {
@@ -98,7 +98,7 @@ public class LayerDependencyConventionTests
     // any adapter. A reference to a concrete adapter would let a test reach a SqlServer type and quietly
     // stop being portable, while still living in a project whose name promises otherwise. It reads the
     // csproj rather than the built assembly for the usual reason - the compiler elides a reference nothing
-    // uses yet. See docs/todo/architecture/persistence-split/README.md.
+    // uses yet. See docs/decisions/0017-sql-belongs-to-the-persistence-adapter.md.
     [Fact]
     public void ConformanceSuite_ShouldNotReferenceAnyAdapter()
     {

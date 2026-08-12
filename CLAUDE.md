@@ -254,7 +254,7 @@ Repeatable operational procedures (external-service access, credential retrieval
 src/
 ├── ThePredictions.Domain           → Core business entities
 ├── ThePredictions.Application      → CQRS commands/queries
-├── ThePredictions.Persistence.SqlServer → SQL Server adapter (see docs/todo/architecture/persistence-split)
+├── ThePredictions.Persistence.SqlServer → SQL Server adapter (see ADR-0017)
 ├── ThePredictions.Infrastructure   → External services (email, payments, football API, images)
 ├── ThePredictions.API              → REST controllers
 ├── ThePredictions.Web              → Blazor server host
