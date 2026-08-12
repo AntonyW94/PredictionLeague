@@ -3,8 +3,10 @@
 @using System.Globalization
 @using ThePredictions.Contracts.SeasonPasses
 @using ThePredictions.Web.Client.Services.SeasonPasses
+@using ThePredictions.Web.Client.Services.Dashboard
 @inject ISeasonPassService SeasonPassService
 @inject NavigationManager NavigationManager
+@inject IDashboardStateService DashboardState
 
 <PageTitle>Season Passes</PageTitle>
 
@@ -54,8 +56,25 @@
                             <li><i class="bi bi-pencil-square"></i> Make predictions every round</li>
                             <li><i class="bi bi-lightning-charge-fill"></i> Use boosts to climb the table faster</li>
                         </ul>
+                        @* Somebody sent here from a join they could not finish is offered the way back to it, rather than
+                           being left to find the league again. *@
+                        @if (DashboardState.PendingJoin is { } pendingJoin)
+                        {
+                            <p class="season-pass-success__subtitle">
+                                You were joining <strong>@pendingJoin.LeagueName</strong>. You can finish that now.
+                            </p>
+                        }
+
                         <div class="season-pass-success__actions">
-                            <a class="btn green-button" href="/dashboard">Go to dashboard</a>
+                            @if (DashboardState.PendingJoin is not null)
+                            {
+                                <a class="btn green-button" href="/dashboard">Join your league</a>
+                            }
+                            else
+                            {
+                                <a class="btn green-button" href="/dashboard">Go to dashboard</a>
+                            }
+
                             <a class="btn blue-light-button" href="/leagues/create">Create a league</a>
                         </div>
                     </div>

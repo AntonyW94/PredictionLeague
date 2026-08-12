@@ -215,6 +215,16 @@
 
     /// <summary>When set, the modal joins a public league directly (no entry code) and skips the code step.</summary>
     [Parameter] public int? LeagueId { get; set; }
+
+    /// <summary>
+    /// A code already in hand, which skips the code step the way an id does.
+    /// </summary>
+    /// <remarks>
+    /// Set when somebody is brought back here after buying a Season Pass, so they do not have to find the league and type
+    /// its code a second time.
+    /// </remarks>
+    [Parameter] public string? EntryCode { get; set; }
+
     [Parameter] public EventCallback OnClose { get; set; }
 
     private bool IsPublic => LeagueId.HasValue;
@@ -229,12 +239,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (!IsPublic)
+        if (!IsPublic && string.IsNullOrWhiteSpace(EntryCode))
             return;
 
-        // Public league: fetch the preview straight away (by id) and jump to the confirm step.
+        // A league we can already identify - by id, or by a code handed back to us - so fetch the preview straight away
+        // and jump to the confirm step.
         _step = Step.Loading;
-        var (preview, errorMessage) = await LeagueService.GetJoinPreviewByIdAsync(LeagueId!.Value);
+
+        if (!IsPublic)
+            _model.EntryCode = EntryCode!;
+
+        var (preview, errorMessage) = IsPublic
+            ? await LeagueService.GetJoinPreviewByIdAsync(LeagueId!.Value)
+            : await LeagueService.GetJoinPreviewAsync(EntryCode!);
 
         if (preview is not null)
         {
@@ -324,8 +341,16 @@
         _isBusy = false;
     }
 
+    /// <summary>
+    /// Off to buy a pass, remembering the league so that finishing there can offer to bring them back to it.
+    /// </summary>
     private void GoToSeasonPasses()
     {
+        DashboardState.RememberPendingJoin(new PendingJoin(
+            LeagueId,
+            IsPublic ? null : _model.EntryCode,
+            _preview?.LeagueName ?? "your league"));
+
         Navigation.NavigateTo("/season-passes");
     }
 

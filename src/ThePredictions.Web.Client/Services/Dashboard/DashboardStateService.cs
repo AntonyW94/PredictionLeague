@@ -275,6 +275,21 @@ public class DashboardStateService(ILeagueService leagueService, ISeasonPassServ
         }
     }
 
+    public PendingJoin? PendingJoin { get; private set; }
+
+    public void RememberPendingJoin(PendingJoin pendingJoin)
+    {
+        PendingJoin = pendingJoin;
+    }
+
+    public PendingJoin? TakePendingJoin()
+    {
+        var pendingJoin = PendingJoin;
+        PendingJoin = null;
+
+        return pendingJoin;
+    }
+
     public const string NeedsSeasonPassMessage =
         "You need a Season Pass for this season before you can join a league in it. You can get one from the Season Passes page.";
 

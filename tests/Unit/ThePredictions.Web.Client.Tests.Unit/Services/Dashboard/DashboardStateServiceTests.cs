@@ -295,6 +295,45 @@ public class DashboardStateServiceTests
         await _leagueService.DidNotReceive().GetMyLeaguesAsync();
     }
 
+    // ---------- The league somebody was heading for ----------
+
+    [Fact]
+    public void PendingJoin_ShouldBeNothing_UntilAJoinIsRefusedForWantOfAPass()
+    {
+        _service.PendingJoin.Should().BeNull();
+    }
+
+    [Fact]
+    public void RememberPendingJoin_ShouldHoldTheLeagueTheyWereHeadingFor()
+    {
+        // Arrange - a private league, so the code they typed has to survive the trip to the passes page as well.
+        _service.RememberPendingJoin(new PendingJoin(null, "ABC123", "The Office"));
+
+        // Assert
+        _service.PendingJoin.Should().Be(new PendingJoin(null, "ABC123", "The Office"));
+    }
+
+    [Fact]
+    public void TakePendingJoin_ShouldReturnItAndForgetIt()
+    {
+        // Once is the point: coming back to the dashboard a second time must not reopen a join they have abandoned.
+        _service.RememberPendingJoin(new PendingJoin(7, null, "The Office"));
+
+        // Act
+        var taken = _service.TakePendingJoin();
+
+        // Assert
+        taken!.LeagueId.Should().Be(7);
+        _service.TakePendingJoin().Should().BeNull();
+        _service.PendingJoin.Should().BeNull();
+    }
+
+    [Fact]
+    public void TakePendingJoin_ShouldReturnNothing_WhenNobodyWasHeadingAnywhere()
+    {
+        _service.TakePendingJoin().Should().BeNull();
+    }
+
     [Fact]
     public async Task CancelJoinRequestAsync_ShouldRefreshRequestsAndAvailability_OnSuccess()
     {
