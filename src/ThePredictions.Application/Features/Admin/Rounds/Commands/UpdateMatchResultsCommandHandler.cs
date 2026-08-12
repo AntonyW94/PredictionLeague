@@ -52,7 +52,6 @@ public class UpdateMatchResultsCommandHandler(
         await roundRepository.UpdateMatchScoresAsync(matchesToUpdate, cancellationToken);
         await ScorePredictionsAsync(matchesToUpdate, cancellationToken);
         await roundResultsService.RecalculateAsync(round, cancellationToken);
-        await leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
         await boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
         
         var isRoundFinishing = round.Matches.All(m => m.Status is MatchStatus.Completed or MatchStatus.Postponed);

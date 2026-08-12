@@ -4,6 +4,7 @@ using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
+using ThePredictions.Domain.Services;
 using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
 
@@ -20,11 +21,13 @@ public class RoundResultsServiceTests
 
     private readonly IUserPredictionRepository _predictions = Substitute.For<IUserPredictionRepository>();
     private readonly IRoundRepository _rounds = Substitute.For<IRoundRepository>();
+    private readonly ILeagueRepository _leagues = Substitute.For<ILeagueRepository>();
     private readonly RoundResultsService _service;
 
     public RoundResultsServiceTests()
     {
-        _service = new RoundResultsService(_predictions, _rounds);
+        _service = new RoundResultsService(_predictions, _rounds, _leagues);
+        _leagues.GetLeagueRoundScoringInputsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([]);
     }
 
     [Fact]
@@ -106,6 +109,116 @@ public class RoundResultsServiceTests
         // Assert
         await _predictions.DidNotReceiveWithAnyArgs().GetByMatchIdsAsync(default!, CancellationToken.None);
         await _rounds.DidNotReceiveWithAnyArgs().UpdateRoundResultsAsync(default, default!, CancellationToken.None);
+    }
+
+    #region What each league pays for the round
+
+    [Fact]
+    public async Task RecalculateAsync_ShouldStoreThePointsEachLeaguePaysForTheSameRound()
+    {
+        // The same tally in two leagues with different settings. This is the product feature the arithmetic implements, and
+        // it lived only in SQL.
+        GivenPredictions();
+        GivenScoringInputs(
+            new LeagueRoundScoringInput(1, "user-1", new OutcomeCounts(2, 3, 0), PointsForExactScore: 3, PointsForCorrectResult: 1),
+            new LeagueRoundScoringInput(2, "user-1", new OutcomeCounts(2, 3, 0), PointsForExactScore: 10, PointsForCorrectResult: 5));
+
+        // Act
+        await _service.RecalculateAsync(RoundWithTwoMatches(), CancellationToken.None);
+
+        // Assert
+        var scores = CapturedScores();
+        scores.Single(score => score.LeagueId == 1).BasePoints.Should().Be(9);
+        scores.Single(score => score.LeagueId == 2).BasePoints.Should().Be(35);
+
+        // Attributed to the player who earned them. Nothing else in these tests read this, and points landing against the
+        // wrong player is the worst thing this code could do quietly.
+        scores.Should().OnlyContain(score => score.UserId == "user-1");
+    }
+
+    [Fact]
+    public async Task RecalculateAsync_ShouldGiveEachPlayerTheirOwnPoints()
+    {
+        // Arrange - same league, different tallies.
+        GivenPredictions();
+        GivenScoringInputs(
+            new LeagueRoundScoringInput(1, "user-1", new OutcomeCounts(2, 0, 0), PointsForExactScore: 3, PointsForCorrectResult: 1),
+            new LeagueRoundScoringInput(1, "user-2", new OutcomeCounts(0, 4, 0), PointsForExactScore: 3, PointsForCorrectResult: 1));
+
+        // Act
+        await _service.RecalculateAsync(RoundWithTwoMatches(), CancellationToken.None);
+
+        // Assert
+        var scores = CapturedScores();
+        scores.Single(score => score.UserId == "user-1").BasePoints.Should().Be(6);
+        scores.Single(score => score.UserId == "user-2").BasePoints.Should().Be(4);
+    }
+
+    [Fact]
+    public async Task RecalculateAsync_ShouldClearAnyBoostWhenBasePointsAreRebuilt()
+    {
+        // Boosts are applied in the step after this one. A boost left on the row would be counted a second time every time
+        // the round was re-processed, which is what the statement this replaces was careful to avoid.
+        GivenPredictions();
+        GivenScoringInputs(
+            new LeagueRoundScoringInput(1, "user-1", new OutcomeCounts(2, 0, 0), PointsForExactScore: 3, PointsForCorrectResult: 1));
+
+        // Act
+        await _service.RecalculateAsync(RoundWithTwoMatches(), CancellationToken.None);
+
+        // Assert
+        var score = CapturedScores().Single();
+        score.BoostedPoints.Should().Be(score.BasePoints);
+        score.HasBoost.Should().BeFalse();
+        score.AppliedBoostCode.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task RecalculateAsync_ShouldRebuildTheTalliesBeforeTheLeaguePoints()
+    {
+        // Order matters: the league points are worked out from the tallies, so reading them first would score the round
+        // from the previous run's numbers.
+        GivenPredictions(Prediction(1, "user-1", PredictionOutcome.ExactScore));
+
+        // Act
+        await _service.RecalculateAsync(RoundWithTwoMatches(), CancellationToken.None);
+
+        // Assert
+        Received.InOrder(() =>
+        {
+            _rounds.UpdateRoundResultsAsync(7, Arg.Any<IEnumerable<RoundResultTally>>(), Arg.Any<CancellationToken>());
+            _leagues.GetLeagueRoundScoringInputsAsync(7, Arg.Any<CancellationToken>());
+        });
+    }
+
+    [Fact]
+    public async Task RecalculateAsync_ShouldStoreNoPoints_WhenNobodyIsInALeagueForThatSeason()
+    {
+        // Arrange
+        GivenPredictions();
+        GivenScoringInputs();
+
+        // Act
+        await _service.RecalculateAsync(RoundWithTwoMatches(), CancellationToken.None);
+
+        // Assert
+        CapturedScores().Should().BeEmpty();
+    }
+
+    #endregion
+
+    private void GivenScoringInputs(params LeagueRoundScoringInput[] inputs) =>
+        _leagues.GetLeagueRoundScoringInputsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(inputs);
+
+    private List<LeagueRoundScore> CapturedScores()
+    {
+        var calls = _leagues.ReceivedCalls()
+            .Where(call => call.GetMethodInfo().Name == nameof(ILeagueRepository.UpdateLeagueRoundResultsAsync))
+            .ToList();
+
+        calls.Should().ContainSingle();
+
+        return ((IEnumerable<LeagueRoundScore>)calls[0].GetArguments()[1]!).ToList();
     }
 
     private void GivenPredictions(params UserPrediction[] predictions) =>

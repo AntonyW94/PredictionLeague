@@ -27,7 +27,6 @@ public class RecalculateSeasonStatsCommandHandler(
         foreach (var round in completedRounds)
         {
             await roundResultsService.RecalculateAsync(round, cancellationToken);
-            await leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
             await boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
 
             var leagueIds = await leagueRepository.GetLeagueIdsForSeasonAsync(round.SeasonId, cancellationToken);

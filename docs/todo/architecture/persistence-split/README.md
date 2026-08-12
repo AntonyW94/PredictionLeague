@@ -1414,14 +1414,20 @@ Four statements, of which two hold rules:
 | Statement | Verdict |
 |---|---|
 | `RoundRepository.UpdateRoundResultsAsync` | **Rule, and moved.** Counting how a player's predictions turned out is `Domain.Services.OutcomeTally`; the repository is handed one tally per player and upserts it. |
-| `LeagueRepository.UpdateLeagueRoundResultsAsync` | **Rule, still to move.** `exact x PointsForExactScore + correct x PointsForCorrectResult`, for approved members only, resetting any boost. This is the league scoring formula and it exists **only** in SQL - there is no C# copy to disagree with it, which is why nothing tests it. |
+| `LeagueRepository.UpdateLeagueRoundResultsAsync` | **Rule, and moved.** `Domain.Services.LeagueScoring.BasePoints`. The scoring formula of the whole game, and it existed **only** in SQL - no C# copy to disagree with it, which is why nothing tested it. Choosing which (league, player) pairs are in scope stayed a read; the arithmetic and the boost reset are C# with tests. |
 | `LeagueRepository.UpdateLeagueRoundBoostsAsync` | Mechanism. The points are computed in C# already; this writes them back. One rule hides in it - it updates only, so a boost can never create a results row. |
 | `UserPredictionRepository.UpsertBatchAsync` | Mechanism. Nothing to move. |
 
 Seven write statements also call `GETUTCDATE()` rather than the injected clock, which is the same smell
-the read side had.
+the read side had. That, and the nullable-column sweep, are what remain.
 
-### What the first one taught
+The scoring move was worth the care it took. Two mutations that had to be caught were "the two rates
+swapped" and "points attributed to the wrong league", and a third - nothing read `UserId` off the row the
+service builds - was caught by the coverage gate rather than by a mutation, because no test had asserted
+which player the points belonged to. Points landing against the wrong player is the worst thing this code
+could do quietly, and it now has a test of its own.
+
+### What the two moves taught
 
 The tally had a second implementation in C# - the active-rounds tile counted the same three things for the
 one player looking at it - so moving the write collapsed a duplicate rather than just relocating a

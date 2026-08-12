@@ -6,6 +6,7 @@ using ThePredictions.Contracts.Boosts;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
+using ThePredictions.Domain.Services;
 using System.Data;
 
 namespace ThePredictions.Persistence.SqlServer.Repositories;
@@ -411,57 +412,119 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
         }
     }
 
-    public async Task UpdateLeagueRoundResultsAsync(int roundId, CancellationToken cancellationToken)
+    public async Task<IEnumerable<LeagueRoundScoringInput>> GetLeagueRoundScoringInputsAsync(
+        int roundId,
+        CancellationToken cancellationToken)
     {
+        // The USING clause of the statement this replaces, without its arithmetic. Which pairs are in scope is the join:
+        // every league running the round's season, and only members it has approved.
+        const string sql = @"
+            SELECT
+                l.[Id] AS [LeagueId],
+                rr.[UserId],
+                rr.[ExactScoreCount],
+                rr.[CorrectResultCount],
+                l.[PointsForExactScore],
+                l.[PointsForCorrectResult]
+            FROM
+                [RoundResults] rr
+            INNER JOIN
+                [Rounds] r ON r.[Id] = rr.[RoundId]
+            INNER JOIN
+                [Leagues] l ON l.[SeasonId] = r.[SeasonId]
+            INNER JOIN
+                [LeagueMembers] lm ON lm.[LeagueId] = l.[Id]
+                    AND lm.[UserId] = rr.[UserId]
+                    AND lm.[Status] = @ApprovedStatus
+            WHERE
+                rr.[RoundId] = @RoundId;";
+
+        var command = new CommandDefinition(
+            sql,
+            new { RoundId = roundId, ApprovedStatus = nameof(LeagueMemberStatus.Approved) },
+            transaction: Transaction,
+            cancellationToken: cancellationToken);
+
+        var rows = await Connection.QueryAsync<ScoringInputRow>(command);
+
+        return rows
+            .Select(row => new LeagueRoundScoringInput(
+                row.LeagueId,
+                row.UserId,
+                new OutcomeCounts(row.ExactScoreCount, row.CorrectResultCount, IncorrectCount: 0),
+                row.PointsForExactScore,
+                row.PointsForCorrectResult))
+            .ToList();
+    }
+
+    public async Task UpdateLeagueRoundResultsAsync(
+        int roundId,
+        IEnumerable<LeagueRoundScore> scores,
+        CancellationToken cancellationToken)
+    {
+        // One row per (league, player), upserted. Every value stored is computed by the caller, including the cleared
+        // boost - so this decides nothing beyond where the numbers go.
         const string sql = @"
             MERGE [LeagueRoundResults] AS target
             USING (
-                    SELECT
-                        lm.[LeagueId],
-                        rr.[RoundId],
-                        rr.[UserId],
-                        (
-                            (rr.[ExactScoreCount] * l.[PointsForExactScore]) +
-                            (rr.[CorrectResultCount] * l.[PointsForCorrectResult])
-                        ) AS [BasePoints]
-                    FROM
-                        [RoundResults] rr
-                    INNER JOIN
-                        [Rounds] r ON r.[Id] = rr.[RoundId]
-                    INNER JOIN
-                        [Leagues] l ON l.[SeasonId] = r.[SeasonId]
-                    INNER JOIN
-                        [LeagueMembers] lm ON lm.[LeagueId] = l.[Id] AND lm.[UserId]  = rr.[UserId] AND lm.[Status]  = @ApprovedStatus
-                    WHERE
-                        rr.[RoundId] = @RoundId
-                   ) AS src
+                SELECT
+                    @LeagueId AS [LeagueId],
+                    @RoundId AS [RoundId],
+                    @UserId AS [UserId],
+                    @BasePoints AS [BasePoints],
+                    @BoostedPoints AS [BoostedPoints],
+                    @HasBoost AS [HasBoost],
+                    @AppliedBoostCode AS [AppliedBoostCode]
+            ) AS src
             ON target.[LeagueId] = src.[LeagueId]
                AND target.[RoundId] = src.[RoundId]
-               AND target.[UserId]  = src.[UserId]
+               AND target.[UserId] = src.[UserId]
 
             WHEN MATCHED THEN
                 UPDATE SET
                     target.[BasePoints]       = src.[BasePoints],
-                    target.[BoostedPoints]    = src.[BasePoints],
-                    target.[HasBoost]         = 0,
-                    target.[AppliedBoostCode] = NULL
+                    target.[BoostedPoints]    = src.[BoostedPoints],
+                    target.[HasBoost]         = src.[HasBoost],
+                    target.[AppliedBoostCode] = src.[AppliedBoostCode]
 
             WHEN NOT MATCHED BY TARGET THEN
                 INSERT ([LeagueId], [RoundId], [UserId], [BasePoints], [BoostedPoints], [HasBoost], [AppliedBoostCode])
-                VALUES (src.[LeagueId], src.[RoundId], src.[UserId], src.[BasePoints], src.[BasePoints], 0, NULL);";
+                VALUES (src.[LeagueId], src.[RoundId], src.[UserId], src.[BasePoints], src.[BoostedPoints],
+                        src.[HasBoost], src.[AppliedBoostCode]);";
+
+        var rows = scores
+            .Select(score => new
+            {
+                score.LeagueId,
+                RoundId = roundId,
+                score.UserId,
+                score.BasePoints,
+                score.BoostedPoints,
+                score.HasBoost,
+                score.AppliedBoostCode
+            })
+            .ToList();
+
+        if (rows.Count == 0)
+            return;
 
         var command = new CommandDefinition(
             sql,
-            new
-            {
-                RoundId = roundId,
-                ApprovedStatus = nameof(LeagueMemberStatus.Approved)
-            },
+            rows,
             transaction: Transaction,
             cancellationToken: cancellationToken);
 
         await Connection.ExecuteAsync(command);
     }
+
+    /// <remarks>Column order matches the SELECT above, per the Dapper result-mapping rule in CLAUDE.md.</remarks>
+    private sealed record ScoringInputRow(
+        int LeagueId,
+        string UserId,
+        int ExactScoreCount,
+        int CorrectResultCount,
+        int PointsForExactScore,
+        int PointsForCorrectResult);
 
     public async Task UpdateLeagueRoundBoostsAsync(IEnumerable<LeagueRoundBoostUpdate> updates, CancellationToken cancellationToken)
     {
