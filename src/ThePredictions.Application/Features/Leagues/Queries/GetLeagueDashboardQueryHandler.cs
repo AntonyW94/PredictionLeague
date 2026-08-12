@@ -43,7 +43,9 @@ public class GetLeagueDashboardQueryHandler(
             EntryDeadlineUtc = header.EntryDeadlineUtc,
             MemberCount = header.MemberCount,
             TotalPrizeFund = PrizeFund.Total(header.Price, header.MemberCount, header.PrizeFundOverride),
-            IsFinished = SeasonCompletion.IsFinished(header.CompletedRoundCount, header.NumberOfRounds),
+            IsFinished = SeasonCompletion.IsEveryRoundComplete(
+                roundCount: header.SeasonRoundCount,
+                completedRoundCount: header.CompletedRoundCount),
             IsFree = header.IsFree,
             Members = MembersOn(data.Members),
             ViewableRounds = RoundsOn(rounds)

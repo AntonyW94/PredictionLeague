@@ -37,7 +37,9 @@ public class GetLeaguePayoutsQueryHandler(
             .ToList();
 
         return new LeaguePayoutsDto(
-            SeasonCompletion.IsEveryRoundComplete(data.SeasonRoundCount, data.CompletedRoundCount),
+            SeasonCompletion.IsEveryRoundComplete(
+                roundCount: data.SeasonRoundCount,
+                completedRoundCount: data.CompletedRoundCount),
             OutstandingTotal(winners),
             PaidTotal(winners, storedByUser),
             winners);

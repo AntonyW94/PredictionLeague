@@ -53,6 +53,24 @@ public abstract class MyLeaguesQueryConformanceTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_ShouldCountTheRoundsThatExistRatherThanTheNumberTheSeasonDeclares()
+    {
+        // The season declares 38 and holds two. Whether it has finished is decided from the two, because the declared
+        // length is a number somebody typed and the football API can add rounds beyond it.
+        var world = await ArrangeAsync();
+        await Seed.AddRoundAsync(world.SeasonId, 1, DateTime.UtcNow.AddDays(-2), RoundStatus.Completed);
+        await Seed.AddRoundAsync(world.SeasonId, 2, DateTime.UtcNow.AddDays(-1), RoundStatus.Completed);
+
+        // Act
+        var data = await Query.ExecuteAsync(world.UserId, CancellationToken.None);
+
+        // Assert - both complete, so this season reads as finished even though it declares 38 rounds.
+        var league = data.Leagues.Single();
+        league.SeasonRoundCount.Should().Be(2);
+        league.CompletedRoundCount.Should().Be(2);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ShouldReturnTheLeaguesSeasonAndCompetition()
     {
         // Arrange
@@ -65,7 +83,9 @@ public abstract class MyLeaguesQueryConformanceTests
         var league = data.Leagues.Single();
         league.SeasonId.Should().Be(world.SeasonId);
         league.SeasonName.Should().Be("2026/27");
-        league.NumberOfRounds.Should().Be(38);
+        // The rounds that exist, not the number the season declares - which is what "is the season over" is now decided
+        // from everywhere. These worlds seed no rounds, so the count is nought rather than the season's 38.
+        league.SeasonRoundCount.Should().Be(0);
         league.SeasonStartDateUtc.Should().NotBe(default);
         league.CompetitionType.Should().BeOneOf(CompetitionType.League, CompetitionType.Tournament);
     }

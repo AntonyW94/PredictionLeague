@@ -97,7 +97,9 @@ public class GetMyLeaguesQueryHandler(
             league.IsFree,
             CountWins(completedScores, score => score.Round.RoundId, userId),
             CountWins(completedScores, score => MonthOf(score.Round), userId),
-            SeasonCompletion.IsFinished(league.CompletedRoundCount, league.NumberOfRounds),
+            SeasonCompletion.IsEveryRoundComplete(
+                roundCount: league.SeasonRoundCount,
+                completedRoundCount: league.CompletedRoundCount),
             league.IsArchivedByUser,
             round.StageName,
             ranks.Stage,

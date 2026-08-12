@@ -23,7 +23,7 @@ public sealed record DashboardLeagueRow(
     decimal Price,
     string SeasonName,
     DateTime SeasonStartDateUtc,
-    int NumberOfRounds,
+    int SeasonRoundCount,
     int CompletedRoundCount,
     bool HasRoundInProgress,
     bool IsArchivedByUser) : ILeagueTile;

@@ -22,5 +22,5 @@ public sealed record LeagueDashboardHeaderRow(
     decimal? PrizeFundOverride,
     bool IsFree,
     int MemberCount,
-    int NumberOfRounds,
+    int SeasonRoundCount,
     int CompletedRoundCount);

@@ -57,7 +57,9 @@ public class GetLeaderboardsQueryHandler(IDashboardLeaderboardsQuery leaderboard
             LeagueId = league.LeagueId,
             LeagueName = league.LeagueName,
             SeasonName = league.SeasonName,
-            IsFinished = SeasonCompletion.IsFinished(league.CompletedRoundCount, league.NumberOfRounds),
+            IsFinished = SeasonCompletion.IsEveryRoundComplete(
+                roundCount: league.SeasonRoundCount,
+                completedRoundCount: league.CompletedRoundCount),
             IsArchivedByUser = league.IsArchivedByUser,
             Entries = ranked
                 .Select(entry => new LeaderboardEntryDto

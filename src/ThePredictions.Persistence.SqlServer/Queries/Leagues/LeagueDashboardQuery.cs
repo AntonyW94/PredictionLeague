@@ -47,7 +47,14 @@ public sealed class LeagueDashboardQuery(IApplicationReadDbConnection dbConnecti
                         lm.[LeagueId] = l.[Id]
                         AND lm.[Status] = @ApprovedStatus
                 ) AS [MemberCount],
-                s.[NumberOfRounds],
+                (
+                    SELECT
+                        COUNT(*)
+                    FROM
+                        [Rounds] r
+                    WHERE
+                        r.[SeasonId] = l.[SeasonId]
+                ) AS [SeasonRoundCount],
                 (
                     SELECT
                         COUNT(*)

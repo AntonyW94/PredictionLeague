@@ -61,7 +61,14 @@ public sealed class MyLeaguesQuery(IApplicationReadDbConnection dbConnection) : 
                 c.[Type] AS [CompetitionType],
                 s.[StartDateUtc] AS [SeasonStartDateUtc],
                 l.[EntryDeadlineUtc],
-                s.[NumberOfRounds],
+                (
+                    SELECT
+                        COUNT(*)
+                    FROM
+                        [Rounds] r
+                    WHERE
+                        r.[SeasonId] = l.[SeasonId]
+                ) AS [SeasonRoundCount],
                 (
                     SELECT
                         COUNT(*)
