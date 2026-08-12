@@ -461,7 +461,7 @@ public class GetMyLeaguesQueryHandlerTests
     public async Task Handle_ShouldReportTheLeagueAsFinished_WhenEveryRoundHasCompleted()
     {
         // Arrange
-        Given(leagues: [League(numberOfRounds: 3, completedRoundCount: 3)]);
+        Given(leagues: [League(seasonRoundCount: 3, completedRoundCount: 3)]);
 
         // Act
         var tile = (await HandleAsync()).Single();
@@ -471,10 +471,38 @@ public class GetMyLeaguesQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldReportTheLeagueAsUnfinished_WhenTheSeasonHoldsMoreRoundsThanItDeclares()
+    {
+        // The case the two old definitions disagreed on. A season declaring 38 and holding 40, of which 38 are complete,
+        // used to read as finished here while the payouts screen said otherwise - and two rounds were still to play.
+        Given(leagues: [League(seasonRoundCount: 40, completedRoundCount: 38)]);
+
+        // Act
+        var tile = (await HandleAsync()).Single();
+
+        // Assert
+        tile.IsFinished.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReportTheLeagueAsUnfinished_WhenTheSeasonHasNoRoundsYet()
+    {
+        // Arrange - nought of nought is not a finished season, and saying otherwise would offer to settle one that has
+        // not started.
+        Given(leagues: [League(seasonRoundCount: 0, completedRoundCount: 0)]);
+
+        // Act
+        var tile = (await HandleAsync()).Single();
+
+        // Assert
+        tile.IsFinished.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Handle_ShouldReportTheLeagueAsUnfinished_WhileRoundsRemain()
     {
         // Arrange
-        Given(leagues: [League(numberOfRounds: 3, completedRoundCount: 2)]);
+        Given(leagues: [League(seasonRoundCount: 3, completedRoundCount: 2)]);
 
         // Act
         var tile = (await HandleAsync()).Single();
@@ -732,7 +760,7 @@ public class GetMyLeaguesQueryHandlerTests
         int seasonId = SeasonId,
         CompetitionType competitionType = CompetitionType.League,
         DateTime? seasonStartDateUtc = null,
-        int numberOfRounds = 38,
+        int seasonRoundCount = 38,
         int memberCount = 10,
         int completedRoundCount = 0,
         decimal totalPaidOut = 0m,
@@ -749,7 +777,7 @@ public class GetMyLeaguesQueryHandlerTests
             competitionType,
             seasonStartDateUtc ?? January,
             null,
-            numberOfRounds,
+            seasonRoundCount,
             memberCount,
             completedRoundCount,
             totalPaidOut,

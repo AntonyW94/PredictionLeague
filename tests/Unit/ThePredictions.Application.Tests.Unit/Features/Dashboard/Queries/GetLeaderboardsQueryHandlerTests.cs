@@ -200,7 +200,7 @@ public class GetLeaderboardsQueryHandlerTests
     {
         // Arrange
         Given(
-            leagues: [League(1, numberOfRounds: 3, completedRoundCount: 3)],
+            leagues: [League(1, seasonRoundCount: 3, completedRoundCount: 3)],
             members: [Member(1, "u1", "Ada", "Lovelace")],
             points: []);
 
@@ -216,7 +216,7 @@ public class GetLeaderboardsQueryHandlerTests
     {
         // Arrange
         Given(
-            leagues: [League(1, numberOfRounds: 3, completedRoundCount: 2)],
+            leagues: [League(1, seasonRoundCount: 3, completedRoundCount: 2)],
             members: [Member(1, "u1", "Ada", "Lovelace")],
             points: []);
 
@@ -369,7 +369,7 @@ public class GetLeaderboardsQueryHandlerTests
         string? name = null,
         decimal price = 10m,
         DateTime? seasonStartDateUtc = null,
-        int numberOfRounds = 38,
+        int seasonRoundCount = 38,
         int completedRoundCount = 1,
         bool hasRoundInProgress = false,
         bool isArchivedByUser = false) =>
@@ -379,7 +379,7 @@ public class GetLeaderboardsQueryHandlerTests
             price,
             "2026/27",
             seasonStartDateUtc ?? SeasonStart,
-            numberOfRounds,
+            seasonRoundCount,
             completedRoundCount,
             hasRoundInProgress,
             isArchivedByUser);

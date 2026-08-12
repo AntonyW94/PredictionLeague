@@ -26,7 +26,7 @@ public sealed record MyLeagueRow(
     CompetitionType CompetitionType,
     DateTime SeasonStartDateUtc,
     DateTime? EntryDeadlineUtc,
-    int NumberOfRounds,
+    int SeasonRoundCount,
     int MemberCount,
     int CompletedRoundCount,
     decimal TotalPaidOut,

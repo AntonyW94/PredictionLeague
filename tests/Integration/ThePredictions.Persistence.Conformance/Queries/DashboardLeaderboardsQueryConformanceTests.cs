@@ -70,7 +70,9 @@ public abstract class DashboardLeaderboardsQueryConformanceTests
         league.LeagueId.Should().Be(leagueId);
         league.LeagueName.Should().Be("Joined");
         league.SeasonName.Should().Be("2026/27");
-        league.NumberOfRounds.Should().Be(38);
+        // The rounds that exist, not the number the season declares - which is what "is the season over" is now decided
+        // from everywhere. These worlds seed no rounds, so the count is nought rather than the season's 38.
+        league.SeasonRoundCount.Should().Be(0);
         league.SeasonStartDateUtc.Should().NotBe(default);
     }
 

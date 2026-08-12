@@ -113,7 +113,7 @@ public class GetLeagueDashboardQueryHandlerTests
     public async Task Handle_ShouldReportTheLeagueAsFinished_WhenEveryRoundHasCompleted()
     {
         // Arrange
-        Given(header: Header(numberOfRounds: 3, completedRoundCount: 3));
+        Given(header: Header(seasonRoundCount: 3, completedRoundCount: 3));
 
         // Act
         var dashboard = await HandleAsync(isAdmin: true);
@@ -126,7 +126,7 @@ public class GetLeagueDashboardQueryHandlerTests
     public async Task Handle_ShouldReportTheLeagueAsUnfinished_WhileRoundsRemain()
     {
         // Arrange
-        Given(header: Header(numberOfRounds: 3, completedRoundCount: 2));
+        Given(header: Header(seasonRoundCount: 3, completedRoundCount: 2));
 
         // Act
         var dashboard = await HandleAsync(isAdmin: true);
@@ -334,7 +334,7 @@ public class GetLeagueDashboardQueryHandlerTests
         bool isFree = false,
         CompetitionType competitionType = CompetitionType.League,
         DateTime? entryDeadlineUtc = null,
-        int numberOfRounds = 38,
+        int seasonRoundCount = 38,
         int completedRoundCount = 0) =>
         new(
             "Test League",
@@ -345,7 +345,7 @@ public class GetLeagueDashboardQueryHandlerTests
             prizeFundOverride,
             isFree,
             memberCount,
-            numberOfRounds,
+            seasonRoundCount,
             completedRoundCount);
 
     private static LeagueDashboardMemberRow Member(

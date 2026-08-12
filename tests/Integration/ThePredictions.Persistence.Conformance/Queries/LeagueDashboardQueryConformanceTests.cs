@@ -43,7 +43,9 @@ public abstract class LeagueDashboardQueryConformanceTests
         // Assert
         var header = data!.Header;
         header.Name.Should().Be("Integration League");
-        header.NumberOfRounds.Should().Be(38);
+        // The rounds that exist, not the number the season declares - which is what "is the season over" is now decided
+        // from everywhere. These worlds seed no rounds, so the count is nought rather than the season's 38.
+        header.SeasonRoundCount.Should().Be(0);
         header.SeasonStartDateUtc.Should().NotBe(default);
         header.IsFree.Should().BeTrue();
     }

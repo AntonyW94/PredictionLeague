@@ -1,44 +1,34 @@
 namespace ThePredictions.Domain.Services;
 
 /// <summary>
-/// Whether a season has run its course.
+/// Whether a season has run its course: every round it holds has been completed, and it holds at least one.
 /// </summary>
 /// <remarks>
-/// Three queries wrote this as a correlated subquery inside a <c>CASE</c>:
+/// There were two definitions of this, and they could disagree. The dashboards asked whether the number of completed
+/// rounds had reached the number the season <b>declares</b>:
 ///
 /// <code>
-/// WHEN (SELECT COUNT(*) FROM [Rounds] r2 WHERE r2.[SeasonId] = l.[SeasonId] AND r2.[Status] = @CompletedStatus) >= s.[NumberOfRounds]
+/// (SELECT COUNT(*) FROM [Rounds] r2 WHERE r2.[SeasonId] = l.[SeasonId] AND r2.[Status] = @Completed) &gt;= s.[NumberOfRounds]
 /// </code>
 ///
-/// The interesting part is the <c>&gt;=</c> rather than <c>=</c>: a season carrying more completed rounds than it
-/// declares is finished, not broken. That happens when rounds are added after the fact, and an equality test
-/// would leave such a league showing as in play for ever.
+/// while the payouts screen asked whether every round that <b>exists</b> had been completed. A season declaring 38 rounds
+/// but holding 40, of which 38 are complete, was finished by the first and unfinished by the second.
+///
+/// This is the second, and now the only one. The declared length is a number an administrator typed and the football API
+/// can add rounds beyond it, so the rounds that exist are the better authority - and the failure modes are not
+/// symmetrical. Reaching the declared count too early would let the payouts screen offer to settle a season with rounds
+/// still to play; requiring every round to be complete can only ever be too cautious, which for money is the right way
+/// round.
+///
+/// The <c>at least one round exists</c> half is not incidental. Without it an empty season reports itself finished, and
+/// the payouts screen offers to pay out a season that has not started.
 /// </remarks>
 public static class SeasonCompletion
 {
-    /// <summary>
-    /// Finished by the season's own declared length - the definition the dashboards use.
-    /// </summary>
-    public static bool IsFinished(int completedRoundCount, int numberOfRounds) =>
-        completedRoundCount >= numberOfRounds;
-
-    /// <summary>
-    /// Finished because every round that exists has been completed, and at least one does.
-    /// </summary>
     /// <remarks>
-    /// The payouts screen asks the question this way instead, and it was written as a pair of <c>EXISTS</c> clauses:
-    ///
-    /// <code>
-    /// EXISTS (SELECT 1 FROM [Rounds] r WHERE r.[SeasonId] = l.[SeasonId])
-    /// AND NOT EXISTS (SELECT 1 FROM [Rounds] r2 WHERE r2.[SeasonId] = l.[SeasonId] AND r2.[Status] &lt;&gt; @Completed)
-    /// </code>
-    ///
-    /// <b>The two definitions can disagree.</b> A season declaring 38 rounds but holding 40, of which 38 are complete,
-    /// is finished by <see cref="IsFinished"/> and unfinished by this one. Both are stated here rather than merged
-    /// because merging them would change what one of the two screens shows, and which is right is a question for the
-    /// owner - recorded in the plan document. The <c>and at least one exists</c> half is not incidental: without it an
-    /// empty season would report itself finished, and the payouts screen would offer to pay out a season that has not
-    /// started.
+    /// The two counts are interchangeable for every input a database can hold - a season cannot have completed rounds
+    /// without having rounds - so swapping them at a call site changes no answer, and no test can catch it. Every caller
+    /// therefore passes them by name, which is what protects a reader instead.
     /// </remarks>
     public static bool IsEveryRoundComplete(int roundCount, int completedRoundCount)
     {

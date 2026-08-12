@@ -38,7 +38,14 @@ public sealed class DashboardLeaderboardsQuery(IApplicationReadDbConnection dbCo
                 l.[Price],
                 s.[Name] AS [SeasonName],
                 s.[StartDateUtc] AS [SeasonStartDateUtc],
-                s.[NumberOfRounds],
+                (
+                    SELECT
+                        COUNT(*)
+                    FROM
+                        [Rounds] r
+                    WHERE
+                        r.[SeasonId] = l.[SeasonId]
+                ) AS [SeasonRoundCount],
                 (
                     SELECT
                         COUNT(*)
