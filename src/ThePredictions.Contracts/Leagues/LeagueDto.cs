@@ -10,7 +10,7 @@ public record LeagueDto(
     int MemberCount,
     decimal Price,
     string EntryCode,
-    DateTime EntryDeadlineUtc,
+    DateTime? EntryDeadlineUtc,
     int PointsForExactScore,
     int PointsForCorrectResult,
     int SeasonId = 0,

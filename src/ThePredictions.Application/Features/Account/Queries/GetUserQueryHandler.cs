@@ -1,31 +1,16 @@
-using ThePredictions.Domain.Common.Exceptions;
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Account;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Account.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetUserQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetUserQuery, UserDetails>
+/// <summary>A player's own account details.</summary>
+public class GetUserQueryHandler(IAccountProfileQuery accountProfileQuery) : IRequestHandler<GetUserQuery, UserDetails>
 {
     public async Task<UserDetails> Handle(GetUserQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                [FirstName],
-                [LastName],
-                [Email],
-                [PhoneNumber],
-                [PreferredTheme],
-                CAST(CASE WHEN [MarketingOptInAtUtc] IS NOT NULL THEN 1 ELSE 0 END AS bit) AS MarketingOptIn
-            FROM [AspNetUsers]
-            WHERE [Id] = @UserId;";
-
-        var user = await dbConnection.QuerySingleOrDefaultAsync<UserQueryResult>(sql, cancellationToken, new { request.UserId });
-
-        if (user is null)
-            throw new EntityNotFoundException("User", request.UserId);
+        var user = await accountProfileQuery.ExecuteAsync(request.UserId, cancellationToken)
+                   ?? throw new EntityNotFoundException("User", request.UserId);
 
         return new UserDetails(
             user.FirstName,
@@ -33,15 +18,9 @@ public class GetUserQueryHandler(IApplicationReadDbConnection dbConnection) : IR
             user.Email,
             user.PhoneNumber,
             user.PreferredTheme,
-            user.MarketingOptIn);
-    }
 
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Local")]
-    private record UserQueryResult(
-        string FirstName,
-        string LastName,
-        string Email,
-        string? PhoneNumber,
-        string PreferredTheme,
-        bool MarketingOptIn);
+            // Opting in is recorded as the moment it happened, so having a date is what "yes" means. The screen only needs the
+            // answer, but storing the date is what lets the consent be evidenced later.
+            MarketingOptIn: user.MarketingOptInAtUtc is not null);
+    }
 }

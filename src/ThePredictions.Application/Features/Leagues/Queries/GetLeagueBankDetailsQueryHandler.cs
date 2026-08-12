@@ -1,33 +1,17 @@
 using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetLeagueBankDetailsQueryHandler(IApplicationReadDbConnection dbConnection, IFieldEncryptionService fieldEncryptionService)
+public class GetLeagueBankDetailsQueryHandler(ILeagueBankDetailsQuery bankDetailsQuery, IFieldEncryptionService fieldEncryptionService)
     : IRequestHandler<GetLeagueBankDetailsQuery, LeagueBankDetailsDto>
 {
     public async Task<LeagueBankDetailsDto> Handle(GetLeagueBankDetailsQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                l.[AdministratorUserId],
-                l.[BankAccountName] AS EncryptedAccountName,
-                l.[BankSortCode] AS EncryptedSortCode,
-                l.[BankAccountNumber] AS EncryptedAccountNumber,
-                l.[PaymentReferenceTemplate]
-            FROM
-                [Leagues] l
-            WHERE
-                l.[Id] = @LeagueId;";
-
-        var row = await dbConnection.QuerySingleOrDefaultAsync<BankDetailsRow>(
-            sql,
-            cancellationToken,
-            new { request.LeagueId });
+        var row = await bankDetailsQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 
         if (row is null)
             throw new KeyNotFoundException($"League with ID {request.LeagueId} not found.");
@@ -41,11 +25,4 @@ public class GetLeagueBankDetailsQueryHandler(IApplicationReadDbConnection dbCon
             fieldEncryptionService.Decrypt(row.EncryptedAccountNumber),
             row.PaymentReferenceTemplate);
     }
-
-    private sealed record BankDetailsRow(
-        string AdministratorUserId,
-        string? EncryptedAccountName,
-        string? EncryptedSortCode,
-        string? EncryptedAccountNumber,
-        string? PaymentReferenceTemplate);
 }

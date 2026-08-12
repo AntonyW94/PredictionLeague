@@ -1,97 +1,73 @@
-﻿using MediatR;
-using ThePredictions.Application.Data;
+using MediatR;
 using ThePredictions.Contracts.Leagues;
-using System.Diagnostics.CodeAnalysis;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-public class GetManageLeaguesQueryHandler(IApplicationReadDbConnection dbConnection) : IRequestHandler<GetManageLeaguesQuery, ManageLeaguesDto>
+/// <summary>
+/// The league management screen: the public leagues, the private ones this player runs, and - for an administrator - everybody
+/// else's private ones.
+/// </summary>
+public class GetManageLeaguesQueryHandler(IManageLeaguesQuery manageLeaguesQuery)
+    : IRequestHandler<GetManageLeaguesQuery, ManageLeaguesDto>
 {
+    /// <summary>What the screen shows in place of an entry code for a league that does not have one.</summary>
+    /// <remarks>
+    /// The statement this replaces produced this word with <c>ISNULL(l.[EntryCode], 'Public')</c>, so a sentinel travelled to the
+    /// browser in a field named for a code. It is a label, it belongs on this side, and naming it says so.
+    /// </remarks>
+    private const string PublicLeagueLabel = "Public";
+
     public async Task<ManageLeaguesDto> Handle(GetManageLeaguesQuery request, CancellationToken cancellationToken)
     {
-        const string sql = @"
-            SELECT
-                l.[Id],
-                l.[Name],
-                s.[Name] AS SeasonName,
-                COUNT(lm.[UserId]) AS MemberCount,
-                l.[Price],
-                ISNULL(l.[EntryCode], 'Public') AS EntryCode,
-                l.[EntryDeadlineUtc],
-                l.[PointsForExactScore],
-                l.[PointsForCorrectResult],
-                CASE
-                    WHEN l.[EntryCode] IS NULL THEN 'Public'
-                    WHEN l.[AdministratorUserId] = @UserId THEN 'MyPrivate'
-                    ELSE 'OtherPrivate'
-                END AS LeagueCategory
-            FROM
-                [Leagues] l
-            JOIN
-                [Seasons] s ON l.[SeasonId] = s.[Id]
-            LEFT JOIN
-                [LeagueMembers] lm ON l.[Id] = lm.[LeagueId]
-            GROUP BY
-                l.[Id], l.[Name], s.[Name], l.[Price], l.[EntryCode], l.[EntryDeadlineUtc], l.[PointsForExactScore], l.[PointsForCorrectResult], s.[StartDateUtc], l.[AdministratorUserId]
-            ORDER BY
-                s.[StartDateUtc] DESC, l.[Name] ASC;";
+        var leagues = await manageLeaguesQuery.ExecuteAsync(cancellationToken);
 
-        var allLeagues = await dbConnection.QueryAsync<LeagueWithCategory>(
-            sql,
-            cancellationToken,
-            new { request.UserId });
+        var ordered = NewestSeasonFirst(leagues).ToList();
 
-        var result = new ManageLeaguesDto();
-        var leagues = allLeagues.ToList();
-
-        if (request.IsAdmin)
+        return new ManageLeaguesDto
         {
-            result.PublicLeagues = leagues
-                .Where(l => l.LeagueCategory == "Public")
-                .Select(ToLeagueDto)
-                .ToList();
-        }
-
-        result.MyPrivateLeagues = leagues
-            .Where(l => l.LeagueCategory == "MyPrivate")
-            .Select(ToLeagueDto)
-            .ToList();
-
-        if (request.IsAdmin)
-        {
-            result.OtherPrivateLeagues = leagues
-                .Where(l => l.LeagueCategory == "OtherPrivate")
-                .Select(ToLeagueDto)
-                .ToList();
-        }
-
-        return result;
+            // An ordinary player sees only the private leagues they run. The other two lists are an administrator's view of
+            // everything on the site, which is why they stay empty otherwise rather than being filtered by the read.
+            PublicLeagues = request.IsAdmin ? ToDtos(ordered.Where(IsPublic)) : [],
+            MyPrivateLeagues = ToDtos(ordered.Where(league => IsPrivateRunBy(league, request.UserId))),
+            OtherPrivateLeagues = request.IsAdmin
+                ? ToDtos(ordered.Where(league => IsPrivateNotRunBy(league, request.UserId)))
+                : []
+        };
     }
 
-    private static LeagueDto ToLeagueDto(LeagueWithCategory league) => new(
-        league.Id,
-        league.Name,
-        league.SeasonName,
-        league.MemberCount,
-        league.Price,
-        league.EntryCode,
-        league.EntryDeadlineUtc,
-        league.PointsForExactScore,
-        league.PointsForCorrectResult);
+    /// <summary>
+    /// Newest season first, and alphabetically within it.
+    /// </summary>
+    /// <remarks>
+    /// By the season's start date rather than its name, so "2026/27" sorts after "2025/26" without depending on how a season
+    /// happens to be named.
+    /// </remarks>
+    private static IEnumerable<ManageLeagueRow> NewestSeasonFirst(IEnumerable<ManageLeagueRow> leagues) =>
+        leagues
+            .OrderByDescending(league => league.SeasonStartDateUtc)
+            .ThenBy(league => league.Name, StringComparer.InvariantCultureIgnoreCase);
 
-    // internal so a test can supply rows for the visibility filter above; InternalsVisibleTo already
-    // exposes this assembly to ThePredictions.Application.Tests.Unit.
-    [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal record LeagueWithCategory(
-        int Id,
-        string Name,
-        string SeasonName,
-        int MemberCount,
-        decimal Price,
-        string EntryCode,
-        DateTime EntryDeadlineUtc,
-        int PointsForExactScore,
-        int PointsForCorrectResult,
-        string LeagueCategory);
+    /// <summary>A league anybody can join, which is one with no entry code.</summary>
+    private static bool IsPublic(ManageLeagueRow league) => league.EntryCode is null;
+
+    /// <summary>A private league this player administers.</summary>
+    private static bool IsPrivateRunBy(ManageLeagueRow league, string userId) =>
+        !IsPublic(league) && league.AdministratorUserId == userId;
+
+    /// <summary>A private league somebody else administers.</summary>
+    private static bool IsPrivateNotRunBy(ManageLeagueRow league, string userId) =>
+        !IsPublic(league) && league.AdministratorUserId != userId;
+
+    private static List<LeagueDto> ToDtos(IEnumerable<ManageLeagueRow> leagues) => leagues.Select(ToDto).ToList();
+
+    private static LeagueDto ToDto(ManageLeagueRow league) =>
+        new(league.Id,
+            league.Name,
+            league.SeasonName,
+            league.MemberCount,
+            league.Price,
+            league.EntryCode ?? PublicLeagueLabel,
+            league.EntryDeadlineUtc,
+            league.PointsForExactScore,
+            league.PointsForCorrectResult);
 }

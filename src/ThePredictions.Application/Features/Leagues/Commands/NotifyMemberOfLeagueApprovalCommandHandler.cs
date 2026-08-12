@@ -2,12 +2,12 @@ using System.Diagnostics.CodeAnalysis;
 using MediatR;
 using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class NotifyMemberOfLeagueApprovalCommandHandler(IApplicationReadDbConnection dbConnection, IEmailService emailService, IOptions<BrevoSettings> brevoSettings, IOptions<SiteSettings> siteSettings) : IRequestHandler<NotifyMemberOfLeagueApprovalCommand>
+public class NotifyMemberOfLeagueApprovalCommandHandler(ILeagueEmailRecipientQuery emailRecipientQuery, IEmailService emailService, IOptions<BrevoSettings> brevoSettings, IOptions<SiteSettings> siteSettings) : IRequestHandler<NotifyMemberOfLeagueApprovalCommand>
 {
     private readonly BrevoSettings _brevoSettings = brevoSettings.Value;
     private readonly SiteSettings _siteSettings = siteSettings.Value;
@@ -24,23 +24,9 @@ public class NotifyMemberOfLeagueApprovalCommandHandler(IApplicationReadDbConnec
         if (templateId == 0)
             return;
 
-        // Read only the member (AspNetUsers) and the season (Seasons) - the league name is supplied by
-        // the caller, which already holds the aggregate. Avoids touching [Leagues], whose row an in-flight
-        // join transaction may have locked.
-        const string sql = @"
-                SELECT
-                    u.[Email],
-                    u.[FirstName],
-                    s.[Name] AS SeasonName
-                FROM
-                    [AspNetUsers] u
-                CROSS JOIN
-                    [Seasons] s
-                WHERE
-                    u.[Id] = @MemberUserId
-                    AND s.[Id] = @SeasonId;";
-
-        var member = await dbConnection.QuerySingleOrDefaultAsync<LeagueMemberContactRow>(sql, cancellationToken, new { request.MemberUserId, request.SeasonId });
+        // Only the player and the season are read - the league's name comes from the caller, which already holds it. That
+        // deliberately avoids touching [Leagues], whose row an in-flight join transaction may have locked.
+        var member = await emailRecipientQuery.ExecuteAsync(request.MemberUserId, request.SeasonId, cancellationToken);
         if (member != null)
         {
             var parameters = new
@@ -56,9 +42,4 @@ public class NotifyMemberOfLeagueApprovalCommandHandler(IApplicationReadDbConnec
         }
     }
 
-    // internal, not public: the Dto suffix is reserved for ThePredictions.Contracts, and keeping the
-    // row type inside the handler confines the positional SELECT-to-record coupling to this one file.
-    // InternalsVisibleTo already exposes this assembly to ThePredictions.Application.Tests.Unit.
-    [ExcludeFromCodeCoverage(Justification = "Dapper row type: properties only, no logic to test.")]
-    internal record LeagueMemberContactRow(string Email, string FirstName, string SeasonName);
 }

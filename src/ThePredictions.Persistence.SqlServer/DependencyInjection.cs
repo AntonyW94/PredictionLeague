@@ -2,6 +2,14 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ThePredictions.Application.Features.Account.Queries;
+using ThePredictions.Application.Features.Homepage.Queries;
+using ThePredictions.Application.Features.Onboarding.Queries;
+using ThePredictions.Application.Features.Prizes.Queries;
+using ThePredictions.Persistence.SqlServer.Queries.Account;
+using ThePredictions.Persistence.SqlServer.Queries.Homepage;
+using ThePredictions.Persistence.SqlServer.Queries.Onboarding;
+using ThePredictions.Persistence.SqlServer.Queries.Prizes;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Admin.Competitions.Queries;
 using ThePredictions.Application.Features.Admin.EmailTests.Queries;
@@ -146,6 +154,14 @@ public static class DependencyInjection
         services.AddScoped<IUserRoundPredictionsQuery, UserRoundPredictionsQuery>();
         services.AddScoped<IPredictionLeaguesQuery, PredictionLeaguesQuery>();
         services.AddScoped<IShareCardPlayerQuery, ShareCardPlayerQuery>();
+        services.AddScoped<ILeagueEmailRecipientQuery, LeagueEmailRecipientQuery>();
+        services.AddScoped<IManageLeaguesQuery, ManageLeaguesQuery>();
+        services.AddScoped<ILeagueBankDetailsQuery, LeagueBankDetailsQuery>();
+        services.AddScoped<IAccountProfileQuery, AccountProfileQuery>();
+        services.AddScoped<IMyPayoutDetailsQuery, MyPayoutDetailsQuery>();
+        services.AddScoped<IOnboardingStateQuery, OnboardingStateQuery>();
+        services.AddScoped<IHomepageSeasonsQuery, HomepageSeasonsQuery>();
+        services.AddScoped<IPrizeSchemeSeasonQuery, PrizeSchemeSeasonQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository

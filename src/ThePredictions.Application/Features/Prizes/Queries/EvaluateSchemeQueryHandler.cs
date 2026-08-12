@@ -2,27 +2,16 @@ using System.Diagnostics.CodeAnalysis;
 using Ardalis.GuardClauses;
 using MediatR;
 using ThePredictions.Application.Common.Prizes;
-using ThePredictions.Application.Data;
 using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common.Guards;
 
 namespace ThePredictions.Application.Features.Prizes.Queries;
 
-public class EvaluateSchemeQueryHandler(IApplicationReadDbConnection dbConnection, IPrizeEvaluator evaluator) : IRequestHandler<EvaluateSchemeQuery, PrizeBreakdownDto>
+public class EvaluateSchemeQueryHandler(IPrizeSchemeSeasonQuery prizeSchemeSeasonQuery, IPrizeEvaluator evaluator) : IRequestHandler<EvaluateSchemeQuery, PrizeBreakdownDto>
 {
     public async Task<PrizeBreakdownDto> Handle(EvaluateSchemeQuery request, CancellationToken cancellationToken)
     {
-        const string seasonSql = @"
-            SELECT
-                s.[NumberOfRounds],
-                s.[StartDateUtc],
-                s.[EndDateUtc]
-            FROM
-                [Seasons] s
-            WHERE
-                s.[Id] = @SeasonId;";
-
-        var season = await dbConnection.QuerySingleOrDefaultAsync<SeasonRow>(seasonSql, cancellationToken, new { request.SeasonId });
+        var season = await prizeSchemeSeasonQuery.ExecuteAsync(request.SeasonId, cancellationToken);
         Guard.Against.EntityNotFound(request.SeasonId, season, "Season");
 
         var evaluationRequest = new PrizeSchemeEvaluationRequest

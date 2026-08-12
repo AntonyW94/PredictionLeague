@@ -1,10 +1,9 @@
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using ThePredictions.Application.Configuration;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Features.Leagues.Commands;
 using ThePredictions.Application.Services;
-using static ThePredictions.Application.Features.Leagues.Commands.NotifyMemberOfLeagueApprovalCommandHandler;
 using Xunit;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Leagues.Commands;
@@ -20,7 +19,7 @@ public class NotifyMemberOfLeagueApprovalCommandHandlerTests
     private const int LeagueId = 7;
     private const int SeasonId = 11;
 
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
+    private readonly ILeagueEmailRecipientQuery _dbConnection = Substitute.For<ILeagueEmailRecipientQuery>();
     private readonly IEmailService _emailService = Substitute.For<IEmailService>();
 
     private NotifyMemberOfLeagueApprovalCommandHandler CreateHandler(long? templateId = TemplateId, string? baseUrl = "https://test.local")
@@ -35,9 +34,8 @@ public class NotifyMemberOfLeagueApprovalCommandHandlerTests
     }
 
     private void GivenMember(string email = "alice@example.com", string firstName = "Alice", string seasonName = "2026/27") =>
-        _dbConnection.QuerySingleOrDefaultAsync<LeagueMemberContactRow>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(new LeagueMemberContactRow(email, firstName, seasonName));
+        _dbConnection.ExecuteAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(new LeagueEmailRecipientRow(email, firstName, seasonName));
 
     private Task HandleAsync(long? templateId = TemplateId, string? baseUrl = "https://test.local") =>
         CreateHandler(templateId, baseUrl).Handle(
@@ -49,8 +47,7 @@ public class NotifyMemberOfLeagueApprovalCommandHandlerTests
     {
         await HandleAsync(templateId: null);
 
-        await _dbConnection.DidNotReceiveWithAnyArgs()
-            .QuerySingleOrDefaultAsync<LeagueMemberContactRow>(default!, CancellationToken.None);
+        await _dbConnection.DidNotReceiveWithAnyArgs().ExecuteAsync(default!, default, CancellationToken.None);
         await _emailService.DidNotReceiveWithAnyArgs().SendTemplatedEmailAsync(default!, default, default!);
     }
 
