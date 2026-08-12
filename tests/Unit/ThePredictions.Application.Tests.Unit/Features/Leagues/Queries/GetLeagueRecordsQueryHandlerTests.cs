@@ -72,19 +72,41 @@ public class GetLeagueRecordsQueryHandlerTests
         // Act
         var records = await HandleAsync();
 
-        // Assert - the ten ISNULL(..., 0) defaults, and no names invented.
+        // Assert - the ten ISNULL(..., 0) defaults, and no names invented. Every field, because each record answers
+        // "nobody holds this yet" for itself, and a name appearing against a record nobody holds is the one failure
+        // here that would look like real data on the tile.
         records.TopRoundPlayerName.Should().BeNull();
         records.TopRoundPoints.Should().Be(0);
         records.TopRoundNumber.Should().BeNull();
+
         records.LowestRoundPlayerName.Should().BeNull();
+        records.LowestRoundPoints.Should().Be(0);
+        records.LowestRoundNumber.Should().BeNull();
+
+        records.MostExactInRoundPlayerName.Should().BeNull();
         records.MostExactInRoundCount.Should().Be(0);
+        records.MostExactInRoundNumber.Should().BeNull();
+
         records.ChampionName.Should().BeNull();
+        records.ChampionPoints.Should().Be(0);
+
+        records.TopEarnerName.Should().BeNull();
         records.TopEarnerAmount.Should().Be(0);
+
+        records.MostRoundsWonPlayerName.Should().BeNull();
         records.MostRoundsWonCount.Should().Be(0);
+
+        records.MostMonthsWonPlayerName.Should().BeNull();
         records.MostMonthsWonCount.Should().Be(0);
+
         records.TotalExactScores.Should().Be(0);
+
+        records.BiggestPrizePlayerName.Should().BeNull();
+        records.BiggestPrizeAmount.Should().Be(0);
         records.BiggestPrizeDescription.Should().BeNull();
+
         records.HighestGameweekRoundNumber.Should().BeNull();
+        records.HighestGameweekPoints.Should().Be(0);
     }
 
     [Fact]
