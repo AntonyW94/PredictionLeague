@@ -15,7 +15,15 @@ public class UserPrediction
     public int PredictedHomeScore { get; init; }
     public int PredictedAwayScore { get; init; }
     public DateTime CreatedAtUtc { get; private set; }
-    public DateTime UpdatedAtUtc { get; private set; }
+    /// <summary>
+    /// When the prediction was last changed.
+    /// </summary>
+    /// <remarks>
+    /// Nullable because the column is. Every prediction the site writes sets it, so no row on dev is null - but a value
+    /// type against a nullable column is the one shape Dapper refuses outright, so hydrating a single stray row would have
+    /// thrown for every prediction in that round rather than for the row itself.
+    /// </remarks>
+    public DateTime? UpdatedAtUtc { get; private set; }
     public PredictionOutcome Outcome { get; private set; } = PredictionOutcome.Pending;
 
     private UserPrediction() { }

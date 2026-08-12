@@ -7,7 +7,8 @@ public class Team
     public int Id { get; init; }
     public string Name { get; private set; } = string.Empty;
     public string ShortName { get; private set; } = string.Empty;
-    public string LogoUrl { get; private set; } = string.Empty;
+    /// <summary>The team's badge, or nothing where the provider has never given one.</summary>
+    public string? LogoUrl { get; private set; }
     public string Abbreviation { get; private set; } = string.Empty;
     public int? ApiTeamId { get; private set; }
 

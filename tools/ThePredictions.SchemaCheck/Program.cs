@@ -70,6 +70,14 @@ if (checkable == 0)
 }
 
 Console.WriteLine($"Checking {checkable} Dapper reads in {sourceRoot}...");
+
+// Printed every run, so a stated exception stays arguable rather than becoming furniture.
+foreach (var (column, reason) in NullabilityExceptions.All)
+{
+    Console.WriteLine();
+    Console.WriteLine($"  Nullability exception: any column named '{column}'");
+    Console.WriteLine($"      {reason}");
+}
 Console.WriteLine();
 
 foreach (var callSite in callSites)
