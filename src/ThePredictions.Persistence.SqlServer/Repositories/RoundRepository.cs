@@ -559,27 +559,30 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
         await Connection.ExecuteAsync(command);
     }
 
-    public async Task UpdateRoundResultsAsync(int roundId, CancellationToken cancellationToken)
+    public async Task UpdateRoundResultsAsync(
+        int roundId,
+        IEnumerable<RoundResultTally> tallies,
+        CancellationToken cancellationToken)
     {
+        // One row per player, upserted. What the counts mean, and which predictions count towards them, is
+        // Domain.Services.OutcomeTally - this only stores the answer.
+        //
+        // No WHEN NOT MATCHED BY SOURCE clause, so a player with no tally in this batch keeps the row they have. That is
+        // how the statement this replaces behaved, and it matters: re-processing a round with a fixture reverted to
+        // unplayed must not wipe the rest of the round's results.
         const string sql = @"
             MERGE [RoundResults] AS target
             USING (
                 SELECT
-                    m.[RoundId],
-                    up.[UserId],
-                    SUM(CASE WHEN up.[Outcome] = @ExactScore THEN 1 ELSE 0 END) AS [ExactScoreCount],
-                    SUM(CASE WHEN up.[Outcome] = @CorrectResult THEN 1 ELSE 0 END) AS [CorrectResultCount],
-                    SUM(CASE WHEN up.[Outcome] = @Incorrect THEN 1 ELSE 0 END) AS [IncorrectCount]
-                FROM [UserPredictions] up
-                INNER JOIN [Matches] m ON m.[Id] = up.[MatchId]
-                WHERE m.[RoundId] = @RoundId
-                AND up.[Outcome] <> 0
-                GROUP BY
-                    m.[RoundId],
-                    up.[UserId]
+                    @RoundId AS [RoundId],
+                    @UserId AS [UserId],
+                    @ExactScoreCount AS [ExactScoreCount],
+                    @CorrectResultCount AS [CorrectResultCount],
+                    @IncorrectCount AS [IncorrectCount]
             ) AS src
             ON target.[RoundId] = src.[RoundId]
-            AND target.[UserId] = src.[UserId]
+               AND target.[UserId] = src.[UserId]
+
             WHEN MATCHED THEN
                 UPDATE SET
                     target.[ExactScoreCount]    = src.[ExactScoreCount],
@@ -590,15 +593,23 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
                 INSERT ([RoundId], [UserId], [ExactScoreCount], [CorrectResultCount], [IncorrectCount])
                 VALUES (src.[RoundId], src.[UserId], src.[ExactScoreCount], src.[CorrectResultCount], src.[IncorrectCount]);";
 
-        var command = new CommandDefinition(
-            sql,
-            new
+        var rows = tallies
+            .Select(tally => new
             {
                 RoundId = roundId,
-                ExactScore = (int)PredictionOutcome.ExactScore,
-                CorrectResult = (int)PredictionOutcome.CorrectResult,
-                Incorrect = (int)PredictionOutcome.Incorrect
-            },
+                tally.UserId,
+                tally.Counts.ExactScoreCount,
+                tally.Counts.CorrectResultCount,
+                tally.Counts.IncorrectCount
+            })
+            .ToList();
+
+        if (rows.Count == 0)
+            return;
+
+        var command = new CommandDefinition(
+            sql,
+            rows,
             transaction: Transaction,
             cancellationToken: cancellationToken);
 

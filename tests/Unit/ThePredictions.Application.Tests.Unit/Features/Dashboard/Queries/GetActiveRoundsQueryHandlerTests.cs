@@ -297,8 +297,12 @@ public class GetActiveRoundsQueryHandlerTests
             rounds: [Round(1, deadlineUtc: Now.AddHours(-1), hasUserPredicted: true)],
             matches:
             [
+                // One of each, two of the next and three of the last, so a count reported under the wrong heading
+                // cannot pass. It had one exact score and one correct result, which are indistinguishable when swapped.
                 Match(1, outcome: PredictionOutcome.ExactScore),
                 Match(1, outcome: PredictionOutcome.CorrectResult),
+                Match(1, outcome: PredictionOutcome.CorrectResult),
+                Match(1, outcome: PredictionOutcome.Incorrect),
                 Match(1, outcome: PredictionOutcome.Incorrect),
                 Match(1, outcome: PredictionOutcome.Incorrect),
                 Match(1, outcome: PredictionOutcome.Pending)
@@ -310,8 +314,8 @@ public class GetActiveRoundsQueryHandlerTests
         // Assert - a match still to be scored counts towards nothing.
         summary.Should().NotBeNull();
         summary!.ExactScoreCount.Should().Be(1);
-        summary.CorrectResultCount.Should().Be(1);
-        summary.IncorrectCount.Should().Be(2);
+        summary.CorrectResultCount.Should().Be(2);
+        summary.IncorrectCount.Should().Be(3);
     }
 
     [Fact]

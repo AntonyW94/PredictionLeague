@@ -102,6 +102,24 @@ internal sealed class SqlServerTestDataInspector(IDbConnectionFactory connection
                 Enum.Parse<RoundStatus>(row.Status), row.ApiRoundName);
     }
 
+    public async Task<StoredRoundResult?> RoundResultAsync(int roundId, string userId)
+    {
+        const string sql = @"
+            SELECT
+                rr.[ExactScoreCount],
+                rr.[CorrectResultCount],
+                rr.[IncorrectCount]
+            FROM
+                [RoundResults] rr
+            WHERE
+                rr.[RoundId] = @RoundId
+                AND rr.[UserId] = @UserId;";
+
+        using var connection = connectionFactory.CreateConnection();
+
+        return await connection.QuerySingleOrDefaultAsync<StoredRoundResult>(sql, new { RoundId = roundId, UserId = userId });
+    }
+
     // Column order matches each SELECT above, per the Dapper result-mapping rule in CLAUDE.md.
     private sealed record MatchRow(
         int Id,

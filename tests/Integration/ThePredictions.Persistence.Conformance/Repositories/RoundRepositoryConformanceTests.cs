@@ -2,6 +2,7 @@ using FluentAssertions;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
+using ThePredictions.Domain.Services;
 using Xunit;
 
 namespace ThePredictions.Persistence.Conformance.Repositories;
@@ -230,6 +231,101 @@ public abstract class RoundRepositoryConformanceTests
         storedRound.DeadlineUtc.Should().Be(newDeadline);
         storedRound.Status.Should().Be(RoundStatus.InProgress);
         storedRound.ApiRoundName.Should().Be("Quarter-finals");
+    }
+
+    #endregion
+
+    #region Storing outcome tallies
+
+    // What the tallies mean, and which predictions count towards them, is Domain.Services.OutcomeTally and is unit
+    // tested. What is left for an adapter is the upsert, and the one behaviour worth pinning here is what it does NOT do:
+    // a player absent from the batch keeps the row they have. The statement this replaced had no test at all, because it
+    // counted and stored in one MERGE and neither half could be reached without a database.
+
+    [Fact]
+    public async Task UpdateRoundResultsAsync_ShouldStoreATallyForEachPlayer()
+    {
+        // Arrange
+        var backdrop = await Seed.AddBackdropAsync();
+        var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, 1, DateTime.UtcNow.AddDays(-1));
+        var otherUserId = await Seed.AddUserAsync("Grace", "Hopper");
+
+        // Act
+        await Repository.UpdateRoundResultsAsync(
+            roundId,
+            [
+                new RoundResultTally(backdrop.UserId, new OutcomeCounts(3, 2, 1)),
+                new RoundResultTally(otherUserId, new OutcomeCounts(0, 0, 5))
+            ],
+            CancellationToken.None);
+
+        // Assert - each count under its own heading, which three SUM(CASE WHEN ...) columns could transpose silently.
+        (await Inspect.RoundResultAsync(roundId, backdrop.UserId))
+            .Should().Be(new StoredRoundResult(3, 2, 1));
+
+        (await Inspect.RoundResultAsync(roundId, otherUserId))
+            .Should().Be(new StoredRoundResult(0, 0, 5));
+    }
+
+    [Fact]
+    public async Task UpdateRoundResultsAsync_ShouldReplaceATallyThatIsAlreadyStored()
+    {
+        // Arrange - a round processed once, then re-processed after a score correction.
+        var backdrop = await Seed.AddBackdropAsync();
+        var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, 1, DateTime.UtcNow.AddDays(-1));
+
+        await Repository.UpdateRoundResultsAsync(
+            roundId, [new RoundResultTally(backdrop.UserId, new OutcomeCounts(3, 2, 1))], CancellationToken.None);
+
+        // Act
+        await Repository.UpdateRoundResultsAsync(
+            roundId, [new RoundResultTally(backdrop.UserId, new OutcomeCounts(1, 1, 4))], CancellationToken.None);
+
+        // Assert - replaced, not added to.
+        (await Inspect.RoundResultAsync(roundId, backdrop.UserId))
+            .Should().Be(new StoredRoundResult(1, 1, 4));
+    }
+
+    [Fact]
+    public async Task UpdateRoundResultsAsync_ShouldLeaveAPlayerAbsentFromTheBatchAlone()
+    {
+        // A round re-processed with a fixture reverted to unplayed must not wipe everybody else's results. The old MERGE
+        // had no WHEN NOT MATCHED BY SOURCE clause, and that omission was load-bearing.
+        var backdrop = await Seed.AddBackdropAsync();
+        var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, 1, DateTime.UtcNow.AddDays(-1));
+        var otherUserId = await Seed.AddUserAsync("Grace", "Hopper");
+
+        await Repository.UpdateRoundResultsAsync(
+            roundId,
+            [
+                new RoundResultTally(backdrop.UserId, new OutcomeCounts(3, 2, 1)),
+                new RoundResultTally(otherUserId, new OutcomeCounts(1, 1, 1))
+            ],
+            CancellationToken.None);
+
+        // Act - only one of them this time.
+        await Repository.UpdateRoundResultsAsync(
+            roundId, [new RoundResultTally(backdrop.UserId, new OutcomeCounts(4, 0, 0))], CancellationToken.None);
+
+        // Assert
+        (await Inspect.RoundResultAsync(roundId, backdrop.UserId)).Should().Be(new StoredRoundResult(4, 0, 0));
+        (await Inspect.RoundResultAsync(roundId, otherUserId)).Should().Be(new StoredRoundResult(1, 1, 1));
+    }
+
+    [Fact]
+    public async Task UpdateRoundResultsAsync_ShouldStoreNothing_WhenThereAreNoTallies()
+    {
+        // Arrange - a round nobody predicted. Dapper throws on an empty parameter list, so this has to be handled rather
+        // than sent.
+        var backdrop = await Seed.AddBackdropAsync();
+        var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, 1, DateTime.UtcNow.AddDays(-1));
+
+        // Act
+        var act = async () => await Repository.UpdateRoundResultsAsync(roundId, [], CancellationToken.None);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+        (await Inspect.RoundResultAsync(roundId, backdrop.UserId)).Should().BeNull();
     }
 
     #endregion

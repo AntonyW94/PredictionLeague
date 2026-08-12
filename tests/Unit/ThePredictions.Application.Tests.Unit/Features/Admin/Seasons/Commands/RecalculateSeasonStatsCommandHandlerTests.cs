@@ -4,6 +4,7 @@ using NSubstitute;
 using ThePredictions.Application.Features.Admin.Rounds.Commands;
 using ThePredictions.Application.Features.Admin.Seasons.Commands;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Application.Services.Boosts;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
@@ -27,12 +28,13 @@ public class RecalculateSeasonStatsCommandHandlerTests
     private readonly ILeagueStatsRepository _leagueStats = Substitute.For<ILeagueStatsRepository>();
     private readonly IBoostService _boostService = Substitute.For<IBoostService>();
     private readonly IMediator _mediator = Substitute.For<IMediator>();
+    private readonly IRoundResultsService _roundResultsService = Substitute.For<IRoundResultsService>();
 
     private readonly RecalculateSeasonStatsCommandHandler _handler;
 
     public RecalculateSeasonStatsCommandHandlerTests()
     {
-        _handler = new RecalculateSeasonStatsCommandHandler(_rounds, _leagues, _leagueStats, _boostService, _mediator);
+        _handler = new RecalculateSeasonStatsCommandHandler(_rounds, _leagues, _leagueStats, _boostService, _roundResultsService, _mediator);
         _leagues.GetLeagueIdsForSeasonAsync(SeasonId, Arg.Any<CancellationToken>()).Returns([]);
         GivenRounds();
     }
@@ -57,7 +59,7 @@ public class RecalculateSeasonStatsCommandHandlerTests
 
         await HandleAsync();
 
-        await _rounds.DidNotReceiveWithAnyArgs().UpdateRoundResultsAsync(default, CancellationToken.None);
+        await _roundResultsService.DidNotReceiveWithAnyArgs().RecalculateAsync(default!, CancellationToken.None);
         await _leagueStats.Received(1).RefreshSeasonAsync(SeasonId, Arg.Any<CancellationToken>());
     }
 
@@ -71,9 +73,9 @@ public class RecalculateSeasonStatsCommandHandlerTests
 
         await HandleAsync();
 
-        await _rounds.Received(1).UpdateRoundResultsAsync(1, Arg.Any<CancellationToken>());
-        await _rounds.DidNotReceive().UpdateRoundResultsAsync(2, Arg.Any<CancellationToken>());
-        await _rounds.DidNotReceive().UpdateRoundResultsAsync(3, Arg.Any<CancellationToken>());
+        await _roundResultsService.Received(1).RecalculateAsync(Arg.Is<Round>(round => round.Id == 1), Arg.Any<CancellationToken>());
+        await _roundResultsService.DidNotReceive().RecalculateAsync(Arg.Is<Round>(round => round.Id == 2), Arg.Any<CancellationToken>());
+        await _roundResultsService.DidNotReceive().RecalculateAsync(Arg.Is<Round>(round => round.Id == 3), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -86,7 +88,7 @@ public class RecalculateSeasonStatsCommandHandlerTests
             Round(1, 1, RoundStatus.Completed, SeasonStart),
             Round(2, 2, RoundStatus.Completed, SeasonStart.AddDays(7)));
         var order = new List<int>();
-        await _rounds.UpdateRoundResultsAsync(Arg.Do<int>(order.Add), Arg.Any<CancellationToken>());
+        await _roundResultsService.RecalculateAsync(Arg.Do<Round>(round => order.Add(round.Id)), Arg.Any<CancellationToken>());
         order.Clear();
 
         await HandleAsync();
@@ -103,7 +105,7 @@ public class RecalculateSeasonStatsCommandHandlerTests
 
         Received.InOrder(() =>
         {
-            _rounds.UpdateRoundResultsAsync(1, Arg.Any<CancellationToken>());
+            _roundResultsService.RecalculateAsync(Arg.Is<Round>(round => round.Id == 1), Arg.Any<CancellationToken>());
             _leagues.UpdateLeagueRoundResultsAsync(1, Arg.Any<CancellationToken>());
             _boostService.ApplyRoundBoostsAsync(1, Arg.Any<CancellationToken>());
         });
