@@ -2,6 +2,7 @@ using MediatR;
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Models;
 using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Dashboard.Queries;
@@ -151,17 +152,17 @@ public class GetMyLeaguesQueryHandler(
     }
 
     /// <summary>
-    /// The round's label. Always "Round N", even where the round has been given a name of its own.
+    /// The round's name: the one an administrator gave it, or "Round N" where nobody has.
     /// </summary>
     /// <remarks>
-    /// Preserved from the old <c>'Round ' + CAST(ar.[RoundNumber] AS VARCHAR(10))</c> rather than switched to
-    /// <c>Round.GetDisplayNameOrDefault</c>, which every other part of the site uses and which would show "Semi
-    /// Finals" here instead. Changing it would change what a live tile says, so it is a question for the owner
-    /// rather than a refactor - see the plan document.
+    /// The same rule as every other screen, which is the point - this tile was the last place naming a round by number
+    /// regardless, from the old <c>'Round ' + CAST(ar.[RoundNumber] AS VARCHAR(10))</c>. A round called "Semi Finals"
+    /// showed as "Round 12" here and as "Semi Finals" everywhere else.
     ///
     /// There being no round in play is <see cref="RoundFacts.NoRoundInPlay"/>'s answer, not this one's.
     /// </remarks>
-    private static string CurrentRoundLabel(MyLeagueRoundRow round) => $"Round {round.RoundNumber}";
+    private static string CurrentRoundLabel(MyLeagueRoundRow round) =>
+        Round.DisplayNameOrDefault(round.DisplayName, round.RoundNumber);
 
     /// <summary>
     /// What the tile's second slot is called: the month the round began in for a league, and "Exact Scores" for a

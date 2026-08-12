@@ -127,7 +127,7 @@ public class GetWinningsQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldWorkOutThePotFromTheEntriesAlone()
+    public async Task Handle_ShouldIncludeTheAdministratorsTopUpInThePot()
     {
         // Arrange - a league with an administrator top-up as well as entry fees.
         Given(Header(entryCount: 10, entryCost: 5m, prizeFundOverride: 100m));
@@ -135,8 +135,9 @@ public class GetWinningsQueryHandlerTests
         // Act
         var winnings = await HandleAsync();
 
-        // Assert - preserved: this is the one page that leaves the top-up out of the pot. Flagged in the plan document.
-        winnings.TotalPrizePot.Should().Be(50m);
+        // Assert - 50 of entry fees plus the 100 the administrator put in, which is what the league dashboard, the My
+        // Leagues tile and the available-leagues list all show. This page used to leave the top-up out and report 50.
+        winnings.TotalPrizePot.Should().Be(150m);
     }
 
     #endregion

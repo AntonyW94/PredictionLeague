@@ -12,10 +12,10 @@ namespace ThePredictions.Application.Features.Leagues.Queries;
 /// deadline became <c>'1900-01-01'</c>. Those are presentation decisions and they belong in C#, where the second one in
 /// particular can be seen for what it is.
 ///
-/// Two member counts, and the handler uses <see cref="TotalMembershipCount"/>. That preserves today's behaviour, which
-/// counts pending and rejected requests as members - every other member count on the site counts only approved ones.
-/// Both are returned so the difference is visible and switching is a one-line change; the plan document records it as a
-/// question for the owner.
+/// Two member counts, and the handler uses <see cref="ApprovedMemberCount"/> - the same population every other member
+/// count on the site uses. It used to use <see cref="TotalMembershipCount"/>, so a league with five members and two
+/// outstanding requests reported seven. The total is still returned because the league prizes page counts that way, and
+/// having both here is what made the difference visible in the first place.
 /// </remarks>
 [ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 public sealed record LeagueDetailRow(

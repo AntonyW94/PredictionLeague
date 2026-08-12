@@ -78,15 +78,15 @@ public class GetWinningsQueryHandler(
     }
 
     /// <summary>
-    /// The pot: every entry fee, and <b>not</b> the administrator's top-up.
+    /// The pot: every entry fee, plus whatever the administrator has put in on top.
     /// </summary>
     /// <remarks>
-    /// Every other page adds <c>PrizeFundOverride</c> through <c>PrizeFund.Total</c>. This one never has, so it is
-    /// preserved rather than quietly corrected - see the plan document. The header carries the top-up so the difference is
-    /// visible here rather than only in the SQL that used to omit it.
+    /// <c>PrizeFund.Total</c>, the same as the league dashboard, the My Leagues tile and the available-leagues list. This
+    /// page worked it out as <c>EntryCount * EntryCost</c> and left the top-up out, so a league with a funded top-up showed
+    /// a smaller pot here than on its own dashboard.
     /// </remarks>
     private static decimal TotalPrizePot(WinningsHeaderRow header) =>
-        header.EntryCount * header.EntryCost;
+        PrizeFund.Total(header.EntryCost, header.EntryCount, header.PrizeFundOverride);
 
     /// <summary>
     /// One line per round of the season: the winner where there is one, and the prize still on offer where there is not.
