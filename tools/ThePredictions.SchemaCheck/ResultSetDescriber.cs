@@ -48,7 +48,10 @@ public sealed class ResultSetDescriber(string connectionString)
             await connection.OpenAsync(cancellationToken);
 
             await using var command = connection.CreateCommand();
-            command.CommandText = "EXEC sys.sp_describe_first_result_set @tsql = @t, @params = @p";
+            // Browse mode 1 fills in source_schema/source_table/source_column. Without it they come back null for every
+            // column, including plain references to one - which makes it impossible to tell a real column from an
+            // expression, and so impossible to trust is_nullable.
+            command.CommandText = "EXEC sys.sp_describe_first_result_set @tsql = @t, @params = @p, @browse_information_mode = 1";
             command.Parameters.AddWithValue("@t", describable);
             command.Parameters.AddWithValue("@p", declarations);
 
@@ -58,13 +61,29 @@ public sealed class ResultSetDescriber(string connectionString)
             var position = 0;
             while (await reader.ReadAsync(cancellationToken))
             {
+                // Browse mode appends the key columns a client would need to identify a row. They are not part of the
+                // result the statement returns, and counting them would make every read look like it had spare columns.
+                var hiddenOrdinal = reader.GetOrdinal("is_hidden");
+                if (!await reader.IsDBNullAsync(hiddenOrdinal, cancellationToken) && reader.GetBoolean(hiddenOrdinal))
+                    continue;
+
                 var nameOrdinal = reader.GetOrdinal("name");
                 var typeOrdinal = reader.GetOrdinal("system_type_name");
+                var nullableOrdinal = reader.GetOrdinal("is_nullable");
+                var sourceColumnOrdinal = reader.GetOrdinal("source_column");
 
                 var name = await reader.IsDBNullAsync(nameOrdinal, cancellationToken) ? string.Empty : reader.GetString(nameOrdinal);
                 var sqlType = await reader.IsDBNullAsync(typeOrdinal, cancellationToken) ? string.Empty : reader.GetString(typeOrdinal);
 
-                columns.Add(new ResultColumn(++position, name, sqlType, SqlTypeMap.ToClrType(sqlType)));
+                // is_nullable is a bit, and true for anything the server cannot prove non-null. source_column is set only
+                // where the column is a plain reference to one, which is how an expression is told from a real column.
+                var isNullable = !await reader.IsDBNullAsync(nullableOrdinal, cancellationToken)
+                                 && reader.GetBoolean(nullableOrdinal);
+
+                var fromTableColumn = !await reader.IsDBNullAsync(sourceColumnOrdinal, cancellationToken);
+
+                columns.Add(new ResultColumn(
+                    ++position, name, sqlType, SqlTypeMap.ToClrType(sqlType), isNullable, fromTableColumn));
             }
 
             return columns.Count == 0

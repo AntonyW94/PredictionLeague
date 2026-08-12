@@ -117,3 +117,21 @@ informational unless `--strict` is passed.
 - [`docs/guides/database.md`](../../docs/guides/database.md#result-mapping) - the result-mapping rules this enforces.
 - [`docs/todo/architecture/test-suite/README.md`](../../docs/todo/architecture/test-suite/README.md) - why the
   planned SQLite-backed query tests would not catch either failure mode.
+
+## Nullability
+
+A column that allows null read into a result type that denies it is checked as well as the types themselves. For a value
+type Dapper refuses outright and the read throws; for a reference type nothing throws and the null simply travels, past an
+annotation promising it could not.
+
+Only columns that come straight from a table are asked. `sp_describe_first_result_set` is conservative about expressions -
+it marks a `CASE`, an aggregate or an outer-joined column nullable whether or not the statement can produce one - and
+checking those would bury real findings in guesses. Telling the two apart needs `@browse_information_mode = 1`, which also
+appends the key columns a client would use to identify a row; those are flagged `is_hidden` and skipped.
+
+Genuine exceptions live in `NullabilityExceptions.cs`, each with a reason, printed on every run. The bar is that the
+database permits a state the product does not, so the honest fix is a constraint rather than an annotation.
+
+This was added after the same fault was found by hand four times during the persistence split. Run against dev it found
+three more: a boost usage with no round (a value type, so a real crash the day a boost is used outside a round), a team
+with no badge, and a prediction with no updated timestamp.

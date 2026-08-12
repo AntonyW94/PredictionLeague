@@ -81,10 +81,23 @@ public static class MappingChecker
         var dropped = columns.Where(c => !settableNames.Contains(c.Name)).Select(c => c.Name).ToList();
         var unfilled = settable.Where(m => !columnNames.Contains(m.Name)).Select(m => m.Name).ToList();
 
-        if (dropped.Count == 0 && unfilled.Count == 0)
+        // Nullability is worth asking here too. Dapper matches these by name and coerces the types, but it will not coerce a
+        // null into a non-nullable value type any more than it will positionally - and an annotation that denies a null the
+        // column allows is misinformation either way.
+        var byName = settable.ToDictionary(member => member.Name, StringComparer.OrdinalIgnoreCase);
+
+        var deniedNulls = columns
+            .Where(column => byName.TryGetValue(column.Name, out var member) && DeniesANullableColumn(member.Type, column))
+            .Select(column => $"{column.Name} ({byName[column.Name].Type}) allows null")
+            .ToList();
+
+        if (dropped.Count == 0 && unfilled.Count == 0 && deniedNulls.Count == 0)
             return new CheckResult(callSite, CheckStatus.Ok, $"name-mapped: all {columns.Count} columns map to a settable member");
 
         var parts = new List<string>();
+
+        if (deniedNulls.Count > 0)
+            parts.Add($"members deny a null the column allows: {string.Join(", ", deniedNulls)}");
 
         if (dropped.Count > 0)
         {
@@ -120,10 +133,41 @@ public static class MappingChecker
             }
 
             if (!TypesCompatible(parameter.Type, column))
+            {
                 problems.Add($"pos {i + 1}: '{parameter.Name}' is {parameter.Type} but column is {column.SqlType} ({column.ClrType})");
+                continue;
+            }
+
+            if (DeniesANullableColumn(parameter.Type, column))
+                problems.Add($"pos {i + 1}: '{parameter.Name}' is {parameter.Type} but column {column.Name} allows null");
         }
 
         return problems;
+    }
+
+    /// <summary>
+    /// Whether the target says a column cannot be null when the column says it can.
+    /// </summary>
+    /// <remarks>
+    /// For a value type this throws at materialisation - Dapper will not coerce a null into an <c>int</c> - and that is the
+    /// fault this exists to catch: it was found by hand four times during the persistence split, once on a screen that would
+    /// have failed outright on the first league saved without an entry deadline.
+    ///
+    /// For a reference type nothing throws. The null simply travels, past an annotation promising it could not, into code
+    /// written on the strength of that promise. Reported for the same reason: the annotation is either true or it is
+    /// misinformation.
+    ///
+    /// Only asked of columns that come straight from a table. See <see cref="ResultColumn.FromTableColumn"/>.
+    /// </remarks>
+    private static bool DeniesANullableColumn(string sourceType, ResultColumn column)
+    {
+        if (!column.IsNullable || !column.FromTableColumn)
+            return false;
+
+        if (NullabilityExceptions.IsAllowed(column.Name))
+            return false;
+
+        return !sourceType.TrimEnd().EndsWith('?');
     }
 
     private static bool TypesCompatible(string sourceType, ResultColumn column)

@@ -31,7 +31,9 @@ public class TeamCommandHandlerTests
         {
             var source = call.Arg<Team>();
             return new Team(id: TeamId, name: source.Name, shortName: source.ShortName,
-                logoUrl: source.LogoUrl, abbreviation: source.Abbreviation, apiTeamId: source.ApiTeamId);
+                // The stored property is nullable because the column is; creating a team still requires a badge, which is
+                // why this echoes an empty string rather than passing the null through.
+                logoUrl: source.LogoUrl ?? string.Empty, abbreviation: source.Abbreviation, apiTeamId: source.ApiTeamId);
         });
     }
 
