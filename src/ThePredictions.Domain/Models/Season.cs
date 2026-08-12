@@ -1,5 +1,6 @@
 using Ardalis.GuardClauses;
 using ThePredictions.Domain.Common.Guards.Season;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Models;
 
@@ -11,6 +12,27 @@ public class Season
     public DateTime EndDateUtc { get; private set; }
     public bool IsActive { get; private set; }
     public int NumberOfRounds { get; private set; }
+
+    /// <summary>
+    /// Refuses to let the season hold more rounds than it says it has.
+    /// </summary>
+    /// <remarks>
+    /// The declared number is not decoration: the prize scheme divides the pot by it, so a season quietly carrying a
+    /// thirty-ninth round pays out thirty-eight rounds' worth of round prizes across thirty-nine rounds. It is also what
+    /// "has this season finished" was decided from until the rounds that exist became the authority instead.
+    ///
+    /// Enforced rather than warned about, at the owner's decision. Raising the number on the season is the way to make
+    /// room, which is a deliberate act with the prize consequences in view.
+    /// </remarks>
+    public void EnsureRoomForAnotherRound(int existingRoundCount)
+    {
+        if (existingRoundCount < NumberOfRounds)
+            return;
+
+        throw new BusinessRuleViolationException(
+            $"{Name} already holds all {NumberOfRounds} rounds it declares. Raise the number of rounds on the season "
+            + "before adding another, so the prize scheme is worked out from the right figure.");
+    }
     public int CompetitionId { get; private set; }
     public decimal? PassStandardPrice { get; private set; }
     public decimal? PassPremiumPrice { get; private set; }

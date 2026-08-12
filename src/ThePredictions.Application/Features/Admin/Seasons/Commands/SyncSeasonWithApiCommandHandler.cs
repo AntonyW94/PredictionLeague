@@ -239,6 +239,12 @@ public class SyncSeasonWithApiCommandHandler(
     private async Task<Round> CreateRoundForWindowAsync(
         LeagueSyncContext context, RoundWindow window, List<ValidFixture> fixtures, CancellationToken cancellationToken)
     {
+        // The same limit the admin screen enforces. Failing here is deliberate and is the owner's decision: the alternative
+        // was to create the round anyway (leaving the declared number wrong, and the prize scheme dividing by it) or to skip
+        // the window (losing its fixtures silently). This stops the sync with a message naming the season, so somebody
+        // raises the number of rounds and runs it again.
+        context.Season.EnsureRoomForAnotherRound(context.AllRounds.Count);
+
         var earliestMatchDateUtc = fixtures.Min(f => f.MatchDateTimeUtc);
         var newRound = Round.Create(
             context.Season.Id,

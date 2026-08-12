@@ -1,16 +1,28 @@
+using Ardalis.GuardClauses;
 using MediatR;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.Rounds;
+using ThePredictions.Domain.Common.Guards;
 using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Commands;
 
-public class CreateRoundCommandHandler(IRoundRepository roundRepository, ICurrentUserService currentUserService) : IRequestHandler<CreateRoundCommand, RoundDto>
+public class CreateRoundCommandHandler(
+    IRoundRepository roundRepository,
+    ISeasonRepository seasonRepository,
+    ICurrentUserService currentUserService) : IRequestHandler<CreateRoundCommand, RoundDto>
 {
     public async Task<RoundDto> Handle(CreateRoundCommand request, CancellationToken cancellationToken)
     {
         currentUserService.EnsureAdministrator();
+
+        // A season cannot hold more rounds than it declares: that number divides the prize pot.
+        var season = await seasonRepository.GetByIdAsync(request.SeasonId, cancellationToken);
+        Guard.Against.EntityNotFound(request.SeasonId, season, "Season");
+
+        var existingRounds = await roundRepository.GetAllForSeasonAsync(request.SeasonId, cancellationToken);
+        season.EnsureRoomForAnotherRound(existingRounds.Count);
 
         var round = Round.Create(
             request.SeasonId,
