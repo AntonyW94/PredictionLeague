@@ -10,6 +10,9 @@ using ThePredictions.Persistence.SqlServer.Queries.Account;
 using ThePredictions.Persistence.SqlServer.Queries.Homepage;
 using ThePredictions.Persistence.SqlServer.Queries.Onboarding;
 using ThePredictions.Persistence.SqlServer.Queries.Prizes;
+using ThePredictions.Application.Common.Prizes;
+using ThePredictions.Application.Features.External.Tasks.Queries;
+using ThePredictions.Persistence.SqlServer.Queries.External;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Features.Admin.Competitions.Queries;
 using ThePredictions.Application.Features.Admin.EmailTests.Queries;
@@ -162,6 +165,9 @@ public static class DependencyInjection
         services.AddScoped<IOnboardingStateQuery, OnboardingStateQuery>();
         services.AddScoped<IHomepageSeasonsQuery, HomepageSeasonsQuery>();
         services.AddScoped<IPrizeSchemeSeasonQuery, PrizeSchemeSeasonQuery>();
+        services.AddScoped<IPrizeWinnersQuery, PrizeWinnersQuery>();
+        services.AddScoped<IPrizeEvaluationInputsQuery, PrizeEvaluationInputsQuery>();
+        services.AddScoped<ILeagueWelcomeBatchQuery, LeagueWelcomeBatchQuery>();
     }
 
     // Every IXxxRepository in Application, in the order Application declares them. A new repository

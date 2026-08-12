@@ -1,6 +1,7 @@
 using ThePredictions.Contracts.Leagues;
 using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common;
+using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Common.Prizes;
 
@@ -13,7 +14,9 @@ public static class PrizePreviewComposer
 {
     public static PrizePreviewDto Compose(PrizeEvaluationInputs inputs, IPrizeEvaluator evaluator, IDateTimeProvider dateTimeProvider, LeaguePaymentInfoDto? payment = null)
     {
-        var deadlinePassed = inputs.EntryDeadlineUtc < dateTimeProvider.UtcNow;
+        // Through the same rule the rest of the site uses, which is also where "a league with no deadline is not open" is
+        // stated - so a league saved without one shows a final pot rather than inviting somebody to join it.
+        var deadlinePassed = !LeagueEntry.IsOpen(inputs.EntryDeadlineUtc, dateTimeProvider.UtcNow);
         var hasPrizes = inputs.HasScheme && (inputs.EntryCost > 0 || inputs.AdminTopUpPounds > 0);
         var currentPot = inputs.EntryCost * inputs.EntrantCount + inputs.AdminTopUpPounds;
 

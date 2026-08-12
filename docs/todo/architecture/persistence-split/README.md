@@ -2,7 +2,11 @@
 
 ## Status
 
-Not Started | **In Progress** | Complete
+Not Started | In Progress | **Complete**
+
+Reads finished 2026-08-12. `ThePredictions.Application` and `ThePredictions.Infrastructure` now hold no
+SQL at all - 53 files and 331 `SELECT`s down to zero - and `SqlOwnershipConventionTests` fails the build
+if any comes back. The write side is deliberately still open; see the last section.
 
 Agreed 2026-08-10. Moves every line of SQL out of `ThePredictions.Application` and
 `ThePredictions.Infrastructure` into a dedicated adapter, `ThePredictions.Persistence.SqlServer`,
@@ -178,8 +182,8 @@ Each phase is one PR, master stays green and deployable throughout.
 | 2 | **Admin/Seasons** ✅ | The same twenty-column statement written twice, and a team count whose definition disagrees with the other read of the same idea. |
 | 2 | **Admin reference data** ✅ | Nine handlers, seven ports, one statement deleted as a duplicate of a port that already existed - and a nullable column two of three reads denied. |
 | 2 | **Admin/Rounds/results digest** ✅ | Six tables and two CTEs into four reads. A top-scorer tie-break that disagreed with every leaderboard, and the one read on the site that skipped the round-naming rule. |
-| 2..N | **One feature area per PR** | Define the query interfaces, move the SQL, classify each predicate, move the rules to C# with unit tests, drop the handler's exclusion, add conformance tests. |
-| Last | **Lock it** | The "no SQL in Application" convention test goes from advisory to enforced once the count reaches zero. |
+| 2 | **Prizes + welcome emails** ✅ | The last three files. A prize scheme with no prizes worked out from it yet, a statement assembled at run time that no tooling could describe, and the `ISNULL(..., -1)` sentinel that stood in for "two nulls are the same prize". |
+| Last | **Lock it** ✅ | `SqlOwnershipConventionTests`: no `.cs` file under `src/ThePredictions.Application` may contain SQL, nothing in it but the port's own declaration may name `IApplicationReadDbConnection`, and no Application type may carry the adapter's coverage exclusion. Enforced, with a positive control so the sweep cannot pass by looking in the wrong place. |
 
 **Phase 0 was split into four once the survey was done.** It was planned as one PR, but the pieces turn
 out to be independently landable, because repositories depend only on Application's
@@ -1289,6 +1293,99 @@ list. Three copies, one of them on the least-watched page on the site.
 `CROSS JOIN` between two unrelated tables - a way to fetch four columns in one trip. Both now use `ILeagueEmailRecipientQuery`,
 and the comment explaining *why* the league itself is deliberately not read (its row may be locked by the in-flight join
 transaction) now lives in one place instead of being paraphrased twice.
+
+### A rule four levels deep that holds back a whole league's email
+
+The welcome-email scan opened with a `NOT EXISTS` nested inside another `NOT EXISTS`, and the inner one was the rule: skip a
+league whose administrator has **set a prize scheme but whose individual prizes have not been worked out from it yet**. Welcoming
+those members would send them an email about prizes with an empty list, so the whole league waits for the next hourly run.
+
+That is a decision about what a real person receives, and it was four levels into a statement nothing could execute without a
+database. It is now nine lines of C# with three tests around it - a league with no scheme goes, a league with a settled scheme
+goes, a league with a scheme and no prizes waits - plus one that arranges two leagues in opposite states, because a rule applied
+per batch rather than per league would have passed the first three.
+
+### A statement that no tooling could describe
+
+`PrizeEvaluationInputsReader` reached a league two ways - by its id from its own pages, by its entry code from the join flow -
+and shared one projection between them, with the predicate concatenated onto the end at run time:
+
+```csharp
+await _readDb.QuerySingleOrDefaultAsync<...>(LeagueSelectSql + "l.[Id] = @LeagueId;", ...)
+```
+
+`ThePredictions.SchemaCheck` verifies every Dapper read in `src/` against the shape SQL Server actually returns, and it can only
+describe a statement that exists as a **constant**. These two were therefore the only reads on the site it never checked - the
+exact class of bug it exists to catch (a `SELECT` order that no longer matches its result record) could have sat in them
+indefinitely. They are two full statements now, written out, and both are verified.
+
+Worth being precise about the risk: neither predicate was ever attacker-controlled, so this was never an injection question. It
+is about what the tooling can see.
+
+### `NULL = NULL`, and the sentinel that worked around it
+
+Matching a prize win against the "already emailed" log needed all four of user, prize slot, round and month to agree. A round
+prize has a round and no month; a monthly prize has a month and no round; a season-long prize has neither. Since SQL will not
+treat two nulls as equal, that last case had to be written:
+
+```sql
+AND ISNULL(pn.[RoundNumber], -1) = ISNULL(w.[RoundNumber], -1)
+AND ISNULL(pn.[Month], -1) = ISNULL(w.[Month], -1)
+```
+
+`-1` is not a round and not a month. It is there purely to make two absences compare equal, which in C# they already do - the
+rule reads as the comparison it was always imitating. Six tests pin it, including the two that matter most in opposite
+directions: the same slot in a different round is **not** the same prize (or nobody is ever told about their second round win),
+and two prizes with no round and no month **are** (or somebody is told about the same overall win every time a round is
+processed).
+
+### Six exclusions left behind by their own SQL
+
+The audit note above ("worth a sweep of the remaining ones for the same mistake") turned out to be right about more than it
+knew. Six handlers in Application still carried `"Query handler: the body is a SQL string plus a mapping"` **after their SQL had
+already moved** - the attribute survived the conversion. Nothing in them was measured, and among them:
+
+- `GetLeagueBankDetailsQueryHandler` decides who may read a league's bank account, and it is the *ordering* that protects it:
+  the caller is checked before anything is decrypted. Now pinned by a test asserting the decryption service is never called for
+  a refused caller - the same guard the payment-info handler got two batches earlier.
+- `GetLeaguePrizeBreakdownQueryHandler` checks membership before reading the league at all, so a refused caller cannot learn
+  the pot exists from how long the answer takes.
+- `GetTournamentRoundMappingsQueryHandler` held a hand-written copy of `TournamentRoundMapping.GetStageList()` - the same split,
+  the same `Enum.TryParse` filter, the same order. Deleted in favour of the method.
+
+All six are measured now. The convention test's third rule is what stops a seventh: an Application type carrying the adapter's
+justification fails the build, because that wording claims something about the code that is no longer true anywhere in that
+project.
+
+### The nullable deadline, a fourth time
+
+`PrizeEvaluationInputs.EntryDeadlineUtc` and `PrizePreviewDto.EntryDeadlineUtc` both said the column could not be null. It can.
+The same shape as `Teams.LogoUrl`, `Leagues.EntryDeadlineUtc` on the manage-leagues screen, and the round list before that - and
+the same fix, which cascaded into two razor lines that now show "Not set" instead of a date in 1900. The deadline comparison
+itself became `LeagueEntry.IsOpen`, so "is entry still open" is one definition rather than a `>` written per page.
+
+Four instances of one mistake, all found by writing the row type from the schema and letting the compiler walk the consequences.
+A deliberate sweep of the remaining nullable columns is still worth doing on its own.
+
+### Locking it: a convention test with a control
+
+`SqlOwnershipConventionTests` is the machine-enforced version of this whole plan. Three rules:
+
+1. no `.cs` file under `src/ThePredictions.Application` contains SQL;
+2. nothing in Application names `IApplicationReadDbConnection` but the port's own declaration - so a handler cannot reach a
+   database to write a statement against;
+3. no Application type carries the adapter's coverage exclusion.
+
+The first needs care to be worth anything. Every file converted by this split **explains in its remarks what the statement used
+to say**, quoting the very keywords being searched for, so a sweep that read comments would flag the entire conversion and have
+to be neutered to pass. It therefore strips comments while keeping string literals - which is the opposite of the naive version,
+and the reason it can be strict: any `SELECT`, `INSERT INTO`, `FROM [`, `INNER JOIN`, `ORDER BY` or `WHERE ` surviving that
+strip is a statement, not prose.
+
+A comment stripper that quietly ate everything would make that test pass for ever, for the wrong reason, and silently. So there
+is a fourth test: the same detector run over `ThePredictions.Persistence.SqlServer`, asserting it **does** find SQL there. If
+the sweep ever stops looking, that is what fails. The detector was also checked the other way round before landing - SQL pasted
+into an Application file, test observed to fail, file restored.
 
 ### Rules found duplicated so far
 

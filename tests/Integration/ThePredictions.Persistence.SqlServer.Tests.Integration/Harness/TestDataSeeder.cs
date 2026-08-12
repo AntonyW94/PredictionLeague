@@ -308,7 +308,11 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         int seasonId,
         string administratorUserId,
         string name = "Integration League",
-        bool hasPrizes = false)
+        bool hasPrizes = false,
+        DateTime? entryDeadlineUtc = null,
+        string? entryCode = null,
+        decimal price = 0m,
+        decimal? prizeFundOverride = null)
     {
         const string sql = @"
             INSERT INTO [Leagues]
@@ -323,7 +327,10 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
                 [PointsForCorrectResult],
                 [CreatedAtUtc],
                 [RequiresMemberApproval],
-                [IsListed]
+                [IsListed],
+                [EntryDeadlineUtc],
+                [EntryCode],
+                [PrizeFundOverride]
             )
             VALUES
             (
@@ -337,7 +344,10 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
                 @PointsForCorrectResult,
                 @CreatedAtUtc,
                 @RequiresMemberApproval,
-                @IsListed
+                @IsListed,
+                @EntryDeadlineUtc,
+                @EntryCode,
+                @PrizeFundOverride
             );
             SELECT CAST(SCOPE_IDENTITY() AS int);";
 
@@ -346,14 +356,17 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
             Name = name,
             SeasonId = seasonId,
             AdministratorUserId = administratorUserId,
-            Price = 0m,
-            IsFree = true,
+            Price = price,
+            IsFree = price == 0m,
             HasPrizes = hasPrizes,
             PointsForExactScore = 3,
             PointsForCorrectResult = 1,
             CreatedAtUtc = DateTime.UtcNow,
             RequiresMemberApproval = false,
-            IsListed = false
+            IsListed = false,
+            EntryDeadlineUtc = entryDeadlineUtc,
+            EntryCode = entryCode,
+            PrizeFundOverride = prizeFundOverride
         });
     }
 
@@ -973,6 +986,153 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
             SELECT CAST(SCOPE_IDENTITY() AS int);";
 
         return await ExecuteScalarAsync<int>(sql, new { Provider = provider, PercentFee = percentFee, FixedFee = fixedFee });
+    }
+
+    public async Task<int> AddLeagueBoostWindowAsync(
+        int leagueBoostRuleId,
+        int startRoundNumber,
+        int endRoundNumber,
+        int maxUsesInWindow)
+    {
+        const string sql = @"
+            INSERT INTO [LeagueBoostWindows]
+            (
+                [LeagueBoostRuleId],
+                [StartRoundNumber],
+                [EndRoundNumber],
+                [MaxUsesInWindow]
+            )
+            VALUES
+            (
+                @LeagueBoostRuleId,
+                @StartRoundNumber,
+                @EndRoundNumber,
+                @MaxUsesInWindow
+            );
+
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new
+        {
+            LeagueBoostRuleId = leagueBoostRuleId,
+            StartRoundNumber = startRoundNumber,
+            EndRoundNumber = endRoundNumber,
+            MaxUsesInWindow = maxUsesInWindow
+        });
+    }
+
+    public async Task<int> AddLeaguePrizeSchemeAsync(int leagueId, string setByUserId)
+    {
+        const string sql = @"
+            INSERT INTO [LeaguePrizeScheme]
+            (
+                [LeagueId],
+                [SetAtUtc],
+                [SetByUserId]
+            )
+            VALUES
+            (
+                @LeagueId,
+                @SetAtUtc,
+                @SetByUserId
+            );
+
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new
+        {
+            LeagueId = leagueId,
+            SetAtUtc = DateTime.UtcNow,
+            SetByUserId = setByUserId
+        });
+    }
+
+    public async Task<int> AddLeaguePrizeSchemeEntryAsync(
+        int leaguePrizeSchemeId,
+        PrizeType category,
+        int perEntryPounds,
+        string? rankTableJson = null)
+    {
+        // [Category] holds the enum's name, because the write path passes e.Category.ToString(). Note the difference from
+        // [LeaguePrizeSettings].[PrizeType], which holds the numeric value - reproduced deliberately, see ITestDataSeeder.
+        const string sql = @"
+            INSERT INTO [LeaguePrizeSchemeEntries]
+            (
+                [LeaguePrizeSchemeId],
+                [Category],
+                [PerEntryPounds],
+                [RankTableJson]
+            )
+            VALUES
+            (
+                @LeaguePrizeSchemeId,
+                @Category,
+                @PerEntryPounds,
+                @RankTableJson
+            );
+
+            SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+        return await ExecuteScalarAsync<int>(sql, new
+        {
+            LeaguePrizeSchemeId = leaguePrizeSchemeId,
+            Category = category.ToString(),
+            PerEntryPounds = perEntryPounds,
+            RankTableJson = rankTableJson
+        });
+    }
+
+    public async Task AddPrizeNotificationAsync(
+        string userId,
+        int leaguePrizeSettingId,
+        int? roundNumber = null,
+        int? month = null)
+    {
+        const string sql = @"
+            INSERT INTO [PrizeNotifications]
+            (
+                [UserId],
+                [LeaguePrizeSettingId],
+                [RoundNumber],
+                [Month],
+                [SentAtUtc]
+            )
+            VALUES
+            (
+                @UserId,
+                @LeaguePrizeSettingId,
+                @RoundNumber,
+                @Month,
+                @SentAtUtc
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            UserId = userId,
+            LeaguePrizeSettingId = leaguePrizeSettingId,
+            RoundNumber = roundNumber,
+            Month = month,
+            SentAtUtc = DateTime.UtcNow
+        });
+    }
+
+    public async Task AddLeagueWelcomeNotificationAsync(int leagueId, string userId)
+    {
+        const string sql = @"
+            INSERT INTO [LeagueWelcomeNotifications]
+            (
+                [LeagueId],
+                [UserId],
+                [SentAtUtc]
+            )
+            VALUES
+            (
+                @LeagueId,
+                @UserId,
+                @SentAtUtc
+            );";
+
+        await ExecuteAsync(sql, new { LeagueId = leagueId, UserId = userId, SentAtUtc = DateTime.UtcNow });
     }
 
     public async Task DeleteMatchAsync(int matchId)
