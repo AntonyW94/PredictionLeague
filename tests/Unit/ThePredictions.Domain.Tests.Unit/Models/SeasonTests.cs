@@ -1,6 +1,7 @@
 using FluentAssertions;
 using ThePredictions.Domain.Models;
 using Xunit;
+using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Domain.Tests.Unit.Models;
 
@@ -389,6 +390,68 @@ public class SeasonTests
         season.PassPremiumPrice.Should().Be(15m);
         season.RequiresPayment.Should().BeTrue();
     }
+
+    #region How many rounds a season may hold
+
+    [Fact]
+    public void EnsureRoomForAnotherRound_ShouldAllowARoundBelowTheDeclaredNumber()
+    {
+        // Arrange
+        var season = SeasonDeclaring(38);
+
+        // Act
+        var act = () => season.EnsureRoomForAnotherRound(existingRoundCount: 37);
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void EnsureRoomForAnotherRound_ShouldRefuseARoundOnceTheDeclaredNumberIsReached()
+    {
+        // The declared number divides the prize pot: a season carrying a thirty-ninth round would pay thirty-eight rounds'
+        // worth of round prizes across thirty-nine rounds.
+        var season = SeasonDeclaring(38);
+
+        // Act
+        var act = () => season.EnsureRoomForAnotherRound(existingRoundCount: 38);
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("*38 rounds*");
+    }
+
+    [Fact]
+    public void EnsureRoomForAnotherRound_ShouldRefuseARoundWhenTheSeasonAlreadyHoldsMoreThanItDeclares()
+    {
+        // Arrange - a season already over its number, which existing data could be in before this rule existed.
+        var season = SeasonDeclaring(38);
+
+        // Act
+        var act = () => season.EnsureRoomForAnotherRound(existingRoundCount: 40);
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>();
+    }
+
+    [Fact]
+    public void EnsureRoomForAnotherRound_ShouldNameTheSeasonItIsRefusing()
+    {
+        // Arrange - the message reaches an administrator mid-sync, so it has to say which season to go and change.
+        var season = SeasonDeclaring(38);
+
+        // Act
+        var act = () => season.EnsureRoomForAnotherRound(existingRoundCount: 38);
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>().WithMessage("2026/27*");
+    }
+
+    private static Season SeasonDeclaring(int numberOfRounds) =>
+        new(id: 42, name: "2026/27", startDateUtc: ValidStart, endDateUtc: ValidEnd, isActive: true,
+            numberOfRounds: numberOfRounds, competitionId: 1, passStandardPrice: null, passPremiumPrice: null);
+
+    #endregion
 
     [Fact]
     public void UpdateDetails_ShouldNotChangeId_WhenUpdating()

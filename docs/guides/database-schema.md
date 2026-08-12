@@ -826,7 +826,7 @@ Extended ASP.NET Identity users table.
 | Id | nvarchar(450) | NO | | Primary key (GUID string) |
 | UserName | nvarchar(256) | YES | | Username |
 | NormalizedUserName | nvarchar(256) | YES | | Uppercase username |
-| Email | nvarchar(256) | YES | | Email address |
+| Email | nvarchar(256) | NO | | Email address, and the login. Required since migration 0008 - every creation path already demanded one, and nine reads declared it always-present |
 | NormalizedEmail | nvarchar(256) | YES | | Uppercase email |
 | EmailConfirmed | bit | NO | | Email verified |
 | PasswordHash | nvarchar(max) | YES | | Hashed password |
