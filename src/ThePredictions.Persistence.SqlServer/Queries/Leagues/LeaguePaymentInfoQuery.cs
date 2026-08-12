@@ -30,15 +30,15 @@ public sealed class LeaguePaymentInfoQuery(IApplicationReadDbConnection dbConnec
                 l.[BankAccountNumber] AS [EncryptedAccountNumber],
                 l.[PaymentReferenceTemplate],
                 CAST(CASE WHEN l.[AdministratorUserId] = @UserId THEN 1 ELSE 0 END AS bit) AS [IsAdministrator],
-                CAST(CASE WHEN EXISTS (
+                (
                     SELECT
-                        1
+                        lm.[Status]
                     FROM
                         [LeagueMembers] lm
                     WHERE
                         lm.[LeagueId] = l.[Id]
                         AND lm.[UserId] = @UserId
-                ) THEN 1 ELSE 0 END AS bit) AS [HasMembership],
+                ) AS [MembershipStatus],
                 u.[FirstName] AS [RequestingFirstName],
                 u.[LastName] AS [RequestingLastName]
             FROM

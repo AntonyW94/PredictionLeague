@@ -44,7 +44,7 @@ public abstract class LeaguePaymentInfoQueryConformanceTests
         // Assert - present, and refused by the handler rather than reported as not found.
         row.Should().NotBeNull();
         row!.IsAdministrator.Should().BeFalse();
-        row.HasMembership.Should().BeFalse();
+        row.MembershipStatus.Should().BeNull();
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public abstract class LeaguePaymentInfoQueryConformanceTests
     [InlineData(LeagueMemberStatus.Approved)]
     [InlineData(LeagueMemberStatus.Pending)]
     [InlineData(LeagueMemberStatus.Rejected)]
-    public async Task ExecuteAsync_ShouldReportAMembershipOfAnyStatus(LeagueMemberStatus status)
+    public async Task ExecuteAsync_ShouldReportAMembershipsStatusWhateverItIs(LeagueMemberStatus status)
     {
         // Arrange
         var world = await ArrangeAsync();
@@ -89,9 +89,9 @@ public abstract class LeaguePaymentInfoQueryConformanceTests
         // Act
         var row = await Query.ExecuteAsync(world.LeagueId, memberId, CancellationToken.None);
 
-        // Assert - faithful to the old EXISTS, which had no status filter. The pending case is the one that has to work:
-        // somebody who has asked to join needs the bank details in order to pay.
-        row!.HasMembership.Should().BeTrue();
+        // Assert - the standing itself, not a verdict on it. Which standings may see a league's bank account is a rule,
+        // and it differs between them: pending may, because that is how somebody pays to join, and rejected may not.
+        row!.MembershipStatus.Should().Be(status);
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public abstract class LeaguePaymentInfoQueryConformanceTests
         var row = await Query.ExecuteAsync(world.LeagueId, memberId, CancellationToken.None);
 
         // Assert
-        row!.HasMembership.Should().BeFalse();
+        row!.MembershipStatus.Should().BeNull();
     }
 
     [Fact]

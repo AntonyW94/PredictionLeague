@@ -1,6 +1,7 @@
 using MediatR;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Services;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
@@ -43,14 +44,13 @@ public class GetLeaguePaymentInfoQueryHandler(
     }
 
     /// <summary>
-    /// Who may see a league's bank details: the administrator, anyone with a membership row, and a prospective joiner
-    /// holding the right entry code.
+    /// Who may see a league's bank details: the administrator, a member or somebody waiting to be approved, and a
+    /// prospective joiner holding the right entry code.
     /// </summary>
     /// <remarks>
-    /// "Anyone with a membership row" means any status, including pending - which is the point, because someone who has
-    /// asked to join needs the details in order to pay. It also covers somebody who was turned away, which is the part
-    /// worth a decision; preserved from the old <c>EXISTS</c>, which had no status filter, and recorded in the plan
-    /// document.
+    /// Pending is load-bearing and deliberate: you ask to join, then you need the details in order to pay. Rejected is
+    /// not - somebody turned away keeps no claim on the account number - and it used to be included, because the read
+    /// asked only whether a membership row existed.
     ///
     /// The entry code arm exists so a private league's joining page can show payment details before the request has been
     /// approved. It is compared case-insensitively, as it was, and a blank code supplied by the caller never matches -
@@ -58,7 +58,7 @@ public class GetLeaguePaymentInfoQueryHandler(
     /// </remarks>
     private static void EnsureMayViewPaymentDetails(LeaguePaymentInfoRow league, string? suppliedEntryCode)
     {
-        if (league.IsAdministrator || league.HasMembership)
+        if (league.IsAdministrator || MayStillPay(league.MembershipStatus))
             return;
 
         if (MatchesEntryCode(league.EntryCode, suppliedEntryCode))
@@ -66,6 +66,12 @@ public class GetLeaguePaymentInfoQueryHandler(
 
         throw new UnauthorizedAccessException("Only the league administrator or its members can view payment details.");
     }
+
+    /// <summary>
+    /// Whether this standing in the league is one that still needs to pay into it.
+    /// </summary>
+    private static bool MayStillPay(LeagueMemberStatus? status) =>
+        status is LeagueMemberStatus.Approved or LeagueMemberStatus.Pending;
 
     private static bool MatchesEntryCode(string? leagueEntryCode, string? suppliedEntryCode)
     {
