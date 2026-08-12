@@ -3,6 +3,7 @@ using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Contracts.Dashboard;
 using ThePredictions.Contracts.Predictions;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Predictions.Queries;
 
@@ -33,7 +34,7 @@ public class GetPredictionPageDataQueryHandler(
         {
             RoundId = round.RoundId,
             RoundNumber = round.RoundNumber,
-            RoundDisplayName = round.DisplayName,
+            RoundName = Round.DisplayNameOrDefault(round.DisplayName, round.RoundNumber),
             SeasonName = round.SeasonName,
             DeadlineUtc = round.DeadlineUtc,
             IsTournament = round.CompetitionType == CompetitionType.Tournament,

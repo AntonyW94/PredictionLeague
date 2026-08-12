@@ -70,9 +70,23 @@ public class GetPredictionPageDataQueryHandlerTests
         // Assert
         page!.RoundId.Should().Be(RoundId);
         page.RoundNumber.Should().Be(12);
-        page.RoundDisplayName.Should().Be("Gameweek 12");
+        page.RoundName.Should().Be("Gameweek 12");
         page.SeasonName.Should().Be("2026/27");
         page.DeadlineUtc.Should().Be(KickOff.AddHours(-2));
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNameTheRoundByItsNumber_WhenNobodyHasNamedIt()
+    {
+        // Arrange - the fallback, and the only case where "Round N" is still the answer. This page used to give that answer
+        // for every league round, whatever it was called.
+        GivenRound(roundNumber: 12, displayName: string.Empty);
+
+        // Act
+        var page = await HandleAsync();
+
+        // Assert
+        page!.RoundName.Should().Be("Round 12");
     }
 
     [Theory]
@@ -408,10 +422,11 @@ public class GetPredictionPageDataQueryHandlerTests
     private void GivenRound(
         int roundNumber = 12,
         int numberOfRounds = 38,
-        CompetitionType competitionType = CompetitionType.League) =>
+        CompetitionType competitionType = CompetitionType.League,
+        string? displayName = null) =>
         _roundHeaderQuery.ExecuteAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
-            .Returns(new RoundHeaderRow(RoundId, roundNumber, $"Gameweek {roundNumber}", KickOff.AddHours(-2),
-                SeasonId, "2026/27", numberOfRounds, competitionType));
+            .Returns(new RoundHeaderRow(RoundId, roundNumber, displayName ?? $"Gameweek {roundNumber}",
+                KickOff.AddHours(-2), SeasonId, "2026/27", numberOfRounds, competitionType));
 
     private void GivenMatches(params RoundMatchRow[] matches) =>
         _roundMatchesQuery.ExecuteAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(matches);

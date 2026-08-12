@@ -3,6 +3,7 @@ using ThePredictions.Application.Features.Rounds.Queries;
 using ThePredictions.Application.Features.Sharing.Models;
 using ThePredictions.Application.Services;
 using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Sharing.Queries;
 
@@ -96,15 +97,12 @@ public class GetRoundShareCardImageQueryHandler(
     /// What the card calls the round.
     /// </summary>
     /// <remarks>
-    /// A tournament round is named - "Semi Finals" - and a league round is numbered. Deliberately narrower than
-    /// <c>Round.DisplayNameOrDefault</c>, which uses the stored name whenever there is one: a league round is stored as
-    /// "Gameweek 5" and this shows "Round 5". The two disagree on every league round in the database, and reconciling them is
-    /// a product decision rather than a refactor - see the open questions in the plan.
+    /// The same rule as the rest of the site, and as the prediction page a player reaches this from. This used to be
+    /// narrower - the stored name for a tournament round only - so a league round stored as "Gameweek 5" was shared as
+    /// "Round 5" while the player's own dashboard called it "Gameweek 5".
     /// </remarks>
     private static string RoundLabel(RoundHeaderRow round) =>
-        round.CompetitionType == CompetitionType.Tournament && !string.IsNullOrWhiteSpace(round.DisplayName)
-            ? round.DisplayName
-            : $"Round {round.RoundNumber}";
+        Round.DisplayNameOrDefault(round.DisplayName, round.RoundNumber);
 
     /// <summary>The player's first name, or nothing to leave the card unnamed.</summary>
     private static string? PlayerName(ShareCardPlayerRow? player) =>

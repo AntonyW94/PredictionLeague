@@ -271,14 +271,29 @@ public class GetRoundShareCardImageQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldLabelALeagueRoundByItsNumber()
+    public async Task Handle_ShouldLabelALeagueRoundByItsName()
     {
-        // League gameweeks are numbered, and a stored display name would just repeat that.
+        // The card is shared from the prediction page and read next to the player's own dashboard, and both call this
+        // "Gameweek 5". It used to be the one place that said "Round 5".
         GivenRound(roundNumber: 5, roundDisplayName: "Gameweek 5", competitionType: CompetitionType.League);
         GivenMatches(MatchRow());
 
         await HandleAsync();
 
+        CapturedModel().RoundLabel.Should().Be("Gameweek 5");
+    }
+
+    [Fact]
+    public async Task Handle_ShouldLabelARoundByItsNumber_WhenNobodyHasNamedIt()
+    {
+        // Arrange - the fallback, and the only case that still reads "Round N".
+        GivenRound(roundNumber: 5, roundDisplayName: string.Empty, competitionType: CompetitionType.League);
+        GivenMatches(MatchRow());
+
+        // Act
+        await HandleAsync();
+
+        // Assert
         CapturedModel().RoundLabel.Should().Be("Round 5");
     }
 
