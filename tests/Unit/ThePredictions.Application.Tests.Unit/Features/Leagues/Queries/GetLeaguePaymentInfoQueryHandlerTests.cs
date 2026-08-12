@@ -3,6 +3,7 @@ using NSubstitute;
 using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Leagues;
+using ThePredictions.Domain.Common.Enumerations;
 using Xunit;
 
 namespace ThePredictions.Application.Tests.Unit.Features.Leagues.Queries;
@@ -36,7 +37,7 @@ public class GetLeaguePaymentInfoQueryHandlerTests
     public async Task Handle_ShouldAllowTheLeagueAdministrator()
     {
         // Arrange
-        Given(Row(isAdministrator: true, hasMembership: false));
+        Given(Row(isAdministrator: true, membershipStatus: null));
 
         // Act
         var info = await HandleAsync();
@@ -45,24 +46,54 @@ public class GetLeaguePaymentInfoQueryHandlerTests
         info.LeagueName.Should().Be("Test League");
     }
 
-    [Fact]
-    public async Task Handle_ShouldAllowAnyoneWithAMembership()
+    [Theory]
+    [InlineData(LeagueMemberStatus.Approved)]
+    [InlineData(LeagueMemberStatus.Pending)]
+    public async Task Handle_ShouldAllowSomebodyWhoStillHasToPayIntoTheLeague(LeagueMemberStatus status)
     {
         // Arrange
-        Given(Row(isAdministrator: false, hasMembership: true));
+        Given(Row(isAdministrator: false, membershipStatus: status));
 
         // Act
         var act = async () => await HandleAsync();
 
-        // Assert - any status, including a pending request: somebody who has asked to join needs the details to pay.
+        // Assert - pending is the case that has to work: you ask to join, then you need the details in order to pay.
         await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldRefuseSomebodyWhoseRequestWasTurnedDown()
+    {
+        // Somebody turned away keeps no claim on the league's account number. The read used to answer only whether a
+        // membership row existed, so a rejected applicant kept the details they had been shown while waiting.
+        Given(Row(isAdministrator: false, membershipStatus: LeagueMemberStatus.Rejected));
+
+        // Act
+        var act = async () => await HandleAsync();
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotDecryptAnything_ForSomebodyWhoseRequestWasTurnedDown()
+    {
+        // Arrange - the check happens before the plaintext exists, as it does for every other refused caller.
+        Given(Row(isAdministrator: false, membershipStatus: LeagueMemberStatus.Rejected));
+
+        // Act
+        var act = async () => await HandleAsync();
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+        _fieldEncryptionService.DidNotReceiveWithAnyArgs().Decrypt(default);
     }
 
     [Fact]
     public async Task Handle_ShouldRefuseAStrangerWithNoEntryCode()
     {
         // Arrange
-        Given(Row(isAdministrator: false, hasMembership: false, entryCode: "SECRET"));
+        Given(Row(isAdministrator: false, membershipStatus: null, entryCode: "SECRET"));
 
         // Act
         var act = async () => await HandleAsync();
@@ -75,7 +106,7 @@ public class GetLeaguePaymentInfoQueryHandlerTests
     public async Task Handle_ShouldAllowAProspectiveJoinerWithTheRightEntryCode()
     {
         // Arrange - a private league's joining page shows payment details before the request is approved.
-        Given(Row(isAdministrator: false, hasMembership: false, entryCode: "SECRET"));
+        Given(Row(isAdministrator: false, membershipStatus: null, entryCode: "SECRET"));
 
         // Act
         var act = async () => await HandleAsync(entryCode: "SECRET");
@@ -88,7 +119,7 @@ public class GetLeaguePaymentInfoQueryHandlerTests
     public async Task Handle_ShouldMatchTheEntryCodeWhateverItsCase()
     {
         // Arrange
-        Given(Row(isAdministrator: false, hasMembership: false, entryCode: "SECRET"));
+        Given(Row(isAdministrator: false, membershipStatus: null, entryCode: "SECRET"));
 
         // Act
         var act = async () => await HandleAsync(entryCode: "secret");
@@ -101,7 +132,7 @@ public class GetLeaguePaymentInfoQueryHandlerTests
     public async Task Handle_ShouldRefuseTheWrongEntryCode()
     {
         // Arrange
-        Given(Row(isAdministrator: false, hasMembership: false, entryCode: "SECRET"));
+        Given(Row(isAdministrator: false, membershipStatus: null, entryCode: "SECRET"));
 
         // Act
         var act = async () => await HandleAsync(entryCode: "GUESS");
@@ -118,7 +149,7 @@ public class GetLeaguePaymentInfoQueryHandlerTests
     {
         // Arrange - the case that matters: a public league stores no code, so a blank supplied code must not be treated
         // as matching it, or its bank details would be readable by anybody.
-        Given(Row(isAdministrator: false, hasMembership: false, entryCode: null));
+        Given(Row(isAdministrator: false, membershipStatus: null, entryCode: null));
 
         // Act
         var act = async () => await HandleAsync(entryCode: suppliedEntryCode);
@@ -131,7 +162,7 @@ public class GetLeaguePaymentInfoQueryHandlerTests
     public async Task Handle_ShouldNotDecryptAnything_ForACallerWhoIsRefused()
     {
         // Arrange
-        Given(Row(isAdministrator: false, hasMembership: false, entryCode: "SECRET"));
+        Given(Row(isAdministrator: false, membershipStatus: null, entryCode: "SECRET"));
 
         // Act
         var act = async () => await HandleAsync();
@@ -263,7 +294,7 @@ public class GetLeaguePaymentInfoQueryHandlerTests
 
     private static LeaguePaymentInfoRow Row(
         bool isAdministrator = false,
-        bool hasMembership = false,
+        LeagueMemberStatus? membershipStatus = null,
         string? entryCode = null,
         string? encryptedAccountName = "A Willson",
         string? encryptedSortCode = "00-00-00",
@@ -281,7 +312,7 @@ public class GetLeaguePaymentInfoQueryHandlerTests
             encryptedAccountNumber,
             paymentReferenceTemplate,
             isAdministrator,
-            hasMembership,
+            membershipStatus,
             requestingFirstName,
             requestingLastName);
 }
