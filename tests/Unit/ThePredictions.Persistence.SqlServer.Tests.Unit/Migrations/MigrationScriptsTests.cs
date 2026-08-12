@@ -29,7 +29,8 @@ public class MigrationScriptsTests
         $"{ExpectedPrefix}0004_CreateUserBadges.sql",
         $"{ExpectedPrefix}0005_DropRoundResultsTotalPoints.sql",
         $"{ExpectedPrefix}0006_LeagueMemberStatsCachedRanks.sql",
-        $"{ExpectedPrefix}0007_PointBoostImagesAtWebp.sql"
+        $"{ExpectedPrefix}0007_PointBoostImagesAtWebp.sql",
+        $"{ExpectedPrefix}0008_AspNetUsersEmailRequired.sql"
     ];
 
     [Fact]

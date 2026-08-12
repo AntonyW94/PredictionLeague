@@ -12,15 +12,12 @@ namespace ThePredictions.SchemaCheck;
 /// </remarks>
 public static class NullabilityExceptions
 {
-    private static readonly Dictionary<string, string> ByColumnName = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Email"] =
-            "AspNetUsers.Email is nullable because ASP.NET Identity's schema is generic, not because an account can be " +
-            "without one - it is the login, and no row on dev is null - prod has not been checked. Declaring the result types " +
-            "nullable would add a 'skip anybody with no address' branch to nine reads for a state the product cannot " +
-            "reach, and a test for each. The fix is a NOT NULL constraint; until that migration lands, this is stated " +
-            "here rather than worked around nine times."
-    };
+    /// <remarks>
+    /// Empty, and worth keeping that way. The one entry it held - <c>AspNetUsers.Email</c>, nullable because Identity's
+    /// schema is generic rather than because an account can be without a login - became migration
+    /// <c>0008_AspNetUsersEmailRequired</c> instead. A constraint says it once; an exception says it for ever.
+    /// </remarks>
+    private static readonly Dictionary<string, string> ByColumnName = new(StringComparer.OrdinalIgnoreCase);
 
     public static bool IsAllowed(string columnName) => ByColumnName.ContainsKey(columnName);
 
