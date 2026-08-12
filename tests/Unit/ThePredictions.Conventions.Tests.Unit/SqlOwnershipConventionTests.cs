@@ -14,7 +14,7 @@ namespace ThePredictions.Conventions.Tests.Unit;
 /// player sees written as <c>CASE</c> expressions, <c>ISNULL</c> sentinels and nested <c>NOT EXISTS</c> blocks inside them -
 /// untestable by anything that did not have a database. The persistence split moved every one behind a port owned by
 /// Application and implemented in <c>ThePredictions.Persistence.SqlServer</c>, with the rules rewritten in C# and unit tested
-/// (see <c>docs/todo/architecture/persistence-split</c>).
+/// (see <c>docs/decisions/0017-sql-belongs-to-the-persistence-adapter.md</c>).
 ///
 /// These tests are what stops that coming back. The plan can be re-read; a failing build cannot be skimmed past.
 /// </summary>
@@ -49,7 +49,7 @@ public class SqlOwnershipConventionTests
         offenders.Should().BeEmpty(
             "SQL in Application is what the persistence split removed. A read belongs behind an interface in Application and "
             + "a class in ThePredictions.Persistence.SqlServer, with a conformance test for the read and unit tests for the "
-            + "rules the handler applies to it - see docs/todo/architecture/persistence-split and "
+            + "rules the handler applies to it - see docs/decisions/0017-sql-belongs-to-the-persistence-adapter.md and "
             + "docs/guides/checklists/new-query.md.");
     }
 
