@@ -75,6 +75,8 @@ Lists methods with high **CRAP scores** (Change Risk Anti-Patterns). CRAP score 
 
 To reduce CRAP scores, extract complex methods into smaller private helpers to distribute the cyclomatic complexity.
 
+**The report currently says "No risk hotspots found", and that is the state to keep it in.** The last two were both the same shape: a method that made no decisions of its own but assembled a reply out of thirty-odd `x?.Field` and `?? 0` expressions, each one a branch. Extracting a resolver per group - one that answers "there is no active round" or "nobody holds this record yet" once, and returns a small record of settled values - moves those branches into methods small enough to read. Where a method is complex because it is *deciding* something, that is a rule and it belongs in the Domain instead.
+
 ### Coverage Table
 
 Shows per-class breakdown with columns:

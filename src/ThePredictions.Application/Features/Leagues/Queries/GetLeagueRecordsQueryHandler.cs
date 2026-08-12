@@ -50,60 +50,101 @@ public class GetLeagueRecordsQueryHandler(
         var exactScores = data.ExactScores.Where(row => approvedUserIds.Contains(row.UserId)).ToList();
         var winnings = data.Winnings.Where(row => approvedUserIds.Contains(row.UserId)).ToList();
 
-        var topRound = HighestRound(roundScores);
-        var lowestRound = LowestRound(roundScores);
-        var mostExact = MostExactInARound(exactScores);
-        var champion = Champion(data.ApprovedMembers, roundScores);
-        var topEarner = TopEarner(winnings);
-        var mostRoundsWon = MostRoundsWon(roundScores);
-        var mostMonthsWon = MostMonthsWon(roundScores);
-        var biggestPrize = BiggestPrize(winnings);
-        var topGameweek = HighestScoringRound(roundScores);
+        var topRound = InARound(HighestRound(roundScores));
+        var lowestRound = InARound(LowestRound(roundScores));
+        var mostExact = ExactScoresInARound(MostExactInARound(exactScores));
+        var champion = OverTheSeason(Champion(data.ApprovedMembers, roundScores));
+        var topEarner = Earned(TopEarner(winnings));
+        var mostRoundsWon = Won(MostRoundsWon(roundScores));
+        var mostMonthsWon = Won(MostMonthsWon(roundScores));
+        var biggestPrize = SinglePrize(BiggestPrize(winnings));
+        var topGameweek = WholeLeaguesRound(HighestScoringRound(roundScores));
 
         return new LeagueRecordsDto
         {
             IsFree = data.IsFree,
 
-            TopRoundPlayerName = NameOf(topRound?.FirstName, topRound?.LastName),
-            TopRoundPoints = topRound?.BoostedPoints ?? 0,
-            TopRoundNumber = topRound?.RoundNumber,
+            TopRoundPlayerName = topRound.PlayerName,
+            TopRoundPoints = topRound.Points,
+            TopRoundNumber = topRound.RoundNumber,
 
-            LowestRoundPlayerName = NameOf(lowestRound?.FirstName, lowestRound?.LastName),
-            LowestRoundPoints = lowestRound?.BoostedPoints ?? 0,
-            LowestRoundNumber = lowestRound?.RoundNumber,
+            LowestRoundPlayerName = lowestRound.PlayerName,
+            LowestRoundPoints = lowestRound.Points,
+            LowestRoundNumber = lowestRound.RoundNumber,
 
-            MostExactInRoundPlayerName = NameOf(mostExact?.FirstName, mostExact?.LastName),
-            MostExactInRoundCount = mostExact?.ExactScoreCount ?? 0,
-            MostExactInRoundNumber = mostExact?.RoundNumber,
+            MostExactInRoundPlayerName = mostExact.PlayerName,
+            MostExactInRoundCount = mostExact.Count,
+            MostExactInRoundNumber = mostExact.RoundNumber,
 
-            ChampionName = NameOf(champion?.FirstName, champion?.LastName),
-            ChampionPoints = champion?.Points ?? 0,
+            ChampionName = champion.PlayerName,
+            ChampionPoints = champion.Points,
 
-            TopEarnerName = NameOf(topEarner?.FirstName, topEarner?.LastName),
-            TopEarnerAmount = topEarner?.Amount ?? 0,
+            TopEarnerName = topEarner.PlayerName,
+            TopEarnerAmount = topEarner.Amount,
 
-            MostRoundsWonPlayerName = NameOf(mostRoundsWon?.FirstName, mostRoundsWon?.LastName),
-            MostRoundsWonCount = mostRoundsWon?.WinCount ?? 0,
+            MostRoundsWonPlayerName = mostRoundsWon.PlayerName,
+            MostRoundsWonCount = mostRoundsWon.Count,
 
-            MostMonthsWonPlayerName = NameOf(mostMonthsWon?.FirstName, mostMonthsWon?.LastName),
-            MostMonthsWonCount = mostMonthsWon?.WinCount ?? 0,
+            MostMonthsWonPlayerName = mostMonthsWon.PlayerName,
+            MostMonthsWonCount = mostMonthsWon.Count,
 
             TotalExactScores = exactScores.Sum(row => row.ExactScoreCount),
 
-            BiggestPrizePlayerName = NameOf(biggestPrize?.FirstName, biggestPrize?.LastName),
-            BiggestPrizeAmount = biggestPrize?.Amount ?? 0,
-            BiggestPrizeDescription = biggestPrize is null
-                ? null
-                : PrizeDescription.For(
-                    biggestPrize.PrizeDescription,
-                    biggestPrize.PrizeType,
-                    biggestPrize.RoundNumber,
-                    biggestPrize.Month),
+            BiggestPrizePlayerName = biggestPrize.PlayerName,
+            BiggestPrizeAmount = biggestPrize.Amount,
+            BiggestPrizeDescription = biggestPrize.Description,
 
-            HighestGameweekRoundNumber = topGameweek?.RoundNumber,
-            HighestGameweekPoints = topGameweek?.Points ?? 0
+            HighestGameweekRoundNumber = topGameweek.RoundNumber,
+            HighestGameweekPoints = topGameweek.Points
         };
     }
+
+    #region Turning "nobody holds this record" into the values the tile shows
+
+    // A record with no holder is the ordinary case on a league that has not started, and the tile shows a dash and a
+    // zero rather than hiding the row. Each of these resolvers answers that for one record, so the question is asked
+    // once per record type instead of three times per record in the middle of building the reply - which is what made
+    // Handle the most complex method in the solution while doing nothing but assignment.
+
+    private static PlayerRecord InARound(LeagueRecordRoundScoreRow? row) =>
+        row is null
+            ? PlayerRecord.None
+            : new PlayerRecord(NameOf(row.FirstName, row.LastName), row.BoostedPoints, row.RoundNumber);
+
+    private static PlayerRecord ExactScoresInARound(LeagueRecordExactScoreRow? row) =>
+        row is null
+            ? PlayerRecord.None
+            : new PlayerRecord(NameOf(row.FirstName, row.LastName), row.ExactScoreCount, row.RoundNumber);
+
+    private static PlayerTally OverTheSeason(PlayerTotal? total) =>
+        total is null ? PlayerTally.None : new PlayerTally(NameOf(total.FirstName, total.LastName), total.Points);
+
+    private static PlayerTally Won(PlayerCount? count) =>
+        count is null ? PlayerTally.None : new PlayerTally(NameOf(count.FirstName, count.LastName), count.WinCount);
+
+    private static PlayerMoney Earned(PlayerAmount? total) =>
+        total is null ? PlayerMoney.None : new PlayerMoney(NameOf(total.FirstName, total.LastName), total.Amount);
+
+    /// <summary>
+    /// The largest single prize, with the label describing what it was for - built here rather than read from a
+    /// column, because the old statement finished it with <c>DATENAME(MONTH, ...)</c>.
+    /// </summary>
+    private static PrizeRecord SinglePrize(LeagueRecordWinningRow? row) =>
+        row is null
+            ? PrizeRecord.None
+            : new PrizeRecord(
+                NameOf(row.FirstName, row.LastName),
+                row.Amount,
+                PrizeDescription.For(row.PrizeDescription, row.PrizeType, row.RoundNumber, row.Month));
+
+    /// <summary>The league's best round as a whole, which belongs to no one player.</summary>
+    private static RoundRecord WholeLeaguesRound(RoundTotal? total) =>
+        total is null ? RoundRecord.None : new RoundRecord(total.RoundNumber, total.Points);
+
+    private static string NameOf(string firstName, string lastName) =>
+        PlayerDisplayName.Format(firstName, lastName);
+
+    #endregion
 
     /// <summary>The best single round anyone has had, earliest round first if two match.</summary>
     private static LeagueRecordRoundScoreRow? HighestRound(IReadOnlyList<LeagueRecordRoundScoreRow> scores) =>
@@ -233,9 +274,6 @@ public class GetLeagueRecordsQueryHandler(
         return LeagueRecords.Highest(totals, total => total.Points, total => total.RoundNumber, _ => string.Empty);
     }
 
-    private static string? NameOf(string? firstName, string? lastName) =>
-        firstName is null || lastName is null ? null : PlayerDisplayName.Format(firstName, lastName);
-
     private static string FullName(LeagueRecordRoundScoreRow row) =>
         PlayerDisplayName.FormatFull(row.FirstName, row.LastName);
 
@@ -261,4 +299,44 @@ public class GetLeagueRecordsQueryHandler(
     private sealed record PlayerCount(string FirstName, string LastName, int WinCount);
 
     private sealed record RoundTotal(int RoundNumber, int Points);
+
+    // One shape per record, rather than one shape with a spare field for the records that have no round or no
+    // wording. A field only some of them mean is a field nothing can tell you is wrong: the mutation check proved it
+    // by giving the champion a round number, which changed no test because nothing reads it.
+
+    /// <summary>A record set in one round, counted in points or in exact scores.</summary>
+    private sealed record PlayerRecord(string? PlayerName, int Points, int? RoundNumber)
+    {
+        /// <summary>Nobody holds it yet: no name, nothing scored, no round.</summary>
+        internal static readonly PlayerRecord None = new(null, 0, null);
+
+        /// <summary>The same number, named for what it counts where that is not points.</summary>
+        internal int Count => Points;
+    }
+
+    /// <summary>A record held across the whole season: total points, rounds won or months won.</summary>
+    private sealed record PlayerTally(string? PlayerName, int Points)
+    {
+        internal static readonly PlayerTally None = new(null, 0);
+
+        internal int Count => Points;
+    }
+
+    /// <summary>The most money one player has taken out of the league.</summary>
+    private sealed record PlayerMoney(string? PlayerName, decimal Amount)
+    {
+        internal static readonly PlayerMoney None = new(null, 0m);
+    }
+
+    /// <summary>The largest single prize, and the wording for what it was won for.</summary>
+    private sealed record PrizeRecord(string? PlayerName, decimal Amount, string? Description)
+    {
+        internal static readonly PrizeRecord None = new(null, 0m, null);
+    }
+
+    /// <summary>A record belonging to a round rather than to a player.</summary>
+    private sealed record RoundRecord(int? RoundNumber, int Points)
+    {
+        internal static readonly RoundRecord None = new(null, 0);
+    }
 }

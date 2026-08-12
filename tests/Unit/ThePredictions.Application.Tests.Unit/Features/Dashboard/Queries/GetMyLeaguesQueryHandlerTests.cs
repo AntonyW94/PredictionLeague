@@ -319,6 +319,42 @@ public class GetMyLeaguesQueryHandlerTests
         tile.PreRoundStageRank.Should().Be(9);
     }
 
+    [Fact]
+    public async Task Handle_ShouldShowNoPositions_ForAPlayerWithNoCachedRanksYet()
+    {
+        // Arrange - the gap between joining a league and the next time the ranks are written.
+        Given(leagues: [League()], rounds: [Round(1, RoundStatus.InProgress)]);
+
+        // Act
+        var tile = (await HandleAsync()).Single();
+
+        // Assert
+        tile.Rank.Should().BeNull();
+        tile.MonthRank.Should().BeNull();
+        tile.RoundRank.Should().BeNull();
+        tile.PreRoundOverallRank.Should().BeNull();
+        tile.PreRoundMonthRank.Should().BeNull();
+        tile.StableRoundRank.Should().BeNull();
+        tile.StageRank.Should().BeNull();
+        tile.PreRoundStageRank.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldStillRankAnUncachedPlayerFirst_BeforeTheRoundStarts()
+    {
+        // Everyone is joint first in a round nobody has scored in - including somebody with no cached row at all, who
+        // would otherwise be shown as unranked in a round where nobody can be behind.
+        Given(leagues: [League()], rounds: [Round(1, RoundStatus.Published)]);
+
+        // Act
+        var tile = (await HandleAsync()).Single();
+
+        // Assert
+        tile.RoundRank.Should().Be(1);
+        tile.StableRoundRank.Should().Be(1);
+        tile.Rank.Should().BeNull();
+    }
+
     #endregion
 
     #region The stage
