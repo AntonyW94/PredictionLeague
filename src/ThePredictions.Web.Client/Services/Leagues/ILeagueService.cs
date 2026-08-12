@@ -29,10 +29,10 @@ public interface ILeagueService
     Task<PendingMembersResultDto> GetPendingMembersForAdminAsync();
     Task UpdateMemberStatusAsync(int leagueId, string userId, LeagueMemberStatus newStatus);
 
-    Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId);
+    Task<(bool Success, string? ErrorMessage, bool NeedsSeasonPass)> JoinPublicLeagueAsync(int leagueId);
     Task<(PrizePreviewDto? Preview, string? ErrorMessage)> GetJoinPreviewByIdAsync(int leagueId);
     Task<(PrizePreviewDto? Preview, string? ErrorMessage)> GetJoinPreviewAsync(string entryCode);
-    Task<(bool Success, string? ErrorMessage, int? LeagueId)> JoinPrivateLeagueAsync(string entryCode);
+    Task<(bool Success, string? ErrorMessage, int? LeagueId, bool NeedsSeasonPass)> JoinPrivateLeagueAsync(string entryCode);
     Task<(bool Success, string? ErrorMessage)> CancelJoinRequestAsync(int leagueId);
     Task<(bool Success, string? ErrorMessage)> DismissAlertAsync(int leagueId);
     Task<(bool Success, string? ErrorMessage)> SetLeagueArchivedAsync(int leagueId, bool isArchived);

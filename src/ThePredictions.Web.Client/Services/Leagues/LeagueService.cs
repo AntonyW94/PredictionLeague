@@ -6,6 +6,7 @@ using ThePredictions.Contracts.Leagues;
 using ThePredictions.Contracts.Prizes;
 using ThePredictions.Domain.Common.Enumerations;
 using System.Net.Http.Json;
+using System.Net;
 using System.Text.Json.Nodes;
 
 namespace ThePredictions.Web.Client.Services.Leagues;
@@ -105,23 +106,34 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
         return await httpClient.GetFromJsonAsync<bool>("api/Dashboard/private-leagues-available");
     }
 
-    public async Task<(bool Success, string? ErrorMessage)> JoinPublicLeagueAsync(int leagueId)
+    public async Task<(bool Success, string? ErrorMessage, bool NeedsSeasonPass)> JoinPublicLeagueAsync(int leagueId)
     {
         var response = await httpClient.PostAsync($"api/leagues/{leagueId}/join", null);
         if (response.IsSuccessStatusCode)
-            return (true, null);
+            return (true, null, false);
 
         try
         {
             var errorContent = await response.Content.ReadFromJsonAsync<JsonNode>();
             var errorMessage = errorContent?["message"]?.ToString() ?? "An unknown error occurred while trying to join the league.";
-            return (false, errorMessage);
+            return (false, errorMessage, NeedsSeasonPass(response));
         }
         catch
         {
-            return (false, "An unexpected error occurred.");
+            return (false, "An unexpected error occurred.", NeedsSeasonPass(response));
         }
     }
+
+    /// <summary>
+    /// Whether the join was refused for want of a season pass, rather than for any other reason.
+    /// </summary>
+    /// <remarks>
+    /// The API already answers this distinctly - 402 Payment Required, carrying the season id - because the gate is a
+    /// domain rule with its own exception type. Telling it apart from an ordinary refusal is what lets the caller offer
+    /// the pass rather than an error message.
+    /// </remarks>
+    private static bool NeedsSeasonPass(HttpResponseMessage response) =>
+        response.StatusCode == HttpStatusCode.PaymentRequired;
 
     public async Task<(PrizePreviewDto? Preview, string? ErrorMessage)> GetJoinPreviewByIdAsync(int leagueId)
     {
@@ -155,7 +167,7 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
         }
     }
 
-    public async Task<(bool Success, string? ErrorMessage, int? LeagueId)> JoinPrivateLeagueAsync(string entryCode)
+    public async Task<(bool Success, string? ErrorMessage, int? LeagueId, bool NeedsSeasonPass)> JoinPrivateLeagueAsync(string entryCode)
     {
         var request = new JoinLeagueRequest { EntryCode = entryCode };
 
@@ -163,18 +175,18 @@ public class LeagueService(HttpClient httpClient) : ILeagueService
         if (response.IsSuccessStatusCode)
         {
             var result = await response.Content.ReadFromJsonAsync<JoinLeagueResultDto>();
-            return (true, null, result?.LeagueId);
+            return (true, null, result?.LeagueId, false);
         }
 
         try
         {
             var errorContent = await response.Content.ReadFromJsonAsync<JsonNode>();
             var errorMessage = errorContent?["message"]?.ToString() ?? "An unknown error occurred.";
-            return (false, errorMessage, null);
+            return (false, errorMessage, null, NeedsSeasonPass(response));
         }
         catch
         {
-            return (false, "An unexpected error occurred.", null);
+            return (false, "An unexpected error occurred.", null, NeedsSeasonPass(response));
         }
     }
 

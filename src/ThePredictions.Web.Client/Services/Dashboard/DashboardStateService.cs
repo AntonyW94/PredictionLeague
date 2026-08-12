@@ -275,20 +275,25 @@ public class DashboardStateService(ILeagueService leagueService, ISeasonPassServ
         }
     }
 
+    public const string NeedsSeasonPassMessage =
+        "You need a Season Pass for this season before you can join a league in it. You can get one from the Season Passes page.";
+
     public async Task JoinPublicLeagueAsync(int leagueId)
     {
         AvailableLeaguesErrorMessage = null;
 
         NotifyStateChanged();
 
-        var (success, errorMessage) = await leagueService.JoinPublicLeagueAsync(leagueId);
+        var (success, errorMessage, needsSeasonPass) = await leagueService.JoinPublicLeagueAsync(leagueId);
         if (success)
         {
             await Task.WhenAll(LoadMyLeaguesAsync(), LoadAvailableLeaguesAsync(), LoadPendingRequestsAsync(), LoadOnboardingAsync());
         }
         else
         {
-            AvailableLeaguesErrorMessage = errorMessage;
+            // Needing a pass is not a mistake the player made, so it is worded as what to do next rather than as the
+            // server's refusal.
+            AvailableLeaguesErrorMessage = needsSeasonPass ? NeedsSeasonPassMessage : errorMessage;
             NotifyStateChanged();
         }
     }

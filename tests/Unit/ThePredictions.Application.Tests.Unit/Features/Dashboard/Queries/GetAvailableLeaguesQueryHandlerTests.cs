@@ -97,16 +97,31 @@ public class GetAvailableLeaguesQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldNotOfferALeagueInASeasonThePlayerHasNoPassFor()
+    public async Task Handle_ShouldStillOfferALeagueInASeasonThePlayerHasNoPassFor()
     {
-        // Arrange
+        // Hiding these read as "there is nothing to join", which is what confused people: a pass is bought per season, and
+        // somebody without one saw an empty list rather than a reason to buy one.
         Given(League(1, "Needs A Pass", hasSeasonPass: false));
 
         // Act
-        var leagues = await HandleAsync();
+        var league = (await HandleAsync()).Single();
 
-        // Assert - passes are bought first, so offering this would be an invitation to a dead end.
-        leagues.Should().BeEmpty();
+        // Assert
+        league.Name.Should().Be("Needs A Pass");
+        league.RequiresSeasonPass.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotAskForAPass_WhenThePlayerAlreadyHoldsOne()
+    {
+        // Arrange
+        Given(League(1, "Already Bought In", hasSeasonPass: true));
+
+        // Act
+        var league = (await HandleAsync()).Single();
+
+        // Assert - the flag decides what the button says, so it has to run the right way round.
+        league.RequiresSeasonPass.Should().BeFalse();
     }
 
     [Fact]

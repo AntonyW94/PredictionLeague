@@ -1,6 +1,7 @@
 @inject ILeagueService LeagueService
 @inject IDashboardStateService DashboardState
 @inject IPayoutService PayoutService
+@inject NavigationManager Navigation
 
 @using ThePredictions.Contracts.Leagues
 @using ThePredictions.Contracts.Prizes
@@ -16,7 +17,20 @@
                 <button type="button" class="btn-close" @onclick="Close" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <ApiError Message="@_errorMessage" />
+                @if (_needsSeasonPass)
+                {
+                    @* Not an error: they have done nothing wrong, they simply have not bought into this season yet. *@
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-2 fw-bold">You need a Season Pass first</p>
+                        <p class="mb-3">A Season Pass covers you for every league in that season. Get one and you can come
+                            straight back to join this league.</p>
+                        <button type="button" class="btn purple-accent-button" @onclick="GoToSeasonPasses">Get a Season Pass</button>
+                    </div>
+                }
+                else
+                {
+                    <ApiError Message="@_errorMessage" />
+                }
 
                 @if (_step == Step.Loading)
                 {
@@ -194,6 +208,7 @@
     private Step _step = Step.Code;
     private bool _isBusy;
     private string? _errorMessage;
+    private bool _needsSeasonPass;
     private PrizePreviewDto? _preview;
     private int? _joinedLeagueId;
     private bool _hasPayoutDetails;
@@ -270,23 +285,27 @@
     {
         _isBusy = true;
         _errorMessage = null;
+        _needsSeasonPass = false;
 
         bool success;
         string? errorMessage;
+        bool needsSeasonPass;
 
         if (IsPublic)
         {
-            (success, errorMessage) = await LeagueService.JoinPublicLeagueAsync(LeagueId!.Value);
+            (success, errorMessage, needsSeasonPass) = await LeagueService.JoinPublicLeagueAsync(LeagueId!.Value);
             if (success)
                 _joinedLeagueId = LeagueId;
         }
         else
         {
             int? joinedLeagueId;
-            (success, errorMessage, joinedLeagueId) = await LeagueService.JoinPrivateLeagueAsync(_model.EntryCode);
+            (success, errorMessage, joinedLeagueId, needsSeasonPass) = await LeagueService.JoinPrivateLeagueAsync(_model.EntryCode);
             if (success)
                 _joinedLeagueId = joinedLeagueId;
         }
+
+        _needsSeasonPass = needsSeasonPass;
 
         if (success)
         {
@@ -305,10 +324,16 @@
         _isBusy = false;
     }
 
+    private void GoToSeasonPasses()
+    {
+        Navigation.NavigateTo("/season-passes");
+    }
+
     private async Task Close()
     {
         _model.EntryCode = string.Empty;
         _errorMessage = null;
+        _needsSeasonPass = false;
         _isBusy = false;
         _step = Step.Code;
         _preview = null;

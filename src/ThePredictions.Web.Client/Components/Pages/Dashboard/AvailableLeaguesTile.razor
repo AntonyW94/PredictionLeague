@@ -1,6 +1,7 @@
 @inject IDashboardStateService DashboardState
 @inject IBrowserService BrowserService
 @inject IJSRuntime JsRuntime
+@inject NavigationManager Navigation
 
 @implements IAsyncDisposable
 
@@ -67,12 +68,24 @@
                                                 </div>
                                             </div>
 
-                                            @* Private (listed) leagues still require the entry code, so open the code-entry
-                                               step rather than joining by id. Public leagues join directly by id. *@
-                                            <button class="btn purple-accent-button w-100 mt-3"
-                                                    @onclick="() => ShowJoinModalAsync(league.IsPrivate ? null : league.Id)">
-                                                Join
-                                            </button>
+                                            @* A league in a season the player has not bought into is still shown - hiding it
+                                               read as "nothing to join" - but the button says what is actually needed and goes
+                                               there, rather than opening a join that would be refused. *@
+                                            @if (league.RequiresSeasonPass)
+                                            {
+                                                <button class="btn purple-accent-button w-100 mt-3" @onclick="GoToSeasonPasses">
+                                                    Season Pass Needed
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                @* Private (listed) leagues still require the entry code, so open the code-entry
+                                                   step rather than joining by id. Public leagues join directly by id. *@
+                                                <button class="btn purple-accent-button w-100 mt-3"
+                                                        @onclick="() => ShowJoinModalAsync(league.IsPrivate ? null : league.Id)">
+                                                    Join
+                                                </button>
+                                            }
                                         </div>
                                     </div>
                                 </div>
@@ -225,6 +238,11 @@
         _showJoinModal = true;
         await Task.Delay(50);
         await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "joinPrivateLeagueModal");
+    }
+
+    private void GoToSeasonPasses()
+    {
+        Navigation.NavigateTo("/season-passes");
     }
 
     private async Task HideJoinModalAsync()
