@@ -2,13 +2,17 @@ using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Models;
 using System.Data;
 
 namespace ThePredictions.Persistence.SqlServer.Repositories;
 
 [ExcludeFromCodeCoverage(Justification = "Repository: a thin Dapper wrapper over SQL. A unit test would assert only that a mocked connection received a string; correctness lives in the SQL.")]
-public class RefreshTokenRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext)
+public class RefreshTokenRepository(
+    IDbConnectionFactory connectionFactory,
+    IDbTransactionContext transactionContext,
+    IDateTimeProvider dateTimeProvider)
     : RepositoryBase(connectionFactory, transactionContext), IRefreshTokenRepository
 {
     #region Create
@@ -39,9 +43,13 @@ public class RefreshTokenRepository(IDbConnectionFactory connectionFactory, IDbT
 
     public Task RevokeAllForUserAsync(string userId, CancellationToken cancellationToken)
     {
-        const string sql = "UPDATE [RefreshTokens] SET [Revoked] = GETUTCDATE() WHERE [UserId] = @UserId AND [Revoked] IS NULL;";
+        const string sql = "UPDATE [RefreshTokens] SET [Revoked] = @RevokedUtc WHERE [UserId] = @UserId AND [Revoked] IS NULL;";
 
-        var command = new CommandDefinition(sql, new { UserId = userId }, transaction: Transaction, cancellationToken: cancellationToken);
+        var command = new CommandDefinition(
+            sql,
+            new { UserId = userId, RevokedUtc = dateTimeProvider.UtcNow },
+            transaction: Transaction,
+            cancellationToken: cancellationToken);
         return Connection.ExecuteAsync(command);
     }
 

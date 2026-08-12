@@ -2,12 +2,16 @@ using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
 
 namespace ThePredictions.Persistence.SqlServer.Repositories;
 
 [ExcludeFromCodeCoverage(Justification = "Repository: a thin Dapper wrapper over SQL. A unit test would assert only that a mocked connection received a string; correctness lives in the SQL.")]
-public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext)
+public class LeagueStatsRepository(
+    IDbConnectionFactory connectionFactory,
+    IDbTransactionContext transactionContext,
+    IDateTimeProvider dateTimeProvider)
     : RepositoryBase(connectionFactory, transactionContext), ILeagueStatsRepository
 {
     public Task RefreshLeagueAsync(int leagueId, CancellationToken cancellationToken)
@@ -118,7 +122,7 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
                             ORDER BY
                                 CASE
                                     WHEN r.[Status] = @InProgressRoundStatus THEN 0
-                                    WHEN r.[Status] = @CompletedRoundStatus AND r.[CompletedDateUtc] > DATEADD(HOUR, -48, GETUTCDATE()) THEN 1
+                                    WHEN r.[Status] = @CompletedRoundStatus AND r.[CompletedDateUtc] > DATEADD(HOUR, -48, @NowUtc) THEN 1
                                     WHEN r.[Status] = @PublishedRoundStatus THEN 2
                                     ELSE 3
                                 END ASC,
@@ -361,7 +365,11 @@ public class LeagueStatsRepository(IDbConnectionFactory connectionFactory, IDbTr
             CompletedRoundStatus = nameof(RoundStatus.Completed),
             CompletedMatchStatus = nameof(MatchStatus.Completed),
             ExactScoreOutcome = PredictionOutcome.ExactScore,
-            CorrectResultOutcome = PredictionOutcome.CorrectResult
+            CorrectResultOutcome = PredictionOutcome.CorrectResult,
+
+            // The 48-hour window that decides which round the cache describes. It was GETUTCDATE(), so the one thing this
+            // recompute depends on for its answer came from the database rather than from the clock everything else uses.
+            NowUtc = dateTimeProvider.UtcNow
         };
 
         await Connection.ExecuteAsync(new CommandDefinition(

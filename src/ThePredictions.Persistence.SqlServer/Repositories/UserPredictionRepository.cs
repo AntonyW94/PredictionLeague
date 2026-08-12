@@ -66,7 +66,10 @@ public class UserPredictionRepository(IDbConnectionFactory connectionFactory, ID
                 [UserPredictions]
             SET
                 [Outcome] = @Outcome,
-                [UpdatedAtUtc] = GETUTCDATE()
+
+                -- The prediction's own timestamp, which UserPrediction.SetOutcome has already set from the injected clock.
+                -- This used to be GETUTCDATE(), so the statement overwrote the entity's answer with the database's.
+                [UpdatedAtUtc] = @UpdatedAtUtc
             WHERE
                 [Id] = @Id;";
 

@@ -3,6 +3,7 @@ using ThePredictions.Persistence.Conformance;
 using ThePredictions.Persistence.Conformance.Repositories;
 using ThePredictions.Persistence.SqlServer.Repositories;
 using ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
+using ThePredictions.Tests.Shared.Helpers;
 using Xunit;
 
 namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Repositories;
@@ -28,7 +29,10 @@ public class SqlServerRoundRepositoryTests(SqlServerDatabaseFixture fixture)
     // A fresh repository per access, with no transaction in progress - how it behaves outside
     // TransactionBehaviour.
     protected override IRoundRepository Repository =>
-        new RoundRepository(_harness.ConnectionFactory, _harness.NewTransactionContext());
+        new RoundRepository(
+            _harness.ConnectionFactory,
+            _harness.NewTransactionContext(),
+            new TestDateTimeProvider(DateTime.UtcNow));
 
     protected override ITestDataSeeder Seed => _harness.Seed;
 
