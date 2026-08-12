@@ -19,7 +19,7 @@ public class PrizePreviewDto
     public decimal EntryCost { get; init; }
     public decimal CurrentPrizePot { get; init; }
     public decimal ProjectedPrizePot { get; init; }
-    public DateTime EntryDeadlineUtc { get; init; }
+    public DateTime? EntryDeadlineUtc { get; init; }
     public bool DeadlinePassed { get; init; }
     public bool HasPrizes { get; init; }
 

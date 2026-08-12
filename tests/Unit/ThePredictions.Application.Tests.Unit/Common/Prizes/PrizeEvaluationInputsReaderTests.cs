@@ -1,10 +1,8 @@
 using FluentAssertions;
 using NSubstitute;
 using ThePredictions.Application.Common.Prizes;
-using ThePredictions.Application.Data;
 using ThePredictions.Domain.Common.Enumerations;
 using Xunit;
-using static ThePredictions.Application.Common.Prizes.PrizeEvaluationInputsReader;
 
 namespace ThePredictions.Application.Tests.Unit.Common.Prizes;
 
@@ -22,13 +20,17 @@ public class PrizeEvaluationInputsReaderTests
     private static readonly DateTime SeasonStart = new(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
     private static readonly DateTime SeasonEnd = new(2027, 5, 31, 0, 0, 0, DateTimeKind.Utc);
 
-    private readonly IApplicationReadDbConnection _dbConnection = Substitute.For<IApplicationReadDbConnection>();
+    private readonly IPrizeEvaluationInputsQuery _inputsQuery = Substitute.For<IPrizeEvaluationInputsQuery>();
     private readonly PrizeEvaluationInputsReader _reader;
 
     public PrizeEvaluationInputsReaderTests()
     {
-        _reader = new PrizeEvaluationInputsReader(_dbConnection);
+        _reader = new PrizeEvaluationInputsReader(_inputsQuery);
     }
+
+    private PrizeLeagueRow _league = LeagueRow();
+    private PrizeSchemeRow[] _schemes = [];
+    private PrizeSchemeEntryRow[] _entries = [];
 
     private void GivenLeague(
         decimal entryCost = 20m,
@@ -36,41 +38,60 @@ public class PrizeEvaluationInputsReaderTests
         int entrantCount = 12,
         string? entryCode = EntryCode,
         DateTime? seasonStartUtc = null,
-        DateTime? seasonEndUtc = null) =>
-        _dbConnection.QuerySingleOrDefaultAsync<LeagueRow>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(new LeagueRow
-            {
-                LeagueId = LeagueId,
-                LeagueName = "The Office League",
-                SeasonName = "2026/27",
-                AdministratorUserId = "admin-1",
-                AdministratorName = "Alice A",
-                EntryCode = entryCode,
-                EntryCost = entryCost,
-                PrizeFundOverride = prizeFundOverride,
-                EntryDeadlineUtc = SeasonStart.AddDays(-1),
-                SeasonStartDateUtc = seasonStartUtc ?? SeasonStart,
-                SeasonEndDateUtc = seasonEndUtc ?? SeasonEnd,
-                NumberOfRounds = 38,
-                EntrantCount = entrantCount
-            });
+        DateTime? seasonEndUtc = null)
+    {
+        _league = LeagueRow() with
+        {
+            EntryCost = entryCost,
+            PrizeFundOverride = prizeFundOverride,
+            EntrantCount = entrantCount,
+            EntryCode = entryCode,
+            SeasonStartDateUtc = seasonStartUtc ?? SeasonStart,
+            SeasonEndDateUtc = seasonEndUtc ?? SeasonEnd
+        };
 
-    private void GivenScheme(bool exists = true) =>
-        _dbConnection.QuerySingleOrDefaultAsync<SchemeRow>(
-                Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(exists ? new SchemeRow { Id = 99 } : null);
+        Arrange();
+    }
 
-    private void GivenSchemeEntries(params EntryRow[] entries) =>
-        _dbConnection.QueryAsync<EntryRow>(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<object?>())
-            .Returns(entries);
+    private void GivenScheme(bool exists = true)
+    {
+        _schemes = exists ? [new PrizeSchemeRow(99)] : [];
+        Arrange();
+    }
 
-    private static EntryRow Entry(PrizeType category, int perEntryPounds, string? rankTableJson = null) =>
-        new() { Category = category, PerEntryPounds = perEntryPounds, RankTableJson = rankTableJson };
+    private void GivenSchemeEntries(params PrizeSchemeEntryRow[] entries)
+    {
+        _entries = entries;
+        Arrange();
+    }
+
+    private void GivenNoLeague()
+    {
+        _inputsQuery.GetByLeagueIdAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns((PrizeEvaluationInputsData?)null);
+        _inputsQuery.GetByEntryCodeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((PrizeEvaluationInputsData?)null);
+    }
+
+    private void Arrange()
+    {
+        var data = new PrizeEvaluationInputsData(_league, _schemes, _entries);
+
+        _inputsQuery.GetByLeagueIdAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(data);
+        _inputsQuery.GetByEntryCodeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(data);
+    }
+
+    private static PrizeLeagueRow LeagueRow() =>
+        new(LeagueId, "The Office League", "admin-1", "Alice", "Andrews", EntryCode,
+            EntryCost: 20m, PrizeFundOverride: null, EntryDeadlineUtc: SeasonStart.AddDays(-1),
+            "2026/27", SeasonStart, SeasonEnd, NumberOfRounds: 38, EntrantCount: 12);
+
+    private static PrizeSchemeEntryRow Entry(PrizeType category, int perEntryPounds, string? rankTableJson = null) =>
+        new(category, perEntryPounds, rankTableJson);
 
     [Fact]
     public async Task LoadAsync_ShouldReturnNothing_WhenTheLeagueDoesNotExist()
     {
+        GivenNoLeague();
+
         var result = await _reader.LoadAsync(LeagueId, CancellationToken.None);
 
         result.Should().BeNull();
@@ -79,6 +100,8 @@ public class PrizeEvaluationInputsReaderTests
     [Fact]
     public async Task LoadByEntryCodeAsync_ShouldReturnNothing_WhenNoLeagueUsesThatCode()
     {
+        GivenNoLeague();
+
         // A mistyped join link must come back empty rather than leaking another league's pot.
         var result = await _reader.LoadByEntryCodeAsync("NOPE", CancellationToken.None);
 
@@ -149,7 +172,7 @@ public class PrizeEvaluationInputsReaderTests
 
         result!.HasScheme.Should().BeFalse();
         result.Categories.Should().BeEmpty();
-        await _dbConnection.DidNotReceiveWithAnyArgs().QueryAsync<EntryRow>(default!, CancellationToken.None);
+        // With no scheme there are no entries to read - the port returns them together, so there is no second trip to skip.
     }
 
     [Fact]

@@ -1,96 +1,102 @@
-using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Application.Data;
+using ThePredictions.Application.Features.Rounds.Queries;
+using ThePredictions.Domain.Models;
 
 namespace ThePredictions.Application.Features.Admin.Rounds.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
-public class GetPrizeWinnersForRoundQueryHandler(IApplicationReadDbConnection dbConnection)
-    : IRequestHandler<GetPrizeWinnersForRoundQuery, IReadOnlyList<PrizeWinner>>
+/// <summary>
+/// Everybody with a prize to be told about, grouped so each of them gets one email listing all of theirs.
+/// </summary>
+public class GetPrizeWinnersForRoundQueryHandler(
+    IRoundHeaderQuery roundHeaderQuery,
+    IPrizeWinnersQuery prizeWinnersQuery) : IRequestHandler<GetPrizeWinnersForRoundQuery, IReadOnlyList<PrizeWinner>>
 {
-    public async Task<IReadOnlyList<PrizeWinner>> Handle(GetPrizeWinnersForRoundQuery request, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<PrizeWinner>> Handle(
+        GetPrizeWinnersForRoundQuery request,
+        CancellationToken cancellationToken)
     {
-        // Column order must match the PrizeWinnerRow constructor (Dapper maps positionally).
-        // Every current Winning across the round's season is returned; the AlreadyNotified flag
-        // (a LEFT JOIN against the PrizeNotifications sent-log) lets the send command skip prizes a
-        // winner has already been emailed about. NULL round numbers / months are normalised to -1
-        // in the join so the all-null overall/section prizes match correctly.
-        const string sql = @"
-            SELECT
-                u.[Id] AS UserId,
-                u.[Email],
-                u.[FirstName],
-                r.[DisplayName] AS RoundName,
-                l.[Id] AS LeagueId,
-                l.[Name] AS LeagueName,
-                lps.[Id] AS LeaguePrizeSettingId,
-                lps.[PrizeType],
-                lps.[PrizeDescription],
-                lps.[Rank],
-                lps.[Stage],
-                w.[Amount],
-                w.[RoundNumber],
-                w.[Month],
-                pr.[DisplayName] AS PrizeRoundName,
-                CAST(CASE WHEN pn.[Id] IS NULL THEN 0 ELSE 1 END AS BIT) AS AlreadyNotified
-            FROM
-                [Rounds] r
-            JOIN
-                [Leagues] l ON l.[SeasonId] = r.[SeasonId]
-            JOIN
-                [LeaguePrizeSettings] lps ON lps.[LeagueId] = l.[Id]
-            JOIN
-                [Winnings] w ON w.[LeaguePrizeSettingId] = lps.[Id]
-            JOIN
-                [AspNetUsers] u ON u.[Id] = w.[UserId]
-            LEFT JOIN
-                [Rounds] pr ON pr.[SeasonId] = r.[SeasonId]
-                AND pr.[RoundNumber] = w.[RoundNumber]
-            LEFT JOIN
-                [PrizeNotifications] pn ON pn.[UserId] = w.[UserId]
-                AND pn.[LeaguePrizeSettingId] = w.[LeaguePrizeSettingId]
-                AND ISNULL(pn.[RoundNumber], -1) = ISNULL(w.[RoundNumber], -1)
-                AND ISNULL(pn.[Month], -1) = ISNULL(w.[Month], -1)
-            WHERE
-                r.[Id] = @RoundId
-                AND w.[Amount] > 0
-            ORDER BY
-                u.[Id],
-                l.[Name]";
+        var round = await roundHeaderQuery.ExecuteAsync(request.RoundId, cancellationToken);
 
-        var rows = await dbConnection.QueryAsync<PrizeWinnerRow>(
-            sql,
-            cancellationToken,
-            new { RoundId = request.RoundId });
+        if (round is null)
+            return [];
 
-        return rows
-            .GroupBy(row => row.UserId)
-            .Select(group =>
-            {
-                var first = group.First();
-                var prizes = group
-                    .Select(row => new WonPrize(
-                        row.LeagueId,
-                        row.LeagueName,
-                        row.LeaguePrizeSettingId,
-                        row.PrizeType,
-                        row.PrizeDescription,
-                        row.Rank,
-                        row.Stage,
-                        row.Amount,
-                        row.RoundNumber,
-                        row.Month,
-                        row.PrizeRoundName,
-                        row.AlreadyNotified))
-                    .ToList();
+        var data = await prizeWinnersQuery.ExecuteAsync(request.RoundId, cancellationToken);
+        var roundName = Round.DisplayNameOrDefault(round.DisplayName, round.RoundNumber);
 
-                return new PrizeWinner(
-                    first.UserId,
-                    first.Email,
-                    first.FirstName,
-                    first.RoundName,
-                    prizes);
-            })
+        return data.Winnings
+            .Where(IsWorthTellingThemAbout)
+            .GroupBy(winning => winning.UserId)
+            .OrderBy(group => group.Key, StringComparer.Ordinal)
+            .Select(group => ToWinner(group, roundName, data))
             .ToList();
     }
+
+    /// <summary>
+    /// Whether this is a prize at all.
+    /// </summary>
+    /// <remarks>
+    /// A winning of nothing is recorded when somebody placed in a category that pays out no money at that position. Emailing
+    /// them about it would be telling them they had won zero pounds.
+    /// </remarks>
+    private static bool IsWorthTellingThemAbout(PrizeWinningRow winning) => winning.Amount > 0m;
+
+    private static PrizeWinner ToWinner(
+        IGrouping<string, PrizeWinningRow> winnings,
+        string roundName,
+        PrizeWinnersData data)
+    {
+        var first = winnings.First();
+
+        return new PrizeWinner(
+            first.UserId,
+            first.Email,
+            first.FirstName,
+            roundName,
+            winnings
+                .OrderBy(winning => winning.LeagueName, StringComparer.InvariantCultureIgnoreCase)
+                .Select(winning => ToWonPrize(winning, data))
+                .ToList());
+    }
+
+    private static WonPrize ToWonPrize(PrizeWinningRow winning, PrizeWinnersData data) =>
+        new(winning.LeagueId,
+            winning.LeagueName,
+            winning.LeaguePrizeSettingId,
+            winning.PrizeType,
+            winning.PrizeDescription,
+            winning.Rank,
+            winning.Stage,
+            winning.Amount,
+            winning.RoundNumber,
+            winning.Month,
+            PrizeRoundName(winning, data),
+            AlreadyNotified(winning, data));
+
+    /// <summary>
+    /// The name of the round a round prize was won in, or nothing for a prize that is not about one round.
+    /// </summary>
+    private static string? PrizeRoundName(PrizeWinningRow winning, PrizeWinnersData data)
+    {
+        if (winning.RoundNumber is not { } roundNumber)
+            return null;
+
+        var round = data.SeasonRounds.SingleOrDefault(candidate => candidate.RoundNumber == roundNumber);
+
+        return round is null ? null : Round.DisplayNameOrDefault(round.DisplayName, round.RoundNumber);
+    }
+
+    /// <summary>
+    /// Whether this exact prize has already been emailed about.
+    /// </summary>
+    /// <remarks>
+    /// The same prize slot pays out repeatedly - a round prize once a round, a monthly prize once a month - so the sent-log has
+    /// to be matched on the scope as well as the slot. Two prizes with no round and no month are the same prize; in SQL that
+    /// needed <c>ISNULL(..., -1)</c> on both sides, because there two nulls are never equal.
+    /// </remarks>
+    private static bool AlreadyNotified(PrizeWinningRow winning, PrizeWinnersData data) =>
+        data.Notifications.Any(notification =>
+            notification.UserId == winning.UserId
+            && notification.LeaguePrizeSettingId == winning.LeaguePrizeSettingId
+            && notification.RoundNumber == winning.RoundNumber
+            && notification.Month == winning.Month);
 }

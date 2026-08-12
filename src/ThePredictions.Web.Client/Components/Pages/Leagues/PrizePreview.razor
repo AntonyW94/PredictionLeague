@@ -40,7 +40,7 @@
                 </div>
                 <div class="prize-preview-stat">
                     <span class="prize-preview-stat-label">Entry deadline</span>
-                    <span class="prize-preview-stat-value">@_preview.EntryDeadlineUtc.ToLocalTime().ToString("d MMM yyyy, HH:mm")</span>
+                    <span class="prize-preview-stat-value">@(_preview.EntryDeadlineUtc is { } deadline ? deadline.ToLocalTime().ToString("d MMM yyyy, HH:mm") : "Not set")</span>
                 </div>
             </div>
 

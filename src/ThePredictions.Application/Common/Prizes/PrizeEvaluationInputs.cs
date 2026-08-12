@@ -14,7 +14,7 @@ public sealed class PrizeEvaluationInputs
     public string? EntryCode { get; init; }
     public decimal EntryCost { get; init; }
     public int EntrantCount { get; init; }
-    public DateTime EntryDeadlineUtc { get; init; }
+    public DateTime? EntryDeadlineUtc { get; init; }
     public int NumberOfRounds { get; init; }
     public int NumberOfMonths { get; init; }
 

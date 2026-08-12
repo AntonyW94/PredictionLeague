@@ -74,17 +74,36 @@ public interface ITestDataSeeder
     /// A league. <paramref name="hasPrizes"/> is what several reads scope on - a league that pays nothing will never send anybody
     /// money - so a test has to be able to arrange one that does.
     /// </summary>
+    /// <remarks>
+    /// <paramref name="entryDeadlineUtc"/> is the moment entry closes, and null - no deadline set - is what the column defaults
+    /// to. The welcome-email scan reads it as a window, so a test has to be able to place a league inside or outside one.
+    /// <paramref name="entryCode"/> null makes the league public, which is how the join flow tells the two apart.
+    /// </remarks>
     Task<int> AddLeagueAsync(
         int seasonId,
         string administratorUserId,
         string name = "Integration League",
-        bool hasPrizes = false);
+        bool hasPrizes = false,
+        DateTime? entryDeadlineUtc = null,
+        string? entryCode = null,
+        decimal price = 0m,
+        decimal? prizeFundOverride = null);
 
     Task AddLeagueMemberAsync(int leagueId, string userId, LeagueMemberStatus status = LeagueMemberStatus.Approved);
 
     Task<int> AddBoostDefinitionAsync(string code, string name, string scope = "Round");
 
     Task<int> AddLeagueBoostRuleAsync(int leagueId, int boostDefinitionId, int totalUsesPerSeason = 2, bool isEnabled = true);
+
+    /// <summary>
+    /// A stretch of rounds in which one of a league's boosts may be used, and how often within it. A rule with no window at all
+    /// runs all season, so a test has to be able to arrange both.
+    /// </summary>
+    Task<int> AddLeagueBoostWindowAsync(
+        int leagueBoostRuleId,
+        int startRoundNumber,
+        int endRoundNumber,
+        int maxUsesInWindow);
 
     Task AddBoostUsageAsync(string userId, int leagueId, int seasonId, int roundId, int boostDefinitionId);
 
@@ -117,6 +136,30 @@ public interface ITestDataSeeder
         int rank = 1,
         string? prizeDescription = null);
 
+    /// <summary>
+    /// The prize scheme an administrator sets before entries close: the shape of the prizes, from which the concrete amounts are
+    /// worked out later.
+    /// </summary>
+    /// <remarks>
+    /// A league can have a scheme with no prize settings frozen from it yet, and that half-configured state is what holds back a
+    /// welcome email - so it has to be arrangeable on its own.
+    /// </remarks>
+    Task<int> AddLeaguePrizeSchemeAsync(int leagueId, string setByUserId);
+
+    /// <summary>
+    /// One category of a scheme, and the whole pounds of each entry that fund it.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="category"/> is stored the way the write path stores it, which for SQL Server means the enum's name in a
+    /// text column - unlike <see cref="AddLeaguePrizeSettingAsync"/>, which stores the numeric value. The difference is real and
+    /// reproduced deliberately.
+    /// </remarks>
+    Task<int> AddLeaguePrizeSchemeEntryAsync(
+        int leaguePrizeSchemeId,
+        PrizeType category,
+        int perEntryPounds,
+        string? rankTableJson = null);
+
     /// <summary>A prize actually paid out to a player.</summary>
     Task AddWinningAsync(
         string userId,
@@ -125,6 +168,19 @@ public interface ITestDataSeeder
         DateTime? awardedDateUtc = null,
         int? roundNumber = null,
         int? month = null);
+
+    /// <summary>
+    /// A record that one player has already been emailed about one specific prize.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="roundNumber"/> and <paramref name="month"/> are the prize's scope, and both null - a season-long prize -
+    /// is a state the log holds. Matching that against a winning is the rule the sent-log exists for, so a test has to be able to
+    /// arrange every combination.
+    /// </remarks>
+    Task AddPrizeNotificationAsync(string userId, int leaguePrizeSettingId, int? roundNumber = null, int? month = null);
+
+    /// <summary>A record that one player has already had a league's welcome email.</summary>
+    Task AddLeagueWelcomeNotificationAsync(int leagueId, string userId);
 
     /// <summary>
     /// A row in the cached ranking table the My Leagues tile reads. Every rank defaults to null, which is what the

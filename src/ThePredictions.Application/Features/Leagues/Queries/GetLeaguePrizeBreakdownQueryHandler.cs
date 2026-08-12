@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Ardalis.GuardClauses;
 using MediatR;
 using ThePredictions.Application.Common.Prizes;
@@ -8,7 +7,6 @@ using ThePredictions.Domain.Common.Guards;
 
 namespace ThePredictions.Application.Features.Leagues.Queries;
 
-[ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public class GetLeaguePrizeBreakdownQueryHandler(
     IPrizeEvaluationInputsReader inputsReader,
     ILeagueMembershipService membershipService,
