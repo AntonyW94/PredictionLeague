@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
 using System.Data;
@@ -9,7 +10,10 @@ using System.Data;
 namespace ThePredictions.Persistence.SqlServer.Repositories;
 
 [ExcludeFromCodeCoverage(Justification = "Repository: a thin Dapper wrapper over SQL. A unit test would assert only that a mocked connection received a string; correctness lives in the SQL.")]
-public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransactionContext transactionContext)
+public class RoundRepository(
+    IDbConnectionFactory connectionFactory,
+    IDbTransactionContext transactionContext,
+    IDateTimeProvider dateTimeProvider)
     : RepositoryBase(connectionFactory, transactionContext), IRoundRepository
 {
     #region SQL Constants
@@ -158,8 +162,14 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
 
     public async Task<Round?> GetOldestInProgressRoundAsync(int seasonId, CancellationToken cancellationToken)
     {
-        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = (SELECT TOP 1 [Id] FROM [Rounds] WHERE [SeasonId] = @SeasonId AND [Status] IN (@PublishedStatus, @InProgressStatus) AND [StartDateUtc] < GETUTCDATE() ORDER BY [StartDateUtc] ASC)";
-        return await QueryAndMapRoundAsync(sql, cancellationToken, new { SeasonId = seasonId, PublishedStatus = nameof(RoundStatus.Published), InProgressStatus = nameof(RoundStatus.InProgress) });
+        const string sql = $"{GetRoundsWithMatchesSql} WHERE r.[Id] = (SELECT TOP 1 [Id] FROM [Rounds] WHERE [SeasonId] = @SeasonId AND [Status] IN (@PublishedStatus, @InProgressStatus) AND [StartDateUtc] < @NowUtc ORDER BY [StartDateUtc] ASC)";
+        return await QueryAndMapRoundAsync(sql, cancellationToken, new
+        {
+            SeasonId = seasonId,
+            PublishedStatus = nameof(RoundStatus.Published),
+            InProgressStatus = nameof(RoundStatus.InProgress),
+            NowUtc = dateTimeProvider.UtcNow
+        });
     }
 
     public async Task<IEnumerable<int>> GetMatchIdsWithPredictionsAsync(IEnumerable<int> matchIds, CancellationToken cancellationToken)
@@ -284,11 +294,11 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
                             AND m.[HomeTeamId] IS NOT NULL
                             AND m.[AwayTeamId] IS NOT NULL
                             AND m.[Status] <> @PostponedStatus
-                            AND COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > GETUTCDATE()
+                            AND COALESCE(m.[CustomLockTimeUtc], r.[DeadlineUtc]) > @NowUtc
                     )
                 ORDER BY
                     CASE
-                        WHEN r.[DeadlineUtc] > GETUTCDATE() THEN r.[DeadlineUtc]
+                        WHEN r.[DeadlineUtc] > @NowUtc THEN r.[DeadlineUtc]
                         ELSE COALESCE(
                             (
                                 SELECT MIN(m.[CustomLockTimeUtc])
@@ -297,7 +307,7 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
                                     AND m.[HomeTeamId] IS NOT NULL
                                     AND m.[AwayTeamId] IS NOT NULL
                                     AND m.[Status] <> @PostponedStatus
-                                    AND m.[CustomLockTimeUtc] > GETUTCDATE()
+                                    AND m.[CustomLockTimeUtc] > @NowUtc
                             ),
                             r.[DeadlineUtc])
                     END ASC
@@ -317,7 +327,11 @@ public class RoundRepository(IDbConnectionFactory connectionFactory, IDbTransact
             {
                 PublishedStatus = nameof(RoundStatus.Published),
                 InProgressStatus = nameof(RoundStatus.InProgress),
-                PostponedStatus = nameof(MatchStatus.Postponed)
+                PostponedStatus = nameof(MatchStatus.Postponed),
+
+                // One instant for all three comparisons. Three separate GETUTCDATE() calls could each land on a different
+                // millisecond, so a fixture locking at that moment could be open in one clause and closed in the next.
+                NowUtc = dateTimeProvider.UtcNow
             });
     }
 
