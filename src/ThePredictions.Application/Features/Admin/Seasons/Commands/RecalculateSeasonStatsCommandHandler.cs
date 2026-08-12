@@ -1,6 +1,7 @@
 using MediatR;
 using ThePredictions.Application.Features.Admin.Rounds.Commands;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Application.Services;
 using ThePredictions.Application.Services.Boosts;
 using ThePredictions.Domain.Common.Enumerations;
 
@@ -11,6 +12,7 @@ public class RecalculateSeasonStatsCommandHandler(
     ILeagueRepository leagueRepository,
     ILeagueStatsRepository leagueStatsRepository,
     IBoostService boostService,
+    IRoundResultsService roundResultsService,
     IMediator mediator) : IRequestHandler<RecalculateSeasonStatsCommand>
 {
     public async Task Handle(RecalculateSeasonStatsCommand request, CancellationToken cancellationToken)
@@ -24,7 +26,7 @@ public class RecalculateSeasonStatsCommandHandler(
 
         foreach (var round in completedRounds)
         {
-            await roundRepository.UpdateRoundResultsAsync(round.Id, cancellationToken);
+            await roundResultsService.RecalculateAsync(round, cancellationToken);
             await leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
             await boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
 

@@ -25,4 +25,14 @@ public interface ITestDataInspector
     Task<StoredMatch?> MatchAsync(int matchId);
 
     Task<StoredRound?> RoundAsync(int roundId);
+
+    /// <summary>
+    /// One player's stored outcome tally for a round, or null where none has been written.
+    /// </summary>
+    /// <remarks>
+    /// These numbers are read by badges, digests, leaderboards, records and the season recap, and the statement that wrote
+    /// them had no test of any kind - it both counted and stored in one <c>MERGE</c>. Now that the counting has moved, what
+    /// is stored can be asserted.
+    /// </remarks>
+    Task<StoredRoundResult?> RoundResultAsync(int roundId, string userId);
 }

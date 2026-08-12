@@ -129,10 +129,11 @@ public class GetActiveRoundsQueryHandler(
         if (!round.Candidate.HasUserPredicted)
             return null;
 
-        return new OutcomeSummaryDto(
-            ExactScoreCount: round.Matches.Count(match => match.Outcome == PredictionOutcome.ExactScore),
-            CorrectResultCount: round.Matches.Count(match => match.Outcome == PredictionOutcome.CorrectResult),
-            IncorrectCount: round.Matches.Count(match => match.Outcome == PredictionOutcome.Incorrect));
+        // The same counting the stored tally uses, which was a MERGE with three SUM(CASE WHEN ...) columns. One rule,
+        // one definition of which predictions count towards it.
+        var counts = OutcomeTally.For(round.Matches.Select(match => match.Outcome));
+
+        return new OutcomeSummaryDto(counts.ExactScoreCount, counts.CorrectResultCount, counts.IncorrectCount);
     }
 
     /// <summary>

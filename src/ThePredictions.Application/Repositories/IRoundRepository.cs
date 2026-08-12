@@ -32,7 +32,15 @@ public interface IRoundRepository
     Task UpdateAsync(Round round, CancellationToken cancellationToken);
     Task MoveMatchesToRoundAsync(IEnumerable<int> matchIds, int targetRoundId, CancellationToken cancellationToken);
     Task UpdateMatchScoresAsync(List<Match> matches, CancellationToken cancellationToken);
-    Task UpdateRoundResultsAsync(int roundId, CancellationToken cancellationToken);
+    /// <summary>
+    /// Stores each player's tally for a round. Existing rows are updated and new ones added; nothing is removed, so a
+    /// player whose predictions have gone back to unjudged keeps the tally they had.
+    /// </summary>
+    /// <remarks>
+    /// The counting is <c>Domain.Services.OutcomeTally</c>. This used to be a <c>MERGE</c> that did both, which meant the
+    /// rule lived in a statement nothing could execute without a database.
+    /// </remarks>
+    Task UpdateRoundResultsAsync(int roundId, IEnumerable<RoundResultTally> tallies, CancellationToken cancellationToken);
     Task UpdateLastReminderSentAsync(Round round, CancellationToken cancellationToken);
     Task UpdateResultsDigestSentAsync(Round round, CancellationToken cancellationToken);
 

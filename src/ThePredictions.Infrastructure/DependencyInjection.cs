@@ -125,6 +125,7 @@ public static class DependencyInjection
         services.AddScoped<IBadgeAwardService, BadgeAwardService>();
 
         services.AddScoped<ILeagueMembershipService, Application.Services.LeagueMembershipService>();
+        services.AddScoped<IRoundResultsService, Application.Services.RoundResultsService>();
         services.AddScoped<ISeasonAccessService, SeasonAccessService>();
         services.AddScoped<ISeasonPriceRecommendationService, SeasonPriceRecommendationService>();
         services.AddScoped<IEmailConfirmationSender, EmailConfirmationSender>();

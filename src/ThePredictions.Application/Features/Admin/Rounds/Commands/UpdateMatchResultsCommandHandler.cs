@@ -14,6 +14,7 @@ namespace ThePredictions.Application.Features.Admin.Rounds.Commands;
 public class UpdateMatchResultsCommandHandler(
     IMediator mediator,
     IBoostService boostService,
+    IRoundResultsService roundResultsService,
     ILeagueRepository leagueRepository,
     IRoundRepository roundRepository,
     IUserPredictionRepository userPredictionRepository,
@@ -50,7 +51,7 @@ public class UpdateMatchResultsCommandHandler(
 
         await roundRepository.UpdateMatchScoresAsync(matchesToUpdate, cancellationToken);
         await ScorePredictionsAsync(matchesToUpdate, cancellationToken);
-        await roundRepository.UpdateRoundResultsAsync(round.Id, cancellationToken);
+        await roundResultsService.RecalculateAsync(round, cancellationToken);
         await leagueRepository.UpdateLeagueRoundResultsAsync(round.Id, cancellationToken);
         await boostService.ApplyRoundBoostsAsync(round.Id, cancellationToken);
         

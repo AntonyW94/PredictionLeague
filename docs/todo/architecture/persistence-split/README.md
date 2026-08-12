@@ -1396,7 +1396,7 @@ collapses each to one.
 |------|--------|--------|
 | Predictable fixture | `GetRoundCompletionQueryHandler.PredictableMatchPredicate` + `ReminderService.GetUsersMissingPredictionsAsync` | **Fully collapsed 2026-08-10.** The rule was never absent from C#: `Match.AreTeamsConfirmed` and `Match.IsPredictionLocked` both existed and were tested, and both SQL copies said in their comments that they mirrored the latter. Only the three-way composition was missing, so each call site rewrote the whole thing in T-SQL. `Match.IsOpenForPrediction` is now that composition, and both call sites read through one `IRoundCompletionQuery`. |
 | Round display name (`CASE WHEN LEN(LTRIM(RTRIM(DisplayName))) > 0 ...`) | The same two files | **Fully collapsed 2026-08-10** to `Round.GetDisplayNameOrDefault`. The second rule those two files duplicated. |
-| Round outcome counts | `RoundRepository.UpdateRoundResultsAsync` MERGE + `GetActiveRoundsQueryHandler.cs:195` | Found 2026-08-10, **untested in either copy**. `RoundResults.ExactScoreCount` is stored and read by badges, digests, leaderboards, records and season recap, so the SQL is canonical and the C# is a live shadow of it. Collapses in phase "Rounds". |
+| Round outcome counts | `RoundRepository.UpdateRoundResultsAsync` MERGE + `GetActiveRoundsQueryHandler` | **Fully collapsed 2026-08-12** to `Domain.Services.OutcomeTally`, the first write-side rule to move. Both copies were untested; the write path now hands the repository a tally per player and the upsert stores it, so the counting has unit tests and the storing has conformance tests for the first time. The tile's own count went with it - and its fixture had one exact score and one correct result, so swapping the two headings passed until the mutation check said otherwise. |
 | Boost secrecy | SQL only, but reads `GETUTCDATE()` instead of `IDateTimeProvider` | Integration tested 2026-08-10; becomes a clock-injected C# filter in phase "Boosts" |
 | Player display name (`FirstName + ' ' + LEFT(LastName, 1)`) | **17 files originally, 2 left** | `Domain.Services.PlayerDisplayName` added 2026-08-10 with the Boosts batch, which adopted it. As of the Badges batch **two SQL copies remain**, in `PrizeEvaluationInputsReader` and `GetRoundDigestQueryHandler`, both in areas still to come. The C# version also drops the trailing space the SQL produced for an empty surname. |
 | Where a player stands on the badges table | `GetBadgeLeaderboardQueryHandler` (C#, row-numbered) + `GetBadgesTileQueryHandler` (SQL, `COUNT(*) + 1`) | **Fully collapsed with the Badges batch.** The two disagreed on real data - joint players shared a position on the tile and did not on the page - and one of them also awarded first place to accounts that were not on the table. Both now read `BadgeStandings`. |
@@ -1404,9 +1404,27 @@ collapses each to one.
 | Round display name (`Round.GetDisplayNameOrDefault`) | Two more reads found ignoring it | **Both fixed with the digest batch**, and `Round.DisplayNameOrDefault` added as the static form so a read holding columns has no excuse. Verified on dev that no round is currently unnamed, so this was a gap rather than a live fault. |
 | Longest run of rounds with an exact score | Two gap-and-island SQL statements, one lifetime and one per season | **Fully collapsed** to `Domain.Services.Badges.Streak`. The two differed only in scope, which four CTEs of window functions made impossible to see. |
 
-## Open question, not yet decided
+## The write side
 
-**The write side.** The agreed mandate ("every rule to C#, no exceptions") was decided for reads.
-Set-based writes mostly turn out to be mechanism under the decision procedure above, but the
-`RoundResults` MERGE is a genuine rule and `UpsertBatchAsync` / `UpdateLeagueRoundBoostsAsync` need a
-call each. Decide per case, with measured row counts, when the relevant feature area comes up.
+Decided 2026-08-12, with row counts measured on dev first: at most 648 predictions in the busiest round
+and 42 league-result rows per round, so there was never a volume argument for computing in SQL.
+
+Four statements, of which two hold rules:
+
+| Statement | Verdict |
+|---|---|
+| `RoundRepository.UpdateRoundResultsAsync` | **Rule, and moved.** Counting how a player's predictions turned out is `Domain.Services.OutcomeTally`; the repository is handed one tally per player and upserts it. |
+| `LeagueRepository.UpdateLeagueRoundResultsAsync` | **Rule, still to move.** `exact x PointsForExactScore + correct x PointsForCorrectResult`, for approved members only, resetting any boost. This is the league scoring formula and it exists **only** in SQL - there is no C# copy to disagree with it, which is why nothing tests it. |
+| `LeagueRepository.UpdateLeagueRoundBoostsAsync` | Mechanism. The points are computed in C# already; this writes them back. One rule hides in it - it updates only, so a boost can never create a results row. |
+| `UserPredictionRepository.UpsertBatchAsync` | Mechanism. Nothing to move. |
+
+Seven write statements also call `GETUTCDATE()` rather than the injected clock, which is the same smell
+the read side had.
+
+### What the first one taught
+
+The tally had a second implementation in C# - the active-rounds tile counted the same three things for the
+one player looking at it - so moving the write collapsed a duplicate rather than just relocating a
+statement. Two mutations could not be made to compile, both because the compiler was already enforcing
+something: dropping the only call to the new service leaves an injected dependency unread, which
+`TreatWarningsAsErrors` makes an error.

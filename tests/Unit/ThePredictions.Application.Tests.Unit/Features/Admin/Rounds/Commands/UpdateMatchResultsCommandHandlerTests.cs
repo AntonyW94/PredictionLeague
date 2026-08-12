@@ -36,13 +36,14 @@ public class UpdateMatchResultsCommandHandlerTests
     private readonly IUserPredictionRepository _predictionRepository = Substitute.For<IUserPredictionRepository>();
     private readonly ILeagueStatsRepository _leagueStatsRepository = Substitute.For<ILeagueStatsRepository>();
     private readonly ICurrentUserService _currentUserService = Substitute.For<ICurrentUserService>();
+    private readonly IRoundResultsService _roundResultsService = Substitute.For<IRoundResultsService>();
 
     private readonly UpdateMatchResultsCommandHandler _handler;
 
     public UpdateMatchResultsCommandHandlerTests()
     {
         _handler = new UpdateMatchResultsCommandHandler(
-            _mediator, _boostService, _leagueRepository, _roundRepository,
+            _mediator, _boostService, _roundResultsService, _leagueRepository, _roundRepository,
             _predictionRepository, _leagueStatsRepository, _currentUserService,
             new TestDateTimeProvider(FixedNow));
 
