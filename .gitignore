@@ -121,6 +121,13 @@ ipch/
 # Visual Studio Trace Files
 *.e2e
 
+# ...but a gitignore pattern matches directories as well as files, so `*.e2e` also swallowed
+# tests/E2E/ThePredictions.Web.Tests.E2E - the whole browser test project, silently, because
+# core.ignorecase makes the match case-insensitive and the folder name ends in `.E2E`. Un-ignore
+# the folder itself; everything inside it is then judged by the ordinary rules, so bin/ and obj/
+# stay excluded.
+!*.Tests.E2E/
+
 # TFS 2012 Local Workspace
 $tf/
 

@@ -1,0 +1,114 @@
+# .github/workflows/e2e-dev.yml
+name: E2E Smoke (Dev)
+
+# The Stage 1 browser smoke suite: a handful of journeys driven through real Chromium against the
+# deployed dev site. See docs/todo/architecture/e2e-testing/README.md.
+#
+# It runs AFTER a dev deploy and does not gate it. That is an accepted Stage 1 limitation: the
+# deploy has already landed by the time these tests report, so a failure is a signal to look
+# rather than a rollback. Revisited at Stage 2, which owns its own stack and can therefore run
+# before anything ships.
+#
+# Deliberately its own workflow rather than a job inside deploy-dev.yml, so that:
+#   * it can be re-run on demand against dev without redeploying, and
+#   * "the deploy failed" and "the smoke suite failed" stay two distinct messages in #github.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base-url:
+        description: 'Site to test. Leave blank for https://dev.thepredictions.co.uk.'
+        required: false
+        type: string
+  workflow_run:
+    workflows: ['Deploy to Dev']
+    types: [completed]
+
+# One run at a time: the three test accounts are fixed and shared, so two concurrent runs would be
+# signing in as the same users and racing each other's refresh tokens. A newer deploy supersedes an
+# older run, so the in-flight one is cancelled rather than queued.
+concurrency:
+  group: e2e-dev
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    # A deploy that failed left dev on the previous build (or half-updated), so there is nothing
+    # worth reporting on. Manual runs are always allowed.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    env:
+      E2E_BASE_URL: ${{ inputs.base-url }}
+      E2E_TEST_ACCOUNT_PASSWORD: ${{ secrets.TEST_ACCOUNT_PASSWORD }}
+      E2E_ARTIFACTS_DIR: ${{ github.workspace }}/e2e-artifacts
+      E2E_PROJECT: tests/E2E/ThePredictions.Web.Tests.E2E/ThePredictions.Web.Tests.E2E.csproj
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # The suite skips itself when it has no password, so a missing secret would otherwise show up as
+      # a green run that tested nothing. Checked here, where the fix belongs.
+      - name: Verify the test account password is available
+        run: |
+          if [ -z "${E2E_TEST_ACCOUNT_PASSWORD:-}" ]; then
+            echo "TEST_ACCOUNT_PASSWORD is not set, so the suite would skip every test and report success."
+            echo "It is the same repository secret refresh-dev-db.yml uses to create the dev test accounts."
+            exit 1
+          fi
+          echo "Test account password is present."
+
+      # Only this project, not the solution: it holds no reference into src/, so building the rest
+      # would spend minutes producing assemblies nothing here loads.
+      - name: Build the E2E project
+        run: dotnet build "$E2E_PROJECT" --configuration Release /p:TreatWarningsAsErrors=true
+
+      # The NuGet package ships the driver, not the browser. --with-deps installs the shared libraries
+      # Chromium needs on a bare Ubuntu runner, which are not present by default.
+      - name: Install Chromium
+        run: pwsh tests/E2E/ThePredictions.Web.Tests.E2E/bin/Release/net8.0/playwright.ps1 install chromium --with-deps
+
+      - name: Run the smoke journeys
+        run: >
+          dotnet test "$E2E_PROJECT"
+          --no-build
+          --configuration Release
+          --verbosity normal
+          --filter "Category=E2E"
+
+      # A Playwright trace per test: the run's DOM snapshots, screenshots and network, opened with
+      # `playwright show-trace <file>`. Written for every test but kept only when the job fails, which
+      # is the point at which anyone wants them.
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: ${{ github.workspace }}/e2e-artifacts
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Failures only. A dev deploy already posts its own outcome, so a green smoke run would just double
+  # the traffic in #github for the same event.
+  notify:
+    if: always()
+    needs: [smoke]
+    uses: ./.github/workflows/notify-slack.yml
+    with:
+      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      notify-on: failure
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

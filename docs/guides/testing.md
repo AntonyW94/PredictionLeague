@@ -298,6 +298,109 @@ that is correct rather than a compromise. The gate measures each unit test proje
 never include a container-backed suite, so removing the attribute would simply turn the gate red.
 `NoExcludedType_ShouldAlreadyHaveAUnitTestFile` is scoped to `tests/Unit` for exactly this reason.
 
+## End-to-End Smoke Tests Against Deployed Dev
+
+`tests/E2E/ThePredictions.Web.Tests.E2E` drives real Chromium through a handful of journeys against
+`https://dev.thepredictions.co.uk`. This is **Stage 1** of
+[`docs/todo/architecture/e2e-testing/README.md`](../todo/architecture/e2e-testing/README.md) - deliberately
+five journeys and no seeder, whose only job is to prove a browser suite runs in CI.
+
+It exists because of a specific failure. On 30 July 2026 a leaderboard query's `SELECT` had drifted from its
+result record, so the page threw for a real user with 1,647 green unit tests and a happy compiler. `SchemaCheck`
+now catches that class of drift, but nothing was **loading a page**. Three of the five journeys do.
+
+### The journeys, and the accounts behind them
+
+`tools/ThePredictions.DatabaseTools/TestAccountCreator.cs` writes three accounts on every dev refresh, all
+using the `TEST_ACCOUNT_PASSWORD` secret. `DataAnonymiser` sets every other user's `PasswordHash` to
+`INVALIDATED`, so these are the only accounts that can sign in on dev at all.
+
+| Account | State | Journey |
+|---------|-------|---------|
+| `testplayer@dev.local` | Season Pass + first league | Dashboard renders; opening the league renders a leaderboard; logging out returns to the anonymous site |
+| `testnewplayer@dev.local` | **No** pass, **no** league | The dashboard's onboarding takeover renders |
+| `testadmin@dev.local` | Pass + league + Administrator | Manage Teams renders, reached through the gear menu |
+
+**The Season Pass is not optional decoration.** `get-pass` is a *required* onboarding step, so an account
+without a pass row sits in the onboarding takeover, which renders the checklist and **no tiles** - no leagues,
+no leaderboards. Before August 2026 `TestAccountCreator` granted no pass, so every dev account was in that
+state and the page this suite exists to watch was unreachable. The new-player account keeps that state on
+purpose, as a journey of its own rather than as an accident.
+
+### Assertions are structural, never value-based
+
+Dev is refreshed from an anonymised production copy, so the data moves underneath the suite. Assert *"the
+leaderboard renders at least one row"*, never *"row 1 is Antony"*. Less precise, but it survives a refresh and
+it still catches the failure actually experienced - the page blowing up.
+
+The same reasoning rules out asserting on a particular onboarding step, or on a league button's label (it
+reads "View Dashboard" mid-season and "View Recap" once finished).
+
+### Running them
+
+```bash
+dotnet test tests\E2E\ThePredictions.Web.Tests.E2E
+```
+
+The suite **skips itself** when `E2E_TEST_ACCOUNT_PASSWORD` is not set, which is the ordinary state of a
+developer machine - so `dotnet test ThePredictions.sln` stays green without credentials. To actually run it,
+install the browser once and supply the password:
+
+```bash
+pwsh tests/E2E/ThePredictions.Web.Tests.E2E/bin/Release/net8.0/playwright.ps1 install chromium
+```
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `E2E_TEST_ACCOUNT_PASSWORD` | none | The `TEST_ACCOUNT_PASSWORD` secret. Absent = every journey skips |
+| `E2E_BASE_URL` | `https://dev.thepredictions.co.uk` | Site under test |
+| `E2E_HEADED` | `false` | `true` to watch the browser |
+| `E2E_SLOW_MO_MS` | `0` | Pause between actions; only useful headed |
+| `E2E_ARTIFACTS_DIR` | next to the build output | Where per-test Playwright traces are written |
+
+A trace is written for **every** test, pass or fail. `e2e-dev.yml` uploads the folder only when the job
+fails, so the decision about what is worth keeping is made where the outcome is actually known. Open one with
+`playwright show-trace <file>`.
+
+### Where it runs, and what it does not do
+
+`.github/workflows/e2e-dev.yml`, triggered by `workflow_run` on **Deploy to Dev** succeeding, and by
+`workflow_dispatch` for an on-demand run. Failures reach `#github` through `notify-slack.yml`.
+
+**It does not gate the deploy** - the deploy has landed by the time it reports. That is an accepted Stage 1
+limitation, revisited at Stage 2, which owns its own stack and can therefore run before anything ships. It
+also **cannot test flows needing controlled state**: submitting a prediction needs a round whose deadline has
+not passed, which depends on whatever dev happens to hold today. That ceiling is the trigger for Stage 2.
+
+### Conventions specific to this project
+
+- **xunit.v3, not NUnit or MSTest.** Playwright ships per-framework packages for those two, but the thing that
+  makes a browser suite stable - the auto-retrying `Assertions.Expect` web-first assertions - lives in the base
+  `Microsoft.Playwright` package. What the framework packages add is base classes for the browser lifecycle,
+  which `Harness/` supplies in about a hundred lines, so pairing with a second test framework would buy little
+  and cost a second idiom in a solution otherwise standardised on xunit.v3.
+- **Every test class carries `[Trait("Category", "E2E")]`**, inherited from `E2ETestBase`. CI's unit job
+  filters `Category!=Integration&Category!=E2E`, and both deploy workflows filter `Category!=E2E`, so an
+  untraited class would be run by no job at all. `E2ETraitConventionTests` fails the build if one is missing.
+- **Derive from `E2ETestBase` and open the session inside the test**, with
+  `await using var session = await StartSessionAsync();`. Not `IAsyncLifetime`: the "no password configured"
+  skip has to be raised *before* anything opens a browser, or an unconfigured machine reports a Playwright
+  error rather than the skip it is.
+- **One browser, one context per test.** The browser is shared because launching costs seconds; the context is
+  not, because it carries the cookies and local storage holding the signed-in session.
+- **Tests run sequentially.** The three accounts are fixed and shared, so two concurrent tests signed in as the
+  same account would race the same refresh token.
+- **Selectors live in `Pages/`, assertions live in the tests.** A page object exposes locators and navigation;
+  it never asserts. When the markup moves, one file changes.
+- **No project reference into `src/`.** These tests observe the deployed site over HTTP, and a reference would
+  let one assert against a type the browser never sees.
+
+### It does not affect the 100% gate
+
+Same shape as the integration project: `coverlet.collector` but **not** `coverlet.msbuild`, because it owns no
+assembly for the threshold to measure. `NoExcludedType_ShouldAlreadyHaveAUnitTestFile` sweeps `tests/Unit`
+only, so nothing here can force an attribute off a type the gate still has to see covered.
+
 ## Composition / Container Validation
 
 A MediatR handler that depends on a service the host never registers is **invisible to `dotnet build` and to handler unit tests** (those construct the handler with mocks). The gap only surfaces at app startup, via the Development host's `ValidateOnBuild`, i.e. on deploy.
@@ -360,6 +463,12 @@ tests/
         ├── Queries/               → Rules that live in a SQL predicate (SQL Server-specific for now)
         ├── Repositories/          → Concrete subclasses that run the conformance suite
         └── Schema/                → The migrations applying cleanly from empty
+tests/
+└── E2E/
+    └── ThePredictions.Web.Tests.E2E/
+        ├── Harness/               → Browser fixture, per-test session, settings, trait convention
+        ├── Pages/                 → Page objects: locators and navigation, never assertions
+        └── *JourneyTests.cs       → One class per actor (player, new player, admin)
 ```
 
 ### The conformance suite

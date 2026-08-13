@@ -194,6 +194,7 @@ All scheduled endpoints protected by API key (`X-Api-Key` header). The legacy `/
 | Migrate (dev/prod/backup) | `migrate-*.yml`, `migrate-shared.yml` | Manual (prod/backup require `confirm`) | Applies DbUp migrations to a single database (see ADR-0013) |
 | Refresh Dev Database | `refresh-dev-db.yml` | Manual only | Copies production data to dev with anonymisation |
 | Backup Production Database | `backup-prod-db.yml` | Daily at 2am UTC + manual | Copies production data to backup (no anonymisation) |
+| E2E Smoke (Dev) | `e2e-dev.yml` | After **Deploy to Dev** succeeds + manual | Drives five browser journeys against dev. Reports after the fact; does not gate the deploy |
 
 The deploy workflows each `needs:` a migrate job, so schema changes land before the code that depends on them. After a deploy, confirm the site is actually healthy rather than trusting a green run alone:
 
@@ -201,7 +202,7 @@ The deploy workflows each `needs:` a migrate job, so schema changes land before 
 - The served page references `css/app.css?v=<timestamp>`; that cache-bust stamp is the publish time, so a matching stamp means the new build is live.
 - Sampling `_framework` assets from `/_framework/blazor.boot.json` returns `200` (a partial upload would 404 most of these and Blazor would not boot).
 
-The two **database** workflows use `tools/ThePredictions.DatabaseTools/`. The **dev refresh** reads all tables from production, anonymises personal data (realistic fake names/emails via Bogus), creates test accounts (`testplayer@dev.local` and `testadmin@dev.local`), and writes to the dev database. The **production backup** copies all data unmodified to `ThePredictionsBackup` as a safety net independent of Fasthosts' own backup policy. Token tables (`AspNetUserTokens`, `RefreshTokens`, `PasswordResetTokens`) are excluded from both. The dev refresh additionally leaves `EmailSettings` untouched so the dev master email switch survives a refresh (see [Dev email gate](#dev-email-gate)).
+The two **database** workflows use `tools/ThePredictions.DatabaseTools/`. The **dev refresh** reads all tables from production, anonymises personal data (realistic fake names/emails via Bogus), creates test accounts (`testplayer@dev.local`, `testadmin@dev.local` and `testnewplayer@dev.local`), and writes to the dev database. The first two get a Season Pass and membership of the first league so they land on a real dashboard; the third deliberately gets neither, so it reproduces a brand-new sign-up's onboarding state. All three are driven by the E2E smoke suite - see [Testing](testing.md#end-to-end-smoke-tests-against-deployed-dev). The **production backup** copies all data unmodified to `ThePredictionsBackup` as a safety net independent of Fasthosts' own backup policy. Token tables (`AspNetUserTokens`, `RefreshTokens`, `PasswordResetTokens`) are excluded from both. The dev refresh additionally leaves `EmailSettings` untouched so the dev master email switch survives a refresh (see [Dev email gate](#dev-email-gate)).
 
 The dev refresh exposes two `workflow_dispatch` toggles to make the dev copy easier to navigate (sensitive fields — emails, password hashes, bank/payout details, payment references — are always scrubbed regardless):
 

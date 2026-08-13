@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- No coverlet.msbuild: this project owns no assembly of its own, so there is nothing for the
+         100% threshold to measure. It drives a real browser against a deployed site instead. The same
+         reasoning as ThePredictions.Persistence.SqlServer.Tests.Integration - the gate measures each
+         unit test project's own run, which cannot include a suite that needs a deployment. -->
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" Version="3.0.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0" />
+    <PackageReference Include="FluentAssertions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <!-- Browser automation. Deliberately the base package rather than Microsoft.Playwright.NUnit or
+         .MSTest: the auto-retrying web-first assertions (Assertions.Expect) that make a browser suite
+         stable ship here, not in the per-framework packages, so pairing with a second test framework
+         would buy only base classes for the browser lifecycle - which Harness/ owns in ~100 lines - at
+         the cost of a second idiom in a solution otherwise standardised on xunit.v3. -->
+    <PackageReference Include="Microsoft.Playwright" Version="1.62.0" />
+  </ItemGroup>
+
+  <!-- Nothing in src/ is referenced on purpose. These tests drive the deployed site over HTTP, so a
+       project reference would let a test assert against a type the browser never sees, and would put a
+       compile-time dependency on the very code the suite is supposed to observe from outside. -->
+</Project>
