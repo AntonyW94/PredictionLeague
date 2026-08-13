@@ -21,6 +21,10 @@ committed `appsettings.json` as `"ApiKey": "${Brevo-ApiKey}"`.
   `TenantId` / `ClientId` / `ClientSecret`). Only authorised developers have this file.
 - Note: an interactive `az login` under the `@evolution-internet.com` tenant cannot read this
   vault (different tenant - `AKV10032 Invalid issuer`). Use the service principal above.
+- If the vault call dies with `The SSL connection could not be established` while the preceding
+  token call to `login.microsoftonline.com` succeeds, suspect a **VPN** rather than TLS. Retrying
+  and forcing TLS 1.2 both achieve nothing (`[Net.ServicePointManager]::SecurityProtocol` has no
+  effect in PowerShell 7, which uses `HttpClient`). Disconnect and try again.
 
 ### Retrieve the key (PowerShell)
 
@@ -45,6 +49,25 @@ With header `api-key: <brevoKey>`:
 | Update | `PUT .../v3/smtp/templates/{id}` |
 | Send | `POST .../v3/smtp/email` (sends a real email) |
 
+## Updating a template: two things that break `PUT`
+
+Both failures return the same misleading `{"code":"bad_request","message":"Input must be a valid
+JSON object"}`, so neither is self-diagnosing:
+
+1. **Do not put `content-type` in the `-Headers` hashtable.** Pass
+   `-ContentType 'application/json; charset=utf-8'` instead.
+2. **Do not pass the JSON as a string.** The templates contain non-ASCII characters (`·`, `©`), so
+   encode the body yourself: `[System.Text.Encoding]::UTF8.GetBytes($json)`.
+
+A `PUT` carrying only `htmlContent` **preserves** the name, subject, sender and `isActive` - verified
+across all nine templates.
+
+**Prefer editing the live `htmlContent` fetched by `GET` over pushing the repo copy wholesale.** It
+cannot clobber drift introduced through the UI, and it keeps the diff to the line you meant to
+change. (Checked 2026-08-12: eight of the nine were byte-identical to `docs/email-templates/`, and
+id 9 differed only by a documentation comment the repo copy carries - so nothing has ever been
+hand-edited in the Brevo UI. Sync both ways when that stops being true.)
+
 ## Conventions
 
 - **Verified sender:** only one exists - `The Predictions <antony@thepredictions.co.uk>` (id `1`).
@@ -52,9 +75,8 @@ With header `api-key: <brevoKey>`:
 - **Single shared Brevo account.** Template IDs are environment-agnostic (the same numbers appear
   in every `appsettings`), so a template created with the dev key is immediately present for
   production too.
-- **Do not modify the existing live templates** (currently ids 5-10: League Join Approved,
-  Confirm Email, Password Reset, Password Reset - Google User, Predictions Missing, Join League
-  Request) without explicit sign-off.
+- **Do not modify the existing live templates** (currently ids 5-13, from League Join Approved
+  through to the round-results digest and prize-won notifications) without explicit sign-off.
 - **Create new templates as `isActive: true`** - the admin email-test tool (`/admin/email-tests`)
   greys out inactive templates, so an inactive one cannot be tested. Nothing actually sends to
   users until a code path and its scheduled task exist.

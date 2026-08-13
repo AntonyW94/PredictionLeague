@@ -306,6 +306,27 @@ When adding or changing any UI element (components, styles, icons, colours), ver
 - Colours use design tokens or existing utility classes that have dark mode overrides (e.g. `text-white-50` is overridden in `themes/dark/dark.css`)
 - New CSS classes include `.theme-dark` overrides where needed
 
+#### The default is light, and `text-white` is a trap
+
+`ThemeService.CurrentTheme` defaults to **`"light"`**; dark mode adds a `.theme-dark` class. So the
+theme you get if you write markup and never think about it is the light one, and `main`'s background
+is `var(--purple-100)` = **#F0EAF5** there (overridden to the dark `--purple-1000` under
+`.theme-dark`).
+
+Bare `text-white` is literally white in `utilities/colours.css`, which makes it **invisible on the
+light background**. This caused a real bug on the branded error pages, caught only when an accurate
+preview was rendered.
+
+The app does not flip text with colour classes - it flips them with **container overrides**. Inside
+`.form-container`, `.card`, `.section`, `.dashboard-container` and similar, `themes/dark/dark.css`
+remaps `text-purple-1000` to white, `text-grey-500` to `--grey-300`, and restores `text-white` to
+white (it is flipped dark by the light-theme container rules). Practically:
+
+- Render new full-page or standalone UI **inside a theme-aware container**. The `form-container` card
+  is the proven pattern - it is what the login, register and error pages use.
+- Use `text-purple-1000` for headings and body text, never bare `text-white`.
+- `--green-600` (#00B960) and `.green-button` read correctly on both themes.
+
 ## Adding New CSS Files
 
 When adding a new CSS file, update TWO places:

@@ -256,6 +256,12 @@ nothing else checks. The three real databases were baselined from a schema that 
 Needs a **running Docker daemon with Linux containers** (on Docker Desktop for Windows, that means the
 Linux engine, not Windows containers). The first run pulls ~1.5GB.
 
+If Docker is in Windows-container mode the failure is misleading: Testcontainers reports a **missing
+image** rather than an engine mismatch, so it reads as a bad tag. `docker pull` is what tells the
+truth (`image operating system "linux" cannot be used on this platform`). Check with
+`docker info --format '{{.OSType}}'` before assuming the tag is wrong. CI on `ubuntu-latest` is
+unaffected.
+
 ```bash
 dotnet test tests\Integration\ThePredictions.Persistence.SqlServer.Tests.Integration
 ```
