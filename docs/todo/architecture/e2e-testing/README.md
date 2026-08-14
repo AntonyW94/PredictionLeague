@@ -172,6 +172,103 @@ everywhere else.
 What genuinely remains: starting the Web project against the container, the relative-time round fixture,
 supplying configuration without Key Vault, and the isolation decision.
 
+### Test levels, and choosing them when you run it
+
+Journeys are not equally worth running. Signing in is worth checking on every push; a rarely-touched
+admin screen is not worth the minutes on every push but is worth checking before a release. So every
+test class carries a **level** alongside its category trait:
+
+| Level | Meaning | Examples |
+|-------|---------|----------|
+| `Smoke` | Cannot be broken without the site being unusable | Sign in, sign out, dashboard loads, a leaderboard renders |
+| `Core` | Features used most weeks | Submitting a prediction, viewing a round's results, joining a league |
+| `Extended` | Rarely used, but still has to work | Admin CRUD screens, prize payout flows, season recap, boost windows |
+
+The level names describe the *test*, and the run names describe the *selection*: a smoke run takes
+`Smoke`, a standard run takes `Smoke` and `Core`, a full run takes everything. Naming the third level
+`Extended` rather than `Full` avoids the muddle of "the full run runs the Full tests plus the others".
+
+Exactly one level per class, never several. The selection is built by combining levels in the filter,
+so a test belonging to two would run twice in a standard run:
+
+```bash
+dotnet test --filter "Category=E2E&(Level=Smoke|Level=Core)"
+```
+
+`E2ELevelConventionTests` should fail the build when a test class has no `Level` trait, or carries a
+value outside the three - the same shape as the category convention test, and for the same reason: a
+class in no level is a class that runs in no job while CI stays green.
+
+### Tickboxes when running it by hand
+
+`workflow_dispatch` renders a `type: boolean` input as a checkbox, so the levels can be picked per run:
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      smoke:
+        description: 'Run smoke journeys'
+        type: boolean
+        default: true
+      core:
+        description: 'Run core-feature journeys'
+        type: boolean
+        default: true
+      extended:
+        description: 'Run rarely-used-feature journeys'
+        type: boolean
+        default: false
+  pull_request:
+  schedule:
+    - cron: '0 3 * * *'
+```
+
+Independent tickboxes rather than one dropdown, deliberately: "Extended only" is a genuinely useful
+selection when you are working on a rarely-used feature and do not want to sit through the rest. A
+`type: choice` dropdown of Smoke / Standard / Full is the simpler alternative if that flexibility turns
+out not to be wanted.
+
+**Build the filter in a shell step, not in a workflow expression.** This looks like it should work and
+is broken:
+
+```yaml
+# WRONG - unticking the box silently turns it back on
+SMOKE: ${{ inputs.smoke || 'true' }}
+```
+
+`false` is falsy in a GitHub expression, so `false || 'true'` evaluates to `'true'` and an unticked box
+is indistinguishable from an absent one. The default has to be chosen by looking at the event instead:
+
+```bash
+if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+  SMOKE="${{ inputs.smoke }}"; CORE="${{ inputs.core }}"; EXTENDED="${{ inputs.extended }}"
+else
+  SMOKE=true; CORE=true; EXTENDED=false     # automatic runs: standard selection
+fi
+
+LEVELS=""
+[ "$SMOKE" = "true" ]    && LEVELS="$LEVELS|Level=Smoke"
+[ "$CORE" = "true" ]     && LEVELS="$LEVELS|Level=Core"
+[ "$EXTENDED" = "true" ] && LEVELS="$LEVELS|Level=Extended"
+
+if [ -z "$LEVELS" ]; then
+  echo "No levels selected - tick at least one box."
+  exit 1
+fi
+
+echo "filter=Category=E2E&(${LEVELS#|})" >> "$GITHUB_OUTPUT"
+```
+
+Three things worth knowing before relying on this:
+
+- **The tickboxes only exist for manual runs.** `pull_request`, `push` and `schedule` have no UI, so
+  their selection is hardcoded - which is the point: a PR gets smoke and core, the nightly cron gets
+  everything.
+- **`workflow_dispatch` allows at most 10 inputs**, so three levels leaves plenty of headroom.
+- **Guard the empty selection.** With every box unticked the filter matches nothing, and `dotnet test`
+  reports that far less clearly than the check above.
+
 ### Seeding through the application's own endpoints, where it earns it
 
 ```text
@@ -291,7 +388,9 @@ Testcontainers approach this plan needs.
 ## Open questions
 
 - [ ] Serial suite, or a season and league per test class?
-- [ ] Does it gate PRs, dev deploys, or both?
+- [ ] Does it gate PRs, dev deploys, or both? If it gates a PR, does it gate on `Smoke` and `Core` only,
+      with `Extended` left to the nightly run?
+- [ ] Three independent level tickboxes as above, or one Smoke / Standard / Full dropdown?
 - [ ] `SkiaSharp` on Linux: add the native assets, run on Windows, or keep image endpoints out of scope?
 - [ ] Which three or four scenarios does the seeder have to produce first? The candidates are the ones
       deployed dev could never reach: submitting a prediction before a deadline, entering results as an
