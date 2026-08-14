@@ -1,4 +1,3 @@
-using Microsoft.Playwright;
 using ThePredictions.Web.Tests.E2E.Harness;
 using ThePredictions.Web.Tests.E2E.Pages;
 using Xunit;
@@ -28,18 +27,18 @@ public class LoginJourneyTests(StackFixture stack) : E2ETestBase(stack)
         var dashboard = new DashboardPage(page);
         var layout = new SiteLayout(page);
 
-        await Assertions.Expect(dashboard.Container).ToBeVisibleAsync();
+        await dashboard.Container.ShouldBeVisibleAsync();
 
         // The URL alone would pass on a page that routed but never authenticated. The avatar menu only
         // renders inside AuthorizeView.Authorized, so its presence is what proves the token came back, was
         // stored, and was read.
-        await Assertions.Expect(layout.AccountMenuButton).ToBeVisibleAsync();
+        await layout.AccountMenuButton.ShouldBeVisibleAsync();
 
         // This user holds no Season Pass and belongs to no league, so what renders is the onboarding
         // takeover rather than the tiles - a legitimate authenticated dashboard, and the one a real new
         // sign-up sees. Asserting no error panel is what makes the difference between "the page rendered"
         // and "the page rendered eight failed reads", which on an empty database is a genuine risk worth
         // catching rather than seeding around.
-        await Assertions.Expect(layout.ErrorMessages).ToHaveCountAsync(0);
+        await layout.ErrorMessages.ShouldNotExistAsync();
     }
 }

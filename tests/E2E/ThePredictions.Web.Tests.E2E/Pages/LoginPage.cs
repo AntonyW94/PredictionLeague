@@ -49,8 +49,7 @@ internal sealed class LoginPage(IPage page)
         // actually waits for afterwards is Blazor WebAssembly downloading and starting its runtime, which is
         // a navigation-sized wait - especially for the first test in a run, which also pays the app's own
         // cold start.
-        await Assertions.Expect(EmailField).ToBeVisibleAsync(
-            new LocatorAssertionsToBeVisibleOptions { Timeout = E2ESettings.NavigationTimeoutMs });
+        await EmailField.ShouldBeVisibleAsync(E2ESettings.NavigationTimeoutMs);
 
         // This is the first arrival in the context, which is the one moment the banner is guaranteed to be
         // there - see the remarks on the method.

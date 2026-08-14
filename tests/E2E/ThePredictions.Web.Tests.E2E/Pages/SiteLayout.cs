@@ -64,7 +64,7 @@ internal sealed class SiteLayout(IPage page)
         await ConsentRejectButton.WaitForAsync(new LocatorWaitForOptions { Timeout = ConsentBannerTimeoutMs });
         await ConsentRejectButton.ClickAsync();
 
-        await Assertions.Expect(ConsentBanner).ToBeHiddenAsync();
+        await ConsentBanner.ShouldBeHiddenAsync();
     }
 
     /// <summary>
