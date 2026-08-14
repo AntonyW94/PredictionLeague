@@ -29,6 +29,11 @@ public sealed class StackFixture : IAsyncLifetime
 
         _playwright = await Playwright.CreateAsync();
 
+        // Playwright's GetByTestId looks for `data-testid` out of the box. The markup uses `data-test-id`,
+        // which is the more readable spelling and the one this repository settled on, so the engine is
+        // pointed at it here - once, rather than every page object hand-writing an attribute selector.
+        _playwright.Selectors.SetTestIdAttribute(TestIds.Attribute);
+
         _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
             Headless = !E2ESettings.RunHeaded,

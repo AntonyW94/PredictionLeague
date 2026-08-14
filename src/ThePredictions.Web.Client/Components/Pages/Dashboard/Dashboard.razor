@@ -40,7 +40,7 @@
 
             @if (onboardingTakeover)
             {
-                <div class="dashboard-container">
+                <div class="dashboard-container" data-test-id="dashboard">
                     @if (onboardingHasPass)
                     {
                         <OnboardingChecklist />
@@ -65,7 +65,7 @@
             }
             else
             {
-            <div class="dashboard-container dashboard--tab-@_activeTab">
+            <div class="dashboard-container dashboard--tab-@_activeTab" data-test-id="dashboard">
                 @if (showOnboardingChecklist)
                 {
                     <OnboardingChecklist />

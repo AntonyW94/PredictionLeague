@@ -66,6 +66,46 @@ else
 3. Auto-refreshes expired tokens via `/api/authentication/refresh-token`
 4. Sets `Authorization: Bearer {token}` header on HttpClient
 
+## Test Hooks: `data-test-id`
+
+**Anything a browser test needs to find carries a `data-test-id`, and tests address elements by that and
+nothing else.** No CSS classes, no `id`, no "the third button in the card".
+
+```razor
+<!-- CORRECT -->
+<button class="btn green-button" data-test-id="login-submit" type="submit">Log in</button>
+
+<!-- WRONG - the test would then depend on a styling hook -->
+<button class="btn green-button" type="submit">Log in</button>
+```
+
+The reason is ownership. A CSS class is a styling hook: renaming one, splitting it, or dropping it for a
+utility class are all ordinary things to do to a stylesheet, and none of them should be able to break a test.
+A `data-test-id` is a stated contract - it says *something depends on this element*, so a restyle leaves it
+alone and removing it is a deliberate act rather than an accident.
+
+### Rules
+
+| Rule | Detail |
+|------|--------|
+| **Hyphenated: `data-test-id`** | **Not** `data-testid`. That is Playwright's own default, so an element carrying it looks annotated and is invisible to the suite. A convention test fails the build on it |
+| **kebab-case, prefixed by area** | `login-email`, `nav-account-menu`, `dashboard`. The prefix keeps the set readable as it grows, and lets two screens each have a submit button |
+| **Declared as a constant** | Add it to `TestIds` in `tests/E2E/ThePredictions.Web.Tests.E2E/Harness/`. Tests never write the string inline |
+| **Describe the element, not its appearance** | `api-error`, not `red-box`. Placement and styling change; what the element *is* does not |
+| **Put it on the shared component, once** | `ApiError` carries `api-error`, so "no error panel anywhere" is one assertion that works on every page |
+| **Both branches of a conditional** | If a wrapper renders in two `@if` arms - as the dashboard does, tiles or onboarding takeover - annotate both, or the test passes on one shape and times out on the other |
+
+### What stops this rotting
+
+`TestIdConventionTests` reads the `.razor` markup and fails the build when an id the suite names is not
+there. That matters because this contract has one end in C# and the other in a string in markup, so the
+compiler sees only half of it: delete an attribute and nothing fails to build - the journey just times out
+later, somewhere else, looking like a broken page rather than a moved id. It needs no database, no browser
+and no Docker, and it runs in under a second.
+
+The check is deliberately one-directional. An id in the markup that no test uses yet is fine - annotating
+ahead of writing the test is encouraged.
+
 ## CSS Architecture
 
 **Full CSS reference:** [`/docs/guides/css-reference.md`](../../docs/guides/css-reference.md)

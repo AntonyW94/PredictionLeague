@@ -6,6 +6,10 @@ namespace ThePredictions.Web.Tests.E2E.Pages;
 /// <summary>
 /// The sign-in screen at <c>/authentication/login</c>, and the way every other journey will start.
 /// </summary>
+/// <remarks>
+/// Every element is addressed by its <c>data-test-id</c> and nothing else - see <see cref="TestIds"/> for
+/// why, and <c>TestIdConventionTests</c> for what stops one being referenced that the markup does not carry.
+/// </remarks>
 internal sealed class LoginPage(IPage page)
 {
     /// <summary>
@@ -14,11 +18,11 @@ internal sealed class LoginPage(IPage page)
     /// </summary>
     private const float BannerTimeoutMs = 15_000;
 
-    private ILocator EmailField => page.Locator("#email");
+    private ILocator EmailField => page.GetByTestId(TestIds.LoginEmail);
 
-    private ILocator PasswordField => page.Locator("#password");
+    private ILocator PasswordField => page.GetByTestId(TestIds.LoginPassword);
 
-    private ILocator SubmitButton => page.Locator("button[type='submit']");
+    private ILocator SubmitButton => page.GetByTestId(TestIds.LoginSubmit);
 
     /// <summary>
     /// Signs in and waits for the dashboard. The client navigates to <c>/</c>, which bounces an
@@ -69,11 +73,11 @@ internal sealed class LoginPage(IPage page)
     /// </remarks>
     private async Task DismissCookieBannerAsync()
     {
-        var rejectButton = page.Locator(".cookie-consent__btn--secondary");
+        var rejectButton = page.GetByTestId(TestIds.CookieConsentReject);
 
         await rejectButton.WaitForAsync(new LocatorWaitForOptions { Timeout = BannerTimeoutMs });
         await rejectButton.ClickAsync();
 
-        await Assertions.Expect(page.Locator(".cookie-consent")).ToBeHiddenAsync();
+        await Assertions.Expect(page.GetByTestId(TestIds.CookieConsent)).ToBeHiddenAsync();
     }
 }
