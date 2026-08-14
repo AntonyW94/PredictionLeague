@@ -124,6 +124,61 @@ jobs:
           --logger "trx;LogFileName=e2e.trx"
           --results-directory "${{ github.workspace }}/e2e-results"
 
+      # Renders the run on the workflow's own summary page: which levels were selected, then every test
+      # with its outcome and duration. Written for a passing run as much as a failing one - "what actually
+      # ran" is the question a green tick does not answer, and digging into a collapsed step log to find
+      # out is not a reasonable way to have to ask it.
+      #
+      # Parsed with python rather than a marketplace test-reporter action: python3 is already on the
+      # runner, and a third-party action pinned by mutable tag is precisely the supply-chain hole the
+      # roadmap already flags about this repository's workflows.
+      - name: Summarise what ran
+        if: always()
+        run: |
+          python3 - "${{ github.workspace }}/e2e-results/e2e.trx" "${{ steps.levels.outputs.filter }}" <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import os, sys, xml.etree.ElementTree as ET
+
+          path, selection = sys.argv[1], sys.argv[2]
+          print("## E2E Journeys\n")
+          print(f"**Selection:** `{selection}`\n")
+
+          if not os.path.exists(path):
+              print("No results were produced, so the run stopped before the tests did.")
+              raise SystemExit(0)
+
+          tree = ET.parse(path)
+
+          # TRX is namespaced; matching on the local name avoids hard-coding the schema URL.
+          def local(element, name):
+              return element.tag.rsplit("}", 1)[-1] == name
+
+          icons = {"Passed": ":white_check_mark:", "Failed": ":x:", "NotExecuted": ":fast_forward:"}
+          rows = []
+
+          for element in tree.iter():
+              if not local(element, "UnitTestResult"):
+                  continue
+              name = element.get("testName", "?").rsplit(".", 2)[-2:]
+              duration = element.get("duration", "")[:11] or "-"
+              outcome = element.get("outcome", "?")
+              rows.append((icons.get(outcome, outcome), ".".join(name), duration))
+
+          if rows:
+              print("| | Test | Duration |")
+              print("|---|---|---|")
+              for icon, name, duration in rows:
+                  print(f"| {icon} | `{name}` | {duration} |")
+              print()
+
+          for element in tree.iter():
+              if local(element, "Counters"):
+                  executed = element.get("executed", "0")
+                  passed = element.get("passed", "0")
+                  failed = element.get("failed", "0")
+                  print(f"**{executed} executed** - {passed} passed, {failed} failed")
+                  break
+          PY
+
       # `dotnet test` exits 0 when a filter matches NOTHING - it prints "No test matches the given
       # testcase filter" and reports success. So a mistyped trait, a renamed level, or simply ticking
       # Extended before any Extended journey exists would produce a green run that tested nothing, which
@@ -151,8 +206,20 @@ jobs:
             exit 1
           fi
 
+      # The machine-readable record of the run, kept whatever the outcome: opens in Visual Studio, and is
+      # what to attach to a bug report. Tiny, so there is no reason to only keep the failures.
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-results-${{ github.run_number }}
+          path: ${{ github.workspace }}/e2e-results
+          if-no-files-found: warn
+          retention-days: 14
+
       # A Playwright trace per test: DOM snapshots, screenshots and network, opened with
-      # `playwright show-trace <file>`. Written for every test but kept only when the job fails.
+      # `playwright show-trace <file>`. Written for every test but kept only when the job fails - a trace
+      # is a debugging tool, and on a green run the summary above already answers what ran.
       - name: Upload Playwright traces
         if: failure()
         uses: actions/upload-artifact@v7
