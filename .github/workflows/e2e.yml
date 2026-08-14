@@ -1,0 +1,145 @@
+# .github/workflows/e2e.yml
+name: E2E Journeys
+
+# Browser journeys against an isolated stack built from scratch on the runner: a SQL Server container,
+# production's schema applied by the committed DbUp migrations, a seeded user, and the published web
+# application launched against it. Nothing here touches dev or production.
+# See docs/todo/architecture/e2e-testing/README.md.
+#
+# Levels let a run pick how much to do. Automatic runs take Smoke and Core; the scheduled run takes
+# everything; a manual run picks with the tickboxes below.
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # 03:00 UTC daily, when the full set including the rarely-used journeys runs.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      smoke:
+        description: 'Smoke - essentials that cannot break without the site being unusable'
+        required: false
+        type: boolean
+        default: true
+      core:
+        description: 'Core - features used most weeks'
+        required: false
+        type: boolean
+        default: true
+      extended:
+        description: 'Extended - rarely used features'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  journeys:
+    runs-on: ubuntu-latest
+    # The stack has a container to pull, a schema to build and an application to start before the first
+    # assertion runs, so the default 6 hours is far too generous to be a useful signal.
+    timeout-minutes: 30
+
+    env:
+      E2E_ARTIFACTS_DIR: ${{ github.workspace }}/e2e-artifacts
+      E2E_WEB_APP_DLL: ${{ github.workspace }}/artifacts/e2e-web/ThePredictions.Web.dll
+      E2E_PROJECT: tests/E2E/ThePredictions.Web.Tests.E2E/ThePredictions.Web.Tests.E2E.csproj
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Which levels to run. Built here rather than in a workflow expression on purpose: `false` is falsy
+      # in GitHub expression syntax, so the obvious-looking `${{ inputs.smoke || 'true' }}` evaluates to
+      # 'true' for an UNTICKED box and the tickboxes would silently do nothing. Branching on the event
+      # name is the only way to tell "unticked" from "no inputs at all".
+      - name: Decide which levels to run
+        id: levels
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SMOKE="${{ inputs.smoke }}"
+            CORE="${{ inputs.core }}"
+            EXTENDED="${{ inputs.extended }}"
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            SMOKE=true; CORE=true; EXTENDED=true
+          else
+            SMOKE=true; CORE=true; EXTENDED=false
+          fi
+
+          LEVELS=""
+          [ "$SMOKE" = "true" ]    && LEVELS="$LEVELS|Level=Smoke"
+          [ "$CORE" = "true" ]     && LEVELS="$LEVELS|Level=Core"
+          [ "$EXTENDED" = "true" ] && LEVELS="$LEVELS|Level=Extended"
+
+          if [ -z "$LEVELS" ]; then
+            echo "No levels selected - tick at least one box."
+            exit 1
+          fi
+
+          echo "Running levels:${LEVELS//|/ }"
+          echo "filter=Category=E2E&(${LEVELS#|})" >> "$GITHUB_OUTPUT"
+
+      # Pulled up front so a ~1.5GB pull is a visible step rather than time charged to the first test, and
+      # so a bad tag fails here with an obvious message. Same tag the integration suite uses.
+      - name: Pull SQL Server image
+        run: docker pull mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
+
+      - name: Build the E2E project
+        run: dotnet build "$E2E_PROJECT" --configuration Release /p:TreatWarningsAsErrors=true
+
+      # Published rather than run from source: publishing materialises the Blazor client into wwwroot and
+      # runs the CSS bundling target, so the browser is handed what a deployment would hand it. A compile
+      # or publish failure is then a build failure here rather than a mysterious test timeout later.
+      - name: Publish the web application
+        run: dotnet publish src/ThePredictions.Web/ThePredictions.Web.csproj --configuration Release --output artifacts/e2e-web
+
+      # The NuGet package ships the driver, not the browser. --with-deps installs the shared libraries
+      # Chromium needs on a bare Ubuntu runner, which are not present by default.
+      - name: Install Chromium
+        run: pwsh tests/E2E/ThePredictions.Web.Tests.E2E/bin/Release/net8.0/playwright.ps1 install chromium --with-deps
+
+      - name: Run the journeys
+        run: >
+          dotnet test "$E2E_PROJECT"
+          --no-build
+          --configuration Release
+          --verbosity normal
+          --filter "${{ steps.levels.outputs.filter }}"
+
+      # A Playwright trace per test: DOM snapshots, screenshots and network, opened with
+      # `playwright show-trace <file>`. Written for every test but kept only when the job fails.
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces-${{ github.run_number }}
+          path: ${{ github.workspace }}/e2e-artifacts
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Failures only: this runs on every push, and a green run is already visible on the PR.
+  notify:
+    if: always()
+    needs: [journeys]
+    uses: ./.github/workflows/notify-slack.yml
+    with:
+      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      notify-on: failure
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- No coverlet.msbuild: this project owns no assembly of its own, so there is nothing for the
+         100% threshold to measure. It drives a real browser against a real stack instead. Same shape
+         as ThePredictions.Persistence.SqlServer.Tests.Integration and
+         ThePredictions.Conventions.Tests.Unit. -->
+    <PackageReference Include="coverlet.collector" Version="6.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.v3" Version="3.0.0" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0" />
+    <PackageReference Include="FluentAssertions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+
+    <!-- Browser automation. Deliberately the base package rather than Microsoft.Playwright.NUnit or
+         .MSTest: the auto-retrying web-first assertions (Assertions.Expect) that make a browser suite
+         stable ship here, not in the per-framework packages, so pairing with a second test framework
+         would buy only base classes for the browser lifecycle - which Harness/ owns - at the cost of a
+         second idiom in a solution otherwise standardised on xunit.v3. -->
+    <PackageReference Include="Microsoft.Playwright" Version="1.62.0" />
+
+    <!-- Throwaway SQL Server per run, pinned image. The same approach the integration suite uses, so
+         one Docker requirement covers both. -->
+    <PackageReference Include="Testcontainers.MsSql" Version="4.13.0" />
+
+    <!-- Builds the schema from the committed migrations, so the stack under test has production's
+         schema rather than a hand-maintained imitation of it. -->
+    <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
+
+    <!-- 6.1.4 to match ThePredictions.Infrastructure, the persistence adapter and the integration
+         suite. Deliberately NOT DatabaseTools' 7.0.1: this project references the adapter, so a
+         different major here would be a diamond conflict rather than an isolated tooling bump. -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+    <PackageReference Include="Dapper" Version="2.1.66" />
+
+    <!-- PasswordHasher, for seeding a user who can actually sign in. Arrives transitively through
+         Domain's Identity.Stores reference anyway; declared explicitly, at the same version, so the
+         seed does not depend on someone else's transitive graph. -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- For MigrationScripts only: the assembly carrying the embedded scripts, and the journal table
+         identity. Reading them from the adapter rather than restating them is what stops this suite and
+         ThePredictions.DatabaseTools disagreeing about the journal keys. Nothing else in the adapter is
+         used - the site is exercised over HTTP, like any other client. -->
+    <ProjectReference Include="..\..\..\src\ThePredictions.Persistence.SqlServer\ThePredictions.Persistence.SqlServer.csproj" />
+  </ItemGroup>
+
+  <!-- The fixture has to find the repository root at runtime, to locate the published web application
+       it launches. Same mechanism the integration suite uses for its migration test. -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryRoot</_Parameter1>
+      <_Parameter2>$(MSBuildThisFileDirectory)..\..\..\</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>
