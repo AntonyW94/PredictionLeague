@@ -32,19 +32,31 @@ no seeder, then the isolated stack later. Stage 1 was built in full and went gre
 ([PR #277](https://github.com/AntonyW94/ThePredictions/pull/277), closed unmerged - the code is still
 readable there and is the starting point for the work below).
 
-**It was abandoned because it cannot coexist with how dev is actually used.**
+**It was abandoned because dev is a working environment, not a test environment.**
 
-`DataAnonymiser` sets every other user's `PasswordHash` to `INVALIDATED`, so `testplayer@dev.local` is
-the *only* account that can sign in on dev at all. `../staging-environment/README.md` says as much: it
-is the account used for manual testing. So the accounts a browser suite would treat as a stable fixture
-are the same accounts the owner drives by hand, on a site whose data is constantly changed while
-testing new work.
+Its data is changed constantly and deliberately while new work is tested, and it is periodically
+replaced wholesale by a refresh from production. A suite asserting on it is aiming at a moving target
+that a person is steering. The specific journeys above break if league 1 is deleted or renumbered (the
+test accounts' membership goes with it), if season 1's dates move into the future (the league page
+renders a countdown and no leaderboards at all), if its results are cleared (the leaderboard renders
+its nothing-scored-yet state), or if the teams table is emptied. None of those is frequent. Each
+produces a red run that is not a bug, and **a suite that cries wolf is worse than no suite**, because it
+trains you to ignore it and is then not believed on the day it is right.
 
-That makes the suite red for reasons that are not bugs. Archive the league and the leaderboard journey
-fails. Give the new-player account a pass to test the purchase flow and the onboarding journey fails.
-Edit a season's dates and the league page shows a countdown where a leaderboard was expected. **A suite
-that cries wolf is worse than no suite**, because it trains you to ignore it, and then it is not
-believed on the day it is right.
+The positive half of the argument matters more. The isolated stack below has to be built regardless,
+because it is the only thing that can reach the flows worth testing - submitting a prediction before a
+deadline, entering results, prize payouts - and because running before a deploy lets it *gate* a change
+rather than report on one that has already shipped. Given that, maintaining a second and weaker suite
+against a moving target is not worth the upkeep.
+
+> **A correction worth recording, because it was the original reason given and it was wrong.** This
+> document previously asserted, and the abandonment was first argued on the basis, that `DataAnonymiser`
+> invalidates every other password and therefore `testplayer@dev.local` is *the only account that can
+> sign in on dev at all* - making it necessarily the same account used for manual testing. That is
+> false. `DataAnonymiser.PreservedEmails` copies two real user rows through untouched, hashes included,
+> and `PersonalDataVerifier` explicitly permits their `AspNetUserLogins` rows to survive, so the owner
+> signs in as their own account and never touches the test accounts. There is no account collision.
+> The decision to drop the suite was re-confirmed on the reasoning above once that was established.
 
 ### The narrower argument for it, and why it did not survive
 
