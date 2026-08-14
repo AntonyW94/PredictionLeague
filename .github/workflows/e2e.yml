@@ -121,6 +121,35 @@ jobs:
           --configuration Release
           --verbosity normal
           --filter "${{ steps.levels.outputs.filter }}"
+          --logger "trx;LogFileName=e2e.trx"
+          --results-directory "${{ github.workspace }}/e2e-results"
+
+      # `dotnet test` exits 0 when a filter matches NOTHING - it prints "No test matches the given
+      # testcase filter" and reports success. So a mistyped trait, a renamed level, or simply ticking
+      # Extended before any Extended journey exists would produce a green run that tested nothing, which
+      # is the worst failure a suite has: it looks like coverage and is not. The step above cannot catch
+      # it, so the executed count is read back and asserted here.
+      #
+      # Deliberately not `if: always()`: when the tests genuinely fail the run is already red, and this
+      # would add a confusing second failure to it.
+      - name: Verify the selection actually ran something
+        run: |
+          TRX="${{ github.workspace }}/e2e-results/e2e.trx"
+
+          if [ ! -f "$TRX" ]; then
+            echo "No results file at $TRX, so what ran cannot be established."
+            exit 1
+          fi
+
+          EXECUTED=$(grep -o 'executed="[0-9]*"' "$TRX" | head -1 | tr -dc '0-9')
+          EXECUTED=${EXECUTED:-0}
+          echo "Journeys and conventions executed: $EXECUTED"
+
+          if [ "$EXECUTED" -eq 0 ]; then
+            echo "The filter '${{ steps.levels.outputs.filter }}' selected no tests."
+            echo "dotnet test reports that as success, so this step is what turns it red."
+            exit 1
+          fi
 
       # A Playwright trace per test: DOM snapshots, screenshots and network, opened with
       # `playwright show-trace <file>`. Written for every test but kept only when the job fails.
