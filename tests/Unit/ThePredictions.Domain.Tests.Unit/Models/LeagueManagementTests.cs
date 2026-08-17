@@ -679,6 +679,78 @@ public class LeagueManagementTests
 
     #endregion
 
+    #region AddMemberAsAdministrator
+
+    [Fact]
+    public void AddMemberAsAdministrator_ShouldAddMemberApproved_WhenApprovalIsRequired()
+    {
+        // Arrange - approval on, which is the default for a league
+        var league = CreateLeagueWithId();
+
+        // Act
+        league.AddMemberAsAdministrator("user-1", _dateTimeProvider);
+
+        // Assert - an administrator placing somebody has already made the approval decision, so asking the league admin
+        // to confirm it again would only leave the player sitting in Pending.
+        league.Members.Should().HaveCount(1);
+        league.Members.First().Status.Should().Be(LeagueMemberStatus.Approved);
+        league.Members.First().ApprovedAtUtc.Should().Be(_dateTimeProvider.UtcNow);
+    }
+
+    [Fact]
+    public void AddMemberAsAdministrator_ShouldAddMember_WhenDeadlineHasPassed()
+    {
+        // Arrange - the case this method exists for: somebody who paid in time but could not finish joining themselves
+        var league = new League(
+            id: 1, name: "Test League", seasonId: 1,
+            administratorUserId: "admin-user", entryCode: "ABC123",
+            createdAtUtc: _dateTimeProvider.UtcNow.AddDays(-10),
+            entryDeadlineUtc: _dateTimeProvider.UtcNow.AddDays(-1),
+            pointsForExactScore: 3, pointsForCorrectResult: 1,
+            price: 0, isFree: true, hasPrizes: false,
+            prizeFundOverride: null,
+            members: null, prizeSettings: null);
+
+        // Act
+        league.AddMemberAsAdministrator("user-1", _dateTimeProvider);
+
+        // Assert - AddMember refuses this exact league, which is the whole difference between the two
+        league.Members.Should().HaveCount(1);
+        league.Members.First().Status.Should().Be(LeagueMemberStatus.Approved);
+    }
+
+    [Fact]
+    public void AddMemberAsAdministrator_ShouldThrowException_WhenUserIsAlreadyMember()
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+        league.AddMember("user-1", _dateTimeProvider);
+
+        // Act
+        var act = () => league.AddMemberAsAdministrator("user-1", _dateTimeProvider);
+
+        // Assert - the deadline is waived; the one-membership-per-player rule is not
+        act.Should().Throw<BusinessRuleViolationException>();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void AddMemberAsAdministrator_ShouldThrowException_WhenUserIdIsMissing(string? userId)
+    {
+        // Arrange
+        var league = CreateLeagueWithId();
+
+        // Act
+        var act = () => league.AddMemberAsAdministrator(userId!, _dateTimeProvider);
+
+        // Assert
+        act.Should().Throw<ArgumentException>();
+    }
+
+    #endregion
+
     #region RemoveMember
 
     [Fact]

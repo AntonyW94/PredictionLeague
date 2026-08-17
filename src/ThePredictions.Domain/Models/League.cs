@@ -254,6 +254,31 @@ public partial class League
     }
 
     /// <summary>
+    /// Places a player in the league on a system administrator's behalf, approved straight away.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately ignores <see cref="EntryDeadlineUtc"/>, which is the whole reason this exists alongside
+    /// <see cref="AddMember"/>. The deadline stops players entering themselves once the season is under way; it is not
+    /// meant to catch somebody who paid in time and could not finish joining on their own device. Only an administrator
+    /// can reach this, so the waiver is a decision somebody made rather than a hole in the rule.
+    ///
+    /// <see cref="RequiresMemberApproval"/> is skipped for the same reason: the administrator placing them has already
+    /// made the approval decision, so leaving them Pending would only ask the league admin to confirm it again.
+    /// </remarks>
+    public void AddMemberAsAdministrator(string userId, IDateTimeProvider dateTimeProvider)
+    {
+        Guard.Against.NullOrWhiteSpace(userId);
+
+        if (_members.Any(m => m.UserId == userId))
+            throw new BusinessRuleViolationException("This user is already a member of the league.");
+
+        var newMember = LeagueMember.Create(Id, userId, dateTimeProvider);
+        newMember.Approve(dateTimeProvider);
+
+        _members.Add(newMember);
+    }
+
+    /// <summary>
     /// Toggles whether new join requests require admin approval. Turning approval off auto-approves any
     /// members currently awaiting approval and returns their user ids so callers can notify them.
     /// </summary>

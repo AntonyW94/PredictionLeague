@@ -96,6 +96,24 @@ internal static class TestIds
     internal const string DeleteUserNewAdmin = "delete-user-new-admin";
 
     /// <summary>
+    /// The administrator-only "Add Member" flow on a league's members page: open the modal, pick a pass holder,
+    /// confirm. Each step is addressable so a failure names the step rather than the journey.
+    /// </summary>
+    internal const string AddMemberOpen = "add-member-open";
+
+    internal const string AddMemberModal = "add-member-modal";
+
+    internal const string AddMemberSelect = "add-member-select";
+
+    internal const string AddMemberConfirm = "add-member-confirm";
+
+    /// <summary>
+    /// Shown in place of the picker when everybody holding a pass for the season is already in the league. Not an
+    /// error, which is why it is a distinct element rather than the shared error panel.
+    /// </summary>
+    internal const string AddMemberNone = "add-member-none";
+
+    /// <summary>
     /// The panel every page shows in place of content when a read behind it fails. One id on the shared
     /// component covers every page at once, which is why "no error anywhere" is cheap to assert.
     /// </summary>
@@ -131,6 +149,11 @@ internal static class TestIds
         DeleteUserImpact,
         DeleteUserImpactEmpty,
         DeleteUserNewAdmin,
+        AddMemberOpen,
+        AddMemberModal,
+        AddMemberSelect,
+        AddMemberConfirm,
+        AddMemberNone,
         ApiError
     ];
 }
