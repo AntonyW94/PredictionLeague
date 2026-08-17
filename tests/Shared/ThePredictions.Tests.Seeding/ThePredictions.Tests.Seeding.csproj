@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <!-- Not a test project: it holds the row-writing seeder the suites arrange with, and no tests of its
+         own. Saying so stops `dotnet test` on the solution reporting an empty assembly. -->
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <!-- 6.1.4 to match Infrastructure, the persistence adapter and both consuming suites. Deliberately
+         not DatabaseTools' 7.0.1: this is referenced alongside the adapter, so a different major here
+         would be a diamond conflict rather than an isolated tooling bump. -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+    <!-- PasswordHasher, for seeding a user who can actually sign in. Only the browser suite needs that,
+         but the hashing belongs next to the INSERT that stores it. -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ITestDataSeeder and the row types live with the conformance contracts, which is why a project
+         under tests/Shared references one under tests/Integration. Moving the interface here would be
+         tidier to look at and would cost more than it is worth: LayerDependencyConventionTests pins the
+         conformance project's references to Application alone, so that it cannot quietly acquire a
+         dependency on an adapter, and adding one to satisfy a folder layout would weaken a rule that
+         exists for a better reason than this. -->
+    <ProjectReference Include="..\..\Integration\ThePredictions.Persistence.Conformance\ThePredictions.Persistence.Conformance.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,9 +1,10 @@
 using Dapper;
+using Microsoft.AspNetCore.Identity;
 using ThePredictions.Application.Data;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Persistence.Conformance;
 
-namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
+namespace ThePredictions.Tests.Seeding;
 
 /// <summary>
 /// Inserts rows directly, bypassing the repositories, so a test arranges its world without depending
@@ -15,7 +16,7 @@ namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 /// deliberately forbids (an unconfirmed fixture, a postponed match) which is exactly what the
 /// predicates under test have to cope with.
 /// </summary>
-internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITestDataSeeder
+public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITestDataSeeder
 {
     private const string DefaultTheme = "light";
 
@@ -121,10 +122,19 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         });
     }
 
-    public async Task<string> AddUserAsync(string firstName, string lastName)
+    public async Task<string> AddUserAsync(string firstName, string lastName, string? email = null, string? password = null)
     {
         var userId = Guid.NewGuid().ToString();
-        var email = $"{firstName}.{lastName}@integration.test".ToLowerInvariant();
+        var address = email ?? $"{firstName}.{lastName}@integration.test".ToLowerInvariant();
+
+        // Both are written only when a password is asked for. A query test never signs in and leaves them
+        // null; a browser journey must, and Identity refuses a sign-in without both - the hash to check the
+        // password against, and the stamp to validate the resulting session.
+        var passwordHash = password is null
+            ? null
+            : new PasswordHasher<object>().HashPassword(new object(), password);
+
+        var securityStamp = password is null ? null : Guid.NewGuid().ToString();
 
         const string sql = @"
             INSERT INTO [AspNetUsers]
@@ -135,6 +145,8 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
                 [Email],
                 [NormalizedEmail],
                 [EmailConfirmed],
+                [PasswordHash],
+                [SecurityStamp],
                 [PhoneNumberConfirmed],
                 [TwoFactorEnabled],
                 [LockoutEnabled],
@@ -151,6 +163,8 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
                 @Email,
                 @NormalizedEmail,
                 @EmailConfirmed,
+                @PasswordHash,
+                @SecurityStamp,
                 @PhoneNumberConfirmed,
                 @TwoFactorEnabled,
                 @LockoutEnabled,
@@ -163,9 +177,11 @@ internal sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : I
         await ExecuteAsync(sql, new
         {
             Id = userId,
-            Email = email,
-            NormalizedEmail = email.ToUpperInvariant(),
+            Email = address,
+            NormalizedEmail = address.ToUpperInvariant(),
             EmailConfirmed = true,
+            PasswordHash = passwordHash,
+            SecurityStamp = securityStamp,
             PhoneNumberConfirmed = false,
             TwoFactorEnabled = false,
             LockoutEnabled = false,

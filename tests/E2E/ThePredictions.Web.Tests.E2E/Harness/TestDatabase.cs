@@ -1,7 +1,7 @@
-using Dapper;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using Testcontainers.MsSql;
+using ThePredictions.Persistence.Conformance;
+using ThePredictions.Tests.Seeding;
 
 namespace ThePredictions.Web.Tests.E2E.Harness;
 
@@ -34,6 +34,12 @@ internal sealed class TestDatabase : IAsyncDisposable
     /// <summary>Connection string for the migrated database, for the application and the seed alike.</summary>
     internal string ConnectionString { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Arranges rows for a journey. The same seeder the integration suite arranges with, so there is one
+    /// place that knows the schema rather than one per suite - see <see cref="TestDataSeeder"/>.
+    /// </summary>
+    internal ITestDataSeeder Seed { get; private set; } = null!;
+
     internal async Task StartAsync()
     {
         await _container.StartAsync();
@@ -46,6 +52,8 @@ internal sealed class TestDatabase : IAsyncDisposable
         }.ConnectionString;
 
         MigrationRunner.Apply(ConnectionString);
+
+        Seed = new TestDataSeeder(new TestDbConnectionFactory(ConnectionString));
 
         await SeedPlayerAsync();
     }
@@ -75,81 +83,19 @@ internal sealed class TestDatabase : IAsyncDisposable
     /// One user, which is all a login journey needs.
     /// </summary>
     /// <remarks>
-    /// Written as SQL rather than through the application's registration endpoint deliberately: a test
-    /// should not arrange through the path it is about to assert on, and registering would drag in the
-    /// email-confirmation gate. The Identity <i>roles</i> are not seeded here at all - the
-    /// <c>DatabaseInitialiser</c> hosted service creates them from the <c>ApplicationUserRole</c> enum
-    /// when the application starts, so they arrive on their own.
+    /// Through the shared seeder rather than SQL of its own. Arranging with SQL written here would mean a
+    /// second place knowing the <c>AspNetUsers</c> column list, and that number would grow with every table
+    /// a journey needs - seasons, leagues, rounds, predictions. The seeder already knows all of them.
     ///
-    /// <c>EmailConfirmed</c> is true because an unconfirmed account is a different journey, and
-    /// <c>SecurityStamp</c> is set because Identity requires one to validate a sign-in.
+    /// A password is passed, which is the one thing a browser journey needs and no query test does: it makes
+    /// the seeder write a real hash and a security stamp, both of which Identity requires to accept a
+    /// sign-in. The Identity <i>roles</i> are still not seeded at all - the <c>DatabaseInitialiser</c> hosted
+    /// service creates them from the <c>ApplicationUserRole</c> enum when the application starts.
     /// </remarks>
-    private async Task SeedPlayerAsync()
-    {
-        var passwordHash = new PasswordHasher<object>().HashPassword(new object(), E2ESettings.PlayerPassword);
-
-        await using var connection = new SqlConnection(ConnectionString);
-
-        await connection.ExecuteAsync(
-            """
-            INSERT INTO [AspNetUsers] (
-                [Id],
-                [UserName],
-                [NormalizedUserName],
-                [Email],
-                [NormalizedEmail],
-                [EmailConfirmed],
-                [PasswordHash],
-                [SecurityStamp],
-                [ConcurrencyStamp],
-                [PhoneNumber],
-                [PhoneNumberConfirmed],
-                [TwoFactorEnabled],
-                [LockoutEnd],
-                [LockoutEnabled],
-                [AccessFailedCount],
-                [FirstName],
-                [LastName]
-            )
-            VALUES (
-                @Id,
-                @UserName,
-                @NormalizedUserName,
-                @Email,
-                @NormalizedEmail,
-                @EmailConfirmed,
-                @PasswordHash,
-                @SecurityStamp,
-                @ConcurrencyStamp,
-                @PhoneNumber,
-                @PhoneNumberConfirmed,
-                @TwoFactorEnabled,
-                @LockoutEnd,
-                @LockoutEnabled,
-                @AccessFailedCount,
-                @FirstName,
-                @LastName
-            )
-            """,
-            new
-            {
-                Id = Guid.NewGuid().ToString(),
-                UserName = E2ESettings.PlayerEmail,
-                NormalizedUserName = E2ESettings.PlayerEmail.ToUpperInvariant(),
-                Email = E2ESettings.PlayerEmail,
-                NormalizedEmail = E2ESettings.PlayerEmail.ToUpperInvariant(),
-                EmailConfirmed = true,
-                PasswordHash = passwordHash,
-                SecurityStamp = Guid.NewGuid().ToString(),
-                ConcurrencyStamp = Guid.NewGuid().ToString(),
-                PhoneNumber = (string?)null,
-                PhoneNumberConfirmed = false,
-                TwoFactorEnabled = false,
-                LockoutEnd = (DateTimeOffset?)null,
-                LockoutEnabled = false,
-                AccessFailedCount = 0,
-                FirstName = E2ESettings.PlayerFirstName,
-                LastName = E2ESettings.PlayerLastName
-            });
-    }
+    private async Task SeedPlayerAsync() =>
+        await Seed.AddUserAsync(
+            E2ESettings.PlayerFirstName,
+            E2ESettings.PlayerLastName,
+            E2ESettings.PlayerEmail,
+            E2ESettings.PlayerPassword);
 }
