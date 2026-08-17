@@ -2,12 +2,21 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
 
-Nothing has shipped. A first attempt was built, evaluated and deliberately abandoned - see the decision
-record below, which is the most important part of this document. **The plan is now single-stage: an
-isolated stack with a seeded database. There is no smoke suite against deployed dev, and there should
-not be one.**
+**The harness shipped in August 2026 and works.** `tests/E2E/ThePredictions.Web.Tests.E2E` builds a whole
+stack per run on the CI runner - SQL Server container, production's schema from the committed DbUp
+migrations, a seeded user, the published web application, real Chromium - and drives **one** journey through
+it: a player signs in and reaches an authenticated dashboard. It runs on `e2e.yml`, gates pull requests, and
+never touches dev or production. See
+[`docs/guides/testing.md`](../../../guides/testing.md#end-to-end-journeys-against-an-isolated-stack).
+
+One journey deliberately. The expensive part of a browser suite is the stack underneath it, and nothing about
+it was proven until a single journey drove it end to end. **What remains is journeys, plus two decisions the
+first of them forces** - see [Outstanding](#outstanding).
+
+An earlier attempt targeted deployed dev instead, and was built and then abandoned; that decision record is
+below, because it is the reason this looks the way it does.
 
 ## Priority
 
@@ -137,6 +146,50 @@ convention test that fails the build when one is missing (an untraited class run
 stays green), `coverlet.collector` but **not** `coverlet.msbuild` so the project stays out of the 100%
 threshold it owns no assembly for, and the filter kept in step across `ci.yml` and both deploy
 workflows.
+
+---
+
+## Outstanding
+
+The stack, the levels, the CI wiring and the conventions are built. What is left:
+
+### Two decisions the second journey forces
+
+- **Isolation.** Every journey so far only reads, so one shared stack and a serial run is fine. The first
+  journey that **writes** breaks that - a test submitting a prediction breaks a test asserting none exist.
+  The answer is almost certainly a season and league per test class rather than a database reset: Respawn
+  would be wiping rows underneath a live application and fighting its connection pool.
+  `Harness/StackCollection.cs` says as much where the decision will be felt.
+- **`SkiaSharp` on Linux.** No `SkiaSharp.NativeAssets.Linux` package, so image rendering fails on an Ubuntu
+  runner. It has not bitten because the dashboard's badge icons are client-side SVG, but a journey touching
+  `GET /api/badges/{key}.png` or a share card will hit it. Options in
+  [Do NOT containerise the website](#do-not-containerise-the-website); none chosen.
+
+### Journeys, in rough order of what they would have caught
+
+1. Open a league and render a leaderboard - the shape of the 2026-07-30 incident.
+2. Submit a prediction before the deadline, and fail to after it. Needs the isolation decision and the
+   round-state fixture below.
+3. An admin enters results, and the leaderboard and rank cache move.
+4. A completed round's prize flow.
+
+Only journey 1 is possible without seeding beyond a user, so it is the natural next one.
+
+### Smaller things worth doing when convenient
+
+- **Nothing exercises `Level=Core` or `Level=Extended` yet**, so the tickboxes and the
+  matched-no-tests guard have never been seen working on a real selection. The first `Core` journey proves
+  both for free.
+- **`WebApplicationProcess`'s diagnostics are unproven.** It captures the application's output and detects
+  early exit so a startup failure reports its reason rather than a bare timeout - but that path has never
+  run, because startup has never failed. Worth deliberately misconfiguring once to check the report is
+  actually readable.
+- **The seeded user's `INSERT` duplicates `TestAccountCreator`'s**, so two places now know the
+  `AspNetUsers` column list and a change to that table breaks both.
+- **`DismissConsentBannerAsync` is documented as call-once-per-context but not enforced**; a second call
+  waits 15 seconds for a banner already answered and then fails.
+- **`ci.yml` fires twice per push on a PR branch**, once as `push` and once as `pull_request`. `e2e.yml` was
+  scoped to avoid that; `ci.yml` predates this work and still pays it.
 
 ---
 

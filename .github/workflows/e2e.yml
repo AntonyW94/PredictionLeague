@@ -10,7 +10,14 @@ name: E2E Journeys
 # everything; a manual run picks with the tickboxes below.
 
 on:
+  # `push` is scoped to master rather than every branch, and that is not a detail. With both triggers
+  # unrestricted, a push to a PR branch fires this workflow TWICE - once as `push`, once as
+  # `pull_request` - and each run pulls a 1.5GB SQL Server image, publishes the application and installs
+  # Chromium. Concurrency does not help, because the two runs have different refs and so land in
+  # different groups. Scoped this way, a PR is covered by `pull_request` and master by `push`, with
+  # nothing checked twice. (ci.yml has the same double-run, and is a two-minute job with no Docker.)
   push:
+    branches: [master]
   pull_request:
   schedule:
     # 03:00 UTC daily, when the full set including the rarely-used journeys runs.
