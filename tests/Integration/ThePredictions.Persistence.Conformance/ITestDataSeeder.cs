@@ -55,6 +55,18 @@ public interface ITestDataSeeder
     /// a tournament stage. The column does not allow null, so the default is a name rather than nothing; pass an empty
     /// string to arrange the blank a read has to cope with, because naming such a round by its number is a rule.
     /// </remarks>
+    /// <summary>
+    /// Puts an existing user in an existing Identity role.
+    /// </summary>
+    /// <remarks>
+    /// The role has to be there already, and in a browser suite that is a matter of timing rather than of
+    /// seeding: <c>DatabaseInitialiser</c> writes the roles from the <c>ApplicationUserRole</c> enum when the
+    /// application starts, so this can only be called <b>after</b> the application is up. Calling it before
+    /// throws rather than quietly leaving the user unprivileged, because an admin journey that silently ran as
+    /// a player would fail somewhere unrelated - on a 403, or on a page that simply did not render.
+    /// </remarks>
+    Task AddUserToRoleAsync(string userId, string roleName);
+
     Task<int> AddRoundAsync(
         int seasonId,
         int roundNumber,

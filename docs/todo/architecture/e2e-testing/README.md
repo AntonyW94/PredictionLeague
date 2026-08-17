@@ -262,7 +262,13 @@ Layer 0 is available now. Nothing else is, until its layer's fixture exists.
 - [ ] `/leagues/{LeagueId:int}/preview` - the scheme is previewed against the current standings
 - [ ] `/season-passes` - the acquire-first gate, and a £0 free-season acquisition
 - [ ] `/badges` and `/badges/{UserId}` - the catalogue renders; another user's is viewable
-- [ ] `/admin/users` - the user list renders *(admin, but needs no round state)*
+- [x] `/admin/users` - **an account holding a season pass is deleted, and the confirmation dialog itemises
+      what that destroys.** `Extended`, and the first journey at that level. Written for a production failure
+      the unit suite could not have caught: eleven foreign keys pointed at `[AspNetUsers]` without
+      `ON DELETE CASCADE`, so the delete raised error 547 and the screen reported an internal server error.
+      `UserDeletionCascadeTests` in the integration suite is the narrow guard on the schema; this is the wide
+      one on the journey. Needed `ITestDataSeeder.AddUserToRoleAsync`, which must run **after** the
+      application has started because `DatabaseInitialiser` writes the Identity roles at startup
 
 **Layer 2 - rounds and matches, relative to `UtcNow` (9 routes)**
 

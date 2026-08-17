@@ -174,7 +174,7 @@ One record per user per season they take part in. A row is written for **every**
 **Constraints:**
 - PK: `Id`
 - UNIQUE: `(UserId, SeasonId)` (`UX_SeasonPasses_User_Season`) - one pass per user per season
-- FK: `UserId` → `AspNetUsers(Id)` (`FK_SeasonPasses_AspNetUsers`)
+- FK: `UserId` → `AspNetUsers(Id)` ON DELETE CASCADE (`FK_SeasonPasses_AspNetUsers`)
 - FK: `SeasonId` → `Seasons(Id)` (`FK_SeasonPasses_Seasons`)
 - FK: `RewardRedeemedForSeasonId` → `Seasons(Id)` (`FK_SeasonPasses_Seasons_Reward`)
 
@@ -192,7 +192,7 @@ Records which onboarding-checklist steps a user has skipped (or had skipped in b
 
 **Constraints:**
 - PK: `(UserId, StepKey)`
-- FK: `UserId` → `AspNetUsers(Id)` (`FK_UserOnboardingSkips_AspNetUsers`)
+- FK: `UserId` → `AspNetUsers(Id)` ON DELETE CASCADE (`FK_UserOnboardingSkips_AspNetUsers`)
 
 ---
 
@@ -233,7 +233,7 @@ End-of-league settlement tracking: **one aggregated row per (league, winner)** h
 - PK: `Id`
 - Unique: `(LeagueId, UserId)` (`UQ_LeaguePayouts_League_User`)
 - FK: `LeagueId` → `Leagues(Id)` ON DELETE CASCADE (`FK_LeaguePayouts_Leagues`)
-- FK: `UserId` → `AspNetUsers(Id)` (`FK_LeaguePayouts_AspNetUsers`)
+- FK: `UserId` → `AspNetUsers(Id)` ON DELETE CASCADE (`FK_LeaguePayouts_AspNetUsers`)
 
 ---
 
@@ -419,7 +419,7 @@ season has no stage mapping. `NULL` is what suppresses the change arrow on the t
 **Constraints:**
 - PK: `LeagueId, UserId` (composite)
 - FK: `LeagueId` → `Leagues.Id` (**no** cascade - `LeagueRepository.DeleteAsync` removes these rows first)
-- FK: `UserId` → `AspNetUsers.Id`
+- FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
 
 > `SnapshotOverallRank` / `SnapshotMonthRank` keep their original names but are no longer point-in-time
 > snapshots. They are recomputed from current results on every refresh, like every other column here.
@@ -447,7 +447,7 @@ Per-user, per-round, per-league results (includes boost effects).
 - UNIQUE: `LeagueId, RoundId, UserId` (index: `UQ_LeagueRoundResults_League_Round_User`)
 - FK: `LeagueId` → `Leagues.Id` (CASCADE DELETE)
 - FK: `RoundId` → `Rounds.Id`
-- FK: `UserId` → `AspNetUsers.Id`
+- FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
 
 **Indexes:**
 - `IX_LeagueRoundResults_League_Round` on `LeagueId, RoundId` (includes UserId, BoostedPoints, BasePoints)
@@ -549,7 +549,7 @@ Actual prize payouts to users.
 
 **Constraints:**
 - PK: `Id`
-- FK: `UserId` → `AspNetUsers.Id`
+- FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
 - FK: `LeaguePrizeSettingId` → `LeaguePrizeSettings.Id`
 
 ---
@@ -575,7 +575,7 @@ The send command (`SendPrizeNotificationsCommand`) skips any prize already prese
 - UNIQUE: `(UserId, LeaguePrizeSettingId, RoundNumber, Month)` - the winning's stable identity; the
   dedup key for idempotency. (SQL Server treats `NULL = NULL` as equal in a unique index, so the
   all-null overall/section prizes are enforced as notified-once.)
-- FK: `UserId` → `AspNetUsers.Id`
+- FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
 - FK: `LeaguePrizeSettingId` → `LeaguePrizeSettings.Id`
 
 > Holds no personal data beyond the `UserId` FK (as `Winnings` does), so it is copied verbatim by
@@ -604,7 +604,7 @@ so historic leagues are never back-filled.
 - PK: `Id`
 - UNIQUE: `(LeagueId, UserId)` - the dedup key for idempotency
 - FK: `LeagueId` → `Leagues.Id` (CASCADE DELETE)
-- FK: `UserId` → `AspNetUsers.Id`
+- FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
 
 > Holds no personal data beyond the `UserId` FK, so it is copied verbatim by the database refresh
 > tool and needs no anonymisation.
@@ -717,7 +717,7 @@ counts only - points are per-league and live in `LeagueRoundResults`.
 - PK: `Id`
 - UNIQUE: `RoundId, UserId`
 - FK: `RoundId` → `Rounds.Id`
-- FK: `UserId` → `AspNetUsers.Id`
+- FK: `UserId` → `AspNetUsers.Id` (CASCADE DELETE)
 
 ---
 
@@ -846,6 +846,24 @@ Extended ASP.NET Identity users table.
 
 **Constraints:**
 - PK: `Id`
+
+**Deleting an account.** Admin "Delete user" issues a single `DELETE FROM [AspNetUsers]`, so what happens is
+decided entirely by the foreign keys pointing at this table. Since migration `0009_CascadeUserDeletion.sql`,
+all of the user's own records cascade: season passes, memberships, predictions, badges, boost usages,
+winnings, payouts, round results, league standings, notifications, onboarding skips, payout details and the
+Identity side tables.
+
+**Two do not cascade, deliberately, and both can still block a delete:**
+
+| Constraint | Why it stays `NO ACTION` |
+|---|---|
+| `Leagues.AdministratorUserId` | Cascading would delete the league and every other member's history with it. `DeleteUserCommandHandler` requires a replacement administrator to be nominated instead, and the admin screen asks for one |
+| `LeaguePrizeScheme.SetByUserId` | The scheme belongs to the league, not to whoever last configured it. An unrelated account closing must not strip a league of its prize configuration |
+
+Before `0009` **eleven** keys did not cascade, which meant almost any account that had ever bought a season
+pass or played a round could not be deleted - and the failure surfaced as a bare "An internal server error
+has occurred." because nothing catches the resulting `SqlException`. `UserDeletionCascadeTests` in the
+integration suite pins all of the above against a real database.
 
 ---
 

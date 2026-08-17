@@ -163,7 +163,53 @@ window.blazorInterop = {
             }
         }
     },
-    showReassignLeagueConfirm: function (title, userList, userToDeleteId) {
+    // What an account deletion destroys, as the dialog states it. The lines are composed in C# by
+    // UserDeletionImpactSummary so the wording is unit tested; this only renders them, escaped.
+    //
+    // An empty list is not the same as a short one: an account with no history at all gets a plain
+    // reassurance rather than an empty box with a heading over it.
+    buildDeletionImpactHtml: function (impactLines) {
+        const self = this;
+
+        if (!Array.isArray(impactLines) || impactLines.length === 0) {
+            return '<p class="swal2-text" data-test-id="delete-user-impact-empty">This account has no records to delete.</p>';
+        }
+
+        const itemsHtml = impactLines
+            .map(line => `<li>${self.escapeHtml(line)}</li>`)
+            .join('');
+
+        return `
+            <p class="swal2-text">This will permanently delete:</p>
+            <ul class="swal2-impact-list" data-test-id="delete-user-impact">${itemsHtml}</ul>
+        `;
+    },
+    showDeleteUserConfirm: function (title, impactLines) {
+        const self = this;
+
+        return new Promise((resolve) => {
+            Swal.fire({
+                title: title,
+                html: `
+                    ${self.buildDeletionImpactHtml(impactLines)}
+                    <p class="swal2-text"><strong>This action cannot be undone.</strong></p>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="bi bi-check-circle"></i> <strong>Confirm Deletion</strong>',
+                cancelButtonText: '<i class="bi bi-x-circle"></i> <strong>Cancel</strong>',
+                customClass: {
+                    popup: 'swal2-admin-light',
+                    confirmButton: 'swal2-btn-green',
+                    cancelButton: 'swal2-btn-red'
+                },
+                buttonsStyling: false
+            }).then((result) => {
+                resolve(result.isConfirmed);
+            });
+        });
+    },
+    showReassignLeagueConfirm: function (title, userList, userToDeleteId, impactLines) {
         const self = this;
         const optionsHtml = userList
             .filter(user => user.id !== userToDeleteId)
@@ -174,8 +220,9 @@ window.blazorInterop = {
             Swal.fire({
                 title: title,
                 html: `
-                    <p class="swal2-text">To delete this account, you must select another user to take ownership of their leagues.</p>
-                    <select id="newAdminSelect" class="swal2-select">
+                    ${self.buildDeletionImpactHtml(impactLines)}
+                    <p class="swal2-text">The leagues this user administers are <strong>not</strong> deleted. Select another user to take ownership of them.</p>
+                    <select id="newAdminSelect" class="swal2-select" data-test-id="delete-user-new-admin">
                         <option value="">-- Select a user --</option>
                         ${optionsHtml}
                     </select>

@@ -826,7 +826,7 @@ Create one service per admin area, same pattern as above (interface + implementa
 - **`IAdminSeasonService`**: `GetSeasonsAsync()`, `GetSeasonAsync(int id)`, `CreateSeasonAsync(...)` / `UpdateSeasonAsync(int id, ...)` (`HttpResponseMessage`), `SetSeasonStatusAsync(int id, ... )` (`PUT api/admin/seasons/{id}/status`, `ApiResult`), `DeleteSeasonAsync(int id)` (`ApiResult`), `HasPredictionsAsync(int id)` (`GET .../has-predictions`), `GetTournamentMappingsAsync(int id)` (`GET .../tournament-mappings`), `LookupApiLeaguesAsync(...)` and `GetApiRoundsAsync(int apiLeagueId, int seasonYear)` (`GET api/admin/seasons/api-rounds?...`), `GetPriceRecommendationAsync(...)` (endpoint at `SeasonPricingSection.razor:79`).
 - **`IAdminRoundService`**: `GetRoundAsync(int id)`, `GetRoundsBySeasonAsync(int seasonId)`, `CreateRoundAsync(...)` / `UpdateRoundAsync(int id, ...)` (`HttpResponseMessage`), `ResendDigestAsync(int roundId)` and `ResendPrizeEmailsAsync(int roundId)` (`POST`, `ApiResult`).
 - **`IAdminTeamService`**: `GetTeamsAsync(int? seasonId = null)`, `GetTeamAsync(int id)`, `CreateTeamAsync(...)` / `UpdateTeamAsync(int id, ...)` (`HttpResponseMessage`).
-- **`IAdminUserService`**: `GetUsersAsync()` (`GET api/admin/users`), `SetUserRoleAsync(string userId, string newRole)` (`POST api/admin/users/{id}/role`, `ApiResult`), `UserOwnsLeaguesAsync(string userId)` (`GET .../owns-leagues`), `DeleteUserAsync(string userId, ...)` (`POST .../delete`, `ApiResult`).
+- **`IAdminUserService`**: `GetUsersAsync()` (`GET api/admin/users`), `SetUserRoleAsync(string userId, string newRole)` (`POST api/admin/users/{id}/role`, `ApiResult`), `GetDeletionImpactAsync(string userId)` (`GET .../deletion-impact`), `DeleteUserAsync(string userId, ...)` (`POST .../delete`, `ApiResult`).
 - **`IAdminEmailTestService`**: `GetTemplatesAsync()`, `GetDefaultsAsync(...)`, `SendTestAsync(...)` (`ApiResult`); reuse `IAdminUserService.GetUsersAsync()` for the recipient list instead of duplicating `GET api/admin/users` (currently duplicated at `EmailTests\Index.razor:180` and `Users\List.razor:348`).
 
 Method signatures take the same request/response DTO types the components already bind; do not invent new DTOs.
@@ -859,7 +859,7 @@ Not specced here; each deserves its own small refactor once the service migratio
 - `Components\Pages\Dashboard\MyLeaguesTile.razor` (757 lines): carousel index/track maths in the component (lines 577-675), JS interop height sync via `blazorInterop.updateCarouselHeight` (lines 665-669), a 1-second `System.Timers.Timer` for the countdown re-render (lines 559-567), sequential per-league prize-breakdown fetches in a foreach (lines 540-557).
 - `Components\Pages\Predictions\Predictions.razor` (523 lines): synthesises a "None" boost option client-side (lines 322-333), applies the mandatory-boost-on-last-round rule client-side (lines 337-342 and 388-389), sequential per-league eligibility fetches in `OnInitializedAsync` (lines 313-346), and a multi-step delete/apply boost saga inside `HandleSubmitPredictionsAsync` (lines 451-496).
 - `Components\Pages\Admin\Seasons\Edit.razor` (575 lines): API-league lookup, tournament-mapping assembly and stage fetching orchestrated in the page (lines 287-448), plus delete flow (line 552).
-- `Components\Pages\Admin\Users\List.razor` (453 lines): role change (line 374), owns-leagues pre-check (line 400) and delete (line 434) orchestrated inline.
+- `Components\Pages\Admin\Users\List.razor`: role change, the deletion-impact pre-check and the delete itself orchestrated inline.
 
 ## Out of scope
 

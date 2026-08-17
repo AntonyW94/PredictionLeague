@@ -194,6 +194,43 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
         return userId;
     }
 
+    public async Task AddUserToRoleAsync(string userId, string roleName)
+    {
+        const string roleSql = @"
+            SELECT
+                r.[Id]
+            FROM
+                [AspNetRoles] r
+            WHERE
+                r.[NormalizedName] = @NormalizedName;";
+
+        var roleId = await QueryScalarOrDefaultAsync<string>(roleSql, new { NormalizedName = roleName.ToUpperInvariant() });
+
+        // Loud rather than lenient. DapperUserStore.AddToRoleAsync silently does nothing for an unknown role,
+        // which is reasonable in production and useless here: the roles are written by DatabaseInitialiser when
+        // the application starts, so a null means this was called before the application was up - and the
+        // symptom would be an admin journey running as a player, failing later on a 403 or a blank page.
+        if (roleId is null)
+            throw new InvalidOperationException(
+                $"The '{roleName}' role does not exist yet. DatabaseInitialiser creates the roles at application "
+                + "startup, so seed role membership after the application has started rather than with the rest "
+                + "of the arrangement.");
+
+        const string sql = @"
+            INSERT INTO [AspNetUserRoles]
+            (
+                [UserId],
+                [RoleId]
+            )
+            VALUES
+            (
+                @UserId,
+                @RoleId
+            );";
+
+        await ExecuteAsync(sql, new { UserId = userId, RoleId = roleId });
+    }
+
     public async Task<int> AddRoundAsync(
         int seasonId,
         int roundNumber,
@@ -1170,5 +1207,16 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
 
         return await connection.ExecuteScalarAsync<T>(sql, parameters)
                ?? throw new InvalidOperationException($"Expected a scalar result from: {sql}");
+    }
+
+    /// <summary>
+    /// A lookup where finding nothing is a real answer the caller wants to handle itself, unlike
+    /// <see cref="ExecuteScalarAsync{T}"/> which treats an absent value as a broken statement.
+    /// </summary>
+    private async Task<T?> QueryScalarOrDefaultAsync<T>(string sql, object parameters)
+    {
+        using var connection = connectionFactory.CreateConnection();
+
+        return await connection.ExecuteScalarAsync<T>(sql, parameters);
     }
 }
