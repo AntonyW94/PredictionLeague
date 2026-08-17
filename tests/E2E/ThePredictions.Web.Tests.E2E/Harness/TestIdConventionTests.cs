@@ -68,7 +68,7 @@ public partial class TestIdConventionTests
     [Fact]
     public void NoMarkup_ShouldUseThePlaywrightDefaultSpelling()
     {
-        var offenders = MarkupFiles()
+        var offenders = WebClientSource.MarkupFiles()
             .Where(file => WrongAttributeSpelling().IsMatch(file.Text))
             .Select(file => file.RelativePath)
             .OrderBy(path => path, StringComparer.Ordinal)
@@ -81,33 +81,8 @@ public partial class TestIdConventionTests
     }
 
     private static HashSet<string> IdsInMarkup() =>
-        MarkupFiles()
+        WebClientSource.MarkupFiles()
             .SelectMany(file => TestIdAttribute().Matches(file.Text))
             .Select(match => match.Groups["id"].Value)
             .ToHashSet(StringComparer.Ordinal);
-
-    /// <summary>
-    /// Every hand-written markup file under <c>src/</c>. Razor and HTML both, because the Web host's
-    /// <c>index.html</c> is as legitimate a place for an id as a component is.
-    /// </summary>
-    private static IEnumerable<(string RelativePath, string Text)> MarkupFiles()
-    {
-        var sourceRoot = Path.Combine(E2ESettings.RepositoryRoot, "src");
-
-        if (!Directory.Exists(sourceRoot))
-            throw new InvalidOperationException($"Expected to find the source tree at '{sourceRoot}'.");
-
-        foreach (var extension in new[] { ".razor", ".html" })
-        {
-            foreach (var path in Directory.EnumerateFiles(sourceRoot, $"*{extension}", SearchOption.AllDirectories))
-            {
-                var relative = Path.GetRelativePath(E2ESettings.RepositoryRoot, path).Replace('\\', '/');
-
-                if (relative.Contains("/obj/") || relative.Contains("/bin/"))
-                    continue;
-
-                yield return (relative, File.ReadAllText(path));
-            }
-        }
-    }
 }
