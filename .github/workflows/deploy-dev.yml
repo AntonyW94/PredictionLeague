@@ -75,13 +75,18 @@ jobs:
         run: |
           rm -rf ./publish/BlazorDebugProxy
           find ./publish -name "*.pdb" -delete
-          # SkiaSharp.NativeAssets.Linux ships thirteen architectures - arm, arm64, musl, riscv,
-          # loongarch and the rest - which is 137MB this Windows/IIS host can never execute. It is
-          # referenced so the browser test suite can render images on a Linux runner, and so a future
-          # containerised deploy would not fail on first use, but shipping it over FTP would grow the
-          # upload by about 64% on a transfer that already needs retries and a three-attempt file count.
-          # The verify step below counts what is left, so this cannot silently remove too much.
-          rm -rf ./publish/runtimes/linux-*
+          # The publish goes up whole, runtimes/linux-* included, and that is a deliberate reversal.
+          #
+          # SkiaSharp.NativeAssets.Linux ships thirteen architectures, 137MB of them, which this
+          # Windows/IIS host cannot execute - so a `rm -rf ./publish/runtimes/linux-*` was added here to
+          # keep the FTP upload from growing by about 64%. Dev then returned 500.30 ("failed to start")
+          # on two consecutive deploys, stayed down for minutes rather than recycling, and came straight
+          # back up on an identical deploy with only that deletion removed.
+          #
+          # WHY it breaks is not established. Nothing was proved about the mechanism, only about the
+          # outcome, and the reasoning above still reads as correct - which is exactly the reason not to
+          # reintroduce a narrower version of it on the strength of an argument. If the upload size needs
+          # solving, exclude the assets at publish time and prove it with a dev deploy before prod.
 
       - name: Deploy to dev site via FTP
         run: |

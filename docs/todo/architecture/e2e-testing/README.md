@@ -179,11 +179,21 @@ The stack, the levels, the CI wiring and the conventions are built. What is left
   **The cost was an order of magnitude worse than first estimated, and is worth knowing before touching it.**
   The package ships thirteen architectures - arm, arm64, musl, riscv, loongarch and the rest - which is
   **137MB across 13 files**, not the "few MB" it was pitched as. On an FTP transfer that already needs retry
-  settings and a three-attempt file count, that was about 64% growth for something the host cannot execute.
-  Both deploy workflows therefore strip `./publish/runtimes/linux-*` in the pruning step that already deletes
-  `.pdb` files. That is safe by construction rather than by measurement: every payload file in the package
-  sits under `runtimes/linux-*`, the rest of it being NuGet metadata and `net462`/`net48` build targets that
-  never reach a `net8.0` publish.
+  settings and a three-attempt file count, that is about 64% growth for something the host cannot execute.
+
+  > **Correction, 2026-08-17.** Both deploy workflows briefly stripped `./publish/runtimes/linux-*` for that
+  > reason, and this section claimed the strip was "safe by construction rather than by measurement: every
+  > payload file in the package sits under `runtimes/linux-*`". The construction argument was wrong somewhere.
+  > Dev returned **500.30, "failed to start", on two consecutive deploys** of that build, stayed down for
+  > minutes rather than recycling, and came back up immediately on an identical deploy with only the strip
+  > removed. The strip is gone from both workflows and the publish now goes up whole.
+  >
+  > **The mechanism is still unexplained**, and that is the useful part of this record. The same publish
+  > starts fine locally on Windows against dev's own configuration, no stdout log was produced for any of the
+  > crashed processes, and `Verify deployment file count` passed on every run including the failing ones. So
+  > the reasoning above has not been shown to be false in its premises, only in its conclusion, which is
+  > precisely why a narrower strip should not be reintroduced on the strength of a better-sounding argument.
+  > If the upload size is worth solving, exclude the assets at publish time and prove it with a dev deploy.
 
   The **share card** remains out of scope and this does not change that. It draws text in seventeen places, so
   it needs fontconfig and fonts as well as the native library, and its correctness is visual rather than
@@ -294,9 +304,9 @@ The completeness alphabetical was reached for is kept by the checklist above, no
 
 ### Smaller things worth doing when convenient
 
-- **Nothing exercises `Level=Core` or `Level=Extended` yet**, so the tickboxes and the
-  matched-no-tests guard have never been seen working on a real selection. The first `Core` journey proves
-  both for free.
+- **Nothing exercises `Level=Extended` yet.** `Core` is now covered by `JoinPrivateLeagueJourneyTests`, which
+  proved the tickboxes and the matched-no-tests guard on a real selection; `Extended` has still never been
+  selected, so that half of the filter remains untried.
 - **`WebApplicationProcess`'s diagnostics are unproven.** It captures the application's output and detects
   early exit so a startup failure reports its reason rather than a bare timeout - but that path has never
   run, because startup has never failed. Worth deliberately misconfiguring once to check the report is
@@ -305,8 +315,15 @@ The completeness alphabetical was reached for is kept by the checklist above, no
   `AspNetUsers` column list and a change to that table breaks both.
 - **`DismissConsentBannerAsync` is documented as call-once-per-context but not enforced**; a second call
   waits 15 seconds for a banner already answered and then fails.
-- **`ci.yml` fires twice per push on a PR branch**, once as `push` and once as `pull_request`. `e2e.yml` was
-  scoped to avoid that; `ci.yml` predates this work and still pays it.
+- **Why the stripped publish would not start on dev is unexplained.** Deleting `runtimes/linux-*` from the
+  publish took dev down with 500.30 twice and removing the deletion brought it back, with no stdout log from
+  any crashed process and the same publish starting cleanly on Windows locally. The workflows now upload the
+  publish whole, so this costs about 64% on every FTP transfer until somebody understands it. Excluding the
+  assets at publish time is the likely answer, but it needs a dev deploy to prove rather than an argument.
+- **Nothing tests the deploy workflows themselves.** Two consecutive dev deploys of a build that could not
+  start were reported green: `Verify deployment file count` passed, and `Warm up site` retried, touched
+  `web.config`, waited 15 seconds and then ran a final `curl` whose status it never checks. A deploy that
+  leaves the site returning 500 should fail, and this one cannot.
 
 ---
 
