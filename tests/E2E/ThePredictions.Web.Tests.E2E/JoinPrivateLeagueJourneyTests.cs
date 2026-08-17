@@ -66,7 +66,7 @@ public class JoinPrivateLeagueJourneyTests(StackFixture stack) : E2ETestBase(sta
 
         // Nothing should have gone wrong resolving a code that exists, holds a pass, and is not already
         // joined - so an error panel at this point IS the bug, and catching it here says which step.
-        await layout.ErrorMessages.ShouldNotExistAsync();
+        await layout.ErrorMessages.ShouldReportNoErrorsAsync();
 
         // Step two: actually join. The league requires approval, so success is a request sent rather than
         // immediate membership.
@@ -75,6 +75,6 @@ public class JoinPrivateLeagueJourneyTests(StackFixture stack) : E2ETestBase(sta
 
         await join.SentConfirmation.ShouldBeVisibleAsync();
 
-        await layout.ErrorMessages.ShouldNotExistAsync();
+        await layout.ErrorMessages.ShouldReportNoErrorsAsync();
     }
 }

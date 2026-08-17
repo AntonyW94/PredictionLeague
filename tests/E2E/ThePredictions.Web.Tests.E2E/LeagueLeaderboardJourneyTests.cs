@@ -63,6 +63,6 @@ public class LeagueLeaderboardJourneyTests(StackFixture stack) : E2ETestBase(sta
             "the league has one approved member and no posted results, so the leaderboard should show that "
             + "member on zero points - a member with no results takes a position rather than being omitted.");
 
-        await layout.ErrorMessages.ShouldNotExistAsync();
+        await layout.ErrorMessages.ShouldReportNoErrorsAsync();
     }
 }

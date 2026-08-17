@@ -64,4 +64,37 @@ internal static class LocatorAssertionExtensions
     /// </remarks>
     internal static Task ShouldNotExistAsync(this ILocator locator, float? timeoutMs = null) =>
         Assertions.Expect(locator).ToHaveCountAsync(0, new LocatorAssertionsToHaveCountOptions { Timeout = timeoutMs });
+
+    /// <summary>
+    /// Asserts nothing matches, and if something does, says <b>what it said</b>.
+    /// </summary>
+    /// <remarks>
+    /// For error panels, <see cref="ShouldNotExistAsync"/> reports "expected count 0 but was 3", which tells
+    /// you a page is broken without telling you how - and the panels are the one place the application has
+    /// already written down what went wrong. This ran the retrying assertion first, so the waiting behaviour
+    /// is unchanged, and only reaches for the text once the assertion has genuinely failed.
+    ///
+    /// It earned itself immediately: a dashboard that had passed for many runs started reporting three
+    /// errors, and "three" was not enough to act on without downloading a trace - which a GitHub outage had
+    /// made unavailable at the time.
+    /// </remarks>
+    internal static async Task ShouldReportNoErrorsAsync(this ILocator locator, float? timeoutMs = null)
+    {
+        try
+        {
+            await locator.ShouldNotExistAsync(timeoutMs);
+        }
+        catch (PlaywrightException)
+        {
+            var messages = await locator.AllInnerTextsAsync();
+
+            var detail = messages.Count == 0
+                ? "(the panels disappeared before their text could be read)"
+                : string.Join($"{Environment.NewLine}  - ", messages.Select(m => m.ReplaceLineEndings(" ").Trim()));
+
+            throw new PlaywrightException(
+                $"The page is showing {messages.Count} error panel(s), so a read behind it failed:"
+                + $"{Environment.NewLine}  - {detail}");
+        }
+    }
 }
