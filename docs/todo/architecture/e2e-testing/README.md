@@ -165,12 +165,30 @@ The stack, the levels, the CI wiring and the conventions are built. What is left
   thrash - but that is now a property of the collection definition rather than of the data, so it can be
   revisited without touching a single assertion.
 
-### Still open
+- **`SkiaSharp` on Linux: native assets added.** `ThePredictions.Infrastructure` now references
+  `SkiaSharp.NativeAssets.Linux`, pinned to `4.150.1` to match the managed package **exactly** - the two
+  halves ship in lockstep and a mismatch is a runtime failure, so this is the one place the highest-version
+  rule in `CLAUDE.md` does not apply. `BadgeImageJourneyTests` exercises it, because adding a native
+  dependency without running it would be a change made on faith, and the failure mode is lazy: the library
+  loads on first use, so the application starts clean and then throws on the first request that draws.
 
-- **`SkiaSharp` on Linux.** No `SkiaSharp.NativeAssets.Linux` package, so image rendering fails on an Ubuntu
-  runner. It has not bitten because the dashboard's badge icons are client-side SVG, but a journey touching
-  `GET /api/badges/{key}.png` or a share card will hit it. Options in
-  [Do NOT containerise the website](#do-not-containerise-the-website); none chosen.
+  It also removes a latent production fault. Production is Windows/IIS today so the Linux binaries are dead
+  weight there, but if the site is ever containerised the first deploy would boot fine and then fail the
+  moment somebody pressed Share.
+
+  **The cost was an order of magnitude worse than first estimated, and is worth knowing before touching it.**
+  The package ships thirteen architectures - arm, arm64, musl, riscv, loongarch and the rest - which is
+  **137MB across 13 files**, not the "few MB" it was pitched as. On an FTP transfer that already needs retry
+  settings and a three-attempt file count, that was about 64% growth for something the host cannot execute.
+  Both deploy workflows therefore strip `./publish/runtimes/linux-*` in the pruning step that already deletes
+  `.pdb` files. That is safe by construction rather than by measurement: every payload file in the package
+  sits under `runtimes/linux-*`, the rest of it being NuGet metadata and `net462`/`net48` build targets that
+  never reach a `net8.0` publish.
+
+  The **share card** remains out of scope and this does not change that. It draws text in seventeen places, so
+  it needs fontconfig and fonts as well as the native library, and its correctness is visual rather than
+  assertable. Badge glyphs are pure paths - nothing in that renderer touches `SKFont`, `SKTypeface` or
+  `DrawText` - which is what makes the badge endpoint a clean probe.
 
 ### Journeys: every page, in fixture-dependency order
 
@@ -255,8 +273,8 @@ Layer 0 is available now. Nothing else is, until its layer's fixture exists.
 **Deliberately not tested (5 routes)**
 
 - `/authentication/external-login-callback` - Google OAuth; needs a real identity provider
-- Share-card and badge PNG endpoints - `SkiaSharp` renders differently on Linux, and font rendering is not
-  assertable. See the friction table
+- The **share card** endpoint - it draws text, so font rendering differs by platform and is not assertable.
+  The **badge PNG** endpoint is now tested, since its glyphs are pure paths; see the note on `SkiaSharp` above
 - Anything asserting an email arrived - Brevo is not called from the stack
 
 ### Why not alphabetical
