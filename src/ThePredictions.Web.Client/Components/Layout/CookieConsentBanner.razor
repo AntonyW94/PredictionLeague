@@ -4,7 +4,7 @@
 
 @if (!ConsentService.HasResponded)
 {
-    <div class="cookie-consent" role="dialog" aria-modal="false" aria-labelledby="cookie-consent-title">
+    <div class="cookie-consent" data-test-id="cookie-consent" role="dialog" aria-modal="false" aria-labelledby="cookie-consent-title">
         <div class="cookie-consent__inner">
             <div class="cookie-consent__copy">
                 <h2 id="cookie-consent-title" class="cookie-consent__title">We value your privacy</h2>
@@ -54,7 +54,7 @@
                 else
                 {
                     <button type="button" class="cookie-consent__btn cookie-consent__btn--primary" @onclick="AcceptAllAsync">Accept all</button>
-                    <button type="button" class="cookie-consent__btn cookie-consent__btn--secondary" @onclick="RejectNonEssentialAsync">Reject non-essential</button>
+                    <button type="button" class="cookie-consent__btn cookie-consent__btn--secondary" data-test-id="cookie-consent-reject" @onclick="RejectNonEssentialAsync">Reject non-essential</button>
                     <button type="button" class="cookie-consent__btn cookie-consent__btn--ghost" @onclick="ShowPreferences">Manage preferences</button>
                 }
             </div>

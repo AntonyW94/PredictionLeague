@@ -298,6 +298,137 @@ that is correct rather than a compromise. The gate measures each unit test proje
 never include a container-backed suite, so removing the attribute would simply turn the gate red.
 `NoExcludedType_ShouldAlreadyHaveAUnitTestFile` is scoped to `tests/Unit` for exactly this reason.
 
+## End-to-End Journeys Against An Isolated Stack
+
+`tests/E2E/ThePredictions.Web.Tests.E2E` drives real Chromium through user journeys against a stack it builds
+from nothing on every run. It exists because of a specific failure: on 30 July 2026 a leaderboard query's
+`SELECT` had drifted from its result record, so the page threw for a real user with 1,647 green unit tests and
+a happy compiler. `SchemaCheck` now catches that class of drift, but nothing was **loading a page**.
+
+**Currently one journey**, deliberately - a player signs in and reaches an authenticated dashboard. The
+expensive part of a browser suite is the stack underneath it, so nothing was proven until one journey drove it
+end to end. See [the plan](../todo/architecture/e2e-testing/README.md#outstanding) for what comes next.
+
+### What a run builds, and in what order
+
+| Step | Piece | Note |
+|------|-------|------|
+| 1 | SQL Server container | `Testcontainers.MsSql`, image pinned to the same tag the integration suite pulls, so one download serves both |
+| 2 | A database with production's collation | `0001_Baseline.sql` omits every `COLLATE` clause on purpose (ADR-0013), so a different default would give the whole schema different comparison and sort semantics |
+| 3 | The committed DbUp migrations | Read from `MigrationScripts` in the adapter, so this suite, the integration suite and `DatabaseTools` cannot disagree about journal keys |
+| 4 | One seeded user | SQL, not the registration endpoint - a test should not arrange through the path it asserts on |
+| 5 | The **published** web application | Launched as its own process against the container |
+| 6 | Chromium | Drives it |
+
+**Order 3-before-5 matters.** The `DatabaseInitialiser` hosted service writes the Identity roles from the
+`ApplicationUserRole` enum when the app starts, so it needs a schema to write them into. Roles are therefore
+never seeded by hand.
+
+**Published, not `dotnet run`.** Publishing materialises the Blazor client into wwwroot and runs the CSS
+bundling target, so the browser is handed what a deployment hands it. `dotnet run` would depend on static web
+assets, which only resolve automatically in the Development environment - and Development is the one
+environment this cannot use, because `Program.cs` then demands an `appsettings.Development.Secrets.json` for
+Key Vault.
+
+**The site is not containerised**, deliberately. A runner is already an ephemeral environment destroyed after
+the run, so a Dockerfile would add an image to maintain and a build per run for isolation that is already
+there. Docker is needed for SQL Server only.
+
+### Configuration the application needs to run anywhere but its own environments
+
+Worked out by reading `Program.cs`, and each one is commented in `WebApplicationProcess` with what breaks
+without it:
+
+| Variable | Why |
+|----------|-----|
+| `ASPNETCORE_ENVIRONMENT=E2E` | An environment with no `appsettings` file of its own, so only the base file loads, no `KeyVaultUri` is present, and the Key Vault branch is skipped without asking for a secrets file |
+| `AllowedHosts=*` | `appsettings.json` restricts it to the two production hostnames, so host filtering would 400 every request to localhost |
+| `ApiBaseUrl` | Drives CORS, `SiteSettings.BaseUrl`, and through `${ApiBaseUrl}` substitution the JWT issuer and audience |
+| `JwtSettings__Secret` | Otherwise the signing key stays the unresolved `${Jwt-Secret}` placeholder at 13 characters, under the 128 bits HS256 demands, and the first sign-in throws instead of returning a token |
+
+`EnableSubstitutions` silently skips a placeholder it cannot resolve, so the remaining `${...}` secrets stay
+literal and do not fail startup. That was checked, not assumed.
+
+### Levels, and choosing them per run
+
+Every test class carries exactly one level, and a run selects by combining them:
+
+| Level | Meaning |
+|-------|---------|
+| `Smoke` | Cannot break without the site being unusable |
+| `Core` | Features used most weeks |
+| `Extended` | Rarely used, but still has to work |
+
+```bash
+dotnet test tests/E2E/ThePredictions.Web.Tests.E2E --filter "Category=E2E&(Level=Smoke|Level=Core)"
+```
+
+`e2e.yml` takes Smoke and Core on a pull request, everything on the 03:00 schedule, and three
+`workflow_dispatch` tickboxes when run by hand.
+
+**Two traps, both guarded, both of which produce a green run that tested nothing:**
+
+- `dotnet test` **exits 0 when a filter matches nothing** - it prints "No test matches the given testcase
+  filter" and reports success. So a renamed level, or ticking Extended before any Extended journey exists,
+  would look like a pass. The workflow reads the executed count back from a TRX and fails on zero.
+- The obvious way to default a tickbox, `${{ inputs.smoke || 'true' }}`, is broken: `false` is falsy in GitHub
+  expression syntax, so `false || 'true'` is `'true'` and an **unticked** box silently turns back on. The
+  filter is built in a shell step that branches on `github.event_name` instead.
+
+### Seeing what ran
+
+The workflow renders a table on its own summary page - the selection, every test with outcome and duration,
+and the totals - on success as much as failure, because "what did it check?" is the question a green tick does
+not answer. A TRX is uploaded on every run; Playwright traces only on failure, opened with
+`playwright show-trace <file>`.
+
+### Running it locally
+
+Needs a **running Docker daemon with Linux containers** (on Docker Desktop for Windows, the Linux engine, not
+Windows containers - `docker info --format '{{.OSType}}'` tells the truth). Then:
+
+```bash
+dotnet publish src/ThePredictions.Web -c Release -o artifacts/e2e-web
+pwsh tests/E2E/ThePredictions.Web.Tests.E2E/bin/Release/net8.0/playwright.ps1 install chromium
+dotnet test tests/E2E/ThePredictions.Web.Tests.E2E
+```
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `E2E_WEB_APP_DLL` | `artifacts/e2e-web/ThePredictions.Web.dll` | The published application to launch |
+| `E2E_PORT` | `5099` | Port the application listens on |
+| `E2E_HEADED` | `false` | `true` to watch the browser |
+| `E2E_SLOW_MO_MS` | `0` | Pause between actions; only useful headed |
+| `E2E_ARTIFACTS_DIR` | beside the build output | Where per-test traces are written |
+
+### Conventions specific to this project
+
+- **`data-test-id` for everything, never a CSS class.** A class is a styling hook and renaming one is an
+  ordinary thing to do to a stylesheet; a test id is a stated contract. Ids live as constants in `TestIds`,
+  and `TestIdConventionTests` reads the markup and fails the build when one is referenced that the markup does
+  not carry - the half a compiler cannot see. See
+  [the Blazor guidelines](../../src/ThePredictions.Web.Client/CLAUDE.md#test-hooks-data-test-id).
+- **Hyphenated, not `data-testid`.** That is Playwright's default rather than ours, so an element carrying it
+  looks annotated and is unfindable. A convention test rejects it.
+- **Browser assertions go through `LocatorAssertionExtensions`**, which wrap Playwright's *web-first*
+  assertions. `(await locator.CountAsync()).Should().Be(0)` reads fine and samples the page once, which races
+  a Blazor render and becomes the intermittent failure nobody can reproduce. `AwesomeAssertions` is right for
+  the convention tests, where there is no page to settle.
+- **`SiteLayout` owns what the layout renders** - navigation, consent banner, error panels. A page object owns
+  only its own page. The consent banner started on `LoginPage` and was wrong there: it is fixed to the foot of
+  every page, so the first journey starting elsewhere would have had a click silently swallowed.
+- **Every test class carries `[Trait("Category", "E2E")]`** (inherited from `E2ETestBase`) **and exactly one
+  `Level`**, on the class and not on a `[Fact]`. Convention tests enforce both. A method-level level *does*
+  filter correctly, which is the trap - it would work while being invisible to the check guaranteeing it.
+- **`AwesomeAssertions`, not FluentAssertions.** This project moved first; the rest follow (roadmap Track 1
+  item 3).
+
+### It does not affect the 100% gate
+
+`coverlet.collector` but **not** `coverlet.msbuild`: it owns no assembly for the threshold to measure, the
+same shape as the integration and conventions projects. CI's unit job filters
+`Category!=Integration&Category!=E2E`, and both deploy workflows filter `Category!=E2E`.
+
 ## Composition / Container Validation
 
 A MediatR handler that depends on a service the host never registers is **invisible to `dotnet build` and to handler unit tests** (those construct the handler with mocks). The gap only surfaces at app startup, via the Development host's `ValidateOnBuild`, i.e. on deploy.
@@ -360,6 +491,12 @@ tests/
         ├── Queries/               → Rules that live in a SQL predicate (SQL Server-specific for now)
         ├── Repositories/          → Concrete subclasses that run the conformance suite
         └── Schema/                → The migrations applying cleanly from empty
+tests/
+└── E2E/
+    └── ThePredictions.Web.Tests.E2E/
+        ├── Harness/               → Container, migrations, seed, app process, browser, conventions
+        ├── Pages/                 → Page objects: locators and navigation, never assertions
+        └── *JourneyTests.cs       → One class per journey, each carrying exactly one Level
 ```
 
 ### The conformance suite

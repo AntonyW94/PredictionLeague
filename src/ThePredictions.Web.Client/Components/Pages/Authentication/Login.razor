@@ -51,6 +51,7 @@
                 <InputText id="email"
                            class="form-control"
                            @bind-Value="_model.Email"
+                           data-test-id="login-email"
                            data-lpignore="true"
                            autocomplete="off"
                            placeholder="Email address"/>
@@ -63,6 +64,7 @@
                                type="@(_showPassword ? "text" : "password")"
                                class="form-control"
                                @bind-Value="_model.Password"
+                               data-test-id="login-password"
                                data-lpignore="true"
                                autocomplete="new-password"
                                placeholder="Password"/>
@@ -84,7 +86,7 @@
             </div>
 
             <div class="d-grid mt-4">
-                <button type="submit" class="btn green-button input-height" disabled="@_isBusy">
+                <button type="submit" class="btn green-button input-height" data-test-id="login-submit" disabled="@_isBusy">
                     @if (_isBusy)
                     {
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>

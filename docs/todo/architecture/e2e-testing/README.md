@@ -2,12 +2,21 @@
 
 ## Status
 
-**Not Started** | In Progress | Complete
+Not Started | **In Progress** | Complete
 
-Nothing has shipped. A first attempt was built, evaluated and deliberately abandoned - see the decision
-record below, which is the most important part of this document. **The plan is now single-stage: an
-isolated stack with a seeded database. There is no smoke suite against deployed dev, and there should
-not be one.**
+**The harness shipped in August 2026 and works.** `tests/E2E/ThePredictions.Web.Tests.E2E` builds a whole
+stack per run on the CI runner - SQL Server container, production's schema from the committed DbUp
+migrations, a seeded user, the published web application, real Chromium - and drives **one** journey through
+it: a player signs in and reaches an authenticated dashboard. It runs on `e2e.yml`, gates pull requests, and
+never touches dev or production. See
+[`docs/guides/testing.md`](../../../guides/testing.md#end-to-end-journeys-against-an-isolated-stack).
+
+One journey deliberately. The expensive part of a browser suite is the stack underneath it, and nothing about
+it was proven until a single journey drove it end to end. **What remains is journeys, plus two decisions the
+first of them forces** - see [Outstanding](#outstanding).
+
+An earlier attempt targeted deployed dev instead, and was built and then abandoned; that decision record is
+below, because it is the reason this looks the way it does.
 
 ## Priority
 
@@ -137,6 +146,142 @@ convention test that fails the build when one is missing (an untraited class run
 stays green), `coverlet.collector` but **not** `coverlet.msbuild` so the project stays out of the 100%
 threshold it owns no assembly for, and the filter kept in step across `ci.yml` and both deploy
 workflows.
+
+---
+
+## Outstanding
+
+The stack, the levels, the CI wiring and the conventions are built. What is left:
+
+### Two decisions the second journey forces
+
+- **Isolation.** Every journey so far only reads, so one shared stack and a serial run is fine. The first
+  journey that **writes** breaks that - a test submitting a prediction breaks a test asserting none exist.
+  The answer is almost certainly a season and league per test class rather than a database reset: Respawn
+  would be wiping rows underneath a live application and fighting its connection pool.
+  `Harness/StackCollection.cs` says as much where the decision will be felt.
+- **`SkiaSharp` on Linux.** No `SkiaSharp.NativeAssets.Linux` package, so image rendering fails on an Ubuntu
+  runner. It has not bitten because the dashboard's badge icons are client-side SVG, but a journey touching
+  `GET /api/badges/{key}.png` or a share card will hit it. Options in
+  [Do NOT containerise the website](#do-not-containerise-the-website); none chosen.
+
+### Journeys: every page, in fixture-dependency order
+
+**The goal is all 47 routes.** The order is not alphabetical, and that is a deliberate decision rather than an
+oversight - see [Why not alphabetical](#why-not-alphabetical).
+
+Work in **layers**. Each layer is one extension to the fixture, and each unlocks a group of pages, so the
+fixture is built once in the order its own dependencies demand rather than dragged into shape page by page.
+
+| Layer | Fixture adds | Unlocks |
+|-------|--------------|---------|
+| **0** | a user *(done)* | anonymous pages, auth, account |
+| **1** | season, competition, teams, league, membership, Season Pass | dashboards, leagues, **leaderboards**, passes, badges |
+| **2** | rounds and matches, every date relative to `UtcNow` | predictions, active rounds, admin rounds |
+| **3** | results posted **through the admin endpoint**, so points and ranks are computed rather than seeded | round results, prizes, payouts, winnings, recap |
+
+Layer 3's wording is the important one. Seed **inputs**, never **outputs**: a seeded rank makes a test that
+asserts its own arrangement. Points, ranks and prize allocations must come out of the real write path -
+`LeagueStatsRepository`'s 11 window functions - or the test proves nothing about them.
+
+### The 47 routes
+
+Layer 0 is available now. Nothing else is, until its layer's fixture exists.
+
+**Layer 0 - a user, and that is all (13 routes)**
+
+- [x] `/authentication/login` - signing in reaches an authenticated dashboard
+- [ ] `/` - anonymous hero renders; an authenticated visitor is bounced to `/dashboard`
+- [ ] `/authentication/register` - a new account is created and confirmation is demanded
+- [ ] `/authentication/forgot-password` - a reset is requested and rate limiting bites on the fourth
+- [ ] `/authentication/reset-password` - a valid token sets a password, an expired one refuses
+- [ ] `/authentication/confirm-email` - a valid token confirms, a used one does not
+- [ ] `/account/details` - name and phone save; marketing consent toggles both ways
+- [ ] `/account/payout-details` - bank details save encrypted and read back for their owner only
+- [ ] `/privacy`, `/terms`, `/cookie-policy`, `/licences` - render, and are reachable anonymously
+- [ ] `/Error` - renders the branded 500 state
+- [ ] Signing out returns to the anonymous site *(was written for the dev suite; port it)*
+
+**Layer 1 - season, league, membership, pass (12 routes)**
+
+- [ ] `/dashboard` - the settled dashboard: My Leagues and Standings tiles, no onboarding takeover
+- [ ] `/dashboard` - the takeover, for a user with no pass and no league
+- [ ] `/leagues/{LeagueId:int}/dashboard` - **the overall leaderboard renders at least one row.** The shape of
+      the 2026-07-30 incident, and the highest-value journey in the list
+- [ ] `/leagues` - lists the leagues the user can manage
+- [ ] `/leagues/create` - a league is created, and the Season Pass gate refuses a user without one
+- [ ] `/leagues/{LeagueId:int}/edit` - settings save
+- [ ] `/leagues/{LeagueId:int}/members` - members list; a join request is approved and rejected
+- [ ] `/leagues/{LeagueId:int}/prizes` - a prize scheme is configured
+- [ ] `/leagues/{LeagueId:int}/preview` - the scheme is previewed against the current standings
+- [ ] `/season-passes` - the acquire-first gate, and a £0 free-season acquisition
+- [ ] `/badges` and `/badges/{UserId}` - the catalogue renders; another user's is viewable
+- [ ] `/admin/users` - the user list renders *(admin, but needs no round state)*
+
+**Layer 2 - rounds and matches, relative to `UtcNow` (9 routes)**
+
+- [ ] `/predictions/{RoundId:int}` - **a prediction is submitted before the deadline, and refused after it.**
+      The journey deployed dev could never have run
+- [ ] `/admin/seasons` - the season list renders
+- [ ] `/admin/seasons/create` - a season is created
+- [ ] `/admin/seasons/edit/{SeasonId:int}` - a season is edited
+- [ ] `/admin/seasons/{SeasonId:int}/rounds` - the round list renders
+- [ ] `/admin/seasons/{SeasonId:int}/rounds/create` - a round is created with matches
+- [ ] `/admin/rounds/edit/{RoundId:int}` - a round is edited, and a Draft round is **not** visible to a player
+- [ ] `/admin/competitions` - the competition list renders
+- [ ] `/admin/competitions/create` - a competition is created
+- [ ] `/admin/competitions/edit/{CompetitionId:int}` - a competition is edited
+- [ ] `/admin/teams` - the team list renders
+- [ ] `/admin/teams/create` - a team is created
+- [ ] `/admin/teams/edit/{TeamId:int}` - a team is edited
+
+**Layer 3 - results through the real write path (8 routes)**
+
+- [ ] `/admin/rounds/{RoundId:int}/results` - **an admin posts results and the leaderboard and rank cache
+      move.** The one journey that proves the derived-state path end to end
+- [ ] `/admin/rounds/{RoundId:int}/completion` - who has not predicted
+- [ ] `/leagues/{LeagueId:int}/payouts` - payouts recorded against winners
+- [ ] `/admin/seasons/{SeasonId:int}/pass-holders` - pass holders for a season
+- [ ] `/admin/running-costs`, `/admin/pricing-settings` - render with data behind them
+- [ ] `/admin/email-settings`, `/admin/email-tests` - render; **do not send anything**
+
+**Deliberately not tested (5 routes)**
+
+- `/authentication/external-login-callback` - Google OAuth; needs a real identity provider
+- Share-card and badge PNG endpoints - `SkiaSharp` renders differently on Linux, and font rendering is not
+  assertable. See the friction table
+- Anything asserting an email arrived - Brevo is not called from the stack
+
+### Why not alphabetical
+
+It was considered, and the appeal is real: a complete enumeration with no judgement calls about what matters.
+The numbers are what rule it out.
+
+**20 of the 47 routes are `/admin/*`, and they sort first.** They are simultaneously the most fixture-hungry
+in the application - seasons, competitions, teams, rounds, matches - and the least used. Alphabetical order
+means building the heaviest fixture in the project to test `/admin/competitions/create` before login has a
+second journey, and long before the leaderboard that actually broke in production.
+
+**17 of the 47 take a route parameter**, so they cannot be visited at all without a seeded entity whose id the
+test knows. Ordering by name ignores that entirely; ordering by layer is ordering by exactly it.
+
+The completeness alphabetical was reached for is kept by the checklist above, not by the order of work.
+
+### Smaller things worth doing when convenient
+
+- **Nothing exercises `Level=Core` or `Level=Extended` yet**, so the tickboxes and the
+  matched-no-tests guard have never been seen working on a real selection. The first `Core` journey proves
+  both for free.
+- **`WebApplicationProcess`'s diagnostics are unproven.** It captures the application's output and detects
+  early exit so a startup failure reports its reason rather than a bare timeout - but that path has never
+  run, because startup has never failed. Worth deliberately misconfiguring once to check the report is
+  actually readable.
+- **The seeded user's `INSERT` duplicates `TestAccountCreator`'s**, so two places now know the
+  `AspNetUsers` column list and a change to that table breaks both.
+- **`DismissConsentBannerAsync` is documented as call-once-per-context but not enforced**; a second call
+  waits 15 seconds for a banner already answered and then fails.
+- **`ci.yml` fires twice per push on a PR branch**, once as `push` and once as `pull_request`. `e2e.yml` was
+  scoped to avoid that; `ci.yml` predates this work and still pays it.
 
 ---
 

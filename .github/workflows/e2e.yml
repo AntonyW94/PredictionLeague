@@ -1,0 +1,248 @@
+# .github/workflows/e2e.yml
+name: E2E Journeys
+
+# Browser journeys against an isolated stack built from scratch on the runner: a SQL Server container,
+# production's schema applied by the committed DbUp migrations, a seeded user, and the published web
+# application launched against it. Nothing here touches dev or production.
+# See docs/todo/architecture/e2e-testing/README.md.
+#
+# Levels let a run pick how much to do. Automatic runs take Smoke and Core; the scheduled run takes
+# everything; a manual run picks with the tickboxes below.
+
+on:
+  # `push` is scoped to master rather than every branch, and that is not a detail. With both triggers
+  # unrestricted, a push to a PR branch fires this workflow TWICE - once as `push`, once as
+  # `pull_request` - and each run pulls a 1.5GB SQL Server image, publishes the application and installs
+  # Chromium. Concurrency does not help, because the two runs have different refs and so land in
+  # different groups. Scoped this way, a PR is covered by `pull_request` and master by `push`, with
+  # nothing checked twice. (ci.yml has the same double-run, and is a two-minute job with no Docker.)
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    # 03:00 UTC daily, when the full set including the rarely-used journeys runs.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      smoke:
+        description: 'Smoke - essentials that cannot break without the site being unusable'
+        required: false
+        type: boolean
+        default: true
+      core:
+        description: 'Core - features used most weeks'
+        required: false
+        type: boolean
+        default: true
+      extended:
+        description: 'Extended - rarely used features'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  journeys:
+    runs-on: ubuntu-latest
+    # The stack has a container to pull, a schema to build and an application to start before the first
+    # assertion runs, so the default 6 hours is far too generous to be a useful signal.
+    timeout-minutes: 30
+
+    env:
+      E2E_ARTIFACTS_DIR: ${{ github.workspace }}/e2e-artifacts
+      E2E_WEB_APP_DLL: ${{ github.workspace }}/artifacts/e2e-web/ThePredictions.Web.dll
+      E2E_PROJECT: tests/E2E/ThePredictions.Web.Tests.E2E/ThePredictions.Web.Tests.E2E.csproj
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # Which levels to run. Built here rather than in a workflow expression on purpose: `false` is falsy
+      # in GitHub expression syntax, so the obvious-looking `${{ inputs.smoke || 'true' }}` evaluates to
+      # 'true' for an UNTICKED box and the tickboxes would silently do nothing. Branching on the event
+      # name is the only way to tell "unticked" from "no inputs at all".
+      - name: Decide which levels to run
+        id: levels
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SMOKE="${{ inputs.smoke }}"
+            CORE="${{ inputs.core }}"
+            EXTENDED="${{ inputs.extended }}"
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            SMOKE=true; CORE=true; EXTENDED=true
+          else
+            SMOKE=true; CORE=true; EXTENDED=false
+          fi
+
+          LEVELS=""
+          [ "$SMOKE" = "true" ]    && LEVELS="$LEVELS|Level=Smoke"
+          [ "$CORE" = "true" ]     && LEVELS="$LEVELS|Level=Core"
+          [ "$EXTENDED" = "true" ] && LEVELS="$LEVELS|Level=Extended"
+
+          if [ -z "$LEVELS" ]; then
+            echo "No levels selected - tick at least one box."
+            exit 1
+          fi
+
+          echo "Running levels:${LEVELS//|/ }"
+          echo "filter=Category=E2E&(${LEVELS#|})" >> "$GITHUB_OUTPUT"
+
+      # Pulled up front so a ~1.5GB pull is a visible step rather than time charged to the first test, and
+      # so a bad tag fails here with an obvious message. Same tag the integration suite uses.
+      - name: Pull SQL Server image
+        run: docker pull mcr.microsoft.com/mssql/server:2022-CU14-ubuntu-22.04
+
+      - name: Build the E2E project
+        run: dotnet build "$E2E_PROJECT" --configuration Release /p:TreatWarningsAsErrors=true
+
+      # Published rather than run from source: publishing materialises the Blazor client into wwwroot and
+      # runs the CSS bundling target, so the browser is handed what a deployment would hand it. A compile
+      # or publish failure is then a build failure here rather than a mysterious test timeout later.
+      - name: Publish the web application
+        run: dotnet publish src/ThePredictions.Web/ThePredictions.Web.csproj --configuration Release --output artifacts/e2e-web
+
+      # The NuGet package ships the driver, not the browser. --with-deps installs the shared libraries
+      # Chromium needs on a bare Ubuntu runner, which are not present by default.
+      - name: Install Chromium
+        run: pwsh tests/E2E/ThePredictions.Web.Tests.E2E/bin/Release/net8.0/playwright.ps1 install chromium --with-deps
+
+      - name: Run the journeys
+        run: >
+          dotnet test "$E2E_PROJECT"
+          --no-build
+          --configuration Release
+          --verbosity normal
+          --filter "${{ steps.levels.outputs.filter }}"
+          --logger "trx;LogFileName=e2e.trx"
+          --results-directory "${{ github.workspace }}/e2e-results"
+
+      # Renders the run on the workflow's own summary page: which levels were selected, then every test
+      # with its outcome and duration. Written for a passing run as much as a failing one - "what actually
+      # ran" is the question a green tick does not answer, and digging into a collapsed step log to find
+      # out is not a reasonable way to have to ask it.
+      #
+      # Parsed with python rather than a marketplace test-reporter action: python3 is already on the
+      # runner, and a third-party action pinned by mutable tag is precisely the supply-chain hole the
+      # roadmap already flags about this repository's workflows.
+      - name: Summarise what ran
+        if: always()
+        run: |
+          python3 - "${{ github.workspace }}/e2e-results/e2e.trx" "${{ steps.levels.outputs.filter }}" <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import os, sys, xml.etree.ElementTree as ET
+
+          path, selection = sys.argv[1], sys.argv[2]
+          print("## E2E Journeys\n")
+          print(f"**Selection:** `{selection}`\n")
+
+          if not os.path.exists(path):
+              print("No results were produced, so the run stopped before the tests did.")
+              raise SystemExit(0)
+
+          tree = ET.parse(path)
+
+          # TRX is namespaced; matching on the local name avoids hard-coding the schema URL.
+          def local(element, name):
+              return element.tag.rsplit("}", 1)[-1] == name
+
+          icons = {"Passed": ":white_check_mark:", "Failed": ":x:", "NotExecuted": ":fast_forward:"}
+          rows = []
+
+          for element in tree.iter():
+              if not local(element, "UnitTestResult"):
+                  continue
+              name = element.get("testName", "?").rsplit(".", 2)[-2:]
+              duration = element.get("duration", "")[:11] or "-"
+              outcome = element.get("outcome", "?")
+              rows.append((icons.get(outcome, outcome), ".".join(name), duration))
+
+          if rows:
+              print("| | Test | Duration |")
+              print("|---|---|---|")
+              for icon, name, duration in rows:
+                  print(f"| {icon} | `{name}` | {duration} |")
+              print()
+
+          for element in tree.iter():
+              if local(element, "Counters"):
+                  executed = element.get("executed", "0")
+                  passed = element.get("passed", "0")
+                  failed = element.get("failed", "0")
+                  print(f"**{executed} executed** - {passed} passed, {failed} failed")
+                  break
+          PY
+
+      # `dotnet test` exits 0 when a filter matches NOTHING - it prints "No test matches the given
+      # testcase filter" and reports success. So a mistyped trait, a renamed level, or simply ticking
+      # Extended before any Extended journey exists would produce a green run that tested nothing, which
+      # is the worst failure a suite has: it looks like coverage and is not. The step above cannot catch
+      # it, so the executed count is read back and asserted here.
+      #
+      # Deliberately not `if: always()`: when the tests genuinely fail the run is already red, and this
+      # would add a confusing second failure to it.
+      - name: Verify the selection actually ran something
+        run: |
+          TRX="${{ github.workspace }}/e2e-results/e2e.trx"
+
+          if [ ! -f "$TRX" ]; then
+            echo "No results file at $TRX, so what ran cannot be established."
+            exit 1
+          fi
+
+          EXECUTED=$(grep -o 'executed="[0-9]*"' "$TRX" | head -1 | tr -dc '0-9')
+          EXECUTED=${EXECUTED:-0}
+          echo "Journeys and conventions executed: $EXECUTED"
+
+          if [ "$EXECUTED" -eq 0 ]; then
+            echo "The filter '${{ steps.levels.outputs.filter }}' selected no tests."
+            echo "dotnet test reports that as success, so this step is what turns it red."
+            exit 1
+          fi
+
+      # The machine-readable record of the run, kept whatever the outcome: opens in Visual Studio, and is
+      # what to attach to a bug report. Tiny, so there is no reason to only keep the failures.
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-results-${{ github.run_number }}
+          path: ${{ github.workspace }}/e2e-results
+          if-no-files-found: warn
+          retention-days: 14
+
+      # A Playwright trace per test: DOM snapshots, screenshots and network, opened with
+      # `playwright show-trace <file>`. Written for every test but kept only when the job fails - a trace
+      # is a debugging tool, and on a green run the summary above already answers what ran.
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces-${{ github.run_number }}
+          path: ${{ github.workspace }}/e2e-artifacts
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Failures only: this runs on every push, and a green run is already visible on the PR.
+  notify:
+    if: always()
+    needs: [journeys]
+    uses: ./.github/workflows/notify-slack.yml
+    with:
+      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      notify-on: failure
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

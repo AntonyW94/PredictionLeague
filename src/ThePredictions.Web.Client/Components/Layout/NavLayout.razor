@@ -42,7 +42,7 @@
                     }
 
                     <div class="dropdown">
-                        <button class="btn nav-avatar-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="User Menu">
+                        <button class="btn nav-avatar-btn" type="button" data-test-id="nav-account-menu" data-bs-toggle="dropdown" aria-expanded="false" title="User Menu">
                             <UserAvatar FirstName="@context.User.FindFirst("FirstName")?.Value"
                                         LastName="@context.User.FindFirst("LastName")?.Value"
                                         Size="sm" />

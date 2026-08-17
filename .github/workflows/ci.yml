@@ -2,7 +2,16 @@
 name: CI
 
 on:
+  # Scoped to master rather than every branch, and paired with pull_request, because with both
+  # unrestricted a push to a PR branch fired this workflow TWICE - once as `push`, once as
+  # `pull_request` - running the whole build, the unit suite with coverage, and the container-backed
+  # integration suite twice over for the same commit. Concurrency cannot help: the two runs have
+  # different refs and so land in different groups.
+  #
+  # The trade, stated: a push to a branch with no open pull request is no longer built. A PR is covered
+  # by `pull_request` and master by `push`, so nothing that gets reviewed or merged goes unchecked.
   push:
+    branches: [master]
   pull_request:
 
 jobs:
@@ -24,17 +33,21 @@ jobs:
       - name: Build solution
         run: dotnet build ThePredictions.sln --no-restore --configuration Release /p:TreatWarningsAsErrors=true
 
-      # Category!=Integration keeps the container-backed suite out of this step: it needs a SQL Server
-      # to start before anything runs, and it owns no assembly for the 100% threshold to measure.
-      # ThePredictions.Persistence.SqlServer.Tests.Integration has a test that fails if a class in it is
-      # missing the trait, so nothing can quietly fall out of both jobs.
+      # Two suites are excluded here, both because they need something a compiler cannot provide and
+      # neither owns an assembly for the 100% threshold to measure:
+      #   * Category!=Integration - the container-backed suite needs a SQL Server to start first, and
+      #     runs in its own job below.
+      #   * Category!=E2E - the browser suite needs a SQL Server, a published application and a real
+      #     Chromium, and runs in e2e.yml.
+      # Each project has a test that fails if one of its classes is missing the trait, so nothing can
+      # quietly fall out of every job.
       - name: Run unit tests with coverage
         run: >
           dotnet test ThePredictions.sln
           --no-build
           --configuration Release
           --verbosity normal
-          --filter "Category!=Integration"
+          --filter "Category!=Integration&Category!=E2E"
           /p:CollectCoverage=true
           /p:CoverletOutputFormat=cobertura
           '/p:Exclude="[ThePredictions.Tests.*]*%2c[xunit.*]*%2c[FluentAssertions]*"'
