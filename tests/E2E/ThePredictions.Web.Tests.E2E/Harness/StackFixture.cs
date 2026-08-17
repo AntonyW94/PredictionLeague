@@ -15,17 +15,23 @@ namespace ThePredictions.Web.Tests.E2E.Harness;
 /// </remarks>
 public sealed class StackFixture : IAsyncLifetime
 {
-    private readonly TestDatabase _database = new();
     private readonly WebApplicationProcess _application = new();
 
     private IPlaywright? _playwright;
     private IBrowser? _browser;
 
+    /// <summary>
+    /// The database behind the running application, so a test class can arrange its own season and league in
+    /// <c>InitializeAsync</c> - see <see cref="TestDatabase.SeedLeagueAsync"/> for why arrangement is per
+    /// class rather than shared.
+    /// </summary>
+    internal TestDatabase Database { get; } = new();
+
     public async ValueTask InitializeAsync()
     {
-        await _database.StartAsync();
+        await Database.StartAsync();
 
-        await _application.StartAsync(_database.ConnectionString);
+        await _application.StartAsync(Database.ConnectionString);
 
         _playwright = await Playwright.CreateAsync();
 
@@ -49,7 +55,7 @@ public sealed class StackFixture : IAsyncLifetime
         _playwright?.Dispose();
 
         await _application.DisposeAsync();
-        await _database.DisposeAsync();
+        await Database.DisposeAsync();
     }
 
     /// <summary>

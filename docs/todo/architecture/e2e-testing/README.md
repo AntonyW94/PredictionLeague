@@ -153,13 +153,20 @@ workflows.
 
 The stack, the levels, the CI wiring and the conventions are built. What is left:
 
-### Two decisions the second journey forces
+### Decisions taken
 
-- **Isolation.** Every journey so far only reads, so one shared stack and a serial run is fine. The first
-  journey that **writes** breaks that - a test submitting a prediction breaks a test asserting none exist.
-  The answer is almost certainly a season and league per test class rather than a database reset: Respawn
-  would be wiping rows underneath a live application and fighting its connection pool.
-  `Harness/StackCollection.cs` says as much where the decision will be felt.
+- **Isolation: a season, league, player and round per test class.** Settled when the leaderboard journey
+  arrived. Not a shared arrangement, because the first journey that **writes** breaks it - a test submitting
+  a prediction breaks a test asserting none exist. Not Respawn either, which is how the integration suite
+  gets its isolation: it deletes every row, and here a live application holds a connection pool over the
+  database for the whole run. `TestDatabase.SeedLeagueAsync` takes the calling class's name and weaves it
+  into the seeded player's email and the league's name, so classes cannot tread on each other. The run is
+  still serial - one application process, and parallel WebAssembly browsers on a two-core runner would
+  thrash - but that is now a property of the collection definition rather than of the data, so it can be
+  revisited without touching a single assertion.
+
+### Still open
+
 - **`SkiaSharp` on Linux.** No `SkiaSharp.NativeAssets.Linux` package, so image rendering fails on an Ubuntu
   runner. It has not bitten because the dashboard's badge icons are client-side SVG, but a journey touching
   `GET /api/badges/{key}.png` or a share card will hit it. Options in
@@ -176,7 +183,7 @@ fixture is built once in the order its own dependencies demand rather than dragg
 | Layer | Fixture adds | Unlocks |
 |-------|--------------|---------|
 | **0** | a user *(done)* | anonymous pages, auth, account |
-| **1** | season, competition, teams, league, membership, Season Pass | dashboards, leagues, **leaderboards**, passes, badges |
+| **1** | season, competition, teams, league, membership, Season Pass, **one non-Draft round** *(done)* | dashboards, leagues, **leaderboards**, passes, badges |
 | **2** | rounds and matches, every date relative to `UtcNow` | predictions, active rounds, admin rounds |
 | **3** | results posted **through the admin endpoint**, so points and ranks are computed rather than seeded | round results, prizes, payouts, winnings, recap |
 
@@ -206,8 +213,8 @@ Layer 0 is available now. Nothing else is, until its layer's fixture exists.
 
 - [ ] `/dashboard` - the settled dashboard: My Leagues and Standings tiles, no onboarding takeover
 - [ ] `/dashboard` - the takeover, for a user with no pass and no league
-- [ ] `/leagues/{LeagueId:int}/dashboard` - **the overall leaderboard renders at least one row.** The shape of
-      the 2026-07-30 incident, and the highest-value journey in the list
+- [x] `/leagues/{LeagueId:int}/dashboard` - **the overall leaderboard renders.** The shape of the 2026-07-30
+      incident, and the highest-value journey in the list
 - [ ] `/leagues` - lists the leagues the user can manage
 - [ ] `/leagues/create` - a league is created, and the Season Pass gate refuses a user without one
 - [ ] `/leagues/{LeagueId:int}/edit` - settings save

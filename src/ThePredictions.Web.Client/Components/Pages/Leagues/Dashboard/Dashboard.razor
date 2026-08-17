@@ -1,4 +1,4 @@
-@page "/leagues/{LeagueId:int}/dashboard"
+﻿@page "/leagues/{LeagueId:int}/dashboard"
 
 @attribute [Authorize]
 
@@ -42,7 +42,7 @@
             @if (!State.IsFinished && (isPreDeadline || !State.ViewableRounds.Any()))
             {
                 <div class="preseason-layout">
-                    <div class="dashboard-waiting text-center">
+                    <div class="dashboard-waiting text-center" data-test-id="league-not-started">
                         <div class="dashboard-waiting__content">
                             <i class="bi bi-hourglass-split dashboard-waiting__icon"></i>
                             <h4 class="fw-bold text-white mt-3">The competition hasn't started yet</h4>

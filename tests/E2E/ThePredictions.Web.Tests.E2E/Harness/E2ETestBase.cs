@@ -13,6 +13,13 @@ namespace ThePredictions.Web.Tests.E2E.Harness;
 [Trait(E2ETrait.Name, E2ETrait.Value)]
 public abstract class E2ETestBase(StackFixture stack)
 {
+    /// <summary>
+    /// The stack's database, for a test class that has to arrange a season and league of its own before its
+    /// journeys can run. Read it in <c>IAsyncLifetime.InitializeAsync</c>, not from inside a test - seeding
+    /// per test would arrange the same world several times over.
+    /// </summary>
+    internal TestDatabase Database => stack.Database;
+
     /// <summary>Opens an isolated browser context for the calling test.</summary>
     internal async Task<BrowserSession> StartSessionAsync([CallerMemberName] string testName = "") =>
         // Qualified by the class, because the trace file is named after this and two actors can reasonably

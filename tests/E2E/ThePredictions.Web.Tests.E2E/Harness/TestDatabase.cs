@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using Testcontainers.MsSql;
+using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Persistence.Conformance;
 using ThePredictions.Tests.Seeding;
 
@@ -98,4 +99,71 @@ internal sealed class TestDatabase : IAsyncDisposable
             E2ESettings.PlayerLastName,
             E2ESettings.PlayerEmail,
             E2ESettings.PlayerPassword);
+
+    /// <summary>
+    /// A season, a league, and a player who is an approved member of it holding a Season Pass - everything a
+    /// journey needs to reach a league page and a leaderboard.
+    /// </summary>
+    /// <param name="scope">
+    /// The calling test class's name. It is woven into the player's email and the league's name, which is
+    /// what makes the arrangement <b>per test class</b> rather than shared.
+    /// </param>
+    /// <remarks>
+    /// <para>
+    /// Per class, deliberately, and this is the isolation decision the plan said had to be made before a
+    /// second journey. Everything so far only reads, so one shared arrangement would have been fine; the
+    /// first journey that <i>writes</i> breaks that, because a test submitting a prediction breaks a test
+    /// asserting none exist. Respawn - which is how the integration suite gets its isolation - is not an
+    /// option here: it deletes every row, and there is a live application holding a connection pool over this
+    /// database for the whole run. Giving each class its own season, league and player costs a handful of
+    /// inserts and means a journey can write without consulting anybody.
+    /// </para>
+    /// <para>
+    /// It also leaves the door open. The suite runs serially today because one application process and
+    /// parallel WebAssembly browsers on a two-core runner would thrash, not because the data forbids it - so
+    /// parallelising later is a change to the collection definition rather than to every assertion.
+    /// </para>
+    /// </remarks>
+    internal async Task<SeededLeague> SeedLeagueAsync(string scope)
+    {
+        var email = $"{scope}@e2e.test".ToLowerInvariant();
+
+        var playerUserId = await Seed.AddUserAsync("Ellie", scope, email, E2ESettings.PlayerPassword);
+
+        // A separate administrator, so the player under test is a plain member. Making them the league's own
+        // admin would quietly change what the dashboard renders - the pending-members and pending-requests
+        // tiles appear for an admin - and a journey should see what an ordinary player sees.
+        var administratorUserId = await Seed.AddUserAsync("Admin", scope);
+
+        var competitionId = await Seed.AddCompetitionAsync($"E2E{Math.Abs(scope.GetHashCode()) % 10000}");
+        var seasonId = await Seed.AddSeasonAsync(competitionId, $"{scope} Season");
+
+        var homeTeamId = await Seed.AddTeamAsync($"{scope} Home", "HOM");
+        var awayTeamId = await Seed.AddTeamAsync($"{scope} Away", "AWY");
+
+        // entryDeadlineUtc left null on purpose. The league dashboard renders a countdown instead of its
+        // content while `EntryDeadlineUtc is { } deadline && UtcNow < deadline`, and null is the column's
+        // default and reads as "entry is not still open".
+        var leagueId = await Seed.AddLeagueAsync(seasonId, administratorUserId, $"{scope} League");
+
+        await Seed.AddLeagueMemberAsync(leagueId, playerUserId);
+        await Seed.AddSeasonPassAsync(playerUserId, seasonId, source: SeasonPassSource.Free);
+
+        // At least one non-Draft round, and this is the other half of escaping the countdown: the dashboard
+        // also falls back to it when `!ViewableRounds.Any()`, and GetLeagueDashboardQueryHandler counts a
+        // round as viewable only when its status is not Draft. Completed rather than Published so the page
+        // renders its settled layout.
+        var roundId = await Seed.AddRoundAsync(
+            seasonId,
+            roundNumber: 1,
+            deadlineUtc: DateTime.UtcNow.AddDays(-7),
+            status: RoundStatus.Completed,
+            startDateUtc: DateTime.UtcNow.AddDays(-8),
+            completedDateUtc: DateTime.UtcNow.AddDays(-6));
+
+        await Seed.AddMatchAsync(roundId, homeTeamId, awayTeamId, DateTime.UtcNow.AddDays(-7));
+
+        return new SeededLeague(
+            seasonId, leagueId, $"{scope} League", email, E2ESettings.PlayerPassword, roundId);
+    }
 }

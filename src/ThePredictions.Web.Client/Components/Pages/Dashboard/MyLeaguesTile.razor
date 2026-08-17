@@ -1,4 +1,4 @@
-@inject NavigationManager NavigationManager
+﻿@inject NavigationManager NavigationManager
 @inject IDashboardStateService DashboardState
 @inject IBrowserService BrowserService
 @inject IJSRuntime JsRuntime
@@ -434,7 +434,7 @@
                                                     var isFinishedOrArchived = league.IsFinished || league.IsArchivedByUser;
                                                     var primaryLabel = isFinishedOrArchived ? "View Recap" : "View Dashboard";
                                                 }
-                                                <button class="btn purple-accent-button w-100" @onclick="() => ViewLeagueDashboard(league.Id)">
+                                                <button class="btn purple-accent-button w-100" data-test-id="my-leagues-view" @onclick="() => ViewLeagueDashboard(league.Id)">
                                                     @primaryLabel
                                                 </button>
                                                 @if (isFinishedOrArchived)
