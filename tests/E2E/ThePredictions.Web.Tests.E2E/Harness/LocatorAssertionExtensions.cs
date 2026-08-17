@@ -41,6 +41,12 @@ namespace ThePredictions.Web.Tests.E2E.Harness;
 internal static class LocatorAssertionExtensions
 {
     /// <summary>
+    /// How long to let the page go quiet before asserting that something is absent. Short: by this point the
+    /// action under test has already happened, and this is only waiting for its consequences to land.
+    /// </summary>
+    private const float SettleTimeoutMs = 10_000;
+
+    /// <summary>
     /// Asserts the element is present and visible, retrying until it is.
     /// </summary>
     /// <param name="timeoutMs">
@@ -64,4 +70,57 @@ internal static class LocatorAssertionExtensions
     /// </remarks>
     internal static Task ShouldNotExistAsync(this ILocator locator, float? timeoutMs = null) =>
         Assertions.Expect(locator).ToHaveCountAsync(0, new LocatorAssertionsToHaveCountOptions { Timeout = timeoutMs });
+
+    /// <summary>
+    /// Asserts nothing matches, and if something does, says <b>what it said</b>.
+    /// </summary>
+    /// <remarks>
+    /// For error panels, <see cref="ShouldNotExistAsync"/> reports "expected count 0 but was 3", which tells
+    /// you a page is broken without telling you how - and the panels are the one place the application has
+    /// already written down what went wrong. This ran the retrying assertion first, so the waiting behaviour
+    /// is unchanged, and only reaches for the text once the assertion has genuinely failed.
+    ///
+    /// It earned itself immediately: a dashboard that had passed for many runs started reporting three
+    /// errors, and "three" was not enough to act on without downloading a trace - which a GitHub outage had
+    /// made unavailable at the time.
+    /// </remarks>
+    internal static async Task ShouldReportNoErrorsAsync(this ILocator locator, float? timeoutMs = null)
+    {
+        // Settle the page BEFORE asserting absence, which is the whole difference between this meaning
+        // something and meaning nothing.
+        //
+        // ToHaveCountAsync(0) returns the instant the count is already zero - it never waits to see whether
+        // something arrives a moment later. So an absence assertion fired immediately after a click passes
+        // before the page has had a chance to fail, and the dashboard fires eight parallel reads. This was
+        // passing by luck for many runs and only started failing when a fourth journey shifted the timing.
+        //
+        // A timeout here is tolerated rather than thrown: "the network never went quiet" is a worse and more
+        // confusing failure than whatever the panels are about to say.
+        try
+        {
+            await locator.Page.WaitForLoadStateAsync(
+                LoadState.NetworkIdle, new PageWaitForLoadStateOptions { Timeout = SettleTimeoutMs });
+        }
+        catch (PlaywrightException)
+        {
+            // Still busy - assert anyway, on the state we have.
+        }
+
+        try
+        {
+            await locator.ShouldNotExistAsync(timeoutMs);
+        }
+        catch (PlaywrightException)
+        {
+            var messages = await locator.AllInnerTextsAsync();
+
+            var detail = messages.Count == 0
+                ? "(the panels disappeared before their text could be read)"
+                : string.Join($"{Environment.NewLine}  - ", messages.Select(m => m.ReplaceLineEndings(" ").Trim()));
+
+            throw new PlaywrightException(
+                $"The page is showing {messages.Count} error panel(s), so a read behind it failed:"
+                + $"{Environment.NewLine}  - {detail}");
+        }
+    }
 }

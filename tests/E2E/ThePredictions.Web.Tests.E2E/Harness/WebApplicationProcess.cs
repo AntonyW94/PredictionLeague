@@ -39,8 +39,31 @@ internal sealed class WebApplicationProcess : IAsyncDisposable
         await WaitUntilLiveAsync();
     }
 
+    /// <summary>
+    /// Writes everything the application logged to the artifacts folder.
+    /// </summary>
+    /// <remarks>
+    /// Without this, a failing journey tells you the page showed an error and never why: the panel says
+    /// "Could not load your leagues", and the exception that caused it lives in the application's console
+    /// output, which was captured and then discarded. The Playwright trace does not help either - it records
+    /// the browser's side, so a 500 is a 500. This is the server's half of the same story, and it is written
+    /// on every run because the run that needs it is the one that already failed.
+    /// </remarks>
+    internal async Task WriteLogAsync()
+    {
+        if (_output.IsEmpty)
+            return;
+
+        Directory.CreateDirectory(E2ESettings.ArtifactsDirectory);
+
+        await File.WriteAllLinesAsync(
+            Path.Combine(E2ESettings.ArtifactsDirectory, "application.log"), _output);
+    }
+
     public async ValueTask DisposeAsync()
     {
+        await WriteLogAsync();
+
         if (_process is null)
             return;
 
@@ -86,6 +109,19 @@ internal sealed class WebApplicationProcess : IAsyncDisposable
         // Without this the signing key stays the unresolved ${Jwt-Secret} placeholder, which is under the
         // 128 bits HS256 demands, and the first sign-in throws instead of returning a token.
         startInfo.Environment["JwtSettings__Secret"] = E2ESettings.JwtSecret;
+
+        // FieldEncryptionService's CONSTRUCTOR rejects a key that is not valid base64, and it is a singleton
+        // injected into the handler graph behind My Leagues, Active Rounds and Standings. Left unresolved the
+        // placeholder ${FieldEncryption-Key} is not base64, so all three dashboard reads returned 500 and the
+        // page rendered three error panels - which looked convincingly like an application bug until the
+        // application's own log said otherwise.
+        startInfo.Environment["FieldEncryption__Key"] = E2ESettings.FieldEncryptionKey;
+
+        // appsettings.json sets Serilog's default minimum to Warning, which suppresses request logging - the
+        // category is Serilog's own, not ThePredictions, so the Information override does not reach it. A
+        // production choice, and the wrong one for a stack whose whole job is to be diagnosed: without this,
+        // a read that fails without throwing leaves no trace of its status code anywhere.
+        startInfo.Environment["Serilog__MinimumLevel__Default"] = "Information";
 
         var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
 

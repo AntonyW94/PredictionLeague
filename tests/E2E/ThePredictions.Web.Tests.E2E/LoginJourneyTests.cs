@@ -39,6 +39,6 @@ public class LoginJourneyTests(StackFixture stack) : E2ETestBase(stack)
         // sign-up sees. Asserting no error panel is what makes the difference between "the page rendered"
         // and "the page rendered eight failed reads", which on an empty database is a genuine risk worth
         // catching rather than seeding around.
-        await layout.ErrorMessages.ShouldNotExistAsync();
+        await layout.ErrorMessages.ShouldReportNoErrorsAsync();
     }
 }

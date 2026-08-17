@@ -40,6 +40,24 @@ internal static class TestIds
     /// </summary>
     internal const string MyLeaguesView = "my-leagues-view";
 
+    /// <summary>
+    /// The join-a-private-league-by-code flow, which is two steps: enter the code and fetch a preview, then
+    /// confirm. Each step is addressable so a failure names the step that broke rather than the journey.
+    /// </summary>
+    internal const string JoinPrivateOpen = "join-private-open";
+
+    internal const string JoinPrivateModal = "join-private-modal";
+
+    internal const string JoinEntryCode = "join-entry-code";
+
+    internal const string JoinContinue = "join-continue";
+
+    internal const string JoinPreview = "join-preview";
+
+    internal const string JoinConfirm = "join-confirm";
+
+    internal const string JoinSent = "join-sent";
+
     internal const string OverallLeaderboard = "overall-leaderboard";
 
     /// <summary>
@@ -75,6 +93,13 @@ internal static class TestIds
         NavAccountMenu,
         Dashboard,
         MyLeaguesView,
+        JoinPrivateOpen,
+        JoinPrivateModal,
+        JoinEntryCode,
+        JoinContinue,
+        JoinPreview,
+        JoinConfirm,
+        JoinSent,
         OverallLeaderboard,
         LeaderboardRow,
         LeagueNotStarted,
