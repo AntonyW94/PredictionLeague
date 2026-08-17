@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <!-- Meta Tags -->
@@ -64,8 +64,12 @@
     <script src="js/error-handlers.js"></script>
 
     <!-- Javascript Files -->
-    <!-- ?v bumped when interop.js changes so browsers fetch the new file instead of a cached copy -->
-    <script src="js/interop.js?v=2"></script>
+    <!-- No ?v here on purpose. Publish stamps one on, and the BundleCssAndAddCacheBusting target in
+         ThePredictions.Web.csproj finds these by their exact unversioned src - so a hand-written ?v stops the
+         replacement matching and freezes the URL instead of busting it. A hardcoded ?v=2 did exactly that, and
+         every deploy afterwards served returning browsers a cached interop.js. CacheBustingConventionTests
+         fails the build if the two drift apart again. -->
+    <script src="js/interop.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="lib/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="lib/sweetalert2/sweetalert2.all.min.js"></script>
