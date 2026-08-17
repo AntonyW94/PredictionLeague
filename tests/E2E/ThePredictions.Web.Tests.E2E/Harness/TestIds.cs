@@ -35,6 +35,27 @@ internal static class TestIds
     internal const string Dashboard = "dashboard";
 
     /// <summary>
+    /// The primary action on a My Leagues card. Labelled "View Dashboard" mid-season and "View Recap" once
+    /// finished, which is exactly why it is addressed by id rather than by its text.
+    /// </summary>
+    internal const string MyLeaguesView = "my-leagues-view";
+
+    internal const string OverallLeaderboard = "overall-leaderboard";
+
+    /// <summary>
+    /// One per row, so several elements share it. That is fine, and is what makes "at least one row" and
+    /// "how many rows" both expressible.
+    /// </summary>
+    internal const string LeaderboardRow = "leaderboard-row";
+
+    /// <summary>
+    /// The countdown a league page shows instead of its content while the competition has not started.
+    /// Asserted <b>absent</b> on the leaderboard journey: if it appears, the fixture put the league in the
+    /// wrong state, and saying so beats timing out on a leaderboard that was never going to render.
+    /// </summary>
+    internal const string LeagueNotStarted = "league-not-started";
+
+    /// <summary>
     /// The panel every page shows in place of content when a read behind it fails. One id on the shared
     /// component covers every page at once, which is why "no error anywhere" is cheap to assert.
     /// </summary>
@@ -53,6 +74,10 @@ internal static class TestIds
         CookieConsentReject,
         NavAccountMenu,
         Dashboard,
+        MyLeaguesView,
+        OverallLeaderboard,
+        LeaderboardRow,
+        LeagueNotStarted,
         ApiError
     ];
 }

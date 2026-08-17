@@ -23,6 +23,25 @@
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
         <PackageReference Include="Polly" Version="8.5.2" />
         <PackageReference Include="SkiaSharp" Version="4.150.1" />
+        <!-- SkiaSharp is a managed wrapper over a NATIVE library, and the base package carries the Windows
+             binary only. Without this, anything that draws - the share card, the badge PNGs - throws
+             DllNotFoundException on libSkiaSharp the first time it is used, on Linux only, and lazily: the
+             application starts perfectly happily and then fails on the first request that renders.
+
+             Added for two reasons. It lets the browser suite prove image rendering actually works rather
+             than skirting round it, and it removes a latent production fault: production is Windows/IIS
+             today, so this is currently dead weight, but if the site is ever containerised (which the
+             hosting notes contemplate) the first deploy would boot clean and then fail the first time
+             somebody pressed Share.
+
+             Version pinned to match the managed package EXACTLY rather than taking the newest available -
+             4.150.2 and 4.151.x both exist. The native and managed halves are released in lockstep and a
+             mismatch is a runtime failure, so this is the one place the highest-version rule does not apply.
+
+             The variant with dependencies, not NoDependencies: the share card draws text in 17 places, so
+             it needs system fonts through fontconfig, which ubuntu-latest already has. NoDependencies is
+             self-contained but cannot see system fonts at all. -->
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.150.1" />
         <PackageReference Include="Stripe.net" Version="52.1.1" />
         <PackageReference Include="Serilog.AspNetCore" Version="8.0.3">
           <TreatAsUsed>true</TreatAsUsed>

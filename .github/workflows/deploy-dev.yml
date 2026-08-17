@@ -75,6 +75,13 @@ jobs:
         run: |
           rm -rf ./publish/BlazorDebugProxy
           find ./publish -name "*.pdb" -delete
+          # SkiaSharp.NativeAssets.Linux ships thirteen architectures - arm, arm64, musl, riscv,
+          # loongarch and the rest - which is 137MB this Windows/IIS host can never execute. It is
+          # referenced so the browser test suite can render images on a Linux runner, and so a future
+          # containerised deploy would not fail on first use, but shipping it over FTP would grow the
+          # upload by about 64% on a transfer that already needs retries and a three-attempt file count.
+          # The verify step below counts what is left, so this cannot silently remove too much.
+          rm -rf ./publish/runtimes/linux-*
 
       - name: Deploy to dev site via FTP
         run: |

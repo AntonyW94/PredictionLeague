@@ -20,4 +20,23 @@ internal sealed class DashboardPage(IPage page)
     /// of it appeared. The id is deliberately on both branches in the markup.
     /// </summary>
     internal ILocator Container => page.GetByTestId(TestIds.Dashboard);
+
+    /// <summary>
+    /// Opens the first league on the My Leagues carousel.
+    /// </summary>
+    /// <remarks>
+    /// <c>.First</c> because a player can belong to several and the carousel renders them all - the seeded
+    /// player belongs to exactly one, so first is the only one, and the locator stays honest if that changes.
+    /// </remarks>
+    internal async Task OpenFirstLeagueAsync()
+    {
+        var view = page.GetByTestId(TestIds.MyLeaguesView).First;
+
+        await view.ShouldBeVisibleAsync();
+        await view.ClickAsync();
+
+        await page.WaitForURLAsync(url =>
+            url.Contains("/leagues/", StringComparison.Ordinal)
+            && url.EndsWith("/dashboard", StringComparison.Ordinal));
+    }
 }
