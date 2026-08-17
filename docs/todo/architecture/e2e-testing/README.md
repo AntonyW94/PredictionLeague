@@ -178,15 +178,26 @@ The stack, the levels, the CI wiring and the conventions are built. What is left
 
   **The cost was an order of magnitude worse than first estimated, and is worth knowing before touching it.**
   The package ships thirteen architectures - arm, arm64, musl, riscv, loongarch and the rest - which is
-  **137MB across 13 files**, not the "few MB" it was pitched as. On an FTP transfer that already needs retry
-  settings and a three-attempt file count, that is about 64% growth for something the host cannot execute.
+  **137MB, and 24 files of the published output** (423 files stripped against 447 whole). On an FTP transfer
+  that already needs retry settings and a three-attempt file count, that is about 64% growth for something
+  the host cannot execute.
 
   > **Correction, 2026-08-17.** Both deploy workflows briefly stripped `./publish/runtimes/linux-*` for that
   > reason, and this section claimed the strip was "safe by construction rather than by measurement: every
   > payload file in the package sits under `runtimes/linux-*`". The construction argument was wrong somewhere.
-  > Dev returned **500.30, "failed to start", on two consecutive deploys** of that build, stayed down for
-  > minutes rather than recycling, and came back up immediately on an identical deploy with only the strip
-  > removed. The strip is gone from both workflows and the publish now goes up whole.
+  > The strip is gone from both workflows and the publish now goes up whole.
+  >
+  > **What the four deploys actually showed**, since the correlation is the whole basis for the reversal and
+  > the reasoning is not to be trusted here:
+  >
+  > | Published files | Deploys | Outcome |
+  > |---|---|---|
+  > | 423 (stripped) | 2 | never came up; 500 by hand for a full minute, twice; `Warm up site` failed both times |
+  > | 447 (whole) | 2 | one reached 200 after the recycle, one was 200 on the first check |
+  >
+  > **Every deploy to this host answers 500 at first**, including the successful ones, so that on its own is
+  > not the symptom - the difference is whether the app pool recycle rescues it. Read the two rows as "did not
+  > recover" against "recovered", not as "500" against "no 500".
   >
   > **The mechanism is still unexplained**, and that is the useful part of this record. The same publish
   > starts fine locally on Windows against dev's own configuration, no stdout log was produced for any of the
@@ -320,10 +331,19 @@ The completeness alphabetical was reached for is kept by the checklist above, no
   any crashed process and the same publish starting cleanly on Windows locally. The workflows now upload the
   publish whole, so this costs about 64% on every FTP transfer until somebody understands it. Excluding the
   assets at publish time is the likely answer, but it needs a dev deploy to prove rather than an argument.
-- **Nothing tests the deploy workflows themselves.** Two consecutive dev deploys of a build that could not
-  start were reported green: `Verify deployment file count` passed, and `Warm up site` retried, touched
-  `web.config`, waited 15 seconds and then ran a final `curl` whose status it never checks. A deploy that
-  leaves the site returning 500 should fail, and this one cannot.
+- **`Warm up site` passes without checking that the site came up.** The step's first `curl` captures a status
+  and branches on it, but the *second* one - the one after the `web.config` touch and the recycle - only
+  prints its status, so nothing after the recycle is asserted. A site left returning a prompt 500 would give
+  a zero exit and a green deploy.
+
+  Worth stating what actually happened, because the first version of this note claimed both bad dev deploys
+  were reported green and that was wrong. Both **failed**, at this step, with `curl` exiting 23 after the
+  recycle rather than through any check on the status. The gap is real and the deploys caught it anyway.
+
+  What is genuinely worth knowing is that **every deploy to this host answers 500 at first**. The successful
+  strip-free deploy did too, and reached 200 only after the touch-and-recycle path; the deploy after it came
+  up immediately. So "500 right after a deploy" says nothing on its own - the signal is whether it recovers -
+  and any check added here has to allow for the recycle rather than assert on the first response.
 
 ---
 
