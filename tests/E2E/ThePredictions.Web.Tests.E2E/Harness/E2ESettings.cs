@@ -38,6 +38,14 @@ internal static class E2ESettings
     internal const string JwtSecret = "e2e-tests-only-not-a-secret-0000000000000000";
 
     /// <summary>
+    /// AES-GCM key for the encrypted payout fields. Must be valid base64 decoding to exactly 32 bytes, which
+    /// <c>FieldEncryptionService</c>'s constructor enforces - and it is a singleton in the handler graph behind
+    /// several dashboard reads, so an invalid key takes those pages down rather than just the payout screen.
+    /// Thirty-two zero bytes: obviously not a real key, for a database that lives for half a minute.
+    /// </summary>
+    internal const string FieldEncryptionKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+
+    /// <summary>
     /// The environment name the application is launched under. Chosen because there is deliberately no
     /// <c>appsettings.E2E.json</c>: only the base file loads, so no <c>KeyVaultUri</c> is present and the
     /// Key Vault branch in <c>Program.cs</c> is skipped entirely. It is also not Development or Local, so

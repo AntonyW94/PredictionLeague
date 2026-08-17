@@ -41,6 +41,12 @@ namespace ThePredictions.Web.Tests.E2E.Harness;
 internal static class LocatorAssertionExtensions
 {
     /// <summary>
+    /// How long to let the page go quiet before asserting that something is absent. Short: by this point the
+    /// action under test has already happened, and this is only waiting for its consequences to land.
+    /// </summary>
+    private const float SettleTimeoutMs = 10_000;
+
+    /// <summary>
     /// Asserts the element is present and visible, retrying until it is.
     /// </summary>
     /// <param name="timeoutMs">
@@ -80,6 +86,26 @@ internal static class LocatorAssertionExtensions
     /// </remarks>
     internal static async Task ShouldReportNoErrorsAsync(this ILocator locator, float? timeoutMs = null)
     {
+        // Settle the page BEFORE asserting absence, which is the whole difference between this meaning
+        // something and meaning nothing.
+        //
+        // ToHaveCountAsync(0) returns the instant the count is already zero - it never waits to see whether
+        // something arrives a moment later. So an absence assertion fired immediately after a click passes
+        // before the page has had a chance to fail, and the dashboard fires eight parallel reads. This was
+        // passing by luck for many runs and only started failing when a fourth journey shifted the timing.
+        //
+        // A timeout here is tolerated rather than thrown: "the network never went quiet" is a worse and more
+        // confusing failure than whatever the panels are about to say.
+        try
+        {
+            await locator.Page.WaitForLoadStateAsync(
+                LoadState.NetworkIdle, new PageWaitForLoadStateOptions { Timeout = SettleTimeoutMs });
+        }
+        catch (PlaywrightException)
+        {
+            // Still busy - assert anyway, on the state we have.
+        }
+
         try
         {
             await locator.ShouldNotExistAsync(timeoutMs);
