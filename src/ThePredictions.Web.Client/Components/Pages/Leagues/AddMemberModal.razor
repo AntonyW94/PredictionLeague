@@ -1,0 +1,160 @@
+@inject HttpClient Http
+
+@using System.Text.Json.Nodes
+@using ThePredictions.Contracts.Leagues
+
+<div class="modal fade" id="addLeagueMemberModal" data-test-id="add-member-modal" tabindex="-1" aria-labelledby="addLeagueMemberModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content themed-modal">
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title fw-bold" id="addLeagueMemberModalLabel">Add Member</h5>
+                <button type="button" class="btn-close" @onclick="CloseAsync" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ApiError Message="@_errorMessage" />
+
+                @if (_candidates is null)
+                {
+                    @if (_errorMessage is null)
+                    {
+                        <div class="text-center py-4"><span class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></span></div>
+                    }
+                }
+                else if (_candidates.Count == 0)
+                {
+                    @* Not an error: everybody who could be added already has been. *@
+                    <p class="mb-0" data-test-id="add-member-none">
+                        Everybody with a Season Pass for this season is already in this league, so there is nobody left to add.
+                    </p>
+                }
+                else
+                {
+                    <p class="mb-3">
+                        Anybody with a Season Pass for this season who is not in the league yet. They go straight in as an
+                        approved member, even if the entry deadline has passed.
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="add-member-user" class="form-label">Player</label>
+                        <select id="add-member-user" class="form-select" data-test-id="add-member-select"
+                                value="@_selectedUserId" @onchange="OnSelectionChanged">
+                            <option value="">Choose a player...</option>
+                            @foreach (var candidate in _candidates)
+                            {
+                                <option value="@candidate.UserId">@candidate.FullName (@candidate.Email)</option>
+                            }
+                        </select>
+                    </div>
+                }
+
+                <div class="d-flex justify-content-end align-items-center mt-4">
+                    <button type="button" class="btn neutral-button me-2" @onclick="CloseAsync">
+                        <span class="bi bi-x-circle me-2"></span>Cancel
+                    </button>
+                    @if (_candidates is { Count: > 0 })
+                    {
+                        <button type="button" class="btn green-button" data-test-id="add-member-confirm"
+                                disabled="@(_isBusy || string.IsNullOrEmpty(_selectedUserId))" @onclick="AddMemberAsync">
+                            @if (_isBusy)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                <span>Adding...</span>
+                            }
+                            else
+                            {
+                                <span class="bi bi-person-plus-fill me-2"></span>
+                                <span>Add to League</span>
+                            }
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>The league the chosen player is placed in.</summary>
+    [Parameter]
+    public int LeagueId { get; set; }
+
+    /// <summary>Raised once a player has been added, so the members list behind the modal can be reloaded.</summary>
+    [Parameter]
+    public EventCallback OnMemberAdded { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private List<LeagueJoinCandidateDto>? _candidates;
+    private string? _selectedUserId;
+    private string? _errorMessage;
+    private bool _isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _candidates = await Http.GetFromJsonAsync<List<LeagueJoinCandidateDto>>($"api/leagues/{LeagueId}/join-candidates");
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Could not load the players who could be added to this league.";
+        }
+    }
+
+    private void OnSelectionChanged(ChangeEventArgs e)
+    {
+        _selectedUserId = e.Value?.ToString();
+        _errorMessage = null;
+    }
+
+    private async Task AddMemberAsync()
+    {
+        _isBusy = true;
+        _errorMessage = null;
+
+        try
+        {
+            var request = new AddLeagueMemberRequest { UserId = _selectedUserId! };
+            var response = await Http.PostAsJsonAsync($"api/leagues/{LeagueId}/members", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await OnMemberAdded.InvokeAsync();
+                return;
+            }
+
+            _errorMessage = await ReadErrorMessageAsync(response);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"An unexpected error occurred: {ex.Message}";
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// The refusals worth reading are the domain's own - already a member, no Season Pass for this season - and the API
+    /// puts those in a "message" property. Anything else falls back to the status code rather than showing an empty box.
+    /// </summary>
+    private static async Task<string> ReadErrorMessageAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var body = await response.Content.ReadFromJsonAsync<JsonNode>();
+            return body?["message"]?.ToString() ?? $"Could not add the member. The server returned a {response.StatusCode} error.";
+        }
+        catch
+        {
+            return $"Could not add the member. The server returned a {response.StatusCode} error.";
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

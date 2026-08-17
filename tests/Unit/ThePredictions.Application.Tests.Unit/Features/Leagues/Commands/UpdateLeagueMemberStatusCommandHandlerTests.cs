@@ -58,7 +58,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
         // Arrange
         var league = CreateLeague();
         var member = CreateMember(status: LeagueMemberStatus.Pending);
-        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Approved);
+        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Approved, IsAdmin: false);
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
         _leagueMemberRepository.GetAsync(1, "member-1", Arg.Any<CancellationToken>()).Returns(member);
@@ -80,7 +80,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
         // Arrange
         var league = CreateLeague();
         var member = CreateMember(status: LeagueMemberStatus.Pending);
-        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Rejected);
+        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Rejected, IsAdmin: false);
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
         _leagueMemberRepository.GetAsync(1, "member-1", Arg.Any<CancellationToken>()).Returns(member);
@@ -98,7 +98,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
     {
         // Arrange
         var league = CreateLeague(administratorUserId: "admin-user");
-        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "other-user", LeagueMemberStatus.Approved);
+        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "other-user", LeagueMemberStatus.Approved, IsAdmin: false);
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
 
@@ -111,10 +111,29 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldApproveMember_WhenASystemAdministratorDoesNotRunTheLeague()
+    {
+        // Arrange
+        var league = CreateLeague(administratorUserId: "admin-user");
+        var member = CreateMember(status: LeagueMemberStatus.Pending);
+        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "other-user", LeagueMemberStatus.Approved, IsAdmin: true);
+
+        _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
+        _leagueMemberRepository.GetAsync(1, "member-1", Arg.Any<CancellationToken>()).Returns(member);
+
+        // Act
+        await _handler.Handle(command, CancellationToken.None);
+
+        // Assert - a system administrator can open this league's members page, so its buttons have to work there too
+        member.Status.Should().Be(LeagueMemberStatus.Approved);
+        await _leagueMemberRepository.Received(1).UpdateAsync(member, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_ShouldThrowEntityNotFoundException_WhenLeagueNotFound()
     {
         // Arrange
-        var command = new UpdateLeagueMemberStatusCommand(999, "member-1", "admin-user", LeagueMemberStatus.Approved);
+        var command = new UpdateLeagueMemberStatusCommand(999, "member-1", "admin-user", LeagueMemberStatus.Approved, IsAdmin: false);
 
         _leagueRepository.GetByIdAsync(999, Arg.Any<CancellationToken>())
             .Returns((League?)null);
@@ -131,7 +150,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
     {
         // Arrange
         var league = CreateLeague();
-        var command = new UpdateLeagueMemberStatusCommand(1, "unknown-member", "admin-user", LeagueMemberStatus.Approved);
+        var command = new UpdateLeagueMemberStatusCommand(1, "unknown-member", "admin-user", LeagueMemberStatus.Approved, IsAdmin: false);
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
         _leagueMemberRepository.GetAsync(1, "unknown-member", Arg.Any<CancellationToken>())
@@ -150,7 +169,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
         // Arrange
         var league = CreateLeague();
         var member = CreateMember(status: LeagueMemberStatus.Pending);
-        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", (LeagueMemberStatus)99);
+        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", (LeagueMemberStatus)99, IsAdmin: false);
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
         _leagueMemberRepository.GetAsync(1, "member-1", Arg.Any<CancellationToken>()).Returns(member);
@@ -169,7 +188,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
         // Arrange
         var league = CreateLeague();
         var member = CreateMember(status: LeagueMemberStatus.Pending);
-        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Pending);
+        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Pending, IsAdmin: false);
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
         _leagueMemberRepository.GetAsync(1, "member-1", Arg.Any<CancellationToken>()).Returns(member);
@@ -188,7 +207,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
         // Arrange
         var league = CreateLeague();
         var member = CreateMember(status: LeagueMemberStatus.Pending);
-        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Approved);
+        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Approved, IsAdmin: false);
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
         _leagueMemberRepository.GetAsync(1, "member-1", Arg.Any<CancellationToken>()).Returns(member);
@@ -207,7 +226,7 @@ public class UpdateLeagueMemberStatusCommandHandlerTests
         // rank can have moved
         var league = CreateLeague();
         var member = CreateMember(status: LeagueMemberStatus.Pending);
-        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Rejected);
+        var command = new UpdateLeagueMemberStatusCommand(1, "member-1", "admin-user", LeagueMemberStatus.Rejected, IsAdmin: false);
 
         _leagueRepository.GetByIdAsync(1, Arg.Any<CancellationToken>()).Returns(league);
         _leagueMemberRepository.GetAsync(1, "member-1", Arg.Any<CancellationToken>()).Returns(member);

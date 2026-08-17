@@ -45,6 +45,22 @@ public class FetchLeagueMembersQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldNotCheckLeagueAdministration_WhenTheCallerIsASystemAdministrator()
+    {
+        // Arrange
+        Given(new LeagueMembersData("Test League", []));
+
+        // Act
+        var page = await HandleAsync(isAdmin: true);
+
+        // Assert - Manage Leagues offers this page for every league, and adding a member to one they do not run is the
+        // job that needs it, so a system administrator is never asked whether they run it.
+        page.LeagueName.Should().Be("Test League");
+        await _membershipService.DidNotReceiveWithAnyArgs()
+            .EnsureLeagueAdministratorAsync(default, default!, CancellationToken.None);
+    }
+
+    [Fact]
     public async Task Handle_ShouldThrow_WhenTheLeagueDoesNotExist()
     {
         // Arrange
@@ -145,8 +161,8 @@ public class FetchLeagueMembersQueryHandlerTests
         _membersQuery.ExecuteAsync(LeagueId, Arg.Any<CancellationToken>()).Returns(data);
     }
 
-    private async Task<LeagueMembersPageDto> HandleAsync() =>
-        await _handler.Handle(new FetchLeagueMembersQuery(LeagueId, UserId), CancellationToken.None);
+    private async Task<LeagueMembersPageDto> HandleAsync(bool isAdmin = false) =>
+        await _handler.Handle(new FetchLeagueMembersQuery(LeagueId, UserId, isAdmin), CancellationToken.None);
 
     private static LeagueMembershipRow Member(
         string userId,

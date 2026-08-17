@@ -4,6 +4,8 @@
 
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JsRuntime
 
 @using ThePredictions.Contracts.Leagues
 @using ThePredictions.Domain.Common.Enumerations
@@ -14,7 +16,16 @@
     <div class="admin-table-container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="fw-bold mb-0">Members</h3>
-            <span class="form-label mb-0">@_leagueData?.LeagueName</span>
+            <div class="d-flex align-items-center gap-3">
+                <span class="form-label mb-0">@_leagueData?.LeagueName</span>
+                @if (_isAdmin && _leagueData != null)
+                {
+                    <button class="btn btn-sm green-button d-flex align-items-center" data-test-id="add-member-open" @onclick="ShowAddMemberModalAsync">
+                        <span class="bi bi-person-plus-fill"></span>
+                        <span class="d-none d-md-inline ms-2">Add Member</span>
+                    </button>
+                }
+            </div>
         </div>
 
         @if (_leagueData == null)
@@ -156,6 +167,11 @@
     </div>
 </div>
 
+@if (_showAddMemberModal)
+{
+    <AddMemberModal LeagueId="LeagueId" OnMemberAdded="HandleMemberAddedAsync" OnClose="HideAddMemberModalAsync" />
+}
+
 @code {
     [Parameter]
     public int LeagueId { get; set; }
@@ -163,6 +179,8 @@
     private LeagueMembersPageDto? _leagueData;
     private string? _errorMessage;
     private string _activeTab = "approved";
+    private bool _isAdmin;
+    private bool _showAddMemberModal;
 
     private List<LeagueMemberDto> _approvedMembers = [];
     private List<LeagueMemberDto> _pendingMembers = [];
@@ -170,6 +188,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _isAdmin = authState.User.IsInRole(RoleNames.Administrator);
+
         await LoadMembersAsync();
     }
 
@@ -226,6 +247,30 @@
         }
 
         StateHasChanged();
+    }
+
+    private async Task ShowAddMemberModalAsync()
+    {
+        _errorMessage = null;
+        _showAddMemberModal = true;
+
+        // The markup has to exist before Bootstrap is asked to show it, and the render that creates it has not happened
+        // yet at this point. Same wait as the dashboard's join modal.
+        await Task.Delay(50);
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "addLeagueMemberModal");
+    }
+
+    private async Task HideAddMemberModalAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "addLeagueMemberModal");
+        _showAddMemberModal = false;
+    }
+
+    private async Task HandleMemberAddedAsync()
+    {
+        await HideAddMemberModalAsync();
+        await LoadMembersAsync();
+        _activeTab = "approved";
     }
 
     private void BackToLeagues()

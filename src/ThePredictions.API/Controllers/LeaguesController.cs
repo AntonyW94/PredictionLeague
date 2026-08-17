@@ -106,7 +106,26 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         [SwaggerParameter("League identifier")] int leagueId,
         CancellationToken cancellationToken)
     {
-        var query = new FetchLeagueMembersQuery(leagueId, CurrentUserId);
+        var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
+
+        var query = new FetchLeagueMembersQuery(leagueId, CurrentUserId, isAdmin);
+        return Ok(await mediator.Send(query, cancellationToken));
+    }
+
+    [HttpGet("{leagueId:int}/join-candidates")]
+    [Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
+    [SwaggerOperation(
+        Summary = "Get players an administrator could add to a league",
+        Description = "Returns everybody holding a Season Pass for the league's season who is not already in the league (of any status). Feeds the \"Add Member\" picker on the league members page. Admin only.")]
+    [SwaggerResponse(200, "Candidates retrieved successfully", typeof(IEnumerable<LeagueJoinCandidateDto>))]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<ActionResult<List<LeagueJoinCandidateDto>>> FetchLeagueJoinCandidatesAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetLeagueJoinCandidatesQuery(leagueId);
         return Ok(await mediator.Send(query, cancellationToken));
     }
 
@@ -520,6 +539,25 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         return Ok(new JoinLeagueResultDto(joinedLeagueId));
     }
 
+    [HttpPost("{leagueId:int}/members")]
+    [Authorize(Roles = nameof(ApplicationUserRole.Administrator))]
+    [SwaggerOperation(
+        Summary = "Add a member to a league",
+        Description = "Places a Season Pass holder in the league as an approved member, ignoring the league's entry deadline. For the player who paid in time but could not finish joining themselves. Admin only.")]
+    [SwaggerResponse(204, "Member added successfully")]
+    [SwaggerResponse(400, "Already a member, or holds no Season Pass for the league's season")]
+    [SwaggerResponse(401, "Not authenticated")]
+    [SwaggerResponse(403, "Not authorised - admin role required")]
+    [SwaggerResponse(404, "League not found")]
+    public async Task<IActionResult> AddLeagueMemberAsync(
+        [SwaggerParameter("League identifier")] int leagueId,
+        [FromBody, SwaggerParameter("The player to place in the league", Required = true)] AddLeagueMemberRequest request,
+        CancellationToken cancellationToken)
+    {
+        await mediator.Send(new AddLeagueMemberCommand(leagueId, request.UserId), cancellationToken);
+        return NoContent();
+    }
+
     [HttpPost("{leagueId:int}/members/{memberId}/status")]
     [SwaggerOperation(
         Summary = "Update member status",
@@ -535,7 +573,9 @@ public class LeaguesController(IMediator mediator) : ApiControllerBase
         [FromBody, SwaggerParameter("New membership status", Required = true)] LeagueMemberStatus newStatus,
         CancellationToken cancellationToken)
     {
-        var command = new UpdateLeagueMemberStatusCommand(leagueId, memberId, CurrentUserId, newStatus);
+        var isAdmin = User.IsInRole(nameof(ApplicationUserRole.Administrator));
+
+        var command = new UpdateLeagueMemberStatusCommand(leagueId, memberId, CurrentUserId, newStatus, isAdmin);
         await mediator.Send(command, cancellationToken);
 
         return NoContent();

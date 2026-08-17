@@ -1,14 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
 using MediatR;
-using ThePredictions.Domain.Common.Enumerations;
+using ThePredictions.Application.Common.Interfaces;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
 [ExcludeFromCodeCoverage(Justification = "MediatR request record: properties only, no logic to test.")]
-public record UpdateLeagueMemberStatusCommand(
+public record AddLeagueMemberCommand(
     int LeagueId,
-    string MemberId,
-    string UpdatingUserId,
-    LeagueMemberStatus NewStatus,
-    bool IsAdmin
-) : IRequest;
+    string UserId
+) : IRequest, ITransactionalRequest;

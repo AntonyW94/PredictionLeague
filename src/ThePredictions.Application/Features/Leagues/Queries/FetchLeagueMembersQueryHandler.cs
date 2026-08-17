@@ -17,7 +17,12 @@ public class FetchLeagueMembersQueryHandler(
         FetchLeagueMembersQuery request,
         CancellationToken cancellationToken)
     {
-        await membershipService.EnsureLeagueAdministratorAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
+        // A system administrator gets in without running the league, because Manage Leagues already offers them this page
+        // for every public and private league - and because placing a member in a league they do not run is the one job
+        // that needs it. The same waiver is in DeleteLeagueCommandHandler and UpdateLeagueMemberStatusCommandHandler, so
+        // an administrator who can open the page can also act on what it shows.
+        if (!request.IsAdmin)
+            await membershipService.EnsureLeagueAdministratorAsync(request.LeagueId, request.CurrentUserId, cancellationToken);
 
         var data = await membersQuery.ExecuteAsync(request.LeagueId, cancellationToken);
 

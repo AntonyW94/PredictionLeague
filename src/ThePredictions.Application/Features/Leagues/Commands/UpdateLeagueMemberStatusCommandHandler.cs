@@ -15,7 +15,9 @@ public class UpdateLeagueMemberStatusCommandHandler(ILeagueRepository leagueRepo
         var league = await leagueRepository.GetByIdAsync(request.LeagueId, cancellationToken);
         Guard.Against.EntityNotFound(request.LeagueId, league, "League");
 
-        if (league.AdministratorUserId != request.UpdatingUserId)
+        // A system administrator is allowed through as well, the same waiver DeleteLeagueCommandHandler makes. They can
+        // already open this league's members page, and a page whose buttons all fail is worse than no page.
+        if (league.AdministratorUserId != request.UpdatingUserId && !request.IsAdmin)
             throw new UnauthorizedAccessException("Only the league administrator can update member status.");
         
         var member = await leagueMemberRepository.GetAsync(request.LeagueId, request.MemberId, cancellationToken);
