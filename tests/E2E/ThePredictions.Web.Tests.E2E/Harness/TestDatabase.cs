@@ -194,8 +194,20 @@ internal sealed class TestDatabase : IAsyncDisposable
 
         var entryCode = EntryCodeFor(scope);
 
+        // The entry deadline must be in the FUTURE, and this is the opposite of what the leaderboard fixture
+        // needs from the very same column - which is worth stating, because copying that one cost a CI run.
+        //
+        // LeagueEntry.IsOpen returns false for a null deadline: "a league with no entry deadline was silently
+        // never joinable", a rule that used to be enforced only by SQL's NULL > anything being unknown. The
+        // dashboard's private-league prompt is gated on IsOpen, so a null deadline here means no button to
+        // click. The leaderboard journey needs the reverse - null or past, or the league page renders a
+        // countdown instead of its leaderboards.
         var leagueId = await Seed.AddLeagueAsync(
-            seasonId, administratorUserId, $"{scope} Private League", entryCode: entryCode);
+            seasonId,
+            administratorUserId,
+            $"{scope} Private League",
+            entryDeadlineUtc: DateTime.UtcNow.AddDays(7),
+            entryCode: entryCode);
 
         // The pass, but deliberately NO AddLeagueMemberAsync - joining is the thing under test.
         await Seed.AddSeasonPassAsync(playerUserId, seasonId, source: SeasonPassSource.Free);
