@@ -2,7 +2,7 @@ using System.Data;
 using Microsoft.Data.SqlClient;
 using ThePredictions.Application.Data;
 
-namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
+namespace ThePredictions.Tests.Seeding;
 
 /// <summary>
 /// The application's connection seam, pointed at the test container. Deliberately not
@@ -10,7 +10,7 @@ namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 /// <c>IConfiguration</c> and rebuilds the string with production pool sizes and connect-retry
 /// settings, none of which a single-test connection wants.
 /// </summary>
-internal sealed class TestDbConnectionFactory(string connectionString) : IDbConnectionFactory
+public sealed class TestDbConnectionFactory(string connectionString) : IDbConnectionFactory
 {
     public IDbConnection CreateConnection() => new SqlConnection(connectionString);
 }

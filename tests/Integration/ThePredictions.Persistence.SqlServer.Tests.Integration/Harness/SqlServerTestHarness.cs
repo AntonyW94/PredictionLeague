@@ -3,8 +3,9 @@ using Microsoft.Extensions.Options;
 using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
 using ThePredictions.Persistence.Conformance;
-using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Persistence.SqlServer.Data.Resilience;
+using ThePredictions.Persistence.SqlServer.Data;
+using ThePredictions.Tests.Seeding;
 
 namespace ThePredictions.Persistence.SqlServer.Tests.Integration.Harness;
 

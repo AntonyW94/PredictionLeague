@@ -38,16 +38,14 @@
          schema rather than a hand-maintained imitation of it. -->
     <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
 
-    <!-- 6.1.4 to match ThePredictions.Infrastructure, the persistence adapter and the integration
-         suite. Deliberately NOT DatabaseTools' 7.0.1: this project references the adapter, so a
-         different major here would be a diamond conflict rather than an isolated tooling bump. -->
+    <!-- Creating the database and clearing the connection pool, which happen either side of the
+         seeder. 6.1.4 to match ThePredictions.Infrastructure, the persistence adapter and the
+         integration suite. Deliberately NOT DatabaseTools' 7.0.1: this project references the adapter,
+         so a different major here would be a diamond conflict rather than an isolated tooling bump. -->
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
-    <PackageReference Include="Dapper" Version="2.1.66" />
 
-    <!-- PasswordHasher, for seeding a user who can actually sign in. Arrives transitively through
-         Domain's Identity.Stores reference anyway; declared explicitly, at the same version, so the
-         seed does not depend on someone else's transitive graph. -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="8.0.14" />
+    <!-- No Dapper and no Identity.Core. Both were here to hand-write an AspNetUsers INSERT; arranging
+         rows is now ThePredictions.Tests.Seeding's job, and the password hashing went with it. -->
   </ItemGroup>
 
   <ItemGroup>
@@ -56,6 +54,9 @@
          ThePredictions.DatabaseTools disagreeing about the journal keys. Nothing else in the adapter is
          used - the site is exercised over HTTP, like any other client. -->
     <ProjectReference Include="..\..\..\src\ThePredictions.Persistence.SqlServer\ThePredictions.Persistence.SqlServer.csproj" />
+    <!-- Arranging rows. The same seeder the integration suite uses, so one place knows the schema rather
+         than one per suite - which matters more with every table a journey needs. -->
+    <ProjectReference Include="..\..\Shared\ThePredictions.Tests.Seeding\ThePredictions.Tests.Seeding.csproj" />
   </ItemGroup>
 
   <!-- The fixture has to find the repository root at runtime, to locate the published web application

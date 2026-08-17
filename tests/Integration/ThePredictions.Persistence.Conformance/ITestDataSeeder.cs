@@ -33,7 +33,17 @@ public interface ITestDataSeeder
 
     Task<int> AddTeamAsync(string name, string abbreviation);
 
-    Task<string> AddUserAsync(string firstName, string lastName);
+    /// <summary>
+    /// A user. <paramref name="email"/> defaults to one derived from the name, which is all a query test
+    /// needs.
+    /// </summary>
+    /// <param name="password">
+    /// Supply one only when the user has to <b>sign in</b>, which in practice means a browser journey. It
+    /// writes a real hash and a security stamp, both of which ASP.NET Identity requires to accept a
+    /// sign-in; left null - as every query test leaves it - the row cannot authenticate, which is correct
+    /// for a test that only reads.
+    /// </param>
+    Task<string> AddUserAsync(string firstName, string lastName, string? email = null, string? password = null);
 
     /// <summary>
     /// A round. <paramref name="completedDateUtc"/> is separate from <paramref name="status"/> on purpose: a round

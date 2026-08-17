@@ -42,6 +42,7 @@
     <!-- The adapter-neutral conformance suite. Every test in it runs here via a concrete subclass. -->
     <ProjectReference Include="..\ThePredictions.Persistence.Conformance\ThePredictions.Persistence.Conformance.csproj" />
     <ProjectReference Include="..\..\Shared\ThePredictions.Tests.Shared\ThePredictions.Tests.Shared.csproj" />
+    <ProjectReference Include="..\..\Shared\ThePredictions.Tests.Seeding\ThePredictions.Tests.Seeding.csproj" />
   </ItemGroup>
 
   <!-- Lets the migration test compare the DbUp journal against the scripts committed on disk. -->
