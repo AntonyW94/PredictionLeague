@@ -1,4 +1,4 @@
-@inject IDashboardStateService DashboardState
+﻿@inject IDashboardStateService DashboardState
 @inject IBrowserService BrowserService
 @inject IJSRuntime JsRuntime
 @inject NavigationManager Navigation
@@ -125,7 +125,7 @@
     @if (DashboardState.HasAvailablePrivateLeagues)
     {
         <div class="mt-auto pt-4">
-            <button class="btn blue-light-button w-100" @onclick="() => ShowJoinModalAsync(null)">Join Private League with Code</button>
+            <button class="btn blue-light-button w-100" data-test-id="join-private-open" @onclick="() => ShowJoinModalAsync(null)">Join Private League with Code</button>
         </div>
     }
 </div>
@@ -133,7 +133,7 @@
 @if (_showJoinModal)
 {
     <JoinPrivateLeagueModal @key="@($"{_joinModalLeagueId}-{_joinModalEntryCode}")" LeagueId="_joinModalLeagueId"
-                            EntryCode="_joinModalEntryCode" OnClose="HideJoinModalAsync" />
+                            EntryCode="@_joinModalEntryCode" OnClose="HideJoinModalAsync" />
 }
 
 @code {

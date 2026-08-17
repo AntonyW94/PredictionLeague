@@ -166,4 +166,60 @@ internal sealed class TestDatabase : IAsyncDisposable
         return new SeededLeague(
             seasonId, leagueId, $"{scope} League", email, E2ESettings.PlayerPassword, roundId);
     }
+
+    /// <summary>
+    /// A <b>private</b> league the player is deliberately <i>not</i> a member of, plus a Season Pass for its
+    /// season - the arrangement needed to exercise joining by entry code.
+    /// </summary>
+    /// <remarks>
+    /// Three details the join flow will not work without, each read out of the code rather than guessed:
+    /// <list type="bullet">
+    ///   <item>The Season Pass, because <c>JoinLeagueCommandHandler</c> calls
+    ///         <c>EnsureCanParticipateAsync</c> and the acquire-first gate refuses a joiner without one.</item>
+    ///   <item>No membership, because the dashboard's private-league check is a <c>NOT EXISTS</c> against
+    ///         <c>LeagueMembers</c> - already being in it hides the button that opens the modal.</item>
+    ///   <item>A six-character alphanumeric code, because <c>JoinLeagueRequestValidator</c> enforces exactly
+    ///         that, so a longer or punctuated code would fail validation rather than the flow.</item>
+    /// </list>
+    /// </remarks>
+    internal async Task<SeededPrivateLeague> SeedPrivateLeagueToJoinAsync(string scope)
+    {
+        var email = $"joiner-{scope}@e2e.test".ToLowerInvariant();
+
+        var playerUserId = await Seed.AddUserAsync("Jo", scope, email, E2ESettings.PlayerPassword);
+        var administratorUserId = await Seed.AddUserAsync("Owner", scope);
+
+        var competitionId = await Seed.AddCompetitionAsync($"J{Math.Abs(scope.GetHashCode()) % 100000}");
+        var seasonId = await Seed.AddSeasonAsync(competitionId, $"{scope} Join Season");
+
+        var entryCode = EntryCodeFor(scope);
+
+        var leagueId = await Seed.AddLeagueAsync(
+            seasonId, administratorUserId, $"{scope} Private League", entryCode: entryCode);
+
+        // The pass, but deliberately NO AddLeagueMemberAsync - joining is the thing under test.
+        await Seed.AddSeasonPassAsync(playerUserId, seasonId, source: SeasonPassSource.Free);
+
+        return new SeededPrivateLeague(seasonId, leagueId, entryCode, email, E2ESettings.PlayerPassword);
+    }
+
+    /// <summary>
+    /// Six characters of <c>[A-Z0-9]</c>, derived from the test class name so it is stable across runs and
+    /// distinct between classes. The shape is not cosmetic - the validator rejects anything else.
+    /// </summary>
+    private static string EntryCodeFor(string scope)
+    {
+        const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+        var hash = Math.Abs(scope.GetHashCode());
+        var code = new char[6];
+
+        for (var i = 0; i < code.Length; i++)
+        {
+            code[i] = alphabet[hash % alphabet.Length];
+            hash /= alphabet.Length;
+        }
+
+        return new string(code);
+    }
 }

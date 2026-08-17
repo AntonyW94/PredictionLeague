@@ -1,4 +1,4 @@
-@inject ILeagueService LeagueService
+﻿@inject ILeagueService LeagueService
 @inject IDashboardStateService DashboardState
 @inject IPayoutService PayoutService
 @inject NavigationManager Navigation
@@ -9,7 +9,7 @@
 @using ThePredictions.Web.Client.Services.Leagues
 @using ThePredictions.Web.Client.Services.Payouts
 
-<div class="modal fade" id="joinPrivateLeagueModal" tabindex="-1" aria-labelledby="joinPrivateLeagueModalLabel" aria-hidden="true">
+<div class="modal fade" id="joinPrivateLeagueModal" data-test-id="join-private-modal" tabindex="-1" aria-labelledby="joinPrivateLeagueModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered @(_step == Step.Confirm ? "modal-lg" : string.Empty)">
         <div class="modal-content themed-modal">
             <div class="modal-header border-bottom">
@@ -51,7 +51,7 @@
                         <FluentValidationValidator />
                         <div class="mb-3">
                             <label for="entryCode" class="form-label">Entry Code</label>
-                            <InputText id="entryCode" class="form-control" @bind-Value="_model.EntryCode" placeholder="Enter 6-character code" />
+                            <InputText id="entryCode" class="form-control" data-test-id="join-entry-code" @bind-Value="_model.EntryCode" placeholder="Enter 6-character code" />
                             <StyledValidationMessage For="@(() => _model.EntryCode)" />
                         </div>
 
@@ -59,7 +59,7 @@
                             <button type="button" class="btn neutral-button me-2" @onclick="Close">
                                 <span class="bi bi-x-circle me-2"></span>Cancel
                             </button>
-                            <button type="submit" class="btn green-button" disabled="@_isBusy">
+                            <button type="submit" class="btn green-button" data-test-id="join-continue" disabled="@_isBusy">
                                 @if (_isBusy)
                                 {
                                     <span class="spinner-border spinner-border-sm me-2"></span>
@@ -76,7 +76,7 @@
                 }
                 else if (_step == Step.Confirm && _preview is not null)
                 {
-                    <div class="join-preview">
+                    <div class="join-preview" data-test-id="join-preview">
                         <h4 class="fw-bold mb-1">@_preview.LeagueName</h4>
                         <p class="text-muted mb-3">Run by @_preview.AdministratorName</p>
 
@@ -152,7 +152,7 @@
                             <button type="button" class="btn neutral-button" @onclick="BackAsync" disabled="@_isBusy">
                                 <span class="bi bi-arrow-left-circle me-2"></span>@(IsPublic ? "Cancel" : "Back")
                             </button>
-                            <button type="button" class="btn green-button" disabled="@(_isBusy || _preview.DeadlinePassed)" @onclick="ConfirmJoinAsync">
+                            <button type="button" class="btn green-button" data-test-id="join-confirm" disabled="@(_isBusy || _preview.DeadlinePassed)" @onclick="ConfirmJoinAsync">
                                 @if (_isBusy)
                                 {
                                     <span class="spinner-border spinner-border-sm me-2"></span>
@@ -169,7 +169,7 @@
                 }
                 else
                 {
-                    <p class="mb-3">
+                    <p class="mb-3" data-test-id="join-sent">
                         <span class="bi bi-check-circle-fill text-green-600 me-2"></span>
                         Your request to join has been sent to the league admin.
                     </p>
