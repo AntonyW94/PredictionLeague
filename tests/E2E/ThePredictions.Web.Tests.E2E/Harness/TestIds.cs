@@ -74,6 +74,28 @@ internal static class TestIds
     internal const string LeagueNotStarted = "league-not-started";
 
     /// <summary>
+    /// One per account on the admin user list, so several elements share it - which is what makes "the row for
+    /// this email" expressible as a filter rather than as an index.
+    /// </summary>
+    internal const string AdminUserRow = "admin-user-row";
+
+    internal const string AdminUserMenu = "admin-user-menu";
+
+    internal const string AdminUserDelete = "admin-user-delete";
+
+    /// <summary>
+    /// The itemised list of what deleting an account destroys, inside the admin confirmation dialog. Lives in
+    /// <c>interop.js</c> rather than a component, because the dialog is composed by SweetAlert.
+    /// </summary>
+    internal const string DeleteUserImpact = "delete-user-impact";
+
+    /// <summary>Shown in place of the list above when the account has no history at all.</summary>
+    internal const string DeleteUserImpactEmpty = "delete-user-impact-empty";
+
+    /// <summary>The replacement-administrator picker, shown only when the account administers a league.</summary>
+    internal const string DeleteUserNewAdmin = "delete-user-new-admin";
+
+    /// <summary>
     /// The panel every page shows in place of content when a read behind it fails. One id on the shared
     /// component covers every page at once, which is why "no error anywhere" is cheap to assert.
     /// </summary>
@@ -103,6 +125,12 @@ internal static class TestIds
         OverallLeaderboard,
         LeaderboardRow,
         LeagueNotStarted,
+        AdminUserRow,
+        AdminUserMenu,
+        AdminUserDelete,
+        DeleteUserImpact,
+        DeleteUserImpactEmpty,
+        DeleteUserNewAdmin,
         ApiError
     ];
 }

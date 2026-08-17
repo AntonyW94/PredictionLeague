@@ -14,8 +14,16 @@ internal static partial class WebClientSource
 
     /// <summary>
     /// Every hand-written markup file under <c>src/</c>. Razor and HTML both, because the Web host's
-    /// <c>index.html</c> is as legitimate a place for a test id as a component is.
+    /// <c>index.html</c> is as legitimate a place for a test id as a component is - and our own JavaScript,
+    /// because the SweetAlert dialogs are composed there and a confirmation dialog is as real a piece of UI
+    /// as any component.
     /// </summary>
+    /// <remarks>
+    /// <c>wwwroot/lib/</c> is skipped. It is vendored third-party code at pinned versions, nobody here
+    /// annotates it, and one of those bundles carries Playwright's own <c>data-testid</c> spelling - which
+    /// would fail <c>TestIdConventionTests.NoMarkup_ShouldUseThePlaywrightDefaultSpelling</c> for something
+    /// no one in this repository wrote.
+    /// </remarks>
     internal static IEnumerable<(string RelativePath, string Text)> MarkupFiles()
     {
         var sourceRoot = Path.Combine(E2ESettings.RepositoryRoot, "src");
@@ -23,13 +31,13 @@ internal static partial class WebClientSource
         if (!Directory.Exists(sourceRoot))
             throw new InvalidOperationException($"Expected to find the source tree at '{sourceRoot}'.");
 
-        foreach (var extension in new[] { ".razor", ".html" })
+        foreach (var extension in new[] { ".razor", ".html", ".js" })
         {
             foreach (var path in Directory.EnumerateFiles(sourceRoot, $"*{extension}", SearchOption.AllDirectories))
             {
                 var relative = Path.GetRelativePath(E2ESettings.RepositoryRoot, path).Replace('\\', '/');
 
-                if (relative.Contains("/obj/") || relative.Contains("/bin/"))
+                if (relative.Contains("/obj/") || relative.Contains("/bin/") || relative.Contains("/lib/"))
                     continue;
 
                 // utf-8 with BOM detection: several components are authored with one, and a byte-order mark

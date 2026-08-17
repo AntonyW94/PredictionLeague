@@ -216,6 +216,64 @@ internal sealed class TestDatabase : IAsyncDisposable
     }
 
     /// <summary>
+    /// An administrator who can sign in, and an ordinary account holding a season pass for them to delete.
+    /// </summary>
+    /// <param name="scope">The calling test class's name, woven into both addresses - see <see cref="SeedLeagueAsync"/>.</param>
+    /// <remarks>
+    /// <para>
+    /// The season pass is the point. It is the exact shape of the production failure: an account with no
+    /// leagues created or joined, one row in <c>[SeasonPasses]</c>, and a foreign key that did not cascade -
+    /// so <c>DELETE FROM [AspNetUsers]</c> failed with error 547 and the screen reported an internal server
+    /// error. Seeded through the same path as everything else, so the journey exercises the real schema.
+    /// </para>
+    /// <para>
+    /// <b>Must be called after the application has started</b>, unlike the other fixtures here. The
+    /// administrator needs a row in <c>[AspNetUserRoles]</c>, and the roles themselves do not exist until
+    /// <c>DatabaseInitialiser</c> writes them at startup - so this runs from the test class's
+    /// <c>InitializeAsync</c>, by which point the stack is up. Seeding it alongside the rest would throw,
+    /// deliberately: see <c>ITestDataSeeder.AddUserToRoleAsync</c>.
+    /// </para>
+    /// </remarks>
+    internal async Task<SeededDeletableUser> SeedDeletableUserAsync(string scope)
+    {
+        var adminEmail = $"admin-{scope}@e2e.test".ToLowerInvariant();
+        var targetEmail = $"deleteme-{scope}@e2e.test".ToLowerInvariant();
+
+        var adminUserId = await Seed.AddUserAsync("Admin", scope, adminEmail, E2ESettings.PlayerPassword);
+        await Seed.AddUserToRoleAsync(adminUserId, nameof(ApplicationUserRole.Administrator));
+
+        const string targetFirstName = "Marie";
+        var targetUserId = await Seed.AddUserAsync(targetFirstName, scope, targetEmail);
+
+        var competitionId = await Seed.AddCompetitionAsync($"D{Math.Abs(scope.GetHashCode()) % 100000}");
+        var seasonId = await Seed.AddSeasonAsync(competitionId, $"{scope} Delete Season");
+
+        // Purchased rather than Free, so the dialog has money to report and the journey can assert that it
+        // does. A comped pass would still block the delete but would show no amount.
+        await Seed.AddSeasonPassAsync(targetUserId, seasonId, source: SeasonPassSource.Purchased);
+
+        return new SeededDeletableUser(
+            adminEmail,
+            E2ESettings.PlayerPassword,
+            targetUserId,
+            targetEmail,
+            $"{targetFirstName} {scope}");
+    }
+
+    /// <summary>Whether an account is still in the database, for a journey that has just deleted one.</summary>
+    internal async Task<bool> UserExistsAsync(string userId)
+    {
+        await using var connection = new SqlConnection(ConnectionString);
+        await connection.OpenAsync();
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM [AspNetUsers] WHERE [Id] = @UserId;";
+        command.Parameters.AddWithValue("@UserId", userId);
+
+        return (int)(await command.ExecuteScalarAsync())! > 0;
+    }
+
+    /// <summary>
     /// Six characters of <c>[A-Z0-9]</c>, derived from the test class name so it is stable across runs and
     /// distinct between classes. The shape is not cosmetic - the validator rejects anything else.
     /// </summary>

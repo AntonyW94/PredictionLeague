@@ -32,18 +32,19 @@ public class UsersController(IMediator mediator) : ApiControllerBase
         return Ok(await mediator.Send(query, cancellationToken));
     }
 
-    [HttpGet("{userId}/owns-leagues")]
+    [HttpGet("{userId}/deletion-impact")]
     [SwaggerOperation(
-        Summary = "Check if user owns leagues",
-        Description = "Returns whether the user is an administrator of any leagues. Used to determine if league ownership must be transferred before account deletion.")]
-    [SwaggerResponse(200, "Returns boolean indicating league ownership", typeof(bool))]
+        Summary = "Count what deleting a user would destroy",
+        Description = "Returns how many of each kind of record the account holds - season passes, memberships, predictions, winnings, payouts and the rest - so the confirmation dialog can state the consequences before the administrator commits. Also reports how many leagues the account administers, which must be re-assigned rather than deleted.")]
+    [SwaggerResponse(200, "Deletion impact retrieved successfully", typeof(UserDeletionImpactDto))]
     [SwaggerResponse(401, "Not authenticated")]
     [SwaggerResponse(403, "Not authorised - admin role required")]
-    public async Task<ActionResult<bool>> UserOwnsLeaguesAsync(
+    [SwaggerResponse(404, "User not found")]
+    public async Task<ActionResult<UserDeletionImpactDto>> DeletionImpactAsync(
         [SwaggerParameter("User identifier")] string userId,
         CancellationToken cancellationToken)
     {
-        var query = new UserOwnsLeaguesQuery(userId);
+        var query = new GetUserDeletionImpactQuery(userId);
         return Ok(await mediator.Send(query, cancellationToken));
     }
 

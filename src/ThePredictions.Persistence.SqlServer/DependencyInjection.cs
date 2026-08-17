@@ -150,6 +150,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailTestUserQuery, EmailTestUserQuery>();
         services.AddScoped<ISeasonsQuery, SeasonsQuery>();
         services.AddScoped<IAdminUsersQuery, AdminUsersQuery>();
+        services.AddScoped<IUserDeletionImpactQuery, UserDeletionImpactQuery>();
         services.AddScoped<ISeasonPassPagesQuery, SeasonPassPagesQuery>();
         services.AddScoped<ISeasonPassHoldersQuery, SeasonPassHoldersQuery>();
         services.AddScoped<ISeasonPricingQuery, SeasonPricingQuery>();

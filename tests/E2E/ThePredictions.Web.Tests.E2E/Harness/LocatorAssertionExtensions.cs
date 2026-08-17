@@ -56,6 +56,19 @@ internal static class LocatorAssertionExtensions
     internal static Task ShouldBeVisibleAsync(this ILocator locator, float? timeoutMs = null) =>
         Assertions.Expect(locator).ToBeVisibleAsync(new LocatorAssertionsToBeVisibleOptions { Timeout = timeoutMs });
 
+    /// <summary>
+    /// Asserts the element's text contains <paramref name="expected"/>, retrying until it does.
+    /// </summary>
+    /// <remarks>
+    /// Substring rather than equality, and case-insensitive, because what this is for is checking that a
+    /// message <i>mentions</i> something - that the deletion dialog names the season pass, say. Pinning the
+    /// whole sentence would make the assertion a copy of the wording rather than a statement about it, and
+    /// every rephrasing would be a test failure.
+    /// </remarks>
+    internal static Task ShouldContainTextAsync(this ILocator locator, string expected, float? timeoutMs = null) =>
+        Assertions.Expect(locator).ToContainTextAsync(
+            expected, new LocatorAssertionsToContainTextOptions { IgnoreCase = true, Timeout = timeoutMs });
+
     /// <summary>Asserts the element is either gone or no longer visible, retrying until it is.</summary>
     internal static Task ShouldBeHiddenAsync(this ILocator locator, float? timeoutMs = null) =>
         Assertions.Expect(locator).ToBeHiddenAsync(new LocatorAssertionsToBeHiddenOptions { Timeout = timeoutMs });
