@@ -15,7 +15,12 @@
     </PackageReference>
     <PackageReference Include="xunit.v3" Version="3.0.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0" />
-    <PackageReference Include="FluentAssertions" Version="7.0.0" />
+    <!-- AwesomeAssertions, not FluentAssertions, and this project is the first to move. FluentAssertions
+         7.0.0 is the last free version - 8.x went commercial - so it will never receive another fix,
+         security or otherwise. This is the community fork, Apache-2.0, and the rest of the test projects
+         follow (roadmap Track 1 item 3). Writing a new project against the library we are leaving would
+         only be work to redo. -->
+    <PackageReference Include="AwesomeAssertions" Version="9.5.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
 
     <!-- Browser automation. Deliberately the base package rather than Microsoft.Playwright.NUnit or

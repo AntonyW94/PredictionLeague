@@ -1,5 +1,5 @@
 using System.Reflection;
-using FluentAssertions;
+using AwesomeAssertions;
 using Xunit;
 
 namespace ThePredictions.Web.Tests.E2E.Harness;

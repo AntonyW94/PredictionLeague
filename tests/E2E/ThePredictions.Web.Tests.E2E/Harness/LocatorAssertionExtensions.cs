@@ -8,6 +8,11 @@ namespace ThePredictions.Web.Tests.E2E.Harness;
 /// assertions underneath.
 /// </summary>
 /// <remarks>
+/// Note these wrap <b>Playwright</b>, not AwesomeAssertions, despite the <c>Should</c> naming. That is why
+/// this project's move off FluentAssertions touched only the convention tests: nothing about the browser ever
+/// went through an assertion library.
+/// </remarks>
+/// <remarks>
 /// <para>
 /// <b>Every method here delegates to <c>Assertions.Expect</c>, and that is the whole point.</b> Playwright's
 /// assertions are <i>web-first</i>: they re-check the page until the condition holds or the timeout expires.
@@ -28,7 +33,7 @@ namespace ThePredictions.Web.Tests.E2E.Harness;
 /// await locator.ShouldBeVisibleAsync();
 /// </code>
 /// <para>
-/// FluentAssertions is still the right tool in this project for the convention tests, which sweep source
+/// An assertion library is still the right tool in this project for the convention tests, which sweep source
 /// files and reflect over types: there is no page to settle, so there is nothing to retry. The rule is the
 /// domain, not the syntax - anything about the browser goes through here.
 /// </para>
