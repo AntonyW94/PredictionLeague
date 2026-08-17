@@ -2,7 +2,16 @@
 name: CI
 
 on:
+  # Scoped to master rather than every branch, and paired with pull_request, because with both
+  # unrestricted a push to a PR branch fired this workflow TWICE - once as `push`, once as
+  # `pull_request` - running the whole build, the unit suite with coverage, and the container-backed
+  # integration suite twice over for the same commit. Concurrency cannot help: the two runs have
+  # different refs and so land in different groups.
+  #
+  # The trade, stated: a push to a branch with no open pull request is no longer built. A PR is covered
+  # by `pull_request` and master by `push`, so nothing that gets reviewed or merged goes unchecked.
   push:
+    branches: [master]
   pull_request:
 
 jobs:
