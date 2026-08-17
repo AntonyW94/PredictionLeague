@@ -1,0 +1,82 @@
+# .github/workflows/fetch-dev-logs.yml
+name: Fetch Dev Logs
+
+# Retrieves the dev site's ASP.NET Core stdout logs and publishes them as an artifact.
+#
+# This exists because the hosting is FTP-only - no RDP, no shell, no log streaming - so when the app
+# fails to START there is nowhere else for the reason to appear. `web.config` already ships with
+# stdoutLogEnabled="true" writing to .\logs\stdout, and both FTP mirror passes in the deploy exclude
+# logs/, so those files survive deploys. They just could not be read without the FTP credentials,
+# which live here as repository secrets and nowhere else.
+#
+# Deliberately READ ONLY. It runs `get` and never `put`, `rm` or `mirror --reverse`, so it cannot
+# alter the site. Manual trigger only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      lines:
+        description: 'Tail this many lines of each log into the run summary (0 for none).'
+        required: false
+        type: string
+        default: '80'
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install lftp
+        run: sudo apt-get install -y -qq lftp > /dev/null 2>&1
+
+      - name: Download the stdout logs
+        run: |
+          mkdir -p dev-logs
+
+          # `get` only, into a local directory. mirror without --reverse pulls FROM the server, and
+          # --only-newer keeps it cheap on a folder that accumulates.
+          lftp -u "${{ secrets.DEV_FTP_USERNAME }},${{ secrets.DEV_FTP_PASSWORD }}" \
+            "ftp://${{ vars.FTP_SERVER }}" \
+            -e "set net:timeout 30; \
+                set net:max-retries 3; \
+                set ftp:passive-mode yes; \
+                set ftp:ssl-allow no; \
+                set ftp:use-mlsd yes; \
+                mirror --only-newer --verbose /htdocs/logs/ ./dev-logs/; \
+                quit"
+
+          echo "Retrieved:"
+          ls -la dev-logs/ || echo "  (nothing - the logs folder may be empty or absent)"
+
+      # Puts the tail straight on the run summary, so the usual reason for fetching these - reading the
+      # most recent startup exception - needs no download at all.
+      - name: Summarise the newest log
+        if: always()
+        run: |
+          {
+            echo "## Dev stdout logs"
+            echo
+
+            newest=$(ls -t dev-logs/* 2>/dev/null | head -1)
+
+            if [ -z "$newest" ]; then
+              echo "No log files were retrieved. Either nothing has been written since the folder was"
+              echo "last cleared, or the site has not failed to start."
+              exit 0
+            fi
+
+            echo "Newest: \`$(basename "$newest")\`"
+            echo
+            echo '```'
+            tail -n "${{ inputs.lines }}" "$newest"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: dev-logs-${{ github.run_number }}
+          path: dev-logs
+          if-no-files-found: warn
+          retention-days: 7
