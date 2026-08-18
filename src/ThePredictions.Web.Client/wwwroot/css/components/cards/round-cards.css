@@ -26,13 +26,12 @@
 
 /* A match tile is always these four lines, in every state:
      1. meta    - outcome icon (left), kickoff time (centre), result chip (right)
-     2. fixture - home badge, predicted score, away badge
-     3. names   - the two teams' short names, under their own badge
-     4. split   - how everyone went, masked with question marks until the match locks
+     2. fixture - each side's badge with its name beneath, either side of the predicted score
+     3. split   - how everyone went, masked with question marks until the match locks
    Everything that used to compete for room on a single line now has its own, which is what lets
    the badges be big enough to recognise the club rather than merely notice a badge.
 
-   None of the four is ever omitted, only refilled: the outcome icon starts as a dashed circle,
+   None of the three is ever omitted, only refilled: the outcome icon starts as a dashed circle,
    the result chip as a clock, the split as three even bars. A tile therefore keeps one height
    from the moment fixtures are published to full time, so the card does not reshuffle under the
    player as each match locks, kicks off and finishes.
@@ -63,12 +62,45 @@
     min-height: 1.25rem;
 }
 
-.match-preview-centre {
+/* Fixture block: each side owns one column holding its badge and its name, with the predicted
+   score between them. Pairing the two in a single column is the point - laying the badges and
+   the names out as two independent rows let them drift apart, because the badges hug the centre
+   while a row of its own would spread the names across the full tile.
+
+   Each side aligns to its INNER edge, so a name shares an edge with its own badge and grows
+   outward. Centring a name under its badge instead would send a long one inward, where the two
+   sides would meet in the middle; growing outward, they never can. */
+.match-preview-fixture {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    /* Tight on purpose. Every pixel the middle takes is a pixel off both name columns, and at the
+       two-per-row width the longest names are already close to the edge. */
+    column-gap: 0.3rem;
+}
+
+.match-preview-side {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.match-preview-side--home {
+    align-items: flex-end;
+}
+
+.match-preview-side--away {
+    align-items: flex-start;
+}
+
+/* The scores centre on the badge AND its name together, not on the badge alone. Every grid
+   item stretches to the tallest column by default, so centring inside that full height leaves
+   equal space above and below - where centring on the badge would hang the score high, with the
+   name's line left as dead space beneath it. */
+.match-preview-scores {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
-    min-width: 0;
+    gap: 0.3rem;
 }
 
 .match-preview-outcome {
@@ -168,7 +200,7 @@
 }
 
 .match-preview-score {
-    min-width: 0.9rem;
+    min-width: 0.8rem;
     text-align: center;
     color: var(--purple-1000);
     font-size: 1.05rem;
@@ -184,25 +216,26 @@
     opacity: 1;
 }
 
-/* Team names line. Two equal halves so each name centres under its own badge, whatever the
-   other one is called. Long names are truncated rather than wrapped - a second line here would
-   cost every tile the height, and the badge above already carries the identity. */
-.match-preview-names {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 0.4rem;
-    margin-top: 0.15rem;
-}
-
+/* Team name, directly under its own badge and sharing that badge's inner edge. Long names are
+   truncated rather than wrapped - a second line here would cost every tile the height, and the
+   badge above already carries the identity. */
 .match-preview-name {
-    text-align: center;
+    margin-top: 0.15rem;
+    max-width: 100%;
     font-size: 0.72rem;
     font-weight: 600;
     color: var(--purple-1000);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    min-width: 0;
+}
+
+.match-preview-side--home .match-preview-name {
+    text-align: right;
+}
+
+.match-preview-side--away .match-preview-name {
+    text-align: left;
 }
 
 /* Lock line. Only appears on a match that locks at its own time rather than with the round, so

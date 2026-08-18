@@ -70,14 +70,18 @@
                                     <i class="bi bi-clock" aria-hidden="true"></i>
                                 </span>
                             </div>
-                            <div class="match-preview-centre">
-                                <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
-                                <span class="match-preview-vs">v</span>
-                                <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
-                            </div>
-                            <div class="match-preview-names">
-                                <span class="match-preview-name">@(match.PlaceholderHomeName ?? "TBC")</span>
-                                <span class="match-preview-name">@(match.PlaceholderAwayName ?? "TBC")</span>
+                            <div class="match-preview-fixture">
+                                <div class="match-preview-side match-preview-side--home">
+                                    <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
+                                    <span class="match-preview-name">@(match.PlaceholderHomeName ?? "TBC")</span>
+                                </div>
+                                <div class="match-preview-scores">
+                                    <span class="match-preview-vs">v</span>
+                                </div>
+                                <div class="match-preview-side match-preview-side--away">
+                                    <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
+                                    <span class="match-preview-name">@(match.PlaceholderAwayName ?? "TBC")</span>
+                                </div>
                             </div>
                             @if (HasOwnLockTime(match))
                             {
@@ -92,10 +96,10 @@
                         continue;
                     }
 
-                    @* Four fixed lines, whatever state the match is in - result icon and score chip,
-                       the badges, the team names, then the prediction split. The tile therefore keeps
-                       one height for its whole life instead of growing as each match locks, kicks off
-                       and finishes. *@
+                    @* Three fixed blocks, whatever state the match is in - the meta line, the fixture
+                       (each side's badge and name in one column, either side of the predicted score),
+                       then the prediction split. The tile therefore keeps one height for its whole life
+                       instead of growing as each match locks, kicks off and finishes. *@
                     <div class="match-preview-row @GetMatchBackgroundClass(match) @GetMatchPulsingClass(match)">
                         <div class="match-preview-meta">
                             <span class="match-preview-outcome">
@@ -129,24 +133,28 @@
                                 </span>
                             }
                         </div>
-                        <div class="match-preview-centre">
-                            <img src="@(match.HomeTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
-                                 class="match-preview-logo"
-                                 alt="Home"
-                                 loading="lazy"
-                                 onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
-                            <span class="match-preview-score">@(match.PredictedHomeScore?.ToString() ?? "-")</span>
-                            <span class="match-preview-vs">@(HasPrediction(match) ? "-" : "v")</span>
-                            <span class="match-preview-score">@(match.PredictedAwayScore?.ToString() ?? "-")</span>
-                            <img src="@(match.AwayTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
-                                 class="match-preview-logo"
-                                 alt="Away"
-                                 loading="lazy"
-                                 onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
-                        </div>
-                        <div class="match-preview-names">
-                            <span class="match-preview-name">@(match.HomeTeamShortName ?? "Home")</span>
-                            <span class="match-preview-name">@(match.AwayTeamShortName ?? "Away")</span>
+                        <div class="match-preview-fixture">
+                            <div class="match-preview-side match-preview-side--home">
+                                <img src="@(match.HomeTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
+                                     class="match-preview-logo"
+                                     alt="Home"
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
+                                <span class="match-preview-name">@(match.HomeTeamShortName ?? "Home")</span>
+                            </div>
+                            <div class="match-preview-scores">
+                                <span class="match-preview-score">@(match.PredictedHomeScore?.ToString() ?? "-")</span>
+                                <span class="match-preview-vs">@(HasPrediction(match) ? "-" : "v")</span>
+                                <span class="match-preview-score">@(match.PredictedAwayScore?.ToString() ?? "-")</span>
+                            </div>
+                            <div class="match-preview-side match-preview-side--away">
+                                <img src="@(match.AwayTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
+                                     class="match-preview-logo"
+                                     alt="Away"
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
+                                <span class="match-preview-name">@(match.AwayTeamShortName ?? "Away")</span>
+                            </div>
                         </div>
                         @if (HasOwnLockTime(match))
                         {
