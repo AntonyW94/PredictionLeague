@@ -13,10 +13,14 @@ public abstract class AuthControllerBase(IConfiguration configuration) : ApiCont
     // the refresh endpoint reads this to re-issue the cookie with the same lifetime.
     private const string RememberMeCookieName = "rememberMe";
 
-    // Shared across the www/dev subdomains in real environments. Local development
-    // (localhost / loopback IPs) can't match this domain, so the cookie falls back
-    // to a host-only cookie there - see BuildCookieOptions.
-    private const string SharedCookieDomain = ".thepredictions.co.uk";
+    // Until August 2026 both cookies were scoped to this domain so www and dev could share them. What
+    // that actually meant was dev and prod sharing ONE refresh token: a cookie is identified by name,
+    // domain and path, so signing into either site replaced the other's, and the site whose database had
+    // never issued that token bounced the player to a login screen. Nothing needed the wider scope - the
+    // client and API are same-origin in every environment, and the apex 301s to www - so the cookies are
+    // host-only now and each environment keeps its own. Kept only to expire what the old scope left
+    // behind; see ExpireLegacyDomainCookies.
+    private const string LegacyCookieDomain = ".thepredictions.co.uk";
 
     // persistent = true keeps the user signed in across browser restarts (a dated cookie for the
     // configured refresh-token lifetime); false writes a session cookie that the browser clears on
@@ -32,6 +36,7 @@ public abstract class AuthControllerBase(IConfiguration configuration) : ApiCont
         {
             Response.Cookies.Append(RefreshTokenCookieName, token, cookieOptions);
             Response.Cookies.Append(RememberMeCookieName, persistent ? "1" : "0", cookieOptions);
+            ExpireLegacyDomainCookies();
         }
         catch (Exception ex)
         {
@@ -53,6 +58,7 @@ public abstract class AuthControllerBase(IConfiguration configuration) : ApiCont
             cookieOptions.Expires = PersistentCookieExpiry();
 
         Response.Cookies.Append(RememberMeCookieName, persistent ? "1" : "0", cookieOptions);
+        ExpireLegacyDomainCookies();
     }
 
     private DateTimeOffset PersistentCookieExpiry() =>
@@ -65,27 +71,54 @@ public abstract class AuthControllerBase(IConfiguration configuration) : ApiCont
         var cookieOptions = BuildCookieOptions();
         Response.Cookies.Delete(RefreshTokenCookieName, cookieOptions);
         Response.Cookies.Delete(RememberMeCookieName, cookieOptions);
+
+        ExpireLegacyDomainCookies();
+    }
+
+    /// <summary>
+    /// Expires the domain-scoped pair written before these cookies became host-only.
+    /// </summary>
+    /// <remarks>
+    /// A host-only cookie does not replace a domain cookie of the same name: the browser keeps both and
+    /// sends both, and the server reads whichever the header happens to list first. Left alone, a player
+    /// could go on presenting a stale token belonging to the other environment for the whole refresh-token
+    /// lifetime - the exact problem the host-only change exists to end - so every write clears the old pair.
+    ///
+    /// Deleting after writing is safe: Response.Cookies.Delete drops any pending Set-Cookie of the same
+    /// name from the response, but only where the domain and path also match, so clearing the old
+    /// domain-scoped pair leaves the host-only cookies just written intact. AuthControllerBaseCookieTests
+    /// pins that, because the two are one line apart and a silent strip would sign everybody out.
+    ///
+    /// Transitional. Safe to remove once the longest refresh-token lifetime has passed since release.
+    /// </remarks>
+    private void ExpireLegacyDomainCookies()
+    {
+        // Localhost never wrote a domain cookie, so there is nothing there to clear.
+        if (IsLocalHost(Request.Host.Host))
+            return;
+
+        var legacyOptions = BuildCookieOptions();
+        legacyOptions.Domain = LegacyCookieDomain;
+
+        Response.Cookies.Delete(RefreshTokenCookieName, legacyOptions);
+        Response.Cookies.Delete(RememberMeCookieName, legacyOptions);
     }
 
     private CookieOptions BuildCookieOptions()
     {
         var isLocal = IsLocalHost(Request.Host.Host);
 
-        var cookieOptions = new CookieOptions
+        // No Domain, deliberately: a host-only cookie is what keeps dev and prod from sharing a session.
+        return new CookieOptions
         {
             HttpOnly = true,
             Path = "/",
             // SameSite=None requires Secure. On localhost we may be served over plain
             // HTTP, and the cookie is first-party (client and API share an origin), so a
-            // host-only Lax cookie works without needing HTTPS.
+            // Lax cookie works without needing HTTPS.
             Secure = isLocal ? Request.IsHttps : true,
             SameSite = isLocal ? SameSiteMode.Lax : SameSiteMode.None
         };
-
-        if (!isLocal)
-            cookieOptions.Domain = SharedCookieDomain;
-
-        return cookieOptions;
     }
 
     private static bool IsLocalHost(string host) =>

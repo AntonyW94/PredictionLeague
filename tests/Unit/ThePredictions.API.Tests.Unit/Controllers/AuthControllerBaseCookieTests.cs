@@ -9,14 +9,20 @@ using Xunit;
 namespace ThePredictions.API.Tests.Unit.Controllers;
 
 /// <summary>
-/// The refresh-token cookie has to be written with the right domain, Secure and SameSite settings
-/// or sign-in silently breaks: too strict and localhost cannot set it over plain HTTP, too loose
-/// and it stops being shared across the www/dev subdomains. These assert the Set-Cookie header the
-/// base controller actually emits.
+/// The refresh-token cookie has to be written with the right domain, Secure and SameSite settings or
+/// sign-in silently breaks: too strict and localhost cannot set it over plain HTTP, too loose and dev
+/// and prod share one session. These assert the Set-Cookie headers the base controller actually emits.
 /// </summary>
+/// <remarks>
+/// The cookies are host-only. They were scoped to ".thepredictions.co.uk" until August 2026, which meant
+/// dev and prod shared a single refresh token and signing into either logged you out of the other. Every
+/// write now also expires that old domain-scoped pair, so the tests below check for two cookies per name:
+/// the live host-only one, and the legacy expiry clearing up after it.
+/// </remarks>
 public class AuthControllerBaseCookieTests
 {
     private const int RefreshTokenExpiryDays = 30;
+    private const string LegacyDomain = "domain=.thepredictions.co.uk";
 
     /// <summary>Concrete stand-in: the base class is abstract and its cookie API is protected.</summary>
     private sealed class TestAuthController(IConfiguration configuration) : AuthControllerBase(configuration)
@@ -59,24 +65,35 @@ public class AuthControllerBaseCookieTests
         };
     }
 
-    private static string SetCookieHeader(TestAuthController controller) =>
-        string.Join(" | ", controller.Response.Headers.SetCookie.ToArray());
+    private static string[] SetCookies(TestAuthController controller) =>
+        controller.Response.Headers.SetCookie.ToArray()!;
+
+    private static string JoinedHeader(TestAuthController controller) =>
+        string.Join(" | ", SetCookies(controller));
+
+    /// <summary>The one Set-Cookie actually carrying a value, as opposed to a legacy expiry clearing up.</summary>
+    private static string LiveCookie(TestAuthController controller, string name) =>
+        SetCookies(controller).Single(cookie => cookie.StartsWith($"{name}=", StringComparison.Ordinal) && !cookie.Contains(LegacyDomain));
+
+    private static string[] LegacyCookies(TestAuthController controller) =>
+        SetCookies(controller).Where(cookie => cookie.Contains(LegacyDomain)).ToArray();
 
     // ---------- cookie options on a real host ----------
 
     [Fact]
-    public void SetTokenCookie_ShouldShareTheCookieAcrossSubdomains_OnARealHost()
+    public void SetTokenCookie_ShouldWriteAHostOnlyCookie_OnARealHost()
     {
         var controller = BuildController("www.thepredictions.co.uk");
 
         controller.CallSetTokenCookie("token-value", persistent: true);
 
-        var header = SetCookieHeader(controller);
-        header.Should().Contain("domain=.thepredictions.co.uk");
-        header.Should().Contain("secure");
-        header.Should().Contain("samesite=none");
-        header.Should().Contain("httponly");
-        header.Should().Contain("path=/");
+        // No domain: this is what stops dev and prod sharing a session.
+        var cookie = LiveCookie(controller, "refreshToken");
+        cookie.Should().NotContain("domain=");
+        cookie.Should().Contain("secure");
+        cookie.Should().Contain("samesite=none");
+        cookie.Should().Contain("httponly");
+        cookie.Should().Contain("path=/");
     }
 
     [Fact]
@@ -86,9 +103,8 @@ public class AuthControllerBaseCookieTests
 
         controller.CallSetTokenCookie("token-value", persistent: true);
 
-        var header = SetCookieHeader(controller);
-        header.Should().Contain("refreshToken=token-value");
-        header.Should().Contain("rememberMe=1");
+        LiveCookie(controller, "refreshToken").Should().StartWith("refreshToken=token-value");
+        LiveCookie(controller, "rememberMe").Should().StartWith("rememberMe=1");
     }
 
     [Fact]
@@ -98,7 +114,7 @@ public class AuthControllerBaseCookieTests
 
         controller.CallSetTokenCookie("token-value", persistent: false);
 
-        SetCookieHeader(controller).Should().Contain("rememberMe=0");
+        LiveCookie(controller, "rememberMe").Should().StartWith("rememberMe=0");
     }
 
     [Fact]
@@ -108,7 +124,7 @@ public class AuthControllerBaseCookieTests
 
         controller.CallSetTokenCookie("token-value", persistent: true);
 
-        SetCookieHeader(controller).Should().Contain("expires=");
+        LiveCookie(controller, "refreshToken").Should().Contain("expires=");
     }
 
     [Fact]
@@ -118,7 +134,49 @@ public class AuthControllerBaseCookieTests
 
         controller.CallSetTokenCookie("token-value", persistent: false);
 
-        SetCookieHeader(controller).Should().NotContain("expires=");
+        LiveCookie(controller, "refreshToken").Should().NotContain("expires=");
+    }
+
+    // ---------- clearing up the old domain-scoped pair ----------
+
+    [Fact]
+    public void SetTokenCookie_ShouldExpireTheLegacyDomainScopedPair()
+    {
+        var controller = BuildController("www.thepredictions.co.uk");
+
+        controller.CallSetTokenCookie("token-value", persistent: true);
+
+        var legacy = LegacyCookies(controller);
+        legacy.Should().HaveCount(2);
+        legacy.Should().OnlyContain(cookie => cookie.Contains("expires=Thu, 01 Jan 1970"));
+        legacy.Should().Contain(cookie => cookie.StartsWith("refreshToken=", StringComparison.Ordinal));
+        legacy.Should().Contain(cookie => cookie.StartsWith("rememberMe=", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void SetTokenCookie_ShouldKeepTheNewCookies_WhenItExpiresTheLegacyPair()
+    {
+        // Response.Cookies.Delete drops pending Set-Cookie headers of the same name, and the legacy delete
+        // runs one line after the write. It survives only because the domain differs - so if that ever
+        // stops being true, this is what catches it rather than a wave of logged-out players.
+        var controller = BuildController("www.thepredictions.co.uk");
+
+        controller.CallSetTokenCookie("token-value", persistent: true);
+
+        LiveCookie(controller, "refreshToken").Should().StartWith("refreshToken=token-value");
+        SetCookies(controller).Should().HaveCount(4);
+    }
+
+    [Fact]
+    public void SetTokenCookie_ShouldNotWriteALegacyExpiry_OnLocalhost()
+    {
+        // Localhost never had a domain cookie to clear, so nothing to undo there.
+        var controller = BuildController("localhost");
+
+        controller.CallSetTokenCookie("token-value", persistent: true);
+
+        LegacyCookies(controller).Should().BeEmpty();
+        SetCookies(controller).Should().HaveCount(2);
     }
 
     // ---------- localhost fallback ----------
@@ -134,7 +192,7 @@ public class AuthControllerBaseCookieTests
 
         controller.CallSetTokenCookie("token-value", persistent: true);
 
-        var header = SetCookieHeader(controller);
+        var header = JoinedHeader(controller);
         header.Should().NotContain("domain=");
         header.Should().Contain("samesite=lax");
         header.Should().NotContain("secure");
@@ -147,7 +205,7 @@ public class AuthControllerBaseCookieTests
 
         controller.CallSetTokenCookie("token-value", persistent: true);
 
-        var header = SetCookieHeader(controller);
+        var header = JoinedHeader(controller);
         header.Should().Contain("secure");
         header.Should().Contain("samesite=lax");
     }
@@ -177,10 +235,10 @@ public class AuthControllerBaseCookieTests
 
         controller.CallSetRememberMePreference(persistent: true);
 
-        var header = SetCookieHeader(controller);
-        header.Should().Contain("rememberMe=1");
-        header.Should().NotContain("refreshToken=");
-        header.Should().Contain("expires=");
+        LiveCookie(controller, "rememberMe").Should().StartWith("rememberMe=1").And.Contain("expires=");
+
+        // No live refresh token - only the legacy expiry clearing up the old one.
+        SetCookies(controller).Should().NotContain(cookie => cookie.StartsWith("refreshToken=", StringComparison.Ordinal) && !cookie.Contains(LegacyDomain));
     }
 
     [Fact]
@@ -190,9 +248,17 @@ public class AuthControllerBaseCookieTests
 
         controller.CallSetRememberMePreference(persistent: false);
 
-        var header = SetCookieHeader(controller);
-        header.Should().Contain("rememberMe=0");
-        header.Should().NotContain("expires=");
+        LiveCookie(controller, "rememberMe").Should().StartWith("rememberMe=0").And.NotContain("expires=");
+    }
+
+    [Fact]
+    public void SetRememberMePreference_ShouldAlsoExpireTheLegacyPair()
+    {
+        var controller = BuildController("www.thepredictions.co.uk");
+
+        controller.CallSetRememberMePreference(persistent: true);
+
+        LegacyCookies(controller).Should().HaveCount(2);
     }
 
     // ---------- reading the preference back ----------
@@ -234,11 +300,23 @@ public class AuthControllerBaseCookieTests
 
         controller.CallDeleteTokenCookie();
 
-        var header = SetCookieHeader(controller);
-        header.Should().Contain("refreshToken=");
-        header.Should().Contain("rememberMe=");
-        // A cookie can only be cleared by a Set-Cookie whose attributes match the original.
-        header.Should().Contain("domain=.thepredictions.co.uk");
-        header.Should().Contain("expires=Thu, 01 Jan 1970");
+        // A cookie can only be cleared by a Set-Cookie whose attributes match the original, so the
+        // host-only pair is cleared host-only.
+        var cookie = LiveCookie(controller, "refreshToken");
+        cookie.Should().NotContain("domain=");
+        cookie.Should().Contain("expires=Thu, 01 Jan 1970");
+        LiveCookie(controller, "rememberMe").Should().Contain("expires=Thu, 01 Jan 1970");
+    }
+
+    [Fact]
+    public void DeleteTokenCookie_ShouldAlsoExpireTheLegacyDomainScopedPair()
+    {
+        // Signing out has to clear the old shared cookie too, or the browser keeps presenting it.
+        var controller = BuildController("www.thepredictions.co.uk");
+
+        controller.CallDeleteTokenCookie();
+
+        LegacyCookies(controller).Should().HaveCount(2);
+        SetCookies(controller).Should().HaveCount(4);
     }
 }
