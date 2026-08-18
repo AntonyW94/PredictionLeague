@@ -7,6 +7,7 @@
 @inject IJSRuntime JsRuntime
 
 @using ThePredictions.Contracts.Admin.Users
+@using ThePredictions.Contracts.Onboarding
 @using ThePredictions.Domain.Common.Enumerations
 @using ThePredictions.Web.Client.ViewModels.Admin.Users
 @using System.Security.Claims
@@ -32,42 +33,45 @@
         }
         else
         {
+            var adminCount = _users.Count(user => user.IsAdmin);
+            var playerCount = _users.Count - adminCount;
+
             <div class="admin-tabs-mobile">
-                <select @onchange="OnMobileTabChanged" value="@_activeTab">
-                    <option value="all">All (@_users.Count)</option>
-                    <option value="admin">Admin (@_adminUsers.Count)</option>
-                    <option value="player">Player (@_playerUsers.Count)</option>
+                <select @onchange="OnMobileTabChanged" value="@_criteria.Tab.ToString()">
+                    <option value="All">All (@_users.Count)</option>
+                    <option value="Admin">Admin (@adminCount)</option>
+                    <option value="Player">Player (@playerCount)</option>
                 </select>
             </div>
 
             <div class="admin-tabs">
-                <button class="admin-tab @(_activeTab == "all" ? "active" : "")" @onclick='() => _activeTab = "all"'>
+                <button class="admin-tab @(_criteria.Tab == UserListTab.All ? "active" : "")" @onclick="() => SetTab(UserListTab.All)">
                     All
                     <span class="match-count-badge">@_users.Count</span>
                 </button>
-                <button class="admin-tab @(_activeTab == "admin" ? "active" : "")" @onclick='() => _activeTab = "admin"'>
+                <button class="admin-tab @(_criteria.Tab == UserListTab.Admin ? "active" : "")" @onclick="() => SetTab(UserListTab.Admin)">
                     Admin
-                    @if (_adminUsers.Any())
+                    @if (adminCount > 0)
                     {
-                        <span class="match-count-badge" style="background: var(--red)">@_adminUsers.Count</span>
+                        <span class="match-count-badge" style="background: var(--red)">@adminCount</span>
                     }
                 </button>
-                <button class="admin-tab @(_activeTab == "player" ? "active" : "")" @onclick='() => _activeTab = "player"'>
+                <button class="admin-tab @(_criteria.Tab == UserListTab.Player ? "active" : "")" @onclick="() => SetTab(UserListTab.Player)">
                     Player
-                    @if (_playerUsers.Any())
+                    @if (playerCount > 0)
                     {
-                        <span class="match-count-badge" style="background: var(--blue-700)">@_playerUsers.Count</span>
+                        <span class="match-count-badge" style="background: var(--blue-700)">@playerCount</span>
                     }
                 </button>
             </div>
 
-            var displayedUsers = GetDisplayedUsers();
+            var displayedUsers = _criteria.Apply(_users);
 
             <div class="user-toolbar">
                 <button type="button" class="user-toolbar-toggle" @onclick="ToggleFilters">
                     <span class="bi bi-sliders2"></span>
                     <span>Sort &amp; filter</span>
-                    @if (HasNonDefaultControls)
+                    @if (_criteria.HasNonDefaultControls)
                     {
                         <span class="user-toolbar-dot" title="Filters active"></span>
                     }
@@ -79,27 +83,42 @@
                     <div class="user-filter-panel">
                         <div class="user-filter-search">
                             <span class="bi bi-search"></span>
-                            <input type="text" class="form-control" placeholder="Search name or email…" value="@_searchTerm" @oninput="OnSearchChanged" />
+                            <input type="text" class="form-control" placeholder="Search name or email…" value="@_criteria.SearchTerm" @oninput="OnSearchChanged" />
                         </div>
                         <div class="user-filter-row">
                             <label class="user-filter-label" for="user-sort">Sort by</label>
-                            <select id="user-sort" class="form-select" value="@_sortField" @onchange="OnSortFieldChanged">
-                                <option value="name">Name</option>
-                                <option value="created">Leagues created</option>
-                                <option value="joined">Leagues joined</option>
-                                <option value="spend">Total spend</option>
-                                <option value="winnings">Total winnings</option>
+                            <select id="user-sort" class="form-select" value="@_criteria.SortField.ToString()" @onchange="OnSortFieldChanged">
+                                <option value="@nameof(UserListSortField.Name)">Name</option>
+                                <option value="@nameof(UserListSortField.LeaguesCreated)">Leagues created</option>
+                                <option value="@nameof(UserListSortField.LeaguesJoined)">Leagues joined</option>
+                                <option value="@nameof(UserListSortField.Badges)">Badges earned</option>
+                                <option value="@nameof(UserListSortField.Setup)">Setup progress</option>
+                                <option value="@nameof(UserListSortField.PassSpend)">Pass spend</option>
+                                <option value="@nameof(UserListSortField.EntrySpend)">Entry spend</option>
+                                <option value="@nameof(UserListSortField.TotalSpend)">Total spend</option>
+                                <option value="@nameof(UserListSortField.Winnings)">Winnings</option>
                             </select>
-                            <button type="button" class="user-sort-dir" @onclick="ToggleSortDirection" title="@(_sortDescending ? "Descending" : "Ascending")">
-                                <span class="bi @(_sortDescending ? "bi-sort-down" : "bi-sort-up")"></span>
-                                <span>@(_sortDescending ? "Desc" : "Asc")</span>
+                            <button type="button" class="user-sort-dir" @onclick="ToggleSortDirection" title="@(_criteria.SortDescending ? "Descending" : "Ascending")">
+                                <span class="bi @(_criteria.SortDescending ? "bi-sort-down" : "bi-sort-up")"></span>
+                                <span>@(_criteria.SortDescending ? "Desc" : "Asc")</span>
                             </button>
                         </div>
                         <div class="user-filter-row user-filter-row-between">
-                            <button type="button" class="user-toggle-chip @(_dormantOnly ? "active" : "")" @onclick="ToggleDormantOnly">
-                                <span class="bi bi-moon-stars-fill"></span> Dormant only
-                            </button>
-                            @if (HasNonDefaultControls)
+                            <div class="user-filter-chips">
+                                <button type="button" class="user-toggle-chip @(_criteria.NoCurrentPassOnly ? "active" : "")" @onclick="ToggleNoCurrentPassOnly" data-test-id="admin-user-filter-no-pass">
+                                    <span class="bi bi-slash-circle"></span> No current pass
+                                </button>
+                                <button type="button" class="user-toggle-chip @(_criteria.SetupIncompleteOnly ? "active" : "")" @onclick="ToggleSetupIncompleteOnly">
+                                    <span class="bi bi-hourglass"></span> Setup incomplete
+                                </button>
+                                <button type="button" class="user-toggle-chip @(_criteria.UnpaidWinnersOnly ? "active" : "")" @onclick="ToggleUnpaidWinnersOnly" data-test-id="admin-user-filter-unpaid">
+                                    <span class="bi bi-exclamation-triangle-fill"></span> Owed money, no details
+                                </button>
+                                <button type="button" class="user-toggle-chip @(_criteria.DormantOnly ? "active" : "")" @onclick="ToggleDormantOnly">
+                                    <span class="bi bi-moon-stars-fill"></span> Dormant
+                                </button>
+                            </div>
+                            @if (_criteria.HasNonDefaultControls)
                             {
                                 <button type="button" class="user-filter-clear" @onclick="ClearFilters">Clear</button>
                             }
@@ -108,9 +127,9 @@
                 }
             </div>
 
-            @if (HasActiveFilters)
+            @if (_criteria.HasActiveFilters)
             {
-                <div class="user-results-count">Showing @displayedUsers.Count of @GetActiveTabUsers().Count</div>
+                <div class="user-results-count">Showing @displayedUsers.Count of @_criteria.InTab(_users).Count()</div>
             }
 
             @if (displayedUsers.Count == 0)
@@ -135,16 +154,6 @@
                                         </div>
                                         <div class="user-email-line">
                                             <span class="user-email">@user.Email</span>
-                                            <span class="user-auth">
-                                                @if (user.HasLocalPassword)
-                                                {
-                                                    <span class="bi bi-envelope-fill" title="Email & password"></span>
-                                                }
-                                                @if (user.SocialProviders.Contains("Google"))
-                                                {
-                                                    <span class="bi bi-google" title="Google"></span>
-                                                }
-                                            </span>
                                         </div>
                                     </div>
 
@@ -167,51 +176,103 @@
                                     </div>
                                 </div>
 
-                                @if (!user.EmailConfirmed)
-                                {
-                                    <div class="user-attention">
-                                        <span class="member-status-pill user-warning-pill" title="Email address not confirmed">
-                                            <span class="bi bi-patch-exclamation-fill"></span> Email
+                                @*
+                                    The two pass questions, then anything actually wrong. A dash for something merely
+                                    absent lives in the setup band below; red here is reserved for a problem.
+                                *@
+                                <div class="user-status-line">
+                                    @if (user.HasCurrentSeasonPass)
+                                    {
+                                        <span class="status-pill pill-pass-on" data-test-id="admin-user-current-pass">
+                                            <span class="bi bi-check-circle-fill"></span> @CurrentPassWording(user)
                                         </span>
-                                    </div>
-                                }
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill pill-pass-off" data-test-id="admin-user-no-current-pass">
+                                            <span class="bi bi-slash-circle"></span> No current pass
+                                        </span>
+                                    }
 
-                                <div class="user-tiles">
-                                    <div class="user-tile">
-                                        <span class="user-tile-value">@user.LeaguesCreated</span>
-                                        <span class="user-tile-label">Created</span>
-                                    </div>
-                                    <div class="user-tile">
-                                        <span class="user-tile-value">
-                                            @user.LeaguesJoinedApproved
-                                            @if (user.LeaguesJoinedPending > 0)
+                                    @if (user.HasEverPurchasedSeasonPass)
+                                    {
+                                        <span class="status-pill pill-paid">
+                                            <span class="bi bi-cash-stack"></span> Paid before
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill pill-unpaid">Never paid</span>
+                                    }
+
+                                    @if (user.IsDormant)
+                                    {
+                                        <span class="status-pill pill-warn">
+                                            <span class="bi bi-moon-stars-fill"></span> Dormant
+                                        </span>
+                                    }
+
+                                    @if (!user.EmailConfirmed)
+                                    {
+                                        <span class="status-pill pill-warn" title="Email address not confirmed">
+                                            <span class="bi bi-patch-exclamation-fill"></span> Email not confirmed
+                                        </span>
+                                    }
+
+                                    @if (user.IsOwedMoneyWithNowhereToSendIt)
+                                    {
+                                        <span class="status-pill pill-danger" title="Has won money but has saved no payout details">
+                                            <span class="bi bi-exclamation-triangle-fill"></span> Cannot be paid
+                                        </span>
+                                    }
+                                </div>
+
+                                <div class="user-panels">
+                                    @Panel(user, UserDetailSection.Memberships, user.LeaguesJoinedApproved, "Leagues joined", user.LeaguesJoinedPending)
+                                    @Panel(user, UserDetailSection.AdministeredLeagues, user.LeaguesCreated, "Leagues created")
+                                    @Panel(user, UserDetailSection.SeasonPasses, user.SeasonPasses.Count, "Season passes", currentCount: user.CurrentPassSeasonNames.Count)
+                                    @Panel(user, UserDetailSection.Badges, user.BadgeCount, "Badges earned")
+                                </div>
+
+                                <div class="user-setup-band">
+                                    <button class="setup-progress" type="button" @onclick="() => OpenDetail(user, UserDetailSection.Onboarding)" data-test-id="admin-user-setup">
+                                        <span class="setup-label">Setup</span>
+                                        <span class="setup-segments">
+                                            @foreach (var step in user.Onboarding.Steps)
                                             {
-                                                <span class="user-tile-badge" title="@user.LeaguesJoinedPending awaiting approval">+@user.LeaguesJoinedPending</span>
+                                                <span class="setup-seg @SegmentClass(step.State)" title="@step.Title (@step.State)"></span>
                                             }
                                         </span>
-                                        <span class="user-tile-label">Joined</span>
-                                    </div>
-                                    <div class="user-tile">
-                                        <span class="user-tile-value @(user.HasSeasonPass ? "user-tile-value-on" : "user-tile-value-off")">@(user.HasSeasonPass ? "Yes" : "No")</span>
-                                        <span class="user-tile-label">Pass</span>
-                                    </div>
+                                        <span class="setup-progress-count @(user.OnboardingStepsCompleted == 0 ? "setup-progress-count-none" : "")">
+                                            @user.OnboardingStepsCompleted of @user.OnboardingStepCount
+                                        </span>
+                                    </button>
+                                    <span class="setup-divider"></span>
+                                    <span class="flag-group">
+                                        <span class="setup-label">Sign in</span>
+                                        @Flag(user.HasLocalPassword, "Password")
+                                        @Flag(user.SocialProviders.Contains("Google"), "Google")
+                                    </span>
+                                    <span class="setup-divider"></span>
+                                    <span class="flag-group">
+                                        @Flag(user.TermsAccepted, "Terms", redWhenAbsent: true)
+                                        @Flag(user.MarketingOptIn, "Marketing")
+                                    </span>
                                 </div>
 
                                 @if (user.TotalSpend > 0 || user.TotalWinnings > 0)
                                 {
-                                    <div class="user-money">
-                                        @if (user.TotalSpend > 0)
-                                        {
-                                            <span title="Season passes @FormatMoney(user.SeasonPassSpend) · league entries @FormatMoney(user.LeagueEntrySpend)">
-                                                <span class="bi bi-cash-stack"></span>@FormatMoney(user.TotalSpend) spent
-                                            </span>
-                                        }
-                                        @if (user.TotalWinnings > 0)
-                                        {
-                                            <span>
-                                                <span class="bi bi-trophy-fill"></span>@FormatMoney(user.TotalWinnings) won
-                                            </span>
-                                        }
+                                    <div class="user-money-strip">
+                                        @MoneyCell(user, UserDetailSection.SeasonPasses, "Passes", user.SeasonPassSpend)
+                                        <span class="money-op">+</span>
+                                        @MoneyCell(user, UserDetailSection.Memberships, "Entries", user.LeagueEntrySpend)
+                                        <span class="money-op">=</span>
+                                        <span class="money-cell money-cell-static">
+                                            <span class="money-label">Spent</span>
+                                            <span class="money-value">@FormatMoney(user.TotalSpend)</span>
+                                        </span>
+                                        <span class="money-spacer"></span>
+                                        @MoneyCell(user, UserDetailSection.Prizes, "Won", user.TotalWinnings, won: true)
                                     </div>
                                 }
                             </div>
@@ -223,22 +284,21 @@
     </div>
 </div>
 
+@if (_detailUser is not null)
+{
+    <UserDetailModal User="_detailUser" Section="_detailSection" OnClose="CloseDetailAsync" />
+}
+
 @code {
     private List<UserDto>? _users;
-    private List<UserDto> _adminUsers = [];
-    private List<UserDto> _playerUsers = [];
     private string? _errorMessage;
     private string? _currentUserId;
-    private string _activeTab = "all";
-    private string _searchTerm = "";
-    private string _sortField = "name";
-    private bool _sortDescending;
-    private bool _dormantOnly;
+    private UserListCriteria _criteria = UserListCriteria.Default;
     private bool _filtersExpanded;
     private string? _openMenuUserId;
 
-    private bool HasActiveFilters => !string.IsNullOrWhiteSpace(_searchTerm) || _dormantOnly;
-    private bool HasNonDefaultControls => HasActiveFilters || _sortField != "name" || _sortDescending;
+    private UserDto? _detailUser;
+    private UserDetailSection _detailSection;
 
     protected override async Task OnInitializedAsync()
     {
@@ -248,19 +308,129 @@
         await LoadUsers();
     }
 
+    /// <summary>
+    /// One clickable count. Flat and inert at zero, because there is nothing behind it to open.
+    /// </summary>
+    /// <remarks>
+    /// <paramref name="pendingCount"/> and <paramref name="currentCount"/> are the two chips a count can carry - requests
+    /// awaiting approval, and passes for a season still running. Both are omitted at zero rather than shown as "+0".
+    /// </remarks>
+    private RenderFragment Panel(UserDto user, UserDetailSection section, int count, string label, int pendingCount = 0, int currentCount = 0)
+    {
+        if (count == 0)
+        {
+            return @<span class="user-panel panel-empty">
+                <span class="panel-primary panel-primary-zero">0</span>
+                <span class="panel-label">@label</span>
+            </span>;
+        }
+
+        return @<button class="user-panel" type="button" @onclick="() => OpenDetail(user, section)">
+            <span class="panel-primary">
+                @count
+                @if (pendingCount > 0)
+                {
+                    <span class="panel-chip chip-pending" title="@pendingCount awaiting approval">+@pendingCount</span>
+                }
+                @if (currentCount > 0)
+                {
+                    <span class="panel-chip chip-current">@currentCount current</span>
+                }
+            </span>
+            <span class="panel-label">@label</span>
+        </button>;
+    }
+
+    /// <summary>
+    /// One money figure. Clickable when there is something behind it.
+    /// </summary>
+    private RenderFragment MoneyCell(UserDto user, UserDetailSection section, string label, decimal amount, bool won = false)
+    {
+        if (amount <= 0)
+        {
+            return @<span class="money-cell money-cell-static">
+                <span class="money-label">@label</span>
+                <span class="money-value money-value-zero">@FormatMoney(amount)</span>
+            </span>;
+        }
+
+        return @<button class="money-cell" type="button" @onclick="() => OpenDetail(user, section)">
+            <span class="money-label">@label</span>
+            <span class="money-value @(won ? "money-value-won" : "")">@FormatMoney(amount)</span>
+        </button>;
+    }
+
+    /// <summary>
+    /// A tick for present, a dash for absent.
+    /// </summary>
+    /// <remarks>
+    /// A red cross would say something is wrong, and for most of these nothing is: signing in with Google rather than a
+    /// password is a choice, and not opting in to marketing is the lawful default. Red is passed in only for the terms
+    /// record, where an account with no stored proof of consent is a real problem.
+    /// </remarks>
+    private static RenderFragment Flag(bool present, string label, bool redWhenAbsent = false) =>
+        @<span class="flag @(present ? "flag-on" : redWhenAbsent ? "flag-bad" : "flag-off")">
+            <span class="bi @(present ? "bi-check-lg" : redWhenAbsent ? "bi-x-lg" : "bi-dash")"></span> @label
+        </span>;
+
+    /// <summary>
+    /// Which season the pass is for, or how many when more than one season is running at once - which happens whenever a
+    /// tournament overlaps a league season.
+    /// </summary>
+    private static string CurrentPassWording(UserDto user) => user.CurrentPassSeasonNames.Count switch
+    {
+        0 => "Current pass",
+        1 => $"Pass · {user.CurrentPassSeasonNames[0]}",
+        var count => $"{count} current passes"
+    };
+
+    private static string SegmentClass(string state) => state switch
+    {
+        OnboardingStepStates.Completed => "seg-done",
+        OnboardingStepStates.Active => "seg-active",
+        OnboardingStepStates.Locked => "seg-locked",
+        _ => "seg-skipped"
+    };
+
+    private async Task OpenDetail(UserDto user, UserDetailSection section)
+    {
+        _detailUser = user;
+        _detailSection = section;
+        _openMenuUserId = null;
+
+        // The markup has to exist before Bootstrap is asked to show it, and the render that creates it has not happened
+        // yet at this point. Same wait as the league join and add-member modals.
+        await Task.Yield();
+
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "userDetailModal");
+    }
+
+    private async Task CloseDetailAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "userDetailModal");
+        _detailUser = null;
+    }
+
+    private void SetTab(UserListTab tab)
+    {
+        _criteria = _criteria with { Tab = tab };
+    }
+
     private void OnMobileTabChanged(ChangeEventArgs e)
     {
-        _activeTab = e.Value?.ToString() ?? "all";
+        SetTab(Enum.TryParse<UserListTab>(e.Value?.ToString(), out var tab) ? tab : UserListTab.All);
     }
 
     private void OnSearchChanged(ChangeEventArgs e)
     {
-        _searchTerm = e.Value?.ToString() ?? "";
+        _criteria = _criteria with { SearchTerm = e.Value?.ToString() };
     }
 
     private void OnSortFieldChanged(ChangeEventArgs e)
     {
-        _sortField = e.Value?.ToString() ?? "name";
+        var field = Enum.TryParse<UserListSortField>(e.Value?.ToString(), out var parsed) ? parsed : UserListSortField.Name;
+
+        _criteria = _criteria with { SortField = field };
     }
 
     private void ToggleFilters()
@@ -270,20 +440,32 @@
 
     private void ToggleDormantOnly()
     {
-        _dormantOnly = !_dormantOnly;
+        _criteria = _criteria with { DormantOnly = !_criteria.DormantOnly };
+    }
+
+    private void ToggleNoCurrentPassOnly()
+    {
+        _criteria = _criteria with { NoCurrentPassOnly = !_criteria.NoCurrentPassOnly };
+    }
+
+    private void ToggleSetupIncompleteOnly()
+    {
+        _criteria = _criteria with { SetupIncompleteOnly = !_criteria.SetupIncompleteOnly };
+    }
+
+    private void ToggleUnpaidWinnersOnly()
+    {
+        _criteria = _criteria with { UnpaidWinnersOnly = !_criteria.UnpaidWinnersOnly };
     }
 
     private void ToggleSortDirection()
     {
-        _sortDescending = !_sortDescending;
+        _criteria = _criteria with { SortDescending = !_criteria.SortDescending };
     }
 
     private void ClearFilters()
     {
-        _searchTerm = "";
-        _dormantOnly = false;
-        _sortField = "name";
-        _sortDescending = false;
+        _criteria = _criteria.Cleared();
     }
 
     private void ToggleMenu(string userId)
@@ -296,47 +478,6 @@
         _openMenuUserId = null;
     }
 
-    private List<UserDto> GetActiveTabUsers() => _activeTab switch
-    {
-        "admin" => _adminUsers,
-        "player" => _playerUsers,
-        _ => _users ?? []
-    };
-
-    private List<UserDto> GetDisplayedUsers()
-    {
-        IEnumerable<UserDto> users = GetActiveTabUsers();
-
-        if (!string.IsNullOrWhiteSpace(_searchTerm))
-        {
-            var term = _searchTerm.Trim();
-            users = users.Where(u =>
-                u.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || u.Email.Contains(term, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (_dormantOnly)
-        {
-            users = users.Where(u => u.IsDormant);
-        }
-
-        users = _sortField switch
-        {
-            "created" => users.OrderBy(u => u.LeaguesCreated),
-            "joined" => users.OrderBy(u => u.LeaguesJoinedApproved + u.LeaguesJoinedPending),
-            "spend" => users.OrderBy(u => u.TotalSpend),
-            "winnings" => users.OrderBy(u => u.TotalWinnings),
-            _ => users.OrderBy(u => u.FullName)
-        };
-
-        if (_sortDescending)
-        {
-            users = users.Reverse();
-        }
-
-        return users.ToList();
-    }
-
     private static string FormatMoney(decimal amount) => amount % 1 == 0
         ? $"£{amount:N0}"
         : $"£{amount:N2}";
@@ -347,12 +488,6 @@
         try
         {
             _users = await Http.GetFromJsonAsync<List<UserDto>>("api/admin/users");
-
-            if (_users != null)
-            {
-                _adminUsers = _users.Where(u => u.IsAdmin).ToList();
-                _playerUsers = _users.Where(u => !u.IsAdmin).ToList();
-            }
         }
         catch (Exception)
         {

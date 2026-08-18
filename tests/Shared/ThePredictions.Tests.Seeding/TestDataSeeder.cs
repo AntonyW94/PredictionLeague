@@ -122,7 +122,14 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
         });
     }
 
-    public async Task<string> AddUserAsync(string firstName, string lastName, string? email = null, string? password = null)
+    public async Task<string> AddUserAsync(
+        string firstName,
+        string lastName,
+        string? email = null,
+        string? password = null,
+        string? phoneNumber = null,
+        DateTime? termsAcceptedAtUtc = null,
+        DateTime? marketingOptInAtUtc = null)
     {
         var userId = Guid.NewGuid().ToString();
         var address = email ?? $"{firstName}.{lastName}@integration.test".ToLowerInvariant();
@@ -153,7 +160,10 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
                 [AccessFailedCount],
                 [FirstName],
                 [LastName],
-                [PreferredTheme]
+                [PreferredTheme],
+                [PhoneNumber],
+                [TermsAcceptedAtUtc],
+                [MarketingOptInAtUtc]
             )
             VALUES
             (
@@ -171,7 +181,10 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
                 @AccessFailedCount,
                 @FirstName,
                 @LastName,
-                @PreferredTheme
+                @PreferredTheme,
+                @PhoneNumber,
+                @TermsAcceptedAtUtc,
+                @MarketingOptInAtUtc
             );";
 
         await ExecuteAsync(sql, new
@@ -182,6 +195,9 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
             EmailConfirmed = true,
             PasswordHash = passwordHash,
             SecurityStamp = securityStamp,
+            PhoneNumber = phoneNumber,
+            TermsAcceptedAtUtc = termsAcceptedAtUtc,
+            MarketingOptInAtUtc = marketingOptInAtUtc,
             PhoneNumberConfirmed = false,
             TwoFactorEnabled = false,
             LockoutEnabled = false,
@@ -890,11 +906,38 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
         });
     }
 
+    public async Task AddOnboardingSkipAsync(string userId, string stepKey, DateTime? skippedAtUtc = null)
+    {
+        const string sql = @"
+            INSERT INTO [UserOnboardingSkips]
+            (
+                [UserId],
+                [StepKey],
+                [SkippedAtUtc]
+            )
+            VALUES
+            (
+                @UserId,
+                @StepKey,
+                @SkippedAtUtc
+            );";
+
+        await ExecuteAsync(sql, new
+        {
+            UserId = userId,
+            StepKey = stepKey,
+            SkippedAtUtc = skippedAtUtc ?? DateTime.UtcNow
+        });
+    }
+
     public async Task<int> AddSeasonPassAsync(
         string userId,
         int seasonId,
         SeasonPassTier tier = SeasonPassTier.Standard,
-        SeasonPassSource source = SeasonPassSource.Purchased)
+        SeasonPassSource source = SeasonPassSource.Purchased,
+        decimal amountPaid = 0m,
+        decimal smsFeePaid = 0m,
+        DateTime? createdAtUtc = null)
     {
         // Tier and Source are stored as enum names, unlike LeaguePrizeSettings.PrizeType which stores the number.
         const string sql = @"
@@ -927,13 +970,19 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
             SeasonId = seasonId,
             Tier = tier.ToString(),
             Source = source.ToString(),
-            AmountPaid = 0m,
-            SmsFeePaid = 0m,
-            CreatedAtUtc = DateTime.UtcNow
+            AmountPaid = amountPaid,
+            SmsFeePaid = smsFeePaid,
+            CreatedAtUtc = createdAtUtc ?? DateTime.UtcNow
         });
     }
 
-    public async Task AddUserBadgeAsync(string userId, string badgeKey, DateTime awardedUtc, int? roundId = null)
+    public async Task AddUserBadgeAsync(
+        string userId,
+        string badgeKey,
+        DateTime awardedUtc,
+        int? roundId = null,
+        int? seasonId = null,
+        string? detail = null)
     {
         // A null [RoundId] is how a lifetime badge is stored, and the unique index over (UserId, BadgeKey, RoundId,
         // SeasonId) treats nulls as equal - so a second award of the same badge needs a round to be scoped to. Nothing
@@ -944,17 +993,29 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
                 [UserId],
                 [BadgeKey],
                 [AwardedUtc],
-                [RoundId]
+                [RoundId],
+                [SeasonId],
+                [Detail]
             )
             VALUES
             (
                 @UserId,
                 @BadgeKey,
                 @AwardedUtc,
-                @RoundId
+                @RoundId,
+                @SeasonId,
+                @Detail
             );";
 
-        await ExecuteAsync(sql, new { UserId = userId, BadgeKey = badgeKey, AwardedUtc = awardedUtc, RoundId = roundId });
+        await ExecuteAsync(sql, new
+        {
+            UserId = userId,
+            BadgeKey = badgeKey,
+            AwardedUtc = awardedUtc,
+            RoundId = roundId,
+            SeasonId = seasonId,
+            Detail = detail
+        });
     }
 
     public async Task<int> AddPricingSettingsAsync(decimal bufferRate, decimal minimumFloor)

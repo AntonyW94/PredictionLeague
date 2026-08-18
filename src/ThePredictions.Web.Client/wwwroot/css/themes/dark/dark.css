@@ -1294,13 +1294,8 @@ main.theme-dark:has(.admin-light) .navbar-logo {
     color: var(--white-alpha-50);
 }
 
-.theme-dark .user-email,
-.theme-dark .user-money {
+.theme-dark .user-email {
     color: var(--white-alpha-70);
-}
-
-.theme-dark .user-auth {
-    color: var(--white-alpha-50);
 }
 
 .theme-dark .user-kebab {
@@ -1328,27 +1323,124 @@ main.theme-dark:has(.admin-light) .navbar-logo {
     color: var(--red);
 }
 
-.theme-dark .user-tile {
+/* Count panels, setup band and money strip all sit on the card rather than on the page, so they
+   lift off it with a translucent white rather than taking a purple of their own. */
+.theme-dark .user-panel {
     background: var(--white-alpha-08);
 }
 
-.theme-dark .user-tile-value {
+.theme-dark .user-panel:hover {
+    background: var(--white-alpha-15);
+    border-color: var(--purple-200);
+}
+
+.theme-dark .panel-empty {
+    background: var(--white-alpha-02);
+    border-color: var(--white-alpha-08);
+}
+
+.theme-dark .panel-primary {
     color: var(--white);
 }
 
-.theme-dark .user-tile-value-off {
+.theme-dark .panel-primary-zero,
+.theme-dark .panel-label {
     color: var(--white-alpha-50);
 }
 
-.theme-dark .user-tile-label {
+.theme-dark .user-setup-band,
+.theme-dark .user-money-strip {
+    background: var(--white-alpha-05);
+    border-color: var(--white-alpha-08);
+}
+
+.theme-dark .setup-divider {
+    background: var(--white-alpha-15);
+}
+
+.theme-dark .setup-label,
+.theme-dark .money-label,
+.theme-dark .setup-progress-count-none {
     color: var(--white-alpha-50);
 }
 
-/* Mid-amber text is too dark on the dark purple surface — brighten the
-   warning pill (and the pending badge) to gold for legibility. */
-.theme-dark .user-warning-pill,
-.theme-dark .user-tile-badge {
+.theme-dark .setup-progress-count,
+.theme-dark .money-value {
+    color: var(--white);
+}
+
+.theme-dark .setup-seg {
+    background: var(--white-alpha-30);
+}
+
+.theme-dark .seg-locked {
+    background: transparent;
+    border-color: var(--white-alpha-30);
+}
+
+.theme-dark .money-value-zero,
+.theme-dark .money-op,
+.theme-dark .flag-off {
+    color: var(--white-alpha-50);
+}
+
+/* Mid-amber and mid-grey text are both too dark on the dark purple surface. Amber goes to gold, and
+   the grey pills borrow a translucent white so they stay legible without becoming loud. */
+.theme-dark .pill-warn,
+.theme-dark .chip-pending,
+.theme-dark .row-pill-pending {
     color: var(--gold);
+}
+
+.theme-dark .pill-pass-off,
+.theme-dark .pill-unpaid,
+.theme-dark .row-pill-free {
+    background: var(--white-alpha-10);
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .pill-paid,
+.theme-dark .row-pill-paid {
+    color: var(--purple-200);
+}
+
+.theme-dark .row-pill-trial {
+    color: var(--blue-700);
+}
+
+/* Detail popup. The modal surface is purple-800, so its rows and footer key off that. */
+.theme-dark .user-detail-subject,
+.theme-dark .user-detail-empty,
+.theme-dark .user-detail-meta,
+.theme-dark .user-detail-season,
+.theme-dark .user-detail-note,
+.theme-dark .user-detail-foot-label,
+.theme-dark .user-step-why {
+    color: var(--white-alpha-70);
+}
+
+.theme-dark .user-detail-primary,
+.theme-dark .user-detail-amount,
+.theme-dark .user-detail-foot-value,
+.theme-dark .user-step-title {
+    color: var(--white);
+}
+
+.theme-dark .user-detail-amount-free,
+.theme-dark .user-detail-amount-void,
+.theme-dark .user-step-title-muted,
+.theme-dark .user-step-icon {
+    color: var(--white-alpha-50);
+}
+
+.theme-dark .user-detail-row,
+.theme-dark .user-step-row {
+    border-top-color: var(--white-alpha-08);
+}
+
+.theme-dark .user-detail-foot {
+    background: var(--white-alpha-05);
+    border-top-color: var(--white-alpha-15);
 }
 
 /* Cards inside admin pages should match the form-container surface

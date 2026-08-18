@@ -630,91 +630,627 @@
     background: var(--red-alpha-15);
 }
 
-/* Attention badges — only rendered when relevant */
-.user-attention {
+/* Status line — the two Season Pass answers, then anything actually wrong.
+
+   There is no single "has a pass" state any more: one pill says whether they can play now, the
+   other whether they have ever paid, and an account can be green on one and grey on the other. */
+.user-status-line {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-1);
     margin-top: var(--space-2);
 }
 
-.user-warning-pill {
-    background: var(--orange-alpha-15);
-    color: var(--orange);
+.status-pill {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-1);
+    padding: 3px var(--space-3);
+    border-radius: 50rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
-/* Stat tiles */
-.user-tiles {
+.status-pill .bi {
+    font-size: 0.8em;
+}
+
+.pill-pass-on {
+    background: var(--green-600-alpha-15);
+    color: var(--green-600);
+}
+
+.pill-pass-off {
+    background: var(--grey-100);
+    color: var(--grey-500);
+}
+
+.pill-paid {
+    background: var(--purple-200-alpha-15);
+    color: var(--purple-300);
+}
+
+.pill-unpaid {
+    background: var(--grey-100);
+    color: var(--grey-500);
+}
+
+.pill-warn {
+    background: var(--orange-alpha-15);
+    color: var(--orange);
+}
+
+.pill-danger {
+    background: var(--red-alpha-15);
+    color: var(--red);
+}
+
+/* Clickable count panels — two up on a phone, four across from tablet.
+
+   Two columns rather than four on the narrowest screens because four panels of a two-digit number
+   and a two-word label do not fit; two-by-two also leaves no orphan, which three panels did. */
+.user-panels {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-2);
     margin-top: var(--space-3);
 }
 
-.user-tile {
+@media (min-width: 768px) {
+    .user-panels {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.user-panel {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    padding: var(--space-2) var(--space-1);
+    gap: 1px;
+    padding: var(--space-2) var(--space-3);
     background: var(--grey-100);
+    border: 1px solid transparent;
     border-radius: var(--bs-border-radius);
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    min-width: 0;
+    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
 }
 
-.user-tile-value {
-    font-size: 1.05rem;
+.user-panel:hover {
+    background: var(--purple-100);
+    border-color: var(--purple-200);
+}
+
+.user-panel:focus-visible {
+    outline: 2px solid var(--purple-200);
+    outline-offset: 2px;
+}
+
+/* A count of zero has nothing behind it, so the panel is flat and does not invite a click. */
+.panel-empty {
+    background: var(--purple-50);
+    border-color: var(--grey-200);
+    cursor: default;
+}
+
+.panel-primary {
+    font-size: 1.2rem;
     font-weight: 700;
+    line-height: 1.15;
     color: var(--purple-1000);
-    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
     display: inline-flex;
     align-items: baseline;
-    gap: 3px;
+    gap: var(--space-1);
 }
 
-.user-tile-value-on {
-    color: var(--green-600);
-}
-
-.user-tile-value-off {
+.panel-primary-zero {
     color: var(--grey-400);
 }
 
-.user-tile-label {
-    font-size: 0.62rem;
+.panel-label {
+    font-size: 0.6rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--grey-500);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.user-tile-badge {
+.panel-chip {
     font-size: 0.6rem;
     font-weight: 700;
-    color: var(--orange);
-    background: var(--orange-alpha-15);
     border-radius: 50rem;
     padding: 0 5px;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
-/* Secondary money line — hidden when both totals are zero */
-.user-money {
+.chip-pending {
+    color: var(--orange);
+    background: var(--orange-alpha-15);
+}
+
+.chip-current {
+    color: var(--green-600);
+    background: var(--green-600-alpha-15);
+}
+
+/* Setup band — onboarding progress, sign-in methods, consent.
+
+   Mobile number and payout details are deliberately not ticks here: both are onboarding steps, so
+   the progress segments already carry them and the popup says which. */
+.user-setup-band {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-1) var(--space-3);
     margin-top: var(--space-2);
-    font-size: 0.75rem;
+    padding: var(--space-2) var(--space-3);
+    background: var(--purple-50);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--bs-border-radius);
+}
+
+/* Hidden while the band is wrapped, because a divider between two stacked rows separates nothing. */
+.setup-divider {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .setup-divider {
+        display: block;
+        width: 1px;
+        align-self: stretch;
+        background: var(--grey-200);
+    }
+}
+
+.setup-progress {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    border: none;
+    background: transparent;
+    padding: 2px var(--space-1);
+    margin: -2px calc(var(--space-1) * -1);
+    border-radius: var(--bs-border-radius);
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.setup-progress:hover .setup-progress-count {
+    text-decoration: underline;
+}
+
+.setup-progress:focus-visible {
+    outline: 2px solid var(--purple-200);
+    outline-offset: 2px;
+}
+
+.setup-label {
+    font-size: 0.62rem;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     color: var(--grey-500);
 }
 
-.user-money .bi {
-    opacity: 0.7;
-    margin-right: 4px;
+.setup-segments {
+    display: inline-flex;
+    gap: 2px;
+}
+
+/* One segment per step, coloured by state — done, still to do, dismissed, or blocked by an
+   earlier step. Grey is the base, so a skipped step needs no rule of its own. */
+.setup-seg {
+    width: 14px;
+    height: 6px;
+    border-radius: 2px;
+    background: var(--grey-300);
+}
+
+.seg-done {
+    background: var(--green-600);
+}
+
+.seg-active {
+    background: var(--orange);
+}
+
+/* Stated rather than left to the base grey, so changing the base cannot silently redefine what a
+   dismissed step looks like. */
+.seg-skipped {
+    background: var(--grey-300);
+}
+
+.seg-locked {
+    background: transparent;
+    border: 1px dashed var(--grey-400);
+}
+
+.setup-progress-count {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--purple-1000);
+    font-variant-numeric: tabular-nums;
+}
+
+.setup-progress-count-none {
+    color: var(--grey-500);
+}
+
+/* Tick, dash or cross.
+
+   A dash for absent, not a red cross: signing in with Google rather than a password is a choice and
+   opting out of marketing is the lawful default, so red is kept for the one flag that means a
+   problem - no stored record of accepting the terms. */
+.flag-group {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.flag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.flag .bi {
+    font-size: 0.82rem;
+}
+
+.flag-on {
+    color: var(--green-600);
+}
+
+.flag-off {
+    color: var(--grey-400);
+    font-weight: 500;
+}
+
+.flag-bad {
+    color: var(--red);
+}
+
+/* Money strip — spend split into passes and entries, added up, with winnings apart on the right.
+
+   Same weight as the counts above it. This was a 0.75rem grey line, which is the wrong size for the
+   figures an administrator is most often on this screen to read. Absent entirely when every figure
+   is zero. */
+.user-money-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-4);
+    margin-top: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: var(--white);
+    border: 1px solid var(--grey-200);
+    border-radius: var(--bs-border-radius);
+    font-variant-numeric: tabular-nums;
+}
+
+.money-cell {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-1);
+    border: none;
+    background: transparent;
+    padding: 0;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: var(--bs-border-radius);
+}
+
+.money-cell:hover .money-value {
+    text-decoration: underline;
+}
+
+.money-cell:focus-visible {
+    outline: 2px solid var(--purple-200);
+    outline-offset: 2px;
+}
+
+/* A total is the sum of the two figures beside it, and a zero has nothing behind it. Neither opens
+   anything, so neither behaves like a link. */
+.money-cell-static {
+    cursor: default;
+}
+
+.money-cell-static:hover .money-value {
+    text-decoration: none;
+}
+
+.money-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--grey-500);
+}
+
+.money-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--purple-1000);
+}
+
+.money-value-won {
+    color: var(--green-600);
+}
+
+.money-value-zero {
+    color: var(--grey-400);
+}
+
+.money-op {
+    color: var(--grey-400);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Pushes winnings away from the spend arithmetic, so "spent" and "won" do not read as one sum. */
+.money-spacer {
+    flex: 1;
+    min-width: var(--space-2);
+}
+
+/* The filter chips wrap on a phone rather than overflowing the panel. */
+.user-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* Detail popup — the rows behind one figure on a card. */
+.user-detail-subject {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--grey-500);
+    font-weight: 500;
+}
+
+.user-detail-body {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.user-detail-empty {
+    margin: 0;
+    padding: 0 var(--space-4);
+    color: var(--grey-500);
+    font-size: 0.9rem;
+}
+
+.user-detail-season {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4) var(--space-1);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--grey-500);
+}
+
+.user-detail-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Two columns and two rows: what it is and what it cost on the first, the qualifying detail
+   underneath, and the amount spanning both rows on the right. */
+.user-detail-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border-top: 1px solid var(--grey-200);
+}
+
+.user-detail-row:first-child {
+    border-top: none;
+}
+
+.user-detail-primary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    min-width: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--purple-1000);
+}
+
+.user-detail-meta {
+    grid-column: 1;
+    font-size: 0.72rem;
+    color: var(--grey-500);
+    font-weight: 500;
+}
+
+.user-detail-amount {
+    grid-row: span 2;
+    grid-column: 2;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--purple-1000);
+}
+
+.user-detail-amount-free {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--grey-400);
+}
+
+.user-detail-amount-won {
+    color: var(--green-600);
+}
+
+/* A fee that exists but was never paid, because the request was not approved. Struck through
+   rather than hidden: the fee is real, and the point is that this account did not pay it. */
+.user-detail-amount-void {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--grey-400);
+    text-decoration: line-through;
+}
+
+.user-detail-note {
+    margin: var(--space-2) var(--space-4) 0;
+    font-size: 0.75rem;
+    color: var(--grey-500);
+    line-height: 1.45;
+}
+
+.user-detail-note-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    color: var(--red);
+    font-weight: 600;
+}
+
+.user-detail-foot {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-top: 2px solid var(--grey-200);
+    background: var(--purple-50);
+    font-size: 0.8rem;
+}
+
+.user-detail-foot-label {
+    color: var(--grey-500);
+    font-weight: 600;
+}
+
+.user-detail-foot-value {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--purple-1000);
+    font-variant-numeric: tabular-nums;
+}
+
+.user-detail-foot-won {
+    color: var(--green-600);
+}
+
+.row-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px var(--space-2);
+    border-radius: 50rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.row-pill-current {
+    background: var(--green-600-alpha-15);
+    color: var(--green-600);
+}
+
+.row-pill-pending {
+    background: var(--orange-alpha-15);
+    color: var(--orange);
+}
+
+.row-pill-rejected {
+    background: var(--red-alpha-15);
+    color: var(--red);
+}
+
+.row-pill-free {
+    background: var(--grey-100);
+    color: var(--grey-500);
+}
+
+.row-pill-trial {
+    background: var(--blue-700-alpha-15);
+    color: var(--blue-900);
+}
+
+.row-pill-paid {
+    background: var(--purple-200-alpha-15);
+    color: var(--purple-300);
+}
+
+/* Onboarding step rows — icon, title and state on one line, the reason underneath. */
+.user-step-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2px var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    border-top: 1px solid var(--grey-200);
+}
+
+.user-step-row:first-child {
+    border-top: none;
+}
+
+.user-step-icon {
+    grid-row: span 2;
+    width: 1.25rem;
+    text-align: center;
+    font-size: 1rem;
+    color: var(--grey-400);
+}
+
+.user-step-icon-done {
+    color: var(--green-600);
+}
+
+.user-step-icon-active {
+    color: var(--orange);
+}
+
+/* Skipped and locked share this: both are outstanding for reasons that are not the account trying
+   and failing, so neither earns a colour. */
+.user-step-icon-muted {
+    color: var(--grey-400);
+}
+
+.user-step-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--purple-1000);
+}
+
+.user-step-title-muted {
+    color: var(--grey-500);
+}
+
+.user-step-state {
+    grid-row: span 2;
+    grid-column: 3;
+    text-align: right;
+}
+
+.user-step-why {
+    grid-column: 2;
+    font-size: 0.72rem;
+    color: var(--grey-500);
 }
 
 /* Season list rows */

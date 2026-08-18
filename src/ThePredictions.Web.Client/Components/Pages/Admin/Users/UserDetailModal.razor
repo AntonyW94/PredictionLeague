@@ -1,0 +1,375 @@
+@using ThePredictions.Contracts.Admin.Users
+@using ThePredictions.Contracts.Onboarding
+@using ThePredictions.Domain.Common.Enumerations
+@using ThePredictions.Web.Client.ViewModels.Admin.Users
+
+@*
+    The rows behind one figure on a user card. Everything shown here arrives with the list, so opening this needs no
+    request - which is why each figure can be a link at all.
+*@
+
+<div class="modal fade" id="userDetailModal" data-test-id="user-detail-modal" tabindex="-1" aria-labelledby="userDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content themed-modal">
+            <div class="modal-header border-bottom">
+                <div>
+                    <h5 class="modal-title fw-bold" id="userDetailModalLabel">@Title</h5>
+                    <span class="user-detail-subject">@User.FullName</span>
+                </div>
+                <button type="button" class="btn-close" @onclick="OnClose" aria-label="Close"></button>
+            </div>
+            <div class="modal-body user-detail-body">
+                @switch (Section)
+                {
+                    case UserDetailSection.Memberships:
+                        @RenderMemberships
+                        break;
+                    case UserDetailSection.AdministeredLeagues:
+                        @RenderAdministeredLeagues
+                        break;
+                    case UserDetailSection.SeasonPasses:
+                        @RenderSeasonPasses
+                        break;
+                    case UserDetailSection.Prizes:
+                        @RenderPrizes
+                        break;
+                    case UserDetailSection.Badges:
+                        @RenderBadges
+                        break;
+                    case UserDetailSection.Onboarding:
+                        @RenderOnboarding
+                        break;
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>The account whose details these are.</summary>
+    [Parameter, EditorRequired]
+    public UserDto User { get; set; } = null!;
+
+    /// <summary>Which of them to show.</summary>
+    [Parameter, EditorRequired]
+    public UserDetailSection Section { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private string Title => Section switch
+    {
+        UserDetailSection.Memberships => "Leagues joined",
+        UserDetailSection.AdministeredLeagues => "Leagues created",
+        UserDetailSection.SeasonPasses => "Season passes",
+        UserDetailSection.Prizes => "Winnings",
+        UserDetailSection.Badges => "Badges earned",
+        _ => "Account setup"
+    };
+
+    private RenderFragment RenderMemberships => @<div>
+        @if (User.Memberships.Count == 0)
+        {
+            <p class="user-detail-empty">This account has not joined any leagues.</p>
+        }
+        else
+        {
+            @foreach (var season in User.Memberships.GroupBy(membership => (membership.SeasonId, membership.SeasonName, membership.IsCurrentSeason)))
+            {
+                @SeasonHeading(season.Key.SeasonName, season.Key.IsCurrentSeason)
+                <div class="user-detail-rows">
+                    @foreach (var membership in season)
+                    {
+                        <div class="user-detail-row">
+                            <span class="user-detail-primary">
+                                @membership.LeagueName
+                                @if (membership.Status == LeagueMemberStatus.Pending)
+                                {
+                                    <span class="row-pill row-pill-pending">Pending</span>
+                                }
+                                else if (membership.Status == LeagueMemberStatus.Rejected)
+                                {
+                                    <span class="row-pill row-pill-rejected">Rejected</span>
+                                }
+                            </span>
+                            @EntryFee(membership)
+                            <span class="user-detail-meta">@StatusWording(membership.Status)</span>
+                        </div>
+                    }
+                </div>
+            }
+            <p class="user-detail-note">
+                A request nobody accepted was never paid for, so its fee is struck through and left out of the total.
+            </p>
+            @Footer($"{User.Memberships.Count} {Plural(User.Memberships.Count, "league")} across {SeasonCount(User.Memberships.Select(m => m.SeasonId))}",
+                    $"{FormatMoney(User.LeagueEntrySpend)} in entry fees", won: false)
+        }
+    </div>;
+
+    private RenderFragment RenderAdministeredLeagues => @<div>
+        @if (User.AdministeredLeagues.Count == 0)
+        {
+            <p class="user-detail-empty">This account has not created any leagues.</p>
+        }
+        else
+        {
+            @foreach (var season in User.AdministeredLeagues.GroupBy(league => (league.SeasonId, league.SeasonName, league.IsCurrentSeason)))
+            {
+                @SeasonHeading(season.Key.SeasonName, season.Key.IsCurrentSeason)
+                <div class="user-detail-rows">
+                    @foreach (var league in season)
+                    {
+                        <div class="user-detail-row">
+                            <span class="user-detail-primary">@league.LeagueName</span>
+                            <span class="user-detail-amount @(league.IsFree || league.Price <= 0 ? "user-detail-amount-free" : "")">
+                                @(league.IsFree || league.Price <= 0 ? "Free" : FormatMoney(league.Price))
+                            </span>
+                            <span class="user-detail-meta">
+                                @league.ApprovedMemberCount @Plural(league.ApprovedMemberCount, "member")
+                                @(league.AlsoPlaying ? " · also playing" : " · not playing in it")
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+            <p class="user-detail-note">
+                The amount is the league&rsquo;s entry fee, not money this account paid.
+            </p>
+            @Footer($"{User.AdministeredLeagues.Count} {Plural(User.AdministeredLeagues.Count, "league")}",
+                    $"{User.AdministeredLeagues.Count(league => league.IsCurrentSeason)} running now", won: false)
+        }
+    </div>;
+
+    private RenderFragment RenderSeasonPasses => @<div>
+        @if (User.SeasonPasses.Count == 0)
+        {
+            <p class="user-detail-empty">This account has never held a Season Pass.</p>
+        }
+        else
+        {
+            <div class="user-detail-rows">
+                @foreach (var pass in User.SeasonPasses)
+                {
+                    <div class="user-detail-row">
+                        <span class="user-detail-primary">
+                            @pass.SeasonName
+                            @if (pass.IsCurrentSeason)
+                            {
+                                <span class="row-pill row-pill-current">Current</span>
+                            }
+                            <span class="row-pill @SourcePillClass(pass.Source)">@pass.Source</span>
+                        </span>
+                        <span class="user-detail-amount @(pass.TotalPaid <= 0 ? "user-detail-amount-free" : "")">
+                            @(pass.TotalPaid <= 0 ? "Free" : FormatMoney(pass.TotalPaid))
+                        </span>
+                        <span class="user-detail-meta">
+                            @pass.Tier tier &middot; <LocalTime UtcDate="pass.CreatedAtUtc" Format="d MMMM yyyy" />
+                        </span>
+                    </div>
+                }
+            </div>
+            <p class="user-detail-note">
+                A pass arrives three ways: purchased, a first-season trial, or free because the season had no price. Only
+                a purchase counts as money spent, which is why an account can hold a pass and never have paid for one.
+            </p>
+            @Footer($"{User.SeasonPasses.Count} {Plural(User.SeasonPasses.Count, "pass", "passes")} · {User.SeasonPasses.Count(pass => pass.WasPurchased)} purchased",
+                    $"{FormatMoney(User.SeasonPassSpend)} paid", won: false)
+        }
+    </div>;
+
+    private RenderFragment RenderPrizes => @<div>
+        @if (User.Prizes.Count == 0)
+        {
+            <p class="user-detail-empty">This account has not won a prize.</p>
+        }
+        else
+        {
+            @foreach (var season in User.Prizes.GroupBy(prize => (prize.SeasonId, prize.SeasonName, prize.IsCurrentSeason)))
+            {
+                @SeasonHeading(season.Key.SeasonName, season.Key.IsCurrentSeason)
+                <div class="user-detail-rows">
+                    @foreach (var prize in season)
+                    {
+                        <div class="user-detail-row">
+                            <span class="user-detail-primary">@prize.Title</span>
+                            <span class="user-detail-amount user-detail-amount-won">@FormatMoney(prize.Amount)</span>
+                            <span class="user-detail-meta">
+                                @prize.LeagueName &middot; <LocalTime UtcDate="prize.AwardedDateUtc" Format="d MMMM yyyy" />
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+            @if (!User.HasPayoutDetails)
+            {
+                <p class="user-detail-note user-detail-note-warning">
+                    <span class="bi bi-exclamation-triangle-fill"></span>
+                    There are no payout details on this account, so there is no way to send this money.
+                </p>
+            }
+            @Footer($"{User.PrizeCount} {Plural(User.PrizeCount, "prize")} across {LeagueCount(User.Prizes.Select(prize => prize.LeagueId))}",
+                    FormatMoney(User.TotalWinnings), won: true)
+        }
+    </div>;
+
+    private RenderFragment RenderBadges => @<div>
+        @if (User.Badges.Count == 0)
+        {
+            <p class="user-detail-empty">This account has not earned a badge.</p>
+        }
+        else
+        {
+            @foreach (var group in User.Badges.GroupBy(badge => badge.SeasonName))
+            {
+                @SeasonHeading(group.Key ?? "Lifetime badges", isCurrentSeason: false)
+                <div class="user-detail-rows">
+                    @foreach (var badge in group)
+                    {
+                        <div class="user-detail-row">
+                            <span class="user-detail-primary">@badge.Name</span>
+                            <span class="user-detail-amount user-detail-amount-free">
+                                <LocalTime UtcDate="badge.AwardedUtc" Format="d MMM yyyy" />
+                            </span>
+                            @if (!string.IsNullOrWhiteSpace(badge.Detail))
+                            {
+                                <span class="user-detail-meta">@badge.Detail</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            @Footer($"{User.BadgeCount} {Plural(User.BadgeCount, "badge")}", "", won: false)
+        }
+    </div>;
+
+    private RenderFragment RenderOnboarding => @<div>
+        <div class="user-detail-rows">
+            @foreach (var step in User.Onboarding.Steps)
+            {
+                <div class="user-step-row">
+                    <span class="bi @StepIcon(step.State) user-step-icon @StepIconClass(step.State)"></span>
+                    <span class="user-step-title @(step.State == OnboardingStepStates.Completed || step.State == OnboardingStepStates.Active ? "" : "user-step-title-muted")">@step.Title</span>
+                    <span class="user-step-state"><span class="row-pill @StepPillClass(step.State)">@StepStateWording(step.State)</span></span>
+                    <span class="user-step-why">@(step.Required ? "Required" : "Optional") &middot; @StepWhy(step)</span>
+                </div>
+            }
+        </div>
+        @Footer(
+            $"{User.OnboardingStepsCompleted} done · {User.Onboarding.Steps.Count(step => step.State is OnboardingStepStates.Active or OnboardingStepStates.Locked)} to do · {User.Onboarding.Steps.Count(step => step.State == OnboardingStepStates.Skipped)} skipped",
+            $"{User.OnboardingStepsCompleted} of {User.OnboardingStepCount}",
+            won: false)
+    </div>;
+
+    private RenderFragment SeasonHeading(string seasonName, bool isCurrentSeason) => @<div class="user-detail-season">
+        <span class="bi bi-calendar3"></span>
+        <span>@(string.IsNullOrWhiteSpace(seasonName) ? "Unknown season" : seasonName)</span>
+        @if (isCurrentSeason)
+        {
+            <span class="row-pill row-pill-current">Current</span>
+        }
+    </div>;
+
+    /// <summary>
+    /// The fee, struck through when the membership was never approved.
+    /// </summary>
+    /// <remarks>
+    /// Struck through rather than hidden: the fee is real, and what the row is saying is that this account did not pay it.
+    /// </remarks>
+    private RenderFragment EntryFee(UserLeagueMembershipDto membership)
+    {
+        var isFree = membership.IsFree || membership.Price <= 0;
+        var counts = membership.Status == LeagueMemberStatus.Approved;
+
+        return @<span class="user-detail-amount @(isFree ? "user-detail-amount-free" : counts ? "" : "user-detail-amount-void")">
+            @(isFree ? "Free" : FormatMoney(membership.Price))
+        </span>;
+    }
+
+    private RenderFragment Footer(string label, string value, bool won) => @<div class="user-detail-foot">
+        <span class="user-detail-foot-label">@label</span>
+        @if (!string.IsNullOrWhiteSpace(value))
+        {
+            <span class="user-detail-foot-value @(won ? "user-detail-foot-won" : "")">@value</span>
+        }
+    </div>;
+
+    private static string StatusWording(LeagueMemberStatus status) => status switch
+    {
+        LeagueMemberStatus.Approved => "Approved member",
+        LeagueMemberStatus.Pending => "Waiting for approval",
+        _ => "Request turned down"
+    };
+
+    private static string SourcePillClass(SeasonPassSource source) => source switch
+    {
+        SeasonPassSource.Purchased => "row-pill-paid",
+        SeasonPassSource.Trial => "row-pill-trial",
+        _ => "row-pill-free"
+    };
+
+    private static string StepIcon(string state) => state switch
+    {
+        OnboardingStepStates.Completed => "bi-check2-circle",
+        OnboardingStepStates.Skipped => "bi-dash-circle",
+        OnboardingStepStates.Locked => "bi-lock-fill",
+        _ => "bi-hourglass"
+    };
+
+    private static string StepIconClass(string state) => state switch
+    {
+        OnboardingStepStates.Completed => "user-step-icon-done",
+        OnboardingStepStates.Active => "user-step-icon-active",
+        _ => "user-step-icon-muted"
+    };
+
+    private static string StepPillClass(string state) => state switch
+    {
+        OnboardingStepStates.Completed => "row-pill-current",
+        OnboardingStepStates.Active => "row-pill-pending",
+        _ => "row-pill-free"
+    };
+
+    private static string StepStateWording(string state) => state switch
+    {
+        OnboardingStepStates.Completed => "Done",
+        OnboardingStepStates.Active => "To do",
+        OnboardingStepStates.Locked => "Locked",
+        _ => "Skipped"
+    };
+
+    /// <summary>Why the step is in the state it is, in terms of this account rather than of the rule.</summary>
+    private string StepWhy(OnboardingStepDto step) => step.Key switch
+    {
+        OnboardingStepKeys.GetPass => User.HasEverHeldSeasonPass
+            ? $"holds {User.SeasonPasses.Count} {Plural(User.SeasonPasses.Count, "pass", "passes")}"
+            : "holds no passes",
+        OnboardingStepKeys.JoinLeague => step.State == OnboardingStepStates.Locked
+            ? "needs a Season Pass first"
+            : $"in {User.Memberships.Count} {Plural(User.Memberships.Count, "league")}",
+        OnboardingStepKeys.AddMobile => string.IsNullOrWhiteSpace(User.PhoneNumber)
+            ? "no mobile number"
+            : "mobile number saved",
+        _ => User.HasPayoutDetails ? "payout details saved" : "no payout details"
+    };
+
+    private static string SeasonCount(IEnumerable<int> seasonIds)
+    {
+        var count = seasonIds.Distinct().Count();
+
+        return $"{count} {Plural(count, "season")}";
+    }
+
+    private static string LeagueCount(IEnumerable<int> leagueIds)
+    {
+        var count = leagueIds.Distinct().Count();
+
+        return $"{count} {Plural(count, "league")}";
+    }
+
+    private static string Plural(int count, string singular, string? plural = null) =>
+        count == 1 ? singular : plural ?? $"{singular}s";
+
+    private static string FormatMoney(decimal amount) => amount % 1 == 0
+        ? $"£{amount:N0}"
+        : $"£{amount:N2}";
+}
