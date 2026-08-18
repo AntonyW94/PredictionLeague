@@ -855,6 +855,50 @@ public class GetAllUsersQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldShowARepeatableBadgeOnce_WhenItHasBeenWonSeveralTimes()
+    {
+        // A badge won every round has a row per round, and counting those rows reported more badges than the catalogue
+        // defines. The badge is one badge however many times it has been won.
+        Given(Data(
+            users: [User(UserId, "Ada", "Lovelace")],
+            badges:
+            [
+                new UserBadgeRow(UserId, "round-winner", "Round 4", Awarded.AddDays(-20), null),
+                new UserBadgeRow(UserId, "round-winner", "Round 9", Awarded.AddDays(-5), null),
+                new UserBadgeRow(UserId, "round-winner", "Round 12", Awarded, null)
+            ]));
+
+        // Act
+        var user = (await HandleAsync()).Single();
+
+        // Assert
+        user.Badges.Should().ContainSingle().Which.BadgeKey.Should().Be("round-winner");
+        user.BadgeCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldShowTheFirstTimeARepeatableBadgeWasEarned()
+    {
+        // The date, the detail and the season all describe one occasion, so they come from the same one - the first.
+        Given(Data(
+            users: [User(UserId, "Ada", "Lovelace")],
+            badges:
+            [
+                new UserBadgeRow(UserId, "ever-present", "Later", Awarded, CurrentSeasonId),
+                new UserBadgeRow(UserId, "ever-present", "First", Awarded.AddDays(-30), FinishedSeasonId)
+            ],
+            seasons: BothSeasons));
+
+        // Act
+        var badge = (await HandleAsync()).Single().Badges.Single();
+
+        // Assert
+        badge.AwardedUtc.Should().Be(Awarded.AddDays(-30));
+        badge.Detail.Should().Be("First");
+        badge.SeasonName.Should().Be("Premier League 2025/26");
+    }
+
+    [Fact]
     public async Task Handle_ShouldNotGiveOneAccountsBadgesToAnother()
     {
         // Arrange

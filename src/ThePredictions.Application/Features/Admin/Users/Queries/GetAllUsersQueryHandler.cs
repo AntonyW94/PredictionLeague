@@ -178,9 +178,18 @@ public class GetAllUsersQueryHandler(IAdminUsersQuery adminUsersQuery)
             .ToList();
 
     /// <summary>
-    /// Badges most recent first, named from the catalogue.
+    /// One entry per badge earned, at the moment it was first earned, most recent first.
     /// </summary>
     /// <remarks>
+    /// A repeatable badge has a row per round or per season it was won in, so a single account holds far more rows than
+    /// the catalogue defines badges - somebody who has won fourteen rounds has fourteen Beat the Crowd rows. Counting
+    /// those rows made the list report more badges than exist, so the rows are collapsed to the badge and only the first
+    /// award of each survives. The later ones are the same badge won again, which is a story for the player's own badges
+    /// page, not for an administrator telling accounts apart.
+    ///
+    /// The detail and the season come from that first award for the same reason: they describe the award being shown, so
+    /// taking them from a later one would date-stamp one occasion and describe another.
+    ///
     /// A key the catalogue no longer defines falls back to the key itself. Badges are defined in code and earned rows
     /// outlive the definition, so a badge retired from the catalogue still has rows pointing at it - showing the raw key is
     /// ugly but it is the truth, and it is better than an empty name or a crash.
@@ -189,6 +198,8 @@ public class GetAllUsersQueryHandler(IAdminUsersQuery adminUsersQuery)
         IEnumerable<UserBadgeRow> badges,
         IReadOnlyDictionary<int, SeasonFacts> seasons) =>
         badges
+            .GroupBy(badge => badge.BadgeKey, StringComparer.Ordinal)
+            .Select(group => group.OrderBy(badge => badge.AwardedUtc).First())
             .OrderByDescending(badge => badge.AwardedUtc)
             .Select(badge => new UserBadgeDto(
                 badge.BadgeKey,

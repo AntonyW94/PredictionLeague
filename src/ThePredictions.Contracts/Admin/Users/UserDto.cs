@@ -47,7 +47,14 @@ public record UserDto(
     /// <summary>Everything this account has paid the site, for passes and league entry together.</summary>
     public decimal TotalSpend => SeasonPassSpend + LeagueEntrySpend;
 
-    /// <summary>How many badges this account has earned.</summary>
+    /// <summary>
+    /// How many different badges this account has earned, which the catalogue caps.
+    /// </summary>
+    /// <remarks>
+    /// Different badges, not awards. A badge that can be won every round is one badge however many times it has been won,
+    /// and the handler has already collapsed the repeats - so this counts what it should and cannot exceed the number of
+    /// badges that exist.
+    /// </remarks>
     public int BadgeCount => Badges.Count;
 
     /// <summary>How many prizes this account has won, which is not the same as how much.</summary>
