@@ -63,6 +63,10 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+# Traces, screenshots and the application log the browser suite writes for a failed journey. CI keeps
+# these as a build artifact; locally they land at the repository root, and a single trace is megabytes.
+e2e-artifacts/
+
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
 

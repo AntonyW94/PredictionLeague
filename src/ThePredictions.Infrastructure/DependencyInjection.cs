@@ -99,6 +99,10 @@ public static class DependencyInjection
 
         services.AddMemoryCache();
 
+        // Singleton on purpose: it hands work off to run after a request has returned, so it must not be
+        // tied to the scope that is about to be disposed.
+        services.AddSingleton<IBackgroundCommandDispatcher, BackgroundCommandDispatcher>();
+
         services.AddScoped<IAuthenticationTokenService, AuthenticationTokenService>();
         services.AddScoped<IEmailService, BrevoEmailService>();
         services.AddScoped<IEmailSettingsProvider, CachedEmailSettingsProvider>();

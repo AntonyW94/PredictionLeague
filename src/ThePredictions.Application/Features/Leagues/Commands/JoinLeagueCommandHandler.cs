@@ -10,7 +10,7 @@ using ThePredictions.Domain.Common.Exceptions;
 
 namespace ThePredictions.Application.Features.Leagues.Commands;
 
-public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ILeagueStatsRepository leagueStatsRepository, ISeasonAccessService seasonAccessService, IMediator mediator, IDateTimeProvider dateTimeProvider) : IRequestHandler<JoinLeagueCommand, int>
+public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ILeagueStatsRepository leagueStatsRepository, ISeasonAccessService seasonAccessService, IBackgroundCommandDispatcher backgroundCommandDispatcher, IDateTimeProvider dateTimeProvider) : IRequestHandler<JoinLeagueCommand, int>
 {
     public async Task<int> Handle(JoinLeagueCommand request, CancellationToken cancellationToken)
     {
@@ -37,7 +37,7 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ILeagu
         if (joinedAsApproved)
             await leagueStatsRepository.RefreshLeagueAsync(league.Id, cancellationToken);
 
-        await NotifyAsync(league, request, cancellationToken);
+        Notify(league, request);
 
         return league.Id;
     }
@@ -53,7 +53,17 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ILeagu
         throw new BusinessRuleViolationException("Either a LeagueId or an EntryCode must be provided.");
     }
 
-    private async Task NotifyAsync(League league, JoinLeagueCommand request, CancellationToken cancellationToken)
+    /// <summary>
+    /// Tells whoever needs to know, without making the joiner wait for it.
+    /// </summary>
+    /// <remarks>
+    /// Dispatched rather than sent. Both branches end at Brevo, a third party over the network, and awaiting
+    /// that here put the whole round trip inside the join response: 5107ms of a 5121ms response in one CI run.
+    /// The join is committed by this point and its id is about to be returned, so there is nothing left for the
+    /// player to wait for. A send that fails is logged by the dispatcher and does not reach them - which is the
+    /// intent either way, since an email nobody received is not a reason to refuse a join that happened.
+    /// </remarks>
+    private void Notify(League league, JoinLeagueCommand request)
     {
         // Always present: AddMember above either added them or threw, so no null guard.
         var member = league.Members.First(m => m.UserId == request.JoiningUserId);
@@ -62,20 +72,20 @@ public class JoinLeagueCommandHandler(ILeagueRepository leagueRepository, ILeagu
         // Otherwise the request is pending: tell the admin there is someone to approve.
         if (member.Status == LeagueMemberStatus.Approved)
         {
-            await mediator.Send(new NotifyMemberOfLeagueApprovalCommand(
+            backgroundCommandDispatcher.Dispatch(new NotifyMemberOfLeagueApprovalCommand(
                 request.JoiningUserId,
                 league.Id,
                 league.Name,
-                league.SeasonId), cancellationToken);
+                league.SeasonId));
         }
         else
         {
-            await mediator.Send(new NotifyLeagueAdminOfJoinRequestCommand(
+            backgroundCommandDispatcher.Dispatch(new NotifyLeagueAdminOfJoinRequestCommand(
                 league.AdministratorUserId,
                 league.Name,
                 league.SeasonId,
                 request.JoiningUserFirstName,
-                request.JoiningUserLastName), cancellationToken);
+                request.JoiningUserLastName));
         }
     }
 }

@@ -53,6 +53,16 @@ public sealed class StackFixture : IAsyncLifetime
         // pointed at it here - once, rather than every page object hand-writing an attribute selector.
         _playwright.Selectors.SetTestIdAttribute(TestIds.Attribute);
 
+        // Web-first assertions do NOT read the context timeout set in NewSessionAsync below. That one governs
+        // locator ACTIONS - Click, Fill, WaitFor - while every Assertions.Expect call reads this separate
+        // static default instead, which starts at Playwright's built-in 5 seconds. Until this line existed the
+        // suite declared 30 seconds and ran every assertion at 5, and a join that took 5.1 seconds lost the
+        // race often enough to look like an application fault.
+        //
+        // It is a process-wide static rather than anything per-context, so it belongs here beside the test-id
+        // attribute: set once, before any browser exists, not re-applied per session.
+        Assertions.SetDefaultExpectTimeout(E2ESettings.AssertionTimeoutMs);
+
         _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
             Headless = !E2ESettings.RunHeaded,

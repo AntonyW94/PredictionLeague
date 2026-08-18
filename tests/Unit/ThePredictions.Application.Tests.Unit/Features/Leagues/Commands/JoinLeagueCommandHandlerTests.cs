@@ -1,5 +1,4 @@
 using FluentAssertions;
-using MediatR;
 using NSubstitute;
 using ThePredictions.Application.Features.Leagues.Commands;
 using ThePredictions.Application.Repositories;
@@ -16,13 +15,13 @@ public class JoinLeagueCommandHandlerTests
     private readonly ILeagueRepository _leagueRepository = Substitute.For<ILeagueRepository>();
     private readonly ILeagueStatsRepository _leagueStatsRepository = Substitute.For<ILeagueStatsRepository>();
     private readonly ISeasonAccessService _seasonAccessService = Substitute.For<ISeasonAccessService>();
-    private readonly IMediator _mediator = Substitute.For<IMediator>();
+    private readonly IBackgroundCommandDispatcher _backgroundCommandDispatcher = Substitute.For<IBackgroundCommandDispatcher>();
     private readonly TestDateTimeProvider _dateTimeProvider = new(new DateTime(2026, 4, 13, 10, 0, 0, DateTimeKind.Utc));
     private readonly JoinLeagueCommandHandler _handler;
 
     public JoinLeagueCommandHandlerTests()
     {
-        _handler = new JoinLeagueCommandHandler(_leagueRepository, _leagueStatsRepository, _seasonAccessService, _mediator, _dateTimeProvider);
+        _handler = new JoinLeagueCommandHandler(_leagueRepository, _leagueStatsRepository, _seasonAccessService, _backgroundCommandDispatcher, _dateTimeProvider);
     }
 
     private League CreateLeague(int id = 1, string administratorUserId = "admin-user", DateTime? entryDeadlineUtc = null, string? entryCode = null, bool requiresMemberApproval = true)
@@ -130,15 +129,15 @@ public class JoinLeagueCommandHandlerTests
         // Act
         await _handler.Handle(command, CancellationToken.None);
 
-        // Assert
-        await _mediator.Received(1).Send(
+        // Assert - dispatched, not sent: the response must not wait on the email. See
+        // IBackgroundCommandDispatcher.
+        _backgroundCommandDispatcher.Received(1).Dispatch(
             Arg.Is<NotifyLeagueAdminOfJoinRequestCommand>(n =>
                 n.AdministratorUserId == "admin-user" &&
                 n.LeagueName == "Test League" &&
                 n.SeasonId == 1 &&
                 n.NewMemberFirstName == "Jane" &&
-                n.NewMemberLastName == "Doe"),
-            Arg.Any<CancellationToken>());
+                n.NewMemberLastName == "Doe"));
     }
 
     [Fact]
@@ -189,15 +188,14 @@ public class JoinLeagueCommandHandlerTests
         await _handler.Handle(command, CancellationToken.None);
 
         // Assert
-        await _mediator.Received(1).Send(
+        _backgroundCommandDispatcher.Received(1).Dispatch(
             Arg.Is<NotifyMemberOfLeagueApprovalCommand>(n =>
                 n.MemberUserId == "new-user" &&
                 n.LeagueId == 5 &&
                 n.LeagueName == "Test League" &&
-                n.SeasonId == 1),
-            Arg.Any<CancellationToken>());
+                n.SeasonId == 1));
 
-        await _mediator.DidNotReceive().Send(Arg.Any<NotifyLeagueAdminOfJoinRequestCommand>(), Arg.Any<CancellationToken>());
+        _backgroundCommandDispatcher.DidNotReceive().Dispatch(Arg.Any<NotifyLeagueAdminOfJoinRequestCommand>());
     }
 
     [Fact]
