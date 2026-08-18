@@ -163,6 +163,39 @@ window.blazorInterop = {
             }
         }
     },
+    // Cleans up after a modal whose element is going away, and is NOT the same as hiding it.
+    //
+    // Bootstrap removes its own backdrop on the transition that follows hide(), but only while the modal
+    // element is still in the document for that transition to end on. Blazor owns that element and removes it
+    // whenever the component holding it stops being rendered - an in-app navigation, or a tile that a state
+    // refresh has un-rendered. hide() is never called on that path, so nothing ever fires, and the backdrop is
+    // left lying over the page with body.modal-open still set: every click lands on the backdrop instead of
+    // the page, and only a reload clears it. Components owning a modal call this as they are disposed.
+    disposeModal: function (id) {
+        const modalElement = document.getElementById(id);
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+                modal.dispose();
+            }
+        }
+
+        // Only once no OTHER modal is left showing, so this can never pull the backdrop out from under one
+        // that is still open. The id is excluded because Blazor disposes the component before it removes the
+        // element, so the modal being disposed of is usually still in the document, still carrying `show`, and
+        // would otherwise match here and stop its own cleanup.
+        const anotherIsOpen = Array.from(document.querySelectorAll('.modal.show'))
+            .some(openModal => openModal.id !== id);
+
+        if (anotherIsOpen) {
+            return;
+        }
+
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    },
     // What an account deletion destroys, as the dialog states it. The lines are composed in C# by
     // UserDeletionImpactSummary so the wording is unit tested; this only renders them, escaped.
     //

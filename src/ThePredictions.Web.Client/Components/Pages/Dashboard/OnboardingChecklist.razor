@@ -147,12 +147,12 @@
     {
         _showJoinModal = true;
         await Task.Delay(50);
-        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "joinPrivateLeagueModal");
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", JoinPrivateLeagueModal.ModalId);
     }
 
     private async Task HideJoinModalAsync()
     {
-        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "joinPrivateLeagueModal");
+        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", JoinPrivateLeagueModal.ModalId);
         _showJoinModal = false;
         await DashboardState.LoadOnboardingAsync();
     }

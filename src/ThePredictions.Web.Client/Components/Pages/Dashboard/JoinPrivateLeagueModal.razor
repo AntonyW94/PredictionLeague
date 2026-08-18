@@ -1,7 +1,10 @@
+@implements IAsyncDisposable
+
 @inject ILeagueService LeagueService
 @inject IDashboardStateService DashboardState
 @inject IPayoutService PayoutService
 @inject NavigationManager Navigation
+@inject IJSRuntime JsRuntime
 
 @using ThePredictions.Contracts.Leagues
 @using ThePredictions.Contracts.Prizes
@@ -9,7 +12,7 @@
 @using ThePredictions.Web.Client.Services.Leagues
 @using ThePredictions.Web.Client.Services.Payouts
 
-<div class="modal fade" id="joinPrivateLeagueModal" data-test-id="join-private-modal" tabindex="-1" aria-labelledby="joinPrivateLeagueModalLabel" aria-hidden="true">
+<div class="modal fade" id="@ModalId" data-test-id="join-private-modal" tabindex="-1" aria-labelledby="joinPrivateLeagueModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered @(_step == Step.Confirm ? "modal-lg" : string.Empty)">
         <div class="modal-content themed-modal">
             <div class="modal-header border-bottom">
@@ -198,6 +201,12 @@
 </div>
 
 @code {
+    /// <summary>
+    /// The element id Bootstrap is pointed at. Shared with the tiles that open and close this modal, which
+    /// address it by the same name through the JS interop.
+    /// </summary>
+    internal const string ModalId = "joinPrivateLeagueModal";
+
     private enum Step { Loading, Code, Confirm, Sent }
 
     private readonly JoinLeagueRequest _model = new()
@@ -405,5 +414,29 @@
         _joinedLeagueId = null;
         _hasPayoutDetails = false;
         await OnClose.InvokeAsync();
+    }
+
+    /// <summary>
+    /// Takes Bootstrap's backdrop with it.
+    /// </summary>
+    /// <remarks>
+    /// This element is Blazor's to remove, and Bootstrap's to have opened. Whenever the two disagree the
+    /// backdrop is the casualty: Bootstrap only tidies it up on the transition that follows hide(), and that
+    /// transition needs an element still in the document to end on. Every path that removes this component
+    /// without going through Close first - an in-app navigation, a state refresh that un-renders the tile
+    /// holding it - therefore used to leave a grey sheet over the whole page with body.modal-open still set,
+    /// swallowing every click until the player reloaded. Reported after a join, where the modal is open on its
+    /// confirmation at exactly the moment the dashboard behind it is reloading its panels.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("blazorInterop.disposeModal", ModalId);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The page is already going. Nothing left to tidy, and nothing to report.
+        }
     }
 }
