@@ -59,6 +59,17 @@ internal static class E2ESettings
     /// </summary>
     internal const float NavigationTimeoutMs = 90_000;
 
+    /// <summary>
+    /// The ceiling for a web-first assertion, applied in <see cref="StackFixture"/> - see the note there on why
+    /// setting it is a separate call from the context timeout.
+    /// </summary>
+    /// <remarks>
+    /// A ceiling, not a cost: an assertion returns the moment its condition holds, so this is only ever paid by
+    /// one that genuinely fails. Kept generous on that basis. The suite is six journeys and a test stops at its
+    /// first failed assertion, so even a wholly broken suite pays about two and a half extra minutes, against a
+    /// false red that costs somebody an investigation and a re-run. Five seconds - the built-in default this
+    /// spent its whole life running at - was already under a real 5.1-second join response.
+    /// </remarks>
     internal const float AssertionTimeoutMs = 30_000;
 
     /// <summary>How long to wait for the launched application to answer its liveness endpoint.</summary>
