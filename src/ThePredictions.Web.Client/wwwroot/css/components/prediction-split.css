@@ -99,10 +99,9 @@
     font-size: 0.75rem;
 }
 
-/* Active Rounds card: the split sits on its own line spanning the match row's three
-   columns, just under the logos and scores. */
+/* Active Rounds card: the split is the match tile's bottom line, sitting directly under
+   the badges and predicted score. */
 .match-preview-row .prediction-split {
-    grid-column: 1 / -1;
-    margin-top: 0.3rem;
+    margin-top: 0.35rem;
     min-width: 0;
 }

@@ -472,8 +472,17 @@
    COMPONENTS
    ============================================ */
 
+/* Carousel arrows share the Badges tile nav treatment - see the .tp-badge-tile__nav rules
+   below, which these deliberately mirror. */
 .theme-dark .carousel-btn {
+    background: var(--purple-600);
+    border-color: var(--white-alpha-15);
     color: var(--white);
+}
+
+.theme-dark .carousel-btn:hover:not(:disabled) {
+    border-color: var(--green-600);
+    color: var(--green-300);
 }
 
 .theme-dark .carousel-dot {

@@ -43,17 +43,33 @@
     width: 100%;
 }
 
+/* Carousel arrows. A pill button rather than a bare chevron, matching the Badges tile's
+   nav buttons so every carousel on the dashboard reads as one control. Hidden below the
+   tablet breakpoint, where the carousels are driven by swipe and the dots instead. */
 .carousel-btn {
-    background: transparent;
-    border: none;
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 1px solid var(--grey-200);
+    background: var(--white);
     color: var(--purple-1000);
-    font-size: 2rem;
-    padding: 0 1rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
     display: none;
+}
+
+.carousel-btn:hover:not(:disabled) {
+    border-color: var(--green-600);
+    color: var(--green-600);
 }
 
 .carousel-btn:disabled {
     opacity: 0.3;
+    cursor: default;
 }
 
 .carousel-dots {
@@ -81,7 +97,7 @@
 /* Tablet and up (--breakpoint-tablet: 768px) */
 @media (min-width: 768px) {
     .carousel-btn {
-        display: block;
+        display: flex;
     }
 
     .carousel-item-wrapper {

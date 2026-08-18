@@ -65,9 +65,36 @@
                     }
 
                     <div class="match-preview-row @GetMatchBackgroundClass(match) @GetMatchPulsingClass(match)">
-                        <span class="match-preview-outcome">
-                            <TargetIcon Outcome="match.Outcome" />
-                        </span>
+                        @if (HasMetaLine(match))
+                        {
+                            <div class="match-preview-meta">
+                                <span class="match-preview-outcome">
+                                    <TargetIcon Outcome="match.Outcome" />
+                                </span>
+                                @if (match.Status == MatchStatus.Scheduled)
+                                {
+                                    <span class="match-preview-kickoff">
+                                        <LocalTime UtcDate="match.MatchDateTimeUtc" Format="ddd dd MMM HH:mm" />
+                                    </span>
+                                }
+                                @if (HasActualScore(match))
+                                {
+                                    <span class="match-preview-actual">
+                                        @if (match.Status == MatchStatus.InProgress)
+                                        {
+                                            <span class="match-preview-actual-status">
+                                                <span class="match-live-dot" title="Live"></span>
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="match-preview-actual-status match-preview-actual-status--ft">FT</span>
+                                        }
+                                        <span class="match-preview-actual-score">@($"{match.ActualHomeScore} - {match.ActualAwayScore}")</span>
+                                    </span>
+                                }
+                            </div>
+                        }
                         <div class="match-preview-centre">
                             <img src="@(match.HomeTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
                                  class="match-preview-logo"
@@ -83,28 +110,6 @@
                                  loading="lazy"
                                  onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
                         </div>
-                        @if (HasActualScore(match))
-                        {
-                            <span class="match-preview-actual">
-                                @if (match.Status == MatchStatus.InProgress)
-                                {
-                                    <span class="match-preview-actual-status">
-                                        <span class="match-live-dot" title="Live"></span>
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="match-preview-actual-status match-preview-actual-status--ft">FT</span>
-                                }
-                                <span class="match-preview-actual-score">@($"{match.ActualHomeScore} - {match.ActualAwayScore}")</span>
-                            </span>
-                        }
-                        @if (match.Status == MatchStatus.Scheduled)
-                        {
-                            <span class="match-preview-kickoff">
-                                <LocalTime UtcDate="match.MatchDateTimeUtc" Format="ddd dd MMM HH:mm" />
-                            </span>
-                        }
                         @if (match.IsPredictionRevealed)
                         {
                             <PredictionSplitBar Home="match.HomeCount"
@@ -267,6 +272,16 @@
             PredictionOutcome.Incorrect => "match-outcome-incorrect",
             _ => "" // Pending or null - use default background
         };
+    }
+
+    // Whether the tile's top line has anything to show: the outcome icon, the kickoff caption, or
+    // the result chip. A postponed match, or one that kicked off before any score was entered, has
+    // none of them, so the line is left out entirely rather than rendered as an empty gap.
+    private static bool HasMetaLine(ActiveRoundMatchDto match)
+    {
+        return match.Outcome is not null and not PredictionOutcome.Pending
+            || match.Status == MatchStatus.Scheduled
+            || HasActualScore(match);
     }
 
     private static bool HasActualScore(ActiveRoundMatchDto match)
