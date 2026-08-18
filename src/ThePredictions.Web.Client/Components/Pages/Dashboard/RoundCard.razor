@@ -71,14 +71,14 @@
                                 </span>
                             </div>
                             <div class="match-preview-fixture">
-                                <div class="match-preview-side match-preview-side--home">
+                                <div class="match-preview-side">
                                     <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
                                     <span class="match-preview-name">@(match.PlaceholderHomeName ?? "TBC")</span>
                                 </div>
                                 <div class="match-preview-scores">
                                     <span class="match-preview-vs">v</span>
                                 </div>
-                                <div class="match-preview-side match-preview-side--away">
+                                <div class="match-preview-side">
                                     <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
                                     <span class="match-preview-name">@(match.PlaceholderAwayName ?? "TBC")</span>
                                 </div>
@@ -134,7 +134,7 @@
                             }
                         </div>
                         <div class="match-preview-fixture">
-                            <div class="match-preview-side match-preview-side--home">
+                            <div class="match-preview-side">
                                 <img src="@(match.HomeTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
                                      class="match-preview-logo"
                                      alt="Home"
@@ -147,7 +147,7 @@
                                 <span class="match-preview-vs">@(HasPrediction(match) ? "-" : "v")</span>
                                 <span class="match-preview-score">@(match.PredictedAwayScore?.ToString() ?? "-")</span>
                             </div>
-                            <div class="match-preview-side match-preview-side--away">
+                            <div class="match-preview-side">
                                 <img src="@(match.AwayTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
                                      class="match-preview-logo"
                                      alt="Away"

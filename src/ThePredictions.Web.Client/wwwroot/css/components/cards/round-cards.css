@@ -67,9 +67,10 @@
    the names out as two independent rows let them drift apart, because the badges hug the centre
    while a row of its own would spread the names across the full tile.
 
-   Each side aligns to its INNER edge, so a name shares an edge with its own badge and grows
-   outward. Centring a name under its badge instead would send a long one inward, where the two
-   sides would meet in the middle; growing outward, they never can. */
+   Badge and name are both centred within that column, so they share a centre line and the space
+   either side of them is even. A long name cannot reach across at the other side because the
+   column itself holds it back - the score sits between the two columns and neither name can
+   leave its own. */
 .match-preview-fixture {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -81,15 +82,8 @@
 .match-preview-side {
     display: flex;
     flex-direction: column;
+    align-items: center;
     min-width: 0;
-}
-
-.match-preview-side--home {
-    align-items: flex-end;
-}
-
-.match-preview-side--away {
-    align-items: flex-start;
 }
 
 /* The scores centre on the badge AND its name together, not on the badge alone. Every grid
@@ -216,26 +210,19 @@
     opacity: 1;
 }
 
-/* Team name, directly under its own badge and sharing that badge's inner edge. Long names are
-   truncated rather than wrapped - a second line here would cost every tile the height, and the
-   badge above already carries the identity. */
+/* Team name, directly under its own badge and sharing its centre line. Long names are truncated
+   rather than wrapped - a second line here would cost every tile the height, and the badge above
+   already carries the identity. */
 .match-preview-name {
     margin-top: 0.15rem;
     max-width: 100%;
+    text-align: center;
     font-size: 0.72rem;
     font-weight: 600;
     color: var(--purple-1000);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.match-preview-side--home .match-preview-name {
-    text-align: right;
-}
-
-.match-preview-side--away .match-preview-name {
-    text-align: left;
 }
 
 /* Lock line. Only appears on a match that locks at its own time rather than with the round, so
