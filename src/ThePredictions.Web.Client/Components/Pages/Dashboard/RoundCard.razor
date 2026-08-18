@@ -1,4 +1,4 @@
-﻿@using ThePredictions.Contracts.Dashboard
+@using ThePredictions.Contracts.Dashboard
 @using ThePredictions.Domain.Common.Enumerations
 @using ThePredictions.Web.Client.Services.Leagues
 @using ThePredictions.Web.Client.Services.Theme
@@ -55,63 +55,116 @@
                 {
                     if (!match.AreTeamsConfirmed)
                     {
+                        @* A knockout slot whose teams are not known yet. It takes the same four lines as a
+                           confirmed fixture - question marks where the badges go, the placeholder names on
+                           the names line - so a part-drawn round reads as one list rather than two. *@
                         <div class="match-preview-row match-preview-row--tbc">
-                            <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
-                            <span class="match-preview-tbc-name">@(match.PlaceholderHomeName ?? "TBC")</span>
-                            <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
+                            <div class="match-preview-meta">
+                                <span class="match-preview-outcome">
+                                    <TargetIcon Outcome="match.Outcome" ShowPending="true" />
+                                </span>
+                                <span class="match-preview-kickoff">
+                                    <LocalTime UtcDate="match.MatchDateTimeUtc" Format="ddd dd MMM HH:mm" />
+                                </span>
+                                <span class="match-preview-actual match-preview-actual--awaiting" title="Not started">
+                                    <i class="bi bi-clock" aria-hidden="true"></i>
+                                </span>
+                            </div>
+                            <div class="match-preview-fixture">
+                                <div class="match-preview-side">
+                                    <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
+                                    <span class="match-preview-name">@(match.PlaceholderHomeName ?? "TBC")</span>
+                                </div>
+                                <div class="match-preview-scores">
+                                    <span class="match-preview-vs">v</span>
+                                </div>
+                                <div class="match-preview-side">
+                                    <span class="match-preview-tbc-logo"><i class="bi bi-question-circle"></i></span>
+                                    <span class="match-preview-name">@(match.PlaceholderAwayName ?? "TBC")</span>
+                                </div>
+                            </div>
+                            @if (HasOwnLockTime(match))
+                            {
+                                <MatchLockLine LockUtc="match.CustomLockTimeUtc!.Value" />
+                            }
+                            <PredictionSplitBar Home="match.HomeCount"
+                                                Draw="match.DrawCount"
+                                                Away="match.AwayCount"
+                                                Revealed="match.IsPredictionRevealed" />
                         </div>
 
                         continue;
                     }
 
+                    @* Three fixed blocks, whatever state the match is in - the meta line, the fixture
+                       (each side's badge and name in one column, either side of the predicted score),
+                       then the prediction split. The tile therefore keeps one height for its whole life
+                       instead of growing as each match locks, kicks off and finishes. *@
                     <div class="match-preview-row @GetMatchBackgroundClass(match) @GetMatchPulsingClass(match)">
-                        <span class="match-preview-outcome">
-                            <TargetIcon Outcome="match.Outcome" />
-                        </span>
-                        <div class="match-preview-centre">
-                            <img src="@(match.HomeTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
-                                 class="match-preview-logo"
-                                 alt="Home"
-                                 loading="lazy"
-                                 onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
-                            <span class="match-preview-score">@(match.PredictedHomeScore?.ToString() ?? "-")</span>
-                            <span class="match-preview-vs">-</span>
-                            <span class="match-preview-score">@(match.PredictedAwayScore?.ToString() ?? "-")</span>
-                            <img src="@(match.AwayTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
-                                 class="match-preview-logo"
-                                 alt="Away"
-                                 loading="lazy"
-                                 onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
-                        </div>
-                        @if (HasActualScore(match))
-                        {
-                            <span class="match-preview-actual">
-                                @if (match.Status == MatchStatus.InProgress)
-                                {
-                                    <span class="match-preview-actual-status">
-                                        <span class="match-live-dot" title="Live"></span>
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="match-preview-actual-status match-preview-actual-status--ft">FT</span>
-                                }
-                                <span class="match-preview-actual-score">@($"{match.ActualHomeScore} - {match.ActualAwayScore}")</span>
+                        <div class="match-preview-meta">
+                            <span class="match-preview-outcome">
+                                <TargetIcon Outcome="match.Outcome" ShowPending="true" />
                             </span>
-                        }
-                        @if (match.Status == MatchStatus.Scheduled)
-                        {
                             <span class="match-preview-kickoff">
                                 <LocalTime UtcDate="match.MatchDateTimeUtc" Format="ddd dd MMM HH:mm" />
                             </span>
-                        }
-                        @if (match.IsPredictionRevealed)
+                            @if (!HasActualScore(match))
+                            {
+                                @* Holds the result slot before kick-off. A clock rather than a score, so the
+                                   slot reads as "nothing here yet" instead of as a nil-nil draw. *@
+                                <span class="match-preview-actual match-preview-actual--awaiting" title="Not started">
+                                    <i class="bi bi-clock" aria-hidden="true"></i>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="match-preview-actual">
+                                    @if (match.Status == MatchStatus.InProgress)
+                                    {
+                                        <span class="match-preview-actual-status">
+                                            <span class="match-live-dot" title="Live"></span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="match-preview-actual-status match-preview-actual-status--ft">FT</span>
+                                    }
+                                    <span class="match-preview-actual-score">@($"{match.ActualHomeScore} - {match.ActualAwayScore}")</span>
+                                </span>
+                            }
+                        </div>
+                        <div class="match-preview-fixture">
+                            <div class="match-preview-side">
+                                <img src="@(match.HomeTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
+                                     class="match-preview-logo"
+                                     alt="Home"
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
+                                <span class="match-preview-name">@(match.HomeTeamShortName ?? "Home")</span>
+                            </div>
+                            <div class="match-preview-scores">
+                                <span class="match-preview-score">@(match.PredictedHomeScore?.ToString() ?? "-")</span>
+                                <span class="match-preview-vs">@(HasPrediction(match) ? "-" : "v")</span>
+                                <span class="match-preview-score">@(match.PredictedAwayScore?.ToString() ?? "-")</span>
+                            </div>
+                            <div class="match-preview-side">
+                                <img src="@(match.AwayTeamLogoUrl ?? "images/placeholders/team-badge-unknown.svg")"
+                                     class="match-preview-logo"
+                                     alt="Away"
+                                     loading="lazy"
+                                     onerror="this.onerror=null; this.src='images/placeholders/team-badge-unknown.svg';" />
+                                <span class="match-preview-name">@(match.AwayTeamShortName ?? "Away")</span>
+                            </div>
+                        </div>
+                        @if (HasOwnLockTime(match))
                         {
-                            <PredictionSplitBar Home="match.HomeCount"
-                                                Draw="match.DrawCount"
-                                                Away="match.AwayCount"
-                                                UserChoice="@GetUserChoice(match)" />
+                            <MatchLockLine LockUtc="match.CustomLockTimeUtc!.Value" />
                         }
+                        <PredictionSplitBar Home="match.HomeCount"
+                                            Draw="match.DrawCount"
+                                            Away="match.AwayCount"
+                                            UserChoice="@GetUserChoice(match)"
+                                            Revealed="match.IsPredictionRevealed" />
                     </div>
                 }
                 </div>
@@ -267,6 +320,25 @@
             PredictionOutcome.Incorrect => "match-outcome-incorrect",
             _ => "" // Pending or null - use default background
         };
+    }
+
+    // Whether this match locks at a moment the card header is not already showing. Most matches lock with
+    // the round, so a lock line on every tile would just repeat the round deadline ten times over; a combined
+    // round (semi-finals plus the final, say) is where a match keeps its own time, and that is worth calling
+    // out. Once it has locked the time is history, so the line goes.
+    private bool HasOwnLockTime(ActiveRoundMatchDto match)
+    {
+        return !match.IsPredictionRevealed
+            && match.CustomLockTimeUtc is { } lockUtc
+            && lockUtc != Round.DeadlineUtc;
+    }
+
+    // Whether the player has a prediction on this match at all. Drives the separator between the two
+    // predicted scores: a "-" reads as a scoreline, so an unpredicted fixture gets a "v" instead and
+    // the row cannot be mistaken for a nil-nil.
+    private static bool HasPrediction(ActiveRoundMatchDto match)
+    {
+        return match is { PredictedHomeScore: not null, PredictedAwayScore: not null };
     }
 
     private static bool HasActualScore(ActiveRoundMatchDto match)

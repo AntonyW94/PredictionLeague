@@ -382,6 +382,23 @@ public class GetActiveRoundsQueryHandlerTests
     }
 
     [Fact]
+    public async Task Handle_ShouldCarryBothTeamShortNamesOntoTheMatch()
+    {
+        // Arrange - the card labels each badge, so both sides' names have to travel, not just the home one
+        // the ordering uses.
+        Given(
+            rounds: [Round(1, deadlineUtc: Now.AddHours(1))],
+            matches: [Match(1, homeTeamShortName: "Arsenal", awayTeamShortName: "Coventry")]);
+
+        // Act
+        var match = (await HandleAsync()).Single().Matches.Single();
+
+        // Assert
+        match.HomeTeamShortName.Should().Be("Arsenal");
+        match.AwayTeamShortName.Should().Be("Coventry");
+    }
+
+    [Fact]
     public async Task Handle_ShouldOrderMatchesByKickOffThenHomeTeam()
     {
         // Arrange - two matches kicking off together, and one earlier.
@@ -512,6 +529,7 @@ public class GetActiveRoundsQueryHandlerTests
         DateTime? customLockTimeUtc = null,
         DateTime? kickOffUtc = null,
         string? homeTeamShortName = null,
+        string? awayTeamShortName = null,
         PredictionOutcome? outcome = null,
         MatchStatus status = MatchStatus.Scheduled,
         bool areTeamsConfirmed = true,
@@ -524,6 +542,7 @@ public class GetActiveRoundsQueryHandlerTests
             null,
             null,
             homeTeamShortName ?? "ARS",
+            awayTeamShortName ?? "COV",
             null,
             null,
             outcome,

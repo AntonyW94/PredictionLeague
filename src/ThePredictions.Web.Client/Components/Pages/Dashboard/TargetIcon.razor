@@ -2,7 +2,12 @@
 
 @* Tabler Icons (MIT licence) - target family rendered inline so the stroke follows the
    parent's CSS colour via currentColor. ExactScore = target-arrow, CorrectResult = target,
-   Incorrect = target-off. Pending or null renders nothing. *@
+   Incorrect = target-off.
+
+   Pending or null renders nothing by default, which is what the footer legend wants. Set
+   ShowPending to render a dashed circle instead: on a match tile the slot has to stay
+   occupied all the way through, so the icon reads as "no result yet" rather than leaving a
+   gap that makes the tile change shape the moment a score is entered. *@
 @if (Outcome is PredictionOutcome.ExactScore)
 {
     <svg class="target-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -30,8 +35,25 @@ else if (Outcome is PredictionOutcome.Incorrect)
         <path d="M3 3l18 18" />
     </svg>
 }
+else if (ShowPending)
+{
+    <svg class="target-icon target-icon--pending" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+        <path d="M8.56 3.69a9 9 0 0 0 -2.92 1.95" />
+        <path d="M3.69 8.56a9 9 0 0 0 -.69 3.44" />
+        <path d="M3.69 15.44a9 9 0 0 0 1.95 2.92" />
+        <path d="M8.56 20.31a9 9 0 0 0 3.44 .69" />
+        <path d="M15.44 20.31a9 9 0 0 0 2.92 -1.95" />
+        <path d="M20.31 15.44a9 9 0 0 0 .69 -3.44" />
+        <path d="M20.31 8.56a9 9 0 0 0 -1.95 -2.92" />
+        <path d="M15.44 3.69a9 9 0 0 0 -3.44 -.69" />
+    </svg>
+}
 
 @code {
     [Parameter, EditorRequired]
     public PredictionOutcome? Outcome { get; set; }
+
+    /// <summary>Whether a pending outcome draws a dashed placeholder rather than nothing at all.</summary>
+    [Parameter]
+    public bool ShowPending { get; set; }
 }

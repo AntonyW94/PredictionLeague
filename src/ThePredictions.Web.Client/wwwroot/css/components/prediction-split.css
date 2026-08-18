@@ -31,6 +31,26 @@
     flex-basis: 0;
 }
 
+/* Masked placeholder, shown while a match can still be predicted. Three even bars, faded back
+   so it reads as a ghost of the real split rather than as an actual three-way tie, with the
+   counts replaced by question marks. Same footprint as the real thing, which is the point: the
+   match tile keeps one height either side of its deadline. */
+.prediction-split--masked .prediction-split-seg {
+    flex-grow: 1;
+    opacity: 0.3;
+}
+
+.prediction-split--masked .prediction-split-counts {
+    color: var(--split-label);
+}
+
+/* Stands in for a count that is being withheld. Set a shade larger than the digits it replaces,
+   because a glyph this small loses its counter and reads as a dot. */
+.prediction-split-unknown {
+    font-size: 0.8rem;
+    vertical-align: -0.06em;
+}
+
 .prediction-split-seg.seg-home {
     background-color: var(--purple-300);
 }
@@ -99,10 +119,9 @@
     font-size: 0.75rem;
 }
 
-/* Active Rounds card: the split sits on its own line spanning the match row's three
-   columns, just under the logos and scores. */
+/* Active Rounds card: the split is the match tile's bottom line, sitting directly under the
+   team names - masked before the deadline, real after it, the same size throughout. */
 .match-preview-row .prediction-split {
-    grid-column: 1 / -1;
-    margin-top: 0.3rem;
+    margin-top: 0.35rem;
     min-width: 0;
 }

@@ -96,6 +96,8 @@ public class GetActiveRoundsQueryHandler(
         return new ActiveRoundMatchDto(
             match.HomeTeamLogoUrl,
             match.AwayTeamLogoUrl,
+            match.HomeTeamShortName,
+            match.AwayTeamShortName,
             match.PredictedHomeScore,
             match.PredictedAwayScore,
             match.Outcome,

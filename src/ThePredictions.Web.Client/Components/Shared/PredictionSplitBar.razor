@@ -1,29 +1,52 @@
-@{
-    var total = Home + Draw + Away;
-}
-@if (total > 0)
+@*
+    How everyone who predicted this match went. Two states, deliberately the same size and shape:
+    a masked placeholder while the match can still be predicted, and the real split once it has
+    locked. Holding the space means a match tile does not change height at its deadline, and the
+    question marks say the numbers exist and are being withheld rather than that there are none.
+*@
+@if (!Revealed)
 {
-    <div class="prediction-split" title="@Home predicted home, @Draw draw, @Away away">
+    <div class="prediction-split prediction-split--masked" title="Revealed once predictions lock">
         <div class="prediction-split-bar">
-            @if (Home > 0)
-            {
-                <span class="prediction-split-seg seg-home" style="flex-grow:@Home"></span>
-            }
-            @if (Draw > 0)
-            {
-                <span class="prediction-split-seg seg-draw" style="flex-grow:@Draw"></span>
-            }
-            @if (Away > 0)
-            {
-                <span class="prediction-split-seg seg-away" style="flex-grow:@Away"></span>
-            }
+            <span class="prediction-split-seg seg-home"></span>
+            <span class="prediction-split-seg seg-draw"></span>
+            <span class="prediction-split-seg seg-away"></span>
         </div>
         <div class="prediction-split-counts">
-            <span class="@(UserChoice == "H" ? "is-mine" : null)"><span class="prediction-split-lbl">H</span> @Home</span>
-            <span class="@(UserChoice == "D" ? "is-mine" : null)"><span class="prediction-split-lbl">D</span> @Draw</span>
-            <span class="@(UserChoice == "A" ? "is-mine" : null)"><span class="prediction-split-lbl">A</span> @Away</span>
+            <span><span class="prediction-split-lbl">H</span> <i class="bi bi-question-circle prediction-split-unknown" aria-hidden="true"></i></span>
+            <span><span class="prediction-split-lbl">D</span> <i class="bi bi-question-circle prediction-split-unknown" aria-hidden="true"></i></span>
+            <span><span class="prediction-split-lbl">A</span> <i class="bi bi-question-circle prediction-split-unknown" aria-hidden="true"></i></span>
         </div>
     </div>
+}
+else
+{
+    var total = Home + Draw + Away;
+
+    @if (total > 0)
+    {
+        <div class="prediction-split" title="@Home predicted home, @Draw draw, @Away away">
+            <div class="prediction-split-bar">
+                @if (Home > 0)
+                {
+                    <span class="prediction-split-seg seg-home" style="flex-grow:@Home"></span>
+                }
+                @if (Draw > 0)
+                {
+                    <span class="prediction-split-seg seg-draw" style="flex-grow:@Draw"></span>
+                }
+                @if (Away > 0)
+                {
+                    <span class="prediction-split-seg seg-away" style="flex-grow:@Away"></span>
+                }
+            </div>
+            <div class="prediction-split-counts">
+                <span class="@(UserChoice == "H" ? "is-mine" : null)"><span class="prediction-split-lbl">H</span> @Home</span>
+                <span class="@(UserChoice == "D" ? "is-mine" : null)"><span class="prediction-split-lbl">D</span> @Draw</span>
+                <span class="@(UserChoice == "A" ? "is-mine" : null)"><span class="prediction-split-lbl">A</span> @Away</span>
+            </div>
+        </div>
+    }
 }
 
 @code {
@@ -34,4 +57,11 @@
     // The logged-in user's own pick for this match ("H"/"D"/"A"), or null if they did not predict.
     // When set, that count is rendered bold so the user can spot their own choice at a glance.
     [Parameter] public string? UserChoice { get; set; }
+
+    /// <summary>
+    /// Whether the counts may be shown. False draws the masked placeholder instead - three even bars and
+    /// question marks - which is what a match still open for predictions gets. Defaults to true, so the
+    /// surfaces that only ever render this after the deadline need say nothing.
+    /// </summary>
+    [Parameter] public bool Revealed { get; set; } = true;
 }

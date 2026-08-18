@@ -1,5 +1,6 @@
 ﻿@implements IAsyncDisposable
-@inject IJSRuntime JsRuntime
+@using ThePredictions.Web.Client.Services.Time
+@inject ICountdownTickService Ticks
 
 <div class="badge-group badge-group--red">
     <span class="badge-icon" title="Deadline">
@@ -13,22 +14,17 @@
 @code {
     [Parameter, EditorRequired]
     public DateTime DeadlineUtc { get; set; }
-   
-    private readonly string _timerId = Guid.NewGuid().ToString();
-    private DotNetObjectReference<CountdownTimer>? _dotNetHelper;
+
     private string _timeRemaining = "";
-   
+
     protected override async Task OnInitializedAsync()
     {
-        _dotNetHelper = DotNetObjectReference.Create(this);
-       
         UpdateDisplay();
-       
-        await JsRuntime.InvokeVoidAsync("blazorInterop.startCountdown", _dotNetHelper, "UpdateTimer", _timerId);
+
+        await Ticks.SubscribeAsync(OnTick);
     }
 
-    [JSInvokable]
-    public void UpdateTimer()
+    private void OnTick()
     {
         UpdateDisplay();
         StateHasChanged();
@@ -42,7 +38,6 @@
 
     public async ValueTask DisposeAsync()
     {
-        _dotNetHelper?.Dispose();
-        await JsRuntime.InvokeVoidAsync("blazorInterop.stopCountdown", _timerId);
+        await Ticks.UnsubscribeAsync(OnTick);
     }
 }

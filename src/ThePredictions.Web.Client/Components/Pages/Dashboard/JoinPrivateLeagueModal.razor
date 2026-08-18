@@ -307,38 +307,78 @@
         bool success;
         string? errorMessage;
         bool needsSeasonPass;
+        int? joinedLeagueId;
 
-        if (IsPublic)
+        try
         {
-            (success, errorMessage, needsSeasonPass) = await LeagueService.JoinPublicLeagueAsync(LeagueId!.Value);
-            if (success)
-                _joinedLeagueId = LeagueId;
+            if (IsPublic)
+            {
+                (success, errorMessage, needsSeasonPass) = await LeagueService.JoinPublicLeagueAsync(LeagueId!.Value);
+                joinedLeagueId = LeagueId;
+            }
+            else
+            {
+                (success, errorMessage, joinedLeagueId, needsSeasonPass) = await LeagueService.JoinPrivateLeagueAsync(_model.EntryCode);
+            }
         }
-        else
+        catch
         {
-            int? joinedLeagueId;
-            (success, errorMessage, joinedLeagueId, needsSeasonPass) = await LeagueService.JoinPrivateLeagueAsync(_model.EntryCode);
-            if (success)
-                _joinedLeagueId = joinedLeagueId;
+            // The request never came back at all - a dropped connection, a timeout, the API restarting
+            // mid-deploy. The service only translates error RESPONSES, so without this the exception
+            // escapes the handler and the modal sits on "Requesting..." for good: no message, both
+            // buttons disabled, nothing to do but reload the page.
+            _errorMessage = "We could not reach the server. Please check your connection and try again.";
+            _isBusy = false;
+            return;
         }
 
         _needsSeasonPass = needsSeasonPass;
 
-        if (success)
+        if (!success)
+        {
+            _errorMessage = errorMessage;
+            _isBusy = false;
+            return;
+        }
+
+        _joinedLeagueId = joinedLeagueId;
+
+        // Confirm the join the moment it lands. The refreshes below only update the panels behind this
+        // modal, and waiting for them held the player on "Requesting..." for four more round trips after
+        // they had already joined.
+        //
+        // StateHasChanged is required, not decorative: Blazor renders an async handler once at its first
+        // await and once when the whole thing finishes, so without this the new step would not appear
+        // until the refreshes below had completed anyway.
+        _step = Step.Sent;
+        _isBusy = false;
+        StateHasChanged();
+
+        await RefreshAfterJoinAsync();
+    }
+
+    /// <summary>
+    /// Brings the dashboard behind the modal up to date once a join has been confirmed.
+    /// </summary>
+    /// <remarks>
+    /// Best effort by design. The join has already succeeded and been reported, so a failure here must not
+    /// be turned into an error message that contradicts it - the panels reload on the next dashboard visit
+    /// regardless.
+    /// </remarks>
+    private async Task RefreshAfterJoinAsync()
+    {
+        try
         {
             await DashboardState.LoadMyLeaguesAsync();
             await DashboardState.LoadAvailableLeaguesAsync();
             await DashboardState.LoadPendingRequestsAsync();
 
-            _step = Step.Sent;
             _hasPayoutDetails = (await PayoutService.GetMyPayoutDetailsAsync())?.HasDetails ?? false;
         }
-        else
+        catch
         {
-            _errorMessage = errorMessage;
+            // Nothing worth telling the player: they have joined, and the panels catch up on their own.
         }
-
-        _isBusy = false;
     }
 
     /// <summary>

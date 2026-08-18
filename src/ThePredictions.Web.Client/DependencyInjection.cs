@@ -53,5 +53,6 @@ public static class DependencyInjection
         services.AddScoped<IPageVisibilityService, PageVisibilityService>();
         services.AddScoped<LiveScorePollingService>();
         services.AddScoped<ILocalDayBoundaryConverter, LocalDayBoundaryConverter>();
+        services.AddScoped<ICountdownTickService, CountdownTickService>();
     }
 }

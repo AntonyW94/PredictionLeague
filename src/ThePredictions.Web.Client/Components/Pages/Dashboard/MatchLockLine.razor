@@ -1,0 +1,75 @@
+﻿@implements IAsyncDisposable
+@using ThePredictions.Web.Client.Services.Time
+@inject ICountdownTickService Ticks
+
+@*
+    The bottom line of a match tile before its predictions lock. It holds the same space the
+    prediction split takes afterwards, so the tile keeps one height for its whole life instead of
+    growing as each match locks.
+
+    Far out it is a plain date, because a seconds counter on twenty tiles at once is noise rather
+    than information. Inside the last day it counts down, which is when the number is worth watching
+    and matches what the card header already does.
+*@
+<span class="match-preview-lock @(_isImminent ? "match-preview-lock--imminent" : "")">
+    <i class="bi bi-lock" aria-hidden="true"></i>
+    @if (_isImminent)
+    {
+        <span>Locks in @_timeRemaining</span>
+    }
+    else
+    {
+        <span>Locks <LocalTime UtcDate="@LockUtc" Format="ddd dd MMM HH:mm" /></span>
+    }
+</span>
+
+@code {
+    /// <summary>The moment this match stops accepting predictions - its own lock time, or the round's deadline.</summary>
+    [Parameter, EditorRequired]
+    public DateTime LockUtc { get; set; }
+
+    // The point at which the plain date gives way to a live countdown.
+    private static readonly TimeSpan ImminentWindow = TimeSpan.FromHours(24);
+
+    private bool _isImminent;
+    private bool _subscribed;
+    private string _timeRemaining = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        UpdateDisplay();
+
+        // Only the tiles actually counting down take the tick. A round a week out subscribes to nothing.
+        if (!_isImminent)
+            return;
+
+        _subscribed = true;
+        await Ticks.SubscribeAsync(OnTick);
+    }
+
+    private void OnTick()
+    {
+        UpdateDisplay();
+        StateHasChanged();
+    }
+
+    private void UpdateDisplay()
+    {
+        var remaining = LockUtc - DateTime.UtcNow;
+
+        _isImminent = remaining <= ImminentWindow;
+
+        if (!_isImminent)
+            return;
+
+        _timeRemaining = remaining.TotalSeconds <= 0
+            ? "0s"
+            : $"{(int)remaining.TotalHours:D2}:{remaining.Minutes:D2}:{remaining.Seconds:D2}";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_subscribed)
+            await Ticks.UnsubscribeAsync(OnTick);
+    }
+}

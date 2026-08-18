@@ -5,8 +5,8 @@
 /* Match preview wrapper - establishes a containment context so the grid below can switch
    to two-per-row based on the CARD's own width rather than the viewport. The Active Rounds
    tile can be half-width or show two cards side by side at once, so a wide viewport does not
-   mean a wide card; querying the viewport switched to two columns far too early and let the
-   result chip overlap the away logo. */
+   mean a wide card; querying the viewport switched to two columns far too early and left the
+   fixture line cramped. */
 .match-preview {
     container: round-card / inline-size;
     width: 100%;
@@ -24,30 +24,81 @@
     margin-top: 0.5rem;
 }
 
+/* A match tile is always these four lines, in every state:
+     1. meta    - outcome icon (left), kickoff time (centre), result chip (right)
+     2. fixture - each side's badge with its name beneath, either side of the predicted score
+     3. split   - how everyone went, masked with question marks until the match locks
+   Everything that used to compete for room on a single line now has its own, which is what lets
+   the badges be big enough to recognise the club rather than merely notice a badge.
+
+   None of the three is ever omitted, only refilled: the outcome icon starts as a dashed circle,
+   the result chip as a clock, the split as three even bars. A tile therefore keeps one height
+   from the moment fixtures are published to full time, so the card does not reshuffle under the
+   player as each match locks, kicks off and finishes.
+
+   One line does come and go - the lock time, above the split - and only on the few matches that
+   lock at some moment other than the round deadline the card header already shows. Standing out
+   is the point of it. */
 .match-preview-row {
-    /* Three columns - outcome icon (left), predicted score (centre), actual score (right).
-       The side columns are an equal fixed width so the predicted score stays optically
-       centred regardless of how wide the actual-score chip is. Tiles are one-per-row on
-       phones (plenty of width) and two-per-row from tablet up. */
-    display: grid;
-    grid-template-columns: 2.9rem 1fr 2.9rem;
-    align-items: center;
-    column-gap: 0.25rem;
-    padding: 0.3rem 0.4rem;
+    display: flex;
+    flex-direction: column;
+    padding: 0.45rem 0.5rem 0.55rem;
     border-radius: var(--bs-border-radius);
     background-color: var(--white);
     border: 1px solid transparent;
 }
 
-.match-preview-centre {
-    display: flex;
+/* Meta line. The two outer tracks are an equal minimum so the centre track - and with it the
+   kickoff caption - stays optically centred whether or not the outcome icon and result chip
+   are present, while still letting the chip grow past that minimum when the score is wide
+   (a "10 - 2" is rare but must not wrap). Each child names its own track: any of the three
+   can be absent, and auto-placement would otherwise slide a lone result chip into the
+   centre track rather than leaving it hard right. */
+.match-preview-meta {
+    display: grid;
+    grid-template-columns: minmax(1.4rem, 1fr) auto minmax(1.4rem, 1fr);
     align-items: center;
-    justify-content: center;
-    gap: 0.25rem;
+    column-gap: 0.3rem;
+    min-height: 1.25rem;
+}
+
+/* Fixture block: each side owns one column holding its badge and its name, with the predicted
+   score between them. Pairing the two in a single column is the point - laying the badges and
+   the names out as two independent rows let them drift apart, because the badges hug the centre
+   while a row of its own would spread the names across the full tile.
+
+   Badge and name are both centred within that column, so they share a centre line and the space
+   either side of them is even. A long name cannot reach across at the other side because the
+   column itself holds it back - the score sits between the two columns and neither name can
+   leave its own. */
+.match-preview-fixture {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    /* Tight on purpose. Every pixel the middle takes is a pixel off both name columns, and at the
+       two-per-row width the longest names are already close to the edge. */
+    column-gap: 0.3rem;
+}
+
+.match-preview-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     min-width: 0;
 }
 
+/* The scores centre on the badge AND its name together, not on the badge alone. Every grid
+   item stretches to the tallest column by default, so centring inside that full height leaves
+   equal space above and below - where centring on the badge would hang the score high, with the
+   name's line left as dead space beneath it. */
+.match-preview-scores {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+}
+
 .match-preview-outcome {
+    grid-column: 1;
     justify-self: start;
     display: inline-flex;
     align-items: center;
@@ -59,13 +110,14 @@
 }
 
 .match-preview-outcome .target-icon {
-    width: 1.05rem;
-    height: 1.05rem;
+    width: 1.15rem;
+    height: 1.15rem;
 }
 
 /* Actual score chip: the status (FT label or live dot) sits to the left of the score.
    It sits on a slightly stronger tint of the outcome colour so it lifts off the tile. */
 .match-preview-actual {
+    grid-column: 3;
     justify-self: end;
     display: inline-flex;
     flex-direction: row;
@@ -76,6 +128,20 @@
     padding: 0.15rem 0.4rem;
     border-radius: var(--bs-border-radius);
     background-color: var(--black-alpha-15);
+}
+
+/* The result slot before kick-off. Same footprint as a filled chip so nothing moves when the
+   score arrives, but flat and muted so it never reads as a result. */
+.match-preview-actual--awaiting {
+    background-color: transparent;
+    color: var(--grey-400);
+    font-size: 0.8rem;
+}
+
+/* A pending outcome is the same size and position as a real one, just muted - the slot is
+   occupied and obviously waiting, rather than missing. */
+.target-icon--pending {
+    color: var(--grey-400);
 }
 
 .match-preview-row.match-outcome-exact .match-preview-actual {
@@ -96,14 +162,14 @@
 }
 
 .match-preview-actual-status--ft {
-    font-size: 0.6rem;
+    font-size: 0.65rem;
     font-weight: 600;
     letter-spacing: 0.03em;
     color: var(--grey-500);
 }
 
 .match-preview-actual-score {
-    font-size: 0.72rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--purple-1000);
     font-variant-numeric: tabular-nums;
@@ -118,18 +184,20 @@
     flex-shrink: 0;
 }
 
+/* Club badges. These are the one thing on the tile that identifies the fixture at a glance,
+   so they get the room: big enough to read the crest, not just register that one is there. */
 .match-preview-logo {
-    width: 1.3rem;
-    height: 1.3rem;
+    width: 2.4rem;
+    height: 2.4rem;
     object-fit: contain;
     flex-shrink: 0;
 }
 
 .match-preview-score {
-    min-width: 0.75rem;
+    min-width: 0.8rem;
     text-align: center;
     color: var(--purple-1000);
-    font-size: 0.8rem;
+    font-size: 1.05rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
 }
@@ -138,20 +206,54 @@
     /* Light mode: a muted grey that still reads clearly on the white card.
        Dark mode keeps the lighter, lower-opacity treatment (see dark.css). */
     color: var(--grey-500);
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     opacity: 1;
 }
 
-/* Kickoff caption: scheduled matches have no result chip, so the kickoff date and time
-   sits on its own full-width line beneath the row. Rounds can span several days (a World
-   Cup matchday runs for a week), so the short weekday + date keeps it unambiguous where a
-   time alone would not. Spanning all three columns sidesteps the narrow right-hand chip
-   track, so it stays on one line even on the two-per-row tablet layout. */
-.match-preview-kickoff {
-    grid-column: 1 / -1;
+/* Team name, directly under its own badge and sharing its centre line. Long names are truncated
+   rather than wrapped - a second line here would cost every tile the height, and the badge above
+   already carries the identity. */
+.match-preview-name {
+    margin-top: 0.15rem;
+    max-width: 100%;
     text-align: center;
-    margin-top: 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--purple-1000);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Lock line. Only appears on a match that locks at its own time rather than with the round, so
+   it is an exception marker - quiet, because it is a footnote to the fixture above it. */
+.match-preview-lock {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
     font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--grey-500);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    min-height: 1.15rem;
+}
+
+/* Inside the last day the countdown is live, so it takes the deadline colour to match the
+   card header's own countdown. */
+.match-preview-lock--imminent {
+    color: var(--red);
+}
+
+/* Kickoff caption, on the meta line's centre track for the tile's whole life - it is the one
+   fact about a match that never changes. Rounds can span several days (a World Cup matchday runs
+   for a week), so the short weekday + date keeps it unambiguous where a time alone would not. */
+.match-preview-kickoff {
+    grid-column: 2;
+    justify-self: center;
+    font-size: 0.68rem;
     font-weight: 600;
     color: var(--grey-500);
     font-variant-numeric: tabular-nums;
@@ -159,32 +261,29 @@
 }
 
 /* TBC fixtures: tournament rounds (e.g. the Round of 32) are published once any fixture has
-   confirmed teams, so the remaining knockout slots are still placeholders. They share the
-   three-column row layout - a muted question-mark either side of the placeholder match name
-   (e.g. "R32 Match 2") - so the card reads as "this slot exists but the teams are unknown". */
+   confirmed teams, so the remaining knockout slots are still placeholders. They use the very same
+   four lines as a confirmed tile - so the row needs no layout of its own here, only a muted
+   question-mark sized to sit where a badge would - and are dimmed as a whole to say "this slot
+   exists but the teams are unknown". Sharing the structure is what keeps a part-drawn knockout
+   card on one rhythm, without a hand-tuned height to drift out of step. */
 .match-preview-row--tbc {
     opacity: 0.85;
 }
 
 .match-preview-tbc-logo {
-    justify-self: center;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    width: 2.4rem;
+    height: 2.4rem;
+    flex-shrink: 0;
+    font-size: 1.9rem;
     line-height: 1;
     color: var(--grey-500);
 }
 
-.match-preview-tbc-name {
-    text-align: center;
-    font-size: 0.72rem;
-    font-weight: 600;
+.match-preview-row--tbc .match-preview-name {
     color: var(--grey-500);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    min-width: 0;
 }
 
 /* Match Outcome Backgrounds - soft tint + matching border, with the outcome colour
@@ -269,37 +368,28 @@
     color: var(--red);
 }
 
-/* Two matches per row - only once the card is genuinely wide enough to fit the home logo,
-   predicted score, away logo AND the FT result chip without the chip overlapping the away
-   logo. 29rem is the measured point where the widest realistic chip ("FT 2 - 0") clears the
-   away logo with roughly 0.7rem of breathing space; below it the grid stays single column.
-   Logos tighten a touch here because each row now only gets half the card width. */
-@container round-card (min-width: 29rem) {
+/* Two matches per row. The meta line and the fixture line no longer compete for width, so a
+   half-width tile only has to fit two badges and the predicted score - which it does from
+   26rem, where each column still clears 12rem. Badges give back a little here because each
+   tile now gets half the card. */
+@container round-card (min-width: 26rem) {
     .match-preview-grid {
         grid-template-columns: 1fr 1fr;
         gap: 0.5rem;
     }
 
-    .match-preview-row {
-        grid-template-columns: 2.75rem 1fr 2.75rem;
-    }
-
     .match-preview-logo {
-        width: 1.15rem;
-        height: 1.15rem;
+        width: 2rem;
+        height: 2rem;
     }
 }
 
-/* Roomy cards - the half-width rows now have space to spare, so let the logos and the
-   predicted score grow back to their full size. */
+/* Roomy cards - the half-width tiles now have space to spare, so let the badges grow back
+   to their full size. */
 @container round-card (min-width: 36rem) {
     .match-preview-logo {
-        width: 1.3rem;
-        height: 1.3rem;
-    }
-
-    .match-preview-score {
-        font-size: 0.9rem;
+        width: 2.4rem;
+        height: 2.4rem;
     }
 }
 
