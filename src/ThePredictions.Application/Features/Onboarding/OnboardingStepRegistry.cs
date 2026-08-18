@@ -35,7 +35,7 @@ public static class OnboardingStepRegistry
         var steps = definitions.Select(definition => ToDto(definition, skippedKeys)).ToList();
 
         var requiredComplete = definitions.Where(d => d.Required).All(d => d.Completed);
-        var hasOutstanding = steps.Any(s => s.State is "Active" or "Locked");
+        var hasOutstanding = steps.Any(s => s.State is OnboardingStepStates.Active or OnboardingStepStates.Locked);
 
         return new OnboardingChecklistDto(requiredComplete, hasOutstanding, steps);
     }
@@ -44,13 +44,13 @@ public static class OnboardingStepRegistry
     {
         string state;
         if (definition.Completed)
-            state = "Completed";
+            state = OnboardingStepStates.Completed;
         else if (skippedKeys.Contains(definition.Key))
-            state = "Skipped";
+            state = OnboardingStepStates.Skipped;
         else if (!definition.PrerequisiteMet)
-            state = "Locked";
+            state = OnboardingStepStates.Locked;
         else
-            state = "Active";
+            state = OnboardingStepStates.Active;
 
         return new OnboardingStepDto(definition.Key, definition.Title, definition.Required, definition.Skippable, state, definition.ActionLabel, definition.ActionHref);
     }

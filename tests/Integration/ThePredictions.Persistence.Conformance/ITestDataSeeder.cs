@@ -43,7 +43,23 @@ public interface ITestDataSeeder
     /// sign-in; left null - as every query test leaves it - the row cannot authenticate, which is correct
     /// for a test that only reads.
     /// </param>
-    Task<string> AddUserAsync(string firstName, string lastName, string? email = null, string? password = null);
+    /// <param name="phoneNumber">
+    /// A mobile number, which the onboarding checklist reads as one of its four steps. Left null - as most tests leave it -
+    /// the step is outstanding.
+    /// </param>
+    /// <param name="termsAcceptedAtUtc">
+    /// When they accepted the terms. Null is a real state, not just an unset default: accounts that predate the click-wrap
+    /// wording on Register have no stored proof of consent, and the administrator's list flags them.
+    /// </param>
+    /// <param name="marketingOptInAtUtc">When they opted in to marketing email, or null if they never did.</param>
+    Task<string> AddUserAsync(
+        string firstName,
+        string lastName,
+        string? email = null,
+        string? password = null,
+        string? phoneNumber = null,
+        DateTime? termsAcceptedAtUtc = null,
+        DateTime? marketingOptInAtUtc = null);
 
     /// <summary>
     /// A round. <paramref name="completedDateUtc"/> is separate from <paramref name="status"/> on purpose: a round
@@ -244,11 +260,28 @@ public interface ITestDataSeeder
     /// A player's participation in a season. Every kind of participation has a row - purchased, trial or free - so this is
     /// what the "have they bought in yet" checks read.
     /// </summary>
+    /// <remarks>
+    /// The amounts default to zero, which is right for a trial or a free-season pass and is what most tests want. State
+    /// them for a purchase: what an account has spent on passes counts <b>purchased</b> rows only, so a test about spend
+    /// has to be able to arrange a paid pass and a comped one separately.
+    /// </remarks>
     Task<int> AddSeasonPassAsync(
         string userId,
         int seasonId,
         SeasonPassTier tier = SeasonPassTier.Standard,
-        SeasonPassSource source = SeasonPassSource.Purchased);
+        SeasonPassSource source = SeasonPassSource.Purchased,
+        decimal amountPaid = 0m,
+        decimal smsFeePaid = 0m,
+        DateTime? createdAtUtc = null);
+
+    /// <summary>
+    /// A record that one account dismissed one onboarding step.
+    /// </summary>
+    /// <remarks>
+    /// Dismissing a step is not finishing it, and it does not stop it being finished later - so a test has to be able to
+    /// arrange a skip both with and without the underlying data being there, because the two produce different states.
+    /// </remarks>
+    Task AddOnboardingSkipAsync(string userId, string stepKey, DateTime? skippedAtUtc = null);
 
     /// <summary>
     /// A badge a player has earned, and when. One row per award: a repeatable badge earned three times is three rows,
@@ -259,7 +292,18 @@ public interface ITestDataSeeder
     /// key is the badge plus the round and season it was scoped to, so two awards of one badge with no scope at all are
     /// the same award - a test that wants a badge won twice has to say which rounds it was won in.
     /// </remarks>
-    Task AddUserBadgeAsync(string userId, string badgeKey, DateTime awardedUtc, int? roundId = null);
+    /// <param name="seasonId">
+    /// The season the badge was scoped to, or null for a lifetime badge. Separate from <paramref name="roundId"/>: the round
+    /// exists to make a second award possible, whereas the season is what a reader shows the badge under.
+    /// </param>
+    /// <param name="detail">The caption extra the badge stores, such as the score or the streak length.</param>
+    Task AddUserBadgeAsync(
+        string userId,
+        string badgeKey,
+        DateTime awardedUtc,
+        int? roundId = null,
+        int? seasonId = null,
+        string? detail = null);
 
     /// <summary>The pricing calculator's settings. A single-row table by convention, not by constraint.</summary>
     Task<int> AddPricingSettingsAsync(decimal bufferRate, decimal minimumFloor);
