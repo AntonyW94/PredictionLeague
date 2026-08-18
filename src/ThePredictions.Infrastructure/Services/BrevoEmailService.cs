@@ -123,5 +123,14 @@ public class BrevoEmailService(
         {
             logger.LogError(e, "Failed to send email via Brevo. Status Code: {StatusCode}, Body: {Body}", e.ErrorCode, e.Message);
         }
+        catch (InvalidOperationException e)
+        {
+            // Brevo is not configured: no API key, no sender name, no sender address. That is a deployment
+            // fault rather than a send failure, but it arrives here by the same route and must not be allowed
+            // to take down whatever the email was about. An invalid key was already survivable - it comes back
+            // as a 401 ApiException, caught above - and a blank one used to escape and fail the caller instead,
+            // which is the harsher outcome for the same underlying mistake.
+            logger.LogError(e, "Failed to send email via Brevo: the service is not configured");
+        }
     }
 }
