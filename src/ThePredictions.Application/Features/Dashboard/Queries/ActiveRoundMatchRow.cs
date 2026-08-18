@@ -19,6 +19,7 @@ public sealed record ActiveRoundMatchRow(
     string? HomeTeamLogoUrl,
     string? AwayTeamLogoUrl,
     string? HomeTeamShortName,
+    string? AwayTeamShortName,
     int? PredictedHomeScore,
     int? PredictedAwayScore,
     PredictionOutcome? Outcome,

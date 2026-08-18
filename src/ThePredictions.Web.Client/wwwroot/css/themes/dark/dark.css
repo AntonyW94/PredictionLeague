@@ -1,4 +1,4 @@
-﻿/* Dark Theme Override — restores dark purple look */
+/* Dark Theme Override — restores dark purple look */
 /* Apply .theme-dark to the page container to activate */
 
 /* ============================================
@@ -620,10 +620,34 @@
     color: var(--grey-300);
 }
 
-/* TBC placeholder rows: lift the question-mark icons and the placeholder match name to the
-   lighter grey so they stay legible on the dark tile, matching the kickoff caption above. */
+/* Team names sit on the dark tile, so they take the card's white like the scores above them. */
+.theme-dark .match-preview-name {
+    color: var(--white);
+}
+
+/* The two placeholder slots on a match tile - the outcome icon before a result exists, and the
+   result chip before kick-off. Both are deliberately quiet, but --grey-400 is too close to the
+   dark tile to register at all, so they lift to the same lighter grey the captions use. */
+.theme-dark .target-icon--pending,
+.theme-dark .match-preview-actual--awaiting {
+    color: var(--grey-300);
+}
+
+/* Lock line: the same caption grey while it is a plain date. The imminent countdown has to
+   restate its red here - this selector outranks the base .match-preview-lock--imminent rule, so
+   without it the live countdown would go quiet exactly when it should stand out. */
+.theme-dark .match-preview-lock {
+    color: var(--grey-300);
+}
+
+.theme-dark .match-preview-lock--imminent {
+    color: var(--red);
+}
+
+/* TBC placeholder rows: lift the question-mark icons and the placeholder names to the lighter
+   grey so they stay legible on the dark tile, matching the kickoff caption above. */
 .theme-dark .match-preview-tbc-logo,
-.theme-dark .match-preview-tbc-name {
+.theme-dark .match-preview-row--tbc .match-preview-name {
     color: var(--grey-300);
 }
 

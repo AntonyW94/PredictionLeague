@@ -113,6 +113,7 @@ public sealed class ActiveRoundsQuery(IApplicationReadDbConnection dbConnection)
                 ht.[LogoUrl] AS [HomeTeamLogoUrl],
                 at.[LogoUrl] AS [AwayTeamLogoUrl],
                 ht.[ShortName] AS [HomeTeamShortName],
+                at.[ShortName] AS [AwayTeamShortName],
                 up.[PredictedHomeScore],
                 up.[PredictedAwayScore],
                 up.[Outcome],
