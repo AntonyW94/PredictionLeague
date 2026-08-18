@@ -1,4 +1,6 @@
 using System.Dynamic;
+using System.Globalization;
+using System.Text;
 using Bogus;
 
 namespace ThePredictions.DatabaseTools;
@@ -43,17 +45,26 @@ public class DataAnonymiser
                 result[kvp.Key] = kvp.Value;
             }
 
-            var realFirstName = dict.TryGetValue("FirstName", out var existingFirstName) ? existingFirstName as string : null;
-            var firstName = preserveFirstNames && !string.IsNullOrWhiteSpace(realFirstName)
-                ? realFirstName
-                : faker.Name.FirstName();
+            var realFirstName = preserveFirstNames
+                ? (dict.TryGetValue("FirstName", out var existingFirstName) ? (existingFirstName as string)?.Trim() : null)
+                : null;
+
+            // A preserved first name is whatever somebody typed into the registration form, so it can arrive with
+            // surrounding space, a space in the middle, an apostrophe or an accent. Falling back when nothing usable
+            // survives is what stops an address beginning with a bare dot.
+            var firstName = string.IsNullOrEmpty(EmailNamePart(realFirstName))
+                ? faker.Name.FirstName()
+                : realFirstName!;
+
             var lastName = faker.Name.LastName();
-            var fakeEmail = $"{firstName.ToLowerInvariant()}.{lastName.ToLowerInvariant()}{counter}@testmail.com";
+            var fakeEmail = $"{EmailNamePart(firstName)}.{EmailNamePart(lastName)}{counter}@testmail.com";
 
             result["Email"] = fakeEmail;
             result["NormalizedEmail"] = fakeEmail.ToUpperInvariant();
             result["UserName"] = fakeEmail;
             result["NormalizedUserName"] = fakeEmail.ToUpperInvariant();
+            // Trimmed, because the name is displayed as well as emailed - an untrimmed one renders as a double space
+            // between the forename and surname wherever the two are composed.
             result["FirstName"] = firstName;
             result["LastName"] = lastName;
             result["PasswordHash"] = "INVALIDATED";
@@ -71,6 +82,43 @@ public class DataAnonymiser
         var firstNameMode = preserveFirstNames ? "first names preserved, last names only" : "first and last names";
         Console.WriteLine($"[INFO] Anonymised {counter - 1} users ({preservedCount} preserved, {firstNameMode})");
         return anonymised;
+    }
+
+    /// <summary>
+    /// A name reduced to what is safe to put in the local part of an email address.
+    /// </summary>
+    /// <remarks>
+    /// Unaccented ASCII letters and digits only, lowercased. Everything else - space, apostrophe, hyphen, accent - is
+    /// dropped rather than replaced, so "O&#39;Kon" becomes "okon" and "Mary Jane" becomes "maryjane".
+    ///
+    /// A generated name never needs this. A <b>preserved</b> one does, because it comes from production untouched: three
+    /// dev accounts ended up with addresses like <c>ben .rogahn28@testmail.com</c> from first names carrying a trailing
+    /// space. Bogus can also produce surnames with an apostrophe, so it is applied to both halves rather than only the
+    /// half that has bitten so far.
+    ///
+    /// Returns an empty string when nothing survives, which the caller treats as "no usable name" - an address must not
+    /// begin with a dot.
+    /// </remarks>
+    internal static string EmailNamePart(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return string.Empty;
+
+        var normalised = name.Normalize(NormalizationForm.FormD);
+        var builder = new StringBuilder(normalised.Length);
+
+        foreach (var character in normalised)
+        {
+            // Decomposing first turns an accented letter into its base letter plus a combining mark, so dropping the
+            // marks keeps the letter rather than losing the whole character.
+            if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark)
+                continue;
+
+            if (char.IsAsciiLetterOrDigit(character))
+                builder.Append(char.ToLowerInvariant(character));
+        }
+
+        return builder.ToString();
     }
 
     public static IEnumerable<dynamic> AnonymiseLeagues(IEnumerable<dynamic> leagues, bool keepLeagueNames = false)
