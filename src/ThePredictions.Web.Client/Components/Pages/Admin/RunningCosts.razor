@@ -6,6 +6,8 @@
 @using ThePredictions.Contracts.Admin.RunningCosts
 @using ThePredictions.Domain.Common.Enumerations
 @using ThePredictions.Web.Client.Services.RunningCosts
+@implements IAsyncDisposable
+
 @inject IRunningCostService RunningCostService
 @inject IJSRuntime JsRuntime
 
@@ -77,7 +79,7 @@
     </div>
 </div>
 
-<div class="modal fade" id="runningCostModal" tabindex="-1" aria-labelledby="runningCostModalLabel" aria-hidden="true">
+<div class="modal fade" id="@ModalId" tabindex="-1" aria-labelledby="runningCostModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-white">
             <div class="modal-header border-bottom">
@@ -274,4 +276,21 @@
         nameof(CostFrequency.OneOff) => "One-off",
         _ => frequency
     };
+
+    /// <summary>
+    /// Takes Bootstrap's backdrop with it. See <c>blazorInterop.disposeModal</c> for why this is needed at all:
+    /// Bootstrap only clears the backdrop on the transition that follows hide(), and navigating away from this
+    /// page with the dialog open leaves that transition with no element to end on.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("blazorInterop.disposeModal", ModalId);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The page is already going. Nothing left to tidy, and nothing to report.
+        }
+    }
 }
