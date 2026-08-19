@@ -1,3 +1,7 @@
+@implements IAsyncDisposable
+
+@inject IJSRuntime JsRuntime
+
 @using ThePredictions.Contracts.Admin.Users
 @using ThePredictions.Contracts.Onboarding
 @using ThePredictions.Domain.Common.Enumerations
@@ -8,7 +12,7 @@
     request - which is why each figure can be a link at all.
 *@
 
-<div class="modal fade" id="userDetailModal" data-test-id="user-detail-modal" tabindex="-1" aria-labelledby="userDetailModalLabel" aria-hidden="true">
+<div class="modal fade" id="@ModalId" data-test-id="user-detail-modal" tabindex="-1" aria-labelledby="userDetailModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content themed-modal">
             <div class="modal-header border-bottom">
@@ -46,6 +50,11 @@
 </div>
 
 @code {
+    /// <summary>
+    /// The element id Bootstrap is pointed at, shared with whatever opens and closes this modal.
+    /// </summary>
+    internal const string ModalId = "userDetailModal";
+
     /// <summary>The account whose details these are.</summary>
     [Parameter, EditorRequired]
     public UserDto User { get; set; } = null!;
@@ -372,4 +381,21 @@
     private static string FormatMoney(decimal amount) => amount % 1 == 0
         ? $"£{amount:N0}"
         : $"£{amount:N2}";
+
+    /// <summary>
+    /// Takes Bootstrap's backdrop with it. See <c>blazorInterop.disposeModal</c> for why this is needed at all:
+    /// Bootstrap only clears the backdrop on the transition that follows hide(), and every route that removes
+    /// this component without going through OnClose first leaves that transition with no element to end on.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("blazorInterop.disposeModal", ModalId);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The page is already going. Nothing left to tidy, and nothing to report.
+        }
+    }
 }

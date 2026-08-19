@@ -1,9 +1,12 @@
+@implements IAsyncDisposable
+
 @inject HttpClient Http
+@inject IJSRuntime JsRuntime
 
 @using System.Text.Json.Nodes
 @using ThePredictions.Contracts.Leagues
 
-<div class="modal fade" id="addLeagueMemberModal" data-test-id="add-member-modal" tabindex="-1" aria-labelledby="addLeagueMemberModalLabel" aria-hidden="true">
+<div class="modal fade" id="@ModalId" data-test-id="add-member-modal" tabindex="-1" aria-labelledby="addLeagueMemberModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content themed-modal">
             <div class="modal-header border-bottom">
@@ -74,6 +77,11 @@
 </div>
 
 @code {
+    /// <summary>
+    /// The element id Bootstrap is pointed at, shared with whatever opens and closes this modal.
+    /// </summary>
+    internal const string ModalId = "addLeagueMemberModal";
+
     /// <summary>The league the chosen player is placed in.</summary>
     [Parameter]
     public int LeagueId { get; set; }
@@ -156,5 +164,22 @@
     private async Task CloseAsync()
     {
         await OnClose.InvokeAsync();
+    }
+
+    /// <summary>
+    /// Takes Bootstrap's backdrop with it. See <c>blazorInterop.disposeModal</c> for why this is needed at all:
+    /// Bootstrap only clears the backdrop on the transition that follows hide(), and every route that removes
+    /// this component without going through CloseAsync first leaves that transition with no element to end on.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("blazorInterop.disposeModal", ModalId);
+        }
+        catch (JSDisconnectedException)
+        {
+            // The page is already going. Nothing left to tidy, and nothing to report.
+        }
     }
 }

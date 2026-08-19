@@ -402,12 +402,12 @@
         // yet at this point. Same wait as the league join and add-member modals.
         await Task.Yield();
 
-        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "userDetailModal");
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", UserDetailModal.ModalId);
     }
 
     private async Task CloseDetailAsync()
     {
-        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "userDetailModal");
+        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", UserDetailModal.ModalId);
         _detailUser = null;
     }
 

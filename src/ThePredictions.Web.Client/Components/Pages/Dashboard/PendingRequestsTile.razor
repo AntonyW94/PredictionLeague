@@ -281,12 +281,12 @@
         _paymentLeagueId = leagueId;
         _paymentLeagueName = leagueName;
         await Task.Delay(50);
-        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "leaguePaymentModal");
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", LeaguePaymentModal.ModalId);
     }
 
     private async Task HidePaymentAsync()
     {
-        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "leaguePaymentModal");
+        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", LeaguePaymentModal.ModalId);
         _paymentLeagueId = null;
         _paymentLeagueName = string.Empty;
     }

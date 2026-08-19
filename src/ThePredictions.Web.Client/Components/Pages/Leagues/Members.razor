@@ -257,12 +257,12 @@
         // The markup has to exist before Bootstrap is asked to show it, and the render that creates it has not happened
         // yet at this point. Same wait as the dashboard's join modal.
         await Task.Delay(50);
-        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", "addLeagueMemberModal");
+        await JsRuntime.InvokeVoidAsync("blazorInterop.showModal", AddMemberModal.ModalId);
     }
 
     private async Task HideAddMemberModalAsync()
     {
-        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", "addLeagueMemberModal");
+        await JsRuntime.InvokeVoidAsync("blazorInterop.hideModal", AddMemberModal.ModalId);
         _showAddMemberModal = false;
     }
 
