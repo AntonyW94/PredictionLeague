@@ -398,8 +398,8 @@ public abstract class AdminUsersQueryConformanceTests
         // Act
         var user = (await Query.ExecuteAsync(CancellationToken.None)).Users.Single(u => u.Id == userId);
 
-        // Assert - a real state rather than an unset default. Migration 0011 backfilled what it could prove and left
-        // the rest null, and the screen has to say "unknown" rather than invent a date.
+        // Assert - a real state rather than an unset default. The one-off dating script filled in what it could prove
+        // and left the rest null, and the screen has to say "unknown" rather than invent a date.
         user.CreatedAtUtc.Should().BeNull();
     }
 

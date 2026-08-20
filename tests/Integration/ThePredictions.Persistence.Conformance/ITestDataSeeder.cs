@@ -53,9 +53,9 @@ public interface ITestDataSeeder
     /// </param>
     /// <param name="marketingOptInAtUtc">When they opted in to marketing email, or null if they never did.</param>
     /// <param name="createdAtUtc">
-    /// When the account was registered. Null is a real state here too: accounts that predate migration 0011 were
-    /// backfilled from their earliest provable activity, and the few with no activity at all kept null - which the
-    /// administrator's list shows as an unknown join date rather than inventing one.
+    /// When the account was registered. Null is a real state here too: accounts that predate migration 0010 were
+    /// dated by a one-off script from their earliest provable activity, and any with no activity at all kept null - which
+    /// the administrator's list shows as an unknown join date rather than inventing one.
     /// </param>
     Task<string> AddUserAsync(
         string firstName,

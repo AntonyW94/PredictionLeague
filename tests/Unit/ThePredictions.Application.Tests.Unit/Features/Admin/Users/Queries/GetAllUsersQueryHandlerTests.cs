@@ -109,8 +109,8 @@ public class GetAllUsersQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldReportNoCreationDate_ForAnAccountThatPredatesTheColumn()
     {
-        // Passed through as null rather than substituted. Migration 0011 backfilled every account it could date from
-        // its earliest provable activity and left the rest null, so the screen has to be able to say it does not know.
+        // Passed through as null rather than substituted. Accounts predating the column were dated by a one-off script
+        // from their earliest provable activity, and the rest left null, so the screen has to be able to say it does not know.
         Given(Data(users: [User(UserId, "Ada", "Lovelace")]));
 
         // Act

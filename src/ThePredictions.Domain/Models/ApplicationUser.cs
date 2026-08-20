@@ -13,9 +13,10 @@ public class ApplicationUser : IdentityUser
 
     /// <summary>When this account was registered.</summary>
     /// <remarks>
-    /// Nullable only because of the accounts that predate the column. Migration 0011 backfilled those from the earliest
-    /// date the database can prove the account existed, and left it null for the few with no evidence at all - which is
-    /// why a reader has to handle "unknown" rather than assume a date. Every account created since is stamped by
+    /// Nullable because of the accounts that predate the column, added by migration 0010. Those were dated by a one-off
+    /// script run by hand - the earliest date the database can prove the account existed - which leaves null for any with
+    /// no evidence at all, and for every account in an environment where that script has not been run. So a reader has to
+    /// handle "unknown" rather than assume a date. Every account created since is stamped by
     /// <see cref="RecordRegistration"/>.
     /// </remarks>
     public DateTime? CreatedAtUtc { get; set; }
