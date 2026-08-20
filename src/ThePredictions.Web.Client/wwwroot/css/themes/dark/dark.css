@@ -1327,8 +1327,17 @@ main.theme-dark:has(.admin-light) .navbar-logo {
     color: var(--white-alpha-50);
 }
 
-.theme-dark .user-email {
+.theme-dark .user-email,
+.theme-dark .user-mobile {
     color: var(--white-alpha-70);
+}
+
+.theme-dark .user-contact-sep {
+    background: var(--white-alpha-50);
+}
+
+.theme-dark .user-mobile-none {
+    color: var(--white-alpha-50);
 }
 
 .theme-dark .user-kebab {
