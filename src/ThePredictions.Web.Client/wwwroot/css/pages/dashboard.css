@@ -91,9 +91,11 @@
     margin-bottom: 1rem;
 }
 
-/* Pre-deadline layout - centre the hero and the cards in a single column */
+/* Pre-deadline layout - centre the hero and the cards in a single column. Wider
+   than a reading measure on purpose: the cards inside are two- and three-column
+   rows, not prose, and at 44rem they left most of a desktop screen empty. */
 .preseason-layout {
-    max-width: 44rem;
+    max-width: 64rem;
     margin: 0 auto;
 }
 
@@ -167,8 +169,18 @@
 }
 
 @media (min-width: 768px) {
+    /* Not three equal columns. A third of a 654px row is 218px, and a round can
+       be called "Group Stage - Matchday 1" (222px) or "Quarter-Finals - Second
+       Leg" (232px), so the name wrapped onto a second line while the date and
+       the match count sat in thirds they only half filled. The date takes what
+       it needs and the name splits the rest with the count, which is 268px at
+       the tightest width this rule covers.
+
+       The date stays centred in the row, not merely in its own column: with an
+       equal fr either side its midpoint is the row's midpoint whatever the date
+       is wide, so a "TBD" draft still lines up with a dated round above it. */
     .preseason-row {
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 1fr auto 1fr;
     }
 
     /* Player rows carry the joined date under the name, so they keep a
@@ -179,6 +191,67 @@
 
     .preseason-row__mid {
         text-align: center;
+    }
+}
+
+/* Round list - two columns on a desktop once the season is long enough to need
+   them (a full league is 38 rounds, which is a very long single column).
+   Deliberately CSS multi-column rather than the grid the players list uses:
+   multi-column fills the left column before the right, so the rounds still read
+   1 to 19 then 20 to 38. A grid would lay them out across the rows, and a
+   sequential list read 1, 2 / 3, 4 makes you zigzag to find round twelve.
+
+   1100px, not the 992px desktop breakpoint, because a round row carries three
+   things where a player row carries two. Halved, the name column is 220px at
+   992px and 236px at 1024px - and "Quarter-Finals - Second Leg" needs 232px, so
+   a long name wraps to two lines and the list turns ragged. The layout stops
+   growing at its 64rem cap (a ~1072px viewport), where the name column reaches
+   its full 260px and every name we can be handed fits. 1100px is the first
+   round number past that; splitting any earlier buys nothing but the ragged
+   case, and below it the list stays as it is today. */
+@media (min-width: 1100px) {
+    .preseason-rounds--split {
+        column-count: 2;
+        column-gap: var(--space-8);
+    }
+
+    .preseason-rounds--split .preseason-row {
+        /* Keep a row whole - multi-column will otherwise break one across the
+           column boundary and leave half a round at the top of the right side. */
+        break-inside: avoid;
+
+        /* Three equal columns would give the name about 150px in half the width,
+           which is not enough for "Group Stage - Matchday 1". The date and the
+           match count take only what they need and the name keeps the rest. */
+        grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
+    /* Which round ends the left column depends on how the browser balances them,
+       so it cannot be targeted - the last round keeps its separator instead, and
+       both columns finish the same way. */
+    .preseason-rounds--split .preseason-row:last-child {
+        border-bottom: 1px solid var(--grey-200);
+    }
+}
+
+/* Players list - one column on mobile, two from tablet up so a full league reads
+   as a block rather than a twenty-row scroll down the middle of the page. */
+.preseason-players {
+    display: grid;
+    grid-template-columns: 1fr;
+    column-gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+    .preseason-players {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Two columns means the final row is the last two items, whether that row is
+       full or half-empty - both are bottom-most in their column, so neither
+       keeps a separator. */
+    .preseason-players .preseason-row:nth-last-child(-n+2) {
+        border-bottom: none;
     }
 }
 

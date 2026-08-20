@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using ThePredictions.Application.Services;
 using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Contracts.Leagues;
@@ -48,7 +48,8 @@ public class GetLeagueDashboardQueryHandler(
                 completedRoundCount: header.CompletedRoundCount),
             IsFree = header.IsFree,
             Members = MembersOn(data.Members),
-            ViewableRounds = RoundsOn(rounds)
+            ViewableRounds = RoundsOn(rounds),
+            SeasonRounds = SeasonRoundsOn(rounds)
         };
     }
 
@@ -92,18 +93,33 @@ public class GetLeagueDashboardQueryHandler(
             .ToList();
 
     /// <summary>
-    /// Every round of the season, newest first.
+    /// The rounds a member may open, newest first.
     /// </summary>
     /// <remarks>
-    /// Every round a member may see, which is every round that has been published - in play and finished included, so the
-    /// round being played now can be selected. A <b>draft</b> is left out: it is a round still being prepared, and the rest
-    /// of the site does not show one to players. This read used to return drafts as well, which put a round its
-    /// administrator had not published yet on every member's dashboard.
+    /// Every round that has been published - in play and finished included, so the round being played now can be
+    /// selected. A <b>draft</b> is left out: it is a round still being prepared, and the rest of the site does not
+    /// let a player open one. This read used to return drafts as well, which put a round its administrator had not
+    /// published yet on every member's dashboard.
     /// </remarks>
     private static List<RoundDto> RoundsOn(IReadOnlyList<LeagueRoundRow> rounds) =>
+        Map(rounds.Where(round => round.Status is not RoundStatus.Draft)
+            .OrderByDescending(round => round.RoundNumber));
+
+    /// <summary>
+    /// Every round of the season in playing order, drafts included.
+    /// </summary>
+    /// <remarks>
+    /// This is the shape of the season, not a list of rounds anyone can open, and the two are different questions.
+    /// Before the competition starts the dashboard previews the fixture structure, and a season half-prepared would
+    /// otherwise look half-length - a member counting five rounds when their administrator has drafted thirty-eight.
+    /// A draft still has no date anyone can rely on, so the preview shows it as TBD; opening one remains impossible
+    /// because that goes through <see cref="RoundsOn"/>.
+    /// </remarks>
+    private static List<RoundDto> SeasonRoundsOn(IReadOnlyList<LeagueRoundRow> rounds) =>
+        Map(rounds.OrderBy(round => round.RoundNumber));
+
+    private static List<RoundDto> Map(IEnumerable<LeagueRoundRow> rounds) =>
         rounds
-            .Where(round => round.Status is not RoundStatus.Draft)
-            .OrderByDescending(round => round.RoundNumber)
             .Select(round => new RoundDto(
                 round.RoundId,
                 round.SeasonId,
