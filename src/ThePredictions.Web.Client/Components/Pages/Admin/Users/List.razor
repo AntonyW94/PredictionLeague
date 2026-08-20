@@ -229,13 +229,6 @@
                                         </span>
                                     }
 
-                                    @if (!user.EmailConfirmed)
-                                    {
-                                        <span class="status-pill pill-warn" title="Email address not confirmed">
-                                            <span class="bi bi-patch-exclamation-fill"></span> Email not confirmed
-                                        </span>
-                                    }
-
                                     @if (user.IsOwedMoneyWithNowhereToSendIt)
                                     {
                                         <span class="status-pill pill-danger" title="Has won money but has saved no payout details">
@@ -272,6 +265,7 @@
                                     </span>
                                     <span class="setup-divider"></span>
                                     <span class="flag-group">
+                                        @Flag(user.EmailConfirmed, "Email", redWhenAbsent: true)
                                         @Flag(user.TermsAccepted, "Terms", redWhenAbsent: true)
                                         @Flag(user.MarketingOptIn, "Marketing")
                                     </span>
@@ -382,8 +376,9 @@
     /// </summary>
     /// <remarks>
     /// A red cross would say something is wrong, and for most of these nothing is: signing in with Google rather than a
-    /// password is a choice, and not opting in to marketing is the lawful default. Red is passed in only for the terms
-    /// record, where an account with no stored proof of consent is a real problem.
+    /// password is a choice, and not opting in to marketing is the lawful default. Red is passed in for the two that are
+    /// real problems: no stored proof of consent to the terms, and an address that was never confirmed - an account we
+    /// cannot reliably email is one that will miss every deadline reminder.
     /// </remarks>
     private static RenderFragment Flag(bool present, string label, bool redWhenAbsent = false) =>
         @<span class="flag @(present ? "flag-on" : redWhenAbsent ? "flag-bad" : "flag-off")">
