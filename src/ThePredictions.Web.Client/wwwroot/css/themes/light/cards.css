@@ -564,6 +564,16 @@
     color: var(--grey-400);
 }
 
+/* Its own line rather than a third item on the contact line: it identifies nobody, it dates them */
+.user-since-line {
+    margin-top: 1px;
+}
+
+.user-since {
+    color: var(--grey-400);
+    font-size: 0.75rem;
+}
+
 .user-auth {
     display: inline-flex;
     gap: var(--space-1);

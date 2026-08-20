@@ -98,7 +98,8 @@ public class TestAccountCreator(SqlConnection connection, string testPassword)
                 [LockoutEnabled],
                 [AccessFailedCount],
                 [FirstName],
-                [LastName]
+                [LastName],
+                [CreatedAtUtc]
             )
             VALUES (
                 @Id,
@@ -117,7 +118,8 @@ public class TestAccountCreator(SqlConnection connection, string testPassword)
                 @LockoutEnabled,
                 @AccessFailedCount,
                 @FirstName,
-                @LastName
+                @LastName,
+                @CreatedAtUtc
             )
             """,
             new
@@ -138,7 +140,10 @@ public class TestAccountCreator(SqlConnection connection, string testPassword)
                 LockoutEnabled = false,
                 AccessFailedCount = 0,
                 FirstName = firstName,
-                LastName = "Tester"
+                LastName = "Tester",
+                // Stamped rather than left null so a seeded account reads like a real one on the admin list.
+                // Null there means "registered before the column existed", which a fresh account is not.
+                CreatedAtUtc = DateTime.UtcNow
             });
     }
 

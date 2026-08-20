@@ -58,6 +58,7 @@ public class GetAllUsersQueryHandler(IAdminUsersQuery adminUsersQuery)
             PlayerDisplayName.FormatFull(user.FirstName, user.LastName),
             user.Email,
             user.PhoneNumber,
+            user.CreatedAtUtc,
             user.IsAdmin,
             user.HasPassword,
             data.LoginProviders

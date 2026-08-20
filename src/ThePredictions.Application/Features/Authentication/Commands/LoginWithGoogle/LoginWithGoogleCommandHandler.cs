@@ -76,7 +76,7 @@ public class LoginWithGoogleCommandHandler(
             EmailConfirmed = true
         };
 
-        newUser.RecordRegistrationConsent(marketingOptIn: false, dateTimeProvider.UtcNow);
+        newUser.RecordRegistration(marketingOptIn: false, dateTimeProvider.UtcNow);
 
         var createResult = await userManager.CreateAsync(newUser);
         if (!createResult.Succeeded)

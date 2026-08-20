@@ -31,14 +31,14 @@ public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailSt
                     [Id], [UserName], [NormalizedUserName], [Email], [NormalizedEmail], [EmailConfirmed],
                     [PasswordHash], [SecurityStamp], [ConcurrencyStamp], [PhoneNumber], [PhoneNumberConfirmed],
                     [TwoFactorEnabled], [LockoutEnd], [LockoutEnabled], [AccessFailedCount], [FirstName], [LastName],
-                    [TermsAcceptedAtUtc], [MarketingOptInAtUtc], [PreferredTheme]
+                    [TermsAcceptedAtUtc], [MarketingOptInAtUtc], [PreferredTheme], [CreatedAtUtc]
                 )
                 VALUES
                 (
                     @Id, @UserName, @NormalizedUserName, @Email, @NormalizedEmail, @EmailConfirmed,
                     @PasswordHash, @SecurityStamp, @ConcurrencyStamp, @PhoneNumber, @PhoneNumberConfirmed,
                     @TwoFactorEnabled, @LockoutEnd, @LockoutEnabled, @AccessFailedCount, @FirstName, @LastName,
-                    @TermsAcceptedAtUtc, @MarketingOptInAtUtc, @PreferredTheme
+                    @TermsAcceptedAtUtc, @MarketingOptInAtUtc, @PreferredTheme, @CreatedAtUtc
                 );";
         await connection.ExecuteAsync(sql, user);
         return IdentityResult.Success;
@@ -100,6 +100,9 @@ public class DapperUserStore : IUserPasswordStore<ApplicationUser>, IUserEmailSt
                     [TermsAcceptedAtUtc] = @TermsAcceptedAtUtc, [MarketingOptInAtUtc] = @MarketingOptInAtUtc,
                     [PreferredTheme] = @PreferredTheme
                 WHERE [Id] = @Id;";
+        // [CreatedAtUtc] is deliberately absent from the SET list. It is stamped once, by
+        // ApplicationUser.RecordRegistration, and this method runs on every email confirmation, password
+        // change and profile edit - a column that is never assigned here cannot be moved by one of them.
         await connection.ExecuteAsync(sql, user);
         return IdentityResult.Success;
     }

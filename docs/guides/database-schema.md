@@ -843,9 +843,28 @@ Extended ASP.NET Identity users table.
 | **PreferredTheme** | nvarchar(10) | NO | 'light' | **Custom: User's theme preference ('light' or 'dark')** |
 | **TermsAcceptedAtUtc** | datetime2 | YES | | **Custom: When the user accepted the Terms of Service, Privacy Policy and 18+ confirmation via the click-wrap wording on Register (GDPR proof of consent)** |
 | **MarketingOptInAtUtc** | datetime2 | YES | | **Custom: When the user opted in to marketing emails (NULL if never opted in or has since opted out)** |
+| **CreatedAtUtc** | datetime2 | YES | | **Custom: When the account was registered. Stamped by `ApplicationUser.RecordRegistration` on both registration paths (form and Google). Nullable because of accounts predating migration 0010 - see below** |
 
 **Constraints:**
 - PK: `Id`
+
+**`CreatedAtUtc` and what NULL means.** Added by migration 0010. There was no creation timestamp before it: Identity
+does not supply one, and the two consent columns are about consent.
+
+**Dating the accounts that predate it is a one-off data fix, run by hand per environment - not a migration.** It is
+therefore not in the DbUp set and will not be applied by a deploy. The rule it applies is the earliest date the database
+can prove the account existed: its own registration consent (only where the time is not exactly midnight, since the flat
+pre-existing values were filled in at midnight and are not real times), the email confirmation token issued with it,
+leagues joined and created, passes bought, predictions made, badges and prizes awarded, payouts, payout details saved,
+boosts played, onboarding steps dismissed, refresh tokens minted at login, and password resets requested.
+
+**NULL therefore means "we cannot date this account", which covers two cases**: it predates the column and has done
+nothing since (2 of 44 on dev), or the dating script has not been run in that environment yet. Neither means "new". Any
+reader has to render it as unknown rather than substituting a date - the admin user list shows "Join date unknown", and
+nothing in the application depends on the dating having happened.
+
+`UpdateAsync` in `DapperUserStore` deliberately omits the column from its `SET` list, so no later profile edit, email
+confirmation or password change can move it.
 
 **Deleting an account.** Admin "Delete user" issues a single `DELETE FROM [AspNetUsers]`, so what happens is
 decided entirely by the foreign keys pointing at this table. Since migration `0009_CascadeUserDeletion.sql`,

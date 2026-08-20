@@ -286,36 +286,61 @@ public class ApplicationUserTests
 
     #endregion
 
-    #region RecordRegistrationConsent
+    #region RecordRegistration
 
     [Fact]
-    public void RecordRegistrationConsent_ShouldStampTermsAndMarketingTimestamps_WhenMarketingOptInChosen()
+    public void RecordRegistration_ShouldStampTermsAndMarketingTimestamps_WhenMarketingOptInChosen()
     {
         // Arrange
         var user = ApplicationUser.Create("John", "Doe", "john@example.com");
         var nowUtc = new DateTime(2026, 4, 28, 10, 0, 0, DateTimeKind.Utc);
 
         // Act
-        user.RecordRegistrationConsent(marketingOptIn: true, nowUtc);
+        user.RecordRegistration(marketingOptIn: true, nowUtc);
 
         // Assert
         user.TermsAcceptedAtUtc.Should().Be(nowUtc);
         user.MarketingOptInAtUtc.Should().Be(nowUtc);
+        user.CreatedAtUtc.Should().Be(nowUtc);
     }
 
     [Fact]
-    public void RecordRegistrationConsent_ShouldLeaveMarketingOptInNull_WhenMarketingNotChosen()
+    public void RecordRegistration_ShouldLeaveMarketingOptInNull_WhenMarketingNotChosen()
     {
         // Arrange
         var user = ApplicationUser.Create("John", "Doe", "john@example.com");
         var nowUtc = new DateTime(2026, 4, 28, 10, 0, 0, DateTimeKind.Utc);
 
         // Act
-        user.RecordRegistrationConsent(marketingOptIn: false, nowUtc);
+        user.RecordRegistration(marketingOptIn: false, nowUtc);
 
         // Assert
         user.TermsAcceptedAtUtc.Should().Be(nowUtc);
         user.MarketingOptInAtUtc.Should().BeNull();
+        user.CreatedAtUtc.Should().Be(nowUtc);
+    }
+
+    [Fact]
+    public void RecordRegistration_ShouldStampWhenTheAccountStarted()
+    {
+        // The whole reason this method carries the creation stamp rather than Create: the Google path builds the user
+        // directly and never calls Create, so a stamp set there would be missing on every account signed up that way.
+        var user = ApplicationUser.Create("John", "Doe", "john@example.com");
+        var nowUtc = new DateTime(2026, 8, 20, 21, 54, 37, DateTimeKind.Utc);
+
+        user.RecordRegistration(marketingOptIn: false, nowUtc);
+
+        user.CreatedAtUtc.Should().Be(nowUtc);
+    }
+
+    [Fact]
+    public void Create_ShouldLeaveTheCreationStampUnset()
+    {
+        // Deliberate. Create takes no clock, so the stamp belongs to RecordRegistration, which both registration
+        // paths call. A user built and never registered has no start date, which is what null means everywhere else.
+        var user = ApplicationUser.Create("John", "Doe", "john@example.com");
+
+        user.CreatedAtUtc.Should().BeNull();
     }
 
     #endregion
@@ -356,13 +381,16 @@ public class ApplicationUserTests
         // Arrange - a registered user whose terms were accepted at registration
         var user = ApplicationUser.Create("John", "Doe", "john@example.com");
         var registeredUtc = new DateTime(2026, 4, 28, 10, 0, 0, DateTimeKind.Utc);
-        user.RecordRegistrationConsent(marketingOptIn: false, registeredUtc);
+        user.RecordRegistration(marketingOptIn: false, registeredUtc);
+        // The creation stamp is not what this is about, but it must survive a later change of mind - see the
+        // assertion at the end.
 
         // Act - later toggling marketing must leave the terms timestamp alone
         user.SetMarketingOptIn(marketingOptIn: true, new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc));
 
         // Assert
         user.TermsAcceptedAtUtc.Should().Be(registeredUtc);
+        user.CreatedAtUtc.Should().Be(registeredUtc);
     }
 
     #endregion

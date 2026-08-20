@@ -89,7 +89,8 @@ public class GetAllUsersQueryHandlerTests
             PhoneNumber = "07700900000",
             EmailConfirmed = true,
             HasPassword = true,
-            IsAdmin = true
+            IsAdmin = true,
+            CreatedAtUtc = new DateTime(2026, 8, 20, 21, 54, 37, DateTimeKind.Utc)
         }]));
 
         // Act
@@ -102,6 +103,21 @@ public class GetAllUsersQueryHandlerTests
         user.EmailConfirmed.Should().BeTrue();
         user.HasLocalPassword.Should().BeTrue();
         user.IsAdmin.Should().BeTrue();
+        user.CreatedAtUtc.Should().Be(new DateTime(2026, 8, 20, 21, 54, 37, DateTimeKind.Utc));
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReportNoCreationDate_ForAnAccountThatPredatesTheColumn()
+    {
+        // Passed through as null rather than substituted. Accounts predating the column were dated by a one-off script
+        // from their earliest provable activity, and the rest left null, so the screen has to be able to say it does not know.
+        Given(Data(users: [User(UserId, "Ada", "Lovelace")]));
+
+        // Act
+        var user = (await HandleAsync()).Single();
+
+        // Assert
+        user.CreatedAtUtc.Should().BeNull();
     }
 
     [Fact]
@@ -1061,10 +1077,10 @@ public class GetAllUsersQueryHandlerTests
         new(users ?? [], loginProviders ?? [], leagues ?? [], seasonPasses ?? [], winnings ?? [],
             seasons ?? [], userIdsWithPayoutDetails ?? [], onboardingSkips ?? [], badges ?? []);
 
-    private static AdminUserRow User(string id, string? firstName, string? lastName) =>
+    private static AdminUserRow User(string id, string? firstName, string? lastName, DateTime? createdAtUtc = null) =>
         new(id, firstName, lastName, $"{id}@example.com", PhoneNumber: null,
             EmailConfirmed: false, HasPassword: true, IsAdmin: false,
-            TermsAcceptedAtUtc: null, MarketingOptInAtUtc: null);
+            TermsAcceptedAtUtc: null, MarketingOptInAtUtc: null, CreatedAtUtc: createdAtUtc);
 
     private static UserLeagueRow League(
         int leagueId,

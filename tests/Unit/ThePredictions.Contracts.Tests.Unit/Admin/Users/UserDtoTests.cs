@@ -32,8 +32,9 @@ public class UserDtoTests
         List<string>? socialProviders = null,
         IReadOnlyList<UserSeasonPassDto>? seasonPasses = null,
         IReadOnlyList<UserPrizeDto>? prizes = null,
-        IReadOnlyList<UserBadgeDto>? badges = null) =>
-        new("user-1", "Alex Player", "alex@example.com", null, false, true, socialProviders ?? [], true,
+        IReadOnlyList<UserBadgeDto>? badges = null,
+        DateTime? createdAtUtc = null) =>
+        new("user-1", "Alex Player", "alex@example.com", null, createdAtUtc, false, true, socialProviders ?? [], true,
             termsAccepted, marketingOptIn, hasPayoutDetails,
             hasEverHeldSeasonPass, hasCurrentSeasonPass, hasEverPurchasedSeasonPass,
             leaguesCreated, leaguesJoinedApproved, leaguesJoinedPending,

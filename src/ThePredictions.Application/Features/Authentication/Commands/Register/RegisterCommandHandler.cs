@@ -31,7 +31,7 @@ public class RegisterCommandHandler(
             request.Email
         );
 
-        newUser.RecordRegistrationConsent(request.MarketingOptIn, dateTimeProvider.UtcNow);
+        newUser.RecordRegistration(request.MarketingOptIn, dateTimeProvider.UtcNow);
 
         var result = await userManager.CreateAsync(newUser, request.Password);
         if (!result.Succeeded)

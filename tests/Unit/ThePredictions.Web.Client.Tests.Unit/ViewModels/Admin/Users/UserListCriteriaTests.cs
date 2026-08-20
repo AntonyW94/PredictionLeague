@@ -461,8 +461,9 @@ public class UserListCriteriaTests
         decimal passSpend = 0m,
         decimal entrySpend = 0m,
         decimal winnings = 0m,
-        bool hasPayoutDetails = true) =>
-        new($"id-{name}", name, email ?? $"{name}@example.com", phoneNumber, isAdmin, true, [], emailConfirmed,
+        bool hasPayoutDetails = true,
+        DateTime? createdAtUtc = null) =>
+        new($"id-{name}", name, email ?? $"{name}@example.com", phoneNumber, createdAtUtc, isAdmin, true, [], emailConfirmed,
             TermsAccepted: true, MarketingOptIn: false, hasPayoutDetails,
             HasEverHeldSeasonPass: !isDormant, hasCurrentPass, HasEverPurchasedSeasonPass: false,
             leaguesCreated, leaguesJoinedApproved, leaguesJoinedPending,

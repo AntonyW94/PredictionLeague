@@ -1336,7 +1336,8 @@ main.theme-dark:has(.admin-light) .navbar-logo {
     background: var(--white-alpha-50);
 }
 
-.theme-dark .user-mobile-none {
+.theme-dark .user-mobile-none,
+.theme-dark .user-since {
     color: var(--white-alpha-50);
 }
 
