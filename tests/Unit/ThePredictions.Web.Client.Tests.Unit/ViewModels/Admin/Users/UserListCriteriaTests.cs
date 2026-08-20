@@ -152,6 +152,20 @@ public class UserListCriteriaTests
     }
 
     [Fact]
+    public void Apply_ShouldNotTreatSkippedStepsAsIncompleteSetup()
+    {
+        // Dismissing an optional step is an answer. "Ada" did the two required steps and said no to the two optional
+        // ones, so there is nothing left to chase her about; "Grace" has never touched hers, so there is.
+        var users = new[]
+        {
+            User("Ada", stepsCompleted: 2, stepsSkipped: 2),
+            User("Grace", stepsCompleted: 2)
+        };
+
+        Criteria(setupIncompleteOnly: true).Apply(users).Select(user => user.FullName).Should().Equal("Grace");
+    }
+
+    [Fact]
     public void Apply_ShouldKeepOnlyAccountsWithAnUnconfirmedEmail_WhenThatFilterIsOn()
     {
         // An account that never confirmed has had no email from us that mattered, which is worth being able to isolate.
@@ -439,6 +453,7 @@ public class UserListCriteriaTests
         bool isDormant = false,
         bool hasCurrentPass = false,
         int stepsCompleted = 4,
+        int stepsSkipped = 0,
         int leaguesCreated = 0,
         int leaguesJoinedApproved = 0,
         int leaguesJoinedPending = 0,
@@ -452,17 +467,27 @@ public class UserListCriteriaTests
             HasEverHeldSeasonPass: !isDormant, hasCurrentPass, HasEverPurchasedSeasonPass: false,
             leaguesCreated, leaguesJoinedApproved, leaguesJoinedPending,
             winnings, passSpend, entrySpend,
-            Checklist(stepsCompleted),
+            Checklist(stepsCompleted, stepsSkipped),
             Memberships: [], AdministeredLeagues: [], SeasonPasses: [], Prizes: [],
             Badges: Badges(badgeCount));
 
-    /// <summary>Four steps, the first <paramref name="completed"/> of them done and the rest outstanding.</summary>
-    private static OnboardingChecklistDto Checklist(int completed) =>
-        new(RequiredComplete: completed >= 2, HasOutstandingSteps: completed < 4,
+    /// <summary>
+    /// Four steps: the first <paramref name="completed"/> done, the next <paramref name="skipped"/> dismissed, and
+    /// whatever is left still outstanding.
+    /// </summary>
+    /// <remarks>
+    /// <c>HasOutstandingSteps</c> is derived rather than passed in, by the rule <c>OnboardingStepRegistry.Build</c>
+    /// applies: only an Active or Locked step is outstanding. That is what the setup filter now reads, so a fixture
+    /// that hard-coded the flag could assert a checklist the server never produces.
+    /// </remarks>
+    private static OnboardingChecklistDto Checklist(int completed, int skipped = 0) =>
+        new(RequiredComplete: completed >= 2, HasOutstandingSteps: completed + skipped < 4,
             Enumerable.Range(0, 4)
                 .Select(index => new OnboardingStepDto(
                     $"step-{index}", $"Step {index}", index < 2, index >= 2,
-                    index < completed ? OnboardingStepStates.Completed : OnboardingStepStates.Active,
+                    index < completed ? OnboardingStepStates.Completed
+                        : index < completed + skipped ? OnboardingStepStates.Skipped
+                        : OnboardingStepStates.Active,
                     "Go", "/"))
                 .ToList());
 

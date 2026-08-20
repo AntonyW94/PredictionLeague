@@ -41,8 +41,14 @@ public class UserDtoTests
             onboarding ?? Checklist(),
             [], [], seasonPasses ?? [], prizes ?? [], badges ?? []);
 
+    /// <remarks>
+    /// <c>HasOutstandingSteps</c> is derived from the states here rather than passed in, by the same rule
+    /// <c>OnboardingStepRegistry.Build</c> applies: a step is outstanding while it is Active or Locked, and neither
+    /// Completed nor Skipped is. Hard-coding the flag would let a test assert a checklist the server cannot produce.
+    /// </remarks>
     private static OnboardingChecklistDto Checklist(params string[] states) =>
-        new(RequiredComplete: false, HasOutstandingSteps: false,
+        new(RequiredComplete: false,
+            HasOutstandingSteps: states.Any(state => state is OnboardingStepStates.Active or OnboardingStepStates.Locked),
             states.Select((state, index) => new OnboardingStepDto($"step-{index}", $"Step {index}", true, false, state, "Go", "/")).ToList());
 
     private static UserSeasonPassDto Pass(int seasonId, string seasonName, bool isCurrentSeason) =>
@@ -160,6 +166,21 @@ public class UserDtoTests
     {
         var user = User(onboarding: Checklist(OnboardingStepStates.Completed, OnboardingStepStates.Completed));
 
+        user.OnboardingComplete.Should().BeTrue();
+    }
+
+    [Fact]
+    public void OnboardingComplete_ShouldBeTrue_WhenTheOnlyStepsNotDoneWereSkipped()
+    {
+        // Dismissing an optional step is an answer, not a gap. An account that did the required steps and said no to
+        // the rest has finished with onboarding, so it has no business appearing under "setup incomplete".
+        var user = User(onboarding: Checklist(
+            OnboardingStepStates.Completed,
+            OnboardingStepStates.Completed,
+            OnboardingStepStates.Skipped,
+            OnboardingStepStates.Skipped));
+
+        user.OnboardingStepsCompleted.Should().Be(2);
         user.OnboardingComplete.Should().BeTrue();
     }
 
