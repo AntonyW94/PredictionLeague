@@ -20,6 +20,7 @@ public record UserDto(
     string FullName,
     string Email,
     string? PhoneNumber,
+    DateTime? CreatedAtUtc,
     bool IsAdmin,
     bool HasLocalPassword,
     List<string> SocialProviders,

@@ -172,6 +172,16 @@
                                                 <span class="user-mobile" data-test-id="admin-user-mobile">@FormatMobile(user.PhoneNumber)</span>
                                             }
                                         </div>
+                                        <div class="user-since-line">
+                                            @if (user.CreatedAtUtc is null)
+                                            {
+                                                <span class="user-since user-since-unknown" data-test-id="admin-user-since">Join date unknown</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="user-since" data-test-id="admin-user-since">Member since @FormatJoined(user.CreatedAtUtc.Value)</span>
+                                            }
+                                        </div>
                                     </div>
 
                                     <div class="user-menu-wrap">
@@ -408,6 +418,15 @@
         phoneNumber.Length == 11 && phoneNumber.All(char.IsAsciiDigit)
             ? $"{phoneNumber[..5]} {phoneNumber[5..]}"
             : phoneNumber;
+
+    /// <summary>When the account started, as "20 Aug 2026 at 21:54".</summary>
+    /// <remarks>
+    /// Local time, not the stored UTC. An administrator reading a join date is placing it against their own day, and an
+    /// hour's discrepancy through the summer would make a signup look like it happened before an email that prompted it.
+    /// The column is UTC and is read as UTC, which is what makes the conversion correct rather than assumed.
+    /// </remarks>
+    private static string FormatJoined(DateTime createdAtUtc) =>
+        DateTime.SpecifyKind(createdAtUtc, DateTimeKind.Utc).ToLocalTime().ToString("d MMM yyyy 'at' HH:mm");
 
     private static string SegmentClass(string state) => state switch
     {

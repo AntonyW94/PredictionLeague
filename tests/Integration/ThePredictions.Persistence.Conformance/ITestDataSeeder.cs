@@ -52,6 +52,11 @@ public interface ITestDataSeeder
     /// wording on Register have no stored proof of consent, and the administrator's list flags them.
     /// </param>
     /// <param name="marketingOptInAtUtc">When they opted in to marketing email, or null if they never did.</param>
+    /// <param name="createdAtUtc">
+    /// When the account was registered. Null is a real state here too: accounts that predate migration 0011 were
+    /// backfilled from their earliest provable activity, and the few with no activity at all kept null - which the
+    /// administrator's list shows as an unknown join date rather than inventing one.
+    /// </param>
     Task<string> AddUserAsync(
         string firstName,
         string lastName,
@@ -59,7 +64,8 @@ public interface ITestDataSeeder
         string? password = null,
         string? phoneNumber = null,
         DateTime? termsAcceptedAtUtc = null,
-        DateTime? marketingOptInAtUtc = null);
+        DateTime? marketingOptInAtUtc = null,
+        DateTime? createdAtUtc = null);
 
     /// <summary>
     /// A round. <paramref name="completedDateUtc"/> is separate from <paramref name="status"/> on purpose: a round

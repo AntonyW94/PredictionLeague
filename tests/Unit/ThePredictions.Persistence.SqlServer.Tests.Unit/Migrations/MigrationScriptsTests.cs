@@ -31,7 +31,9 @@ public class MigrationScriptsTests
         $"{ExpectedPrefix}0006_LeagueMemberStatsCachedRanks.sql",
         $"{ExpectedPrefix}0007_PointBoostImagesAtWebp.sql",
         $"{ExpectedPrefix}0008_AspNetUsersEmailRequired.sql",
-        $"{ExpectedPrefix}0009_CascadeUserDeletion.sql"
+        $"{ExpectedPrefix}0009_CascadeUserDeletion.sql",
+        $"{ExpectedPrefix}0010_AspNetUsersCreatedAtUtc.sql",
+        $"{ExpectedPrefix}0011_BackfillAspNetUsersCreatedAtUtc.sql"
     ];
 
     [Fact]

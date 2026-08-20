@@ -375,6 +375,34 @@ public abstract class AdminUsersQueryConformanceTests
         user.PhoneNumber.Should().Be("07700900000");
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnWhenTheAccountWasCreated()
+    {
+        // Arrange
+        var createdAt = new DateTime(2026, 8, 20, 21, 54, 37, DateTimeKind.Utc);
+        var userId = await Seed.AddUserAsync("Ada", "Lovelace", createdAtUtc: createdAt);
+
+        // Act
+        var user = (await Query.ExecuteAsync(CancellationToken.None)).Users.Single(u => u.Id == userId);
+
+        // Assert - to the second, because the screen shows a time and not only a date.
+        user.CreatedAtUtc.Should().Be(createdAt);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ShouldReturnNoCreationDate_ForAnAccountThatPredatesTheColumn()
+    {
+        // Arrange
+        var userId = await Seed.AddUserAsync("Grace", "Hopper");
+
+        // Act
+        var user = (await Query.ExecuteAsync(CancellationToken.None)).Users.Single(u => u.Id == userId);
+
+        // Assert - a real state rather than an unset default. Migration 0011 backfilled what it could prove and left
+        // the rest null, and the screen has to say "unknown" rather than invent a date.
+        user.CreatedAtUtc.Should().BeNull();
+    }
+
     #endregion
 
     #region Payout details

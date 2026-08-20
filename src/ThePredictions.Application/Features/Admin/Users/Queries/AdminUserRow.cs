@@ -11,6 +11,10 @@ namespace ThePredictions.Application.Features.Admin.Users.Queries;
 /// The two consent columns arrive as the dates they are stored as rather than as flags. Whether a date means consent was
 /// given is not in doubt, but the date is the part that would answer a subject access request, so the read does not throw
 /// it away to save the screen a comparison.
+///
+/// <see cref="CreatedAtUtc"/> is nullable and stays nullable all the way to the screen. Migration 0011 backfilled the
+/// accounts that predate the column from their earliest provable activity, and left the few with no evidence at all
+/// null - so "we do not know" is a real answer here and cannot be collapsed into a date.
 /// </remarks>
 [ExcludeFromCodeCoverage(Justification = "Data-only type: properties only, no logic to test.")]
 public sealed record AdminUserRow(
@@ -23,4 +27,5 @@ public sealed record AdminUserRow(
     bool HasPassword,
     bool IsAdmin,
     DateTime? TermsAcceptedAtUtc,
-    DateTime? MarketingOptInAtUtc);
+    DateTime? MarketingOptInAtUtc,
+    DateTime? CreatedAtUtc);

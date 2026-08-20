@@ -129,7 +129,8 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
         string? password = null,
         string? phoneNumber = null,
         DateTime? termsAcceptedAtUtc = null,
-        DateTime? marketingOptInAtUtc = null)
+        DateTime? marketingOptInAtUtc = null,
+        DateTime? createdAtUtc = null)
     {
         var userId = Guid.NewGuid().ToString();
         var address = email ?? $"{firstName}.{lastName}@integration.test".ToLowerInvariant();
@@ -163,7 +164,8 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
                 [PreferredTheme],
                 [PhoneNumber],
                 [TermsAcceptedAtUtc],
-                [MarketingOptInAtUtc]
+                [MarketingOptInAtUtc],
+                [CreatedAtUtc]
             )
             VALUES
             (
@@ -184,7 +186,8 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
                 @PreferredTheme,
                 @PhoneNumber,
                 @TermsAcceptedAtUtc,
-                @MarketingOptInAtUtc
+                @MarketingOptInAtUtc,
+                @CreatedAtUtc
             );";
 
         await ExecuteAsync(sql, new
@@ -198,6 +201,9 @@ public sealed class TestDataSeeder(IDbConnectionFactory connectionFactory) : ITe
             PhoneNumber = phoneNumber,
             TermsAcceptedAtUtc = termsAcceptedAtUtc,
             MarketingOptInAtUtc = marketingOptInAtUtc,
+            // Defaults to null, which is a real state: an account that predates the column. A test that cares
+            // about the join date passes one in.
+            CreatedAtUtc = createdAtUtc,
             PhoneNumberConfirmed = false,
             TwoFactorEnabled = false,
             LockoutEnabled = false,

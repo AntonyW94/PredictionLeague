@@ -67,7 +67,8 @@ public sealed class AdminUsersQuery(IApplicationReadDbConnection dbConnection) :
                         AND r.[Name] = @AdminRoleName
                 ) THEN 1 ELSE 0 END AS bit) AS [IsAdmin],
                 u.[TermsAcceptedAtUtc],
-                u.[MarketingOptInAtUtc]
+                u.[MarketingOptInAtUtc],
+                u.[CreatedAtUtc]
             FROM
                 [AspNetUsers] u;";
 
