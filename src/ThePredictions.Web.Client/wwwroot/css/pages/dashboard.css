@@ -184,6 +184,46 @@
     }
 }
 
+/* Round list - two columns on a desktop once the season is long enough to need
+   them (a full league is 38 rounds, which is a very long single column).
+   Deliberately CSS multi-column rather than the grid the players list uses:
+   multi-column fills the left column before the right, so the rounds still read
+   1 to 19 then 20 to 38. A grid would lay them out across the rows, and a
+   sequential list read 1, 2 / 3, 4 makes you zigzag to find round twelve.
+
+   1100px, not the 992px desktop breakpoint, because a round row carries three
+   things where a player row carries two. Halved, the name column is 220px at
+   992px and 236px at 1024px - and "Quarter-Finals - Second Leg" needs 232px, so
+   a long name wraps to two lines and the list turns ragged. The layout stops
+   growing at its 64rem cap (a ~1072px viewport), where the name column reaches
+   its full 260px and every name we can be handed fits. 1100px is the first
+   round number past that; splitting any earlier buys nothing but the ragged
+   case, and below it the list stays as it is today. */
+@media (min-width: 1100px) {
+    .preseason-rounds--split {
+        column-count: 2;
+        column-gap: var(--space-8);
+    }
+
+    .preseason-rounds--split .preseason-row {
+        /* Keep a row whole - multi-column will otherwise break one across the
+           column boundary and leave half a round at the top of the right side. */
+        break-inside: avoid;
+
+        /* Three equal columns would give the name about 150px in half the width,
+           which is not enough for "Group Stage - Matchday 1". The date and the
+           match count take only what they need and the name keeps the rest. */
+        grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+
+    /* Which round ends the left column depends on how the browser balances them,
+       so it cannot be targeted - the last round keeps its separator instead, and
+       both columns finish the same way. */
+    .preseason-rounds--split .preseason-row:last-child {
+        border-bottom: 1px solid var(--grey-200);
+    }
+}
+
 /* Players list - one column on mobile, two from tablet up so a full league reads
    as a block rather than a twenty-row scroll down the middle of the page. */
 .preseason-players {

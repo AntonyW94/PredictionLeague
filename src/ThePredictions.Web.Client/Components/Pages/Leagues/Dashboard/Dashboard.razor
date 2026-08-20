@@ -142,14 +142,20 @@
                     {
                         <div class="section">
                             <h3 class="text-white text-center fw-bold mb-3">Round Structure</h3>
-                            @foreach (var round in State.SeasonRounds)
-                            {
-                                <div class="preseason-row">
-                                    <span class="text-white fw-bold">@(string.IsNullOrWhiteSpace(round.ApiRoundName) ? $"Round {round.RoundNumber}" : round.ApiRoundName)</span>
-                                    <span class="preseason-row__mid text-white-50 d-none d-md-block">@(round.Status == RoundStatus.Draft ? "TBD" : round.StartDateUtc.ToString("dd MMM yyyy"))</span>
-                                    <span class="text-white-50 fw-bold">@round.MatchCount @(round.MatchCount == 1 ? "match" : "matches")</span>
-                                </div>
-                            }
+                            @* A full season is 38 rounds, which is too long to read down one column - but a short
+                               tournament split in two reads as a sparse 4 and 3 rather than a tidy list, so only a
+                               list long enough to benefit is split. The CSS fills the left column before the right,
+                               so the rounds still read in playing order. *@
+                            <div class="preseason-rounds @(State.SeasonRounds.Count >= SplitRoundsFrom ? "preseason-rounds--split" : null)">
+                                @foreach (var round in State.SeasonRounds)
+                                {
+                                    <div class="preseason-row">
+                                        <span class="text-white fw-bold">@(string.IsNullOrWhiteSpace(round.ApiRoundName) ? $"Round {round.RoundNumber}" : round.ApiRoundName)</span>
+                                        <span class="preseason-row__mid text-white-50 d-none d-md-block">@(round.Status == RoundStatus.Draft ? "TBD" : round.StartDateUtc.ToString("dd MMM yyyy"))</span>
+                                        <span class="text-white-50 fw-bold">@round.MatchCount @(round.MatchCount == 1 ? "match" : "matches")</span>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     }
                 </div>
@@ -240,6 +246,12 @@
 </div>
 
 @code {
+    /// <summary>
+    /// The shortest round list worth splitting into two columns. Below this a split reads as a sparse pair of stubs
+    /// (a seven-round tournament becomes four and three) rather than a tidy list, and one column is the better shape.
+    /// </summary>
+    private const int SplitRoundsFrom = 10;
+
     [Parameter]
     public int LeagueId { get; set; }
 
