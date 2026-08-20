@@ -23,9 +23,15 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
             logger.LogWarning("Season Pass Required: {Message}", ex.Message);
             await HandleKnownExceptionAsync(context, HttpStatusCode.PaymentRequired, new { message = ex.Message, seasonId = ex.SeasonId });
         }
+        // Information, not Warning, and the only entry in this list logged that way. Nothing has gone
+        // wrong: a gate refused an account that has not confirmed its address yet, which is the gate
+        // working. It is also the one refusal here that repeats - the same person hits it on every
+        // attempt until they click the link - so at Warning it dominated the warnings monitor, which
+        // fires on more than zero events and renotifies every 30 minutes while unresolved. The user is
+        // told on screen either way: the message below is what the client displays.
         catch (EmailNotConfirmedException ex)
         {
-            logger.LogWarning("Email Not Confirmed: {Message}", ex.Message);
+            logger.LogInformation("Email Not Confirmed: {Message}", ex.Message);
             await HandleKnownExceptionAsync(context, HttpStatusCode.Forbidden, new { message = ex.Message, emailNotConfirmed = true });
         }
         catch (ArgumentException ex)

@@ -101,6 +101,8 @@ Exceptions are automatically mapped to HTTP responses:
 | `BusinessRuleViolationException` | 400 Bad Request | A rule the caller could have satisfied |
 | `ValidationException` | 400 Bad Request | FluentValidation failure |
 | `UnauthorizedAccessException` | 401 Unauthorized | Auth failure |
+| `SeasonPassRequiredException` | 402 Payment Required | The season needs a pass this account does not hold |
+| `EmailNotConfirmedException` | 403 Forbidden | The account has not confirmed its email address |
 | `ReadQueryFailedException` | 500 Internal Error | A read query failed to execute or materialise |
 | `InvalidOperationException` | 500 Internal Error | A server-side defect - missing setting, misused API |
 | Other | 500 Internal Error | Unexpected errors |
@@ -110,6 +112,10 @@ Exceptions are automatically mapped to HTTP responses:
 That split is deliberately fail-safe. An unclassified fault is reported as a server problem, which is the assumption that degrades gracefully - the reverse default hid real breakage (a missing Stripe key, a result set that would not materialise) in the client-error bucket, where no alert looks for it and the 400 tells the user they did something wrong. See [ADR-0016](../../docs/decisions/0016-business-rule-exception-classification.md).
 
 Never throw `BusinessRuleViolationException` for an infrastructure or configuration failure, and never assume a bare `InvalidOperationException` from a library means a client mistake.
+
+**`EmailNotConfirmedException` is logged at Information, not Warning** - the one exception in the table treated that way. Nothing has gone wrong: a gate refused an account that has not confirmed its address, which is the gate working, and the client shows the exception's message on screen so the person is told. It is also the only refusal here that repeats indefinitely - the same account hits it on every attempt until the link is clicked - and the `Web Warnings` monitor alerts on more than zero warnings in five minutes and renotifies every 30 minutes while unresolved, so at Warning one unconfirmed account was enough to keep the channel busy. See [alerting configuration](../../docs/todo/architecture/alerting-config/README.md) for the monitor definitions.
+
+If you add another refusal that a user will hit repeatedly until they act, log it the same way.
 
 ### A missing entity is thrown, never returned as null
 

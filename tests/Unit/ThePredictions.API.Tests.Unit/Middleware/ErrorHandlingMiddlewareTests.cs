@@ -142,6 +142,17 @@ public class ErrorHandlingMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_ShouldLogAtInformation_WhenEmailNotConfirmed()
+    {
+        // The one refusal in the middleware that is not a Warning. It repeats for the same person on every
+        // attempt until they click the confirmation link, and at Warning it dominated the warnings monitor -
+        // which alerts on more than zero events. Raising this back to Warning should fail here.
+        await InvokeWith(new EmailNotConfirmedException());
+
+        LastEntry().Level.Should().Be(LogLevel.Information);
+    }
+
+    [Fact]
     public async Task InvokeAsync_ShouldReturnBadRequestWithErrors_WhenValidationFails()
     {
         var failure = new ValidationFailure("Name", "Name is required.");
