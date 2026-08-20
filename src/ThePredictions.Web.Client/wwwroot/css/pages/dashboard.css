@@ -169,8 +169,18 @@
 }
 
 @media (min-width: 768px) {
+    /* Not three equal columns. A third of a 654px row is 218px, and a round can
+       be called "Group Stage - Matchday 1" (222px) or "Quarter-Finals - Second
+       Leg" (232px), so the name wrapped onto a second line while the date and
+       the match count sat in thirds they only half filled. The date takes what
+       it needs and the name splits the rest with the count, which is 268px at
+       the tightest width this rule covers.
+
+       The date stays centred in the row, not merely in its own column: with an
+       equal fr either side its midpoint is the row's midpoint whatever the date
+       is wide, so a "TBD" draft still lines up with a dated round above it. */
     .preseason-row {
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 1fr auto 1fr;
     }
 
     /* Player rows carry the joined date under the name, so they keep a
