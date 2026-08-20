@@ -531,6 +531,7 @@
 .user-email-line {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--space-2);
     margin-top: 1px;
 }
@@ -540,6 +541,27 @@
     font-size: 0.8rem;
     word-break: break-all;
     min-width: 0;
+}
+
+/* Email and mobile read as one contact line, so a dot separates them rather than a second row */
+.user-contact-sep {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--grey-400);
+    flex-shrink: 0;
+}
+
+.user-mobile {
+    color: var(--grey-500);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* Absent, not wrong: a number is optional, so this is greyed like every other zero on the card, not red */
+.user-mobile-none {
+    color: var(--grey-400);
 }
 
 .user-auth {

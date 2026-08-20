@@ -11,7 +11,7 @@ namespace ThePredictions.Web.Client.Tests.Unit.ViewModels.Admin.Users;
 /// Which accounts the administrator sees, and in what order.
 ///
 /// The filters matter more than they look. Most of these figures are zero for most accounts, so the tie-break on name is
-/// what stops the list reshuffling between loads - and the four toggles have to combine, because "lapsed, and we owe them
+/// what stops the list reshuffling between loads - and the five toggles have to combine, because "lapsed, and we owe them
 /// money" is the pair worth acting on first.
 /// </summary>
 public class UserListCriteriaTests
@@ -69,6 +69,24 @@ public class UserListCriteriaTests
         var users = new[] { User("Ada", email: "ada@example.com"), User("Grace", email: "grace@other.com") };
 
         Criteria(searchTerm: "OTHER").Apply(users).Select(user => user.FullName).Should().Equal("Grace");
+    }
+
+    [Fact]
+    public void Apply_ShouldMatchOnPartOfTheMobileNumber()
+    {
+        // The reason the number is on the card at all: a number rings in, and the question is whose it is.
+        var users = new[] { User("Ada", phoneNumber: "07700900123"), User("Grace", phoneNumber: "07700900456") };
+
+        Criteria(searchTerm: "900456").Apply(users).Select(user => user.FullName).Should().Equal("Grace");
+    }
+
+    [Fact]
+    public void Apply_ShouldNotMatchAccountsWithNoMobileNumber_WhenSearchingForOne()
+    {
+        // Most accounts have no number, so the search runs against null far more often than not.
+        var users = new[] { User("Ada", phoneNumber: null), User("Grace", phoneNumber: "07700900456") };
+
+        Criteria(searchTerm: "07700").Apply(users).Select(user => user.FullName).Should().Equal("Grace");
     }
 
     [Fact]
@@ -131,6 +149,15 @@ public class UserListCriteriaTests
         };
 
         Criteria(unpaidWinnersOnly: true).Apply(users).Select(user => user.FullName).Should().Equal("Ada");
+    }
+
+    [Fact]
+    public void Apply_ShouldKeepOnlyAccountsWithAnUnconfirmedEmail_WhenThatFilterIsOn()
+    {
+        // An account that never confirmed has had no email from us that mattered, which is worth being able to isolate.
+        var users = new[] { User("Ada", emailConfirmed: false), User("Grace") };
+
+        Criteria(emailUnconfirmedOnly: true).Apply(users).Select(user => user.FullName).Should().Equal("Ada");
     }
 
     [Fact]
@@ -313,16 +340,18 @@ public class UserListCriteriaTests
     }
 
     [Theory]
-    [InlineData("ada", false, false, false, false)]
-    [InlineData(null, true, false, false, false)]
-    [InlineData(null, false, true, false, false)]
-    [InlineData(null, false, false, true, false)]
-    [InlineData(null, false, false, false, true)]
+    [InlineData("ada", false, false, false, false, false)]
+    [InlineData(null, true, false, false, false, false)]
+    [InlineData(null, false, true, false, false, false)]
+    [InlineData(null, false, false, true, false, false)]
+    [InlineData(null, false, false, false, true, false)]
+    [InlineData(null, false, false, false, false, true)]
     public void HasActiveFilters_ShouldBeTrue_WhenAnythingIsBeingHidden(
-        string? searchTerm, bool dormant, bool noPass, bool setupIncomplete, bool unpaidWinners)
+        string? searchTerm, bool dormant, bool noPass, bool setupIncomplete, bool unpaidWinners, bool emailUnconfirmed)
     {
         Criteria(searchTerm: searchTerm, dormantOnly: dormant, noCurrentPassOnly: noPass,
-                 setupIncompleteOnly: setupIncomplete, unpaidWinnersOnly: unpaidWinners)
+                 setupIncompleteOnly: setupIncomplete, unpaidWinnersOnly: unpaidWinners,
+                 emailUnconfirmedOnly: emailUnconfirmed)
             .HasActiveFilters.Should().BeTrue();
     }
 
@@ -366,7 +395,8 @@ public class UserListCriteriaTests
             dormantOnly: true,
             noCurrentPassOnly: true,
             setupIncompleteOnly: true,
-            unpaidWinnersOnly: true);
+            unpaidWinnersOnly: true,
+            emailUnconfirmedOnly: true);
 
         var cleared = criteria.Cleared();
 
@@ -387,8 +417,10 @@ public class UserListCriteriaTests
         bool dormantOnly = false,
         bool noCurrentPassOnly = false,
         bool setupIncompleteOnly = false,
-        bool unpaidWinnersOnly = false) =>
-        new(tab, searchTerm, sortField, sortDescending, dormantOnly, noCurrentPassOnly, setupIncompleteOnly, unpaidWinnersOnly);
+        bool unpaidWinnersOnly = false,
+        bool emailUnconfirmedOnly = false) =>
+        new(tab, searchTerm, sortField, sortDescending, dormantOnly, noCurrentPassOnly, setupIncompleteOnly,
+            unpaidWinnersOnly, emailUnconfirmedOnly);
 
     /// <summary>
     /// An account with only the facts a test states.
@@ -402,6 +434,8 @@ public class UserListCriteriaTests
         string name,
         bool isAdmin = false,
         string? email = null,
+        string? phoneNumber = null,
+        bool emailConfirmed = true,
         bool isDormant = false,
         bool hasCurrentPass = false,
         int stepsCompleted = 4,
@@ -413,7 +447,7 @@ public class UserListCriteriaTests
         decimal entrySpend = 0m,
         decimal winnings = 0m,
         bool hasPayoutDetails = true) =>
-        new($"id-{name}", name, email ?? $"{name}@example.com", null, isAdmin, true, [], true,
+        new($"id-{name}", name, email ?? $"{name}@example.com", phoneNumber, isAdmin, true, [], emailConfirmed,
             TermsAccepted: true, MarketingOptIn: false, hasPayoutDetails,
             HasEverHeldSeasonPass: !isDormant, hasCurrentPass, HasEverPurchasedSeasonPass: false,
             leaguesCreated, leaguesJoinedApproved, leaguesJoinedPending,

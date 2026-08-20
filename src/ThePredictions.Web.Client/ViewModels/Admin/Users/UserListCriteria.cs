@@ -20,7 +20,8 @@ public sealed record UserListCriteria(
     bool DormantOnly = false,
     bool NoCurrentPassOnly = false,
     bool SetupIncompleteOnly = false,
-    bool UnpaidWinnersOnly = false)
+    bool UnpaidWinnersOnly = false,
+    bool EmailUnconfirmedOnly = false)
 {
     /// <summary>What the screen shows before anybody touches a control.</summary>
     public static UserListCriteria Default { get; } = new();
@@ -31,7 +32,8 @@ public sealed record UserListCriteria(
         || DormantOnly
         || NoCurrentPassOnly
         || SetupIncompleteOnly
-        || UnpaidWinnersOnly;
+        || UnpaidWinnersOnly
+        || EmailUnconfirmedOnly;
 
     /// <summary>
     /// Whether any control has been moved off its default, filter or sort.
@@ -72,7 +74,8 @@ public sealed record UserListCriteria(
             var term = SearchTerm.Trim();
             users = users.Where(user =>
                 user.FullName.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || user.Email.Contains(term, StringComparison.OrdinalIgnoreCase));
+                || user.Email.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || (user.PhoneNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
         }
 
         if (DormantOnly)
@@ -86,6 +89,9 @@ public sealed record UserListCriteria(
 
         if (UnpaidWinnersOnly)
             users = users.Where(user => user.IsOwedMoneyWithNowhereToSendIt);
+
+        if (EmailUnconfirmedOnly)
+            users = users.Where(user => !user.EmailConfirmed);
 
         return users;
     }

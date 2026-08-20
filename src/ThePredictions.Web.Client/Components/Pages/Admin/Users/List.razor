@@ -83,7 +83,7 @@
                     <div class="user-filter-panel">
                         <div class="user-filter-search">
                             <span class="bi bi-search"></span>
-                            <input type="text" class="form-control" placeholder="Search name or email…" value="@_criteria.SearchTerm" @oninput="OnSearchChanged" />
+                            <input type="text" class="form-control" placeholder="Search name, email or mobile…" value="@_criteria.SearchTerm" @oninput="OnSearchChanged" />
                         </div>
                         <div class="user-filter-row">
                             <label class="user-filter-label" for="user-sort">Sort by</label>
@@ -116,6 +116,9 @@
                                 </button>
                                 <button type="button" class="user-toggle-chip @(_criteria.DormantOnly ? "active" : "")" @onclick="ToggleDormantOnly">
                                     <span class="bi bi-moon-stars-fill"></span> Dormant
+                                </button>
+                                <button type="button" class="user-toggle-chip @(_criteria.EmailUnconfirmedOnly ? "active" : "")" @onclick="ToggleEmailUnconfirmedOnly" data-test-id="admin-user-filter-unconfirmed-email">
+                                    <span class="bi bi-patch-exclamation-fill"></span> Email not confirmed
                                 </button>
                             </div>
                             @if (_criteria.HasNonDefaultControls)
@@ -152,8 +155,22 @@
                                             <span class="member-name">@user.FullName</span>
                                             <span class="user-role @(user.IsAdmin ? "user-role-admin" : "")">@(user.IsAdmin ? "Admin" : "Player")</span>
                                         </div>
+                                        @*
+                                            Email then mobile, because both are how an administrator identifies and
+                                            reaches an account. An account with no number says so rather than showing
+                                            nothing: the absence is the answer to "why has this player had no texts".
+                                        *@
                                         <div class="user-email-line">
                                             <span class="user-email">@user.Email</span>
+                                            <span class="user-contact-sep" aria-hidden="true"></span>
+                                            @if (string.IsNullOrWhiteSpace(user.PhoneNumber))
+                                            {
+                                                <span class="user-mobile user-mobile-none" data-test-id="admin-user-mobile">No mobile</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="user-mobile" data-test-id="admin-user-mobile">@FormatMobile(user.PhoneNumber)</span>
+                                            }
                                         </div>
                                     </div>
 
@@ -384,6 +401,19 @@
         var count => $"{count} current passes"
     };
 
+    /// <summary>
+    /// A stored mobile number, grouped so it can be read aloud.
+    /// </summary>
+    /// <remarks>
+    /// Stored as eleven digits with nothing between them, because that is the only shape the account form accepts. Anything
+    /// else is either older data or a number the validator never saw, so it is shown exactly as stored rather than forced
+    /// into a grouping it does not fit.
+    /// </remarks>
+    private static string FormatMobile(string phoneNumber) =>
+        phoneNumber.Length == 11 && phoneNumber.All(char.IsAsciiDigit)
+            ? $"{phoneNumber[..5]} {phoneNumber[5..]}"
+            : phoneNumber;
+
     private static string SegmentClass(string state) => state switch
     {
         OnboardingStepStates.Completed => "seg-done",
@@ -456,6 +486,11 @@
     private void ToggleUnpaidWinnersOnly()
     {
         _criteria = _criteria with { UnpaidWinnersOnly = !_criteria.UnpaidWinnersOnly };
+    }
+
+    private void ToggleEmailUnconfirmedOnly()
+    {
+        _criteria = _criteria with { EmailUnconfirmedOnly = !_criteria.EmailUnconfirmedOnly };
     }
 
     private void ToggleSortDirection()
