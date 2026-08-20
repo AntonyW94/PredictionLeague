@@ -75,11 +75,12 @@ jobs:
           fi
 
   notify:
-    if: always()
+    # Not always(): a cancelled run notifies nothing at all. See notify-slack.yml.
+    if: ${{ !cancelled() }}
     needs: [check]
     uses: ./.github/workflows/notify-slack.yml
     with:
-      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
       notify-on: failure
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

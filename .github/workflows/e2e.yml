@@ -238,13 +238,12 @@ jobs:
 
   # Failures only: this runs on every push, and a green run is already visible on the PR.
   #
-  # A cancelled run is NOT a failure here, which is where this workflow differs from every other one that
-  # calls notify-slack. This is the only workflow with `cancel-in-progress`, so it is the only one where
-  # cancellation happens by itself: two merges to master a minute apart cancel the first run's journeys,
-  # and there is nothing wrong. Elsewhere a cancellation means somebody stopped a deploy, a migration or a
-  # backup by hand, which is worth being told about - so those keep treating it as a failure.
+  # This workflow is why the no-notification-on-cancel rule exists: it is the only one with
+  # `cancel-in-progress`, so two merges to master a minute apart cancel the first run's journeys and there
+  # is nothing wrong. The rule is applied everywhere rather than only here.
   notify:
-    if: always()
+    # Not always(): a cancelled run notifies nothing at all. See notify-slack.yml.
+    if: ${{ !cancelled() }}
     needs: [journeys]
     uses: ./.github/workflows/notify-slack.yml
     with:

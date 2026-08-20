@@ -67,11 +67,15 @@ every time a deploy ran its migration step.
 Slack builds notification previews from the **top-level `text` field**. A payload of only
 blocks or attachments shows as "No preview available" on desktop and mobile.
 
-**A cancelled job counts as a failure everywhere except `e2e.yml`.** Every caller maps
-`cancelled` to `failure`, which is right where a cancellation means somebody stopped a deploy,
-a migration or a backup by hand. `e2e.yml` is the only workflow with `cancel-in-progress`, so
-it is the only one that cancels itself: two merges to master a minute apart cancel the first
-run, and a "failure" posted for that is pure noise. It therefore notifies on `failure` alone.
+**A cancelled run notifies nothing, in every workflow.** Each caller guards its `notify` job
+with `if: ${{ !cancelled() }}` instead of `always()`. A cancellation is either routine
+(`e2e.yml` is the one workflow with `cancel-in-progress`, so two merges a minute apart cancel
+the first run) or somebody deliberately stopping a job, and in that second case they already
+know. Either way there is nothing to tell them.
+
+Note the guard has to be on the job. Dropping `cancelled` from the caller's `status` expression
+is not equivalent: the six callers passing `notify-on: always` post whatever status they are
+given, so a cancelled deploy would announce a **success**.
 
 ## Residual
 
