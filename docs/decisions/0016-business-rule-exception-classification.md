@@ -22,7 +22,7 @@ Every new raw Dapper call or configuration guard was a fresh chance to misfile, 
 
 We will invert the default.
 
-- **`BusinessRuleViolationException`** (new, `ThePredictions.Domain.Common.Exceptions`) is the only type that means "a rule the caller could have satisfied". The middleware maps it to **400 and a Warning**.
+- **`BusinessRuleViolationException`** (new, `ThePredictions.Domain.Common.Exceptions`) is the only type that means "a rule the caller could have satisfied". The middleware maps it to **400 and a Warning**. *(Severity revised by [ADR-0018](./0018-log-severity-says-who-must-act.md): client faults log at Information. The 400, and the decision about which type means a client fault, stand.)*
 - **`InvalidOperationException` is no longer caught** by the middleware. It falls through to the unhandled bucket: **500 and an Error**, with a stack trace.
 
 An unclassified fault is therefore reported as a server problem. That is the assumption that degrades gracefully: a business rule misfiled as a 500 is a cosmetically wrong status code on a path that was already refusing the request, whereas a defect misfiled as a 400 is silent breakage.
@@ -55,6 +55,7 @@ An unclassified fault is therefore reported as a server problem. That is the ass
 
 ## Related
 
+- [ADR-0018](./0018-log-severity-says-who-must-act.md) - revises the severity half of this decision: client faults log at Information, and Warning is reserved for what somebody must act on.
 - [`src/ThePredictions.API/CLAUDE.md`](../../src/ThePredictions.API/CLAUDE.md) - the exception-to-status table this defines.
 - [`docs/guides/database.md`](../guides/database.md#result-mapping) - Dapper result mapping and read failures.
 - [`tools/ThePredictions.SchemaCheck/README.md`](../../tools/ThePredictions.SchemaCheck/README.md) - the tool that catches materialisation drift before it ships, and its blind spots.

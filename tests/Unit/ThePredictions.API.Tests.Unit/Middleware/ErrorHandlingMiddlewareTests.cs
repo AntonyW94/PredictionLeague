@@ -17,6 +17,11 @@ namespace ThePredictions.API.Tests.Unit.Middleware;
 /// <summary>
 /// The exception-to-status mapping is a contract, not an implementation detail: it decides whether a fault
 /// is alerted on as a server Error or filed as a client mistake. See ADR-0016.
+///
+/// The log <b>level</b> is the second half of that contract, and ADR-0018 fixes it: every client fault is
+/// Information, Warning is reserved for what somebody has to act on, and only an unclassified exception is an
+/// Error. <see cref="InvokeAsync_ShouldLogAtInformation_ForEveryClientFault"/> pins the whole set at once, so a
+/// new branch cannot quietly arrive at Warning and start paging.
 /// </summary>
 public class ErrorHandlingMiddlewareTests
 {
@@ -41,12 +46,12 @@ public class ErrorHandlingMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ShouldReturnBadRequestAndLogWarning_WhenBusinessRuleViolated()
+    public async Task InvokeAsync_ShouldReturnBadRequestAndLogInformation_WhenBusinessRuleViolated()
     {
         var context = await InvokeWith(new BusinessRuleViolationException("Only pending members can be approved."));
 
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        LastEntry().Level.Should().Be(LogLevel.Warning);
+        LastEntry().Level.Should().Be(LogLevel.Information);
         (await ReadBody(context)).RootElement.GetProperty("message").GetString()
             .Should().Be("Only pending members can be approved.");
     }
@@ -85,12 +90,12 @@ public class ErrorHandlingMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ShouldReturnNotFoundAndLogWarning_WhenEntityNotFound()
+    public async Task InvokeAsync_ShouldReturnNotFoundAndLogInformation_WhenEntityNotFound()
     {
         var context = await InvokeWith(new EntityNotFoundException("League", 7));
 
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
-        LastEntry().Level.Should().Be(LogLevel.Warning);
+        LastEntry().Level.Should().Be(LogLevel.Information);
     }
 
     // ArgumentNullException derives from ArgumentException but is listed on the not-found branch, which is
@@ -104,12 +109,12 @@ public class ErrorHandlingMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ShouldReturnBadRequestAndLogWarning_WhenArgumentIsInvalid()
+    public async Task InvokeAsync_ShouldReturnBadRequestAndLogInformation_WhenArgumentIsInvalid()
     {
         var context = await InvokeWith(new ArgumentException("Entry code must be six characters."));
 
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        LastEntry().Level.Should().Be(LogLevel.Warning);
+        LastEntry().Level.Should().Be(LogLevel.Information);
     }
 
     [Fact]
@@ -118,7 +123,7 @@ public class ErrorHandlingMiddlewareTests
         var context = await InvokeWith(new UnauthorizedAccessException("Only the administrator of league 7 can do this."));
 
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.Unauthorized);
-        LastEntry().Level.Should().Be(LogLevel.Warning);
+        LastEntry().Level.Should().Be(LogLevel.Information);
         (await ReadBody(context)).RootElement.GetProperty("message").GetString()
             .Should().Be("You are not authorised to perform this action.");
     }
@@ -142,17 +147,6 @@ public class ErrorHandlingMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_ShouldLogAtInformation_WhenEmailNotConfirmed()
-    {
-        // The one refusal in the middleware that is not a Warning. It repeats for the same person on every
-        // attempt until they click the confirmation link, and at Warning it dominated the warnings monitor -
-        // which alerts on more than zero events. Raising this back to Warning should fail here.
-        await InvokeWith(new EmailNotConfirmedException());
-
-        LastEntry().Level.Should().Be(LogLevel.Information);
-    }
-
-    [Fact]
     public async Task InvokeAsync_ShouldReturnBadRequestWithErrors_WhenValidationFails()
     {
         var failure = new ValidationFailure("Name", "Name is required.");
@@ -160,7 +154,7 @@ public class ErrorHandlingMiddlewareTests
         var context = await InvokeWith(new ValidationException([failure]));
 
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
-        LastEntry().Level.Should().Be(LogLevel.Warning);
+        LastEntry().Level.Should().Be(LogLevel.Information);
         (await ReadBody(context)).RootElement.GetProperty("errors").GetArrayLength().Should().Be(1);
     }
 
@@ -218,6 +212,46 @@ public class ErrorHandlingMiddlewareTests
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.OK);
         _logger.Entries.Should().BeEmpty();
         context.Response.Body.Length.Should().Be(0);
+    }
+
+    /// <summary>
+    /// Every exception the middleware classifies as the caller's fault, whatever status code it maps to. Each is
+    /// labelled so a failure names the branch rather than printing an exception.
+    /// </summary>
+    public static TheoryData<string, Exception> ClientFaults => new()
+    {
+        { "key not found", new KeyNotFoundException("No league with that id.") },
+        { "entity not found", new EntityNotFoundException("League", 7) },
+        { "null argument", new ArgumentNullException("leagueId") },
+        { "season pass required", new SeasonPassRequiredException(12) },
+        { "email not confirmed", new EmailNotConfirmedException() },
+        { "invalid argument", new ArgumentException("Entry code must be six characters.") },
+        { "business rule", new BusinessRuleViolationException("Only pending members can be approved.") },
+        { "validation", new ValidationException([new ValidationFailure("Name", "Name is required.")]) },
+        { "identity update", new IdentityUpdateException(["Password is too short."]) },
+        { "unauthorised", new UnauthorizedAccessException("Only the administrator of league 7 can do this.") }
+    };
+
+    // ADR-0018, and the reason the warnings monitor can be alerted on at all: none of these needs anybody to
+    // look at anything, so none of them is a Warning. The monitor fires on more than zero warnings in five
+    // minutes and renotifies every 30 minutes while unresolved, so one repeated refusal was enough to bury a
+    // real warning among the noise. A new branch added at Warning fails here.
+    [Theory]
+    [MemberData(nameof(ClientFaults))]
+    public async Task InvokeAsync_ShouldLogAtInformation_ForEveryClientFault(string branch, Exception exception)
+    {
+        await InvokeWith(exception);
+
+        LastEntry().Level.Should().Be(LogLevel.Information, "a {0} fault is the caller's to fix and needs nobody to act", branch);
+    }
+
+    // The other half of the same rule: what is left over is a defect, and stays an Error.
+    [Fact]
+    public async Task InvokeAsync_ShouldLogAtError_WhenNothingClassifiedTheException()
+    {
+        await InvokeWith(new FormatException("Input string was not in a correct format."));
+
+        LastEntry().Level.Should().Be(LogLevel.Error);
     }
 
     private async Task<HttpContext> InvokeWith(Exception exception, Action<HttpContext>? configure = null)

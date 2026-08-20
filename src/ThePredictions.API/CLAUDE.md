@@ -113,9 +113,19 @@ That split is deliberately fail-safe. An unclassified fault is reported as a ser
 
 Never throw `BusinessRuleViolationException` for an infrastructure or configuration failure, and never assume a bare `InvalidOperationException` from a library means a client mistake.
 
-**`EmailNotConfirmedException` is logged at Information, not Warning** - the one exception in the table treated that way. Nothing has gone wrong: a gate refused an account that has not confirmed its address, which is the gate working, and the client shows the exception's message on screen so the person is told. It is also the only refusal here that repeats indefinitely - the same account hits it on every attempt until the link is clicked - and the `Web Warnings` monitor alerts on more than zero warnings in five minutes and renotifies every 30 minutes while unresolved, so at Warning one unconfirmed account was enough to keep the channel busy. See [alerting configuration](../../docs/todo/architecture/alerting-config/README.md) for the monitor definitions.
+### Log severity says who has to act
 
-If you add another refusal that a user will hit repeatedly until they act, log it the same way.
+**Every client fault in that table logs at `Information`.** Not Warning. The status code says what happened; the level says whether anybody needs to look. See [ADR-0018](../../docs/decisions/0018-log-severity-says-who-must-act.md).
+
+| Level | Means | Examples |
+|-------|-------|----------|
+| `Information` | The caller could have made a different request | Wrong id, failed validation, a business rule, an unconfirmed email, an unauthorised attempt, a pass not held |
+| `Warning` | Somebody has to act, and it is not the caller's doing | Slow query, missing index, a third party failing or returning nothing, a data condition an administrator must resolve |
+| `Error` | Unhandled or unclassified - a defect until proven otherwise | Anything reaching the final `catch` |
+
+This is what makes the warnings alert readable. The `Web Warnings` monitor fires on **more than zero** warnings in five minutes and renotifies every 30 minutes while unresolved, so a bucket that also held routine refusals could not be alerted on - and a real warning arriving among them would not be noticed. `EmailNotConfirmedException` made the case: the same account trips that gate on every attempt until it clicks the link, so one unconfirmed player kept the channel busy on their own.
+
+**A new branch in the middleware goes in at `Information` unless somebody has to act on it.** `ErrorHandlingMiddlewareTests.InvokeAsync_ShouldLogAtInformation_ForEveryClientFault` covers the whole set, so one added at Warning fails the build.
 
 ### A missing entity is thrown, never returned as null
 
