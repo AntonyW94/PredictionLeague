@@ -176,11 +176,12 @@ jobs:
   # Reports the overall outcome to #github. Runs even when an earlier job fails, so a
   # failed migration is still reported rather than silently skipping the notification.
   notify:
-    if: always()
+    # Not always(): a cancelled run notifies nothing at all. See notify-slack.yml.
+    if: ${{ !cancelled() }}
     needs: [validate, migrate, deploy]
     uses: ./.github/workflows/notify-slack.yml
     with:
-      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
       notify-on: always
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

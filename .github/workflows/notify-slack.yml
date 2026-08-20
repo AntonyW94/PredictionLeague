@@ -9,6 +9,16 @@ name: Notify Slack (shared)
 # SLACK_WEBHOOK_URL is optional on purpose. If it is not set the notification is skipped
 # with a log line instead of failing the run, so this can be merged and live in the repo
 # before the secret exists.
+#
+# A CANCELLED RUN NOTIFIES NOTHING. Every caller guards this job with `if: ${{ !cancelled() }}`
+# rather than `always()`, so a cancelled run posts no message at all. `!cancelled()` still runs
+# the job when a needed job FAILED, which is what `always()` was there for, so a real failure is
+# still reported.
+#
+# The guard has to live in the caller, and dropping `cancelled` from its `status` expression is
+# NOT a substitute. Six callers pass `notify-on: always`, where the condition below posts
+# whatever the status is - so a cancelled deploy or migration would announce itself as a
+# SUCCESS, which is worse than the false failure this replaced. The job must not run at all.
 
 on:
   workflow_call:

@@ -237,12 +237,17 @@ jobs:
           retention-days: 14
 
   # Failures only: this runs on every push, and a green run is already visible on the PR.
+  #
+  # This workflow is why the no-notification-on-cancel rule exists: it is the only one with
+  # `cancel-in-progress`, so two merges to master a minute apart cancel the first run's journeys and there
+  # is nothing wrong. The rule is applied everywhere rather than only here.
   notify:
-    if: always()
+    # Not always(): a cancelled run notifies nothing at all. See notify-slack.yml.
+    if: ${{ !cancelled() }}
     needs: [journeys]
     uses: ./.github/workflows/notify-slack.yml
     with:
-      status: ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+      status: ${{ contains(needs.*.result, 'failure') && 'failure' || 'success' }}
       notify-on: failure
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
