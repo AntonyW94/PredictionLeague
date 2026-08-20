@@ -85,8 +85,20 @@ public record UserDto(
     /// <summary>How many onboarding steps there are to complete.</summary>
     public int OnboardingStepCount => Onboarding.Steps.Count;
 
-    /// <summary>Whether every onboarding step is done.</summary>
-    public bool OnboardingComplete => OnboardingStepCount > 0 && OnboardingStepsCompleted == OnboardingStepCount;
+    /// <summary>Whether this account has dealt with every onboarding step, by doing it or by dismissing it.</summary>
+    /// <remarks>
+    /// Dealt with, not done. A player who dismissed "Add payout details" has answered the question - they do not want to
+    /// hand over bank details - so chasing them is chasing somebody who already said no. A skipped step therefore leaves
+    /// nothing outstanding, and only a step still Active or Locked does. This is what separates it from
+    /// <see cref="OnboardingStepsCompleted"/>, which counts completions and nothing else.
+    ///
+    /// The judgement is not made here. <see cref="OnboardingChecklistDto.HasOutstandingSteps"/> is computed by the step
+    /// registry that owns what each state means, so reading it keeps one definition of "outstanding" rather than a second
+    /// one that has to be kept in step. The step-count guard stays: a checklist with no steps at all is data nobody can
+    /// interpret, and the safe reading is that the account is not settled, so it surfaces in the filter rather than
+    /// vanishing from it.
+    /// </remarks>
+    public bool OnboardingComplete => OnboardingStepCount > 0 && !Onboarding.HasOutstandingSteps;
 
     /// <summary>
     /// Nothing has ever happened on this account.
