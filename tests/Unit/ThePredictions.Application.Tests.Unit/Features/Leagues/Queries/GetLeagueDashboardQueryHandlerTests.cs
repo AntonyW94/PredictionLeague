@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using NSubstitute;
 using ThePredictions.Application.Features.Leagues.Queries;
 using ThePredictions.Application.Services;
@@ -257,8 +257,8 @@ public class GetLeagueDashboardQueryHandlerTests
     [Fact]
     public async Task Handle_ShouldNotListARoundThatHasNotBeenPublished()
     {
-        // A draft is a round its administrator is still preparing, and no other screen shows one to players. This read
-        // used to return them, so an unpublished round appeared on every member's dashboard.
+        // A draft is a round its administrator is still preparing, and no other screen lets a player open one. This
+        // read used to return them, so an unpublished round appeared on every member's dashboard.
         Given(rounds: [Round(1, status: RoundStatus.Draft), Round(2, status: RoundStatus.Completed)]);
 
         // Act
@@ -266,6 +266,36 @@ public class GetLeagueDashboardQueryHandlerTests
 
         // Assert
         dashboard.ViewableRounds.Select(round => round.RoundNumber).Should().Equal(2);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldListEveryRoundOfTheSeason_IncludingDrafts()
+    {
+        // Arrange - the structure preview answers "how long is this season", which a draft counts towards even though
+        // nobody may open it yet.
+        Given(rounds: [Round(1, status: RoundStatus.Completed), Round(3, status: RoundStatus.Draft), Round(2, status: RoundStatus.Draft)]);
+
+        // Act
+        var dashboard = await HandleAsync(isAdmin: true);
+
+        // Assert - in playing order, and the drafts still never become selectable.
+        dashboard.SeasonRounds.Select(round => round.RoundNumber).Should().Equal(1, 2, 3);
+        dashboard.ViewableRounds.Select(round => round.RoundNumber).Should().Equal(1);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldCarryEachSeasonRoundsDetails()
+    {
+        // Arrange
+        Given(rounds: [Round(7, matchCount: 8, status: RoundStatus.Draft)]);
+
+        // Act
+        var round = (await HandleAsync(isAdmin: true)).SeasonRounds.Single();
+
+        // Assert - the preview shows a draft as TBD, so it needs the status as well as the count.
+        round.RoundNumber.Should().Be(7);
+        round.MatchCount.Should().Be(8);
+        round.Status.Should().Be(RoundStatus.Draft);
     }
 
     [Fact]
@@ -307,6 +337,7 @@ public class GetLeagueDashboardQueryHandlerTests
 
         // Assert
         dashboard.ViewableRounds.Should().BeEmpty();
+        dashboard.SeasonRounds.Should().BeEmpty();
         dashboard.Members.Should().BeEmpty();
     }
 

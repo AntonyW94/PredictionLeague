@@ -91,9 +91,11 @@
     margin-bottom: 1rem;
 }
 
-/* Pre-deadline layout - centre the hero and the cards in a single column */
+/* Pre-deadline layout - centre the hero and the cards in a single column. Wider
+   than a reading measure on purpose: the cards inside are two- and three-column
+   rows, not prose, and at 44rem they left most of a desktop screen empty. */
 .preseason-layout {
-    max-width: 44rem;
+    max-width: 64rem;
     margin: 0 auto;
 }
 
@@ -179,6 +181,27 @@
 
     .preseason-row__mid {
         text-align: center;
+    }
+}
+
+/* Players list - one column on mobile, two from tablet up so a full league reads
+   as a block rather than a twenty-row scroll down the middle of the page. */
+.preseason-players {
+    display: grid;
+    grid-template-columns: 1fr;
+    column-gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+    .preseason-players {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Two columns means the final row is the last two items, whether that row is
+       full or half-empty - both are bottom-most in their column, so neither
+       keeps a separator. */
+    .preseason-players .preseason-row:nth-last-child(-n+2) {
+        border-bottom: none;
     }
 }
 

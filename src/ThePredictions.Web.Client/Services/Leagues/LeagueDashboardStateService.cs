@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using ThePredictions.Contracts.Admin.Rounds;
 using ThePredictions.Contracts.Leaderboards;
 using ThePredictions.Contracts.Leagues;
@@ -32,6 +32,12 @@ public class LeagueDashboardStateService(HttpClient httpClient)
     public bool IsFree { get; private set; }
     public List<LeagueDashboardMemberDto> Members { get; private set; } = [];
     public List<RoundDto> ViewableRounds { get; private set; } = [];
+
+    /// <summary>
+    /// Every round of the season in playing order, drafts included - the pre-deadline round-structure preview
+    /// only. Never use it to pick a round to open; <see cref="ViewableRounds"/> is the list that may be opened.
+    /// </summary>
+    public List<RoundDto> SeasonRounds { get; private set; } = [];
     public List<PredictionResultDto> CurrentRoundResults { get; private set; } = [];
     public List<MatchInRoundDto> CurrentRoundMatches { get; private set; } = [];
     public List<LeaderboardEntryDto> OverallLeaderboard { get; private set; } = [];
@@ -84,6 +90,7 @@ public class LeagueDashboardStateService(HttpClient httpClient)
                 IsFree = data.IsFree;
                 Members = data.Members;
                 ViewableRounds = data.ViewableRounds;
+                SeasonRounds = data.SeasonRounds;
 
                 if (!IsFinished)
                     await LoadPrizeBreakdown(leagueId);

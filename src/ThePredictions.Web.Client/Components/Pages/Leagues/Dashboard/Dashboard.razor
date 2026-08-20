@@ -105,45 +105,49 @@
                         </div>
                     }
 
-                    @if (State.ViewableRounds.Any())
+                    @if (State.Members.Any())
                     {
                         <div class="section mb-4">
+                            <h3 class="text-white text-center fw-bold mb-3">Players <span class="match-count-badge">@State.Members.Count</span></h3>
+                            <div class="preseason-players">
+                                @foreach (var member in State.Members)
+                                {
+                                    <div class="preseason-row preseason-row--player">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <UserAvatar FullName="@member.FullName" />
+                                            <div class="d-flex flex-column">
+                                                <span class="text-white fw-bold">@member.FullName</span>
+                                                <small class="text-white-50">Joined @member.JoinedAtUtc.ToString("dd MMM yyyy")</small>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            @if (member.Status == "Approved")
+                                            {
+                                                <span class="member-status-pill member-status-approved">Approved</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="member-status-pill member-status-pending">Pending</span>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    @* Every round the season is made of, drafts included, so the structure reads full length while
+                       the administrator is still preparing it. A draft has no reliable date yet, so it shows TBD. *@
+                    @if (State.SeasonRounds.Any())
+                    {
+                        <div class="section">
                             <h3 class="text-white text-center fw-bold mb-3">Round Structure</h3>
-                            @foreach (var round in State.ViewableRounds.OrderBy(r => r.RoundNumber))
+                            @foreach (var round in State.SeasonRounds)
                             {
                                 <div class="preseason-row">
                                     <span class="text-white fw-bold">@(string.IsNullOrWhiteSpace(round.ApiRoundName) ? $"Round {round.RoundNumber}" : round.ApiRoundName)</span>
                                     <span class="preseason-row__mid text-white-50 d-none d-md-block">@(round.Status == RoundStatus.Draft ? "TBD" : round.StartDateUtc.ToString("dd MMM yyyy"))</span>
                                     <span class="text-white-50 fw-bold">@round.MatchCount @(round.MatchCount == 1 ? "match" : "matches")</span>
-                                </div>
-                            }
-                        </div>
-                    }
-
-                    @if (State.Members.Any())
-                    {
-                        <div class="section">
-                            <h3 class="text-white text-center fw-bold mb-3">Players <span class="match-count-badge">@State.Members.Count</span></h3>
-                            @foreach (var member in State.Members)
-                            {
-                                <div class="preseason-row preseason-row--player">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <UserAvatar FullName="@member.FullName" />
-                                        <div class="d-flex flex-column">
-                                            <span class="text-white fw-bold">@member.FullName</span>
-                                            <small class="text-white-50">Joined @member.JoinedAtUtc.ToString("dd MMM yyyy")</small>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        @if (member.Status == "Approved")
-                                        {
-                                            <span class="member-status-pill member-status-approved">Approved</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="member-status-pill member-status-pending">Pending</span>
-                                        }
-                                    </div>
                                 </div>
                             }
                         </div>
