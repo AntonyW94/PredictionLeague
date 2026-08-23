@@ -35,7 +35,16 @@ window.blazorInterop = {
     sharePredictions: async function (base64Png, fileName, title, text) {
         let blob;
         try {
-            blob = await (await fetch(`data:image/png;base64,${base64Png}`)).blob();
+            // Decode the base64 in-page rather than fetch()ing a data: URL. A fetch to data: counts
+            // as a connect-src, which the CSP does not allow (and should not need to) - the bytes are
+            // already here, so there is nothing to fetch.
+            const binary = atob(base64Png);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+
+            blob = new Blob([bytes], { type: 'image/png' });
         } catch (error) {
             console.error('[Share] Could not build the image', error);
             return 'error';
