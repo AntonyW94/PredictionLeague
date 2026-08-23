@@ -1,9 +1,11 @@
 using FluentAssertions;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using ThePredictions.Application.Common.Behaviours;
 using ThePredictions.Application.Common.Interfaces;
+using ThePredictions.Application.Configuration;
 using ThePredictions.Application.Data;
 using Xunit;
 
@@ -22,15 +24,22 @@ public class TransactionBehaviourTests
     private readonly ILogger<TransactionBehaviour<SampleCommand, string>> _logger =
         Substitute.For<ILogger<TransactionBehaviour<SampleCommand, string>>>();
 
-    private readonly TransactionBehaviour<SampleCommand, string> _behaviour;
+    // High enough that a test transaction never trips the slow-transaction warning by accident, so
+    // the tests that count log calls are not at the mercy of how busy the build agent is.
+    private const int NeverSlow = 60_000;
 
-    public TransactionBehaviourTests()
-    {
-        _behaviour = new TransactionBehaviour<SampleCommand, string>(_transactionContext, _logger);
-    }
+    private TransactionBehaviour<SampleCommand, string> BuildBehaviour(int slowTransactionThresholdMilliseconds = NeverSlow) =>
+        new(_transactionContext,
+            Options.Create(new QueryMonitoringSettings { SlowTransactionThresholdMilliseconds = slowTransactionThresholdMilliseconds }),
+            _logger);
 
-    private Task<string> HandleAsync(RequestHandlerDelegate<string>? next = null) =>
-        _behaviour.Handle(new SampleCommand(), next ?? (_ => Task.FromResult("done")), CancellationToken.None);
+    private Task<string> HandleAsync(RequestHandlerDelegate<string>? next = null, int slowTransactionThresholdMilliseconds = NeverSlow) =>
+        BuildBehaviour(slowTransactionThresholdMilliseconds)
+            .Handle(new SampleCommand(), next ?? (_ => Task.FromResult("done")), CancellationToken.None);
+
+    private int WarningCount() => _logger.ReceivedCalls()
+        .Count(c => c.GetMethodInfo().Name == nameof(ILogger.Log)
+                    && (LogLevel)c.GetArguments()[0]! == LogLevel.Warning);
 
     [Fact]
     public async Task Handle_ShouldPassTheHandlersAnswerStraightBack()
@@ -98,5 +107,34 @@ public class TransactionBehaviourTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         _logger.ReceivedWithAnyArgs().Log(default, default, default!, default, default!);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldWarn_WhenTheTransactionIsHeldOpenForTheThreshold()
+    {
+        // Threshold zero makes every transaction count as slow, which is the only way to exercise the
+        // warning deterministically.
+        await HandleAsync(slowTransactionThresholdMilliseconds: 0);
+
+        WarningCount().Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldNotWarn_WhenTheTransactionIsComfortablyUnderTheThreshold()
+    {
+        await HandleAsync();
+
+        WarningCount().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldStillWarn_WhenTheCommandFailedAfterHoldingTheTransactionOpen()
+    {
+        // A transaction that was held open and then rolled back blocked readers for just as long as
+        // one that committed, so the duration has to be reported either way.
+        var act = () => HandleAsync(_ => throw new InvalidOperationException("nope"), slowTransactionThresholdMilliseconds: 0);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        WarningCount().Should().Be(1);
     }
 }

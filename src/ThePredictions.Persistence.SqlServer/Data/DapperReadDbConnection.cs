@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 using Dapper;
 using Microsoft.Extensions.Logging;
@@ -20,36 +22,65 @@ public class DapperReadDbConnection(
 
     public async Task<IEnumerable<T>> QueryAsync<T>(string sql, CancellationToken cancellationToken, object? param = null)
     {
-        return await ExecuteTimedAsync(sql, async ct =>
-        {
-            var command = new CommandDefinition(commandText: sql, parameters: param, cancellationToken: ct, commandTimeout: _commandTimeout);
-
-            using var connection = connectionFactory.CreateConnection();
-            return await connection.QueryAsync<T>(command);
-        }, cancellationToken);
+        return await ExecuteTimedAsync(sql, param, (connection, command) => connection.QueryAsync<T>(command), cancellationToken);
     }
 
     public async Task<T?> QuerySingleOrDefaultAsync<T>(string sql, CancellationToken cancellationToken, object? param = null)
     {
-        return await ExecuteTimedAsync(sql, async ct =>
-        {
-            var command = new CommandDefinition(commandText: sql, parameters: param, cancellationToken: ct, commandTimeout: _commandTimeout);
-
-            using var connection = connectionFactory.CreateConnection();
-            return await connection.QuerySingleOrDefaultAsync<T>(command);
-        }, cancellationToken);
+        return await ExecuteTimedAsync(sql, param, (connection, command) => connection.QuerySingleOrDefaultAsync<T>(command), cancellationToken);
     }
 
     // Runs the (retried) read and logs a Warning when it takes at least the configured threshold, so
     // slow query paths are visible in the logs. Parameters are never logged - the SQL is parameterised,
     // so the text carries no user data. Timing wraps the whole retried execution (retry overhead counts
     // as slow too); the finally block ensures a slow failure is still reported.
-    private async Task<TResult> ExecuteTimedAsync<TResult>(string sql, Func<CancellationToken, Task<TResult>> operation, CancellationToken cancellationToken)
+    //
+    // The elapsed time is broken down rather than reported as a single number, because "this read took
+    // two seconds" has three quite different causes and the fix for each is unrelated:
+    //
+    //   - a high ConnectionMilliseconds is time spent getting a connection at all, not running SQL:
+    //     an exhausted pool, or the cost of a fresh login handshake to a remote server.
+    //   - a high remainder (Elapsed minus Connection) is the server: the query itself, or waiting on
+    //     locks held by a writer.
+    //   - both low while Elapsed is high means the time went nowhere near the database. The await
+    //     resumed late because no thread was free, which QueuedWorkItems is here to show.
+    //
+    // Without the split every one of those looks identical in the log, and the natural reading - that
+    // the query needs an index - is the wrong conclusion for two of the three.
+    private async Task<TResult> ExecuteTimedAsync<TResult>(
+        string sql,
+        object? param,
+        Func<IDbConnection, CommandDefinition, Task<TResult>> read,
+        CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
+
+        // Assigned inside the retried operation, so on a retried read this reports the last attempt's
+        // connection cost rather than the sum. The total covers every attempt either way.
+        var connectionMilliseconds = 0L;
+
         try
         {
-            return await retryPolicy.ExecuteAsync(operation, cancellationToken);
+            return await retryPolicy.ExecuteAsync(async ct =>
+            {
+                var command = new CommandDefinition(commandText: sql, parameters: param, cancellationToken: ct, commandTimeout: _commandTimeout);
+
+                var connectionStopwatch = Stopwatch.StartNew();
+
+                using var connection = connectionFactory.CreateConnection();
+
+                // Dapper would open this itself on first use, which would fold the wait for a pooled
+                // connection into the query's measured cost. Opening it here keeps the two apart. A
+                // factory that hands back an open connection has nothing to do; Dapper leaves a
+                // connection it did not open alone, and the using block still disposes it.
+                if (connection.State != ConnectionState.Open)
+                    await ((DbConnection)connection).OpenAsync(ct);
+
+                connectionStopwatch.Stop();
+                connectionMilliseconds = connectionStopwatch.ElapsedMilliseconds;
+
+                return await read(connection, command);
+            }, cancellationToken);
         }
         catch (InvalidOperationException exception)
         {
@@ -66,7 +97,14 @@ public class DapperReadDbConnection(
         {
             stopwatch.Stop();
             if (stopwatch.ElapsedMilliseconds >= _slowQueryThresholdMilliseconds)
-                logger.LogWarning("Slow query ({ElapsedMilliseconds}ms >= {ThresholdMilliseconds}ms threshold): {Sql}", stopwatch.ElapsedMilliseconds, _slowQueryThresholdMilliseconds, sql);
+                logger.LogWarning(
+                    "Slow query ({ElapsedMilliseconds}ms >= {ThresholdMilliseconds}ms threshold, {ConnectionMilliseconds}ms acquiring the connection, {QueuedWorkItems} work items queued on {WorkerThreads} threads): {Sql}",
+                    stopwatch.ElapsedMilliseconds,
+                    _slowQueryThresholdMilliseconds,
+                    connectionMilliseconds,
+                    ThreadPool.PendingWorkItemCount,
+                    ThreadPool.ThreadCount,
+                    sql);
         }
     }
 }

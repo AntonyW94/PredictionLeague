@@ -21,11 +21,12 @@ public sealed class DapperReadDbConnectionQueryTests : IDisposable
     private readonly IDbConnectionFactory _connectionFactory = Substitute.For<IDbConnectionFactory>();
     private readonly ILogger<DapperReadDbConnection> _logger = Substitute.For<ILogger<DapperReadDbConnection>>();
 
+    // A shared in-memory database lives only while at least one connection is open.
+    private const string ConnectionString = "Data Source=readpath;Mode=Memory;Cache=Shared";
+
     public DapperReadDbConnectionQueryTests()
     {
-        // A shared in-memory database lives only while at least one connection is open.
-        const string connectionString = "Data Source=readpath;Mode=Memory;Cache=Shared";
-        _keepAlive = new SqliteConnection(connectionString);
+        _keepAlive = new SqliteConnection(ConnectionString);
         _keepAlive.Open();
 
         using var setup = _keepAlive.CreateCommand();
@@ -35,7 +36,7 @@ public sealed class DapperReadDbConnectionQueryTests : IDisposable
 
         _connectionFactory.CreateConnection().Returns(_ =>
         {
-            var connection = new SqliteConnection(connectionString);
+            var connection = new SqliteConnection(ConnectionString);
             connection.Open();
             return connection;
         });
@@ -95,6 +96,26 @@ public sealed class DapperReadDbConnectionQueryTests : IDisposable
             "SELECT Name FROM Leagues WHERE Id = 99", CancellationToken.None);
 
         name.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task QueryAsync_ShouldOpenTheConnection_WhenTheFactoryHandsBackAClosedOne()
+    {
+        // The real factory returns a closed SqlConnection - opening it is what the connection-cost
+        // half of the slow-query warning measures, so the read has to work without Dapper doing it.
+        var closedConnectionFactory = Substitute.For<IDbConnectionFactory>();
+        closedConnectionFactory.CreateConnection().Returns(_ => new SqliteConnection(ConnectionString));
+
+        var readDbConnection = new DapperReadDbConnection(
+            closedConnectionFactory,
+            new PassThroughRetryPolicy(),
+            Options.Create(new TimeoutSettings()),
+            Options.Create(new QueryMonitoringSettings()),
+            _logger);
+
+        var names = await readDbConnection.QueryAsync<string>("SELECT Name FROM Leagues ORDER BY Id", CancellationToken.None);
+
+        names.Should().Equal("Alpha", "Beta");
     }
 
     [Fact]
