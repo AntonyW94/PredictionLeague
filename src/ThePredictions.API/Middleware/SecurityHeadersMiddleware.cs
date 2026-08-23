@@ -43,11 +43,12 @@ public class SecurityHeadersMiddleware(RequestDelegate next)
         // - 'wasm-unsafe-eval' required for WebAssembly execution
         // - 'unsafe-inline' for styles as Blazor may inject inline styles
         // - data: for fonts/images as Blazor may use data URIs
+        // - blob: for images so the share-preview dialog can show the generated PNG
         context.Response.Headers.Append("Content-Security-Policy",
             "default-src 'self'; " +
             "script-src 'self' 'wasm-unsafe-eval'; " +
             "style-src 'self' 'unsafe-inline'; " +
-            "img-src 'self' data: https:; " +
+            "img-src 'self' data: blob: https:; " +
             "font-src 'self' data:; " +
             "connect-src 'self' https://accounts.google.com; " +
             "frame-ancestors 'none'; " +

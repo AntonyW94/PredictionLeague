@@ -68,7 +68,7 @@ public class SecurityHeadersMiddlewareTests
     [InlineData("default-src 'self'")]
     [InlineData("script-src 'self' 'wasm-unsafe-eval'")]
     [InlineData("style-src 'self' 'unsafe-inline'")]
-    [InlineData("img-src 'self' data: https:")]
+    [InlineData("img-src 'self' data: blob: https:")]
     [InlineData("font-src 'self' data:")]
     [InlineData("connect-src 'self' https://accounts.google.com")]
     [InlineData("frame-ancestors 'none'")]
