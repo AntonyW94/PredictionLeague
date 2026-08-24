@@ -47,6 +47,23 @@ exception, and for a nullable column no failure of any kind. Verified against th
 and null, which is what the serialiser emits for a null value. `SetBasedWriteConventionTests` requires it, and
 requires each path to name the column it feeds.
 
+**No `WITH` clause declares a width.** Text is read as `nvarchar(4000)` and money as `decimal(38, 10)`,
+whatever the column is; `int`, `bit` and `datetime2` have no width to get wrong. This is the part of the
+decision that was got wrong first and is worth stating plainly: a `WITH` clause declaration is a **cast**, so
+one narrower than the column it feeds silently truncates, and `strict` does not help because it only guards
+whether the property is *there*. Measured against the live server - `nvarchar(20)` reading a 28-character
+value stored 20 characters and raised nothing; `decimal(18,0)` reading `12.349` stored `12.00`.
+
+The first pass declared each type to match its column, checked by hand against `sys.columns`, and **two of the
+seventy were narrower than their column** - `Matches.Status` is `nvarchar(50)` and `ApiRoundName` is
+`nvarchar(128)`. Both would have truncated real data with nothing to show for it. Nothing available catches
+that class of mistake: not the compiler, not the unit tests, not the conformance tests, not `strict`, and not
+`SET NOEXEC ON`, because the truncation happens before the insert sees the value. Copying widths more
+carefully is not a fix for a 3%-per-declaration error rate; not copying them is. Declaring wide makes the
+destination column the single place a width is stated, so an overflow becomes SQL Server's own *"String or
+binary data would be truncated"* at the insert, and a wide `decimal` is rounded to the column's scale on the
+way in - `12.349` into a 2dp column stores `12.35`, which is the right answer rather than a lost one.
+
 **An enum bound for an `int` column is cast in C#.** `[UserPredictions].[Outcome]` stores the enum's
 underlying value, and what a serialiser does with an enum by default is not something the stored value should
 depend on.
@@ -68,27 +85,40 @@ depend on.
   mistake in the `WITH` clause is a runtime failure rather than a compile error. `strict` mode, the convention
   tests and the conformance tests are the three answers to that, in that order.
 - JSON is a slightly odd transport for a set of rows. It is the least-bad option here (see below).
-- Writing 70 column/type declarations by hand duplicates what the schema already knows. Each was checked
-  against `sys.columns` on the live database rather than against the schema doc, and two were wrong on the
-  first pass - `Matches.Status` is `nvarchar(50)` and `ApiRoundName` is `nvarchar(128)`, both of which would
-  have silently truncated.
+- Seventy type declarations still have to be written, even without widths in them. They are now uniform
+  enough to be uninteresting - `int`, `nvarchar(4000)`, `datetime2`, `bit`, `decimal(38, 10)` - and a
+  convention test rejects anything else, but a table-valued parameter would not need them at all.
+- The `WITH` clause no longer documents the real column width. That was the argument for mirroring it, and it
+  lost: the schema doc is where a column's width belongs, and mirroring it here bought nothing that
+  `docs/guides/database-schema.md` does not already say while costing two silent-truncation bugs.
 
 **Neutral / notes**
 - `UserBadgeRepository.AwardAsync` is deliberately left alone: it awards one badge and returns whether it
   inserted, so it is a per-row API by design rather than a batch written badly. Its caller loops, and making
   it set based would mean returning which of the batch were new.
-- Verification, in order of strength: the twelve statements were compiled against the live schema under
-  `SET NOEXEC ON` (which binds every column and would reject a wrong name or an unconvertible type); the
-  conformance suite exercises the scoring writes and the prediction writes against real SQL Server in
-  Testcontainers; the convention tests pin `strict` and the path/column agreement; `JsonRowsTests` pins the
-  JSON each type produces.
+- Verification, in order of strength: the conformance suite exercises the scoring writes, the prediction
+  writes and the match-score update against real SQL Server in Testcontainers; the twelve statements were
+  compiled against the live schema under `SET NOEXEC ON`, which binds every column and rejects a wrong name or
+  an unconvertible type; the convention tests pin `strict`, the path/column agreement and the absence of
+  declared widths; `JsonRowsTests` pins the JSON each type produces. Worth being clear about what none of
+  them reach: a value long enough to overflow its column is now a runtime error from SQL Server rather than
+  anything caught earlier. That is the point of declaring wide - the check moves to the one place that has the
+  column's real width.
+- A static check remains possible if this ever needs more: `tools/ThePredictions.SchemaCheck` already
+  validates every Dapper *read* against `sys.columns`, and could be taught to do the same for a `WITH` clause.
+  It was not needed once the widths came out, because there is no longer a per-column value to be wrong.
 
 ## Alternatives considered
 
-- **Table-valued parameters.** The textbook answer, and the one to revisit if a statement ever outgrows JSON.
-  Rejected for now because each shape needs a user-defined table type in the database: a migration per shape,
-  a schema object to keep in step with every column change, and another thing for
-  `docs/guides/database-schema.md` and the refresh tool to track. JSON needs none of that.
+- **Table-valued parameters.** The textbook answer, and the one to revisit if this pattern spreads much
+  further. They would close the width problem *structurally* rather than by convention - the type is declared
+  once, in the database, and enforced - which is a real advantage over what is here and was weighed properly
+  once the truncation behaviour was measured. Rejected on cost: each shape needs a user-defined table type, so
+  eleven migrations, eleven schema objects to keep in step, and entries in
+  `docs/guides/database-schema.md` and the refresh tool. Table types also cannot be `ALTER`ed, so a future
+  column change means a drop-and-recreate migration. And Dapper wants a `DataTable` per call, which replaces
+  the anonymous objects with per-shape boilerplate. Declaring no widths removes the same failure mode for
+  none of that, which is what tipped it.
 - **A multi-row `VALUES` list with generated parameter names.** One parameter per column per row, so the SQL
   text - and therefore the cached plan - changes with the row count, and 2100 parameters is a hard ceiling.
   Given ADR-0015, deliberately churning the plan cache is the wrong direction.

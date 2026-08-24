@@ -41,8 +41,12 @@ internal static class JsonRows
     /// Verified against the live server: property names are matched case-sensitively by the <c>WITH</c>
     /// clause's JSON paths, and every type this codebase stores survives the round trip - <c>int</c>,
     /// <c>nvarchar</c> (including <c>\uXXXX</c> escapes and surrogate pairs, which the default encoder
-    /// produces), <c>money</c>, <c>bit</c> from <c>true</c>/<c>false</c>, JSON <c>null</c> as SQL NULL, and
+    /// produces), <c>decimal</c>, <c>bit</c> from <c>true</c>/<c>false</c>, JSON <c>null</c> as SQL NULL, and
     /// <c>datetime2(7)</c> at full precision from the ISO 8601 form with a <c>Z</c> suffix.
+    ///
+    /// The <c>WITH</c> clauses on the other side deliberately declare no widths - <c>nvarchar(4000)</c> and
+    /// <c>decimal(38, 10)</c> whatever the column is - because such a declaration is a cast, and one narrower
+    /// than its column truncates silently. See ADR-0020.
     /// </remarks>
     internal static DbString From<T>(IReadOnlyCollection<T> rows) =>
         new()

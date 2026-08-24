@@ -32,7 +32,7 @@ public class OnboardingSkipRepository(IDbConnectionFactory connectionFactory, ID
             FROM
                 OPENJSON(@Rows)
                 WITH (
-                    [StepKey] nvarchar(100) 'strict $.StepKey'
+                    [StepKey] nvarchar(4000) 'strict $.StepKey'
                 ) src
             LEFT JOIN
                 [UserOnboardingSkips] existing ON existing.[UserId] = @UserId

@@ -109,6 +109,75 @@ public class SetBasedWriteConventionTests
     }
 
     /// <summary>
+    /// A declared type with a width in it, which is the one thing a <c>WITH</c> clause must never state.
+    /// </summary>
+    private static readonly Regex WidthBearingType = new(
+        @"\[(?<column>\w+)\]\s+(?<type>(?:n?var)?char\(\s*\d+\s*\)|n?text|decimal\(\s*\d+\s*,\s*\d+\s*\)|numeric\(\s*\d+\s*,\s*\d+\s*\))\s+'strict ",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// A <c>WITH</c> clause declares a type in order to read the JSON, and that declaration is a **cast** - so one
+    /// narrower than the column it feeds silently truncates. Verified against the live server:
+    /// <c>nvarchar(20)</c> reading a 28-character value stored 20 characters and raised nothing, and
+    /// <c>decimal(18,0)</c> reading 12.349 stored 12.00. <c>strict</c> does not help; it only guards whether the
+    /// property is <i>there</i>.
+    ///
+    /// Two of the first 70 declarations written here were narrower than their column, which is the measured error
+    /// rate for copying a width by hand. So no width is copied: the types are deliberately wider than any column
+    /// they feed, which makes the destination column the only place a width is stated and turns an overflow into
+    /// SQL Server's own "String or binary data would be truncated" at the insert. A wide <c>decimal</c> is rounded
+    /// to the column's scale on the way in, which is the right answer rather than a lost one.
+    /// </summary>
+    [Fact]
+    public void NoJsonColumn_ShouldDeclareAWidth()
+    {
+        var offenders = AdapterSourceFiles()
+            .SelectMany(file => WidthBearingType.Matches(file.Text).Select(match => (file.RelativePath, Match: match)))
+            .Where(entry => IsACopiedWidth(entry.Match.Groups["type"].Value))
+            .Select(entry =>
+                $"{entry.RelativePath}: [{entry.Match.Groups["column"].Value}] {entry.Match.Groups["type"].Value}")
+            .OrderBy(entry => entry, StringComparer.Ordinal)
+            .ToList();
+
+        offenders.Should().BeEmpty(
+            "a declared width narrower than the column silently truncates, and a width is only ever right by "
+            + "accident of it being copied correctly. Use nvarchar(4000) for text and decimal(38, 10) for money, "
+            + "and let the column decide - see docs/guides/database.md#set-based-writes.");
+    }
+
+    /// <summary>
+    /// The positive control for the sweep above.
+    /// </summary>
+    [Fact]
+    public void TheWidthDetector_ShouldStillRecogniseADeclaredWidth()
+    {
+        Offends("[Status] nvarchar(50) 'strict $.Status'").Should().BeTrue();
+        Offends("[Amount] decimal(18, 2) 'strict $.Amount'").Should().BeTrue();
+        Offends("[Code] char(3) 'strict $.Code'").Should().BeTrue();
+
+        Offends("[Status] nvarchar(4000) 'strict $.Status'").Should().BeFalse(
+            "4000 is the deliberate wide default rather than a copied column width.");
+        Offends("[Amount] decimal(38, 10) 'strict $.Amount'").Should().BeFalse();
+        Offends("[RoundId] int 'strict $.RoundId'").Should().BeFalse(
+            "int, bit and datetime2 have no width to get wrong.");
+        return;
+
+        static bool Offends(string declaration)
+        {
+            var match = WidthBearingType.Match(declaration);
+            return match.Success && IsACopiedWidth(match.Groups["type"].Value);
+        }
+    }
+
+    /// <summary>
+    /// The two wide forms every text and money column is read through. Anything else with a width in it is a
+    /// column's own width, copied - which is the thing that cannot be checked and was twice wrong.
+    /// </summary>
+    private static bool IsACopiedWidth(string declaredType) =>
+        !declaredType.Replace(" ", string.Empty).Equals("nvarchar(4000)", StringComparison.OrdinalIgnoreCase)
+        && !declaredType.Replace(" ", string.Empty).Equals("decimal(38,10)", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     /// The positive control for both path sweeps. An empty result set from a regex that has stopped matching would
     /// make them pass for ever without reading anything.
     /// </summary>

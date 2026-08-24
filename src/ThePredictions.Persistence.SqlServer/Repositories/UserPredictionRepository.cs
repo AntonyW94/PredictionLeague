@@ -33,7 +33,7 @@ public class UserPredictionRepository(IDbConnectionFactory connectionFactory, ID
                 OPENJSON(@Rows)
                 WITH (
                     [MatchId] int 'strict $.MatchId',
-                    [UserId] nvarchar(450) 'strict $.UserId',
+                    [UserId] nvarchar(4000) 'strict $.UserId',
                     [PredictedHomeScore] int 'strict $.PredictedHomeScore',
                     [PredictedAwayScore] int 'strict $.PredictedAwayScore',
                     [CreatedAtUtc] datetime2 'strict $.CreatedAtUtc',

@@ -31,7 +31,7 @@ public class PrizeNotificationRepository(IDbConnectionFactory connectionFactory,
             FROM
                 OPENJSON(@Rows)
                 WITH (
-                    [UserId] nvarchar(450) 'strict $.UserId',
+                    [UserId] nvarchar(4000) 'strict $.UserId',
                     [LeaguePrizeSettingId] int 'strict $.LeaguePrizeSettingId',
                     [RoundNumber] int 'strict $.RoundNumber',
                     [Month] int 'strict $.Month',

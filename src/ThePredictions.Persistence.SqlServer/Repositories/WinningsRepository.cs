@@ -53,9 +53,9 @@ public class WinningsRepository(IDbConnectionFactory connectionFactory, IDbTrans
             FROM
                 OPENJSON(@Rows)
                 WITH (
-                    [UserId] nvarchar(450) 'strict $.UserId',
+                    [UserId] nvarchar(4000) 'strict $.UserId',
                     [LeaguePrizeSettingId] int 'strict $.LeaguePrizeSettingId',
-                    [Amount] decimal(18, 2) 'strict $.Amount',
+                    [Amount] decimal(38, 10) 'strict $.Amount',
                     [AwardedDateUtc] datetime2 'strict $.AwardedDateUtc',
                     [RoundNumber] int 'strict $.RoundNumber',
                     [Month] int 'strict $.Month'

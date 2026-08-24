@@ -59,12 +59,12 @@ public class RoundRepository(
                 [AwayTeamId] int 'strict $.AwayTeamId',
                 [MatchDateTimeUtc] datetime2 'strict $.MatchDateTimeUtc',
                 [CustomLockTimeUtc] datetime2 'strict $.CustomLockTimeUtc',
-                [Status] nvarchar(50) 'strict $.Status',
+                [Status] nvarchar(4000) 'strict $.Status',
                 [ExternalId] int 'strict $.ExternalId',
                 [MatchNumber] int 'strict $.MatchNumber',
-                [PlaceholderHomeName] nvarchar(100) 'strict $.PlaceholderHomeName',
-                [PlaceholderAwayName] nvarchar(100) 'strict $.PlaceholderAwayName',
-                [ApiRoundName] nvarchar(128) 'strict $.ApiRoundName'
+                [PlaceholderHomeName] nvarchar(4000) 'strict $.PlaceholderHomeName',
+                [PlaceholderAwayName] nvarchar(4000) 'strict $.PlaceholderAwayName',
+                [ApiRoundName] nvarchar(4000) 'strict $.ApiRoundName'
             ) src;";
 
     private const string GetRoundsWithMatchesSql = @"
@@ -471,10 +471,10 @@ public class RoundRepository(
                         [CustomLockTimeUtc] datetime2 'strict $.CustomLockTimeUtc',
                         [ExternalId] int 'strict $.ExternalId',
                         [MatchNumber] int 'strict $.MatchNumber',
-                        [Status] nvarchar(50) 'strict $.Status',
-                        [PlaceholderHomeName] nvarchar(100) 'strict $.PlaceholderHomeName',
-                        [PlaceholderAwayName] nvarchar(100) 'strict $.PlaceholderAwayName',
-                        [ApiRoundName] nvarchar(128) 'strict $.ApiRoundName'
+                        [Status] nvarchar(4000) 'strict $.Status',
+                        [PlaceholderHomeName] nvarchar(4000) 'strict $.PlaceholderHomeName',
+                        [PlaceholderAwayName] nvarchar(4000) 'strict $.PlaceholderAwayName',
+                        [ApiRoundName] nvarchar(4000) 'strict $.ApiRoundName'
                     ) src ON src.[Id] = m.[Id];";
 
             var rowsToUpdate = matchesToUpdate.Select(m => new
@@ -611,7 +611,7 @@ public class RoundRepository(
                 [Id] int 'strict $.Id',
                 [ActualHomeTeamScore] int 'strict $.ActualHomeTeamScore',
                 [ActualAwayTeamScore] int 'strict $.ActualAwayTeamScore',
-                [Status] nvarchar(50) 'strict $.Status'
+                [Status] nvarchar(4000) 'strict $.Status'
             ) src ON src.[Id] = m.[Id];";
 
         var rows = matches
@@ -658,7 +658,7 @@ public class RoundRepository(
                     OPENJSON(@Rows)
                     WITH (
                         [RoundId] int 'strict $.RoundId',
-                        [UserId] nvarchar(450) 'strict $.UserId',
+                        [UserId] nvarchar(4000) 'strict $.UserId',
                         [ExactScoreCount] int 'strict $.ExactScoreCount',
                         [CorrectResultCount] int 'strict $.CorrectResultCount',
                         [IncorrectCount] int 'strict $.IncorrectCount'

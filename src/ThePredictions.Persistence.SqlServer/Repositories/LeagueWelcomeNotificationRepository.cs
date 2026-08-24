@@ -28,7 +28,7 @@ public class LeagueWelcomeNotificationRepository(IDbConnectionFactory connection
                 OPENJSON(@Rows)
                 WITH (
                     [LeagueId] int 'strict $.LeagueId',
-                    [UserId] nvarchar(450) 'strict $.UserId',
+                    [UserId] nvarchar(4000) 'strict $.UserId',
                     [SentAtUtc] datetime2 'strict $.SentAtUtc'
                 ) src;";
 

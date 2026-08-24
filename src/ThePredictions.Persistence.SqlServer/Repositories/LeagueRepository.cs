@@ -415,8 +415,8 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                     OPENJSON(@Rows)
                     WITH (
                         [LeagueId] int 'strict $.LeagueId',
-                        [UserId] nvarchar(450) 'strict $.UserId',
-                        [Status] nvarchar(20) 'strict $.Status',
+                        [UserId] nvarchar(4000) 'strict $.UserId',
+                        [Status] nvarchar(4000) 'strict $.Status',
                         [JoinedAtUtc] datetime2 'strict $.JoinedAtUtc',
                         [ApprovedAtUtc] datetime2 'strict $.ApprovedAtUtc'
                     ) src;";
@@ -510,11 +510,11 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                     WITH (
                         [LeagueId] int 'strict $.LeagueId',
                         [RoundId] int 'strict $.RoundId',
-                        [UserId] nvarchar(450) 'strict $.UserId',
+                        [UserId] nvarchar(4000) 'strict $.UserId',
                         [BasePoints] int 'strict $.BasePoints',
                         [BoostedPoints] int 'strict $.BoostedPoints',
                         [HasBoost] bit 'strict $.HasBoost',
-                        [AppliedBoostCode] nvarchar(50) 'strict $.AppliedBoostCode'
+                        [AppliedBoostCode] nvarchar(4000) 'strict $.AppliedBoostCode'
                     ) src
             ) AS src
             ON target.[LeagueId] = src.[LeagueId]
@@ -584,10 +584,10 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                     WITH (
                         [LeagueId] int 'strict $.LeagueId',
                         [RoundId] int 'strict $.RoundId',
-                        [UserId] nvarchar(450) 'strict $.UserId',
+                        [UserId] nvarchar(4000) 'strict $.UserId',
                         [BoostedPoints] int 'strict $.BoostedPoints',
                         [HasBoost] bit 'strict $.HasBoost',
-                        [AppliedBoostCode] nvarchar(50) 'strict $.AppliedBoostCode'
+                        [AppliedBoostCode] nvarchar(4000) 'strict $.AppliedBoostCode'
                     ) src
             ) AS src
             ON target.[LeagueId] = src.[LeagueId]
