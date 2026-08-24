@@ -330,7 +330,83 @@ public abstract class RoundRepositoryConformanceTests
 
     #endregion
 
+    #region Storing match scores
+
+    [Fact]
+    public async Task UpdateMatchScoresAsync_ShouldStoreTheScoreAndStatusOfEveryFixtureInTheBatch()
+    {
+        // The per-minute path: several fixtures move at once during a Saturday afternoon, and this is one
+        // statement over the set. A source joined on the wrong column would update one and silently miss the rest.
+        var backdrop = await Seed.AddBackdropAsync();
+        var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, roundNumber: 1, deadlineUtc: DateTime.UtcNow.AddDays(-1));
+        var firstId = await Seed.AddMatchAsync(roundId, backdrop.HomeTeamId, backdrop.AwayTeamId);
+        var secondId = await Seed.AddMatchAsync(roundId, backdrop.AwayTeamId, backdrop.HomeTeamId);
+
+        // Act
+        await Repository.UpdateMatchScoresAsync(
+            [
+                ScoredMatch(firstId, roundId, backdrop, 3, 1, MatchStatus.Completed),
+                ScoredMatch(secondId, roundId, backdrop, 0, 0, MatchStatus.InProgress)
+            ],
+            CancellationToken.None);
+
+        // Assert
+        var first = await Inspect.MatchAsync(firstId);
+        first!.Status.Should().Be(MatchStatus.Completed);
+
+        var second = await Inspect.MatchAsync(secondId);
+        second!.Status.Should().Be(MatchStatus.InProgress);
+    }
+
+    [Fact]
+    public async Task UpdateMatchScoresAsync_ShouldLeaveAFixtureAbsentFromTheBatchAlone()
+    {
+        // Arrange
+        var backdrop = await Seed.AddBackdropAsync();
+        var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, roundNumber: 1, deadlineUtc: DateTime.UtcNow.AddDays(-1));
+        var scoredId = await Seed.AddMatchAsync(roundId, backdrop.HomeTeamId, backdrop.AwayTeamId);
+        var untouchedId = await Seed.AddMatchAsync(roundId, backdrop.AwayTeamId, backdrop.HomeTeamId);
+
+        // Act
+        await Repository.UpdateMatchScoresAsync(
+            [ScoredMatch(scoredId, roundId, backdrop, 2, 0, MatchStatus.Completed)],
+            CancellationToken.None);
+
+        // Assert - a join with no predicate would have taken every row with it.
+        (await Inspect.MatchAsync(untouchedId))!.Status.Should().Be(MatchStatus.Scheduled);
+    }
+
+    [Fact]
+    public async Task UpdateMatchScoresAsync_ShouldChangeNothing_WhenThereIsNothingToStore()
+    {
+        var backdrop = await Seed.AddBackdropAsync();
+        var roundId = await Seed.AddRoundAsync(backdrop.SeasonId, roundNumber: 1, deadlineUtc: DateTime.UtcNow.AddDays(-1));
+        var matchId = await Seed.AddMatchAsync(roundId, backdrop.HomeTeamId, backdrop.AwayTeamId);
+
+        // Act
+        var act = async () => await Repository.UpdateMatchScoresAsync([], CancellationToken.None);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+        (await Inspect.MatchAsync(matchId))!.Status.Should().Be(MatchStatus.Scheduled);
+    }
+
+    #endregion
+
     #region Helpers
+
+    private static Match ScoredMatch(
+        int matchId,
+        int roundId,
+        SeededBackdrop backdrop,
+        int homeScore,
+        int awayScore,
+        MatchStatus status) =>
+        new(
+            id: matchId, roundId: roundId, homeTeamId: backdrop.HomeTeamId, awayTeamId: backdrop.AwayTeamId,
+            matchDateTimeUtc: DateTime.UtcNow.AddHours(-2), customLockTimeUtc: null, status: status,
+            actualHomeTeamScore: homeScore, actualAwayTeamScore: awayScore, externalId: null, matchNumber: null,
+            placeholderHomeName: null, placeholderAwayName: null, apiRoundName: null);
 
     private static Round RoundWith(int roundId, int seasonId, IEnumerable<Match> matches) =>
         new(

@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
+using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Contracts.Boosts;
 using ThePredictions.Domain.Common;
@@ -396,17 +397,46 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
         if (league.Members.Any())
         {
             const string insertMemberSql = @"
-                INSERT INTO [LeagueMembers] ([LeagueId], [UserId], [Status], [JoinedAtUtc], [ApprovedAtUtc])
-                VALUES (@LeagueId, @UserId, @Status, @JoinedAtUtc, @ApprovedAtUtc);";
+                INSERT INTO [LeagueMembers]
+                (
+                    [LeagueId],
+                    [UserId],
+                    [Status],
+                    [JoinedAtUtc],
+                    [ApprovedAtUtc]
+                )
+                SELECT
+                    src.[LeagueId],
+                    src.[UserId],
+                    src.[Status],
+                    src.[JoinedAtUtc],
+                    src.[ApprovedAtUtc]
+                FROM
+                    OPENJSON(@Rows)
+                    WITH (
+                        [LeagueId] int 'strict $.LeagueId',
+                        [UserId] nvarchar(4000) 'strict $.UserId',
+                        [Status] nvarchar(4000) 'strict $.Status',
+                        [JoinedAtUtc] datetime2 'strict $.JoinedAtUtc',
+                        [ApprovedAtUtc] datetime2 'strict $.ApprovedAtUtc'
+                    ) src;";
 
-            var insertCommand = new CommandDefinition(insertMemberSql, league.Members.Select(m => new
-            {
-                m.LeagueId,
-                m.UserId,
-                Status = m.Status.ToString(),
-                m.JoinedAtUtc,
-                m.ApprovedAtUtc
-            }), transaction: Transaction, cancellationToken: cancellationToken);
+            var memberRows = league.Members
+                .Select(m => new
+                {
+                    m.LeagueId,
+                    m.UserId,
+                    Status = m.Status.ToString(),
+                    m.JoinedAtUtc,
+                    m.ApprovedAtUtc
+                })
+                .ToList();
+
+            var insertCommand = new CommandDefinition(
+                insertMemberSql,
+                new { Rows = JsonRows.From(memberRows) },
+                transaction: Transaction,
+                cancellationToken: cancellationToken);
 
             await Connection.ExecuteAsync(insertCommand);
         }
@@ -462,19 +492,30 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
         IEnumerable<LeagueRoundScore> scores,
         CancellationToken cancellationToken)
     {
-        // One row per (league, player), upserted. Every value stored is computed by the caller, including the cleared
-        // boost - so this decides nothing beyond where the numbers go.
+        // One row per (league, player), upserted in one statement. Every value stored is computed by the caller,
+        // including the cleared boost - so this decides nothing beyond where the numbers go.
         const string sql = @"
             MERGE [LeagueRoundResults] AS target
             USING (
                 SELECT
-                    @LeagueId AS [LeagueId],
-                    @RoundId AS [RoundId],
-                    @UserId AS [UserId],
-                    @BasePoints AS [BasePoints],
-                    @BoostedPoints AS [BoostedPoints],
-                    @HasBoost AS [HasBoost],
-                    @AppliedBoostCode AS [AppliedBoostCode]
+                    src.[LeagueId],
+                    src.[RoundId],
+                    src.[UserId],
+                    src.[BasePoints],
+                    src.[BoostedPoints],
+                    src.[HasBoost],
+                    src.[AppliedBoostCode]
+                FROM
+                    OPENJSON(@Rows)
+                    WITH (
+                        [LeagueId] int 'strict $.LeagueId',
+                        [RoundId] int 'strict $.RoundId',
+                        [UserId] nvarchar(4000) 'strict $.UserId',
+                        [BasePoints] int 'strict $.BasePoints',
+                        [BoostedPoints] int 'strict $.BoostedPoints',
+                        [HasBoost] bit 'strict $.HasBoost',
+                        [AppliedBoostCode] nvarchar(4000) 'strict $.AppliedBoostCode'
+                    ) src
             ) AS src
             ON target.[LeagueId] = src.[LeagueId]
                AND target.[RoundId] = src.[RoundId]
@@ -510,7 +551,7 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
 
         var command = new CommandDefinition(
             sql,
-            rows,
+            new { Rows = JsonRows.From(rows) },
             transaction: Transaction,
             cancellationToken: cancellationToken);
 
@@ -532,12 +573,22 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
             MERGE [LeagueRoundResults] AS target
             USING (
                 SELECT
-                    @LeagueId          AS [LeagueId],
-                    @RoundId           AS [RoundId],
-                    @UserId            AS [UserId],
-                    @BoostedPoints     AS [BoostedPoints],
-                    @HasBoost          AS [HasBoost],
-                    @AppliedBoostCode  AS [AppliedBoostCode]
+                    src.[LeagueId],
+                    src.[RoundId],
+                    src.[UserId],
+                    src.[BoostedPoints],
+                    src.[HasBoost],
+                    src.[AppliedBoostCode]
+                FROM
+                    OPENJSON(@Rows)
+                    WITH (
+                        [LeagueId] int 'strict $.LeagueId',
+                        [RoundId] int 'strict $.RoundId',
+                        [UserId] nvarchar(4000) 'strict $.UserId',
+                        [BoostedPoints] int 'strict $.BoostedPoints',
+                        [HasBoost] bit 'strict $.HasBoost',
+                        [AppliedBoostCode] nvarchar(4000) 'strict $.AppliedBoostCode'
+                    ) src
             ) AS src
             ON target.[LeagueId] = src.[LeagueId]
                AND target.[RoundId] = src.[RoundId]
@@ -548,18 +599,25 @@ public class LeagueRepository(IDbConnectionFactory connectionFactory, IDbTransac
                     target.[HasBoost]         = src.[HasBoost],
                     target.[AppliedBoostCode] = src.[AppliedBoostCode];";
 
+        var rows = updates
+            .Select(u => new
+            {
+                u.LeagueId,
+                u.RoundId,
+                u.UserId,
+                u.BoostedPoints,
+                u.HasBoost,
+                u.AppliedBoostCode
+            })
+            .ToList();
+
+        if (rows.Count == 0)
+            return;
+
         await Connection.ExecuteAsync(
             new CommandDefinition(
                 sql,
-                updates.Select(u => new
-                {
-                    u.LeagueId,
-                    u.RoundId,
-                    u.UserId,
-                    u.BoostedPoints,
-                    u.HasBoost,
-                    u.AppliedBoostCode
-                }),
+                new { Rows = JsonRows.From(rows) },
                 transaction: Transaction,
                 cancellationToken: cancellationToken
             ));

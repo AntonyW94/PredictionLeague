@@ -35,4 +35,23 @@ public interface ITestDataInspector
     /// is stored can be asserted.
     /// </remarks>
     Task<StoredRoundResult?> RoundResultAsync(int roundId, string userId);
+
+    /// <summary>
+    /// One player's stored prediction for one fixture, or null where none has been written.
+    /// </summary>
+    /// <remarks>
+    /// Both writes behind this - the upsert a player's submission goes through, and the outcome update scoring
+    /// applies - store several rows at once, so both are set based. What they store had no assertion of its own
+    /// before that, which is a gap worth closing on the one table holding what players actually typed in.
+    /// </remarks>
+    Task<StoredPrediction?> PredictionAsync(int matchId, string userId);
+
+    /// <summary>
+    /// One player's stored points for one round of one league, or null where none has been written.
+    /// </summary>
+    /// <remarks>
+    /// Two statements upsert this row - the scoring pass and then the boost pass over the top of it - and the
+    /// order matters: the first clears any boost so a re-processed round cannot count one twice.
+    /// </remarks>
+    Task<StoredLeagueRoundResult?> LeagueRoundResultAsync(int leagueId, int roundId, string userId);
 }

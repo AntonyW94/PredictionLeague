@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
+using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Models;
 
@@ -12,9 +13,6 @@ public class PrizeNotificationRepository(IDbConnectionFactory connectionFactory,
 {
     public async Task AddNotificationsAsync(IEnumerable<PrizeNotification> notifications, CancellationToken cancellationToken)
     {
-        if (!notifications.Any())
-            return;
-
         const string sql = @"
             INSERT INTO [PrizeNotifications]
             (
@@ -24,16 +22,37 @@ public class PrizeNotificationRepository(IDbConnectionFactory connectionFactory,
                 [Month],
                 [SentAtUtc]
             )
-            VALUES
-            (
-                @UserId,
-                @LeaguePrizeSettingId,
-                @RoundNumber,
-                @Month,
-                @SentAtUtc
-            );";
+            SELECT
+                src.[UserId],
+                src.[LeaguePrizeSettingId],
+                src.[RoundNumber],
+                src.[Month],
+                src.[SentAtUtc]
+            FROM
+                OPENJSON(@Rows)
+                WITH (
+                    [UserId] nvarchar(4000) 'strict $.UserId',
+                    [LeaguePrizeSettingId] int 'strict $.LeaguePrizeSettingId',
+                    [RoundNumber] int 'strict $.RoundNumber',
+                    [Month] int 'strict $.Month',
+                    [SentAtUtc] datetime2 'strict $.SentAtUtc'
+                ) src;";
 
-        var command = new CommandDefinition(commandText: sql, parameters: notifications, transaction: Transaction, cancellationToken: cancellationToken);
+        var rows = notifications
+            .Select(notification => new
+            {
+                notification.UserId,
+                notification.LeaguePrizeSettingId,
+                notification.RoundNumber,
+                notification.Month,
+                notification.SentAtUtc
+            })
+            .ToList();
+
+        if (rows.Count == 0)
+            return;
+
+        var command = new CommandDefinition(commandText: sql, parameters: new { Rows = JsonRows.From(rows) }, transaction: Transaction, cancellationToken: cancellationToken);
         await Connection.ExecuteAsync(command);
     }
 }

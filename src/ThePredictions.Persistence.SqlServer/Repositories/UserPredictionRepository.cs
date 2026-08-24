@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
+using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Models;
 using System.Data;
@@ -15,22 +16,63 @@ public class UserPredictionRepository(IDbConnectionFactory connectionFactory, ID
 
     public Task UpsertBatchAsync(IEnumerable<UserPrediction> predictions, CancellationToken cancellationToken)
     {
+        // Every fixture a player has just predicted, in one statement. This is the deadline-rush path - a whole
+        // round submitted at once - so it used to be one round trip per fixture while the player waited.
         const string sql = @"
         MERGE INTO [UserPredictions] AS target
-        USING (SELECT @UserId AS UserId, @MatchId AS MatchId) AS source
+        USING (
+            SELECT
+                src.[MatchId],
+                src.[UserId],
+                src.[PredictedHomeScore],
+                src.[PredictedAwayScore],
+                src.[CreatedAtUtc],
+                src.[UpdatedAtUtc],
+                src.[Outcome]
+            FROM
+                OPENJSON(@Rows)
+                WITH (
+                    [MatchId] int 'strict $.MatchId',
+                    [UserId] nvarchar(4000) 'strict $.UserId',
+                    [PredictedHomeScore] int 'strict $.PredictedHomeScore',
+                    [PredictedAwayScore] int 'strict $.PredictedAwayScore',
+                    [CreatedAtUtc] datetime2 'strict $.CreatedAtUtc',
+                    [UpdatedAtUtc] datetime2 'strict $.UpdatedAtUtc',
+                    [Outcome] int 'strict $.Outcome'
+                ) src
+        ) AS source
         ON (target.[UserId] = source.[UserId] AND target.[MatchId] = source.[MatchId])
         WHEN MATCHED THEN
             UPDATE SET
-                [PredictedHomeScore] = @PredictedHomeScore,
-                [PredictedAwayScore] = @PredictedAwayScore,
-                [UpdatedAtUtc] = @UpdatedAtUtc
+                [PredictedHomeScore] = source.[PredictedHomeScore],
+                [PredictedAwayScore] = source.[PredictedAwayScore],
+                [UpdatedAtUtc] = source.[UpdatedAtUtc]
         WHEN NOT MATCHED THEN
             INSERT ([MatchId], [UserId], [PredictedHomeScore], [PredictedAwayScore], [CreatedAtUtc], [UpdatedAtUtc], [Outcome])
-            VALUES (@MatchId, @UserId, @PredictedHomeScore, @PredictedAwayScore, @CreatedAtUtc, @UpdatedAtUtc, @Outcome);";
+            VALUES (source.[MatchId], source.[UserId], source.[PredictedHomeScore], source.[PredictedAwayScore],
+                    source.[CreatedAtUtc], source.[UpdatedAtUtc], source.[Outcome]);";
+
+        // [Outcome] is an int column, so the enum is cast rather than left to the serialiser's default for
+        // enums. Stating it means the stored value cannot change because a serialiser setting did.
+        var rows = predictions
+            .Select(prediction => new
+            {
+                prediction.MatchId,
+                prediction.UserId,
+                prediction.PredictedHomeScore,
+                prediction.PredictedAwayScore,
+                prediction.CreatedAtUtc,
+                prediction.UpdatedAtUtc,
+                Outcome = (int)prediction.Outcome
+            })
+            .ToList();
+
+        if (rows.Count == 0)
+            return Task.CompletedTask;
 
         var command = new CommandDefinition(
             commandText: sql,
-            parameters: predictions,
+            parameters: new { Rows = JsonRows.From(rows) },
             transaction: Transaction,
             cancellationToken: cancellationToken
         );
@@ -63,29 +105,44 @@ public class UserPredictionRepository(IDbConnectionFactory connectionFactory, ID
     {
         const string sql = @"
             UPDATE
-                [UserPredictions]
+                up
             SET
-                [Outcome] = @Outcome,
+                up.[Outcome] = src.[Outcome],
 
                 -- The prediction's own timestamp, which UserPrediction.SetOutcome has already set from the injected clock.
                 -- This used to be GETUTCDATE(), so the statement overwrote the entity's answer with the database's.
-                [UpdatedAtUtc] = @UpdatedAtUtc
-            WHERE
-                [Id] = @Id;";
+                up.[UpdatedAtUtc] = src.[UpdatedAtUtc]
+            FROM
+                [UserPredictions] up
+            INNER JOIN
+                OPENJSON(@Rows)
+                WITH (
+                    [Id] int 'strict $.Id',
+                    [Outcome] int 'strict $.Outcome',
+                    [UpdatedAtUtc] datetime2 'strict $.UpdatedAtUtc'
+                ) src ON src.[Id] = up.[Id];";
 
-        if (predictionsToUpdate.Any())
-        {
-            var command = new CommandDefinition(
-                commandText: sql,
-                parameters: predictionsToUpdate,
-                transaction: Transaction,
-                cancellationToken: cancellationToken
-            );
+        // [Outcome] is an int column - see the note in UpsertBatchAsync.
+        var rows = predictionsToUpdate
+            .Select(prediction => new
+            {
+                prediction.Id,
+                Outcome = (int)prediction.Outcome,
+                prediction.UpdatedAtUtc
+            })
+            .ToList();
 
-            await Connection.ExecuteAsync(command);
-        }
+        if (rows.Count == 0)
+            return;
 
-        await Task.CompletedTask;
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { Rows = JsonRows.From(rows) },
+            transaction: Transaction,
+            cancellationToken: cancellationToken
+        );
+
+        await Connection.ExecuteAsync(command);
     }
 
     #endregion

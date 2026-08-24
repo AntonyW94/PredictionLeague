@@ -123,6 +123,57 @@ Two consequences worth knowing:
 So a transactional command must contain writes and the reads that inform them, and nothing slow that is not a write. HTTP calls, email sends, payment calls and anything else that can block on a third party belong in a separate, untransacted command sent **after** the transactional one returns. `ScoreMatchResultsCommand` / `CompleteRoundCommand` is the worked example: settling a round used to send a season's worth of email from inside the transaction that had just written the round's points.
 
 `CommitAsync` ends the transaction and releases the connection, so a command sent after a commit gets a fresh autocommit connection rather than the committed transaction object.
+## Set-based writes
+
+**A write that stores more than one row sends them as one JSON parameter. Never pass Dapper a collection as a command's parameter.**
+
+Dapper executes the command **once per element** when its parameter object is an `IEnumerable`. It reads exactly like a batch and is not one - it is N sequential round trips, all inside the transaction holding the write locks:
+
+```csharp
+// WRONG - one statement per match, sequentially
+var command = new CommandDefinition(sql, matches.Select(m => new { m.Id, m.Status }), transaction: Transaction);
+
+// CORRECT - one statement, one round trip
+var rows = matches.Select(m => new { m.Id, Status = m.Status.ToString() }).ToList();
+if (rows.Count == 0)
+    return;
+
+var command = new CommandDefinition(sql, new { Rows = JsonRows.From(rows) }, transaction: Transaction);
+```
+
+with the statement reading the rows back:
+
+```sql
+UPDATE
+    m
+SET
+    m.[Status] = src.[Status]
+FROM
+    [Matches] m
+INNER JOIN
+    OPENJSON(@Rows)
+    WITH (
+        [Id] int 'strict $.Id',
+        [Status] nvarchar(4000) 'strict $.Status'
+    ) src ON src.[Id] = m.[Id];
+```
+
+Four rules, each enforced by `SetBasedWriteConventionTests` or explained by a failure it prevents:
+
+| Rule | Why |
+|------|-----|
+| **Always `strict $.Column`** | `OPENJSON` is lax by default: a path naming a property the JSON does not carry yields NULL rather than an error, so one typo silently writes NULL over a column. `strict` raises "Property cannot be found on the specified JSON path" instead, and still accepts a property that is present and null. |
+| **The JSON path names the column it feeds** | The row objects are built next to the statement, so the pair should read as one name twice. Anything else is a typo or a half-finished rename. |
+| **Never declare a width** - `nvarchar(4000)` for text, `decimal(38, 10)` for money, and `int`/`bit`/`datetime2` as they are | The `WITH` clause is a **cast**, so a declared width narrower than the column **silently truncates** - measured: `nvarchar(20)` reading a 28-character value stored 20 and raised nothing, and `decimal(18,0)` reading `12.349` stored `12.00`. `strict` does not help; it only guards whether the property is there. Declaring wide makes the destination column the only place a width is stated, so an overflow becomes SQL Server's own "String or binary data would be truncated" at the insert. A wide `decimal` is rounded to the column's scale on the way in, which is the right answer rather than a lost one. |
+| **Return early on an empty collection** | Nothing to store, so nothing to send. |
+
+The width rule is the one worth arguing about, so: two of the first seventy declarations written here copied a width that was wrong, and neither the compiler, the unit tests, the conformance tests nor `strict` mode would have caught either. Not copying a width at all is what removes the error, rather than copying it more carefully.
+
+Cast an enum bound for an `int` column (`Outcome = (int)prediction.Outcome`) rather than passing it whole - what a serialiser does with an enum by default is not something the stored value should depend on. An enum bound for a text column keeps its `.ToString()`.
+
+Matching is by property name, so unlike the read side's positional records, the order the row object lists its properties in does not matter.
+
+See [ADR-0020](../decisions/0020-set-based-writes.md) for why JSON rather than table-valued parameters or a multi-row `VALUES` list, and [ADR-0019](../decisions/0019-read-uncommitted-for-query-side-reads.md) for why the length of a write transaction is what unrelated reads pay for.
 
 ## DateTime Handling
 
