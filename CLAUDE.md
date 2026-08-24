@@ -234,6 +234,8 @@ Repeatable operational procedures (external-service access, credential retrieval
 9. **NEVER leave code coverage below 100%** - Write tests or add `[ExcludeFromCodeCoverage]` for untestable code
 10. **NEVER create `.sql` files in the repository EXCEPT under `src/ThePredictions.Persistence.SqlServer/Migrations/`** (the DbUp migration set, ADR-0013; numbered, embedded, immutable once applied, and never renamed — the resource names are journal keys) - everywhere else, present ad-hoc SQL in the chat for the user to run manually
 11. **NEVER let a query's `SELECT` column order drift from its result `record` constructor** - Dapper maps them positionally (name + type per position); a mismatch compiles and passes tests but throws at runtime. See [Dapper Result Mapping](#dapper-result-mapping--select-column-order-must-match-the-record-constructor).
+12. **NEVER put `SET TRANSACTION ISOLATION LEVEL` or `WITH (NOLOCK)` in a query** - every query-side read already runs at `READ UNCOMMITTED`, applied once in `IReadIsolationPolicy` (ADR-0019). Adding it per query is how the last one came to be missing it.
+13. **NEVER do non-database work inside a transactional command** - the handler's whole body is how long its locks are held, and with no snapshot isolation on this instance that is how long an unrelated read of the same rows waits. Email sends, HTTP calls and payment calls go in a separate, untransacted command sent after the transactional one returns. See [Transactions hold writes, and nothing else](docs/guides/database.md#transactions-hold-writes-and-nothing-else).
 
 ## Quick Reference
 

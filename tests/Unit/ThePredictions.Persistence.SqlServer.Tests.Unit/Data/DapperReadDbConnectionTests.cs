@@ -22,6 +22,7 @@ public class DapperReadDbConnectionTests
         _readDbConnection = new DapperReadDbConnection(
             _connectionFactory,
             new PassThroughRetryPolicy(),
+            new ReadUncommittedIsolationPolicy(),
             Options.Create(new TimeoutSettings()),
             Options.Create(new QueryMonitoringSettings()),
             Substitute.For<ILogger<DapperReadDbConnection>>());

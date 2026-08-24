@@ -39,10 +39,10 @@ public class GetLeaderboardsQueryHandlerTests
                 Member(1, "u1", "Ada", "Lovelace"), Member(1, "u2", "Grace", "Hopper"),
                 Member(2, "u1", "Ada", "Lovelace"), Member(2, "u2", "Grace", "Hopper")
             ],
-            points:
+            totals:
             [
-                Points(1, "u1", 20), Points(1, "u2", 5),
-                Points(2, "u1", 5), Points(2, "u2", 20)
+                Total(1, "u1", 20), Total(1, "u2", 5),
+                Total(2, "u1", 5), Total(2, "u2", 20)
             ]);
 
         // Act
@@ -54,13 +54,14 @@ public class GetLeaderboardsQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldTotalEveryRoundsPoints()
+    public async Task Handle_ShouldShowTheTotalTheReadSupplied()
     {
-        // Arrange
+        // Arrange - the read groups by (league, member), so a member arrives with one row carrying the sum
+        // of every round they scored in rather than one row per round.
         Given(
             leagues: [League(1)],
             members: [Member(1, "u1", "Ada", "Lovelace")],
-            points: [Points(1, "u1", 12), Points(1, "u1", 7), Points(1, "u1", 3)]);
+            totals: [Total(1, "u1", 22)]);
 
         // Act
         var entry = (await HandleAsync()).Single().Entries.Single();
@@ -76,7 +77,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1)],
             members: [Member(1, "u1", "Ada", "Lovelace"), Member(1, "u2", "Grace", "Hopper")],
-            points: [Points(1, "u1", 12)]);
+            totals: [Total(1, "u1", 12)]);
 
         // Act
         var entries = (await HandleAsync()).Single().Entries.ToList();
@@ -98,7 +99,7 @@ public class GetLeaderboardsQueryHandlerTests
                 Member(1, "u2", "Grace", "Hopper"),
                 Member(1, "u3", "Alan", "Turing")
             ],
-            points: [Points(1, "u1", 20), Points(1, "u2", 20), Points(1, "u3", 5)]);
+            totals: [Total(1, "u1", 20), Total(1, "u2", 20), Total(1, "u3", 5)]);
 
         // Act
         var entries = (await HandleAsync()).Single().Entries.ToList();
@@ -114,7 +115,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1)],
             members: [Member(1, "u2", "Grace", "Hopper"), Member(1, "u1", "Ada", "Lovelace")],
-            points: [Points(1, "u1", 20), Points(1, "u2", 20)]);
+            totals: [Total(1, "u1", 20), Total(1, "u2", 20)]);
 
         // Act
         var entries = (await HandleAsync()).Single().Entries.ToList();
@@ -130,7 +131,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1)],
             members: [Member(1, "u1", "Ada", "Lovelace")],
-            points: []);
+            totals: []);
 
         // Act
         var entry = (await HandleAsync()).Single().Entries.Single();
@@ -150,7 +151,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1, completedRoundCount: 3)],
             members: [Member(1, "u1", "Ada", "Lovelace", snapshotRank: 4)],
-            points: []);
+            totals: []);
 
         // Act
         var entry = (await HandleAsync()).Single().Entries.Single();
@@ -166,7 +167,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1, completedRoundCount: 0)],
             members: [Member(1, "u1", "Ada", "Lovelace", snapshotRank: 4)],
-            points: []);
+            totals: []);
 
         // Act
         var entry = (await HandleAsync()).Single().Entries.Single();
@@ -182,7 +183,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1, hasRoundInProgress: true)],
             members: [Member(1, "u1", "Ada", "Lovelace")],
-            points: []);
+            totals: []);
 
         // Act
         var entry = (await HandleAsync()).Single().Entries.Single();
@@ -202,7 +203,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1, seasonRoundCount: 3, completedRoundCount: 3)],
             members: [Member(1, "u1", "Ada", "Lovelace")],
-            points: []);
+            totals: []);
 
         // Act
         var league = (await HandleAsync()).Single();
@@ -218,7 +219,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1, seasonRoundCount: 3, completedRoundCount: 2)],
             members: [Member(1, "u1", "Ada", "Lovelace")],
-            points: []);
+            totals: []);
 
         // Act
         var league = (await HandleAsync()).Single();
@@ -234,7 +235,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1, isArchivedByUser: true)],
             members: [Member(1, "u1", "Ada", "Lovelace")],
-            points: []);
+            totals: []);
 
         // Act
         var league = (await HandleAsync()).Single();
@@ -258,7 +259,7 @@ public class GetLeaderboardsQueryHandlerTests
                 League(2, seasonStartDateUtc: SeasonStart.AddMonths(1), hasRoundInProgress: true)
             ],
             members: [],
-            points: []);
+            totals: []);
 
         // Act
         var leagues = (await HandleAsync()).ToList();
@@ -278,7 +279,7 @@ public class GetLeaderboardsQueryHandlerTests
                 League(2, seasonStartDateUtc: SeasonStart)
             ],
             members: [],
-            points: []);
+            totals: []);
 
         // Act
         var leagues = (await HandleAsync()).ToList();
@@ -294,7 +295,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1, price: 5m), League(2, price: 20m)],
             members: [],
-            points: []);
+            totals: []);
 
         // Act
         var leagues = (await HandleAsync()).ToList();
@@ -310,7 +311,7 @@ public class GetLeaderboardsQueryHandlerTests
         Given(
             leagues: [League(1, name: "Zebras"), League(2, name: "Aardvarks")],
             members: [],
-            points: []);
+            totals: []);
 
         // Act
         var leagues = (await HandleAsync()).ToList();
@@ -327,7 +328,7 @@ public class GetLeaderboardsQueryHandlerTests
     public async Task Handle_ShouldReturnNothing_WhenThePlayerIsInNoLeagues()
     {
         // Arrange
-        Given(leagues: [], members: [], points: []);
+        Given(leagues: [], members: [], totals: []);
 
         // Act
         var leagues = await HandleAsync();
@@ -340,7 +341,7 @@ public class GetLeaderboardsQueryHandlerTests
     public async Task Handle_ShouldReturnAnEmptyTable_ForALeagueWithNoMembersOfItsOwn()
     {
         // Arrange - a league row with no member rows should not throw.
-        Given(leagues: [League(1)], members: [], points: []);
+        Given(leagues: [League(1)], members: [], totals: []);
 
         // Act
         var league = (await HandleAsync()).Single();
@@ -354,11 +355,11 @@ public class GetLeaderboardsQueryHandlerTests
     private void Given(
         IReadOnlyList<DashboardLeagueRow> leagues,
         IReadOnlyList<DashboardLeagueMemberRow> members,
-        IReadOnlyList<DashboardLeagueMemberPointsRow> points)
+        IReadOnlyList<DashboardLeagueMemberTotalRow> totals)
     {
         _leaderboardsQuery
             .ExecuteAsync(ViewerId, Arg.Any<CancellationToken>())
-            .Returns(new DashboardLeaderboardsData(leagues, members, points));
+            .Returns(new DashboardLeaderboardsData(leagues, members, totals));
     }
 
     private async Task<IEnumerable<LeagueLeaderboardDto>> HandleAsync() =>
@@ -392,6 +393,6 @@ public class GetLeaderboardsQueryHandlerTests
         int? snapshotRank = null) =>
         new(leagueId, userId, firstName, lastName, snapshotRank);
 
-    private static DashboardLeagueMemberPointsRow Points(int leagueId, string userId, int boostedPoints) =>
-        new(leagueId, userId, boostedPoints);
+    private static DashboardLeagueMemberTotalRow Total(int leagueId, string userId, int totalPoints) =>
+        new(leagueId, userId, totalPoints);
 }

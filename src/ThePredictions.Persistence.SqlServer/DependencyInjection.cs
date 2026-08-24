@@ -72,6 +72,9 @@ public static class DependencyInjection
             configuration.GetSection(SqlRetryPolicyOptions.SectionName));
         services.AddSingleton<ISqlRetryPolicy, SqlRetryPolicy>();
 
+        // The level the whole query side reads at, in one place. See ADR-0019 for why it is not the default.
+        services.AddSingleton<IReadIsolationPolicy, ReadUncommittedIsolationPolicy>();
+
         services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
         services.AddScoped<IDbTransactionContext, DbTransactionContext>();
         services.AddScoped<IApplicationReadDbConnection, DapperReadDbConnection>();

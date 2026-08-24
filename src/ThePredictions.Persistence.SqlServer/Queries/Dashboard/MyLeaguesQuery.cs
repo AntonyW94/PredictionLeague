@@ -13,11 +13,11 @@ namespace ThePredictions.Persistence.SqlServer.Queries.Dashboard;
 /// counts wins, labels a round, works out a prize pot or decides which round is the active one.
 /// </summary>
 /// <remarks>
-/// Every read keeps the <c>READ UNCOMMITTED</c> hint the original carried, and for the reason recorded against it:
-/// this is a high-frequency tile that was blocking for seconds behind the results and stats write path, because this
-/// managed instance cannot have <c>READ_COMMITTED_SNAPSHOT</c> enabled. The tile auto-refreshes, so a transient dirty
-/// read self-corrects on the next poll, whereas the lock wait was plainly visible. The level is reset at the end of
-/// each batch so it cannot leak to another read on the same pooled connection.
+/// These four reads used to carry a <c>READ UNCOMMITTED</c> hint of their own, because this is a high-frequency tile
+/// that was blocking for seconds behind the results and stats write path and this managed instance cannot have
+/// <c>READ_COMMITTED_SNAPSHOT</c> enabled. That is now how the whole query side reads - see
+/// <see cref="ThePredictions.Application.Data.IReadIsolationPolicy"/> and ADR-0019 - so the hint is gone from here
+/// rather than repeated in the two files that happened to have hit the problem first.
 ///
 /// The <c>LeagueMemberStats</c> read is a keyed lookup and stays that way. ADR-0015 exists because computing those
 /// ranks live cost roughly 400ms of query <i>planning</i> per dashboard load - the plan was invalidated about once a
@@ -27,9 +27,6 @@ namespace ThePredictions.Persistence.SqlServer.Queries.Dashboard;
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public sealed class MyLeaguesQuery(IApplicationReadDbConnection dbConnection) : IMyLeaguesQuery
 {
-    private const string ReadUncommitted = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;";
-    private const string ReadCommitted = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;";
-
     public async Task<MyLeaguesData> ExecuteAsync(string userId, CancellationToken cancellationToken)
     {
         var leaguesTask = GetLeaguesAsync(userId, cancellationToken);
@@ -46,9 +43,7 @@ public sealed class MyLeaguesQuery(IApplicationReadDbConnection dbConnection) : 
     {
         // The four aggregates are counts and sums. What they mean - the pot, what is left of it, whether the season
         // is over - is decided in C#.
-        var sql = $@"
-            {ReadUncommitted}
-
+        const string sql = @"
             SELECT
                 l.[Id] AS [LeagueId],
                 l.[Name] AS [LeagueName],
@@ -118,9 +113,7 @@ public sealed class MyLeaguesQuery(IApplicationReadDbConnection dbConnection) : 
                 [Competitions] c ON c.[Id] = s.[CompetitionId]
             WHERE
                 lm.[UserId] = @UserId
-                AND lm.[Status] = @ApprovedStatus;
-
-            {ReadCommitted}";
+                AND lm.[Status] = @ApprovedStatus;";
 
         return (await dbConnection.QueryAsync<MyLeagueRow>(
             sql, cancellationToken,
@@ -136,9 +129,7 @@ public sealed class MyLeaguesQuery(IApplicationReadDbConnection dbConnection) : 
     {
         // Every round of every season the player has a league in, drafts included: which of them can be the active
         // round, and which one wins, is the handler's rule. The stage text comes back raw for the same reason.
-        var sql = $@"
-            {ReadUncommitted}
-
+        const string sql = @"
             SELECT
                 r.[Id] AS [RoundId],
                 r.[SeasonId],
@@ -181,9 +172,7 @@ public sealed class MyLeaguesQuery(IApplicationReadDbConnection dbConnection) : 
                     WHERE
                         lm.[UserId] = @UserId
                         AND lm.[Status] = @ApprovedStatus
-                );
-
-            {ReadCommitted}";
+                );";
 
         return (await dbConnection.QueryAsync<MyLeagueRoundRow>(
             sql, cancellationToken,
@@ -200,9 +189,7 @@ public sealed class MyLeaguesQuery(IApplicationReadDbConnection dbConnection) : 
     {
         // Every approved member's scores in the player's leagues. A round cannot be known to be won without the
         // scores it was won against, and counting those wins is the rule that moved.
-        var sql = $@"
-            {ReadUncommitted}
-
+        const string sql = @"
             SELECT
                 lrr.[LeagueId],
                 lrr.[UserId],
@@ -217,9 +204,7 @@ public sealed class MyLeaguesQuery(IApplicationReadDbConnection dbConnection) : 
             INNER JOIN
                 [LeagueMembers] mine ON mine.[LeagueId] = lrr.[LeagueId]
                     AND mine.[UserId] = @UserId
-                    AND mine.[Status] = @ApprovedStatus;
-
-            {ReadCommitted}";
+                    AND mine.[Status] = @ApprovedStatus;";
 
         return (await dbConnection.QueryAsync<MyLeagueRoundScoreRow>(
             sql, cancellationToken,
@@ -230,9 +215,7 @@ public sealed class MyLeaguesQuery(IApplicationReadDbConnection dbConnection) : 
     {
         // A keyed lookup on the cache maintained by LeagueStatsRepository, exactly as before. Nothing is recomputed
         // here and nothing should be - see ADR-0015.
-        var sql = $@"
-            {ReadUncommitted}
-
+        const string sql = @"
             SELECT
                 stats.[LeagueId],
                 stats.[OverallRank],
@@ -252,9 +235,7 @@ public sealed class MyLeaguesQuery(IApplicationReadDbConnection dbConnection) : 
                     AND lm.[UserId] = stats.[UserId]
                     AND lm.[Status] = @ApprovedStatus
             WHERE
-                stats.[UserId] = @UserId;
-
-            {ReadCommitted}";
+                stats.[UserId] = @UserId;";
 
         return (await dbConnection.QueryAsync<MyLeagueStatsRow>(
             sql, cancellationToken,

@@ -44,9 +44,12 @@ public sealed class DapperReadDbConnectionQueryTests : IDisposable
 
     public void Dispose() => _keepAlive.Dispose();
 
-    private DapperReadDbConnection BuildConnection(int slowQueryThresholdMilliseconds = 500) =>
+    private DapperReadDbConnection BuildConnection(
+        int slowQueryThresholdMilliseconds = 500,
+        IReadIsolationPolicy? isolationPolicy = null) =>
         new(_connectionFactory,
             new PassThroughRetryPolicy(),
+            isolationPolicy ?? new UnwrappedIsolationPolicy(),
             Options.Create(new TimeoutSettings()),
             Options.Create(new QueryMonitoringSettings { SlowQueryThresholdMilliseconds = slowQueryThresholdMilliseconds }),
             _logger);
@@ -109,6 +112,7 @@ public sealed class DapperReadDbConnectionQueryTests : IDisposable
         var readDbConnection = new DapperReadDbConnection(
             closedConnectionFactory,
             new PassThroughRetryPolicy(),
+            new UnwrappedIsolationPolicy(),
             Options.Create(new TimeoutSettings()),
             Options.Create(new QueryMonitoringSettings()),
             _logger);
@@ -116,6 +120,17 @@ public sealed class DapperReadDbConnectionQueryTests : IDisposable
         var names = await readDbConnection.QueryAsync<string>("SELECT Name FROM Leagues ORDER BY Id", CancellationToken.None);
 
         names.Should().Equal("Alpha", "Beta");
+    }
+
+    [Fact]
+    public async Task QueryAsync_ShouldExecuteTheSqlThePolicyReturns()
+    {
+        // The isolation policy rewrites the batch that actually runs, so a read that ignored its output
+        // would run at whatever level the pooled connection happened to be left on.
+        var names = await BuildConnection(isolationPolicy: new FixedSqlIsolationPolicy("SELECT Name FROM Leagues WHERE Id = 2"))
+            .QueryAsync<string>("SELECT Name FROM Leagues ORDER BY Id", CancellationToken.None);
+
+        names.Should().ContainSingle().Which.Should().Be("Beta");
     }
 
     [Fact]
@@ -151,5 +166,21 @@ public sealed class DapperReadDbConnectionQueryTests : IDisposable
     {
         public Task<T> ExecuteAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken cancellationToken) =>
             operation(cancellationToken);
+    }
+
+    /// <summary>
+    /// The production policy wraps every read in <c>SET TRANSACTION ISOLATION LEVEL</c>, which the in-memory
+    /// database backing these tests cannot parse. It is exercised directly by
+    /// <c>ReadUncommittedIsolationPolicyTests</c>; here what matters is that the read path runs whatever the
+    /// policy returns, which <see cref="QueryAsync_ShouldExecuteTheSqlThePolicyReturns"/> pins.
+    /// </summary>
+    private sealed class UnwrappedIsolationPolicy : IReadIsolationPolicy
+    {
+        public string Apply(string sql) => sql;
+    }
+
+    private sealed class FixedSqlIsolationPolicy(string sql) : IReadIsolationPolicy
+    {
+        public string Apply(string _) => sql;
     }
 }

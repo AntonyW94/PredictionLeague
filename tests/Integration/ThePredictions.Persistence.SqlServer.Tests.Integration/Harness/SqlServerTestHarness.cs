@@ -41,12 +41,15 @@ internal sealed class SqlServerTestHarness
     /// <summary>
     /// The real <see cref="DapperReadDbConnection"/> over the test container - the seam every query
     /// handler takes, and the one handler unit tests substitute, which is why the SQL behind it has
-    /// never run under test. Retry and slow-query logging are left at their production defaults; the
-    /// logger is silent because a passing query has nothing to report.
+    /// never run under test. Retry, slow-query logging and the read isolation level are left at their
+    /// production defaults - so every conformance query runs through the real READ UNCOMMITTED wrapper
+    /// against real SQL Server, which is the only place that batch is parsed under test. The logger is
+    /// silent because a passing query has nothing to report.
     /// </summary>
     internal IApplicationReadDbConnection ReadDbConnection => new DapperReadDbConnection(
         ConnectionFactory,
         new SqlRetryPolicy(Options.Create(new SqlRetryPolicyOptions()), NullLogger<SqlRetryPolicy>.Instance),
+        new ReadUncommittedIsolationPolicy(),
         Options.Create(new TimeoutSettings()),
         Options.Create(new QueryMonitoringSettings()),
         NullLogger<DapperReadDbConnection>.Instance);

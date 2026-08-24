@@ -12,28 +12,23 @@ namespace ThePredictions.Persistence.SqlServer.Queries.Leagues;
 /// counts a win, sums a total, names a player or labels a prize.
 /// </summary>
 /// <remarks>
-/// Each read keeps the <c>READ UNCOMMITTED</c> hint the original statement carried, and for the same reason: the
-/// records tile spans the highest-contention tables in the schema (<c>LeagueRoundResults</c>, <c>RoundResults</c>,
-/// <c>Winnings</c>) and was blocking for seconds behind the results and stats write path, because this managed
-/// instance cannot have <c>READ_COMMITTED_SNAPSHOT</c> enabled. The queries themselves are fast; the lock wait was
-/// the cost. A dirty read here is cosmetic and self-corrects on the next load, and the level is reset at the end of
-/// every batch so it cannot leak into another read on the same pooled connection.
+/// These reads used to carry a <c>READ UNCOMMITTED</c> hint of their own: the records tile spans the
+/// highest-contention tables in the schema (<c>LeagueRoundResults</c>, <c>RoundResults</c>, <c>Winnings</c>) and was
+/// blocking for seconds behind the results and stats write path, because this managed instance cannot have
+/// <c>READ_COMMITTED_SNAPSHOT</c> enabled. The queries themselves are fast; the lock wait was the cost. The whole
+/// query side now reads that way - see <see cref="ThePredictions.Application.Data.IReadIsolationPolicy"/> and
+/// ADR-0019 - so the hint no longer belongs in the handful of files that noticed first.
 ///
-/// That hint is why this is an adapter concern rather than a handler one: it is a statement about how one engine
-/// takes locks, and it means nothing to an adapter that does not take them.
+/// It stays an adapter concern rather than a handler one either way: it is a statement about how one engine takes
+/// locks, and it means nothing to an adapter that does not take them.
 /// </remarks>
 [ExcludeFromCodeCoverage(Justification = "Query handler: the body is a SQL string plus a mapping. A unit test would mock IApplicationReadDbConnection and verify neither. Covered by tools/ThePredictions.SchemaCheck and E2E.")]
 public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection) : ILeagueRecordsQuery
 {
-    private const string ReadUncommitted = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;";
-    private const string ReadCommitted = "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;";
-
     public async Task<LeagueRecordsData?> ExecuteAsync(int leagueId, CancellationToken cancellationToken)
     {
         var league = await dbConnection.QuerySingleOrDefaultAsync<LeagueRow>(
-            $@"
-            {ReadUncommitted}
-
+            @"
             SELECT
                 l.[Id],
                 l.[SeasonId],
@@ -41,9 +36,7 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
             FROM
                 [Leagues] l
             WHERE
-                l.[Id] = @LeagueId;
-
-            {ReadCommitted}",
+                l.[Id] = @LeagueId;",
             cancellationToken,
             new { LeagueId = leagueId });
 
@@ -68,9 +61,7 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
     private async Task<IReadOnlyList<LeaderboardParticipantRow>> GetApprovedMembersAsync(
         int leagueId, CancellationToken cancellationToken)
     {
-        var sql = $@"
-            {ReadUncommitted}
-
+        const string sql = @"
             SELECT
                 lm.[UserId],
                 u.[FirstName],
@@ -81,9 +72,7 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
                 [AspNetUsers] u ON u.[Id] = lm.[UserId]
             WHERE
                 lm.[LeagueId] = @LeagueId
-                AND lm.[Status] = @ApprovedStatus;
-
-            {ReadCommitted}";
+                AND lm.[Status] = @ApprovedStatus;";
 
         return (await dbConnection.QueryAsync<LeaderboardParticipantRow>(
             sql, cancellationToken,
@@ -96,9 +85,7 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
         // Not filtered by league membership, because it does not need to be: the table is already per-league and
         // the handler decides who may hold a record. HasAnyPrediction answers the EXISTS the lowest-round block
         // used; whether that fact excludes a row is the handler's rule.
-        var sql = $@"
-            {ReadUncommitted}
-
+        const string sql = @"
             SELECT
                 lrr.[UserId],
                 u.[FirstName],
@@ -126,9 +113,7 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
             INNER JOIN
                 [AspNetUsers] u ON u.[Id] = lrr.[UserId]
             WHERE
-                lrr.[LeagueId] = @LeagueId;
-
-            {ReadCommitted}";
+                lrr.[LeagueId] = @LeagueId;";
 
         return (await dbConnection.QueryAsync<LeagueRecordRoundScoreRow>(
             sql, cancellationToken, new { LeagueId = leagueId })).ToList();
@@ -140,9 +125,7 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
         // RoundResults is league-agnostic, so this one narrows to approved members at the source: reading every
         // player's whole season to discard most of it would be wasteful. It is an optimisation, not the rule - the
         // handler filters the same way regardless, so narrowing here can only remove rows it would remove anyway.
-        var sql = $@"
-            {ReadUncommitted}
-
+        const string sql = @"
             SELECT
                 rr.[UserId],
                 u.[FirstName],
@@ -160,9 +143,7 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
                     AND lm.[LeagueId] = @LeagueId
                     AND lm.[Status] = @ApprovedStatus
             WHERE
-                r.[SeasonId] = @SeasonId;
-
-            {ReadCommitted}";
+                r.[SeasonId] = @SeasonId;";
 
         return (await dbConnection.QueryAsync<LeagueRecordExactScoreRow>(
             sql, cancellationToken,
@@ -176,9 +157,7 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
         // passes the enum and Dapper sends its underlying int. Mapping it to PrizeType here is what stops that
         // accident spreading: the old statement compared the column against an int parameter and worked only
         // because SQL Server silently converted one to the other.
-        var sql = $@"
-            {ReadUncommitted}
-
+        const string sql = @"
             SELECT
                 w.[UserId],
                 u.[FirstName],
@@ -196,9 +175,7 @@ public sealed class LeagueRecordsQuery(IApplicationReadDbConnection dbConnection
             INNER JOIN
                 [AspNetUsers] u ON u.[Id] = w.[UserId]
             WHERE
-                lps.[LeagueId] = @LeagueId;
-
-            {ReadCommitted}";
+                lps.[LeagueId] = @LeagueId;";
 
         return (await dbConnection.QueryAsync<LeagueRecordWinningRow>(
             sql, cancellationToken, new { LeagueId = leagueId })).ToList();
