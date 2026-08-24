@@ -13,6 +13,7 @@ namespace ThePredictions.Persistence.SqlServer.Data;
 public class DapperReadDbConnection(
     IDbConnectionFactory connectionFactory,
     ISqlRetryPolicy retryPolicy,
+    IReadIsolationPolicy isolationPolicy,
     IOptions<TimeoutSettings> timeoutSettings,
     IOptions<QueryMonitoringSettings> queryMonitoringSettings,
     ILogger<DapperReadDbConnection> logger) : IApplicationReadDbConnection
@@ -61,9 +62,15 @@ public class DapperReadDbConnection(
 
         try
         {
+            // Every read runs at the isolation level the policy chooses, applied here rather than in each
+            // query so there is one answer to "what level do reads run at" instead of one per file. The
+            // logged SQL stays the caller's own text: the wrapper is noise in a slow-query warning, and it
+            // is the same on every line.
+            var commandText = isolationPolicy.Apply(sql);
+
             return await retryPolicy.ExecuteAsync(async ct =>
             {
-                var command = new CommandDefinition(commandText: sql, parameters: param, cancellationToken: ct, commandTimeout: _commandTimeout);
+                var command = new CommandDefinition(commandText: commandText, parameters: param, cancellationToken: ct, commandTimeout: _commandTimeout);
 
                 var connectionStopwatch = Stopwatch.StartNew();
 

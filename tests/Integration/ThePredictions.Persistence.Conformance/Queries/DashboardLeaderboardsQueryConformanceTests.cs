@@ -31,7 +31,7 @@ public abstract class DashboardLeaderboardsQueryConformanceTests
         // Assert
         data.Leagues.Should().BeEmpty();
         data.Members.Should().BeEmpty();
-        data.Points.Should().BeEmpty();
+        data.Totals.Should().BeEmpty();
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public abstract class DashboardLeaderboardsQueryConformanceTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldReturnPointsTaggedWithTheirLeague()
+    public async Task ExecuteAsync_ShouldReturnATotalTaggedWithItsLeague()
     {
         // Arrange - the same player scoring in two of their leagues.
         var backdrop = await Seed.AddBackdropAsync();
@@ -188,12 +188,12 @@ public abstract class DashboardLeaderboardsQueryConformanceTests
         var data = await Query.ExecuteAsync(backdrop.UserId, CancellationToken.None);
 
         // Assert - without the league id the handler could not rank the two tables separately.
-        data.Points.Single(row => row.LeagueId == firstId).BoostedPoints.Should().Be(18);
-        data.Points.Single(row => row.LeagueId == secondId).BoostedPoints.Should().Be(9);
+        data.Totals.Single(row => row.LeagueId == firstId).TotalPoints.Should().Be(18);
+        data.Totals.Single(row => row.LeagueId == secondId).TotalPoints.Should().Be(9);
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldReturnEachRoundsPointsSeparately()
+    public async Task ExecuteAsync_ShouldTotalEveryRoundIntoOneRow()
     {
         // Arrange
         var backdrop = await Seed.AddBackdropAsync();
@@ -208,12 +208,12 @@ public abstract class DashboardLeaderboardsQueryConformanceTests
         // Act
         var data = await Query.ExecuteAsync(backdrop.UserId, CancellationToken.None);
 
-        // Assert - summing is the handler's job, so the rows arrive unaggregated.
-        data.Points.Select(row => row.BoostedPoints).Should().BeEquivalentTo([10, 7]);
+        // Assert - one row per (league, member), boosted points summed across every round they scored in.
+        data.Totals.Select(row => row.TotalPoints).Should().BeEquivalentTo([17]);
     }
 
     [Fact]
-    public async Task ExecuteAsync_ShouldReturnNoPoints_ForALeagueThePlayerIsNotIn()
+    public async Task ExecuteAsync_ShouldReturnNoTotal_ForALeagueThePlayerIsNotIn()
     {
         // Arrange
         var backdrop = await Seed.AddBackdropAsync();
@@ -231,6 +231,6 @@ public abstract class DashboardLeaderboardsQueryConformanceTests
         var data = await Query.ExecuteAsync(backdrop.UserId, CancellationToken.None);
 
         // Assert
-        data.Points.Should().BeEmpty();
+        data.Totals.Should().BeEmpty();
     }
 }

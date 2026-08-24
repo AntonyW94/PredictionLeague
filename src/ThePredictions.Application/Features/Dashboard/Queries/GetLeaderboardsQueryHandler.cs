@@ -24,13 +24,11 @@ public class GetLeaderboardsQueryHandler(IDashboardLeaderboardsQuery leaderboard
             .GroupBy(member => member.LeagueId)
             .ToDictionary(group => group.Key, group => group.ToList());
 
-        var totalsByLeague = data.Points
+        var totalsByLeague = data.Totals
             .GroupBy(row => row.LeagueId)
             .ToDictionary(
                 group => group.Key,
-                group => group
-                    .GroupBy(row => row.UserId)
-                    .ToDictionary(byUser => byUser.Key, byUser => byUser.Sum(row => row.BoostedPoints)));
+                group => group.ToDictionary(row => row.UserId, row => row.TotalPoints));
 
         return LeagueTileOrder.Apply(data.Leagues)
             .Select(league => ToDto(league, membersByLeague, totalsByLeague))
@@ -76,8 +74,9 @@ public class GetLeaderboardsQueryHandler(IDashboardLeaderboardsQuery leaderboard
     }
 
     /// <summary>
-    /// A member with no result rows in a league scores zero rather than dropping out of its table, which is what
-    /// the old <c>SUM(ISNULL(lrr.[BoostedPoints], 0))</c> over a left join was for.
+    /// A member with no total in a league scores zero rather than dropping out of its table, which is what the old
+    /// <c>SUM(ISNULL(lrr.[BoostedPoints], 0))</c> over a left join was for. The read inner-joins instead, so a
+    /// member who has never scored has no row at all rather than a row of zero.
     /// </summary>
     private static int TotalFor(IReadOnlyDictionary<string, int> totals, string userId) =>
         totals.TryGetValue(userId, out var total) ? total : 0;

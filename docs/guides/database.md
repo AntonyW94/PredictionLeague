@@ -103,6 +103,27 @@ Dapper reports a result-set/result-record mismatch as a plain `InvalidOperationE
 
 Both types are reported as a 500 and an Error. Business rules throw `BusinessRuleViolationException` (400 and a Warning), so a materialisation bug cannot be mistaken for a client mistake - see [ADR-0016](../decisions/0016-business-rule-exception-classification.md). This used to be the other way round: `InvalidOperationException` meant "client error" and every infrastructure path had to remember to opt out, which is how a broken leaderboard spent a day logged as a Warning behind a 400.
 
+## Isolation levels
+
+**Every query-side read runs at `READ UNCOMMITTED`. You do not write that anywhere - it is applied once, for all of them.**
+
+`DapperReadDbConnection` passes each read's SQL through `IReadIsolationPolicy` before executing it. The production implementation sets the level, runs the read, and sets it back in the same batch, so there is no extra round trip and nothing to remember per query. Do **not** add `SET TRANSACTION ISOLATION LEVEL` or `WITH (NOLOCK)` to a query - two files used to carry the hint by hand and that is exactly how a third one came to be missing it.
+
+Why: this instance cannot have `READ_COMMITTED_SNAPSHOT` enabled, so a reader under `READ COMMITTED` has no snapshot to fall back on and simply waits for whichever writer holds the rows it wants. The cost is dirty reads, which is a real trade and is argued out in [ADR-0019](../decisions/0019-read-uncommitted-for-query-side-reads.md).
+
+Two consequences worth knowing:
+
+- **Repository reads on the command path are not affected**, and must not be. They feed writes, and a write decided from data that may not exist is a different class of bug from a leaderboard that is briefly wrong. This is one of the things the [CQRS split](cqrs-patterns.md) buys.
+- **The isolation level rides pooled connections.** Measured against the live server: set it, close the connection, and the pool hands back the same SPID still holding the level - `sp_reset_connection` does not clear it. That is why `DbTransactionContext` passes `IsolationLevel.ReadCommitted` to `BeginTransaction` explicitly rather than inheriting whatever the session was left on.
+
+## Transactions hold writes, and nothing else
+
+`TransactionBehaviour` opens a transaction for any command marked `ITransactionalRequest` and commits it when the handler returns, so **the handler's whole body is the lock-hold window** - and with no snapshot isolation available, that window is also how long an unrelated read of the same rows can be made to wait.
+
+So a transactional command must contain writes and the reads that inform them, and nothing slow that is not a write. HTTP calls, email sends, payment calls and anything else that can block on a third party belong in a separate, untransacted command sent **after** the transactional one returns. `ScoreMatchResultsCommand` / `CompleteRoundCommand` is the worked example: settling a round used to send a season's worth of email from inside the transaction that had just written the round's points.
+
+`CommitAsync` ends the transaction and releases the connection, so a command sent after a commit gets a fresh autocommit connection rather than the committed transaction object.
+
 ## DateTime Handling
 
 **All dates are stored and retrieved in UTC.**
