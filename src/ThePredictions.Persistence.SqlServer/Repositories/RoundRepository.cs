@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
+using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
@@ -18,6 +19,11 @@ public class RoundRepository(
 {
     #region SQL Constants
 
+    /// <remarks>
+    /// Every fixture in one statement. The <c>WITH</c> clause names each column's type, and the JSON is matched
+    /// to it by property name rather than by position, so the two call sites building the row objects may list
+    /// their properties in any order.
+    /// </remarks>
     private const string AddMatchSql = @"
         INSERT INTO [Matches]
         (
@@ -33,20 +39,33 @@ public class RoundRepository(
             [PlaceholderAwayName],
             [ApiRoundName]
         )
-        VALUES
-        (
-            @RoundId,
-            @HomeTeamId,
-            @AwayTeamId,
-            @MatchDateTimeUtc,
-            @CustomLockTimeUtc,
-            @Status,
-            @ExternalId,
-            @MatchNumber,
-            @PlaceholderHomeName,
-            @PlaceholderAwayName,
-            @ApiRoundName
-        );";
+        SELECT
+            src.[RoundId],
+            src.[HomeTeamId],
+            src.[AwayTeamId],
+            src.[MatchDateTimeUtc],
+            src.[CustomLockTimeUtc],
+            src.[Status],
+            src.[ExternalId],
+            src.[MatchNumber],
+            src.[PlaceholderHomeName],
+            src.[PlaceholderAwayName],
+            src.[ApiRoundName]
+        FROM
+            OPENJSON(@Rows)
+            WITH (
+                [RoundId] int 'strict $.RoundId',
+                [HomeTeamId] int 'strict $.HomeTeamId',
+                [AwayTeamId] int 'strict $.AwayTeamId',
+                [MatchDateTimeUtc] datetime2 'strict $.MatchDateTimeUtc',
+                [CustomLockTimeUtc] datetime2 'strict $.CustomLockTimeUtc',
+                [Status] nvarchar(50) 'strict $.Status',
+                [ExternalId] int 'strict $.ExternalId',
+                [MatchNumber] int 'strict $.MatchNumber',
+                [PlaceholderHomeName] nvarchar(100) 'strict $.PlaceholderHomeName',
+                [PlaceholderAwayName] nvarchar(100) 'strict $.PlaceholderAwayName',
+                [ApiRoundName] nvarchar(128) 'strict $.ApiRoundName'
+            ) src;";
 
     private const string GetRoundsWithMatchesSql = @"
         SELECT
@@ -117,7 +136,7 @@ public class RoundRepository(
 
         var insertMatchesCommand = new CommandDefinition(
             commandText: AddMatchSql,
-            parameters: matchesToInsert,
+            parameters: new { Rows = JsonRows.From(matchesToInsert) },
             transaction: Transaction,
             cancellationToken: cancellationToken
         );
@@ -398,7 +417,7 @@ public class RoundRepository(
 
         if (matchesToInsert.Any())
         {
-            var insertMatchesCommand = new CommandDefinition(AddMatchSql, matchesToInsert.Select(m => new
+            var rowsToInsert = matchesToInsert.Select(m => new
             {
                 RoundId = round.Id,
                 m.HomeTeamId,
@@ -411,7 +430,14 @@ public class RoundRepository(
                 m.PlaceholderHomeName,
                 m.PlaceholderAwayName,
                 m.ApiRoundName
-            }), transaction: Transaction, cancellationToken: cancellationToken);
+            }).ToList();
+
+            var insertMatchesCommand = new CommandDefinition(
+                AddMatchSql,
+                new { Rows = JsonRows.From(rowsToInsert) },
+                transaction: Transaction,
+                cancellationToken: cancellationToken);
+
             await Connection.ExecuteAsync(insertMatchesCommand);
         }
 
@@ -419,23 +445,39 @@ public class RoundRepository(
         {
             const string updateSql = @"
                 UPDATE
-                    [Matches]
+                    m
                 SET
-                    [RoundId] = @RoundId,
-                    [HomeTeamId] = @HomeTeamId,
-                    [AwayTeamId] = @AwayTeamId,
-                    [MatchDateTimeUtc] = @MatchDateTimeUtc,
-                    [CustomLockTimeUtc] = @CustomLockTimeUtc,
-                    [ExternalId] = @ExternalId,
-                    [MatchNumber] = @MatchNumber,
-                    [Status] = @Status,
-                    [PlaceholderHomeName] = @PlaceholderHomeName,
-                    [PlaceholderAwayName] = @PlaceholderAwayName,
-                    [ApiRoundName] = @ApiRoundName
-                WHERE
-                    [Id] = @Id;";
+                    m.[RoundId] = src.[RoundId],
+                    m.[HomeTeamId] = src.[HomeTeamId],
+                    m.[AwayTeamId] = src.[AwayTeamId],
+                    m.[MatchDateTimeUtc] = src.[MatchDateTimeUtc],
+                    m.[CustomLockTimeUtc] = src.[CustomLockTimeUtc],
+                    m.[ExternalId] = src.[ExternalId],
+                    m.[MatchNumber] = src.[MatchNumber],
+                    m.[Status] = src.[Status],
+                    m.[PlaceholderHomeName] = src.[PlaceholderHomeName],
+                    m.[PlaceholderAwayName] = src.[PlaceholderAwayName],
+                    m.[ApiRoundName] = src.[ApiRoundName]
+                FROM
+                    [Matches] m
+                INNER JOIN
+                    OPENJSON(@Rows)
+                    WITH (
+                        [Id] int 'strict $.Id',
+                        [RoundId] int 'strict $.RoundId',
+                        [HomeTeamId] int 'strict $.HomeTeamId',
+                        [AwayTeamId] int 'strict $.AwayTeamId',
+                        [MatchDateTimeUtc] datetime2 'strict $.MatchDateTimeUtc',
+                        [CustomLockTimeUtc] datetime2 'strict $.CustomLockTimeUtc',
+                        [ExternalId] int 'strict $.ExternalId',
+                        [MatchNumber] int 'strict $.MatchNumber',
+                        [Status] nvarchar(50) 'strict $.Status',
+                        [PlaceholderHomeName] nvarchar(100) 'strict $.PlaceholderHomeName',
+                        [PlaceholderAwayName] nvarchar(100) 'strict $.PlaceholderAwayName',
+                        [ApiRoundName] nvarchar(128) 'strict $.ApiRoundName'
+                    ) src ON src.[Id] = m.[Id];";
 
-            var updateMatchesCommand = new CommandDefinition(updateSql, matchesToUpdate.Select(m => new
+            var rowsToUpdate = matchesToUpdate.Select(m => new
             {
                 m.Id,
                 m.RoundId,
@@ -449,7 +491,14 @@ public class RoundRepository(
                 m.PlaceholderHomeName,
                 m.PlaceholderAwayName,
                 m.ApiRoundName
-            }), transaction: Transaction, cancellationToken: cancellationToken);
+            }).ToList();
+
+            var updateMatchesCommand = new CommandDefinition(
+                updateSql,
+                new { Rows = JsonRows.From(rowsToUpdate) },
+                transaction: Transaction,
+                cancellationToken: cancellationToken);
+
             await Connection.ExecuteAsync(updateMatchesCommand);
         }
 
@@ -549,23 +598,35 @@ public class RoundRepository(
 
         const string sql = @"
         UPDATE
-            [Matches]
+            m
         SET
-            [ActualHomeTeamScore] = @ActualHomeTeamScore,
-            [ActualAwayTeamScore] = @ActualAwayTeamScore,
-            [Status] = @Status
-        WHERE
-            [Id] = @Id;";
+            m.[ActualHomeTeamScore] = src.[ActualHomeTeamScore],
+            m.[ActualAwayTeamScore] = src.[ActualAwayTeamScore],
+            m.[Status] = src.[Status]
+        FROM
+            [Matches] m
+        INNER JOIN
+            OPENJSON(@Rows)
+            WITH (
+                [Id] int 'strict $.Id',
+                [ActualHomeTeamScore] int 'strict $.ActualHomeTeamScore',
+                [ActualAwayTeamScore] int 'strict $.ActualAwayTeamScore',
+                [Status] nvarchar(50) 'strict $.Status'
+            ) src ON src.[Id] = m.[Id];";
 
-        var command = new CommandDefinition(
-            commandText: sql,
-            parameters: matches.Select(m => new
+        var rows = matches
+            .Select(m => new
             {
                 m.Id,
                 m.ActualHomeTeamScore,
                 m.ActualAwayTeamScore,
                 Status = m.Status.ToString()
-            }),
+            })
+            .ToList();
+
+        var command = new CommandDefinition(
+            commandText: sql,
+            parameters: new { Rows = JsonRows.From(rows) },
             transaction: Transaction,
             cancellationToken: cancellationToken
         );
@@ -588,11 +649,20 @@ public class RoundRepository(
             MERGE [RoundResults] AS target
             USING (
                 SELECT
-                    @RoundId AS [RoundId],
-                    @UserId AS [UserId],
-                    @ExactScoreCount AS [ExactScoreCount],
-                    @CorrectResultCount AS [CorrectResultCount],
-                    @IncorrectCount AS [IncorrectCount]
+                    src.[RoundId],
+                    src.[UserId],
+                    src.[ExactScoreCount],
+                    src.[CorrectResultCount],
+                    src.[IncorrectCount]
+                FROM
+                    OPENJSON(@Rows)
+                    WITH (
+                        [RoundId] int 'strict $.RoundId',
+                        [UserId] nvarchar(450) 'strict $.UserId',
+                        [ExactScoreCount] int 'strict $.ExactScoreCount',
+                        [CorrectResultCount] int 'strict $.CorrectResultCount',
+                        [IncorrectCount] int 'strict $.IncorrectCount'
+                    ) src
             ) AS src
             ON target.[RoundId] = src.[RoundId]
                AND target.[UserId] = src.[UserId]
@@ -623,7 +693,7 @@ public class RoundRepository(
 
         var command = new CommandDefinition(
             sql,
-            rows,
+            new { Rows = JsonRows.From(rows) },
             transaction: Transaction,
             cancellationToken: cancellationToken);
 

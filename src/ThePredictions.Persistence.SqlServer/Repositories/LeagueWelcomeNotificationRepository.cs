@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
+using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Models;
 
@@ -12,9 +13,6 @@ public class LeagueWelcomeNotificationRepository(IDbConnectionFactory connection
 {
     public async Task AddNotificationsAsync(IEnumerable<LeagueWelcomeNotification> notifications, CancellationToken cancellationToken)
     {
-        if (!notifications.Any())
-            return;
-
         const string sql = @"
             INSERT INTO [LeagueWelcomeNotifications]
             (
@@ -22,14 +20,31 @@ public class LeagueWelcomeNotificationRepository(IDbConnectionFactory connection
                 [UserId],
                 [SentAtUtc]
             )
-            VALUES
-            (
-                @LeagueId,
-                @UserId,
-                @SentAtUtc
-            );";
+            SELECT
+                src.[LeagueId],
+                src.[UserId],
+                src.[SentAtUtc]
+            FROM
+                OPENJSON(@Rows)
+                WITH (
+                    [LeagueId] int 'strict $.LeagueId',
+                    [UserId] nvarchar(450) 'strict $.UserId',
+                    [SentAtUtc] datetime2 'strict $.SentAtUtc'
+                ) src;";
 
-        var command = new CommandDefinition(commandText: sql, parameters: notifications, transaction: Transaction, cancellationToken: cancellationToken);
+        var rows = notifications
+            .Select(notification => new
+            {
+                notification.LeagueId,
+                notification.UserId,
+                notification.SentAtUtc
+            })
+            .ToList();
+
+        if (rows.Count == 0)
+            return;
+
+        var command = new CommandDefinition(commandText: sql, parameters: new { Rows = JsonRows.From(rows) }, transaction: Transaction, cancellationToken: cancellationToken);
         await Connection.ExecuteAsync(command);
     }
 }

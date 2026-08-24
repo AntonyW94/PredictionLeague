@@ -1,5 +1,6 @@
 using FluentAssertions;
 using ThePredictions.Application.Repositories;
+using ThePredictions.Contracts.Boosts;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Services;
 using Xunit;
@@ -18,6 +19,9 @@ public abstract class LeagueRepositoryScoringConformanceTests
     protected abstract ILeagueRepository Repository { get; }
 
     protected abstract ITestDataSeeder Seed { get; }
+
+    /// <summary>Direct reads, bypassing the repository.</summary>
+    protected abstract ITestDataInspector Inspect { get; }
 
     #region Which pairs are in scope
 
@@ -188,6 +192,93 @@ public abstract class LeagueRepositoryScoringConformanceTests
         // Assert
         await act.Should().NotThrowAsync();
         (await Repository.GetLeagueRoundResultsAsync(world.RoundId, CancellationToken.None)).Should().BeEmpty();
+    }
+
+    #endregion
+
+    #region Applying boosts over the top
+
+    [Fact]
+    public async Task UpdateLeagueRoundBoostsAsync_ShouldRaiseTheStoredPointsAndRecordWhichBoostDidIt()
+    {
+        // Arrange - a scored round, boost cleared, exactly as the scoring pass leaves it.
+        var world = await ArrangeAsync();
+        await Repository.UpdateLeagueRoundResultsAsync(
+            world.RoundId,
+            [new LeagueRoundScore(world.LeagueId, world.UserId, BasePoints: 9, BoostedPoints: 9, HasBoost: false, AppliedBoostCode: null)],
+            CancellationToken.None);
+
+        // Act
+        await Repository.UpdateLeagueRoundBoostsAsync(
+            [new LeagueRoundBoostUpdate(world.LeagueId, world.RoundId, world.UserId, BoostedPoints: 18, HasBoost: true, AppliedBoostCode: "DOUBLE")],
+            CancellationToken.None);
+
+        // Assert - base points untouched, so re-processing the round can start from them again.
+        var stored = await Inspect.LeagueRoundResultAsync(world.LeagueId, world.RoundId, world.UserId);
+        stored.Should().NotBeNull();
+        stored!.BasePoints.Should().Be(9);
+        stored.BoostedPoints.Should().Be(18);
+        stored.HasBoost.Should().BeTrue();
+        stored.AppliedBoostCode.Should().Be("DOUBLE");
+    }
+
+    [Fact]
+    public async Task UpdateLeagueRoundBoostsAsync_ShouldUpdateEveryRowInTheBatch()
+    {
+        // The whole point of the set-based rewrite: one statement, every row. A source that joined on the wrong
+        // column, or a JSON path naming a property the rows do not carry, would update one and miss the rest.
+        var world = await ArrangeAsync();
+        var otherUserId = await Seed.AddUserAsync("Grace", "Hopper");
+        await Seed.AddLeagueMemberAsync(world.LeagueId, otherUserId);
+
+        await Repository.UpdateLeagueRoundResultsAsync(
+            world.RoundId,
+            [
+                new LeagueRoundScore(world.LeagueId, world.UserId, BasePoints: 9, BoostedPoints: 9, HasBoost: false, AppliedBoostCode: null),
+                new LeagueRoundScore(world.LeagueId, otherUserId, BasePoints: 4, BoostedPoints: 4, HasBoost: false, AppliedBoostCode: null)
+            ],
+            CancellationToken.None);
+
+        // Act
+        await Repository.UpdateLeagueRoundBoostsAsync(
+            [
+                new LeagueRoundBoostUpdate(world.LeagueId, world.RoundId, world.UserId, BoostedPoints: 18, HasBoost: true, AppliedBoostCode: "DOUBLE"),
+                new LeagueRoundBoostUpdate(world.LeagueId, world.RoundId, otherUserId, BoostedPoints: 12, HasBoost: true, AppliedBoostCode: "TRIPLE")
+            ],
+            CancellationToken.None);
+
+        // Assert
+        (await Inspect.LeagueRoundResultAsync(world.LeagueId, world.RoundId, world.UserId))!.BoostedPoints.Should().Be(18);
+        (await Inspect.LeagueRoundResultAsync(world.LeagueId, world.RoundId, otherUserId))!.BoostedPoints.Should().Be(12);
+    }
+
+    [Fact]
+    public async Task UpdateLeagueRoundBoostsAsync_ShouldCreateNothing_WhenThereIsNoScoredRowToBoost()
+    {
+        // Matched-only by design: a boost is an adjustment to points that have been worked out, never a way to
+        // bring a row into being with no base points behind it.
+        var world = await ArrangeAsync();
+
+        // Act
+        await Repository.UpdateLeagueRoundBoostsAsync(
+            [new LeagueRoundBoostUpdate(world.LeagueId, world.RoundId, world.UserId, BoostedPoints: 18, HasBoost: true, AppliedBoostCode: "DOUBLE")],
+            CancellationToken.None);
+
+        // Assert
+        (await Inspect.LeagueRoundResultAsync(world.LeagueId, world.RoundId, world.UserId)).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateLeagueRoundBoostsAsync_ShouldStoreNothing_WhenThereIsNothingToStore()
+    {
+        var world = await ArrangeAsync();
+
+        // Act
+        var act = async () => await Repository.UpdateLeagueRoundBoostsAsync([], CancellationToken.None);
+
+        // Assert
+        await act.Should().NotThrowAsync();
+        (await Inspect.LeagueRoundResultAsync(world.LeagueId, world.RoundId, world.UserId)).Should().BeNull();
     }
 
     #endregion

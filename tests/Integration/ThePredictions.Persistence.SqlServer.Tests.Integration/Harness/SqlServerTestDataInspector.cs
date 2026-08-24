@@ -120,6 +120,55 @@ internal sealed class SqlServerTestDataInspector(IDbConnectionFactory connection
         return await connection.QuerySingleOrDefaultAsync<StoredRoundResult>(sql, new { RoundId = roundId, UserId = userId });
     }
 
+    public async Task<StoredPrediction?> PredictionAsync(int matchId, string userId)
+    {
+        const string sql = @"
+            SELECT
+                up.[PredictedHomeScore],
+                up.[PredictedAwayScore],
+                up.[Outcome],
+                up.[CreatedAtUtc],
+                up.[UpdatedAtUtc]
+            FROM
+                [UserPredictions] up
+            WHERE
+                up.[MatchId] = @MatchId
+                AND up.[UserId] = @UserId;";
+
+        using var connection = connectionFactory.CreateConnection();
+
+        // [Outcome] is an int column holding the enum's underlying value, so the row type reads it as an int
+        // and the cast happens here rather than being left to Dapper to guess at.
+        var row = await connection.QuerySingleOrDefaultAsync<PredictionRow>(sql, new { MatchId = matchId, UserId = userId });
+
+        return row == null
+            ? null
+            : new StoredPrediction(
+                row.PredictedHomeScore, row.PredictedAwayScore, (PredictionOutcome)row.Outcome,
+                row.CreatedAtUtc, row.UpdatedAtUtc);
+    }
+
+    public async Task<StoredLeagueRoundResult?> LeagueRoundResultAsync(int leagueId, int roundId, string userId)
+    {
+        const string sql = @"
+            SELECT
+                lrr.[BasePoints],
+                lrr.[BoostedPoints],
+                lrr.[HasBoost],
+                lrr.[AppliedBoostCode]
+            FROM
+                [LeagueRoundResults] lrr
+            WHERE
+                lrr.[LeagueId] = @LeagueId
+                AND lrr.[RoundId] = @RoundId
+                AND lrr.[UserId] = @UserId;";
+
+        using var connection = connectionFactory.CreateConnection();
+
+        return await connection.QuerySingleOrDefaultAsync<StoredLeagueRoundResult>(
+            sql, new { LeagueId = leagueId, RoundId = roundId, UserId = userId });
+    }
+
     // Column order matches each SELECT above, per the Dapper result-mapping rule in CLAUDE.md.
     private sealed record MatchRow(
         int Id,
@@ -140,4 +189,11 @@ internal sealed class SqlServerTestDataInspector(IDbConnectionFactory connection
         DateTime DeadlineUtc,
         string Status,
         string? ApiRoundName);
+
+    private sealed record PredictionRow(
+        int PredictedHomeScore,
+        int PredictedAwayScore,
+        int Outcome,
+        DateTime CreatedAtUtc,
+        DateTime? UpdatedAtUtc);
 }

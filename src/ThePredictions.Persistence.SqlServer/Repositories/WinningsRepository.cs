@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Dapper;
 using ThePredictions.Application.Data;
+using ThePredictions.Persistence.SqlServer.Data;
 using ThePredictions.Application.Repositories;
 using ThePredictions.Domain.Common.Enumerations;
 using ThePredictions.Domain.Models;
@@ -32,9 +33,6 @@ public class WinningsRepository(IDbConnectionFactory connectionFactory, IDbTrans
 
     public async Task AddWinningsAsync(IEnumerable<Winning> winnings, CancellationToken cancellationToken)
     {
-        if (!winnings.Any())
-            return;
-
         const string sql = @"
             INSERT INTO [Winnings]
             (
@@ -45,17 +43,40 @@ public class WinningsRepository(IDbConnectionFactory connectionFactory, IDbTrans
                 [RoundNumber],
                 [Month]
             )
-            VALUES
-            (
-                @UserId,
-                @LeaguePrizeSettingId,
-                @Amount,
-                @AwardedDateUtc,
-                @RoundNumber,
-                @Month
-            );";
+            SELECT
+                src.[UserId],
+                src.[LeaguePrizeSettingId],
+                src.[Amount],
+                src.[AwardedDateUtc],
+                src.[RoundNumber],
+                src.[Month]
+            FROM
+                OPENJSON(@Rows)
+                WITH (
+                    [UserId] nvarchar(450) 'strict $.UserId',
+                    [LeaguePrizeSettingId] int 'strict $.LeaguePrizeSettingId',
+                    [Amount] decimal(18, 2) 'strict $.Amount',
+                    [AwardedDateUtc] datetime2 'strict $.AwardedDateUtc',
+                    [RoundNumber] int 'strict $.RoundNumber',
+                    [Month] int 'strict $.Month'
+                ) src;";
 
-        var command = new CommandDefinition(commandText: sql, parameters: winnings, transaction: Transaction, cancellationToken: cancellationToken);
+        var rows = winnings
+            .Select(winning => new
+            {
+                winning.UserId,
+                winning.LeaguePrizeSettingId,
+                winning.Amount,
+                winning.AwardedDateUtc,
+                winning.RoundNumber,
+                winning.Month
+            })
+            .ToList();
+
+        if (rows.Count == 0)
+            return;
+
+        var command = new CommandDefinition(commandText: sql, parameters: new { Rows = JsonRows.From(rows) }, transaction: Transaction, cancellationToken: cancellationToken);
         await Connection.ExecuteAsync(command);
     }
 
