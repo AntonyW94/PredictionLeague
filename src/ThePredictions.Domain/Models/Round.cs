@@ -1,4 +1,4 @@
-using Ardalis.GuardClauses;
+﻿using Ardalis.GuardClauses;
 using ThePredictions.Domain.Common;
 using ThePredictions.Domain.Common.Enumerations;
 
@@ -221,6 +221,24 @@ public class Round
 
         return openDeadlines.Count == 0 ? null : openDeadlines.Min();
     }
+
+    /// <summary>
+    /// Whether this round is predicted in batches rather than in one go: true when its fixtures do not all
+    /// share a single effective deadline, which happens once a per-match <see cref="Match.CustomLockTimeUtc"/>
+    /// splits them (see <see cref="RecalculateBatchPredictionLocks"/>).
+    /// </summary>
+    /// <remarks>
+    /// An ordinary league round locks every fixture at the round deadline, so a player either has the whole
+    /// round in or none of it - which is why the completion views have nothing useful to say per fixture there.
+    /// Postponed fixtures are excluded for the same reason as in <see cref="GetLatestPredictionDeadline"/>:
+    /// they cannot be predicted, so a stale lock on one must not make an ordinary round look staggered.
+    /// </remarks>
+    public bool HasStaggeredPredictionDeadlines =>
+        _matches
+            .Where(match => !match.IsPostponed)
+            .Select(match => match.GetEffectiveDeadline(DeadlineUtc))
+            .Distinct()
+            .Count() > 1;
 
     /// <summary>
     /// Recomputes the per-match custom lock times for this round from its confirmed matches. Matches whose

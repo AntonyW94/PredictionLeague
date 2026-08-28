@@ -1065,6 +1065,66 @@ public class RoundTests
 
     #endregion
 
+    #region HasStaggeredPredictionDeadlines
+
+    [Fact]
+    public void HasStaggeredPredictionDeadlines_ShouldBeFalse_WhenRoundHasNoMatches()
+    {
+        // Arrange
+        var round = CreateRoundWithId();
+
+        // Act / Assert
+        round.HasStaggeredPredictionDeadlines.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasStaggeredPredictionDeadlines_ShouldBeFalse_WhenEveryMatchLocksAtTheRoundDeadline()
+    {
+        // Arrange - an ordinary league round: no custom locks, so the whole round is predicted in one go
+        var deadline = new DateTime(2026, 7, 14, 18, 30, 0, DateTimeKind.Utc);
+        var round = CreateRoundWithMatches(deadline, null, null, null);
+
+        // Act / Assert
+        round.HasStaggeredPredictionDeadlines.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasStaggeredPredictionDeadlines_ShouldBeFalse_WhenEveryCustomLockIsTheSameMoment()
+    {
+        // Arrange - custom locks that all agree still leave one deadline, so the round is not split
+        var deadline = new DateTime(2026, 7, 14, 18, 30, 0, DateTimeKind.Utc);
+        var sharedLock = deadline.AddHours(3);
+        var round = CreateRoundWithMatches(deadline, sharedLock, sharedLock);
+
+        // Act / Assert
+        round.HasStaggeredPredictionDeadlines.Should().BeFalse();
+    }
+
+    [Fact]
+    public void HasStaggeredPredictionDeadlines_ShouldBeTrue_WhenAMatchCarriesItsOwnLock()
+    {
+        // Arrange - a combined round: the semi-finals lock at the round deadline, the final three days later
+        var deadline = new DateTime(2026, 7, 14, 18, 30, 0, DateTimeKind.Utc);
+        var round = CreateRoundWithMatches(deadline, null, deadline.AddDays(3));
+
+        // Act / Assert
+        round.HasStaggeredPredictionDeadlines.Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasStaggeredPredictionDeadlines_ShouldIgnoreAPostponedMatchesOwnLock()
+    {
+        // A called-off fixture cannot be predicted, so a stale lock on one must not make an ordinary round
+        // look like it is played in batches.
+        var deadline = new DateTime(2026, 7, 14, 18, 30, 0, DateTimeKind.Utc);
+        var round = CreateRoundWithPostponedLateLock(deadline, postponedLockUtc: deadline.AddDays(5));
+
+        // Act / Assert
+        round.HasStaggeredPredictionDeadlines.Should().BeFalse();
+    }
+
+    #endregion
+
     #region RecalculateBatchPredictionLocks
 
     private static readonly DateTime BatchRoundDeadline = new(2026, 7, 14, 18, 30, 0, DateTimeKind.Utc);
