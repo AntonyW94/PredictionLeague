@@ -16,4 +16,5 @@ public record RoundCompletionDto(
     bool DeadlinePassed,
     bool CanSendReminders,
     int PredictableMatchCount,
+    bool HasStaggeredDeadlines,
     IReadOnlyList<RoundCompletionPlayerDto> Players);

@@ -195,6 +195,23 @@ public class GetRoundCompletionQueryHandlerTests
         result.DeadlinePassed.Should().BeFalse("the round is still open even though its deadline has gone.");
     }
 
+    [Fact]
+    public async Task Handle_ShouldReportTheRoundAsUnstaggered_WhenEveryFixtureLocksAtTheRoundDeadline()
+    {
+        // An ordinary round is entered in one go, so the views have nothing useful to say per fixture.
+        Given(fixtures: [Fixture(1), Fixture(2)]);
+
+        (await HandleAsync()).HasStaggeredDeadlines.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_ShouldReportTheRoundAsStaggered_WhenAFixtureCarriesItsOwnLock()
+    {
+        Given(fixtures: [Fixture(1), Fixture(2, customLock: NowUtc.AddDays(3))]);
+
+        (await HandleAsync()).HasStaggeredDeadlines.Should().BeTrue();
+    }
+
     #endregion
 
     #region Players

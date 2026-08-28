@@ -64,6 +64,10 @@ public class GetRoundCompletionQueryHandler(
             DeadlinePassed: openFixtures.Count == 0,
             canSendReminders,
             openFixtures.Count,
+            // An ordinary round locks every fixture together, so a player has either the whole round in or
+            // none of it and the per-fixture detail says nothing the count does not. Only a round split into
+            // batches by a custom lock can leave someone genuinely part-way through.
+            data.Round.HasStaggeredPredictionDeadlines,
             players);
     }
 

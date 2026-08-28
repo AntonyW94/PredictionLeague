@@ -45,17 +45,26 @@
                             <UserAvatar FullName="@player.PlayerName" />
                             <div class="incomplete-predictions__details">
                                 <span class="text-white fw-bold">@player.PlayerName</span>
-                                <small class="text-white-50">Missing: @string.Join(", ", player.MissingFixtures.Select(f => $"{f.HomeTeam} v {f.AwayTeam}"))</small>
+                                @if (_completion.HasStaggeredDeadlines)
+                                {
+                                    <small class="text-white-50">Missing: @string.Join(", ", player.MissingFixtures.Select(f => $"{f.HomeTeam} v {f.AwayTeam}"))</small>
+                                }
                             </div>
                         </div>
                         <div class="incomplete-predictions__actions">
-                            @if (player.HasEnteredNothing)
+                            @* An ordinary round is entered in one go, so every incomplete player is on none of them
+                               and naming the fixtures adds nothing. Only a round whose fixtures lock in batches can
+                               leave someone genuinely part-way through, which is where the detail earns its place. *@
+                            @if (_completion.HasStaggeredDeadlines)
                             {
-                                <span class="member-status-pill member-status-pending">None (@player.PredictedCount/@_completion.PredictableMatchCount)</span>
-                            }
-                            else
-                            {
-                                <span class="member-status-pill member-status-pending">Partial (@player.PredictedCount/@_completion.PredictableMatchCount)</span>
+                                @if (player.HasEnteredNothing)
+                                {
+                                    <span class="member-status-pill member-status-pending">None (@player.PredictedCount/@_completion.PredictableMatchCount)</span>
+                                }
+                                else
+                                {
+                                    <span class="member-status-pill member-status-pending">Partial (@player.PredictedCount/@_completion.PredictableMatchCount)</span>
+                                }
                             }
                             @if (_completion.CanSendReminders && !_completion.DeadlinePassed)
                             {
